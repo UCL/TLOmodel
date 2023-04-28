@@ -178,6 +178,8 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
                 # Treat / refer based on diagnosis
                 if malaria_test_result == "severe_malaria":
+                    df.at[person_id, "ma_dx_counter"] += 1
+
                     schedule_hsi(
                         HSI_Malaria_Treatment_Complicated(
                             person_id=person_id,
@@ -188,6 +190,8 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
                 # return type "clinical_malaria" includes asymptomatic infection
                 elif malaria_test_result == "clinical_malaria":
+                    df.at[person_id, "ma_dx_counter"] += 1
+
                     schedule_hsi(
                         HSI_Malaria_Treatment(
                             person_id=person_id,
@@ -292,6 +296,8 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     person_id=person_id, hsi_event=hsi_event)
 
                 if malaria_test_result == "severe_malaria":
+                    df.at[person_id, "ma_dx_counter"] += 1
+
                     schedule_hsi(
                         HSI_Malaria_Treatment_Complicated(
                             person_id=person_id,
@@ -301,6 +307,8 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         tclose=None)
 
                 elif malaria_test_result == "clinical_malaria":
+                    df.at[person_id, "ma_dx_counter"] += 1
+
                     schedule_hsi(
                         HSI_Malaria_Treatment(
                             person_id=person_id,
@@ -365,23 +373,16 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
 
     if "Malaria" in sim.modules:
         # Quick diagnosis algorithm - just perfectly recognises the symptoms of severe malaria
-        sev_set = {"acidosis",
-                   "coma_convulsions",
-                   "renal_failure",
-                   "shock",
-                   "jaundice",
-                   "anaemia"}
 
-        # if person's symptoms are on severe malaria list then consider treatment for malaria
-        any_symptoms_indicative_of_severe_malaria = len(sev_set.intersection(symptoms)) > 0
-
-        if any_symptoms_indicative_of_severe_malaria:
+        if symptoms == "severe_malaria":
             # Check if malaria parasitaemia:
             malaria_test_result = sim.modules["Malaria"].check_if_fever_is_caused_by_malaria(
                 person_id=person_id, hsi_event=hsi_event)
 
             # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
             if malaria_test_result in ("severe_malaria", "clinical_malaria"):
+                df.at[person_id, "ma_dx_counter"] += 1
+
                 # Launch the HSI for treatment for Malaria, HSI_Malaria_Treatment will determine correct treatment
                 schedule_hsi(
                     hsi_event=HSI_Malaria_Treatment_Complicated(

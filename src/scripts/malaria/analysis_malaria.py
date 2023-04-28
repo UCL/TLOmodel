@@ -35,8 +35,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 1, 1)
-popsize = 2000
+end_date = Date(2012, 1, 1)
+popsize = 200
 
 # set up the log config
 log_config = {
@@ -44,12 +44,12 @@ log_config = {
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
-        "tlo.methods.malaria": logging.INFO,
+        "tlo.methods.malaria": logging.DEBUG,
         "tlo.methods.healthsystem.summary": logging.INFO,
     },
 }
 # seed = random.randint(0, 50000)
-seed = 100
+seed = 500
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
 # Register the appropriate modules
@@ -60,7 +60,7 @@ sim.register(
         resourcefilepath=resourcefilepath,
         service_availability=["*"],
         mode_appt_constraints=0,
-        cons_availability='default',
+        cons_availability='all',
         ignore_priority=True,
         capabilities_coefficient=1.0,
         disable=False,
@@ -74,7 +74,7 @@ sim.register(
     )
 )
 
-sim.modules["Malaria"].parameters["testing_adj"] = 0.8
+sim.modules["Malaria"].parameters["testing_adj"] = 1.0
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

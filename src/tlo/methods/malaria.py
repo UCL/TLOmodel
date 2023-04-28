@@ -155,6 +155,9 @@ class Malaria(Module):
         "ma_clinical_counter": Property(
             Types.INT, "annual counter for malaria clinical episodes"
         ),
+        "ma_dx_counter": Property(
+            Types.INT, "annual counter for malaria diagnoses"
+        ),
         "ma_tx_counter": Property(
             Types.INT, "annual counter for malaria treatment episodes"
         ),
@@ -260,6 +263,7 @@ class Malaria(Module):
         df.loc[df.is_alive, "ma_age_edited"] = 0.0
 
         df.loc[df.is_alive, "ma_clinical_counter"] = 0
+        df.loc[df.is_alive, "ma_dx_counter"] = 0
         df.loc[df.is_alive, "ma_tx_counter"] = 0
         df.loc[df.is_alive, "ma_clinical_preg_counter"] = 0
         df.loc[df.is_alive, "ma_iptp"] = False
@@ -325,7 +329,7 @@ class Malaria(Module):
         alive_infected = alive & df.ma_is_infected
 
         # draw from currently asymptomatic to allocate clinical cases
-        # this can include people who became ainfected/asym in previous polls
+        # this can include people who became infected/asym in previous polls
         alive_infected_asym = alive_infected & (df.ma_inf_type == "asym")
         now_clinical = _draw_incidence_for("monthly_prob_clin", alive_infected_asym)
         df.loc[now_clinical, "ma_inf_type"] = "clinical"
@@ -485,6 +489,7 @@ class Malaria(Module):
         df.at[child_id, "ma_age_edited"] = 0.0
         df.at[child_id, "ma_clinical_counter"] = 0
         df.at[child_id, "ma_clinical_preg_counter"] = 0
+        df.at[child_id, "ma_dx_counter"] = 0
         df.at[child_id, "ma_tx_counter"] = 0
         df.at[child_id, "ma_iptp"] = False
 
@@ -563,6 +568,8 @@ class Malaria(Module):
                                       symptom_onset + DateOffset(days=4), self.rng),
                     tclose=None
                 )
+            else:
+                print(f"no rdt for person {person}")
 
     def check_if_fever_is_caused_by_malaria(self, person_id, hsi_event):
         """Run by an HSI when an adult presents with fever"""
@@ -595,47 +602,6 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
 
         # assigns new malaria infections
         self.module.malaria_poll2(population)
-
-
-# class MalariaScheduleTesting(RegularEvent, PopulationScopeEventMixin):
-#     """ additional malaria testing happening outside the symptom-driven generic HSI event
-#     to increase tx coverage up to reported levels
-#     """
-#
-#     def __init__(self, module):
-#         super().__init__(module, frequency=DateOffset(days=3))
-#
-#     def apply(self, population):
-#         df = population.props
-#         p = self.module.parameters
-#
-#         # select people to go for testing (and subsequent tx)
-#         # random sample 0.4 to match clinical case tx coverage
-#         # this sample will include asymptomatic infections too to account for
-#         # unnecessary treatments  and uninfected people
-#         # todo change back if needed
-#         # alive = df.is_alive
-#         # test = df.index[alive][self.module.rng.random_sample(size=alive.sum()) < p["testing_adj"]]
-#
-#         # weight testing to those with clinical malaria infection and not on treatment
-#         # severe cases will seek emergency care
-#         random_draw = self.module.rng.random_sample(size=len(df))
-#
-#         test = df.loc[df.is_alive &
-#                       (df.ma_inf_type == "clinical") &
-#                       ~df.ma_tx &
-#                       (random_draw < p["testing_adj"])].index
-#
-#         for person_index in test:
-#             logger.debug(key='message',
-#                          data=f'MalariaScheduleTesting: scheduling HSI_Malaria_rdt for person {person_index}')
-#
-#             self.sim.modules["HealthSystem"].schedule_hsi_event(
-#                 HSI_Malaria_rdt(self.module, person_id=person_index),
-#                 priority=0,
-#                 topen=random_date(self.sim.date, self.sim.date + self.frequency, self.module.rng),
-#                 tclose=None
-#             )
 
 
 class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
@@ -757,11 +723,13 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         if dx_result:
             # ----------------------------------- SEVERE MALARIA -----------------------------------
 
+            df.at[person_id, "ma_dx_counter"] += 1
+
             # if severe malaria, treat for complicated malaria
             if df.at[person_id, "ma_inf_type"] == "severe":
 
                 logger.debug(key='message',
-                             data=f'HSI_Malaria_rdt: scheduling HSI_Malaria_Treament_Complicated {person_id}'
+                             data=f'HSI_Malaria_rdt: scheduling HSI_Malaria_Treatment_Complicated {person_id}'
                                   f'on date {self.sim.date}')
 
                 treat = HSI_Malaria_Treatment_Complicated(
@@ -816,6 +784,7 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
 
             # Check if drugs are available, and provide drugs:
             drugs_available = self.get_drugs(age_of_person=person["age_years"])
+            print("drugs_available", drugs_available, person_id)
 
             if drugs_available:
 
