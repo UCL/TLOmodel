@@ -250,18 +250,18 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
                            )
                 return _x.groupby(_x.index).mean().stack()
 
-            if in_log_file == 'run_analysis_contraception_no_diseases__2023-04-04T222656.log':
-                # without interv, 250K, till 2050; final costs update EHP & OHT
-                results_folder_name = 'run_analysis_contraception_no_diseases-2023-04-04T222430Z'
-            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-04-04T222332.log':
-                # with interv, 250K, till 2050; final costs update EHP & OHT
-                results_folder_name = 'run_analysis_contraception_no_diseases-2023-04-04T222103Z'
-            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-04-04T224551.log':
-                # without interv, 2K till 2099, final costs update EHP & OHT
-                results_folder_name = 'run_analysis_contraception_no_diseases-2023-04-04T224344Z'
-            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-04-04T224342.log':
-                # with interv, 2K till 2099, final costs update EHP & OHT
-                results_folder_name = 'run_analysis_contraception_no_diseases-2023-04-04T224121Z'
+            if in_log_file == 'run_analysis_contraception_no_diseases__2023-04-26T142627.log':
+                # without interv, 250K, till 2050; final costs update EHP & OHT + pregn test to initiate co
+                results_folder_name = 'run_analysis_contraception_no_diseases-2023-04-26T142416Z'
+            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-04-26T142508.log':
+                # with interv, 250K, till 2050; final costs update EHP & OHT + pregn test to initiate co
+                results_folder_name = 'run_analysis_contraception_no_diseases-2023-04-26T142300Z'
+            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-04-26T141435.log':
+                # without interv, 2K till 2099, final costs update EHP & OHT + pregn test to initiate co
+                results_folder_name = 'run_analysis_contraception_no_diseases-2023-04-26T141159Z'
+            elif in_log_file == 'run_analysis_contraception_no_diseases__2023-04-26T141545.log':
+                # with interv, 2K till 2099, final costs update EHP & OHT + pregn test to initiate co
+                results_folder_name = 'run_analysis_contraception_no_diseases-2023-04-26T141321ZZ'
             else:
                 raise ValueError(
                     "Unknown results_folder_name for the log file " + str(in_log_file) +
