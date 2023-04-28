@@ -51,7 +51,7 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
     ppfp_interv_costs_with = reduce_magnitude(in_ppfp_interv_costs_with, in_reduce_magnitude)
     ppfp_bottom = [x + y for x, y in zip(cons_costs_with, pop_interv_costs_with)]
 
-    # %%% PLot all time periods + total ................................................................................
+    # %%% Plot all time periods + total ................................................................................
     fig, ax = plt.subplots()
     # custom x-axis tick labels
     x_labels_tp = in_x_labels.copy()
@@ -108,7 +108,7 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
 
     plt.savefig(outputpath / output_filename, format='png')
 
-    # %%% PLot total only ..............................................................................................
+    # %%% Plot total only ..............................................................................................
     fig2, ax2 = plt.subplots()
     # custom x-axis tick labels
     x2_i = np.array(0)  # the x_label locations
