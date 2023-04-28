@@ -9,9 +9,9 @@
 ###########################################################
 # 1.1 Run previous setup files
 #---------------------------------
-source("0 scripts/0_packages_and_functions.R")
-source("0 scripts/1_data_setup.R")
-source("0 scripts/2_feature_manipulation.R")
+source(paste0(path_to_scripts, "0_packages_and_functions.R"))
+source(paste0(path_to_scripts, "1_data_setup.R"))
+source(paste0(path_to_scripts, "2_feature_manipulation.R"))
 
 # The script below runs the stepwise algorithm for the selection of control variables. This takes 5-6 hours to run so it has been replaced by the output below
 #source("0 scripts/3_pre_regression_analysis.R") 

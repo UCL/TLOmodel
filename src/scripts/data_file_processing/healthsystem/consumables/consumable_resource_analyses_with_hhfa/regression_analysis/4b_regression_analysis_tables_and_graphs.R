@@ -1,12 +1,14 @@
 # This script generates tables and graphs based on the results of 
 # 4_regression_analysis.R
+# In the future, we might want to load the regression outputs instead of re-running 
+# the regression analysis script. 
 
 ###########################################################
 # 1. Data setup
 ###########################################################
 # 1.1 Run previous setup files
 #---------------------------------
-#source("0 scripts/4_regression_analysis.R")
+source(paste0(path_to_scripts, "4_regression_analysis.R"))
 
 ###########################################################
 # 2. Tables and Graphs
@@ -15,7 +17,7 @@
 #######################################################
 # Create the combined plot for manuscript
 #-----------------------------------------------------------
-filename = "2 outputs/figures/main_regression_plot.png"
+filename =  paste0(path_to_outputs, "figures/main_regression_plot.png")
 custom_forest_plot(model = model_fac_item_re) #, xlab = "Odds ratio with 95% Confidence Interval"
 png(filename, units="in", width=8, height=5, res=300)
 cowplot::plot_grid(data_table,p, align = "h", rel_widths = c(0.65, 0.35))
@@ -31,7 +33,7 @@ p_level1 <- p1
 custom_forest_plot_by_level(model = model_level_summaries[[2]], xlab = fac_types_for_reg[2], ylimit = 16)
 p_level2 <- p
 
-filename = "2 outputs/figures/regression_plot_bylevel.png"
+filename =  paste0(path_to_outputs, "figures/regression_plot_bylevel.png")
 png(filename, units="in", width=8, height=5, res=300)
 plot <- cowplot::plot_grid(p_level1,p_level2, align = "h", nrow = 1, rel_widths = c(0.68, 0.32))
 x.grob <- textGrob("                                                                              Odds Ratio with 95% Confidence Interval", 
@@ -55,7 +57,7 @@ for (i in 2:10){
 custom_forest_plot_by_level(model = model_prog_summaries[[6]], xlab = programs_for_reg[6], ylimit = 8)
 p_prog6 <- p1
 
-filename = "2 outputs/figures/regression_plot_byprog1.png"
+filename =  paste0(path_to_outputs, "figures/regression_plot_byprog1.png")
 png(filename, units="in", width=8, height=5, res=300)
 plot <- cowplot::plot_grid(p_prog1,p_prog2,p_prog3,p_prog4, p_prog5,
                    align = "h", nrow = 1, rel_widths = c(0.45, 0.125,0.125, 0.125, 0.125))
@@ -64,7 +66,7 @@ x.grob <- textGrob("                                                            
 grid.arrange(arrangeGrob(plot, bottom = x.grob))
 dev.off()
 
-filename = "2 outputs/figures/regression_plot_byprog2.png"
+filename =  paste0(path_to_outputs, "figures/regression_plot_byprog2.png")
 png(filename, units="in", width=8, height=5, res=300)
 plot <- cowplot::plot_grid(p_prog6,p_prog7,p_prog8,p_prog9, p_prog10,
                    align = "h", nrow = 1, rel_widths = c(0.45, 0.125,0.125, 0.125, 0.125))
@@ -94,7 +96,7 @@ for (i in 1:10){
   custom_forest_plot_by_level_itemfe(model = model_prog_summaries_itemfe[[i]], ylimit = 16,
                                      ref_item = ref_item_list[i])
   
-  filename <<- paste("2 outputs/figures/regression_plot_prog_",programs_for_reg[i], ".png")
+  filename <<- paste( paste0(path_to_outputs, "figures/regression_plot_prog_"),programs_for_reg[i], ".png")
   png(filename, units="in", width=8, height=5, res=300)
   prog_plot <- cowplot::plot_grid(data_table,p, align = "h", rel_widths = c(0.65, 0.35))
   print(prog_plot)
@@ -113,7 +115,7 @@ for (i in 2:4){
   assign(name, p)
 }
 
-filename = "2 outputs/figures/regression_plot_byowner.png"
+filename =  paste0(path_to_outputs, "figures/regression_plot_byowner.png")
 png(filename, units="in", width=8, height=5, res=300)
 plot <- cowplot::plot_grid(p_owner1,p_owner2, p_owner3, p_owner4, 
                            align = "h", nrow = 1, rel_widths = c(0.52, 0.16, 0.16, 0.16))
@@ -131,28 +133,11 @@ custom_forest_plot_by_level(model = model_item_type_summaries[[2]], xlab = item_
 p_item_type2 <- p
 
 
-filename = "2 outputs/figures/regression_plot_byitem_type.png"
+filename =  paste0(path_to_outputs, "figures/regression_plot_byitem_type.png")
 png(filename, units="in", width=8, height=5, res=300)
 plot <- cowplot::plot_grid(p_item_type1,p_item_type2, align = "h", nrow = 1, rel_widths = c(0.68,0.32))
 x.grob <- textGrob("                                                                              Odds Ratio with 95% Confidence Interval", 
                    gp=gpar(fontface="bold", col="black", fontsize=8))
 grid.arrange(arrangeGrob(plot, bottom = x.grob))
 dev.off()
- 
-# 2.3 Appendix: Forest plot of main plot but only taking observed cases as available
-#####################################################################################
-# Note that this code has been commented out becuase it needs a different dataset to be
-# used for model 4. Running the code below should generate the necessary graph.
-
-#source("0 scripts/0_packages_and_functions.R")
-#source("0 scripts/1_data_setup_only_observed.R") # This dataset only codes observed consumables as available,
-#i.e. consumables reported available byt not observed are treated as not available. 
-#source("0 scripts/2_feature_manipulation.R")
-# source("0 scripts/7_regression_analysis_only_observed.R") 
-
-#filename = "2 outputs/figures/main_regression_plot_only_observed.png"
-#custom_forest_plot(model = model_fac_item_re_only_observed) #, xlab = "Odds ratio with 95% Confidence Interval"
-#png(filename, units="in", width=8, height=5, res=300)
-#cowplot::plot_grid(data_table,p, align = "h", rel_widths = c(0.65, 0.35))
-#dev.off()
 

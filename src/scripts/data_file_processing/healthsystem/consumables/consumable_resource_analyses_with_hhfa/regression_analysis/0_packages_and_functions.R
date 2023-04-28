@@ -1,87 +1,74 @@
 # This script loads the necessary packages for the regression analysis
 # and creates functions used in scripts 2-5
 
-#install.packages("caTools")
-#install.packages("caret")
-#install.packages("dplyr")
-#install.packages("modeest")
-#install.packages("ggplot2")
-#install.packages("cowplot")
-#install.packages("Amelia")
-#install.packages("readxl")
-#install.packages("readr")
-#install.packages("mlbench")
-#install.packages("magrittr")
-#install.pacakges("estimatr")
-#install.packages("ggcorrplot")
-#install.packages("lmerTest",dependencies=TRUE)
-#install.packages("Matrix") # required for lmerTest
-#install.packages("frm")
-#install.packages("jtools") # for regression visualisations
-#install.pacakges("ggfortify")
-#install.packages("glmmTMB")
-#install.packages("pls")
-#install.packages("psych")
-#install.packages("sjPlot") # for plot_model
-#install.packages("sjmisc") # for plot_model
-#install.packages("knitr") # to create documents
-#install.packages("huxtable") # to export regression summary tables using export_summs
-#install.packages("geepack") # to run clustered GEE
-#install.packages("MESS", dependencies = TRUE) # for model comparison
-#install.packages("car") # to run Wald tests on regression output (Anova function)
-#webshot::install_phantomjs()
-#install.packages("effects") # to allow for type= "eff" in plot_model
-#install.packages("cvTools") # for k-fold cross validation
-#install.packages("fastDummies") # to create dummies from categorical variable
-#install.packages("janitor") # for tabyl command - get summary of categorical variable
-#install.packages("aod") # wald.test
-#install.packages("openxlsx") # for write.xlsx
-
 # 1. Load libraries #
 #####################
-library(magrittr) # for %>% to work
-library(estimatr) # for lm_robust to work (clustered SE)
+install.packages("pacman")
+pacman::p_load(magrittr, # for %>% to work
+               estimatr, # for lm_robust to work (clustered SE)
+               
+               dplyr,
+               modeest,
+               broom.mixed, # for tidy to work to generate conf int table
+               stringr,
+               
+               #Excel packages
+               caTools,
+               readxl,
+               writexl,
+               openxlsx, #for write.xlsx
+               readr,
+               ggcorrplot,
+               
+               # Regression packages
+               nlme, # random effects regression - lme
+               lmerTest, # random effects regression - lmer
+               frm, # Fractional regression model
+               ggfortify, # for diagnostic plots
+               glmmTMB, # Multilevel regression model
+               MASS, # to run stepAIC with BIC criterion
+               
+               # visualisation packages
+               jtools, # for regression visualisations
+               sjPlot, # for plot_model
+               sjmisc, # for plot_model
+               viridis,
+               ggpubr,
+               ggplot2,
+               cowplot, # for plot_grid (combine multiple graphs)
+               gridExtra, # for combining forest plots (text grob)
+               grid,
+               
+               # packages for tables
+               gtsummary, # to get p-values in summary tables
+               huxtable,  # to export regression summary tables using export_summs
+               margins, # to calculate average marginal effects from logistic regression results
+               janitor, # for tabyl command - get summary of categorical variable
+               aod, # wald.test
+               
+               MESS, # for model comparison
+               car, # to run Wald tests on regression outputs (Anova function)
+               caret, # to run k-fold cross validation
+               effects, # to allow for type= "eff" in plot_model
+               cvTools, # for k-fold cross validation
+               fastDummies # to create dummies from categorical variable
+               )
 
-library(dplyr)
-library(modeest)
-library(ggplot2)
-library(cowplot) # for plot_grid (combine multiple graphs)
-library(gridExtra) # for combining forest plots (text grob)
-library(grid)
-library(broom.mixed) # for tidy to work to generate conf int table
+setwd("C:/Users/sm2511/PycharmProjects/TLOmodel/src/scripts/data_file_processing/healthsystem/consumables/consumable_resource_analyses_with_hhfa/regression_analysis/")
+path_to_scripts = "C:/Users/sm2511/PycharmProjects/TLOmodel/src/scripts/data_file_processing/healthsystem/consumables/consumable_resource_analyses_with_hhfa/regression_analysis/"
+path_to_local_repo = "C:/Users/sm2511/PycharmProjects/TLOmodel/"
+path_to_dropbox = "C:/Users/sm2511/Dropbox/Thanzi la Onse/"
+path_to_files_in_dropbox = paste0(path_to_dropbox, "05 - Resources/Module-healthsystem/consumables raw files/")
+path_to_data = paste0(path_to_dropbox, "07 - Data/HHFA_2018-19/2 clean/")
 
-library(caTools)
-library(readxl)
-library(writexl)
-library(openxlsx) #for write.xlsx
-library(readr)
-library(ggcorrplot)
+dir.create(file.path(path_to_local_repo, "outputs/", "regression_analysis"))
+path_to_outputs = paste0(path_to_local_repo, "outputs/", "regression_analysis/")
+dir.create(file.path(path_to_outputs, "regression_analysis"))
+dir.create(file.path(path_to_outputs, "predictions"))
+dir.create(file.path(paste0(path_to_outputs, "predictions/", "figures")))
+dir.create(file.path(path_to_outputs, "tables"))
+dir.create(file.path(path_to_outputs, "figures"))
 
-library(nlme) # random effects regression - lme
-library(lmerTest) # random effects regression - lmer
-library(frm) # Fractional regression model
-library(ggfortify) # for diagnostic plots
-library(glmmTMB) # Multilevel regression model
-library(MASS) # to run stepAIC with BIC criterion
-
-library(jtools) # for regression visualisations
-library(sjPlot) # for plot_model
-library(sjmisc) # for plot_model
-
-library(gtsummary) # to get p-values in summary tables
-library(huxtable)  # to export regression summary tables using export_summs
-library(margins) # to calculate average marginal effects from logistic regression results
-
-library(geepack) # to run clustered GEE
-library(MESS) # for model comparison
-library(car) # to run Wald tests on regression outputs (Anova function)
-library(caret) # to run k-fold cross validation
-library(effects) # to allow for type= "eff" in plot_model
-library(cvTools) # for k-fold cross validation
-library(fastDummies) # to create dummies from categorical variable
-
-library(janitor) # for tabyl command - get summary of categorical variable
-library(aod) # wald.test
 
 # 2. Create functions #
 #######################

@@ -11,10 +11,9 @@
 ###########################################################
 # 1.1 Run previous setup files
 #---------------------------------
-source("0 scripts/0_packages_and_functions.R")
-source("0 scripts/1b_data_setup_only_observed.R")
-source("0 scripts/2_feature_manipulation.R")
-#source("0 scripts/3_pre_regression_analysis.R")
+source(paste0(path_to_scripts, "0_packages_and_functions.R"))
+source(paste0(path_to_scripts, "1_data_setup.R"))
+source(paste0(path_to_scripts, "2_feature_manipulation.R"))
 
 # Output of 3_pre_regression_analysis.R
 chosen_varlist_orig = c( "available",                       "fac_urban",                           
@@ -131,7 +130,7 @@ model_fac_item_re_only_observed <- glmer(available ~ fac_type + fac_owner + fac_
 
 # 3. Save regression results
 ###########################
-save(model_fac_item_re_only_observed, file = "2 outputs/regression_results/model_fac_item_re_only_observed.rdta")
+save(model_fac_item_re_only_observed, file = paste0(path_to_outputs, "regression_results/model_fac_item_re_only_observed.rdta"))
 
 # 4. Summarise results in a table
 ##################################

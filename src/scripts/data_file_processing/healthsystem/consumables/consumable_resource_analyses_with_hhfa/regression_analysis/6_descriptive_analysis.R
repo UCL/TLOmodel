@@ -1,9 +1,9 @@
 # This script extracts descriptive tables for the manuscript
 
 # Run setup files
-source("0 scripts/0_packages_and_functions.R")
-source("0 scripts/1_data_setup.R")
-source("0 scripts/2_feature_manipulation.R")
+source(paste0(path_to_scripts, "0_packages_and_functions.R"))
+source(paste0(path_to_scripts, "1_data_setup.R"))
+source(paste0(path_to_scripts, "2_feature_manipulation.R"))
 
 # 1. Set up variable lists #
 ###########################
@@ -66,7 +66,7 @@ for (var in desc_table_varlist_full_bin){
 
 # Display and extract descriptive table
 desc_table
-write_xlsx(desc_table,"2 outputs/tables/desc_table.xlsx")
+write_xlsx(desc_table,paste0(path_to_outputs, "tables/desc_table.xlsx"))
 
 # 2.1.a Separately extract data for higher levels of care not included in the main analysis
 #############################################################################################
@@ -108,7 +108,7 @@ for (var in c("fac_type")){
 
 # Display and extract descriptive table
 desc_table_all_levels
-write_xlsx(desc_table,"2 outputs/tables/desc_table_alllevels.xlsx")
+write_xlsx(desc_table,paste0(path_to_outputs, "tables/desc_table_alllevels.xlsx"))
 
 # 2.2 Extract descriptive table for program and item   #
 #--------------------------------------------------#
@@ -133,7 +133,7 @@ item_summary <- merge(desc_table_item_pt1,desc_table_item_pt2,by="item")
 
 # Display and extract descriptive table
 item_summary
-write_xlsx(item_summary,"2 outputs/tables/desc_table_item.xlsx")
+write_xlsx(item_summary,paste0(path_to_outputs, "tables/desc_table_item.xlsx"))
 
 
 # Get descriptve table by program
@@ -153,7 +153,7 @@ colnames(desc_table_program) = c("program", "n", "percent", "mean", "or", "ci.lo
 
 # Display and extract descriptive table
 desc_table_program
-write_xlsx(desc_table_program,"2 outputs/tables/desc_table_program.xlsx")
+write_xlsx(desc_table_program,paste0(path_to_outputs, "tables/desc_table_program.xlsx"))
 
 # Get descriptve table by type of consumable
 df$item_drug <- relevel(factor(df$item_drug), ref="0")
@@ -172,7 +172,7 @@ colnames(desc_table_item_type) = c("consumable type", "n", "percent", "mean", "o
 
 # Display and extract descriptive table
 desc_table_item_type
-write_xlsx(desc_table_item_type,"2 outputs/tables/desc_table_item_type.xlsx")
+write_xlsx(desc_table_item_type,paste0(path_to_outputs, "tables/desc_table_item_type.xlsx"))
 
 
 # 3. Extract descriptive table by level of care for secondary analysis #
@@ -233,7 +233,7 @@ for (level in 1:length(datasets_by_level)){
     i = 1
   }
   # Display and extract descriptive table
-  desc_file = paste0("2 outputs/tables/desc_table_", datasets_by_level[[i]]$fac_type[1] ,".txt")
+  desc_file = paste0(path_to_outputs, "tables/desc_table_", datasets_by_level[[i]]$fac_type[1] ,".txt")
   write.table(desc_table, file = desc_file, sep = ",", quote = FALSE, row.names = F)
 }
 pvals <- m1c$result$chi2[3]
@@ -245,9 +245,9 @@ print(m1c$result$chi2[3],digits=3.3)
 district_table <-  df %>% 
   group_by(district) %>% 
   summarise(facilities = n_distinct(fac_code))
-write.csv(district_table,"2 outputs/tables/district_table.csv", row.names = TRUE)
+write.csv(district_table,paste0(path_to_outputs, "tables/district_table.csv"), row.names = TRUE)
 
 # Table of items
 item_table <- df[c('program', 'item')]
 item_table <- item_table[!duplicated(df$item),]
-write.csv(item_table,"2 outputs/tables/item_table.csv", row.names = TRUE)
+write.csv(item_table,paste0(path_to_outputs, "tables/item_table.csv"), row.names = TRUE)

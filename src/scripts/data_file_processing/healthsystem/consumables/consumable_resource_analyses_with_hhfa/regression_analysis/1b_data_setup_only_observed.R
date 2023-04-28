@@ -2,7 +2,7 @@
 
 # 1. Load HHFA data#
 ####################
-df_orig <- read_csv("1 data/cleaned_hhfa_2019_onlyobserved.csv", col_names = TRUE)
+df_orig <- read_csv(paste0(path_to_data,"cleaned_hhfa_2019_onlyobserved.csv"), col_names = TRUE)
 
 # 2. Filter data to be ignored #
 ###############################

@@ -1,36 +1,20 @@
+# This script loads the outputs of the final regression model
+# and generates predictions for consumable availability scenarios
+
 ###########################################################
-# 1. Load necessary packages
+# 1. Set up
 ###########################################################
-library(viridis)
-library(stringr)
-library(ggpubr)
 
 # 1.1 Run setup script
 #---------------------------------
-source("0 scripts/1b_data_setup_for_regression.R")
-
-
-# 1.2 Assign a code to items
-#----------------------------
-tags <- c("Storage", "Pool", "Warehouse")
-ids <- c(102, 101, 103)
-item_code = seq(1, length(unique(df_orig$item)), by=1)
-
-sapply(data, function(x) {
-  ids[which(sapply(tags, function(y) grepl(y, x, ignore.case = TRUE)))]
-})
-
-sapply(df_orig, function(x) {
-  item_code[which(sapply(df_orig$item, function(y) grepl(y, x, ignore.case = TRUE)))]
-})
-
+source(paste0(path_to_scripts, "3b_data_setup_for_regression.R"))
 
 ###########################################################
 # 2. Load model outputs
 ###########################################################
-load("2 outputs/regression_results/model_lit.rdta")
-load("2 outputs/regression_results/model_base.rdta")
-load("2 outputs/regression_results/model_fac_item_re.rdta")
+load(paste0(path_to_outputs, "regression_results/model_lit.rdta"))
+load(paste0(path_to_outputs, "regression_results/model_base.rdta"))
+load(paste0(path_to_outputs, "regression_results/model_fac_item_re.rdta"))
 
 # Run new model which can be used in the LinearModel functionality of the TLO model
 model_tlo_lm <- glm(available ~ fac_type + fac_owner + fac_urban + functional_computer +
@@ -64,7 +48,7 @@ extract <- df_orig[which(!is.na(df_orig$available)),] %>%
   group_by(program, item) %>%
   summarise_at(vars(available), list(mean))
 
-write.csv(extract,"2 outputs/predictions/full_item_list_hhfa.csv", row.names = TRUE)
+write.csv(extract, paste0(path_to_outputs, "tables/full_item_list_hhfa.csv"), row.names = TRUE)
 
 
 ###########################################################
@@ -114,7 +98,7 @@ print(paste0("Among ",c,  " facilities which previously did not have computers, 
              round(a*100,2), " % of instances, and changed from 1 to 0 in ", round(b*100,2), " % of the instances."))
 
 # Extract .csv for model simulation
-write.csv(summary_pred_computer,"2 outputs/predictions/summary_pred_computer.csv", row.names = TRUE)
+write.csv(summary_pred_computer,paste0(path_to_outputs, "predictions/summary_pred_computer.csv"), row.names = TRUE)
 
 # 3.2 All facilities have pharmacists managing drug orders
 ##########################################################
@@ -182,7 +166,7 @@ figure <- ggpubr::ggarrange(p_original, p_predict, # list of plots
                   legend = "bottom", # legend position
                   align = "hv", # Align them both, horizontal and vertical
                   nrow = 2)  %>% # number of rows
-  ggexport(filename = "2 outputs/figures/prediction/pred_computer.pdf") 
+  ggexport(filename = paste0(path_to_outputs, "predictions/figures/pred_computer.pdf"))
 
 # If we want common axis titles
 #annotate_figure(figure, left = textGrob("District", rot = 90, vjust = 1, gp = gpar(cex = 1.3)),
@@ -233,7 +217,7 @@ ggpubr::ggarrange(p_original, p_predict, # list of plots
                   legend = "bottom", # legend position
                   align = "hv", # Align them both, horizontal and vertical
                   nrow = 2)  %>% # number of rows
-  ggexport(filename = "2 outputs/figures/prediction/pred_pharma.pdf") 
+  ggexport(filename = paste0(path_to_outputs, "predictions/figures/pred_pharma.pdf"))
 
 # 4.3 Increase availability of HIV, TB, Malaria drugs by 10%
 ############################################################
@@ -277,5 +261,5 @@ ggpubr::ggarrange(p_original, p_predict, # list of plots
                   legend = "bottom", # legend position
                   align = "hv", # Align them both, horizontal and vertical
                   nrow = 2)  %>% # number of rows
-  ggexport(filename = "2 outputs/figures/prediction/pred_global_fund_target.pdf") 
+  ggexport(filename = paste0(path_to_outputs, "predictions/figures/pred_global_fund_target.pdf"))
 

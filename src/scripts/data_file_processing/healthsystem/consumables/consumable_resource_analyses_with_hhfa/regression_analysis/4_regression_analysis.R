@@ -10,7 +10,7 @@
 ###########################################################
 # 1.1 Run setup script
 #---------------------------------
-source("0 scripts/3b_data_setup_for_regression.R")
+source(paste0(path_to_scripts, "3b_data_setup_for_regression.R"))
 
 #######################################################################
 # 2. Regression analysis
@@ -128,10 +128,10 @@ tbl_merge <-
 
 # Save regression results
 ###########################
-save(model_lit, file = "2 outputs/regression_results/model_lit.rdta")
-save(model_base, file = "2 outputs/regression_results/model_base.rdta")
-save(model_fac_re, file = "2 outputs/regression_results/model_fac_re.rdta")
-save(model_fac_item_re, file = "2 outputs/regression_results/model_fac_item_re.rdta")
+save(model_lit, file = paste0(path_to_outputs, "regression_results/model_lit.rdta"))
+save(model_base, file = paste0(path_to_outputs, "regression_results/model_base.rdta"))
+save(model_fac_re, file = paste0(path_to_outputs, "regression_results/model_fac_re.rdta"))
+save(model_fac_item_re, file = paste0(path_to_outputs, "regression_results/model_fac_item_re.rdta"))
 
 # 4. Sub-group analyses
 ##############################
@@ -447,14 +447,14 @@ item_type_tbl_merge <-
 
 # Save subgroup regression results
 ###########################
-save(model_owner_summaries, file = "2 outputs/regression_results/sub-group/model_owner.rdta")
-save(model_item_type_summaries, file = "2 outputs/regression_results/sub-group/model_item_type.rdta")
-save(model_level_summaries, file = "2 outputs/regression_results/sub-group/model_level.rdta")
-save(model_prog_summaries, file = "2 outputs/regression_results/sub-group/model_program.rdta")
-save(model_prog_summaries_itemfe, file = "2 outputs/regression_results/sub-group/model_program_itemfe.rdta")
+save(model_owner_summaries, file = paste0(path_to_outputs, "regression_results/sub-group/model_owner.rdta"))
+save(model_item_type_summaries, file = paste0(path_to_outputs, "regression_results/sub-group/model_item_type.rdta"))
+save(model_level_summaries, file = paste0(path_to_outputs, "regression_results/sub-group/model_level.rdta"))
+save(model_prog_summaries, file = paste0(path_to_outputs, "regression_results/sub-group/model_program.rdta"))
+save(model_prog_summaries_itemfe, file = paste0(path_to_outputs, "regression_results/sub-group/model_program_itemfe.rdta"))
 
-save(model_owner_ci, file = "2 outputs/regression_results/sub-group/model_owner_ci.rdta")
-save(model_item_type_ci, file = "2 outputs/regression_results/sub-group/model_item_type_ci.rdta")
-save(model_level_ci, file = "2 outputs/regression_results/sub-group/model_level_ci.rdta")
-save(model_prog_ci, file = "2 outputs/regression_results/sub-group/model_program_ci.rdta")
-save(model_prog_ci_itemfe, file = "2 outputs/regression_results/sub-group/model_program_itemfe_ci.rdta")
+save(model_owner_ci, file = paste0(path_to_outputs, "regression_results/sub-group/model_owner_ci.rdta"))
+save(model_item_type_ci, file = paste0(path_to_outputs, "regression_results/sub-group/model_item_type_ci.rdta"))
+save(model_level_ci, file = paste0(path_to_outputs, "regression_results/sub-group/model_level_ci.rdta"))
+save(model_prog_ci, file = paste0(path_to_outputs, "regression_results/sub-group/model_program_ci.rdta"))
+save(model_prog_ci_itemfe, file = paste0(path_to_outputs, "regression_results/sub-group/model_program_itemfe_ci.rdta"))

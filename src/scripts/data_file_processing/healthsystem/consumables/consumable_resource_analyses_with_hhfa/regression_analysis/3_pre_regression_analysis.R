@@ -3,9 +3,9 @@
 # 4_regression_analysis.R rather that running this each time. 
 
 # Run setup files
-source("0 scripts/0_packages_and_functions.R")
-source("0 scripts/1_data_setup.R")
-source("0 scripts/2_feature_manipulation.R")
+source(paste0(path_to_scripts, "0_packages_and_functions.R"))
+source(paste0(path_to_scripts, "1_data_setup.R"))
+source(paste0(path_to_scripts, "2_feature_manipulation.R"))
 
 # 1. Choose variables to be included in the backward elimination analysis #
 ###########################################################################
@@ -23,7 +23,7 @@ correlation_numeric_vars <- cor(fac_reg_df[fac_vars_numeric])
 fac_vars_numeric_corrplot <- ggcorrplot(correlation_numeric_vars, lab_size = 1.5, p.mat = NULL, 
                                         insig = c("pch", "blank"), pch = 1, pch.col = "black", pch.cex =1,
                                         tl.cex =5.5, lab = TRUE)
-ggsave(plot = fac_vars_numeric_corrplot, filename = "2 outputs/figures/fac_vars_numeric_corrplot.png")
+ggsave(plot = fac_vars_numeric_corrplot, filename = paste0(path_to_outputs, "figures/fac_vars_numeric_corrplot.png"))
 
 highly_correlated_numeric_vars <- c('drivetime_todh', 'drivetime_torms', 
                                     'inpatient_visit_count', 'inpatient_days_count') #'functional_computer_no', 'functional_car_no', 'functional_motor_cycle_no'
@@ -35,7 +35,7 @@ correlation_numeric_vars <- cor(fac_reg_df[fac_vars_numeric])
 fac_vars_numeric_corrplot_post <- ggcorrplot(correlation_numeric_vars, lab_size = 1.8, p.mat = NULL, 
                                              insig = c("pch", "blank"), pch = 1, pch.col = "black", pch.cex =1,
                                              tl.cex =5.5, lab = TRUE)
-ggsave(plot = fac_vars_numeric_corrplot_post, filename = "2 outputs/figures/fac_vars_numeric_corrplot_post.png")
+ggsave(plot = fac_vars_numeric_corrplot_post, filename = paste0(path_to_outputs, "figures/fac_vars_numeric_corrplot_post.png"))
 
 # 1.1.2 Binary variables
 #---------------------
@@ -44,7 +44,7 @@ correlation_binary_vars <- cor(fac_reg_df[fac_vars_binary])
 fac_vars_binary_corrplot <- ggcorrplot(correlation_binary_vars, lab_size = 0.8, p.mat = NULL, 
                                        insig = c("pch", "blank"), pch = 1, pch.col = "black", pch.cex =1,
                                        tl.cex =3.5, lab = TRUE)
-ggsave(plot = fac_vars_binary_corrplot, filename = "2 outputs/figures/fac_vars_binary_corrplot.png")
+ggsave(plot = fac_vars_binary_corrplot, filename = paste0(path_to_outputs, "figures/fac_vars_binary_corrplot.png"))
 
 highly_correlated_binary_vars <- c('service_delivery', 'service_pmtct', 'service_pnc',
                                    'functional_ambulance', 'vaccine_storage', 'service_anc',
@@ -57,7 +57,7 @@ correlation_binary_vars <- cor(fac_reg_df[fac_vars_binary])
 fac_vars_binary_corrplot <- ggcorrplot(correlation_binary_vars, lab_size = 1, p.mat = NULL, 
                                        insig = c("pch", "blank"), pch = 1, pch.col = "black", pch.cex =1,
                                        tl.cex =3.5, lab = TRUE)
-ggsave(plot = fac_vars_binary_corrplot, filename = "2 outputs/figures/fac_vars_binary_corrplot_post.png")
+ggsave(plot = fac_vars_binary_corrplot, filename = paste0(path_to_outputs, "figures/fac_vars_binary_corrplot_post.png"))
 
 # Create varlist to record the outcome of the stepwise procedure
 regressor_list_postcorrelationanalysis <- fac_exp_vars
@@ -122,7 +122,7 @@ stepwise_logistic_model$call
 
 # 4. Model diagnostic #
 #######################
-png(file = "2 outputs/figures/logistic_model_diagnostic.png")
+png(file = paste0(path_to_outputs, "figures/logistic_model_diagnostic.png"))
 autoplot(stepwise_logistic_model)
 dev.off()
 
@@ -155,4 +155,4 @@ sheet_lst <- list('regressor_list_initial' = regressor_list_initial,
                 'regressor_list_postother' = regressor_list_postotherreasons, 
                'chosen_varlist'= chosen_varlist)
 
-write.xlsx(sheet_lst, file = "2 outputs/tables/regressor_list.xlsx")
+write.xlsx(sheet_lst, file = paste0(path_to_outputs, "tables/regressor_list.xlsx"))
