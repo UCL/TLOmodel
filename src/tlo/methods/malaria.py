@@ -1113,14 +1113,18 @@ class MalariaTxLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # prop clinical episodes which had treatment, all ages
 
         # sum all the counters for previous year
+        dx = df["ma_dx_counter"].sum()  # treatment (inc severe)
         tx = df["ma_tx_counter"].sum()  # treatment (inc severe)
         clin = df["ma_clinical_counter"].sum()  # clinical episodes (inc severe)
 
+        dx_coverage = dx / clin if clin else 0
         tx_coverage = tx / clin if clin else 0
 
         treatment = {
+            "number_diagnosed": dx,
             "number_treated": tx,
             "number_clinical episodes": clin,
+            "proportion_diagnosed": dx_coverage,
             "treatment_coverage": tx_coverage,
         }
 
@@ -1134,6 +1138,7 @@ class MalariaTxLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         df["ma_clinical_counter"] = 0
         df["ma_tx_counter"] = 0
+        df["ma_dx_counter"] = 0
         df["ma_clinical_preg_counter"] = 0
 
 
