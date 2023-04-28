@@ -16,41 +16,6 @@ load(paste0(path_to_outputs, "regression_results/model_lit.rdta"))
 load(paste0(path_to_outputs, "regression_results/model_base.rdta"))
 load(paste0(path_to_outputs, "regression_results/model_fac_item_re.rdta"))
 
-# Run new model which can be used in the LinearModel functionality of the TLO model
-model_tlo_lm <- glm(available ~ fac_type + fac_owner + fac_urban + functional_computer +
-                             functional_emergency_vehicle + service_diagnostic +
-                             incharge_drug_orders +
-                             dist_todh_cat + dist_torms_cat +
-                             drug_order_fulfilment_freq_last_3mts_cat +  rms +
-                             functional_refrigerator +  functional_landline + fuctional_mobile +
-                             functional_toilet +  functional_handwashing_facility +
-                             water_source_main +
-                             outpatient_only + 
-                             service_hiv + service_othersti + 
-                             service_malaria + service_tb + 
-                             service_fp + service_imci +  
-                             source_drugs_ngo +  source_drugs_pvt + 
-                             drug_transport_self  + item + district, 
-                           family = binomial(logit),
-                           data = df_for_fac_item_re_sorted) 
-save(model_tlo_lm, file = "2 outputs/regression_results/model_tlo_lm.rdta")
-
-# Test the accuracy of this model
-k = 5
-kfold_cross_validation(model_tlo_lm, df_for_fac_item_re_sorted, k)
-accuracy_tlo_lm <- accuracy
-accuracy_tlo_lm_sd <- accuracy_sd
-accuracy_tlo_lm_se <- accuracy_tlo_lm_sd/sqrt(length(fitted(model_tlo_lm)))
-# The accuracy of the model with item fixed effects is 79.3% (same with district fixed effects) and without item fixed effects it’s only 57.3% 
-
-# Extract consumable list is the original data
-extract <- df_orig[which(!is.na(df_orig$available)),] %>% 
-  group_by(program, item) %>%
-  summarise_at(vars(available), list(mean))
-
-write.csv(extract, paste0(path_to_outputs, "tables/full_item_list_hhfa.csv"), row.names = TRUE)
-
-
 ###########################################################
 # 3. Run predictions for policy evaluation
 ###########################################################
