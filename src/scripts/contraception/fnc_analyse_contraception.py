@@ -583,23 +583,24 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             """
         # TODO: soft code this (use resource_items_pkgs_df)
         #  (note: similar thing done in co_test in analyses combined branch)
-            if in_d == dict({1: 8}):
+        # TODO: remove zeros from logging
+            if in_d == dict({1: 3.75, 2019: 1}):
                 return 'pill'
-            if in_d == dict({2: 120}):
+            if in_d == dict({2: 30}):
                 return 'male_condom'
-            if in_d == dict({25: 120}):
-                return 'other_modern'
-            if in_d == dict({7: 1}):
-                return 'IUD'
-            # TODO: remove zeros from logging
-            if in_d == dict({3: 1, 5: 1, 6: 0}):
+            if in_d == dict({3: 1, 1933: 1, 98: 1}):
                 return 'injections'
-            if in_d == dict({8: 2, 5: 2, 9: 2, 10: 0.1, 247: 2, 12: 0.5}):
+            if in_d == dict({1933: 1, 7: 1}):
+                return 'IUD'
+            if in_d == dict({1933: 3, 8: 1, 5: 1, 9: 1, 10: 1, 11: 1, 12: 1}):
                 return 'implant'
             if in_d == dict(
-                {14: 1, 15: 1, 16: 1, 17: 0.02, 9: 3, 101: 0.0006, 247: 1, 21: 1, 23: 8, 5: 2}
+                {8: 1, 2019: 1, 307: 0.5, 15: 1, 1960: 2, 75: 10, 2676: 1, 2677: 1, 21: 0.25, 112: 3, 23: 2, 5: 2,
+                 49: 0.2}
             ):
                 return 'female_sterilization'
+            if in_d == dict({25: 30}):
+                return 'other_modern'
             else:
                 raise ValueError(
                     "There is an unrecognised request: " + str(in_d) + "."
@@ -695,30 +696,16 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
                 # numbers of women using them (there is only one item for condoms), these are calculated from rescaled
                 # numbers of women, hence no need to rescale the costs
                 costs = 0
-                if (i[1] == "male_condom") | (i[1] == "other_modern"):
+                # calculate costs from the logs and rescale to the pop. size of Malawi
+                item_avail_dict = in_df_cons_avail_by_time_and_method.loc[
+                    i, 'Item_Available_summation'
+                ]
+                for time_method_key in list(item_avail_dict.keys()):
                     unit_cost = float(in_df_resource_items_pkgs['Unit_Cost'].loc[
-                                          in_df_resource_items_pkgs['Intervention_Pkg']
-                                          == get_intervention_pkg_name(i[1])])
-                    # costs = unit_cost * nmb of years within the time period (tp_len) * 2 *
-                    # Expected_Units_Per_Case as approximation of number of condom used per 6 months *
-                    # mean nmb of women using
-                    costs = unit_cost * \
-                        int(in_df_mean_use['tp_len'].loc[in_df_mean_use.index == i[0]]) * 2 * \
-                        float(in_df_resource_items_pkgs['Expected_Units_Per_Case'].loc[
-                                  in_df_resource_items_pkgs['Intervention_Pkg'] == get_intervention_pkg_name(i[1])
-                              ]) * float(in_df_mean_use[i[1]].loc[in_df_mean_use.index == i[0]])
-
-                # otherwise calculate from the logs and rescale to the pop. size of Malawi
-                else:
-                    item_avail_dict = in_df_cons_avail_by_time_and_method.loc[
-                        i, 'Item_Available_summation'
-                    ]
-                    for time_method_key in list(item_avail_dict.keys()):
-                        unit_cost = float(in_df_resource_items_pkgs['Unit_Cost'].loc[
-                                (in_df_resource_items_pkgs['Intervention_Pkg'] == get_intervention_pkg_name(i[1]))
-                                & (in_df_resource_items_pkgs['Item_Code'] == time_method_key)])
-                        costs = costs + (unit_cost * item_avail_dict[time_method_key])
-                    costs = costs * scaling_factor
+                            (in_df_resource_items_pkgs['Intervention_Pkg'] == get_intervention_pkg_name(i[1]))
+                            & (in_df_resource_items_pkgs['Item_Code'] == time_method_key)])
+                    costs = costs + (unit_cost * item_avail_dict[time_method_key])
+                costs = costs * scaling_factor
                 l_costs.append(costs)
             return l_costs
 
@@ -797,10 +784,10 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             #  (Parameters/pop_intervention_cost & ppfp_intervention_cost)
             # TODO?: it's approximated from costs for 2016-2020 -
             #  ie not approximation for pop of 2016 but average pop of 2016-2020
-            # cost of Pop intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
-            pop_interv_cost_2016 = 1300000000
-            # cost of PPFP intervention for whole population of Malawi in 2016 (MWK - Malawi Kwacha)
-            ppfp_interv_cost_2016 = 146000000
+            # cost of Pop and PPFP intervention implementations for whole population of Malawi at the end of 2015
+            # (MWK - Malawi Kwacha) with inflation rate of 81% to 2020
+            pop_interv_cost_2016 = 1300000000 * 1.81
+            ppfp_interv_cost_2016 = 146000000 * 1.81
             # calculate interventions costs for each year
             popsize1549['pop_intervention_cost'] = popsize1549['ratio'] * pop_interv_cost_2016
             popsize1549['ppfp_intervention_cost'] = popsize1549['ratio'] * ppfp_interv_cost_2016

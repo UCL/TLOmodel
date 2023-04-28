@@ -335,7 +335,7 @@ def test_woman_starting_contraceptive_after_birth(tmpdir, seed):
 
 
 def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir, seed):
-    """Check HSI for the maintenance of a person on a contraceptive are scheduled as expected.."""
+    """Check HSI for the maintenance of a person on a contraceptive are scheduled as expected."""
 
     # Create a simulation that has run for zero days and clear the event queue
     sim = run_sim(tmpdir,
@@ -353,18 +353,24 @@ def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir, s
     pp['p_stop_per_month'] = zero_param(pp['p_stop_per_month'])
     pp['p_switch_from_per_month'] = zero_param(pp['p_switch_from_per_month'])
 
-    # Set that person_id=0 is a woman on a contraceptive for longer than six months
+    # Set that person_id=0 is a woman on a contraceptive for longer than days_between_appt_for_maintenance specific for
+    # the contraception method
     person_id = 0
     df = sim.population.props
+    states_that_may_require_HSI_to_maintain_on = \
+        sorted(sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on)
+    co_method = 'pill'
+    assert co_method in states_that_may_require_HSI_to_maintain_on
+    meth_spec_days_between_appt = sim.modules['Contraception'].\
+        parameters['days_between_appts_for_maintenance'][states_that_may_require_HSI_to_maintain_on.index(co_method)]
     original_props = {
         'sex': 'F',
         'age_years': 30,
-        'date_of_birth': sim.date - pd.DateOffset(years=30),
-        'co_contraception': 'pill',  # <-- requires appointments for maintenance
+        'co_contraception': co_method,  # <-- requires appointments for maintenance
         'is_pregnant': False,
         'date_of_last_pregnancy': pd.NaT,
         'co_unintended_preg': False,
-        'co_date_of_last_fp_appt': sim.date - pd.DateOffset(months=7)
+        'co_date_of_last_fp_appt': sim.date - pd.DateOffset(days=meth_spec_days_between_appt + 31)
     }
     df.loc[person_id, original_props.keys()] = original_props.values()
 
@@ -721,6 +727,8 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
         """Helper function to find the availability of consumables used in the Contraception module."""
         sim = run_sim(tmpdir, seed, run=False, consumables_available='default')
         item_codes = sim.modules['Contraception'].get_item_code_for_each_contraceptive()
+        # do not check the `co_initiation` items, only contraception methods items
+        del item_codes['co_initiation']
         cons = sim.modules['HealthSystem'].consumables._prob_item_codes_available
 
         def find_average_availability(items: List, level: str):
