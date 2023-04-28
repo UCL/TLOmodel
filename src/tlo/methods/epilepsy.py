@@ -509,7 +509,9 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """Get some summary statistics and log them"""
         df = population.props
 
-        status_groups = df.groupby('ep_seiz_stat').sum()
+        status_groups = df[
+            ["ep_seiz_stat", "is_alive", "ep_antiep"]
+        ].groupby('ep_seiz_stat').sum()
 
         n_seiz_stat_1_3 = sum(status_groups.iloc[1:].is_alive)
         n_seiz_stat_2_3 = sum(status_groups.iloc[2:].is_alive)

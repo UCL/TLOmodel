@@ -14,6 +14,7 @@ from tlo.methods.causes import (
     collect_causes_from_disease_modules,
     create_mappers_from_causes_to_label,
 )
+from tlo.methods.demography import age_at_date
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -333,7 +334,7 @@ class HealthBurden(Module):
                 end_date=(
                     date_of_birth + pd.DateOffset(years=self.parameters['Age_Limit_For_YLL']) - pd.DateOffset(days=1)),
                 date_of_birth=date_of_birth
-            ).sum(level=1)\
+            ).groupby(level=1).sum()\
              .assign(year=date_of_death.year)\
              .set_index(['year'], append=True)['person_years']\
              .pipe(_format_for_multi_index)
@@ -342,7 +343,7 @@ class HealthBurden(Module):
         # ascribed to the age of death and to the year of death. This is computed by collapsing the age-dimension of
         # `yll_stacked_by_time` onto the age(-range) of death.
         age_range_to_stack_to = age_range
-        yll_stacked_by_age_and_time = pd.DataFrame(yll_stacked_by_time.sum(level=[0, 2, 3]))\
+        yll_stacked_by_age_and_time = pd.DataFrame(yll_stacked_by_time.groupby(level=[0, 2, 3]).sum())\
                                         .assign(age_range=age_range_to_stack_to)\
                                         .set_index(['age_range'], append=True)['person_years']\
                                         .reorder_levels(['sex', 'age_range', 'li_wealth', 'year'])
@@ -382,7 +383,7 @@ class HealthBurden(Module):
 
         # Get the age (in whole years) that this person will be on each day.
         # N.B. This is a slight approximation as it doesn't make allowance for leap-years.
-        df['age_in_years'] = ((df['days'] - date_of_birth) / np.timedelta64(1, 'Y')).astype(int)
+        df['age_in_years'] = age_at_date(df['days'], date_of_birth).astype(int)
 
         age_range_lookup = self.sim.modules['Demography'].AGE_RANGE_LOOKUP  # get the age_range_lookup from demography
         df['age_range'] = df['age_in_years'].map(age_range_lookup)
@@ -434,7 +435,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
         # Get the population dataframe
         df = self.sim.population.props
-        idx_alive = set(df.loc[df.is_alive].index)
+        idx_alive = df.loc[df.is_alive].index
 
         # 1) Ask each disease module to log the DALYS for the previous month
         dalys_from_each_disease_module = list()
@@ -462,7 +463,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
                 # Perform checks on what has been returned
                 assert set(dalys_from_disease_module.columns) == set(declared_causes_of_disability_module)
-                assert set(dalys_from_disease_module.index) == idx_alive
+                assert set(dalys_from_disease_module.index) == set(idx_alive)
                 assert not pd.isnull(dalys_from_disease_module).any().any()
                 assert ((dalys_from_disease_module >= 0) & (dalys_from_disease_module <= 1)).all().all()
                 assert (dalys_from_disease_module.sum(axis=1) <= 1).all()
