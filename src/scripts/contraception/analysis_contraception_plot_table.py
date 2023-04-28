@@ -16,7 +16,7 @@ time_start = time.time()
 #  suffix) & return last year of sims (the same for that) // separate them as pop_size_simulated & last_year_simulated
 # pop_size_simulated = "2K"
 pop_size_simulated = "250K"
-branch_name = 'co_2023_02_inclPR807-AnalysisUpdate2'
+branch_name = 'co_final'
 # which results to use
 # - Without interv
 # datestamp_without_log = '2023-04-26T141435'
