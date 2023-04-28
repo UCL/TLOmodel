@@ -1089,7 +1089,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         # if to maintain on a method
         elif self.new_contraceptive in ['injections', 'IUD', 'implant']:
             return self.make_appt_footprint({'FamPlan': 1})
-        elif self.new_contraceptive in ['other_modern', 'pill']:
+        elif self.new_contraceptive in ['male_condom', 'other_modern', 'pill']:
             return self.make_appt_footprint({'PharmDispensing': 1})
         else:
             return self.make_appt_footprint({})
