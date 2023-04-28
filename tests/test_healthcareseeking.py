@@ -908,8 +908,11 @@ def test_force_healthcare_seeking(seed):
         sim.modules['HealthSeekingBehaviour'].theHealthSeekingBehaviourPoll.run()
 
         # See what HSI are scheduled to occur for the person on the same day
-        evs = [x[1].TREATMENT_ID for x in
-               sim.modules['HealthSystem'].find_events_for_person(0) if x[0].date() == start_date]
+        evs = [
+            event.TREATMENT_ID
+            for date, event in sim.modules['HealthSystem'].find_events_for_person(0)
+            if date == start_date
+        ]
 
         return 'FirstAttendance_NonEmergency' in evs
 

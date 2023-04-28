@@ -14,6 +14,7 @@ from tlo.methods.causes import (
     collect_causes_from_disease_modules,
     create_mappers_from_causes_to_label,
 )
+from tlo.methods.demography import age_at_date
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -382,7 +383,7 @@ class HealthBurden(Module):
 
         # Get the age (in whole years) that this person will be on each day.
         # N.B. This is a slight approximation as it doesn't make allowance for leap-years.
-        df['age_in_years'] = ((df['days'] - date_of_birth) / np.timedelta64(1, 'Y')).astype(int)
+        df['age_in_years'] = age_at_date(df['days'], date_of_birth).astype(int)
 
         age_range_lookup = self.sim.modules['Demography'].AGE_RANGE_LOOKUP  # get the age_range_lookup from demography
         df['age_range'] = df['age_in_years'].map(age_range_lookup)
