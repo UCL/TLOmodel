@@ -49,8 +49,10 @@ class LongRun(BaseScenario):
                      "spurious_symptoms": True
                  },
                  "HealthSystem": {
-                     "use_funded_or_actual_staffing": "actual",
+                     "use_funded_or_actual_staffing": "actual",  # actual, funded, funded_plus
+                     "mode_appt_constraints": 1  # 0, 1, 2
                  }
+            }
         )
 
     def draw_parameters(self, draw_number, rng):
