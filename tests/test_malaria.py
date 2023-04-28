@@ -498,8 +498,7 @@ def test_individual_testing_and_treatment(sim):
     # assign person_id active tb
     df.at[person_id, 'ma_is_infected'] = True
     df.at[person_id, 'ma_date_infected'] = sim.date
-    df.at[person_id, 'ma_date_symptoms'] = sim.date
-    df.at[person_id, 'ma_inf_type'] = "severe"
+    df.at[person_id, 'ma_inf_type'] = "clinical"
     df.at[person_id, 'age_years'] = 3
 
     # assign clinical symptoms and schedule rdt
@@ -518,6 +517,9 @@ def test_individual_testing_and_treatment(sim):
     rdt_appt = malaria.HSI_Malaria_rdt(person_id=person_id,
                                                  module=sim.modules['Malaria'])
     rdt_appt.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # check person diagnosed
+    assert df.at[person_id, "ma_dx_counter"] == 1
 
     # check treatment event is scheduled
     date_event, event = [

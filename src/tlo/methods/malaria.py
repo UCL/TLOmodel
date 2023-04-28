@@ -333,7 +333,7 @@ class Malaria(Module):
         alive_infected_asym = alive_infected & (df.ma_inf_type == "asym")
         now_clinical = _draw_incidence_for("monthly_prob_clin", alive_infected_asym)
         df.loc[now_clinical, "ma_inf_type"] = "clinical"
-        df.loc[now_clinical, "ma_clinical_counter"] += 1
+        # df.loc[now_clinical, "ma_clinical_counter"] += 1
 
         # draw from clinical cases to allocate severe cases - draw from all currently clinical cases
         alive_infected_clinical = alive_infected & (df.ma_inf_type == "clinical")
@@ -342,7 +342,7 @@ class Malaria(Module):
 
         # malaria infections in pregnancy
         alive_now_infected_pregnant = now_clinical & df.is_pregnant
-        df.loc[alive_now_infected_pregnant, "ma_clinical_preg_counter"] += 1
+        # df.loc[alive_now_infected_pregnant, "ma_clinical_preg_counter"] += 1
 
         # ----------------------------------- ASSIGN INFECTION DATES -----------------------------------
 
@@ -531,6 +531,8 @@ class Malaria(Module):
         df = population
         p = self.parameters
 
+        df.loc[clinical_index, "ma_clinical_counter"] += 1
+
         df.loc[clinical_index, "ma_date_symptoms"] = df.loc[clinical_index, "ma_date_infected"] + pd.DateOffset(days=7)
 
         # schedule symptom onset 7 days after date of infection
@@ -539,6 +541,8 @@ class Malaria(Module):
             symptom_onset = df.at[person, "ma_date_symptoms"]
 
             if df.at[person, "is_pregnant"]:
+                df.at[person, "ma_clinical_preg_counter"] += 1
+
                 symptom_list = {"severe_anaemia", "fever", "headache", "vomiting", "stomachache"}
             else:
                 symptom_list = {"fever", "headache", "vomiting", "stomachache"}
