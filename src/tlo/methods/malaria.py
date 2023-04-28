@@ -337,7 +337,7 @@ class Malaria(Module):
         df.loc[now_severe, "ma_inf_type"] = "severe"
 
         # malaria infections in pregnancy
-        alive_now_infected_pregnant = now_clinical & df.is_pregnant
+        # alive_now_infected_pregnant = now_clinical & df.is_pregnant
         # df.loc[alive_now_infected_pregnant, "ma_clinical_preg_counter"] += 1
 
         # ----------------------------------- ASSIGN INFECTION DATES -----------------------------------
@@ -406,7 +406,7 @@ class Malaria(Module):
 
         # 1) ----------------------------------- REGULAR EVENTS -----------------------------------
 
-        sim.schedule_event(MalariaPollingEventDistrict(self), sim.date + DateOffset(months=1))
+        # sim.schedule_event(MalariaPollingEventDistrict(self), sim.date + DateOffset(months=1))
 
         # sim.schedule_event(MalariaScheduleTesting(self), sim.date + DateOffset(days=0))
 
