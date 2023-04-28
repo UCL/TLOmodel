@@ -372,7 +372,7 @@ class HSI_Event:
             # Types.
             # (HSI that require a bed for one or more days always need such appointments, but this may have been
             # missed in the declaration of the `EXPECTED_APPPT_FOOTPRINT` in the HSI.)
-            # NB. The in-patient day Apppointment time is automatically applied on subsequent days.
+            # NB. The in-patient day Appointment time is automatically applied on subsequent days.
             if sum(self.BEDDAYS_FOOTPRINT.values()):
                 self.EXPECTED_APPT_FOOTPRINT = health_system.bed_days.add_first_day_inpatient_appts_to_footprint(
                     self.EXPECTED_APPT_FOOTPRINT)
