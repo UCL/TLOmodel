@@ -478,6 +478,7 @@ class HealthSystem(Module):
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
         PriorityRank_Dict: dict = None,
+        max_squeeze_by_priority: dict = None,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -525,6 +526,8 @@ class HealthSystem(Module):
             the end of the simulation respectively, or ``None`` to not track the HSI
             event details and frequencies.
         :param PriorityRank_Dict: contains priority and fast tracking channel eligibility given Treatment_ID
+        :max_squeeze_by_priority: contains maximum squeeze allowed under mode_appt_constraints=2 given priority of 
+            treatment
         """
 
         super().__init__(name)
@@ -699,11 +702,12 @@ class HealthSystem(Module):
                                        rng=self.rng,
                                        availability=self.get_cons_availability())
 
-        # Convert PriorityRank dataframe to dictionary
         if self.adopt_priority_policy:
+        # Convert PriorityRank dataframe to dictionary
             Dictio = self.parameters['PriorityRank']
             Dictio.set_index("Treatment", drop=True, inplace=True)
             self.PriorityRank_Dict = Dictio.to_dict(orient="index")
+       
 
         # The attributes that can be looked up to determine whether a person might be eligible
         # for fast-tracking, as well as the corresponding fast-tracking channels, depend on the modules
@@ -717,7 +721,12 @@ class HealthSystem(Module):
                 self.list_fasttrack.append(('hv_diagnosed', 'FT_if_Hivdiagnosed'))
             if 'Tb' in self.sim.modules:
                 self.list_fasttrack.append(('tb_diagnosed', 'FT_if_tbdiagnosed'))
-
+        
+        # Initialise look-up table for max squeeze by priority to avoid invoking fnc
+        self.max_squeeze_by_priority = dict([(0,self.get_max_squeeze_based_on_priority(0))]) 
+        for i in range(1,self.lowest_priority_considered+1):
+            self.max_squeeze_by_priority[i] = self.get_max_squeeze_based_on_priority(i)
+    
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
 
@@ -1687,7 +1696,7 @@ class HealthSystem(Module):
                     event = event.hsi_event
 
                     # Get max squeeze factor allowed given priority of HSI
-                    squeeze_factor_priority = self.get_max_squeeze_based_on_priority(_priority)
+                    squeeze_factor_priority = self.max_squeeze_by_priority[_priority]
                     # Get required squeeze factor to run all HSIs in the queue
                     squeeze_factor_queue = squeeze_factor_per_hsi_event[ev_num]                  # todo use zip here!
                     # Squeeze as little as possible, i.e. chose min between two

@@ -1535,7 +1535,7 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
 
     # In second district, make capabilities tuned to be those required to run all priority=2 events under
     # maximum squeezed allowed for this priority
-    scale = (1.+sim.modules["HealthSystem"].get_max_squeeze_based_on_priority(2))
+    scale = (1.+sim.modules["HealthSystem"].max_squeeze_by_priority[2])
 
     hsi2 = DummyHSIEvent(module=sim.modules['DummyModule'],
                          person_id=int(tot_population/2),  # Ensures call is on officers in second district
