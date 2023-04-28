@@ -1519,6 +1519,8 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
             hsi,
             topen=sim.date,
             tclose=sim.date + pd.DateOffset(days=1),
+            # Assign priority as 0,1,0,1,...0,1,2,3,2,3,....2,3. In doing so, in following tests also
+            # check that events are rearranged in queue based on priority and not order in which were scheduled.
             priority=int(i/int(tot_population/2))*2 + i % 2
         )
 
@@ -1536,7 +1538,7 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
 
     # In second district, make capabilities tuned to be those required to run all priority=2 events under
     # maximum squeezed allowed for this priority
-    scale = (1.+sim.modules["HealthSystem"].get_max_squeeze_based_on_priority(2))
+    scale = (1.+sim.modules["HealthSystem"].max_squeeze_by_priority[2])
 
     hsi2 = DummyHSIEvent(module=sim.modules['DummyModule'],
                          person_id=int(tot_population/2),  # Ensures call is on officers in second district
@@ -1577,9 +1579,10 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
 
     # Check that some level of squeeze occurs:
     # Although the capabilities in first district were set to half of those required,
-    # some level of squeeze was allowed, so more than
-    # half of appointments should have taken place in total
-    assert Nran_w_priority0 + Nran_w_priority1 > (tot_population/4)
+    # if some level of squeeze was allowed (i.e. if max squeeze allowed for priority=0 is >0)
+    # more than half of appointments should have taken place in total.
+    if sim.modules["HealthSystem"].get_max_squeeze_based_on_priority(0) > 0:
+        assert Nran_w_priority0 + Nran_w_priority1 > (tot_population/4)
 
     # Check that the maximum squeeze allowed is set by priority:
     # The capabilities in the second district were tuned to accomodate all priority=2
