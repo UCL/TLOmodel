@@ -652,8 +652,9 @@ def test_population_testing_and_treatment(sim):
     sim.modules['Malaria'].parameters['testing_adj'] = 1.0  # all cases referred for rdt
     sim.modules["Malaria"].parameters["sensitivity_rdt"] = 1.0
 
+    pop = 100
     # Run the simulation and flush the logger
-    sim.make_initial_population(n=10)
+    sim.make_initial_population(n=pop)
     # simulate for 0 days, just get everything set up (dxtests etc)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
@@ -666,12 +667,13 @@ def test_population_testing_and_treatment(sim):
     df.ma_is_infected = True
     df.ma_date_infected = sim.date
     df.ma_inf_type = "clinical"
-    df.age_years = 4
 
     idx = list(df.index.values)
 
     # assign clinical symptoms and schedule rdt
     sim.modules["Malaria"].clinical_symptoms(population=df, clinical_index=idx, severe_index=[])
+
+    assert df["ma_clinical_counter"].sum() == pop
 
     # check 10 rdt are scheduled
     for person in idx:
@@ -679,3 +681,26 @@ def test_population_testing_and_treatment(sim):
             ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id=person) if
             (isinstance(ev[1], malaria.HSI_Malaria_rdt) & (ev[0] >= sim.date))
         ])
+
+    # run the rdt for everyone
+    for person in idx:
+        rdt_appt = malaria.HSI_Malaria_rdt(person_id=person,
+                                           module=sim.modules['Malaria'])
+        rdt_appt.apply(person_id=person, squeeze_factor=0.0)
+
+    assert df["ma_dx_counter"].sum() == pop
+
+    # check 10 treatment events are scheduled
+    for person in idx:
+        assert 1 == len([
+            ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id=person) if
+            (isinstance(ev[1], malaria.HSI_Malaria_Treatment) & (ev[0] >= sim.date))
+        ])
+
+    # run the treatment for everyone
+    for person in idx:
+        tx_appt = malaria.HSI_Malaria_Treatment(person_id=person,
+                                           module=sim.modules['Malaria'])
+        tx_appt.apply(person_id=person, squeeze_factor=0.0)
+
+    assert df["ma_tx_counter"].sum() == pop
