@@ -82,9 +82,6 @@ class Malaria(Module):
         "sev_symp_prob": Parameter(
             Types.REAL, "probabilities of each symptom for severe malaria cases"
         ),
-        # "p_infection": Parameter(
-        #     Types.REAL, "Probability that an uninfected individual becomes infected"
-        # ),
         "sensitivity_rdt": Parameter(Types.REAL, "Sensitivity of rdt"),
         "cfr": Parameter(Types.REAL, "case-fatality rate for severe malaria"),
         "dur_asym": Parameter(Types.REAL, "duration (days) of asymptomatic malaria"),
@@ -242,7 +239,6 @@ class Malaria(Module):
             p["daly_wt_severe"] = self.sim.modules["HealthBurden"].get_daly_weight(213)
 
         # ----------------------------------- DECLARE THE SYMPTOMS -------------------------------------------
-        # todo add malaria fever
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom("severe_anaemia"),  # nb. will cause care seeking as much as a typical symptom
             Symptom.emergency("severe_malaria"),  # emergency
@@ -370,11 +366,14 @@ class Malaria(Module):
 
         # update clinical symptoms for all new clinical and severe infections
         self.clinical_symptoms(df, new_clinical, new_severe)
+
         # check symptom onset occurs in one week
         if len(new_clinical):
             assert (df.loc[new_clinical, "ma_date_infected"] < df.loc[new_clinical, "ma_date_symptoms"]).all()
             assert not pd.isnull(df.loc[new_clinical, "ma_date_symptoms"]).all()
 
+        assert (df.loc[new_clinical, "ma_clinical_counter"] >= 1).all()
+        assert (df.loc[new_severe, "ma_clinical_counter"] >= 1).all()
         # ----------------------------------- SCHEDULED DEATHS -----------------------------------
         # schedule deaths within the next week
         # Assign time of infections across the month
