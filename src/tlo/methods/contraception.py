@@ -140,8 +140,8 @@ class Contraception(Module):
         self.use_healthsystem = use_healthsystem  # if True: initiation and switches to contraception require an HSI;
         # if False: initiation and switching do not occur through an HSI
 
-        self.use_interventions = use_interventions  # if True: interventions are on from the date 'interventions_start',
-        # if False interventions are off
+        self.use_interventions = use_interventions  # if True: interventions are on from the date
+        # 'interventions_start_date', if False interventions are off
         self.interventions_start_date = interventions_start_date  # a date when interventions are assumed to be
         # implemented
         self.interventions_on = False  # if False/True: interventions off/on at the time; starts as False, changes to
@@ -269,7 +269,9 @@ class Contraception(Module):
             # Log possible initiation date of interventions
             logger.info(key='contraception_intervention',
                         data={
-                            'date_co_interv_implemented': self.interventions_start_date
+                            'date_co_interv_implemented': self.interventions_start_date,
+                            'pop_intervention_cost_2016_in2015MWK': self.parameters['pop_intervention_cost'],
+                            'ppfp_intervention_cost_2016_in2015MWK': self.parameters['ppfp_intervention_cost'],
                         },
                         description='Date when contraception interventions are implemented'
                                     ' (if it is before end of sim).'
