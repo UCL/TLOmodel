@@ -422,6 +422,8 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
 
         print("Fig: Dependency Ratio Over time saved.")
 
+    # TODO: create the multipanel figs (Fig 3, Fig A6.1)
+
     # %% Calculate Use and Consumables Costs of Contraception methods within
     # some time periods:
     if in_calc_use_costs_bool:
