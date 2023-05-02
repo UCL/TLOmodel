@@ -33,7 +33,6 @@ df_pred_computer['functional_computer'] = 1 # Set computer availability
 df_pred_computer$available_prob <- rep(NA,nrow(df_pred_computer)) # empty column
 
 newpred_computer <- predict(model_fac_item_re,newdata=df_pred_computer, type = "response") # Predict availability
-save(newpred_computer, file = paste0(path_to_outputs, "predictions/pred_computer_all.rdta"))
 df_pred_computer$available_prob <- newpred_computer 
 
 # Update probability values to binary
