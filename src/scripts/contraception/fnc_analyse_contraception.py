@@ -27,9 +27,9 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
                           in_plot_pregnancies_bool: bool = False,
                           in_plot_depend_ratio_bool: bool = False,
                           in_set_ylims_bool: bool = False, in_ylims_l: list = [],
-                          in_calc_use_costs_bool: bool = False, in_required_time_period_starts: list = [],
                           in_contraceptives_order: list = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
                                                            'female_sterilization', 'other_modern'],
+                          in_calc_use_costs_bool: bool = False, in_required_time_period_starts: list = [],
                           in_calc_intervention_costs_bool: bool = False,
                           in_use_output: str = "mean"
                           ):
@@ -57,6 +57,8 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
     :param in_ylims_l: list of the upper limits for y-axes of the figures in the
         order [Use, Use By Method, Pregnancies] (default: [] -- as we don't need
         it if 'in_set_ylims_bool' is False)
+    :param in_contraceptives_order: list of modern contraceptives ordered as we
+        want them to appear in the plots and tables
     :param in_calc_use_costs_bool: True if we want to calculate use and costs of
         contraception methods in time periods (time periods
         'in_required_time_period_starts' needs to be given as input)
@@ -65,8 +67,6 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
         periods for which we require the calculations, first year inc.,
         last year excl. (default: [] -- as we don't need it if
         'in_calc_use_costs_bool' is False)
-    :param in_contraceptives_order: list of modern contraceptives ordered as we
-        want them to appear in the table
     :param in_calc_intervention_costs_bool: True if we want to calculate
         contraception Pop and PPFP intervention costs over time (default: False)
     :param in_use_output: "mean" or "max", according to which output of numbers,
@@ -227,9 +227,8 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             plt.axvline(x=Date(2023, 1, 1), ls=ls_start_interv, color='gray', label='interventions start')
             if in_set_ylims_bool:
                 ax.set_ylim([0, in_ylims_l[2]])
-            contraceptives_order_all_meths = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
-                                              'female_sterilization', 'other_modern', 'periodic_abstinence',
-                                              'withdrawal', 'other_traditional']
+            contraceptives_order_all_meths = in_contraceptives_order +\
+                                             ['periodic_abstinence', 'withdrawal', 'other_traditional']
             # TODO: make the order of non-modern methods as input parameter
             #  (then join ordered modern & non-modern methods)
             plt.title("Contraception Use By Method")
