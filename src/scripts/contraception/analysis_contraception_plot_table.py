@@ -1,3 +1,8 @@
+"""
+To be able to run this script to save figs & tables, the log file has to be exported to 'outputs'.
+"""
+# TODO: Improve the code so this doesn't have to be done.
+
 import time
 from pathlib import Path
 
@@ -26,7 +31,9 @@ datestamp_without_log = '2023-04-26T142627'
 # # - With interv
 # datestamp_with_log = '2023-04-26T141545'
 # 2K till 2099, final costs update EHP & OHT + pregn test to initiate co: '2023-04-26T141545' from 2023-04-26T141321Z
-datestamp_with_log = '2023-04-26T142508'
+datestamp_with_log = '2023-05-01T154930'
+# 250K till 2050; final costs update EHP & OHT + pregn test + rebased on master + interv costs:
+# '2023-05-01T154930' from 2023-05-01T154641Z
 # 250K till 2050; final costs update EHP & OHT + pregn test to initiate co: '2023-04-26T142508' from 2023-04-26T142300Z
 logFile_without = 'run_analysis_contraception_no_diseases__' + datestamp_without_log + '.log'
 logFile_with = 'run_analysis_contraception_no_diseases__' + datestamp_with_log + '.log'
