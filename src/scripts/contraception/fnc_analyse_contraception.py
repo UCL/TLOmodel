@@ -228,7 +228,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             if in_set_ylims_bool:
                 ax.set_ylim([0, in_ylims_l[2]])
             contraceptives_order_all_meths = in_contraceptives_order +\
-                                             ['periodic_abstinence', 'withdrawal', 'other_traditional']
+                ['periodic_abstinence', 'withdrawal', 'other_traditional']
             # TODO: make the order of non-modern methods as input parameter
             #  (then join ordered modern & non-modern methods)
             plt.title("Contraception Use By Method")
