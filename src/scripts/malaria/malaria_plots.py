@@ -73,8 +73,14 @@ pfpr = output["tlo.methods.malaria"]["prevalence"]
 tx = output["tlo.methods.malaria"]["tx_coverage"]
 
 # numbers rdt requested
-num_rdt = output["tlo.methods.healthsystem.summary"]["Consumables"]
-rdt_item_code = 163
+cons = output["tlo.methods.healthsystem.summary"]["Consumables"]
+rdt_item_code = '163'
+
+rdt_usage_model = []
+# extract item rdt values for each year
+for row in range(cons.shape[0]):
+    cons_dict = cons.at[row, 'Item_Available']
+    rdt_usage_model.append(cons_dict.get(rdt_item_code))
 
 
 # get model output dates in correct format
@@ -84,8 +90,6 @@ model_years = model_years.dt.year
 years_of_simulation = len(model_years)
 # ------------------------------------- FIGURES -----------------------------------------#
 
-plt.style.use("ggplot")
-plt.figure(1, figsize=(10, 10))
 
 # FIGURES
 plt.style.use("ggplot")
@@ -145,9 +149,48 @@ plt.gca().set_ylim(0.0, 1.0)
 plt.legend(["MAP", "Model"])
 plt.tight_layout()
 
-# out_path = "//fi--san02/homes/tmangal/Thanzi la Onse/Malaria/model_outputs/ITN_projections_28Jan2010/"
-# figpath = out_path + "Baseline_averages29Jan2010" + datestamp + ".png"
-# plt.savefig(figpath, bbox_inches="tight")
+plt.show()
+
+plt.close()
+
+# ------------------ consumption of RDTs
+
+plt.figure(1, figsize=(10, 10))
+
+# Malaria incidence per 1000py - all ages with MAP model estimates
+# Malaria rdt usage
+ax = plt.subplot(121)  # numrows, numcols, fignum
+plt.plot(MAP_comm.Year, MAP_comm.RDT_Consumption_Public)  # MAP data
+plt.plot(WHO_comm.Year, WHO_comm.NumSuspectedCasesTestedByRDT)  # WHO data
+plt.plot(model_years, rdt_usage_model, color="mediumseagreen")  # model
+plt.title("Malaria RDT usage")
+plt.xlabel("Year")
+plt.xticks(rotation=90)
+plt.ylabel("Numbers of RDTs used")
+# plt.gca().set_xlim(start_date, end_date)
+# plt.gca().set_ylim(0.0, 1.0)
+plt.legend(["MAP", "WHO", "Model"])
+plt.tight_layout()
+
+# Malaria RDT yield
+# both datasets from 2010
+MAP_rdt_yield = MAP_comm.Tested_Positive_Public / MAP_comm.RDT_Consumption_Public
+WHO_rdt_yield = WHO_comm.NumPositiveCasesTestedByRDT / WHO_comm.NumSuspectedCasesTestedByRDT
+# model rdt yield
+model_yield = inc.number_new_cases / rdt_usage_model
+
+ax4 = plt.subplot(122)  # numrows, numcols, fignum
+plt.plot(MAP_comm.Year, MAP_rdt_yield)  # MAP data
+plt.plot(WHO_comm.Year, WHO_rdt_yield)  # WHO data
+plt.plot(model_years, model_yield, color="mediumseagreen")  # model
+plt.title("Malaria RDT yield (positive / suspected)")
+plt.xlabel("Year")
+plt.xticks(rotation=90)
+plt.ylabel("RDT yield")
+# plt.gca().set_xlim(start_date, end_date)
+# plt.gca().set_ylim(0.0, 1.0)
+plt.legend(["MAP", "WHO", "Model"])
+plt.tight_layout()
 
 plt.show()
 
