@@ -51,12 +51,6 @@ jobs:
       - uses: actions/checkout@v3
         with:
           lfs: true
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: "latest"
-          auto-update-conda: true
-          auto-activate-base: true
-          activate-environment: ""
       - name: System info
         run: |
           set -x
