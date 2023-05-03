@@ -511,11 +511,13 @@ def test_individual_testing_and_treatment(sim):
     # assign person_id active tb
     df.at[person_id, 'ma_is_infected'] = True
     df.at[person_id, 'ma_date_infected'] = sim.date
+    df.at[person_id, 'ma_date_symptoms'] = sim.date
     df.at[person_id, 'ma_inf_type'] = "clinical"
     df.at[person_id, 'age_years'] = 3
 
     # assign clinical symptoms and schedule rdt
-    sim.modules["Malaria"].clinical_symptoms(population=df, clinical_index=[0], severe_index=[])
+    pollevent = malaria.MalariaUpdateEvent(module=sim.modules['Malaria'])
+    pollevent.apply(sim.population)
 
     assert not pd.isnull(df.at[person_id, "ma_date_symptoms"])
 
@@ -556,11 +558,13 @@ def test_individual_testing_and_treatment(sim):
     # assign person_id active tb
     df.at[person_id, 'ma_is_infected'] = True
     df.at[person_id, 'ma_date_infected'] = sim.date
+    df.at[person_id, 'ma_date_symptoms'] = sim.date
     df.at[person_id, 'ma_inf_type'] = "asym"
     df.at[person_id, 'age_years'] = 3
 
     # assign clinical symptoms and schedule rdt
-    sim.modules["Malaria"].clinical_symptoms(population=df, clinical_index=[0], severe_index=[])
+    pollevent = malaria.MalariaUpdateEvent(module=sim.modules['Malaria'])
+    pollevent.apply(sim.population)
 
     assert not pd.isnull(df.at[person_id, "ma_date_symptoms"])
 
@@ -601,11 +605,13 @@ def test_individual_testing_and_treatment(sim):
     # assign person_id active tb
     df.at[person_id, 'ma_is_infected'] = True
     df.at[person_id, 'ma_date_infected'] = sim.date
+    df.at[person_id, 'ma_date_symptoms'] = sim.date
     df.at[person_id, 'ma_inf_type'] = "severe"
     df.at[person_id, 'age_years'] = 3
 
     # assign clinical symptoms and schedule rdt
-    sim.modules["Malaria"].clinical_symptoms(population=df, clinical_index=[0], severe_index=[])
+    pollevent = malaria.MalariaUpdateEvent(module=sim.modules['Malaria'])
+    pollevent.apply(sim.population)
 
     assert not pd.isnull(df.at[person_id, "ma_date_symptoms"])
 
@@ -666,12 +672,14 @@ def test_population_testing_and_treatment(sim):
 
     df.ma_is_infected = True
     df.ma_date_infected = sim.date
+    df.ma_date_symptoms = sim.date
     df.ma_inf_type = "clinical"
 
     idx = list(df.index.values)
 
     # assign clinical symptoms and schedule rdt
-    sim.modules["Malaria"].clinical_symptoms(population=df, clinical_index=idx, severe_index=[])
+    pollevent = malaria.MalariaUpdateEvent(module=sim.modules['Malaria'])
+    pollevent.apply(sim.population)
 
     assert df["ma_clinical_counter"].sum() == pop
 

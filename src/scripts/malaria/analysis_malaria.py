@@ -34,8 +34,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2010, 5, 1)
-popsize = 500
+end_date = Date(2020, 1, 1)
+popsize = 5000
 
 # set up the log config
 log_config = {
@@ -59,7 +59,7 @@ sim.register(
         resourcefilepath=resourcefilepath,
         service_availability=["*"],
         mode_appt_constraints=0,
-        cons_availability='all',
+        cons_availability='default',
         ignore_priority=True,
         capabilities_coefficient=1.0,
         disable=False,
@@ -73,8 +73,8 @@ sim.register(
     )
 )
 
-sim.modules["Malaria"].parameters["testing_adj"] = 1.0
-sim.modules["Malaria"].parameters["sensitivity_rdt"] = 1.0
+sim.modules["Malaria"].parameters["testing_adj"] = 0.6
+sim.modules["Malaria"].parameters["sensitivity_rdt"] = 0.95
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
@@ -100,8 +100,7 @@ output = parse_log_file(sim.log_filepath)
 inc = output["tlo.methods.malaria"]["incidence"]
 pfpr = output["tlo.methods.malaria"]["prevalence"]
 tx = output["tlo.methods.malaria"]["tx_coverage"]
-# mort = output["tlo.methods.malaria"]["ma_mortality"]
-# symp = output['tlo.methods.malaria']['symptoms']
+symp = output['tlo.methods.malaria']['symptoms']
 
 prev_district = output["tlo.methods.malaria"]["prev_district"]
 
@@ -110,8 +109,6 @@ prev_district = output["tlo.methods.malaria"]["prev_district"]
 # get model output dates in correct format
 model_years = pd.to_datetime(inc.date)
 model_years = model_years.dt.year
-start_date = 2010
-end_date = 2025
 
 # import malaria data
 # MAP
@@ -133,6 +130,16 @@ txMAP_data = pd.read_excel(
 # WHO
 WHO_data = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="WHO_MalReport",
+)
+
+# MAP commodities
+MAP_comm = pd.read_excel(
+    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="MAP_CommoditiesData2023",
+)
+
+# WHO commodities
+WHO_comm = pd.read_excel(
+    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="WHO_TestData2023",
 )
 
 # ------------------------------------- SINGLE RUN FIGURES -----------------------------------------#
@@ -160,7 +167,7 @@ plt.title("Malaria Inc / 1000py")
 plt.xlabel("Year")
 plt.ylabel("Incidence (/1000py)")
 plt.xticks(rotation=90)
-plt.gca().set_xlim(start_date, end_date)
+# plt.gca().set_xlim(start_date, end_date)
 plt.legend(["MAP", "WHO", "Model"])
 plt.tight_layout()
 
@@ -176,8 +183,8 @@ plt.plot(model_years, pfpr.child2_10_prev, color="mediumseagreen")  # model
 plt.title("Malaria PfPR 2-10 yrs")
 plt.xlabel("Year")
 plt.xticks(rotation=90)
-plt.ylabel("PfPR (%)")
-plt.gca().set_xlim(start_date, end_date)
+plt.ylabel("PfPR")
+# plt.gca().set_xlim(start_date, end_date)
 plt.legend(["MAP", "Model"])
 plt.tight_layout()
 
@@ -189,36 +196,10 @@ plt.title("Malaria Treatment Coverage")
 plt.xlabel("Year")
 plt.xticks(rotation=90)
 plt.ylabel("Treatment coverage (%)")
-plt.gca().set_xlim(start_date, end_date)
+# plt.gca().set_xlim(start_date, end_date)
 plt.gca().set_ylim(0.0, 1.0)
 plt.legend(["MAP", "Model"])
 plt.tight_layout()
-
-# # Malaria mortality rate - all ages with MAP model estimates
-# ax4 = plt.subplot(224)  # numrows, numcols, fignum
-# plt.plot(mortMAP_data.Year, mortMAP_data.mortality_rate_median)  # MAP data
-# plt.fill_between(
-#     mortMAP_data.Year,
-#     mortMAP_data.mortality_rate_LCI,
-#     mortMAP_data.mortality_rate_UCI,
-#     alpha=0.5,
-# )
-# plt.plot(WHO_data.Year, WHO_data.MortRatePerPersonPoint)  # WHO data
-# plt.fill_between(
-#     WHO_data.Year,
-#     WHO_data.MortRatePerPersonLower,
-#     WHO_data.MortRatePerPersonUpper,
-#     alpha=0.5,
-# )
-# plt.plot(model_years, mort.mort_rate, color="mediumseagreen")  # model
-# plt.title("Malaria Mortality Rate")
-# plt.xlabel("Year")
-# plt.xticks(rotation=90)
-# plt.ylabel("Mortality rate")
-# plt.gca().set_xlim(start_date, end_date)
-# plt.gca().set_ylim(0.0, 0.0015)
-# plt.legend(["MAP", "WHO", "Model"])
-# plt.tight_layout()
 
 # out_path = "//fi--san02/homes/tmangal/Thanzi la Onse/Malaria/model_outputs/ITN_projections_28Jan2010/"
 # figpath = out_path + "Baseline_averages29Jan2010" + datestamp + ".png"
