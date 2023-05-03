@@ -132,12 +132,12 @@ class CopdAnalyses:
         death_compare = compare_number_of_deaths(self.__logfile_path, resourcefilepath)
         fig, axs = plt.subplots(nrows=1, ncols=2, sharey=True, sharex=True)
         for _col, sex in enumerate(('M', 'F')):
-            plot_df = death_compare.loc[(['2010-2014', '2015-2019'], sex, slice(None))].groupby('period').sum()
+            plot_df = death_compare.loc[(['2010-2014', '2015-2019'], sex, slice(None), 'COPD')].groupby('period').sum()
             ax = plot_df['model'].plot.bar(color='#ADD8E6', label='Model', ax=axs[_col], rot=0)
             ax.errorbar(x=plot_df['model'].index, y=plot_df.GBD_mean,
                         yerr=[plot_df.GBD_lower, plot_df.GBD_upper],
                         fmt='o', color='#23395d', label="GBD")
-            ax.set_title(f'{self.__gender_desc[sex]} mean annual deaths, 2010-2019')
+            ax.set_title(f'{self.__gender_desc[sex]} annual COPD deaths, 2010-2019')
             ax.set_xlabel("Time period")
             ax.set_ylabel("Number of deaths")
             ax.legend(loc=2)

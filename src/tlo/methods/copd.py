@@ -62,6 +62,9 @@ class Copd(Module):
         ),
         'prob_will_die_sev_exacerbation': Parameter(
             Types.REAL, 'probability that a person will die of severe exacerbation '
+        ),
+        'prob_will_survive_given_oxygen': Parameter(
+            Types.REAL, 'probability that an individual with severe copd will not die when given oxygen '
         )
     }
 
@@ -245,9 +248,9 @@ class CopdModels:
         """Returns the probability that a treatment prevents death during an exacerbation, according to the treatment
         provided (oxygen and/or amino_phylline)"""
         if oxygen and amino_phylline:
-            return 1.0
+            return self.params['prob_will_survive_given_oxygen']
         elif oxygen:
-            return 0.9
+            return self.params['prob_will_survive_given_oxygen']
         else:
             return 0.0
 
@@ -389,7 +392,6 @@ class CopdDeath(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         person = self.sim.population.props.loc[person_id, ['is_alive', 'ch_will_die_this_episode']]
-
         # Check if they should still die and, if so, cause the death
         if person.is_alive and person.ch_will_die_this_episode:
             self.sim.modules['Demography'].do_death(
