@@ -75,7 +75,7 @@ table_use_costs_bool = True
 TimePeriods_starts = [2023, 2031, 2041, 2051]
 # The use & cost values within the time periods in table can be "mean" (default) or can be changed to "max"
 # use_output = "max"  # TODO: test whether it still works
-# Order of contraceptives for a fig and a table
+# Order of modern contraception methods in which they should appear in figs and tables
 contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
                         'female_sterilization', 'other_modern']
 # MWK to USD exchange rate (1 MWK = mwk_to_usd_exchange_rate USD)
@@ -154,11 +154,11 @@ def do_analysis(ID, logFile, in_calc_intervention_costs_bool):
             # %% Do you want to set the upper limits for the y-axes?
             # If so, order them as [Use, Use By Method, Pregnancies] within ylims_l.
             set_ylims_bool, ylims_l,
+            # List of modern methods in order in which they should appear in plots and tables
+            contraceptives_order,
             # %% Calculate Use and Consumables Costs of Contraception methods within
             # some time periods?
             run_analysis, TimePeriods_starts,
-            # List of modern methods in order in which they should appear in table
-            contraceptives_order,
             # %% Calculate Contraception Pop and PPFP Intervention Costs over time?
             in_calc_intervention_costs_bool
             # and default: in_use_output="mean"
