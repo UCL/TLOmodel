@@ -1,7 +1,35 @@
 """
-To be able to run this script to save figs & tables, the log file has to be exported to 'outputs'.
-"""
+To be able to run this script to save figs & tables, the log file has to be exported to the folder 'outputs'.
 # TODO: Improve the code so this doesn't have to be done.
+
+This script can be used to plot:
+ * use of (any) contraception over time,
+ * use of all contraception methods over time,
+ * pregnancies over time, and
+ * dependency ratio
+up to the year 2050 (or less if less years simulated), the first 3 are plotted in both variants, as total numbers of
+women and as the proportions among women of reproductive age (15-49 years).
+
+All plots can be prepared for both, simulation without and with interventions. The y-axis limits are pre-set, so they
+are the same for both (without/with) to allow easy comparison.
+NB. If any line is out of the plot, needs to be run with the parameter 'plot_depend_ratio_bool=False' to see the maximum
+and subsequently the parameter 'ylims_l' needs to be adjusted.
+
+* The table of consumables is always prepared (as inexpensive for time).
+
+* The table of use and consumables costs (in MWK & USD) can be prepared. If requested, the time periods for the table
+need to be specified, the default 'use_output' for the table is 'mean', but can be changed to 'max'. Figure with the
+total costs per same time periods as in the table, showing consumables and interventions implementation costs, along
+with a fig of only totals in all intervention time (for presentations) can be prepared.
+NB. To work on the table of use and costs (prepared if 'table_use_costs_bool==True'), it can be run for the first time
+with 'run_analysis==True', to calculate the use and costs as it takes the most of the running time (~37 min for 250K pop
+size simulated to 2050) and store them. But the follow-up runs to see the progress of the work on the table, can be
+run with 'run_analysis==False' (~1.7 min for 250K pop size simulated to 2050) when all the pre-calculated values of the
+use and costs for the table are imported. Also only one of the analyses (without or with interventions) can be
+performed, the other one will be then filled with the numbers from the same analysis.
+
+All the options can be set in the # TO SET # section below.
+"""
 
 import time
 from pathlib import Path
@@ -12,10 +40,6 @@ import pandas as pd
 import tables
 
 time_start = time.time()
-# running time - both analysis all figs & tab for 250K pop till 2050:
-# (not updated with Dependency ratio)
-# running 1st time (ie run_analysis = True) with all plot_.._bool = False ~ 37 mins
-# running again (ie run_analysis = False) with all plot_.._bool = True or False ~ 1.7 min
 # ####### TO SET #######################################################################################################
 # TODO: estimate the pop_size_simulated from scaling_factor (and if not same for both sims, add them to IDs instead to
 #  suffix) & return last year of sims (the same for that) // separate them as pop_size_simulated & last_year_simulated
