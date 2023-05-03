@@ -188,7 +188,7 @@ def test_natural_history(seed):
 
     # check for TB-related symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-    assert (symptom in set(sim.modules['SymptomManager'].has_what(tb_case)) for symptom in symptom_list)
+    assert symptom_list.issubset(sim.modules['SymptomManager'].has_what(tb_case))
 
     # Check person_id has a ScreeningAndRefer event scheduled by TbActiveEvent
     date_event, event = [
