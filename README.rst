@@ -11,7 +11,7 @@ Prequisites
 We use Git LFS to store large and binary files. Before you clone the repository, install
 `Git LFS <https://git-lfs.github.com/>`_ and run the command :code:`git lfs install`. On Windows, simply run the
 installer. On MacOS, extract the contents of the .tar.gz file using :code:`tar xvfz <filename>.tar.gz` and then
-run :code:`./install.sh`. The TLOmodel repository can then be cloned as normal.
+run :code:`./install.sh`. The ``TLOmodel`` repository can then be cloned as normal.
 
 Installation
 ============
@@ -26,23 +26,23 @@ you prefer, you can carry out the setup using the command line:
     conda activate tlo
     pip install -e .
 
-where `{platform}` is `linux-64` if installing on a Linux system, `osx-64` if installing on
-MacOS (x86 processor), `osx-arm64` if installing on MacOS (ARM64 'Apple silicon' processor) or
-`win-64` if installing on Windows.
+where ``{platform}`` is ``linux-64``` if installing on a Linux system, ``osx-64`` if installing on
+MacOS (x86 processor), ``osx-arm64`` if installing on MacOS (ARM64 'Apple silicon' processor) or
+``win-64`` if installing on Windows.
 
 This will install the software in 'editable' mode, so any changes you make to the source will immediately be reflected.
 After the initial install, each time you wish to use the model simply activate the environment::
 
     conda activate tlo
 
-To update dependencies, perform the following steps in the TLOmodel directory:
+To update dependencies, perform the following steps in the ``TLOmodel`` directory:
 
 ::
 
     conda activate tlo
-    conda install --file conda-dev-{platform}.lock
+    conda install --file requirements/conda-dev-{platform}.lock
 
-where `{platform}` is one of `linux-64`, `osx-64`, `osx-arm64` or `win-64` as above.
+where ``{platform}`` is one of ``linux-64``, ``osx-64``, ``osx-arm64`` or ``win-64`` as above.
 
 Documentation
 =============
@@ -51,7 +51,7 @@ To build the documentation, activate your environment as above then run::
 
     tox -f docs
 
-The generated HTML documentation will appear in `dist/docs`.
+The generated HTML documentation will appear in ``dist/docs``.
 
 Wiki
 ====
