@@ -100,11 +100,11 @@ class Contraception(Module):
 
         'pop_intervention_cost': Parameter(
             Types.INT, "Cost of Pop intervention (population scale contraception intervention) for whole population of "
-                       "Malawi in 2016 (MWK - Malawi Kwacha)"),
+                       "Malawi in 2016 (2015 MWK - Malawi Kwacha)"),
 
         'ppfp_intervention_cost': Parameter(
             Types.INT, "Cost of PPFP (post-partum family planning) intervention for whole population of Malawi in 2016 "
-                       "(MWK - Malawi Kwacha)")
+                       "(2015 MWK - Malawi Kwacha)")
     }
 
     all_contraception_states = {
@@ -274,8 +274,7 @@ class Contraception(Module):
                             'pop_intervention_cost_2016_in2015MWK': self.parameters['pop_intervention_cost'],
                             'ppfp_intervention_cost_2016_in2015MWK': self.parameters['ppfp_intervention_cost'],
                         },
-                        description='Date when contraception interventions are implemented'
-                                    ' (if it is before end of sim).'
+                        description='Information about contraception interventions.'
                         )
 
     def on_birth(self, mother_id, child_id):
