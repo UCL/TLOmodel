@@ -601,12 +601,11 @@ class Contraception(Module):
         """Initiation of mother's contraception after birth."""
 
         # Allocate the woman to a contraceptive status
-        probs_below30 = self.processed_params['p_start_after_birth_below30']
-        probs_30plus = self.processed_params['p_start_after_birth_30plus']
-
         if mother_age < 30:
+            probs_below30 = self.processed_params['p_start_after_birth_below30']
             new_contraceptive = self.rng.choice(probs_below30.index, p=probs_below30.values)
         else:
+            probs_30plus = self.processed_params['p_start_after_birth_30plus']
             new_contraceptive = self.rng.choice(probs_30plus.index, p=probs_30plus.values)
 
         # Do the change in contraceptive
