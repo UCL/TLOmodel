@@ -1,3 +1,8 @@
+"""
+A script called from analysis_contraception_plot_table.py, containing functions
+* table_use_costs__plot_costs() which creates the table of use and costs and plots the costs, and
+* table_cons() which creates the table of consumables.
+"""
 import math
 from datetime import date
 
