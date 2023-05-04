@@ -51,14 +51,16 @@ branch_name = 'co_final'
 # - Without interv
 # datestamp_without_log = '2023-04-26T141435'
 # 2K till 2099, final costs update EHP & OHT + pregn test to initiate co: '2023-04-26T141435' from 2023-04-26T141159Z
-datestamp_without_log = '2023-04-26T142627'
+datestamp_without_log = '2023-05-03T132214'
+# 250K till 2050; final costs update EHP & OHT + pregn test + rebased on master + interv costs: '2023-05-03T132214'
+#    from 2023-05-03T131944Z
 # 250K till 2050; final costs update EHP & OHT + pregn test to initiate co: '2023-04-26T142627' from 2023-04-26T142416Z
 # # - With interv
 # datestamp_with_log = '2023-04-26T141545'
 # 2K till 2099, final costs update EHP & OHT + pregn test to initiate co: '2023-04-26T141545' from 2023-04-26T141321Z
 datestamp_with_log = '2023-05-01T154930'
-# 250K till 2050; final costs update EHP & OHT + pregn test + rebased on master + interv costs:
-# '2023-05-01T154930' from 2023-05-01T154641Z
+# 250K till 2050; final costs update EHP & OHT + pregn test + rebased on master + interv costs: '2023-05-01T154930'
+#    from 2023-05-01T154641Z
 # 250K till 2050; final costs update EHP & OHT + pregn test to initiate co: '2023-04-26T142508' from 2023-04-26T142300Z
 logFile_without = 'run_analysis_contraception_no_diseases__' + datestamp_without_log + '.log'
 logFile_with = 'run_analysis_contraception_no_diseases__' + datestamp_with_log + '.log'
