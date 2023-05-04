@@ -21,12 +21,14 @@ from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
     HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
 )
+from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.epilepsy import HSI_Epilepsy_Start_Anti_Epileptic
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.labour import HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour
 from tlo.methods.malaria import HSI_Malaria_Treatment, HSI_Malaria_Treatment_Complicated
 from tlo.methods.measles import HSI_Measles_Treatment
+from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
 from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
 from tlo.methods.other_adult_cancers import (
     HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom,
@@ -398,6 +400,21 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                          priority=0,
                          topen=sim.date,
                          tclose=None)
+
+    # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
+    if 'craving_sandwiches' in symptoms:
+        event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
+            module=sim.modules['ChronicSyndrome'],
+            person_id=person_id
+        )
+        schedule_hsi(event, priority=1, topen=sim.date)
+
+    if 'extreme_pain_in_the_nose' in symptoms:
+        event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(
+            module=sim.modules['Mockitis'],
+            person_id=person_id
+        )
+        schedule_hsi(event, priority=1, topen=sim.date)
 
     if 'severe_trauma' in symptoms:
         if 'RTI' in sim.modules:
