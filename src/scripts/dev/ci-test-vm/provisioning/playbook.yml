@@ -1,0 +1,53 @@
+- hosts: all
+
+  tasks:
+
+   - name: create github action user
+     become: true
+     ansible.builtin.user:
+       name: gha
+       createhome: yes
+       home: /home/gha
+       shell: /bin/bash
+
+   - name: add deadsnakes ppa
+     become: true
+     apt_repository:
+       repo: ppa:deadsnakes/ppa
+       state: present
+       update_cache: yes
+
+   - name: install packages from apt
+     become: true
+     apt:
+       name: 
+         - acl  # https://github.com/georchestra/ansible/issues/55#issuecomment-651043423
+         - python3.8
+         - python3.8-distutils
+         - python3-pip
+       state: present
+
+   - name: update-alternative select python3.8 as default
+     become: true
+     community.general.alternatives:
+       name: python
+       path: /usr/bin/python3.8
+       link: /usr/bin/python
+       state: selected
+
+   - name: install tox
+     become: true
+     ansible.builtin.shell: python3.8 -m pip install tox
+     args:
+       creates: /usr/local/bin/tox
+
+   - name: install virtualenv
+     become: true
+     ansible.builtin.shell: python3.8 -m pip install virtualenv
+     args:
+       creates: /usr/local/bin/virtualenv
+
+  roles:
+    - role: diodonfrost.git_lfs
+      become: yes
+
