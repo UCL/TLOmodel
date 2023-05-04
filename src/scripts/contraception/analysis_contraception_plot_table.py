@@ -22,8 +22,8 @@ need to be specified, the default 'use_output' for the table is 'mean', but can 
 * Figure with the total costs per periods from the table, showing consumables and interventions implementation costs,
 along with a fig of only totals in all intervention time (for presentations) can be prepared.
 NB. To work on the table of use and costs (prepared if 'table_use_costs_bool==True'), it can be run for the first time
-with 'run_analysis==True', to calculate the use and costs as it takes the most of the running time (~37 min for 250K pop
-size simulated to 2050) and store them. But the follow-up runs to see the progress of the work on the table, can be
+with 'run_analysis==True', to calculate the use and costs as it takes the most of the running time (~37-40 min for 250K
+pop size simulated to 2050) and store them. But the follow-up runs to see the progress of the work on the table, can be
 run with 'run_analysis==False' (~1.7 min for 250K pop size simulated to 2050) when all the pre-calculated values of the
 use and costs for the table are imported. Also only one of the analyses (without or with interventions) can be
 performed, the other one will be then filled with the numbers from the same analysis. Figures are prepared only if the
