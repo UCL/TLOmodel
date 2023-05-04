@@ -255,11 +255,11 @@ tb_deaths0 = summarise_tb_deaths(results0, py0)
 tb_deaths1 = summarise_tb_deaths(results1, py1)
 tb_deaths2 = summarise_tb_deaths(results2, py2)
 
-
 #  create smoothed lines
 num_interp = 12
-def create_smoothed_lines(data_x, data_y):
 
+
+def create_smoothed_lines(data_x, data_y):
     # xnew = np.linspace(data_x.min(), data_x.max(), num_interp)
     # bspline = interpolate.make_interp_spline(data_x, data_y, k=2, bc_type="not-a-knot")
     # smoothed_data = bspline(xnew)
@@ -331,12 +331,11 @@ s_tb_death2 = create_smoothed_lines(data_x2, tb_deaths2["median_tb_deaths_rate_1
 s_tb_death2_l = create_smoothed_lines(data_x2, tb_deaths2["lower_tb_deaths_rate_100kpy"][12:])
 s_tb_death2_u = create_smoothed_lines(data_x2, tb_deaths2["upper_tb_deaths_rate_100kpy"][12:])
 
-
 # ---------------------------------- PLOTS ---------------------------------- #
 plt.style.use('ggplot')
 
 font = {'family': 'sans-serif',
-        'color':  'black',
+        'color': 'black',
         'weight': 'bold',
         'size': 11,
         }
@@ -421,17 +420,16 @@ ax4.set_ylim([0, 100])
 plt.tick_params(axis="both", which="major", labelsize=10)
 
 ax1.text(-0.15, 1.05, 'A)', horizontalalignment='center',
-    verticalalignment='center', transform=ax1.transAxes, fontdict=font)
+         verticalalignment='center', transform=ax1.transAxes, fontdict=font)
 
 ax2.text(-0.1, 1.05, 'B)', horizontalalignment='center',
-    verticalalignment='center', transform=ax2.transAxes, fontdict=font)
+         verticalalignment='center', transform=ax2.transAxes, fontdict=font)
 
 ax3.text(-0.15, 1.05, 'C)', horizontalalignment='center',
-    verticalalignment='center', transform=ax3.transAxes, fontdict=font)
+         verticalalignment='center', transform=ax3.transAxes, fontdict=font)
 
 ax4.text(-0.1, 1.05, 'D)', horizontalalignment='center',
-    verticalalignment='center', transform=ax4.transAxes, fontdict=font)
-
+         verticalalignment='center', transform=ax4.transAxes, fontdict=font)
 
 # handles for legend
 l_baseline = mlines.Line2D([], [], color=baseline_colour, label="Baseline")
@@ -443,6 +441,7 @@ plt.legend(handles=[l_baseline, l_sc1, l_sc2])
 fig.savefig(outputspath / "Epi_outputs_focussed.png")
 
 plt.show()
+
 
 # %%:  ---------------------------------- PrEP IMPACT ---------------------------------- #
 
@@ -486,3 +485,55 @@ sf = extract_results(
 sc0_agyw = agyw_inc0["median"][12:25] * sf[0][0].values[0]
 sc1_agyw = agyw_inc1["median"][12:25] * sf[0][0].values[0]
 sc2_agyw = agyw_inc2["median"][12:25] * sf[0][0].values[0]
+
+
+# ---------------------------------------------------------------------------
+# calculate numbers of deaths over each scenario
+
+def num_deaths_aids(results_folder):
+    extract_deaths = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year).groupby(
+                ["year", "cause"])["person_id"].count()
+        ),
+        do_scaling=True,
+    )
+    # removes multi-index
+    extract_deaths = extract_deaths.reset_index()
+
+    # select only cause AIDS_TB and AIDS_non_TB
+    num_aids_deaths = extract_deaths.loc[(extract_deaths.year >= 2023)]
+
+    # select years 2023-2035
+    num_aids_deaths = num_aids_deaths.loc[
+        (num_aids_deaths.cause == "AIDS_TB") | (num_aids_deaths.cause == "AIDS_non_TB")
+        ]
+
+    # group deaths by year
+    sum_aids_deaths = pd.DataFrame(num_aids_deaths.groupby(["year"]).sum())
+
+    return(sum_aids_deaths)
+
+
+# differences in deaths
+sc1_aids_deaths = num_deaths_aids(results1)
+sc2_aids_deaths = num_deaths_aids(results2)
+
+# sum columns to get total deaths over full time-period by run
+sum_columns_aids_deaths1 = sc1_aids_deaths.sum(axis=0)
+sum_columns_aids_deaths2 = sc2_aids_deaths.sum(axis=0)
+
+
+# extract differences in number deaths by run
+diff = sum_columns_aids_deaths1.subtract(sum_columns_aids_deaths2, fill_value=0)
+
+# summarise differences in number deaths
+median_aids_deaths = diff.median()
+lower_aids_deaths = diff.quantile(q=0.025)
+upper_aids_deaths = diff.quantile(q=0.975)
+
+
+
