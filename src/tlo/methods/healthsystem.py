@@ -1286,12 +1286,15 @@ class HealthSystem(Module):
                 load_factor[officer] = max(call / availability - 1, 0)
 
         # 2) Convert these load-factors into an overall 'squeeze' signal for each HSI,
-        # based on the highest load-factor of any officer required (or zero if event
-        # has an empty footprint)
-        squeeze_factor_per_hsi_event = np.array([
-            max((load_factor[officer] for officer in footprint), default=0)
-            for footprint in footprints_per_event
-        ])
+        # based on the load-factor of the officer with the largest time requirement for that
+        # event (or zero if event has an empty footprint)
+        squeeze_factor_per_hsi_event = []
+        for footprint in footprints_per_event:
+            if len(footprint) > 0:
+                squeeze_factor_per_hsi_event.append(max(load_factor[footprint.most_common()[0][0]], 0.))
+            else:
+                squeeze_factor_per_hsi_event.append(0.0)
+        squeeze_factor_per_hsi_event = np.array(squeeze_factor_per_hsi_event)
 
         assert (squeeze_factor_per_hsi_event >= 0).all()
 
