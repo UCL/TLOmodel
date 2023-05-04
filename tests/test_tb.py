@@ -186,9 +186,9 @@ def test_natural_history(seed):
     assert df.at[tb_case, 'tb_date_active'] == sim.date
     assert df.at[tb_case, 'tb_smear']
 
-    # check symptoms
+    # check for TB-related symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-    assert set(sim.modules['SymptomManager'].has_what(tb_case)) == symptom_list
+    assert symptom_list.issubset(sim.modules['SymptomManager'].has_what(tb_case))
 
     # Check person_id has a ScreeningAndRefer event scheduled by TbActiveEvent
     date_event, event = [
