@@ -154,6 +154,7 @@ def test_natural_history(seed):
     sim.modules['Tb'].parameters['scaling_factor_WHO'] = 50
     sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"] = 100
     sim.modules['Tb'].parameters['prop_smear_positive'] = 1.0
+    sim.modules['Tb'].parameters['prop_smear_positive_hiv'] = 1.0
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -762,19 +763,19 @@ def test_active_tb_linear_model(seed):
     df = sim.population.props
 
     # set properties - no risk factors
-    df.at[df.is_alive, 'tb_inf'] = 'uninfected'
-    df.at[df.is_alive, 'age_years'] = 25
-    df.at[df.is_alive, 'va_bcg_all_doses'] = True
+    df.loc[df.is_alive, 'tb_inf'] = 'uninfected'
+    df.loc[df.is_alive, 'age_years'] = 25
+    df.loc[df.is_alive, 'va_bcg_all_doses'] = True
 
-    df.at[df.is_alive, 'li_bmi'] = 1  # 4=obese
-    df.at[df.is_alive, 'li_ex_alc'] = False
-    df.at[df.is_alive, 'li_tob'] = False
+    df.loc[df.is_alive, 'li_bmi'] = 1  # 4=obese
+    df.loc[df.is_alive, 'li_ex_alc'] = False
+    df.loc[df.is_alive, 'li_tob'] = False
 
-    df.at[df.is_alive, 'tb_on_ipt'] = False
+    df.loc[df.is_alive, 'tb_on_ipt'] = False
 
-    df.at[df.is_alive, 'hv_inf'] = False
-    df.at[df.is_alive, 'sy_aids_symptoms'] = 0
-    df.at[df.is_alive, 'hv_art'] = "not"
+    df.loc[df.is_alive, 'hv_inf'] = False
+    df.loc[df.is_alive, 'sy_aids_symptoms'] = 0
+    df.loc[df.is_alive, 'hv_art'] = "not"
 
     # no risk factors
     person_id0 = 0

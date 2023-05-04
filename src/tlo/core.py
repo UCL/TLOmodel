@@ -117,47 +117,57 @@ class Parameter(Specifiable):
 class Property(Specifiable):
     """Used to specify properties of individuals."""
 
+    """Default values to use for Series of different Pandas dtypes."""
+    PANDAS_TYPE_DEFAULT_VALUE_MAP = {
+        "datetime64[ns]": pd.NaT,
+        bool: False,
+        "int64": 0,
+        float: float("nan"),
+        "category": float("nan"),
+        object: float("nan"),
+    }
+
     def __init__(self, type_, description, categories=None, *, ordered=False):
         """Create a new property specification.
 
-        :param type_: an instance of Types giving the type of allowed values of this property
-        :param description: textual description of what this property represents
-        :param optional: whether a value needs to be given for this property
+        :param type_: An instance of ``Types`` giving the type of allowed values of this
+            property.
+        :param description: Textual description of what this property represents.
+        :param categories: Set of categories this property can take if ``type_`` is
+            ``Types.CATEGORICAL``.
+        :param ordered: Whether categories are ordered  if ``type_`` is
+            ``Types.CATEGORICAL``.
         """
+        if type_ in [Types.SERIES, Types.DATA_FRAME]:
+            raise TypeError("Property cannot be of type SERIES or DATA_FRAME.")
         super().__init__(type_, description, categories)
         self.ordered = ordered
+
+    @property
+    def default_value(self):
+        return self.PANDAS_TYPE_DEFAULT_VALUE_MAP[self.pandas_type]
 
     def create_series(self, name, size):
         """Create a Pandas Series for this property.
 
         The values will be left uninitialised.
 
-        :param name: the name for the series
-        :param size: the length of the series
+        :param name: The name for the series.
+        :param size: The length of the series.
         """
-        if self.type_ in [Types.SERIES, Types.DATA_FRAME]:
-            raise TypeError("Property cannot be of type SERIES or DATA_FRAME.")
-
         # Series of Categorical are setup differently
         if self.type_ is Types.CATEGORICAL:
-            s = pd.Series(
-                pd.Categorical(
-                    values=np.repeat(np.nan, repeats=size),
-                    categories=self.categories,
-                    ordered=self.ordered
-                ),
-                name=name,
-                index=range(size),
-                dtype=self.pandas_type
+            dtype = pd.CategoricalDtype(
+                categories=self.categories, ordered=self.ordered
             )
         else:
-            s = pd.Series(
-                name=name,
-                index=range(size),
-                dtype=self.pandas_type,
-            )
-
-        return s
+            dtype = self.pandas_type
+        return pd.Series(
+            data=[self.default_value] * size,
+            name=name,
+            index=range(size),
+            dtype=dtype,
+        )
 
 
 class Module:
@@ -281,7 +291,7 @@ class Module:
             elif parameter_definition.python_type == pd.Categorical:
                 categories = parameter_definition.categories
                 assert parameter_value in categories, f"{error_message}\nvalid values: {categories}"
-                parameter_value = pd.Categorical(parameter_value, categories=categories)
+                parameter_value = pd.Categorical([parameter_value], categories=categories)
             elif parameter_definition.type_.name == 'STRING':
                 parameter_value = parameter_value.strip()
             else:

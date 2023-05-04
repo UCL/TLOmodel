@@ -1436,13 +1436,13 @@ class HealthSystem(Module):
             if availability == 0:
                 load_factor[officer] = float('inf')
             else:
-                load_factor[officer] = max(call / availability - 1, 0)
+                load_factor[officer] = max(call / availability - 1, 0.0)
 
         # 2) Convert these load-factors into an overall 'squeeze' signal for each HSI,
         # based on the highest load-factor of any officer required (or zero if event
         # has an empty footprint)
         squeeze_factor_per_hsi_event = np.array([
-            max((load_factor[officer] for officer in footprint), default=0)
+            max((load_factor[officer] for officer in footprint), default=0.0)
             for footprint in footprints_per_event
         ])
 
@@ -1859,7 +1859,7 @@ class HealthSystem(Module):
                             self.running_total_footprint -= original_call
                             self.running_total_footprint += updated_call
 
-                            # Don't recompute for mode=0?
+                            # Don't recompute for mode=0
                             if self.mode_appt_constraints != 0:
                                 squeeze_factor_per_hsi_event = self.get_squeeze_factors(
                                     footprints_per_event=footprints_of_all_individual_level_hsi_event,

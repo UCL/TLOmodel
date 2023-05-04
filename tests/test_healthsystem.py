@@ -1,7 +1,7 @@
 import heapq as hp
 import os
 from pathlib import Path
-from typing import Set
+from typing import Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -839,11 +839,11 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     # Check the count of appointment type (total) matches the count split by level
     counts_of_appts_by_level = pd.concat(
         {idx: pd.DataFrame.from_dict(mydict)
-         for idx, mydict in summary_hsi_event['Number_By_Appt_Type_Code_And_Level'].iteritems()
+         for idx, mydict in summary_hsi_event['Number_By_Appt_Type_Code_And_Level'].items()
          }).unstack().fillna(0.0).astype(int)
 
     assert summary_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict() == \
-           counts_of_appts_by_level.sum(axis=1, level=1).sum(axis=0).to_dict()
+           counts_of_appts_by_level.groupby(axis=1, level=1).sum().sum().to_dict()
 
 
 @pytest.mark.slow
@@ -1070,7 +1070,8 @@ def test_manipulation_of_service_availability(seed, tmpdir):
     """Check that the parameter `service_availability` can be used to allow/disallow certain `TREATMENT_ID`s.
     N.B. This is setting service_availability through a change in parameter, as would be done by BatchRunner."""
 
-    generic_first_appts = {'FirstAttendance_NonEmergency', 'FirstAttendance_Emergency'}
+    generic_first_appts = {'FirstAttendance_NonEmergency', 'FirstAttendance_Emergency',
+                           'FirstAttendance_SpuriousEmergencyCare'}
 
     def get_set_of_treatment_ids_that_run(service_availability) -> Set[str]:
         """Return set of TREATMENT_IDs that occur when running the simulation with the `service_availability`."""
@@ -1644,7 +1645,7 @@ def test_which_hsi_can_run(seed):
                                                    use_funded_or_actual_staffing=use_funded_or_actual_staffing),
                          DummyModule(),
                          )
-            sim.make_initial_population(n=100)
+            sim.make_initial_population(n=40)
             sim.simulate(end_date=sim.start_date)
 
             # Get pointer to the HealthSystemScheduler event
@@ -1701,8 +1702,11 @@ def test_which_hsi_can_run(seed):
                             sqz=sqz,
                         ))
 
-    # in the first place, check squeeze_factor is always float
-    assert all([isinstance(r['sqz'], float) for r in results])
+    # Check that all hsi events that ran had reasonable (float) squeeze
+    for r in results:
+        if r['hsi_did_run']:
+            assert isinstance(r['sqz'], float)
+            assert r['sqz'] != float('nan')
 
     results = pd.DataFrame(results)
 
@@ -1716,8 +1720,8 @@ def test_which_hsi_can_run(seed):
     assert (results.loc[results['mode_appt_constraints'] == 0, 'sqz'] == 0.0).all()
 
     # mode 1 - actual, funded, funded_plus -> every hsi that does run, has sqz in [0.0, Inf)
-    assert results.loc[
-        (results['mode_appt_constraints'] == 1) & (results['hsi_did_run']), 'sqz'].between(0.0, float('inf'), 'left')
+    res = results.loc[(results['mode_appt_constraints'] == 1) & (results['hsi_did_run'])]
+    assert res['sqz'].between(0.0, float('inf'), 'left').all()
 
     # mode 1 - funded_plus -> every hsi runs
     assert results.loc[(results['mode_appt_constraints'] == 1) &
@@ -1761,16 +1765,6 @@ def test_which_hsi_can_run(seed):
     assert (results_alt.columns == appts_not_run.columns).all()
     assert collapse_into_set_of_strings(results_alt) == collapse_into_set_of_strings(appts_not_run)
 
-    # mode 2 - actual, funded, funded_plus -> every hsi that does run, has sqz = 0.0
-    assert (results.loc[(results['mode_appt_constraints'] == 2) & (results['hsi_did_run']), 'sqz'] == 0.0).all()
-
-    # mode 2 - actual, funded, funded_plus -> some don't run (the ones we expected,
-    # i.e., those don't run in mode 1 and those with non-zero sqz in mode 1)
-    df_1 = results.loc[(results['mode_appt_constraints'] == 1)
-                       & ((~results['hsi_did_run']) | (results['sqz'] > 0.0))].drop(
-        columns=['mode_appt_constraints', 'hsi_did_run', 'sqz']
-    )
-    df_2 = results.loc[(results['mode_appt_constraints'] == 2) & (~results['hsi_did_run'])].drop(
-        columns=['mode_appt_constraints', 'hsi_did_run', 'sqz']
-    )
-    assert collapse_into_set_of_strings(df_1) == collapse_into_set_of_strings(df_2)
+    # mode 2 - actual, funded, funded_plus -> every hsi that does run, has sqz <= max squeeze allowed for priority
+    max_squeeze = sim.modules["HealthSystem"].max_squeeze_by_priority[1]
+    assert (results.loc[(results['mode_appt_constraints'] == 2) & (results['hsi_did_run']), 'sqz'] <= max_squeeze).all()

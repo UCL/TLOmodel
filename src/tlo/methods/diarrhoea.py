@@ -22,7 +22,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -1257,7 +1257,7 @@ class DiarrhoeaPollingEvent(RegularEvent, PopulationScopeEventMixin):
     def compute_fraction_of_year_between_polling_event(self):
         """Compute fraction of a year that elapses between polling event. This is used to adjust the risk of
         infection"""
-        return (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'Y')
+        return (self.sim.date + self.frequency - self.sim.date) / pd.Timedelta(days=DAYS_IN_YEAR)
 
     def apply(self, population):
         df = population.props
