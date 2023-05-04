@@ -1,25 +1,12 @@
 """ load the outputs from a simulation and plot the results with comparison data """
 
-import os
 import datetime
 import pickle
 from pathlib import Path
 
-import matplotlib.lines as mlines
-import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
-from tlo.analysis.utils import (
-    compare_number_of_deaths,
-    extract_params,
-    extract_results,
-    get_scenario_info,
-    get_scenario_outputs,
-    load_pickled_dataframes,
-    summarize,
-)
 
 resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
@@ -32,14 +19,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # MAP
 incMAP_data = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_malaria.xlsx",
-    sheet_name="inc1000py_MAPdata",
-)
-PfPRMAP_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="PfPR_MAPdata",
-)
-mortMAP_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_malaria.xlsx",
-    sheet_name="mortalityRate_MAPdata",
+    sheet_name="MAP_InfectionData2023",
 )
 txMAP_data = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="txCov_MAPdata",
@@ -47,7 +27,7 @@ txMAP_data = pd.read_excel(
 
 # WHO
 WHO_data = pd.read_excel(
-    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="WHO_MalReport",
+    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="WHO_CaseData2023",
 )
 
 # MAP commodities
@@ -72,6 +52,8 @@ inc = output["tlo.methods.malaria"]["incidence"]
 pfpr = output["tlo.methods.malaria"]["prevalence"]
 tx = output["tlo.methods.malaria"]["tx_coverage"]
 
+scaling_factor = output["tlo.methods.population"]["scaling_factor"].values[0][1]
+
 # numbers rdt requested
 cons = output["tlo.methods.healthsystem.summary"]["Consumables"]
 rdt_item_code = '163'
@@ -82,6 +64,14 @@ for row in range(cons.shape[0]):
     cons_dict = cons.at[row, 'Item_Available']
     rdt_usage_model.append(cons_dict.get(rdt_item_code))
 
+scaled_rdt_usage_model = [i * scaling_factor for i in rdt_usage_model]
+
+# Malaria RDT yield
+# both datasets from 2010
+MAP_rdt_yield = (MAP_comm.Tested_Positive_Public / MAP_comm.RDT_Consumption_Public) * 100
+WHO_rdt_yield = (WHO_comm.NumPositiveCasesTestedByRDT / WHO_comm.NumSuspectedCasesTestedByRDT) * 100
+# model rdt yield
+model_yield = (rdt_usage_model[1:10] / inc.number_new_cases) * 100
 
 # get model output dates in correct format
 model_years = pd.to_datetime(inc.date)
@@ -89,7 +79,8 @@ model_years = model_years.dt.year
 
 years_of_simulation = len(model_years)
 # ------------------------------------- FIGURES -----------------------------------------#
-
+start_date = 2010
+end_date = 2022
 
 # FIGURES
 plt.style.use("ggplot")
@@ -97,16 +88,11 @@ plt.figure(1, figsize=(10, 10))
 
 # Malaria incidence per 1000py - all ages with MAP model estimates
 ax = plt.subplot(221)  # numrows, numcols, fignum
-plt.plot(incMAP_data.Year, incMAP_data.inc_1000pyMean)  # MAP data
+plt.plot(incMAP_data.Year, incMAP_data.IncidenceRatePer1000, color="crimson")  # MAP data
+plt.plot(WHO_data.Year, WHO_data.IncidencePer1000, color="darkorchid")  # WHO data
 plt.fill_between(
-    incMAP_data.Year,
-    incMAP_data.inc_1000py_Lower,
-    incMAP_data.inc_1000pyUpper,
-    alpha=0.5,
-)
-plt.plot(WHO_data.Year, WHO_data.cases1000pyPoint)  # WHO data
-plt.fill_between(
-    WHO_data.Year, WHO_data.cases1000pyLower, WHO_data.cases1000pyUpper, alpha=0.5
+    WHO_data.Year, WHO_data.IncidencePer1000Low, WHO_data.IncidencePer1000High,
+    color="darkorchid", alpha=0.1
 )
 plt.plot(
     model_years, inc.inc_1000py, color="mediumseagreen"
@@ -115,81 +101,50 @@ plt.title("Malaria Inc / 1000py")
 plt.xlabel("Year")
 plt.ylabel("Incidence (/1000py)")
 plt.xticks(rotation=90)
-# plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_xlim(start_date, end_date)
 plt.legend(["MAP", "WHO", "Model"])
 plt.tight_layout()
 
-# Malaria parasite prevalence rate - 2-10 year olds with MAP model estimates
-# expect model estimates to be slightly higher as some will have
-# undetectable parasitaemia
-ax2 = plt.subplot(222)  # numrows, numcols, fignum
-plt.plot(PfPRMAP_data.Year, PfPRMAP_data.PfPR_median)  # MAP data
-plt.fill_between(
-    PfPRMAP_data.Year, PfPRMAP_data.PfPR_LCI, PfPRMAP_data.PfPR_UCI, alpha=0.5
-)
-plt.plot(model_years, pfpr.child2_10_prev, color="mediumseagreen")  # model
-plt.title("Malaria PfPR 2-10 yrs")
-plt.xlabel("Year")
-plt.xticks(rotation=90)
-plt.ylabel("PfPR")
-# plt.gca().set_xlim(start_date, end_date)
-plt.legend(["MAP", "Model"])
-plt.tight_layout()
-
 # Malaria treatment coverage - all ages with MAP model estimates
-ax3 = plt.subplot(223)  # numrows, numcols, fignum
-plt.plot(txMAP_data.Year, txMAP_data.ACT_coverage)  # MAP data
+ax2 = plt.subplot(222)  # numrows, numcols, fignum
+plt.plot(txMAP_data.Year, txMAP_data.ACT_coverage, color="crimson")  # MAP data
 plt.plot(model_years, tx.treatment_coverage, color="mediumseagreen")  # model
 plt.title("Malaria Treatment Coverage")
 plt.xlabel("Year")
 plt.xticks(rotation=90)
 plt.ylabel("Treatment coverage (%)")
-# plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_xlim(start_date, end_date)
 plt.gca().set_ylim(0.0, 1.0)
 plt.legend(["MAP", "Model"])
 plt.tight_layout()
 
-plt.show()
 
-plt.close()
-
-# ------------------ consumption of RDTs
-
-plt.figure(1, figsize=(10, 10))
-
-# Malaria incidence per 1000py - all ages with MAP model estimates
 # Malaria rdt usage
-ax = plt.subplot(121)  # numrows, numcols, fignum
-plt.plot(MAP_comm.Year, MAP_comm.RDT_Consumption_Public)  # MAP data
-plt.plot(WHO_comm.Year, WHO_comm.NumSuspectedCasesTestedByRDT)  # WHO data
-plt.plot(model_years, rdt_usage_model, color="mediumseagreen")  # model
-plt.title("Malaria RDT usage")
+ax3 = plt.subplot(223)  # numrows, numcols, fignum
+plt.plot(MAP_comm.Year, MAP_comm.RDT_Consumption_Public, color="crimson")  # MAP data
+plt.plot(WHO_comm.Year, WHO_comm.NumSuspectedCasesTestedByRDT, color="darkorchid")  # WHO data
+plt.plot(model_years, scaled_rdt_usage_model[1:10], color="mediumseagreen")  # model
+plt.title("RDT usage")
 plt.xlabel("Year")
 plt.xticks(rotation=90)
 plt.ylabel("Numbers of RDTs used")
-# plt.gca().set_xlim(start_date, end_date)
-# plt.gca().set_ylim(0.0, 1.0)
+plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_ylim(0.0, 4.0e7)
 plt.legend(["MAP", "WHO", "Model"])
 plt.tight_layout()
 
-# Malaria RDT yield
-# both datasets from 2010
-MAP_rdt_yield = MAP_comm.Tested_Positive_Public / MAP_comm.RDT_Consumption_Public
-WHO_rdt_yield = WHO_comm.NumPositiveCasesTestedByRDT / WHO_comm.NumSuspectedCasesTestedByRDT
-# model rdt yield
-model_yield = inc.number_new_cases / rdt_usage_model
-
-ax4 = plt.subplot(122)  # numrows, numcols, fignum
-plt.plot(MAP_comm.Year, MAP_rdt_yield)  # MAP data
-plt.plot(WHO_comm.Year, WHO_rdt_yield)  # WHO data
+# malaria rdt yield
+ax4 = plt.subplot(224)  # numrows, numcols, fignum
+plt.plot(MAP_comm.Year, MAP_rdt_yield, color="crimson")  # MAP data
+plt.plot(WHO_comm.Year, WHO_rdt_yield, color="darkorchid")  # WHO data
 plt.plot(model_years, model_yield, color="mediumseagreen")  # model
-plt.title("Malaria RDT yield (positive / suspected)")
+plt.title("RDT yield (positive / suspected)")
 plt.xlabel("Year")
 plt.xticks(rotation=90)
-plt.ylabel("RDT yield")
-# plt.gca().set_xlim(start_date, end_date)
-# plt.gca().set_ylim(0.0, 1.0)
-plt.legend(["MAP", "WHO", "Model"])
+plt.ylabel("RDT yield (%)")
+plt.gca().set_xlim(start_date, end_date)
+plt.gca().set_ylim(0.0, 100)
+plt.legend(["MAP (Public)", "WHO", "Model"])
 plt.tight_layout()
 
 plt.show()

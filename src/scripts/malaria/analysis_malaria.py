@@ -104,7 +104,7 @@ symp = output['tlo.methods.malaria']['symptoms']
 
 prev_district = output["tlo.methods.malaria"]["prev_district"]
 
-## ----------------------------------- CREATE PLOTS-----------------------------------
+# ----------------------------------- CREATE PLOTS-----------------------------------
 
 # get model output dates in correct format
 model_years = pd.to_datetime(inc.date)

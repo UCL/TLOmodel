@@ -375,7 +375,6 @@ class Malaria(Module):
         death = df.index[new_severe][random_draw < (p["cfr"] * p["mortality_adjust"])]
 
         for person in death:
-
             logger.debug(key='message',
                          data=f'MalariaEvent: scheduling malaria death for person {person}')
 
@@ -452,7 +451,7 @@ class Malaria(Module):
         # malaria treatment complicated - same consumables for adults and children
         self.item_codes_for_consumables_required['malaria_complicated'] = {
             get_item_code("Injectable artesunate"): 1,
-         }
+        }
 
         self.item_codes_for_consumables_required['malaria_complicated_optional_items'] = {
             get_item_code("Cannula iv  (winged with injection pot) 18_each_CMST"): 3,
@@ -799,8 +798,8 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
 
             if self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['malaria_complicated'],
-                    optional_item_codes=self.module.item_codes_for_consumables_required['malaria_complicated_optional_items']):
-
+                optional_item_codes=self.module.item_codes_for_consumables_required[
+                    'malaria_complicated_optional_items']):
                 logger.debug(key='message',
                              data=f'HSI_Malaria_Treatment_Complicated: giving complicated malaria treatment for '
                                   f' {person_id}')
@@ -1151,7 +1150,7 @@ class MalariaTxLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # reset all counters
         logger.debug(key='message',
-                    data=f'Resetting the malaria counter {self.sim.date}')
+                     data=f'Resetting the malaria counter {self.sim.date}')
 
         df["ma_clinical_counter"] = 0
         df["ma_tx_counter"] = 0

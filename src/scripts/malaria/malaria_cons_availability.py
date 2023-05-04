@@ -1,36 +1,15 @@
-
 import datetime
 from pathlib import Path
-import os
 
-import matplotlib.lines as mlines
-import matplotlib.patches as mpatches
-from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from matplotlib.gridspec import GridSpec
 import seaborn as sns
-import lacroix
-import math
-
-from tlo.analysis.utils import (
-    compare_number_of_deaths,
-    extract_params,
-    extract_results,
-    get_scenario_info,
-    get_scenario_outputs,
-    load_pickled_dataframes,
-    summarize,
-)
-from tlo import Date
 
 resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
-
-
 
 # %%: get consumables availability
 
@@ -53,7 +32,6 @@ average_cons_availability = cons_full.groupby(["item_code", "Facility_Level"])["
 
 
 def get_item_codes_from_package_name(lookup_df: pd.DataFrame, package: str) -> dict:
-
     return int(pd.unique(lookup_df.loc[lookup_df["Intervention_Pkg"] == package, "Item_Code"]))
 
 
@@ -61,7 +39,8 @@ def get_item_code_from_item_name(lookup_df: pd.DataFrame, item: str) -> int:
     """Helper function to provide the item_code (an int) when provided with the name of the item"""
     return int(pd.unique(lookup_df.loc[lookup_df["Items"] == item, "Item_Code"])[0])
 
-## malaria consumables
+
+# malaria consumables
 
 item_codes_dict = dict()
 
@@ -69,18 +48,23 @@ item_codes_dict = dict()
 item_codes_dict["rdt"] = get_item_code_from_item_name(items_list, "Malaria test kit (RDT)")
 
 # treatment
-item_codes_dict["Artemether_lumefantrine"] = get_item_code_from_item_name(items_list, "Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST")
+item_codes_dict["Artemether_lumefantrine"] = get_item_code_from_item_name(
+    items_list,
+    "Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST")
 item_codes_dict["paracetamol_syrup"] = get_item_code_from_item_name(
     items_list, "Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST")
 item_codes_dict["paracetamol"] = get_item_code_from_item_name(items_list, "Paracetamol 500mg_1000_CMST")
 item_codes_dict["Injectable_artesunate"] = get_item_code_from_item_name(items_list, "Injectable artesunate")
-item_codes_dict["cannula"] = get_item_code_from_item_name(items_list, "Cannula iv  (winged with injection pot) 18_each_CMST")
-item_codes_dict["gloves"] = get_item_code_from_item_name(items_list, "Disposables gloves, powder free, 100 pieces per box")
+item_codes_dict["cannula"] = get_item_code_from_item_name(items_list,
+                                                          "Cannula iv  (winged with injection pot) 18_each_CMST")
+item_codes_dict["gloves"] = get_item_code_from_item_name(items_list,
+                                                         "Disposables gloves, powder free, 100 pieces per box")
 item_codes_dict["gauze"] = get_item_code_from_item_name(items_list, "Gauze, absorbent 90cm x 40m_each_CMST")
 item_codes_dict["water_for_injection"] = get_item_code_from_item_name(items_list, "Water for injection, 10ml_Each_CMST")
 
 # select item codes from item_codes_dict
-selected_cons_availability = average_cons_availability[average_cons_availability["item_code"].isin(item_codes_dict.values())]
+selected_cons_availability = average_cons_availability[
+    average_cons_availability["item_code"].isin(item_codes_dict.values())]
 # remove level 0
 selected_cons_availability = selected_cons_availability.loc[selected_cons_availability.Facility_Level != "0"]
 # remove level 4
