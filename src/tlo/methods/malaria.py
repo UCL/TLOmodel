@@ -730,6 +730,7 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
                 {"Under5OPD": 1}
             )
+            return ACTUAL_APPT_FOOTPRINT
 
     def get_drugs(self, age_of_person):
         """Helper function to get treatment according to the age of the person being treated. Returns bool to indicate

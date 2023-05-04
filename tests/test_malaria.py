@@ -40,7 +40,6 @@ def check_dtypes(simulation):
 
 @pytest.fixture
 def sim(seed):
-
     sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
@@ -62,7 +61,6 @@ def sim(seed):
 
 @pytest.mark.slow
 def test_sims(sim):
-
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
     check_dtypes(sim)
@@ -112,7 +110,6 @@ def test_sims(sim):
 # increase cfr for severe cases (all severe cases will die)
 @pytest.mark.slow
 def test_remove_malaria_test(seed):
-
     service_availability = list([" "])  # no treatments available
 
     end_date = Date(2018, 12, 31)
@@ -177,7 +174,6 @@ def test_remove_malaria_test(seed):
 # test everyone regularly and check no treatment without positive rdt
 @pytest.mark.slow
 def test_schedule_rdt_for_all(sim):
-
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
     sim.modules['Malaria'].parameters['testing_adj'] = 10
@@ -374,7 +370,6 @@ def test_dx_algorithm_for_non_malaria_outcomes(seed):
 
 
 def test_severe_malaria_deaths_perfect_treatment(sim):
-
     # -------------- Perfect treatment for severe malaria -------------- #
     # set perfect treatment for severe malaria cases - no deaths should occur
     sim.modules['Malaria'].parameters['treatment_adjustment'] = 0
@@ -392,7 +387,7 @@ def test_severe_malaria_deaths_perfect_treatment(sim):
 
     # put person on treatment
     treatment_appt = malaria.HSI_Malaria_Treatment_Complicated(person_id=person_id,
-                                                                     module=sim.modules['Malaria'])
+                                                               module=sim.modules['Malaria'])
     treatment_appt.apply(person_id=person_id, squeeze_factor=0.0)
     assert df.at[person_id, 'ma_tx']
     assert df.at[person_id, "ma_date_tx"] == sim.date
@@ -427,7 +422,7 @@ def test_severe_malaria_deaths_treatment_failure(sim):
 
     # put person on treatment
     treatment_appt = malaria.HSI_Malaria_Treatment_Complicated(person_id=person_id,
-                                                                     module=sim.modules['Malaria'])
+                                                               module=sim.modules['Malaria'])
     treatment_appt.apply(person_id=person_id, squeeze_factor=0.0)
     assert df.at[person_id, 'ma_tx']
     assert df.at[person_id, "ma_date_tx"] == sim.date
@@ -505,7 +500,7 @@ def test_individual_testing_and_treatment(sim):
 
     df = sim.population.props
 
-    ## -------- clinical infection
+    # -------- clinical infection
     person_id = 0
 
     # assign person_id active tb
@@ -530,7 +525,7 @@ def test_individual_testing_and_treatment(sim):
 
     # screen and test person_id
     rdt_appt = malaria.HSI_Malaria_rdt(person_id=person_id,
-                                                 module=sim.modules['Malaria'])
+                                       module=sim.modules['Malaria'])
     rdt_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
     # check person diagnosed
@@ -546,13 +541,13 @@ def test_individual_testing_and_treatment(sim):
     # run treatment event and check person is treated and treatment counter incremented
     assert df.at[person_id, "ma_tx_counter"] == 0
     tx_appt = malaria.HSI_Malaria_Treatment(person_id=person_id,
-                                                 module=sim.modules['Malaria'])
+                                            module=sim.modules['Malaria'])
     tx_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
     assert df.at[person_id, "ma_tx_counter"] == 1
     assert df.at[person_id, "ma_tx"]
 
-    ## -------- asymptomatic infection
+    # -------- asymptomatic infection
     person_id = 1
 
     # assign person_id active tb
@@ -577,7 +572,7 @@ def test_individual_testing_and_treatment(sim):
 
     # screen and test person_id
     rdt_appt = malaria.HSI_Malaria_rdt(person_id=person_id,
-                                                 module=sim.modules['Malaria'])
+                                       module=sim.modules['Malaria'])
     rdt_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
     # check person diagnosed
@@ -593,13 +588,13 @@ def test_individual_testing_and_treatment(sim):
     # run treatment event and check person is treated and treatment counter incremented
     assert df.at[person_id, "ma_tx_counter"] == 0
     tx_appt = malaria.HSI_Malaria_Treatment(person_id=person_id,
-                                                 module=sim.modules['Malaria'])
+                                            module=sim.modules['Malaria'])
     tx_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
     assert df.at[person_id, "ma_tx_counter"] == 1
     assert df.at[person_id, "ma_tx"]
 
-    ## -------- severe infection
+    # -------- severe infection
     person_id = 2
 
     # assign person_id active tb
@@ -624,7 +619,7 @@ def test_individual_testing_and_treatment(sim):
 
     # screen and test person_id
     rdt_appt = malaria.HSI_Malaria_rdt(person_id=person_id,
-                                                 module=sim.modules['Malaria'])
+                                       module=sim.modules['Malaria'])
     rdt_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
     # check person diagnosed
@@ -640,7 +635,7 @@ def test_individual_testing_and_treatment(sim):
     # run treatment event and check person is treated and treatment counter incremented
     assert df.at[person_id, "ma_tx_counter"] == 0
     tx_appt = malaria.HSI_Malaria_Treatment_Complicated(person_id=person_id,
-                                                 module=sim.modules['Malaria'])
+                                                        module=sim.modules['Malaria'])
     tx_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
     assert df.at[person_id, "ma_tx_counter"] == 1
@@ -708,7 +703,7 @@ def test_population_testing_and_treatment(sim):
     # run the treatment for everyone
     for person in idx:
         tx_appt = malaria.HSI_Malaria_Treatment(person_id=person,
-                                           module=sim.modules['Malaria'])
+                                                module=sim.modules['Malaria'])
         tx_appt.apply(person_id=person, squeeze_factor=0.0)
 
     assert df["ma_tx_counter"].sum() == pop
