@@ -2,7 +2,9 @@
 
 ## Overview
 
-A test/staging environment for Github Actions TLOmodel workflows
+A test/staging environment for Github Actions TLOmodel workflows.
+
+The VM has two cores, and we setup two runners for each core to reflect how runners are deployed in live environment.
 
 ## Setup
 
