@@ -328,7 +328,9 @@ def test_death_rate():
 
     # 2) -------- TEST HIGH DEATH RATE BUT PERFECT TREATMENT SHOULD LEAD TO NO DEATHS ------------
     # reset death rate due to severe exacerbation to 1. This will ensure many deaths are scheduled
-    copd_module.parameters['prob_will_die_sev_exacerbation'] = 1
+    copd_module.parameters['prob_will_die_sev_exacerbation'] = 1.0
+    # reset will survive given oxygen probability to 1.0 to ensure all survive when care is given
+    copd_module.parameters['prob_will_survive_given_oxygen'] = 1.0
     # call copd exacerbation event and confirm all have been scheduled to die
     for idx in range(len(df.index)):
         _event = copd.CopdExacerbationEvent(copd_module, idx, severe=True)
