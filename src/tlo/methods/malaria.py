@@ -110,9 +110,6 @@ class Malaria(Module):
         "data_end": Parameter(
             Types.REAL, "final year of ICL malaria model outputs, after 2018 = projections"
         ),
-        # "prob_sev": Parameter(
-        #     Types.REAL, "probability of infected case becoming severe"
-        # ),
         "irs_rates_boundary": Parameter(
             Types.REAL, "threshold for indoor residual spraying coverage"
         ),
@@ -428,7 +425,6 @@ class Malaria(Module):
         # malaria treatment uncomplicated children <15kg
         self.item_codes_for_consumables_required['malaria_uncomplicated_young_children'] = {
             get_item_code("Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST"): 1,
-            # get_item_code("Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST"): 18
         }
         self.item_codes_for_consumables_required['paracetamol_syrup'] = {
             get_item_code("Paracetamol syrup 120mg/5ml_0.0119047619047619_CMST"): 18
@@ -442,7 +438,6 @@ class Malaria(Module):
         # malaria treatment uncomplicated adults >36kg
         self.item_codes_for_consumables_required['malaria_uncomplicated_adult'] = {
             get_item_code("Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST"): 4,
-            # get_item_code("Paracetamol 500mg_1000_CMST"): 18
         }
         self.item_codes_for_consumables_required['paracetamol'] = {
             get_item_code("Paracetamol 500mg_1000_CMST"): 18
@@ -580,12 +575,6 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
 
         if not df.at[individual_id, "is_alive"] or (df.at[individual_id, "ma_inf_type"] == "none"):
             return
-
-        # death should only occur if severe malaria case
-        if not df.at[individual_id, "ma_inf_type"] == "severe":
-            print("oh no")
-            print(individual_id, df.at[individual_id, "ma_inf_type"])
-        # assert df.at[individual_id, "ma_inf_type"] == "severe"
 
         # if on treatment, will reduce probability of death
         # use random number generator - currently param treatment_adjustment set to 0.5
@@ -874,10 +863,9 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         this is a regular event for clinical and severe cases which:
         * assigns symptoms
         * schedules rdt
-
         * cures people currently on treatment for malaria
         * clears symptoms for those not on treatment
-        it also clears parasites if treated
+        * clears parasites if treated
         """
 
         logger.debug(key='message', data='MalariaUpdateEvent')
