@@ -1,12 +1,9 @@
-"""inspired by analysis_contraception.py
-
-a function 'analyse contraception' defined to be used for pre-simulated data
-(using a scenario files run_analysis_contraception_no_diseases.py or
-run_analysis_contraception_all_diseases.py) by another script
-(analysis_contraception_plot_table.py) to plot use of contraception over time,
-use of contraception methods over time, pregnancies over time, and/or calculate
-data for a table of use and costs of contraception methods and or intervention
-costs (whichever required)
+"""
+a function 'analyse_contraception' defined to be used for pre-simulated data (using the scenario file
+run_analysis_contraception_no_diseases.py) called from the script analysis_contraception_plot_table.py, plots use of
+contraception over time, use of contraception methods over time, pregnancies over time, dependency ratio over time,
+and/or calculates data for a table of use and costs of contraception methods and interventions (whichever are required
+according to the setting in the analysis_contraception_plot_table.py script).
 """
 import logging
 import warnings
