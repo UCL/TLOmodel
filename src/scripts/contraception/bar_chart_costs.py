@@ -1,3 +1,9 @@
+"""
+A script called from tables.py, containing a function
+* plot_costs() which plots
+ - the total costs per periods from the table, and
+ - the total costs for the entire time shown in the table (to be used in presentations).
+"""
 from pathlib import Path
 
 import matplotlib.pyplot as plt
