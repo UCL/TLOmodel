@@ -342,6 +342,9 @@ new_availability_df_imputed.loc[missing_change_data, 'availability_change_prop']
 #------------------------------------------------------
 new_availability_df_imputed['available_prop_scenario1'] = new_availability_df_imputed['available_prop'] * new_availability_df_imputed['availability_change_prop']
 
+availability_greater_than_1 = new_availability_df_imputed['available_prop_scenario1'] > 1
+new_availability_df_imputed.loc[availability_greater_than_1, 'available_prop_scenario1'] = 1
+
 assert(sum(new_availability_df_imputed.available_prop_scenario1.isna()) ==
        sum(new_availability_df_imputed.availability_change_prop.isna()))
 
