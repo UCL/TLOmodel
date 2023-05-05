@@ -345,12 +345,14 @@ new_availability_df_imputed['available_prop_scenario1'] = new_availability_df_im
 availability_greater_than_1 = new_availability_df_imputed['available_prop_scenario1'] > 1
 new_availability_df_imputed.loc[availability_greater_than_1, 'available_prop_scenario1'] = 1
 
+new_availability_df_imputed = new_availability_df_imputed.rename({'available_prop': 'available_prop_2018'}, axis = 1)
+
 assert(sum(new_availability_df_imputed.available_prop_scenario1.isna()) ==
        sum(new_availability_df_imputed.availability_change_prop.isna()))
 
 # Save
 #------------------------------------------------------
-full_df_with_scenario = new_availability_df_imputed[['Facility_ID', 'month', 'item_code', 'available_prop', 'available_prop_scenario1']].reset_index().drop('index', axis = 1)
+full_df_with_scenario = new_availability_df_imputed[['Facility_ID', 'month', 'item_code', 'available_prop_2018', 'available_prop_scenario1']].reset_index().drop('index', axis = 1)
 # full_df_with_scenario.to_csv(outputfilepath / "temp_consumable_resourcefile.csv", index=False)
 # Save updated consumable availability resource file with scenario data
 full_df_with_scenario.to_csv(
