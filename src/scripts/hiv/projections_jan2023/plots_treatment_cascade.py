@@ -559,13 +559,48 @@ fig.savefig(outputspath / "Treatment_cascade_6panel.png")
 plt.show()
 
 
-# extract numbers of appts scaled to full population size
+# extract numbers of hiv and tb appts scaled to full population size
+# compare scenario 1 and 2
+scaling_factor = 145.39609
 
-# hiv test
+# produce lists of relevant columns
+tb_appts = [col for col in tx_id1 if col.startswith('Tb')]
+hiv_appts = [col for col in tx_id1 if col.startswith('Hiv')]
+all_appts = tb_appts + hiv_appts
 
-# hiv tx
+data1 = tx_id1[tx_id1.columns.intersection(all_appts)]
+data2 = tx_id2[tx_id2.columns.intersection(all_appts)]
 
-# tb test
+# row 13 is 2023
+# sum all appts from 2023 for each scenario
+tmp1 = data1.iloc[13:26]
+tmp1.loc['Total'] = tmp1.sum()
+tmp2 = data2.iloc[13:26]
+tmp2.loc['Total'] = tmp2.sum()
 
-# tb treatment
+# total number of hiv/tb appts 2023-2035 - sum only the "_median" columns
+median_appts = [col for col in tx_id1 if col.endswith('_median')]
+data1_median = tmp1[tmp1.columns.intersection(median_appts)]
+data2_median = tmp2[tmp2.columns.intersection(median_appts)]
+
+total_sc1 = data1_median.loc['Total'].sum() * scaling_factor
+total_sc2 = data2_median.loc['Total'].sum() * scaling_factor
+
+# additional appts required due to supply constraints in hiv/tb
+print(total_sc1 - total_sc2)
+
+# need to scale to full population
+sc1_prev_appts = sum([tmp1.loc["Total", "Hiv_Prevention_Circumcision_median"],
+                     tmp1.loc["Total", "Hiv_Prevention_Infant_median"],
+                     tmp1.loc["Total", "Tb_Prevention_Ipt_median"],
+                     tmp1.loc["Total", "Hiv_Prevention_Prep_median"]]) * scaling_factor
+
+sc2_prev_appts = sum([tmp2.loc["Total", "Hiv_Prevention_Circumcision_median"],
+                     tmp2.loc["Total", "Hiv_Prevention_Infant_median"],
+                     tmp2.loc["Total", "Tb_Prevention_Ipt_median"],
+                     tmp2.loc["Total", "Hiv_Prevention_Prep_median"]]) * scaling_factor
+
+
+
+
 
