@@ -115,6 +115,11 @@ class Contraception(Module):
     # 'other modern' includes Male sterilization, Female Condom, Emergency contraception;
     # 'other traditional' includes lactational amenohroea (LAM),  standard days method (SDM), 'other traditional
     #  method').
+    contraceptives_initiated_with_additional_items = {
+        'pill', 'IUD', 'injections', 'implant', 'female_sterilization'
+    }
+    # These are methods for which additional items ('co_initiation') are used to initiate the method after not using any
+    # contraceptive or after using a method which is not in this category.
 
     PROPERTIES = {
         'co_contraception': Property(Types.CATEGORICAL, 'Current contraceptive method',
@@ -1104,13 +1109,12 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.sim.population.props.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
 
         # Record use of consumables and default the person to "not_using" if the consumable is not available.
-        # If initiating a contraceptive that may require HSI to switch to, "co_initiation" items included except for
-        # condoms (i.e. for "male_condom", and "other_modern" as for Malawi only female condom is considered as
-        # "other_modern").
+        # If initiating use of a modern contraceptive method except condoms (after not using any or using non-modern
+        # contraceptive or using condoms), "co_initiation" items are used along with the method consumables.
         cons_to_check = self.module.cons_codes[self.new_contraceptive].copy()
-        if current_method == "not_using"\
-           and self.new_contraceptive in self.module.states_that_may_require_HSI_to_switch_to\
-           and self.new_contraceptive != 'male_condom' and self.new_contraceptive != 'other_modern':
+        if current_method in\
+            (self.module.all_contraception_states - self.module.contraceptives_initiated_with_additional_items) \
+           and self.new_contraceptive in self.module.contraceptives_initiated_with_additional_items:
             cons_to_check.update(self.module.cons_codes["co_initiation"])
         cons_available = self.get_consumables(cons_to_check)
         _new_contraceptive = self.new_contraceptive if cons_available else "not_using"
