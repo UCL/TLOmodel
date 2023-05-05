@@ -872,10 +872,8 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             # PPFP intervention implementation costs are estimated)
             popsize1549['ratio'] = popsize1549.loc[:, '15-49'] / popsize1549.loc[2016, '15-49']
             # Mulitply Pop and PPFP intervention costs by this ratio for each year:
-            # TODO: pull the 2 parameters below from contraception logging with key 'contraception_intervention' (once
-            #  these are added in that logging)
-            # TODO?: these 2 parameters are approximated from costs for 2016-2020 - ie not approximation for pop of 2016
-            #  as we use it, hence may be used rather as approximation for average pop of 2016-2020 if decided to
+            # TODO?: these 2 parameters below are approximated from costs for 2016-2020 - ie not approximation for pop
+            #  of 2016 as we use it, hence may be used rather as approximation for average pop of 2016-2020?
             # cost of Pop and PPFP intervention implementations for whole population of Malawi at the end of 2015
             # (MWK - Malawi Kwacha) with inflation rate of 81% to 2020
             # TODO?: these 2 parameters are approximated from costs for 2016-2020 - ie not approximation for pop of 2016
