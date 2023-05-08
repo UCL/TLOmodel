@@ -60,11 +60,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 if __name__ == "__main__":
-    outputspath = Path('./outputs/tbh03@ic.ac.uk')
+    outputspath = Path('./outputs/mm2908@ic.ac.uk')
 
     # Find results folder (most recent run generated using that scenario_filename)
-    scenario_filename = 'long_run_all_diseases.py'
-    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+    scenario_filename = 'scenario_impact_of_mode.py'
+    #results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+    results_folder = "outputs/mm2908@ic.ac.uk/scenario_impact_of_mode-2023-04-25T131942Z/3/" #get_scenario_outputs(scenario_filename, outputspath)[-1]
+
+    print("Results folder is ", results_folder)
 
     # Run all the calibrations
     apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=Path('./resources'))

@@ -214,12 +214,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                             label=dat,
                             color=colors[dat]
                         )
-                        ax[row].fill_between(
-                            xs,
-                            outcomes_this_cause.loc[(sex,), (dat, 'upper', cause)].values,
-                            outcomes_this_cause.loc[(sex,), (dat, 'lower', cause)].values,
-                            facecolor=colors[dat], alpha=0.2
-                        )
+                       # ax[row].fill_between(
+                       #     xs,
+                       #     outcomes_this_cause.loc[(sex,), (dat, 'upper', cause)].values,
+                       #     outcomes_this_cause.loc[(sex,), (dat, 'lower', cause)].values,
+                       #     facecolor=colors[dat], alpha=0.2
+                       # )
                     ax[row].legend()
                     ax[row].set_xticks(xs)
                     ax[row].set_xticklabels(x, rotation=90)
@@ -257,7 +257,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         xylim = tot_outcomes_by_cause.loc[('upper', slice(None))].max().max() / 1e3
         line_x = np.linspace(0, xylim)
         ax.plot(line_x, line_x, 'k--')
-        ax.fill_between(line_x, line_x*0.9, line_x*1.1, color='grey', alpha=0.5)
+        #ax.fill_between(line_x, line_x*0.9, line_x*1.1, color='grey', alpha=0.5)
         ax.set(xlim=(0, xylim), ylim=(0, xylim))
 
         for cause in all_causes:
