@@ -1271,7 +1271,6 @@ class HealthSystem(Module):
 
         # 1) Compute the load factors for each officer type at each facility that is
         # called-upon in this list of HSIs
-        unavail_officers = []  # Store officers unavailable (availability = 0)
         load_factor = {}
         for officer, call in total_footprint.items():
             if compute_squeeze_factor_to_district_level:
@@ -1283,7 +1282,6 @@ class HealthSystem(Module):
                 load_factor[officer] = 99.99
             elif availability == 0:
                 load_factor[officer] = float('inf')
-                unavail_officers.append(officer)
             else:
                 load_factor[officer] = max(call / availability - 1, 0)
 
@@ -1296,7 +1294,7 @@ class HealthSystem(Module):
                 # If any of the required officers are not available at the facility, set overall squeeze to inf
                 require_missing_officer = False
                 for officer in footprint:
-                    if officer in unavail_officers:
+                    if load_factor[officer] == float('inf'):
                         require_missing_officer = True
                         break
 
