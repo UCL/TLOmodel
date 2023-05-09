@@ -1118,7 +1118,7 @@ class HealthSystem(Module):
                     # don't check remaining, as they all lead to priority=1.
 
                     # Look up relevant attributes for HSI_Event's target
-                    list_targets = list(list(zip(*self.list_fasttrack))[0])
+                    list_targets = [_t[0] for _t in self.list_fasttrack]
                     target_attributes = pdf.loc[hsi_event.target, list_targets]
 
                     # First item in Lists is age-related, therefore need to invoke different logic.
