@@ -668,7 +668,6 @@ def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcef
     plt.close(fig)
 
 
-
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
 
