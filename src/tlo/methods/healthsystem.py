@@ -486,13 +486,13 @@ class HealthSystem(Module):
         cons_availability: Optional[str] = None,
         beds_availability: Optional[str] = None,
         randomise_queue: bool = True,
-        ignore_priority: bool = True,
-        adopt_priority_policy: bool = False,
+        ignore_priority: bool = False,
+        adopt_priority_policy: bool = True,
+        include_fasttrack_routes: bool = True,
+        lowest_priority_considered: int = 10,
         priority_rank_dict: dict = None,
-        include_fasttrack_routes: bool = False,
         list_fasttrack: [List[str]] = None,
         max_squeeze_by_priority: dict = None,
-        lowest_priority_considered: int = 10,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = None,
         disable: bool = False,
@@ -520,17 +520,17 @@ class HealthSystem(Module):
             event to schedule
         :param adopt_priority_policy: If 'True' then use priority specified in the PriorityRank ResourceFile instead
             of that provided as argument when scheduling via `schedule_hsi_event`.
-        :param priority_rank_dict: contains priority and fast tracking channel eligibility given Treatment_ID
         :param include_fasttrack_routes: If 'True' then include fast-tracking options for vulnerable categories;
             otherwise ignore indicators for fast-tracking. Options are specified in the PriorityRank ResourceFile
+        :param lowest_priority_considered: If priority lower (i.e. priority value greater than) this, do not schedule
+            (and instead call `never_ran` at the time of `tclose`).
+        :param priority_rank_dict: contains priority and fast tracking channel eligibility given Treatment_ID
         :param list_fasttrack: list of individual's attributes that will be relevant in
             determining whether they should be eligible for fast tracking, and the corresponding
             fast tracking channels that can be potentially available given the modules included in the simulation.
             They are specified in the PriorityRank ResourceFile
         :max_squeeze_by_priority: contains maximum squeeze allowed under mode_appt_constraints=2 given priority of
             treatment
-        :param lowest_priority_considered: If priority lower (i.e. priority value greater than) this, do not schedule
-            (and instead call `never_ran` at the time of `tclose`).
         :param capabilities_coefficient: Multiplier for the capabilities of health
             officers, if ``None`` set to ratio of initial population to estimated 2010
             population.
@@ -1394,7 +1394,7 @@ class HealthSystem(Module):
         Eventually switch to max_squeeze[priority] look-up table initialised with this function,
         so that don't have to recalculate this every time for few values.
         """
-        max_squeeze = 1.0/np.exp(-(priority+0.2)/6.0) - 1.0
+        max_squeeze = 0.0
         return max_squeeze
 
     def get_squeeze_factors(self, footprints_per_event, total_footprint, current_capabilities,
