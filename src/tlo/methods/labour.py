@@ -11,7 +11,6 @@ from tlo.methods import Metadata, labour_lm, pregnancy_helper_functions
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneMaternalEvent
 from tlo.util import BitsetHandler
 
@@ -2214,12 +2213,11 @@ class Labour(Module):
         is called within HSI_Labour_ReceivesPostnatalCheck.
         :param hsi_event: HSI event in which the function has been called
         """
-        df = self.sim.population.props
         person_id = hsi_event.target
 
         if 'Depression' in self.sim.modules.keys():
-            if not df.at[person_id, 'de_ever_diagnosed_depression']:
-                self.sim.modules['Depression'].do_when_suspected_depression(person_id, hsi_event)
+            self.sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
+                                                                      hsi_event=hsi_event)
 
     def interventions_delivered_pre_discharge(self, hsi_event):
         """
@@ -2232,14 +2230,10 @@ class Labour(Module):
         person_id = int(hsi_event.target)
         params = self.current_parameters
 
-        # HIV testing occurs within the HIV module for women who havent already been diagnosed
-        if 'Hiv' in self.sim.modules.keys():
-            if not df.at[person_id, 'hv_diagnosed']:
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
-                    topen=self.sim.date,
-                    tclose=None,
-                    priority=0)
+        # HIV testing occurs within the HIV module for women who haven't already been diagnosed.
+        # The probability of getting the HIV test is determined by the Hiv module.
+        if 'Hiv' in self.sim.modules:
+            self.sim.modules['Hiv'].decide_whether_hiv_test_for_mother(person_id, referred_from="labour")
 
         # ------------------------------- Postnatal iron and folic acid ---------------------------------------------
         cons = {_i: params['number_ifa_tablets_required_postnatally'] for _i in

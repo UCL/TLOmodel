@@ -130,13 +130,7 @@ class Measles(Module):
                     odds_ratio_health_seeking_in_adults=2.5)  # non-emergencies
         )
 
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(
-                name='encephalitis',
-                emergency_in_adults=True,
-                emergency_in_children=True
-            )
-        )
+        self.sim.modules['SymptomManager'].register_symptom(Symptom.emergency('encephalitis'))
 
     def pre_initialise_population(self):
         self.process_parameters()
@@ -381,9 +375,14 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
         if df.at[person_id, "me_has_measles"]:
 
             if df.at[person_id, "me_on_treatment"]:
-                reduction_in_death_risk = 0.4
 
-                if self.module.rng.random_sample() < reduction_in_death_risk:
+                reduction_in_death_risk = 0.6
+
+                # Certain death (100%) is reduced by specified amount
+                p_death_with_treatment = 1. - reduction_in_death_risk
+
+                # If below that probability, death goes ahead
+                if self.module.rng.random_sample() < p_death_with_treatment:
                     logger.debug(key="MeaslesDeathEvent",
                                  data=f"MeaslesDeathEvent: scheduling death for treated {person_id} on {self.sim.date}")
 

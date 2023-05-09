@@ -149,7 +149,7 @@ class Epilepsy(Module):
 
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
-            Symptom("seizures", emergency_in_children=True, emergency_in_adults=True))
+            Symptom.emergency("seizures"))
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -509,7 +509,9 @@ class EpilepsyLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         """Get some summary statistics and log them"""
         df = population.props
 
-        status_groups = df.groupby('ep_seiz_stat').sum()
+        status_groups = df[
+            ["ep_seiz_stat", "is_alive", "ep_antiep"]
+        ].groupby('ep_seiz_stat').sum()
 
         n_seiz_stat_1_3 = sum(status_groups.iloc[1:].is_alive)
         n_seiz_stat_2_3 = sum(status_groups.iloc[2:].is_alive)
@@ -626,10 +628,11 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Schedule a reoccurrence of this follow-up in 3 months:
+        # Schedule a reoccurrence of this follow-up in 3 months if ep_seiz_stat == '3',
+        # else, schedule this reoccurrence of it in 1 year (i.e., if ep_seiz_stat == '2')
         hs.schedule_hsi_event(
             hsi_event=self,
-            topen=self.sim.date + DateOffset(months=3),
+            topen=self.sim.date + DateOffset(months=3 if df.at[person_id, 'ep_seiz_stat'] == '3' else 12),
             tclose=None,
             priority=0
         )

@@ -388,7 +388,7 @@ def test_severe_malaria_deaths_perfect_treatment(sim):
 
     # select person and assign severe malaria
     person_id = 0
-    df.at[person_id, ["ma_is_infected", "ma_inf_type"]] = (True, "severe")
+    df.loc[person_id, ["ma_is_infected", "ma_inf_type"]] = (True, "severe")
 
     # put person on treatment
     treatment_appt = malaria.HSI_Malaria_complicated_treatment_adult(person_id=person_id,
@@ -423,7 +423,7 @@ def test_severe_malaria_deaths_treatment_failure(sim):
 
     # select person and assign severe malaria
     person_id = 0
-    df.at[person_id, ["ma_is_infected", "ma_inf_type"]] = (True, "severe")
+    df.loc[person_id, ["ma_is_infected", "ma_inf_type"]] = (True, "severe")
 
     # put person on treatment
     treatment_appt = malaria.HSI_Malaria_complicated_treatment_adult(person_id=person_id,
@@ -446,7 +446,7 @@ def test_severe_malaria_deaths_treatment_failure(sim):
     # set treatment with zero efficacy for severe malaria cases - death should occur
     # select person and assign severe malaria
     person_id = 1
-    df.at[person_id, ["ma_is_infected", "ma_inf_type"]] = (True, "severe")
+    df.loc[person_id, ["ma_is_infected", "ma_inf_type"]] = (True, "severe")
 
     assert not df.at[person_id, 'ma_tx']
     assert df.at[person_id, "ma_date_tx"] is pd.NaT
