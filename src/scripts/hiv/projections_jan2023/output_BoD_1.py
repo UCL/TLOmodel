@@ -19,7 +19,7 @@ outputpath = Path("./outputs")  # folder for convenience of storing outputs
 #outputpath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2015, 2, 1))
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2012, 12, 31))
 
 
 def get_num_deaths(_df):
@@ -82,13 +82,13 @@ with open(outputpath / "default_run.pickle", "rb") as f:
 
 print(output.keys())
 print(f"expected deaths {output['tlo.methods.demography']['death']}")
-sample_deaths = output['tlo.methods.demography']['death'].groupby(['cause', 'sex']).size()
-#sample_deaths = output['tlo.methods.demography']['death'].drop(columns=[])
+#sample_deaths = output['tlo.methods.demography']['death'].groupby(['cause', 'sex']).size()
+sample_deaths = output['tlo.methods.demography']['death'].drop(columns=[])
 sample_deaths.to_excel(outputpath / "sample_mortality_noXpert.xlsx")
 
 print(f"expected dalys{output['tlo.methods.healthburden']['dalys_stacked']}")
-sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', 'sex']).size()
-#sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].drop(columns=[])
+#sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', 'sex']).size()
+sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].drop(columns=[])
 sample_dalys.to_excel(outputpath / "sample_dalys_noXpert.xlsx")
 
 

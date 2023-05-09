@@ -23,8 +23,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2015, 2, 1)
-popsize = 20000
+end_date = Date(2012, 12, 31)
+popsize = 5000
 scenario = 0
 
 # set up the log config
@@ -37,6 +37,7 @@ log_config = {
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
+        "tlo.methods.healthburden": logging.INFO,
         "tlo.methods.healthsystem.summary": logging.INFO,
         "tlo.methods.labour.detail": logging.WARNING,  # this logger keeps outputting even when set to warning
     },
