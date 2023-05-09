@@ -99,11 +99,11 @@ class Contraception(Module):
 
         'pop_intervention_cost': Parameter(
             Types.INT, "Cost of Pop intervention (population scale contraception intervention) for whole population of "
-                       "Malawi in 2016 (MWK - Malawi Kwacha)"),
+                       "Malawi in 2016 (2015 MWK - Malawi Kwacha)"),
 
         'ppfp_intervention_cost': Parameter(
             Types.INT, "Cost of PPFP (post-partum family planning) intervention for whole population of Malawi in 2016 "
-                       "(MWK - Malawi Kwacha)")
+                       "(2015 MWK - Malawi Kwacha)")
     }
 
     all_contraception_states = {
@@ -115,6 +115,11 @@ class Contraception(Module):
     # 'other modern' includes Male sterilization, Female Condom, Emergency contraception;
     # 'other traditional' includes lactational amenohroea (LAM),  standard days method (SDM), 'other traditional
     #  method').
+    contraceptives_initiated_with_additional_items = {
+        'pill', 'IUD', 'injections', 'implant', 'female_sterilization'
+    }
+    # These are methods for which additional items ('co_initiation') are used to initiate the method after not using any
+    # contraceptive or after using a method which is not in this category.
 
     PROPERTIES = {
         'co_contraception': Property(Types.CATEGORICAL, 'Current contraceptive method',
@@ -140,8 +145,8 @@ class Contraception(Module):
         self.use_healthsystem = use_healthsystem  # if True: initiation and switches to contraception require an HSI;
         # if False: initiation and switching do not occur through an HSI
 
-        self.use_interventions = use_interventions  # if True: interventions are on from the date 'interventions_start',
-        # if False interventions are off
+        self.use_interventions = use_interventions  # if True: interventions are on from the date
+        # 'interventions_start_date', if False interventions are off
         self.interventions_start_date = interventions_start_date  # a date when interventions are assumed to be
         # implemented
         self.interventions_on = False  # if False/True: interventions off/on at the time; starts as False, changes to
@@ -269,10 +274,11 @@ class Contraception(Module):
             # Log possible initiation date of interventions
             logger.info(key='contraception_intervention',
                         data={
-                            'date_co_interv_implemented': self.interventions_start_date
+                            'date_co_interv_implemented': self.interventions_start_date,
+                            'pop_intervention_cost_2016_in2015MWK': self.parameters['pop_intervention_cost'],
+                            'ppfp_intervention_cost_2016_in2015MWK': self.parameters['ppfp_intervention_cost'],
                         },
-                        description='Date when contraception interventions are implemented'
-                                    ' (if it is before end of sim).'
+                        description='Information about contraception interventions.'
                         )
 
     def on_birth(self, mother_id, child_id):
@@ -599,12 +605,11 @@ class Contraception(Module):
         """Initiation of mother's contraception after birth."""
 
         # Allocate the woman to a contraceptive status
-        probs_below30 = self.processed_params['p_start_after_birth_below30']
-        probs_30plus = self.processed_params['p_start_after_birth_30plus']
-
         if mother_age < 30:
+            probs_below30 = self.processed_params['p_start_after_birth_below30']
             new_contraceptive = self.rng.choice(probs_below30.index, p=probs_below30.values)
         else:
+            probs_30plus = self.processed_params['p_start_after_birth_30plus']
             new_contraceptive = self.rng.choice(probs_30plus.index, p=probs_30plus.values)
 
         # Do the change in contraceptive
@@ -769,7 +774,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         Determine who will become pregnant and update contraceptive method."""
 
         # Check whether it is appropriate and time to implement interventions
-        if self.module.use_interventions and self.sim.date == self.module.interventions_start_date\
+        if self.module.use_interventions and self.sim.date == self.module.interventions_start_date \
                 and not self.module.interventions_on:
             # Update module parameters to enable interventions
             self.module.processed_params = self.module.process_params()
@@ -1104,13 +1109,12 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.sim.population.props.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
 
         # Record use of consumables and default the person to "not_using" if the consumable is not available.
-        # If initiating a contraceptive that may require HSI to switch to, "co_initiation" items included except for
-        # condoms (i.e. for "male_condom", and "other_modern" as for Malawi only female condom is considered as
-        # "other_modern").
+        # If initiating use of a modern contraceptive method except condoms (after not using any or using non-modern
+        # contraceptive or using condoms), "co_initiation" items are used along with the method consumables.
         cons_to_check = self.module.cons_codes[self.new_contraceptive].copy()
-        if current_method == "not_using"\
-           and self.new_contraceptive in self.module.states_that_may_require_HSI_to_switch_to\
-           and self.new_contraceptive != 'male_condom' and self.new_contraceptive != 'other_modern':
+        if current_method in\
+            (self.module.all_contraception_states - self.module.contraceptives_initiated_with_additional_items) \
+           and self.new_contraceptive in self.module.contraceptives_initiated_with_additional_items:
             cons_to_check.update(self.module.cons_codes["co_initiation"])
         cons_available = self.get_consumables(cons_to_check)
         _new_contraceptive = self.new_contraceptive if cons_available else "not_using"

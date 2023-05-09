@@ -1,3 +1,37 @@
+"""
+To be able to run this script to save figs & tables, the log file has to be exported to the folder 'outputs'.
+# TODO: Improve the code so this doesn't have to be done.
+
+This script can be used to plot:
+ * use of (any) contraception over time,
+ * use of all contraception methods over time,
+ * pregnancies over time, and
+ * dependency ratio
+up to the year 2050 (or less if less years simulated), the first 3 are plotted in both variants, as total numbers of
+women and as the proportions among women of reproductive age (15-49 years).
+
+All plots can be prepared for both, simulation without and with interventions. The y-axis limits are pre-set, so they
+are the same for both (without/with) to allow easy comparison.
+NB. If any line is out of the plot, needs to be run with the parameter 'plot_depend_ratio_bool=False' to see the maximum
+and subsequently the parameter 'ylims_l' needs to be adjusted.
+
+* The table of consumables is always prepared (as inexpensive for time).
+
+* The table of use and consumables costs (in MWK & USD) can be prepared. If requested, the time periods for the table
+need to be specified, the default 'use_output' for the table is 'mean', but can be changed to 'max'.
+* Figure with the total costs per periods from the table, showing consumables and interventions implementation costs,
+along with a fig of only totals in all intervention time (for presentations) can be prepared.
+NB. To work on the table of use and costs (prepared if 'table_use_costs_bool==True'), it can be run for the first time
+with 'run_analysis==True', to calculate the use and costs as it takes the most of the running time (~37-40 min for 250K
+pop size simulated to 2050) and store them. But the follow-up runs to see the progress of the work on the table, can be
+run with 'run_analysis==False' (~1.7 min for 250K pop size simulated to 2050) when all the pre-calculated values of the
+use and costs for the table are imported. Also only one of the analyses (without or with interventions) can be
+performed, the other one will be then filled with the numbers from the same analysis. Figures are prepared only if the
+the table is prepared,and if requested.
+
+All the options can be set in the # TO SET # section below.
+"""
+
 import time
 from pathlib import Path
 
@@ -7,27 +41,25 @@ import pandas as pd
 import tables
 
 time_start = time.time()
-# running time - both analysis all figs & tab for 250K pop till 2050:
-# (not updated with Dependency ratio)
-# running 1st time (ie run_analysis = True) with all plot_.._bool = False ~ 37 mins
-# running again (ie run_analysis = False) with all plot_.._bool = True or False ~ 1.7 min
 # ####### TO SET #######################################################################################################
 # TODO: estimate the pop_size_simulated from scaling_factor (and if not same for both sims, add them to IDs instead to
 #  suffix) & return last year of sims (the same for that) // separate them as pop_size_simulated & last_year_simulated
 # pop_size_simulated = "2K"
 pop_size_simulated = "250K"
-branch_name = 'co_2023_02_inclPR807-AnalysisUpdate2'
+branch_name = 'co_final'
 # which results to use
 # - Without interv
 # datestamp_without_log = '2023-04-26T141435'
 # 2K till 2099, final costs update EHP & OHT + pregn test to initiate co: '2023-04-26T141435' from 2023-04-26T141159Z
-datestamp_without_log = '2023-04-26T142627'
-# 250K till 2050; final costs update EHP & OHT + pregn test to initiate co: '2023-04-26T142627' from 2023-04-26T142416Z
+datestamp_without_log = '2023-05-06T170512'
+# 250K till 2050; final costs update EHP & OHT + rebased on master + pregn test corrected: '2023-05-06T170512'
+#    from 2023-05-06T170253Z
 # # - With interv
 # datestamp_with_log = '2023-04-26T141545'
 # 2K till 2099, final costs update EHP & OHT + pregn test to initiate co: '2023-04-26T141545' from 2023-04-26T141321Z
-datestamp_with_log = '2023-04-26T142508'
-# 250K till 2050; final costs update EHP & OHT + pregn test to initiate co: '2023-04-26T142508' from 2023-04-26T142300Z
+datestamp_with_log = '2023-05-06T170612'
+# 250K till 2050; final costs update EHP & OHT + rebased on master + pregn test corrected: '2023-05-06T170612'
+#    from 2023-05-06T170359Z
 logFile_without = 'run_analysis_contraception_no_diseases__' + datestamp_without_log + '.log'
 logFile_with = 'run_analysis_contraception_no_diseases__' + datestamp_with_log + '.log'
 ##
@@ -68,7 +100,7 @@ table_use_costs_bool = True
 TimePeriods_starts = [2023, 2031, 2041, 2051]
 # The use & cost values within the time periods in table can be "mean" (default) or can be changed to "max"
 # use_output = "max"  # TODO: test whether it still works
-# Order of contraceptives for a fig and a table
+# Order of modern contraception methods in which they should appear in figs and tables
 contraceptives_order = ['pill', 'IUD', 'injections', 'implant', 'male_condom',
                         'female_sterilization', 'other_modern']
 # MWK to USD exchange rate (1 MWK = mwk_to_usd_exchange_rate USD)
@@ -147,11 +179,11 @@ def do_analysis(ID, logFile, in_calc_intervention_costs_bool):
             # %% Do you want to set the upper limits for the y-axes?
             # If so, order them as [Use, Use By Method, Pregnancies] within ylims_l.
             set_ylims_bool, ylims_l,
+            # List of modern methods in order in which they should appear in plots and tables
+            contraceptives_order,
             # %% Calculate Use and Consumables Costs of Contraception methods within
             # some time periods?
             run_analysis, TimePeriods_starts,
-            # List of modern methods in order in which they should appear in table
-            contraceptives_order,
             # %% Calculate Contraception Pop and PPFP Intervention Costs over time?
             in_calc_intervention_costs_bool
             # and default: in_use_output="mean"

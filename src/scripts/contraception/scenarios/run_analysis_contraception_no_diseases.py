@@ -14,7 +14,8 @@ used modules:
     - cons_availability="all", i.e. all consumables are assumed to be always available,
     - disable=False, i.e. the health system is disabled (hence no constraints and no logging) and every HSI event runs
 * Contraception, for which SimplifiedPregnancyAndLabour is used
-    - use_interventions=False/True according to what we need (False => no intervention, True => interventions sice 2023)
+    - use_interventions=False/True according to what we need (False => without interventions,
+    True => interventions since 2023)
 * DummyHivModule (a supporting module required by Contraception module)
 
 logging above warning level:
@@ -23,17 +24,20 @@ logging above warning level:
     - DEBUG if tabel from analysis_contraception_plot_table required.
 * demography: INFO.
 NB. For analysis_all_calibration this is enough only if analysis_hsi_descriptions are not required, and the analysis
-needs to be changed accordingly to run properly.
+needs to be changed accordingly to run properly. We use an adjusted analysis_all_calibration script, stored in the
+EvaJ/contraception_2023-02_inclPR807/AnalysisAllCalib_Contraception branch.
 
 
 CONTRACEPTION PAPER (Tim C et al. 2023):
 ---------------------------------------
-- we decided on 1 draw & 1 run/per draw with 250K initial_population_size
-- use_interventions=False/True according to what we need
-- for analysis_all_calibration with analysis_hsi_descriptions excluded (Fig 2):
-    2010-2099 with contraception logging at level INFO (a job to simulate so many years with DEBUG logging fails)
+- 1 draw & 1 run/per draw with 250K initial_population_size
+- use_interventions=False/True for simulation without/with interventions,
+- for analysis_all_calibration adjusted in the branch
+EvaJ/contraception_2023-02_inclPR807/AnalysisAllCalib_Contraception with the analysis_hsi_descriptions excluded (Fig 2):
+    2010-2099 simulated with contraception logging at the level INFO (a job to simulate that many years with DEBUG
+    logging fails)
 - for analysis_contraception_plot_table (Fig 3, Fig 4, Tab 4, and Fig A6.1):
-    2010-2050 with contraception logging at level DEBUG
+    2010-2050 simulated with contraception logging at the level DEBUG
 """
 
 from tlo import Date, logging

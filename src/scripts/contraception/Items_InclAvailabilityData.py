@@ -1,17 +1,21 @@
+"""
+This script checks ..
+(A) if what_to_check = 'lines':
+.. which item codes from the 'RF_of_interest_filename' on lines x-y (incl) (ie 'lines_of_interest' = [x, y])
+are (not) in the availability data 'avail_data_filename'
+& prints Number of unavailable items (including repetitions) + Unavailable item codes.
+
+XOR
+
+(B) if what_to_check = 'item_name'
+.. which items from the 'RF_of_interest_filename' containing 'name_containing' in item name (Items)
+are (not) in the availability data 'avail_data_filename'
+& prints Codes of all items containing 'name_containing' + Available item codes.
+"""
+
 from pathlib import Path
 
 import pandas as pd
-
-'''
-This script checks
-(A) which item codes from the 'RF_of_interest_filename' on lines x-y (incl) (ie 'lines_of_interest' = [x, y])
-are (not) in the availability data 'avail_data_filename'
-& prints Number of unavailable items (including repetitions) + Unavailable item codes.// if what_to_check = 'lines'
-.. xor ..
-(B) which items from the the 'RF_of_interest_filename' containing 'name_containing' in item name (Items)
-are (not) in the availability data 'avail_data_filename'
-& prints Codes of all items containing 'name_containing' + Available item codes.// if what_to_check = 'item_name'
-'''
 
 # ### TO SET ##########
 RF_of_interest_filename = 'ResourceFile_Consumables_Items_and_Packages.csv'

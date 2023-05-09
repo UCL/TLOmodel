@@ -1,3 +1,8 @@
+"""
+A helper script to see the numbers of women of reproductive age having female sterilisation per 5-years age categories +
+total, and the number of all women in the population in 2010 and 2020, to help to calibrate the intervention multipliers
+(saved in ResourceFile_Contraception.xlsx in the sheets Interventions_Pop & Interventions_PPFP).
+"""
 from pathlib import Path
 
 import pandas as pd
@@ -6,9 +11,10 @@ from matplotlib import dates as mdates
 from tlo.analysis.utils import parse_log_file
 
 # ### TO SET #################################################################################################
-datestamp_without_log = '2022-10-18T165118'
-logFile_without_interv = 'run_analysis_contraception__' + datestamp_without_log + '.log'
-# this is for runs done by the run_analysis_contraception.py (located in src/scripts/contraception/scenarios)
+datestamp_without_log = '2023-04-26T142627'
+logFile_without_interv = 'run_analysis_contraception_no_diseases__' + datestamp_without_log + '.log'
+# this is for the runs done by the run_analysis_contraception_no_diseases.py (located in
+# src/scripts/contraception/scenarios)
 ##############################################################################################################
 
 
