@@ -1307,6 +1307,7 @@ def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
     # Check that the remaining events obey ordering rules
     event_prev = hp.heappop(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
 
+# Change this
     while (len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE) > 0):
         next_event_tuple = hp.heappop(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
         assert event_prev.topen <= next_event_tuple.topen, 'Not respecting topen'
@@ -1316,6 +1317,15 @@ def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
                 assert event_prev.rand_queue_counter < next_event_tuple.rand_queue_counter, 'Not respecting rand'
         event_prev = next_event_tuple
 
+# to this
+#    while (len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE) > 0):
+#        next_event_tuple = hp.heappop(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
+#        assert event_prev.priority <= next_event_tuple.priority, 'Not respecting priority'
+#        if (event_prev.priority == next_event_tuple.priority):
+#            assert event_prev.topen <= next_event_tuple.topen, 'Not respecting topen'
+#            if (event_prev.topen == next_event_tuple.topen):
+#                assert event_prev.rand_queue_counter < next_event_tuple.rand_queue_counter, 'Not respecting rand'
+#        event_prev = next_event_tuple
 
 @pytest.mark.slow
 def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
