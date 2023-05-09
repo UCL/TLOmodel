@@ -986,7 +986,13 @@ def test_use_dummy_version(seed):
 
 def test_hsi_scheduling(seed):
     """
-    check how many HSIs being scheduled for people through HSI_Tb_ScreeningAndRefer
+    check HSI_Tb_ScreeningAndRefer schedules the correct events for children / adults / adults with HIV
+
+    children should have an xray and hiv test scheduled
+    adults should have treatment and hiv test scheduled
+    adults already diagnosed with hiv should not have further hiv test scheduled
+
+    assert multiple tests not being scheduled accidentally in each HSI_Tb_ScreeningAndRefer call
 
     """
     popsize = 10
