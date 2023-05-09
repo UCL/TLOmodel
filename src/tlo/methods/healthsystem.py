@@ -1122,12 +1122,18 @@ class HealthSystem(Module):
                     target_attributes = pdf.loc[hsi_event.target, list_targets]
 
                     # First item in Lists is age-related, therefore need to invoke different logic.
-                    if (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]] == 1 and target_attributes[0] <= 5):
+                    if (
+                        (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]] == 1)
+                        and (target_attributes['age_exact_years'] <= 5)
+                    ):
                         return 1
 
                     # All other attributes are boolean, can do this in for loop
                     for i in range(1, len(self.list_fasttrack)):
-                        if (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]] == 1 and target_attributes[i]):
+                        if (
+                            (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]] == 1)
+                            and target_attributes[i]
+                        ):
                             return 1
 
                 return _priority_ranking
