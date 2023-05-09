@@ -1318,9 +1318,10 @@ def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
 
 
 @pytest.mark.slow
-def test_policy_and_lowest_priority_enforced(seed, tmpdir):
+def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
     """The priority set by the policy should overwrite the priority the event was scheduled with. If the priority
-     is below the lowest one considered, the event will not be scheduled (call never_ran at tclose)"""
+     is below the lowest one considered, the event will not be scheduled (call never_ran at tclose). If a TREATMENT_ID
+     and a person characteristic warrant it, fast-tracking is enabled."""
 
     class DummyHSI(HSI_Event, IndividualScopeEventMixin):
         """HSI event that schedules another HSI_Event for the same day"""
