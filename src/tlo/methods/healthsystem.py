@@ -67,13 +67,12 @@ class HSIEventQueueItem(NamedTuple):
     The order of the attributes in the tuple is important as the queue sorting is done
     by the order of the items in the tuple, i.e. first by `priority`, then `topen` and
     so on.
+
+    Ensure priority is above topen in order for held-over events with low priority not
+    to jump ahead higher priority ones which were opened later.
     """
-    # Change this
-    topen: Date
     priority: int
-    # to this
-    # priority: int
-    # topen: Date
+    topen: Date
     rand_queue_counter: int  # Ensure order of events with same topen & priority is not model-dependent
     queue_counter: int  # Include safety tie-breaker in unlikely event rand_queue_counter is equal
     tclose: Date
@@ -1097,10 +1096,7 @@ class HealthSystem(Module):
             rand_queue = self.hsi_event_queue_counter
 
         _new_item: HSIEventQueueItem = HSIEventQueueItem(
-            # Change this
-            topen, priority, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event)
-            # to this
-            # priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event)
+            priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event)
 
         # Add to queue:
         hp.heappush(self.HSI_EVENT_QUEUE, _new_item)
@@ -1868,19 +1864,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 pass
 
             elif self.sim.date < next_event_tuple.topen:
-                # The event is not yet due (before topen), and therefore neither will all subsequent ones.
-                # Break here, but first make sure the next_event_tuple is saved
-
+                # The event is not yet due (before topen)
                 hp.heappush(_list_of_events_not_due_today, next_event_tuple)
-                # Change this
-                break
 
-                # to this
-                #if next_event_tuple.priority == self.module.lowest_priority_considered:
-                #    # Check the priority
-                #    # If the next event is not due and has low priority, then stop looking through the heapq
-                #    # as all other events will also not be due.
-                #    break
+                if next_event_tuple.priority == self.module.lowest_priority_considered:
+                    # Check the priority
+                    # If the next event is not due and has low priority, then stop looking through the heapq
+                    # as all other events will also not be due.
+                    break
 
             else:
                 # The event is now due to run today and the person is confirmed to be still alive
@@ -1892,9 +1883,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     _list_of_population_hsi_event_tuples_due_today.append(next_event_tuple)
                 else:
                     _list_of_individual_hsi_event_tuples_due_today.append(next_event_tuple)
-
-        # Change this (remove)
-        assert len(_list_of_events_not_due_today) <= 1
 
         # add events from the _list_of_events_not_due_today back into the queue
         while len(_list_of_events_not_due_today) > 0:
