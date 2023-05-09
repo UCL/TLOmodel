@@ -2019,7 +2019,7 @@ class RTI(Module):
 
         daly_change = selected_for_rti_inj.applymap(
             lambda code: self.ASSIGN_INJURIES_AND_DALY_CHANGES[code][1]
-        ).sum(axis=1)
+        ).sum(axis=1, numeric_only=True)
         df.loc[injured_index, 'rt_disability'] += daly_change
 
         # Store the true sum of DALY weights in the df
@@ -2390,7 +2390,7 @@ class RTI(Module):
                        'Polytrauma': sum(i > 2 for i in injais) > 1,
                        'MAIS': max(injmais),
                        'Number_of_injuries': ninj}
-            inj_df = inj_df.append(new_row, ignore_index=True)
+            inj_df.loc[len(inj_df)] = new_row
             # If person has an ISS score less than 15 they have a mild injury, otherwise severe
             if new_row['ISS'] < 15:
                 severity_category.append('mild')
@@ -5387,38 +5387,26 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         # Make some summary statistics
         # Get the dataframe and isolate the important information
         df = population.props
-        # dump dataframe each month if population size is large (used to find the minimum viable population size)
-        time_stamped_file_name = "df_at_" + str(self.sim.date.month) + "_" + str(self.sim.date.year)
-        if len(df.loc[df.is_alive]) > 750000:
-            df.to_csv(f"C:/Users/Robbie Manning Smith/Documents/Dataframe_dump/{time_stamped_file_name}.csv")
-        thoseininjuries = df.loc[df.rt_road_traffic_inc]
+        population_with_injuries = df.loc[df.rt_road_traffic_inc]
         # ================================= Injury severity ===========================================================
-        sev = thoseininjuries['rt_inj_severity']
-        rural_injuries = df.loc[df.rt_road_traffic_inc & ~df.li_urban]
-        if len(rural_injuries) > 0:
-            percent_sev_rural = \
-                len(rural_injuries.loc[rural_injuries['rt_inj_severity'] == 'severe']) / len(rural_injuries)
-        else:
-            percent_sev_rural = 'none_injured'
-        urban_injuries = df.loc[df.rt_road_traffic_inc & df.li_urban]
-        if len(urban_injuries) > 0:
-            percent_sev_urban = \
-                len(urban_injuries.loc[urban_injuries['rt_inj_severity'] == 'severe']) / len(urban_injuries)
-        else:
-            percent_sev_urban = 'none_injured'
-        severity, severitycount = np.unique(sev, return_counts=True)
-        if 'mild' in severity:
-            idx = np.where(severity == 'mild')
-            self.totmild += len(idx)
-        if 'severe' in severity:
-            idx = np.where(severity == 'severe')
-            self.totsevere += len(idx)
+        population_subsets_with_injuries = {
+            "rural": population_with_injuries.loc[~population_with_injuries.li_urban],
+            "urban": population_with_injuries.loc[population_with_injuries.li_urban],
+        }
+        proportion_severely_injured = {
+            label: (
+                len(pop_subset.loc[pop_subset['rt_inj_severity'] == 'severe'])
+                / len(pop_subset)
+            ) if len(pop_subset) > 0 else "none_injured"
+            for label, pop_subset in population_subsets_with_injuries.items()
+        }
+        self.totmild += (population_with_injuries.rt_inj_severity == "mild").sum()
+        self.totsevere += (population_with_injuries.rt_inj_severity == "severe").sum()
         dict_to_output = {
             'total_mild_injuries': self.totmild,
-            ''
-            '_severe_injuries': self.totsevere,
-            'Percent_severe_rural': percent_sev_rural,
-            'Percent_severe_urban': percent_sev_urban
+            'total_severe_injuries': self.totsevere,
+            'proportion_severe_rural': proportion_severely_injured["rural"],
+            'proportion_severe_urban': proportion_severely_injured["urban"],
         }
         logger.info(key='injury_severity',
                     data=dict_to_output,

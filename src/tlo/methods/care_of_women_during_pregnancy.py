@@ -778,8 +778,8 @@ class CareOfWomenDuringPregnancy(Module):
         if 'Depression' in self.sim.modules:
             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'depression_screen'})
 
-            if not df.at[person_id, 'de_ever_diagnosed_depression']:
-                self.sim.modules['Depression'].do_when_suspected_depression(person_id, hsi_event)
+            self.sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
+                                                                      hsi_event=hsi_event)
 
     def iron_and_folic_acid_supplementation(self, hsi_event):
         """This function contains the intervention iron and folic acid supplementation delivered during ANC.
