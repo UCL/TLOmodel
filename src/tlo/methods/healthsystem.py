@@ -491,7 +491,7 @@ class HealthSystem(Module):
         include_fasttrack_routes: bool = True,
         lowest_priority_considered: int = 10,
         priority_rank_dict: dict = None,
-        list_fasttrack: [List[str]] = None,
+        list_fasttrack: Optional[List[str]] = None,
         max_squeeze_by_priority: dict = None,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = None,
@@ -732,10 +732,8 @@ class HealthSystem(Module):
                                        availability=self.get_cons_availability())
 
         if self.adopt_priority_policy:
-            # Convert PriorityRank dataframe to dictionary
-            Dictio = self.parameters['PriorityRank']
-            Dictio.set_index("Treatment", drop=True, inplace=True)
-            self.priority_rank_dict = Dictio.to_dict(orient="index")
+            self.priority_rank_dict = \
+                self.parameters['PriorityRank'].set_index("Treatment", drop=True).to_dict(orient="index")
 
         # The attributes that can be looked up to determine whether a person might be eligible
         # for fast-tracking, as well as the corresponding fast-tracking channels, depend on the modules
@@ -1157,30 +1155,36 @@ class HealthSystem(Module):
         """Check the priority of the Treatment_ID based on policy under consideration """
 
         if (hsi_event.TREATMENT_ID == 'FirstAttendance_Emergency'):
-            return 0
+            return 0  # Emergency appointment have the highest priority by definition
         else:
 
-            PR = self.priority_rank_dict
+            pr = self.priority_rank_dict
             pdf = self.sim.population.props
 
-            if hsi_event.TREATMENT_ID in PR:
-                _priority_ranking = PR[hsi_event.TREATMENT_ID]['Priority']
+            if hsi_event.TREATMENT_ID in pr:
+                _priority_ranking = pr[hsi_event.TREATMENT_ID]['Priority']
 
                 if self.include_fasttrack_routes:
                     # Check whether fast-tracking routes are available for this treatment. If person qualifies for one
                     # don't check remaining, as they all lead to priority=1.
 
                     # Look up relevant attributes for HSI_Event's target
-                    list_targets = list(list(zip(*self.list_fasttrack))[0])
+                    list_targets = [_t[0] for _t in self.list_fasttrack]
                     target_attributes = pdf.loc[hsi_event.target, list_targets]
 
                     # First item in Lists is age-related, therefore need to invoke different logic.
-                    if (PR[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]] == 1 and target_attributes[0] <= 5):
+                    if (
+                        (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]] == 1)
+                        and (target_attributes['age_exact_years'] <= 5)
+                    ):
                         return 1
 
                     # All other attributes are boolean, can do this in for loop
                     for i in range(1, len(self.list_fasttrack)):
-                        if (PR[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]] == 1 and target_attributes[i]):
+                        if (
+                            (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]] == 1)
+                            and target_attributes[i]
+                        ):
                             return 1
 
                 return _priority_ranking
@@ -1629,7 +1633,7 @@ class HealthSystem(Module):
         list_of_events = list()
 
         for ev_tuple in self.HSI_EVENT_QUEUE:
-            date = ev_tuple.topen  # this is the 'topen' value
+            date = ev_tuple.topen
             event = ev_tuple.hsi_event
             if isinstance(event.target, (int, np.integer)):
                 if event.target == person_id:
