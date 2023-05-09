@@ -700,9 +700,8 @@ class HealthSystem(Module):
 
         # Convert PriorityRank dataframe to dictionary
         if self.adopt_priority_policy:
-            Dictio = self.parameters['PriorityRank']
-            Dictio.set_index("Treatment", drop=True, inplace=True)
-            self.priority_rank_dict = Dictio.to_dict(orient="index")
+            self.priority_rank_dict = \
+                self.parameters['PriorityRank'].set_index("Treatment", drop=True).to_dict(orient="index")
 
         # The attributes that can be looked up to determine whether a person might be eligible
         # for fast-tracking, as well as the corresponding fast-tracking channels, depend on the modules
