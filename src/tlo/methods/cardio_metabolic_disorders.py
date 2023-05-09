@@ -877,7 +877,8 @@ class Tracker:
 
     def add(self, condition: str, _to_add: dict):
         for _a in _to_add:
-            self._tracker[condition][_a] += _to_add[_a]
+            if _a in self._tracker[condition]:
+                self._tracker[condition][_a] += _to_add[_a]
 
     def report(self):
         return self._tracker
