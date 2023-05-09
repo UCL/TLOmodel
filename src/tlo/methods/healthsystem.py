@@ -459,7 +459,6 @@ class HealthSystem(Module):
         ignore_priority: bool = False,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = 'funded_plus',
-        chosen_consumable_scenario: Optional[str] = '2018',
         disable: bool = False,
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
@@ -487,9 +486,6 @@ class HealthSystem(Module):
         :param use_funded_or_actual_staffing: If `actual`, then use the numbers and distribution of staff estimated to
         be available currently; If `funded`, then use the numbers and distribution of staff that are potentially
         available.
-        : param chosen_consumable_scenario: If '2018', then use the probability of consumable availability estimates from
-        2018. If other scenarios are specified, use the relevant consumable availability estimates from the resourcefile.
-        This only applies if 'default' is chosen under 'cons_availability'.
         :param disable: If ``True``, disables the health system (no constraints and no
             logging) and every HSI event runs.
         :param disable_and_reject_all: If ``True``, disable health system and no HSI
@@ -534,10 +530,6 @@ class HealthSystem(Module):
         # Find which resourcefile to use - those for the actual staff available or the funded staff available
         assert use_funded_or_actual_staffing in ['actual', 'funded', 'funded_plus']
         self.use_funded_or_actual_staffing = use_funded_or_actual_staffing
-
-        # Find which consumable availability estimates to use - those based on 2018 data or those for a new scenario
-        assert chosen_consumable_scenario in ['2018', 'scenario1']
-        self.chosen_consumable_scenario = chosen_consumable_scenario
 
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
         self.recognised_modules_names = []
@@ -625,14 +617,11 @@ class HealthSystem(Module):
                 path_to_resourcefiles_for_healthsystem / 'human_resources' / f'{_i}' /
                 'ResourceFile_Daily_Capabilities.csv')
 
-        # Read in ResourceFile_Consumables based on the chosen scenario
-        chosen_availability_column = 'available_prop_' + self.chosen_consumable_scenario
+        # Read in ResourceFile_Consumables
         self.parameters['item_and_package_code_lookups'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_Items_and_Packages.csv')
         self.parameters['availability_estimates'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_availability_small.csv',
-            usecols=['Facility_ID', 'month', 'item_code', chosen_availability_column])
-        self.parameters['availability_estimates'] = self.parameters['availability_estimates'].rename(columns = {chosen_availability_column : 'available_prop'})
+            path_to_resourcefiles_for_healthsystem / 'consumables' / 'ResourceFile_Consumables_availability_small.csv')
 
         # Data on the number of beds available of each type by facility_id
         self.parameters['BedCapacity'] = pd.read_csv(
