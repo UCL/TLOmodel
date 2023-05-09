@@ -21,7 +21,7 @@ def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
         def unpack_nested_dict_in_series(_raw: pd.Series):
             return pd.concat(
                 {
-                  idx: pd.DataFrame.from_dict(mydict) for idx, mydict in _raw.iteritems()
+                  idx: pd.DataFrame.from_dict(mydict) for idx, mydict in _raw.items()
                  }
              ).unstack().fillna(0.0).astype(int)
 

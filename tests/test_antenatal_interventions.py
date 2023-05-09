@@ -159,6 +159,9 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     params['sensitivity_blood_test_glucose'] = 1.0
     params['specificity_blood_test_glucose'] = 1.0
 
+    # Set prob of depression screening for perinatal female to one
+    params_dep['pr_assessed_for_depression_for_perinatal_female'] = 1.0
+
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
     # Select a woman from the dataframe of reproductive age
