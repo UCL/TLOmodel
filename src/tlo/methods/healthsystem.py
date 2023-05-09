@@ -469,7 +469,7 @@ class HealthSystem(Module):
         adopt_priority_policy: bool = False,
         priority_rank_dict: dict = None,
         include_fasttrack_routes: bool = False,
-        list_fasttrack: [List[str]] = None,
+        list_fasttrack: Optional[List[str]] = None,
         lowest_priority_considered: int = 10,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = 'funded_plus',
@@ -1104,7 +1104,7 @@ class HealthSystem(Module):
         """Check the priority of the Treatment_ID based on policy under consideration """
 
         if (hsi_event.TREATMENT_ID == 'FirstAttendance_Emergency'):
-            return 0
+            return 0  # Emergency appointment have the highest priority by definition
         else:
 
             pr = self.priority_rank_dict
@@ -1562,7 +1562,7 @@ class HealthSystem(Module):
         list_of_events = list()
 
         for ev_tuple in self.HSI_EVENT_QUEUE:
-            date = ev_tuple.topen  # this is the 'topen' value
+            date = ev_tuple.topen
             event = ev_tuple.hsi_event
             if isinstance(event.target, (int, np.integer)):
                 if event.target == person_id:
