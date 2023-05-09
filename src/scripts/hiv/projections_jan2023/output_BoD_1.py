@@ -81,22 +81,49 @@ with open(outputpath / "default_run.pickle", "rb") as f:
 # num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
 
 print(output.keys())
-print(f"expected deaths {output['tlo.methods.demography']['death']}")
-#sample_deaths = output['tlo.methods.demography']['death'].groupby(['cause', 'sex']).size()
-sample_deaths = output['tlo.methods.demography']['death'].drop(columns=[])
-sample_deaths.to_excel(outputpath / "sample_mortality_noXpert.xlsx")
 
+# output serialises availability of  CXR consumables
+cons_available = output['tlo.methods.healthsystem.summary']['Consumables'].drop(columns=[])
+cons_available .to_excel(outputpath / "cons_available_noCXR.xlsx")
+
+# output serialises mortality patterns
+print(f"expected deaths {output['tlo.methods.demography']['death']}")
+sample_deaths = output['tlo.methods.demography']['death'].groupby(['date','cause', 'sex']).size()
+#sample_deaths = output['tlo.methods.demography']['death'].drop(columns=[])
+sample_deaths.to_excel(outputpath / "sample_mortality_noCXR.xlsx")
+
+# output YLLs and YLDs
+
+print(f" expected ylds{output['tlo.methods.healthburden']['yld_by_causes_of_disability']}")
+ylds = output['tlo.methods.healthburden']['yld_by_causes_of_disability'].drop(columns=[])
+ylds.to_excel(outputpath / "ylds_noCXR.xlsx")
+print(f"expected ylls{output['tlo.methods.healthburden']['yll_by_causes_of_death_stacked']}")
+yll_output = output['tlo.methods.healthburden']['yll_by_causes_of_death_stacked'].drop(columns=[])
+yll_output.to_excel(outputpath / "sample_yll_noCXR.xlsx")
+
+
+# Exports TB program indicators
 print(f"expected dalys{output['tlo.methods.healthburden']['dalys_stacked']}")
 #sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', 'sex']).size()
 sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].drop(columns=[])
-sample_dalys.to_excel(outputpath / "sample_dalys_noXpert.xlsx")
+sample_dalys.to_excel(outputpath / "sample_dalys_NoXpert.xlsx")
+
+print(f"projected TB incidence{output['tlo.methods.tb']['tb_incidence']}")
+TB_incidence= output['tlo.methods.tb']['tb_incidence'].drop(columns=[])
+TB_incidence.to_excel(outputpath / "new_TB_cases_NoXpert.xlsx")
+
+print(f"projected treatment coverage {output['tlo.methods.tb']['tb_incidence']}")
+TB_treatment_cov= output['tlo.methods.tb']['tb_treatment'].drop(columns=[])
+TB_treatment_cov.to_excel(outputpath / "TB_treatment_NoXpert.xlsx")
+
+# output DALYs
+print(f"expected dalys{output['tlo.methods.healthburden']['dalys_stacked']}")
+#sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', 'sex']).size()
+sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].drop(columns=[])
+sample_dalys.to_excel(outputpath / "sample_dalys_NoXpert.xlsx")
 
 
-#print(f" expected ylds{output['tlo.methods.healthburden']['yld_by_causes_of_disability']}")
- #ylds = output['tlo.methods.healthburden']['yld_by_causes_of_disability']
-#print(f"expected ylls{output['tlo.methods.healthburden']['yll_by_causes_of_death_stacked']}")
-# yll_output = output['tlo.methods.healthburden']['yll_by_causes_of_death_stacked']
-#
+
 # # results_folder = Path("./outputs")
 # # results_folder = Path("./outputs/nic503@york.ac.uk")
 #
