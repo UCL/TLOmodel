@@ -23,10 +23,10 @@ class ImpactOfConsumablesAvailabilityIntervention(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2010, 12, 31)
-        self.pop_size = 20_000  # <- recommended population size for the runs
+        self.end_date = Date(2030, 12, 31)
+        self.pop_size = 50_000
         self.number_of_draws = 2  # <- one scenario
-        self.runs_per_draw = 1  # <- repeated this many times
+        self.runs_per_draw = 3  # <- repeated this many times
 
     def log_configuration(self):
         return {
