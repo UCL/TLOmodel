@@ -3,7 +3,7 @@ This file defines a batch run to calculate the health effect of updated consumab
 as a result of a supply chain intervention. The following scenarios are currently considered:
 1. Scenario 1: Provide computers to all level 1a and 1b facilities.
 
-The bath runs are for a large population for a long time with all disease modules and full use of HSIs.
+The batch runs are for a large population for a long time with all disease modules and full use of HSIs.
 
 Run on the batch system using:
 ```tlo batch-submit src/scripts/healthsystem/impact_of_cons_availability/impact_of_consumable_availability_intervention.py```
@@ -25,8 +25,8 @@ class ImpactOfConsumablesAvailabilityIntervention(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2010, 12, 31)
         self.pop_size = 20_000  # <- recommended population size for the runs
-        self.number_of_draws = 1  # <- one scenario
-        self.runs_per_draw = 3  # <- repeated this many times
+        self.number_of_draws = 2  # <- one scenario
+        self.runs_per_draw = 1  # <- repeated this many times
 
     def log_configuration(self):
         return {
@@ -45,7 +45,7 @@ class ImpactOfConsumablesAvailabilityIntervention(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'HealthSystem': {
-                chosen_consumable_scenario: ['2018', 'scenario1'][draw_number]
+                'cons_availability':  ['alternate_scenario1', 'default'][draw_number]
                }
         }
 

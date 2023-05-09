@@ -424,6 +424,8 @@ class HealthSystem(Module):
             Types.STRING,
             "Availability of consumables. If 'default' then use the availability specified in the ResourceFile; if "
             "'none', then let no consumable be  ever be available; if 'all', then all consumables are always available."
+            "If any other scenario is specified, the probability of consumable availability is taken from the relavant "
+            "column in the ResourceFile"
             " When using 'all' or 'none', requests for consumables are not logged. NB. This parameter is over-ridden"
             "if an argument is provided to the module initialiser."),
 

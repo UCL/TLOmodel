@@ -25,6 +25,8 @@ class Consumables:
     :param: `availability`: Determines the availability of consumables. If 'default' then use the availability
      specified in the ResourceFile; if 'none', then let no consumable be ever be available; if 'all', then all
      consumables are always available. When using 'all' or 'none', requests for consumables are not logged.
+     If other scenarios are specified (eg. 'alternate_scenario1'), the probability of consumable availability is drawn
+     from the relevant column of the ResourceFile.
 
     If an item_code is requested that is not recognised (not included in `data`), a `UserWarning` is issued, and the
      result returned is on the basis of the average availability of other consumables in that facility in that month.
@@ -32,8 +34,8 @@ class Consumables:
 
     def __init__(self, data: pd.DataFrame = None, rng: np.random = None, availability: str = 'default') -> None:
 
-        assert availability in ('none', 'default', 'all'), "Argument `availability` is not recognised."
-        self.cons_availability = availability  # Governs availability  - none/default/all
+        assert availability in ('none', 'default', 'all', 'alternate_scenario1'), "Argument `availability` is not recognised."
+        self.cons_availability = availability  # Governs availability  - none/default/all/...(alternate scenarios)
         self.item_codes = set()  # All item_codes that are recognised.
 
         self._rng = rng
@@ -69,6 +71,8 @@ class Consumables:
             self.override_availability(dict(zip(self.item_codes, repeat(1.0))))
         elif self.cons_availability == 'none':
             self.override_availability(dict(zip(self.item_codes, repeat(0.0))))
+        elif self.cons_availability == 'alternate_scenario1':
+            self._prob_item_codes_available = df.set_index(['month', 'Facility_ID', 'item_code'])['available_prop_scenario1']
 
     def _refresh_availability_of_consumables(self, date: datetime.datetime):
         """Update the availability of all items based on the data for the probability of availability, givem the current
@@ -175,7 +179,7 @@ class Consumables:
             # If `facility_info` is None, it implies that the HSI has not been initialised because the HealthSystem
             #  is running with `disable=True`. Therefore, accept the default behaviour indicated by the argument saved
             #  in `self.cons_availability`. If the behaviour is `default`, then let the consumable be available.
-            if self.cons_availability in ('all', 'default'):
+            if self.cons_availability in ('all', 'default', 'alternate_scenario1'):
                 return {_i: True for _i in item_codes}
             else:
                 return {_i: False for _i in item_codes}
