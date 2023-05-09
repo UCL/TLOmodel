@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -213,8 +213,11 @@ class Stunting(Module):
             low_bound_age_in_years = agegp[0] / 12.0
             high_bound_age_in_years = (1 + agegp[1]) / 12.0
 
-            mask = df.is_alive & df.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
-                                                            inclusive='left')
+            mask = (
+                df.is_alive
+                & (df.age_exact_years >= low_bound_age_in_years)
+                & (df.age_exact_years < high_bound_age_in_years)
+            )
 
             stunted = make_scaled_linear_model_stunting(target_prob=p_stunting.prob_stunting, mask=mask).predict(
                 df.loc[mask], self.rng, squeeze_single_row_output=False)
@@ -312,21 +315,23 @@ class Models:
         p = self.p
 
         return LinearModel.multiplicative(
-            Predictor('age_exact_years',
-                      conditions_are_exhaustive=True,
-                      conditions_are_mutually_exclusive=True).when('< 0.5',
-                                                                   p['base_inc_rate_stunting_by_agegp'][0])
-                                                             .when('.between(0.5, 1.0, inclusive="left")',
-                                                                   p['base_inc_rate_stunting_by_agegp'][1])
-                                                             .when('.between(1.0, 2.0, inclusive="left")',
-                                                                   p['base_inc_rate_stunting_by_agegp'][2])
-                                                             .when('.between(2.0, 3.0, inclusive="left")',
-                                                                   p['base_inc_rate_stunting_by_agegp'][3])
-                                                             .when('.between(3.0, 4.0, inclusive="left")',
-                                                                   p['base_inc_rate_stunting_by_agegp'][4])
-                                                             .when('.between(4.0, 5.0, inclusive="left")',
-                                                                   p['base_inc_rate_stunting_by_agegp'][5])
-                                                             .when('> 5.0', 0.0),
+            Predictor(
+                conditions_are_exhaustive=True, conditions_are_mutually_exclusive=True
+            ).when(
+                "age_exact_years < 0.5", p["base_inc_rate_stunting_by_agegp"][0]
+            ).when(
+                "0.5 <= age_exact_years < 1", p["base_inc_rate_stunting_by_agegp"][1]
+            ).when(
+                "1 <= age_exact_years < 2", p["base_inc_rate_stunting_by_agegp"][2]
+            ).when(
+                "2 <= age_exact_years < 3", p["base_inc_rate_stunting_by_agegp"][3]
+            ).when(
+                "3 <= age_exact_years < 4", p["base_inc_rate_stunting_by_agegp"][4]
+            ).when(
+                "4 <= age_exact_years < 5", p["base_inc_rate_stunting_by_agegp"][5]
+            ).when(
+                "age_exact_years >= 5", 0.0
+            ),
             Predictor('li_wealth',
                       conditions_are_mutually_exclusive=True).when(1, 1.0)
                                                              .otherwise(p['rr_stunting_wealth_level']),
@@ -349,8 +354,9 @@ class Models:
                              '(nb_breastfeeding_status == "none")) & (age_exact_years < 0.5)',
                              p['rr_stunting_no_exclusive_breastfeeding']),
             Predictor().when(
-                '(nb_breastfeeding_status == "none") & (age_exact_years.between(0.5, 2.0, inclusive="left"))',
-                p['rr_stunting_no_continued_breastfeeding']),
+                '(nb_breastfeeding_status == "none") & (0.5 <= age_exact_years < 2.0)',
+                p['rr_stunting_no_continued_breastfeeding']
+            ),
         )
 
     def make_lm_prob_progression_to_severe_stunting(self):
@@ -359,21 +365,34 @@ class Models:
         p = self.p
 
         return LinearModel.multiplicative(
-            Predictor('age_exact_years',
-                      conditions_are_exhaustive=True,
-                      conditions_are_mutually_exclusive=True).when('< 0.5',
-                                                                   p['r_progression_severe_stunting_by_agegp'][0])
-                                                             .when('.between(0.5, 1.0, inclusive="left")',
-                                                                   p['r_progression_severe_stunting_by_agegp'][1])
-                                                             .when('.between(1.0, 2.0, inclusive="left")',
-                                                                   p['r_progression_severe_stunting_by_agegp'][2])
-                                                             .when('.between(2.0, 3.0, inclusive="left")',
-                                                                   p['r_progression_severe_stunting_by_agegp'][3])
-                                                             .when('.between(3.0, 4.0, inclusive="left")',
-                                                                   p['r_progression_severe_stunting_by_agegp'][4])
-                                                             .when('.between(4.0, 5.0, inclusive="left")',
-                                                                   p['r_progression_severe_stunting_by_agegp'][5])
-                                                             .when('> 5.0', 1.0),
+            Predictor(
+                conditions_are_exhaustive=True, conditions_are_mutually_exclusive=True
+            ).when(
+                'age_exact_years < 0.5', p['r_progression_severe_stunting_by_agegp'][0]
+            )
+            .when(
+                '0.5 <= age_exact_years < 1.0',
+                p['r_progression_severe_stunting_by_agegp'][1]
+            )
+            .when(
+                '1.0 <= age_exact_years < 2.0',
+                p['r_progression_severe_stunting_by_agegp'][2]
+            )
+            .when(
+                '2.0 <= age_exact_years < 3.0',
+                p['r_progression_severe_stunting_by_agegp'][3]
+            )
+            .when(
+                '3.0 <= age_exact_years < 4.0',
+                p['r_progression_severe_stunting_by_agegp'][4]
+            )
+            .when(
+                '4.0 <= age_exact_years < 5.0',
+                p['r_progression_severe_stunting_by_agegp'][5]
+            )
+            .when(
+                'age_exact_years >= 5.0', 1.0
+            ),
             Predictor('un_ever_wasted',
                       conditions_are_exhaustive=True,
                       conditions_are_mutually_exclusive=True
@@ -466,7 +485,7 @@ class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         rng = self.module.rng
 
         annual_prob = model.predict(df.loc[mask]).clip(upper=1.0)
-        cum_prob_over_days_exposed = 1.0 - np.exp(np.log(1.0 - annual_prob) * days_exposed_to_risk / 365.25)
+        cum_prob_over_days_exposed = 1.0 - np.exp(np.log(1.0 - annual_prob) * days_exposed_to_risk / DAYS_IN_YEAR)
 
         assert pd.notnull(cum_prob_over_days_exposed).all()
         return mask[mask].index[cum_prob_over_days_exposed > rng.random_sample(mask.sum())]

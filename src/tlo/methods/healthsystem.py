@@ -488,17 +488,17 @@ class HealthSystem(Module):
         randomise_queue: bool = True,
         ignore_priority: bool = True,
         adopt_priority_policy: bool = False,
-        PriorityRank_Dict: dict = None,
-        lowest_priority_considered: int = 10,
+        priority_rank_dict: dict = None,
         include_fasttrack_routes: bool = False,
         list_fasttrack: [List[str]] = None,
+        max_squeeze_by_priority: dict = None,
+        lowest_priority_considered: int = 10,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = None,
         disable: bool = False,
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
         hsi_event_count_log_period: Optional[str] = "month",
-        max_squeeze_by_priority: dict = None,
     ):
         """
         :param name: Name to use for module, defaults to module class name if ``None``.
@@ -520,14 +520,17 @@ class HealthSystem(Module):
             event to schedule
         :param adopt_priority_policy: If 'True' then use priority specified in the PriorityRank ResourceFile instead
             of that provided as argument when scheduling via `schedule_hsi_event`.
-        :param PriorityRank_Dict: contains priority and fast tracking channel eligibility given Treatment_ID
-        :param lowest_priority_considered: If priority lower (i.e. priority value greater than) this, do not schedule
-            (and instead call `never_ran` at the time of `tclose`).
+        :param priority_rank_dict: contains priority and fast tracking channel eligibility given Treatment_ID
         :param include_fasttrack_routes: If 'True' then include fast-tracking options for vulnerable categories;
+            otherwise ignore indicators for fast-tracking. Options are specified in the PriorityRank ResourceFile
         :param list_fasttrack: list of individual's attributes that will be relevant in
             determining whether they should be eligible for fast tracking, and the corresponding
             fast tracking channels that can be potentially available given the modules included in the simulation.
-            otherwise ignore indicators for fast-tracking. It is specified in the PriorityRank ResourceFile
+            They are specified in the PriorityRank ResourceFile
+        :max_squeeze_by_priority: contains maximum squeeze allowed under mode_appt_constraints=2 given priority of
+            treatment
+        :param lowest_priority_considered: If priority lower (i.e. priority value greater than) this, do not schedule
+            (and instead call `never_ran` at the time of `tclose`).
         :param capabilities_coefficient: Multiplier for the capabilities of health
             officers, if ``None`` set to ratio of initial population to estimated 2010
             population.
@@ -547,8 +550,6 @@ class HealthSystem(Module):
             end of each day, end of each calendar month, end of each calendar year or
             the end of the simulation respectively, or ``None`` to not track the HSI
             event details and frequencies.
-        :max_squeeze_by_priority: contains maximum squeeze allowed under mode_appt_constraints=2 given priority of 
-            treatment
         """
 
         super().__init__(name)
@@ -731,11 +732,10 @@ class HealthSystem(Module):
                                        availability=self.get_cons_availability())
 
         if self.adopt_priority_policy:
-        # Convert PriorityRank dataframe to dictionary
+            # Convert PriorityRank dataframe to dictionary
             Dictio = self.parameters['PriorityRank']
             Dictio.set_index("Treatment", drop=True, inplace=True)
-            self.PriorityRank_Dict = Dictio.to_dict(orient="index")
-       
+            self.priority_rank_dict = Dictio.to_dict(orient="index")
 
         # The attributes that can be looked up to determine whether a person might be eligible
         # for fast-tracking, as well as the corresponding fast-tracking channels, depend on the modules
@@ -749,12 +749,12 @@ class HealthSystem(Module):
                 self.list_fasttrack.append(('hv_diagnosed', 'FT_if_Hivdiagnosed'))
             if 'Tb' in self.sim.modules:
                 self.list_fasttrack.append(('tb_diagnosed', 'FT_if_tbdiagnosed'))
-        
+
         # Initialise look-up table for max squeeze by priority to avoid invoking fnc
-        self.max_squeeze_by_priority = dict([(0,self.get_max_squeeze_based_on_priority(0))]) 
-        for i in range(1,self.lowest_priority_considered+1):
+        self.max_squeeze_by_priority = dict([(0, self.get_max_squeeze_based_on_priority(0))])
+        for i in range(1, self.lowest_priority_considered+1):
             self.max_squeeze_by_priority[i] = self.get_max_squeeze_based_on_priority(i)
-    
+
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
 
@@ -1084,6 +1084,9 @@ class HealthSystem(Module):
         # Check topen is not in the past
         assert topen >= self.sim.date
 
+        # Check that priority is in valid range
+        assert priority >= 0
+
         # Check that topen is strictly before tclose
         assert topen < tclose
 
@@ -1157,7 +1160,7 @@ class HealthSystem(Module):
             return 0
         else:
 
-            PR = self.PriorityRank_Dict
+            PR = self.priority_rank_dict
             pdf = self.sim.population.props
 
             if hsi_event.TREATMENT_ID in PR:
@@ -1469,18 +1472,24 @@ class HealthSystem(Module):
             else:
                 availability = get_total_minutes_of_this_officer_in_all_district(officer)
 
-            if availability is None:  # todo - does this ever happen?
-                load_factor[officer] = 99.99
-            elif availability == 0:
+            # If officer is not contemplated by health system, log warning and proceed as if availability = 0
+            if availability is None:
+                logger.warning(
+                    key="message",
+                    data=(f"Requested officer {officer} is not contemplated by health system. ")
+                )
+                availability = 0
+
+            if availability == 0:
                 load_factor[officer] = float('inf')
             else:
-                load_factor[officer] = max(call / availability - 1, 0)
+                load_factor[officer] = max(call / availability - 1, 0.0)
 
         # 2) Convert these load-factors into an overall 'squeeze' signal for each HSI,
         # based on the highest load-factor of any officer required (or zero if event
         # has an empty footprint)
         squeeze_factor_per_hsi_event = np.array([
-            max((load_factor[officer] for officer in footprint), default=0)
+            max((load_factor[officer] for officer in footprint), default=0.0)
             for footprint in footprints_per_event
         ])
 
@@ -1846,7 +1855,7 @@ class HealthSystem(Module):
                             priority=_priority
                         )
 
-            # If not in mode_appt_constraints=2, run all events.
+            # If not in mode_appt_constraints=2
             else:
 
                 for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
@@ -1858,62 +1867,92 @@ class HealthSystem(Module):
                     _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
 
                     # Mode 0: All HSI Event run, with no squeeze
-                    # Mode 1: All Run With Squeeze
+                    # Mode 1: All HSI Events run with squeeze provided latter is not inf
+                    ok_to_run = True
+                    if self.mode_appt_constraints == 1 and squeeze_factor == float('inf'):
+                        ok_to_run = False
 
-                    # Compute the bed days that are allocated to this HSI and provide this information to the HSI
-                    # todo - only do this if some bed-days declared
-                    event._received_info_about_bed_days = \
-                        self.bed_days.issue_bed_days_according_to_availability(
-                            facility_id=self.bed_days.get_facility_id_for_beds(persons_id=event.target),
-                            footprint=event.BEDDAYS_FOOTPRINT
-                        )
+                    if ok_to_run:
 
-                    # Check that a facility has been assigned to this HSI
-                    assert event.facility_info is not None, \
-                        f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
-
-                    # Run the HSI event (allowing it to return an updated appt_footprint)
-                    actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
-
-                    # Check if the HSI event returned updated appt_footprint
-                    if actual_appt_footprint is not None:
-                        # The returned footprint is different to the expected footprint: so must update load factors
-
-                        # check its formatting:
-                        assert self.appt_footprint_is_valid(actual_appt_footprint)
-
-                        # Update load factors:
-                        updated_call = self.get_appt_footprint_as_time_request(
-                            facility_info=event.facility_info,
-                            appt_footprint=actual_appt_footprint
-                        )
-                        original_call = footprints_of_all_individual_level_hsi_event[ev_num]
-                        footprints_of_all_individual_level_hsi_event[ev_num] = updated_call
-                        self.running_total_footprint -= original_call
-                        self.running_total_footprint += updated_call
-
-                        if self.mode_appt_constraints != 0:
-                            # only need to recompute squeeze factors if running with constraints
-                            # i.e. mode != 0
-                            squeeze_factor_per_hsi_event = self.get_squeeze_factors(
-                                footprints_per_event=footprints_of_all_individual_level_hsi_event,
-                                total_footprint=self.running_total_footprint,
-                                current_capabilities=self.capabilities_today,
-                                compute_squeeze_factor_to_district_level=self.compute_squeeze_factor_to_district_level,
+                        # Compute the bed days that are allocated to this HSI and provide this information to the HSI
+                        # todo - only do this if some bed-days declared
+                        event._received_info_about_bed_days = \
+                            self.bed_days.issue_bed_days_according_to_availability(
+                                facility_id=self.bed_days.get_facility_id_for_beds(persons_id=event.target),
+                                footprint=event.BEDDAYS_FOOTPRINT
                             )
-                    else:
-                        # no actual footprint is returned so take the expected initial declaration as the actual,
-                        # as recorded before the HSI event run
-                        actual_appt_footprint = _appt_footprint_before_running
 
-                    # Write to the log
-                    self.record_hsi_event(
-                        hsi_event=event,
-                        actual_appt_footprint=actual_appt_footprint,
-                        squeeze_factor=squeeze_factor,
-                        did_run=True,
-                        priority=_priority
-                    )
+                        # Check that a facility has been assigned to this HSI
+                        assert event.facility_info is not None, \
+                            f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
+
+                        # Run the HSI event (allowing it to return an updated appt_footprint)
+                        actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
+
+                        # Check if the HSI event returned updated appt_footprint
+                        if actual_appt_footprint is not None:
+                            # The returned footprint is different to the expected footprint: so must update load factors
+
+                            # check its formatting:
+                            assert self.appt_footprint_is_valid(actual_appt_footprint)
+
+                            # Update load factors:
+                            updated_call = self.get_appt_footprint_as_time_request(
+                                facility_info=event.facility_info,
+                                appt_footprint=actual_appt_footprint
+                            )
+                            original_call = footprints_of_all_individual_level_hsi_event[ev_num]
+                            footprints_of_all_individual_level_hsi_event[ev_num] = updated_call
+                            self.running_total_footprint -= original_call
+                            self.running_total_footprint += updated_call
+
+                            # Don't recompute for mode=0
+                            if self.mode_appt_constraints != 0:
+                                squeeze_factor_per_hsi_event = self.get_squeeze_factors(
+                                    footprints_per_event=footprints_of_all_individual_level_hsi_event,
+                                    total_footprint=self.running_total_footprint,
+                                    current_capabilities=self.capabilities_today,
+                                    compute_squeeze_factor_to_district_level=self.
+                                    compute_squeeze_factor_to_district_level,
+                                )
+
+                        else:
+                            # no actual footprint is returned so take the expected initial declaration as the actual,
+                            # as recorded before the HSI event run
+                            actual_appt_footprint = _appt_footprint_before_running
+
+                        # Write to the log
+                        self.record_hsi_event(
+                            hsi_event=event,
+                            actual_appt_footprint=actual_appt_footprint,
+                            squeeze_factor=squeeze_factor,
+                            did_run=True,
+                            priority=_priority
+                        )
+
+                    # if not ok_to_run
+                    else:
+                        # Do not run,
+                        # Call did_not_run for the hsi_event
+                        rtn_from_did_not_run = event.did_not_run()
+
+                        # If received no response from the call to did_not_run, or a True signal, then
+                        # add to the hold-over queue.
+                        # Otherwise (disease module returns "FALSE") the event is not rescheduled and will not run.
+
+                        if not (rtn_from_did_not_run is False):
+                            # reschedule event
+                            hp.heappush(_to_be_held_over, _list_of_individual_hsi_event_tuples[ev_num])
+
+                        # Log that the event did not run
+                        self.record_hsi_event(
+                            hsi_event=event,
+                            actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
+                            squeeze_factor=squeeze_factor,
+                            did_run=False,
+                            priority=_priority
+                        )
+
         return _to_be_held_over
 
     @property
