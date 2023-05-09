@@ -867,7 +867,7 @@ def test_no_availability_of_consumables_for_events(seed):
 
 def test_logging_works_for_person_older_than_100(seed):
     """Check that no error is caused when someone older than 100 years is onset with a prevalent condition. (This has
-    previously caused an error.)"""
+    previously caused an error.) """
 
     sim = make_simulation_health_system_functional(seed=seed)
     sim.make_initial_population(n=100)
