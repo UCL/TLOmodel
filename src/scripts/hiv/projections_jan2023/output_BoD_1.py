@@ -18,7 +18,8 @@ resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 #outputpath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-
+with open(outputpath / "default_run.pickle", "rb") as f:
+    output = pickle.load(f)
 TARGET_PERIOD = (Date(2010, 1, 1), Date(2012, 12, 31))
 
 
@@ -74,8 +75,7 @@ def make_plot(_df, annotations=None):
 # with open(outputpath / "default_run.pickle", "rb") as f:
 #     output = pickle.load(f)
 
-with open(outputpath / "default_run.pickle", "rb") as f:
-    output = pickle.load(f)
+
 
 # num_deaths_summarized = summarize(num_deaths).loc[0].unstack()
 # num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
@@ -113,7 +113,7 @@ sample_dalys.to_excel(outputpath / "sample_dalys_NoXpert.xlsx")
 print(f"expected deaths {output['tlo.methods.demography']['death']}")
 sample_deaths = output['tlo.methods.demography']['death'].groupby(['date','cause', 'sex']).size()
 #sample_deaths = output['tlo.methods.demography']['death'].drop(columns=[])
-sample_deaths.to_excel(outputpath / "sample_mortality_noCXR.xlsx")
+sample_deaths.to_excel(outputpath / "sample_mortality_NoXpert.xlsx")
 
 
 # # results_folder = Path("./outputs")
