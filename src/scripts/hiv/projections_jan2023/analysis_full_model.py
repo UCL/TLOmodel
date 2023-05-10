@@ -58,7 +58,7 @@ sim.register(*fullmodel(
                          "service_availability": ["*"],
                          "mode_appt_constraints": 0,  # no constraints, no squeeze factor
                          "cons_availability": "default",
-                         "beds_availability": "all",
+                         "beds_availability": "default",  #changed beds to default to check outcomr
                          "ignore_priority": False,
                          "use_funded_or_actual_staffing": "funded_plus",
                          "capabilities_coefficient": 1.0},

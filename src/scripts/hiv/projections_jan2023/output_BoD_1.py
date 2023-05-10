@@ -83,16 +83,16 @@ def make_plot(_df, annotations=None):
 print(output.keys())
 # output serialises availability of  CXR consumables
 cons_available = output['tlo.methods.healthsystem.summary']['Consumables'].drop(columns=[])
-cons_available .to_excel(outputpath / "cons_available_noCXR.xlsx")
+cons_available .to_excel(outputpath / "cons_available_NoXpert.xlsx")
 
 # output YLLs and YLDs
 
 print(f" expected ylds{output['tlo.methods.healthburden']['yld_by_causes_of_disability']}")
 ylds = output['tlo.methods.healthburden']['yld_by_causes_of_disability'].drop(columns=[])
-ylds.to_excel(outputpath / "ylds_noCXR.xlsx")
+ylds.to_excel(outputpath / "ylds_NoXpert.xlsx")
 print(f"expected ylls{output['tlo.methods.healthburden']['yll_by_causes_of_death_stacked']}")
 yll_output = output['tlo.methods.healthburden']['yll_by_causes_of_death_stacked'].drop(columns=[])
-yll_output.to_excel(outputpath / "sample_yll_noCXR.xlsx")
+yll_output.to_excel(outputpath / "sample_yll_NoXpert.xlsx")
 
 # Exports TB program indicators
 print(f"projected TB incidence{output['tlo.methods.tb']['tb_incidence']}")
