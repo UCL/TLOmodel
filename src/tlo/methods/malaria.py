@@ -343,9 +343,7 @@ class Malaria(Module):
         # now_infected includes all new infections this month
         # join all indices (some clinical infections drawn from asymptomatic infections from previous months)
         for idx in all_new_infections:
-            date_of_infection = now + pd.DateOffset(
-                days=self.rng.randint(0, 30)
-            )
+            date_of_infection = now + pd.DateOffset(days=self.rng.randint(1, 30))
             df.at[idx, "ma_date_infected"] = date_of_infection
 
         assert (df.loc[all_new_infections, "ma_date_infected"] >= self.sim.date).all()
