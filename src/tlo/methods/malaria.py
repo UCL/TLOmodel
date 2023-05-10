@@ -313,7 +313,6 @@ class Malaria(Module):
         # select new infections, (persons on IPTp are not at risk of infection)
         alive_uninfected = alive & ~df.ma_is_infected & ~df.ma_iptp
         now_infected = _draw_incidence_for("monthly_prob_inf", alive_uninfected)
-        # df.loc[now_infected, "ma_is_infected"] = True
         df.loc[now_infected, "ma_inf_type"] = "asym"
 
         # draw from currently asymptomatic to allocate clinical cases
@@ -321,7 +320,6 @@ class Malaria(Module):
         alive_infected_asym = alive & (df.ma_inf_type == "asym")
         now_clinical = _draw_incidence_for("monthly_prob_clin", alive_infected_asym)
         df.loc[now_clinical, "ma_inf_type"] = "clinical"
-        # df.loc[now_clinical, "ma_clinical_counter"] += 1
 
         # draw from clinical cases to allocate severe cases - draw from all currently clinical cases
         alive_infected_clinical = alive & (df.ma_inf_type == "clinical")
