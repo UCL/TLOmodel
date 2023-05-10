@@ -988,7 +988,8 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
                 HSI_Malaria_rdt(self.module, person_id=idx),
                 priority=0,
                 topen=random_date(now + DateOffset(days=1),
-                                  now + DateOffset(days=4), self.module.rng),
+                                  now + DateOffset(days=4),
+                                  self.module.rng),
                 tclose=None
             )
 
@@ -1035,7 +1036,7 @@ class MalariaParasiteClearanceEvent(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props
         p = self.module.parameters
 
-        # select people infected at least 100 days ago
+        # select people infected at least a period ago equal to the duration of asymptomatic infection
         asym_inf = df.index[df.is_alive &
                             (df.ma_inf_type == "asym") &
                             (df.ma_date_infected < (self.sim.date - DateOffset(days=p["dur_asym"])))]
