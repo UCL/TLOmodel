@@ -980,10 +980,10 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         df.loc[all_new_infections, "ma_is_infected"] = True
 
         # sample those scheduled for rdt
-        random_draw = self.module.rng.random_sample(size=len(df))
-        test_idx = df.loc[(df.ma_date_symptoms == now) & (random_draw < p["testing_adj"])].index
+        eligible_for_rdt = df.loc[df.is_alive & (df.ma_date_symptoms == now)].index
+        selected_for_rdt = self.module.rng.random_sample(size=len(eligible_for_rdt)) < p["testing_adj"]
 
-        for idx in test_idx:
+        for idx in eligible_for_rdt[selected_for_rdt]:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Malaria_rdt(self.module, person_id=idx),
                 priority=0,
