@@ -378,8 +378,11 @@ def test_math_of_incidence_calcs(seed):
     x = x0
 
     # Run polling event once per month for a year
+    # As default behaviour of date_range is to include both start and end dates in range
+    # we use an offset of 11 months so as not to also include date 12 months onwards
+    # closed / inclusive kwarg avoided here to keep compatibility across Pandas versions
     poll = stunting.StuntingPollingEvent(sim.modules['Stunting'])
-    for date in pd.date_range(Date(2010, 1, 1), sim.date + pd.DateOffset(years=1), freq='MS', closed='left'):
+    for date in pd.date_range(Date(2010, 1, 1), sim.date + pd.DateOffset(months=11), freq='MS'):
         # Do incidence of stunting through the model's polling event
         sim.date = date
         poll.apply(sim.population)

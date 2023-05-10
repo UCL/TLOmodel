@@ -18,7 +18,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -798,7 +798,7 @@ class CardioMetabolicDisorders(Module):
         """
 
         def is_next_test_due(current_date, date_of_last_test):
-            return pd.isnull(date_of_last_test) or (current_date - date_of_last_test).days > 365.25 / 2
+            return pd.isnull(date_of_last_test) or (current_date - date_of_last_test).days > DAYS_IN_YEAR / 2
 
         df = self.sim.population.props
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
@@ -877,7 +877,8 @@ class Tracker:
 
     def add(self, condition: str, _to_add: dict):
         for _a in _to_add:
-            self._tracker[condition][_a] += _to_add[_a]
+            if _a in self._tracker[condition]:
+                self._tracker[condition][_a] += _to_add[_a]
 
     def report(self):
         return self._tracker
