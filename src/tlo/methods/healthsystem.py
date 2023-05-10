@@ -1292,11 +1292,7 @@ class HealthSystem(Module):
         for footprint in footprints_per_event:
             if len(footprint) > 0:
                 # If any of the required officers are not available at the facility, set overall squeeze to inf
-                require_missing_officer = False
-                for officer in footprint:
-                    if load_factor[officer] == float('inf'):
-                        require_missing_officer = True
-                        break
+                require_missing_officer = any([load_factor[officer] == float('inf') for officer in footprint])
 
                 if require_missing_officer:
                     squeeze_factor_per_hsi_event.append(float('inf'))
