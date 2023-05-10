@@ -27,10 +27,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2019, 12, 31)
-        self.pop_size = 100_000
+        self.pop_size = 1000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 5
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
@@ -49,7 +49,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        return list(self._scenarios.values())[draw_number]
+        return list(self._scenarios.values())[0]
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
