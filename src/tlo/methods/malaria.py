@@ -943,10 +943,9 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
             & (df.ma_date_symptoms == now)].index
 
         # assign clinical symptoms
-        symptom_list = ["fever", "headache", "vomiting", "stomachache"]
         self.sim.modules["SymptomManager"].change_symptom(
             person_id=new_symptomatic_clinical,
-            symptom_string=symptom_list,
+            symptom_string=["fever", "headache", "vomiting", "stomachache"],
             add_or_remove="+",
             disease_module=self.module,
             date_of_onset=now,
