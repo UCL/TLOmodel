@@ -157,6 +157,10 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
     if 'Schisto' in sim.modules:
         sim.modules['Schisto'].do_on_presentation_with_symptoms(person_id=person_id, symptoms=symptoms)
 
+    if "Malaria" in sim.modules:
+        if 'fever' in symptoms:
+            sim.modules['Malaria'].do_on_presentation_with_fever_under5(person_id=person_id, hsi_event=hsi_event)
+
     if age <= 5:
         # ----------------------------------- CHILD < 5 -----------------------------------
         if 'Diarrhoea' in sim.modules:
@@ -167,35 +171,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
         if 'Alri' in sim.modules:
             if ('cough' in symptoms) or ('difficult_breathing' in symptoms):
                 sim.modules['Alri'].on_presentation(person_id=person_id, hsi_event=hsi_event)
-
-        if "Malaria" in sim.modules and not df.at[person_id, "ma_tx"]:
-            if 'fever' in symptoms:
-                malaria_test_result = sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
-                    person_id=person_id, hsi_event=hsi_event)
-
-                # Treat / refer based on diagnosis
-                if malaria_test_result == "severe_malaria":
-                    df.at[person_id, "ma_dx_counter"] += 1
-
-                    schedule_hsi(
-                        HSI_Malaria_Treatment_Complicated(
-                            person_id=person_id,
-                            module=sim.modules["Malaria"]),
-                        priority=0,
-                        topen=sim.date,
-                        tclose=None)
-
-                # return type "clinical_malaria" includes asymptomatic infection
-                elif malaria_test_result == "clinical_malaria":
-                    df.at[person_id, "ma_dx_counter"] += 1
-
-                    schedule_hsi(
-                        HSI_Malaria_Treatment(
-                            person_id=person_id,
-                            module=sim.modules["Malaria"]),
-                        priority=0,
-                        topen=sim.date,
-                        tclose=None)
 
         # Routine assessments
         if 'Stunting' in sim.modules:
@@ -287,32 +262,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                                                             'level1']):
                 depr.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
 
-        if "Malaria" in sim.modules and not df.at[person_id, "ma_tx"]:
-            if 'fever' in symptoms:
-                malaria_test_result = sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
-                    person_id=person_id, hsi_event=hsi_event)
-
-                if malaria_test_result == "severe_malaria":
-                    df.at[person_id, "ma_dx_counter"] += 1
-
-                    schedule_hsi(
-                        HSI_Malaria_Treatment_Complicated(
-                            person_id=person_id,
-                            module=sim.modules["Malaria"]),
-                        priority=0,
-                        topen=sim.date,
-                        tclose=None)
-
-                elif malaria_test_result == "clinical_malaria":
-                    df.at[person_id, "ma_dx_counter"] += 1
-
-                    schedule_hsi(
-                        HSI_Malaria_Treatment(
-                            person_id=person_id,
-                            module=sim.modules["Malaria"]),
-                        priority=0,
-                        topen=sim.date,
-                        tclose=None)
 
         if 'CardioMetabolicDisorders' in sim.modules:
             # Take a blood pressure measurement for proportion of individuals who have not been diagnosed and
@@ -368,26 +317,10 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
             sim.modules['Depression'].do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
             # TODO: Trigger surgical care for injuries.
 
-    if "Malaria" in sim.modules and not df.at[person_id, "ma_tx"]:
-        # Quick diagnosis algorithm - just perfectly recognises the symptoms of severe malaria
-
-        if symptoms == "severe_malaria":
-            # Check if malaria parasitaemia:
-            malaria_test_result = sim.modules["Malaria"].check_if_fever_is_caused_by_malaria(
-                person_id=person_id, hsi_event=hsi_event)
-
-            # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
-            if malaria_test_result in ("severe_malaria", "clinical_malaria"):
-                df.at[person_id, "ma_dx_counter"] += 1
-
-                # Launch the HSI for treatment for Malaria, HSI_Malaria_Treatment will determine correct treatment
-                schedule_hsi(
-                    hsi_event=HSI_Malaria_Treatment_Complicated(
-                        sim.modules["Malaria"], person_id=person_id
-                    ),
-                    priority=0,
-                    topen=sim.date,
-                )
+    if "Malaria" in sim.modules:
+        if 'severe_malaria' in symptoms:
+            sim.modules['Malaria'].do_on_emergency_presentation_with_severe_malaria(person_id=person_id,
+                                                                                    hsi_event=hsi_event)
 
     # ------ CARDIO-METABOLIC DISORDERS ------
     if 'CardioMetabolicDisorders' in sim.modules:

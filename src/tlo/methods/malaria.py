@@ -525,6 +525,59 @@ class Malaria(Module):
         else:
             return "negative_malaria_test"
 
+    def do_on_non_emergency_presentation_with_fever(self, person_id, hsi_event):
+        """This is called for a person (of any age) that attends non-emergency generic HSI and has a fever."""
+        df = self.sim.population.props
+
+        if not df.at[person_id, "ma_tx"]:
+            malaria_test_result = self.check_if_fever_is_caused_by_malaria(person_id=person_id, hsi_event=hsi_event)
+
+            # Treat / refer based on diagnosis
+            if malaria_test_result == "severe_malaria":
+                df.at[person_id, "ma_dx_counter"] += 1
+                self.sim.modules['HealthSystem'].schedule_hsi(
+                    HSI_Malaria_Treatment_Complicated(
+                        person_id=person_id,
+                        module=self),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None)
+
+            # return type "clinical_malaria" includes asymptomatic infection
+            elif malaria_test_result == "clinical_malaria":
+                df.at[person_id, "ma_dx_counter"] += 1
+                self.sim.modules['HealthSystem'].schedule_hsi(
+                    HSI_Malaria_Treatment(
+                        person_id=person_id,
+                        module=self),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None)
+
+    def do_on_emergency_presentation_with_severe_malaria(self, person_id, hsi_event):
+        """This is called for a person (of any age) that attends an emergency generic HSI and has a fever.
+        (Quick diagnosis algorithm - just perfectly recognises the symptoms of severe malaria.)
+        """
+        df = self.sim.population.props
+
+        if not df.at[person_id, "ma_tx"]:
+            # Check if malaria parasitaemia:
+            malaria_test_result = self.check_if_fever_is_caused_by_malaria(person_id=person_id, hsi_event=hsi_event)
+
+            # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
+            if malaria_test_result in ("severe_malaria", "clinical_malaria"):
+                df.at[person_id, "ma_dx_counter"] += 1
+
+                # Launch the HSI for treatment for Malaria, HSI_Malaria_Treatment will determine correct treatment
+                self.sim.modules['HealthSystem'].schedule_hsi(
+                    hsi_event=HSI_Malaria_Treatment_Complicated(
+                        person_id=person_id,
+                        module=self),
+                    priority=0,
+                    topen=self.sim.date,
+                )
+
+
 
 class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
