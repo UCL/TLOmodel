@@ -729,6 +729,9 @@ def get_color_coarse_appt(coarse_appt_type: str) -> str:
 
 
 SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
+
+    '*': 'black',
+
     'FirstAttendance*': 'darkgrey',
     'Inpatient*': 'silver',
 
@@ -794,7 +797,7 @@ def get_color_short_treatment_id(short_treatment_id: str) -> str:
     )
 
 
-CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP = MappingProxyType({
+CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP = MappingProxyType({
     'Maternal Disorders': 'green',
     'Neonatal Disorders': 'springgreen',
     'Congenital birth defects': 'mediumaquamarine',
@@ -806,6 +809,7 @@ CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP = MappingProxyType({
     'Malaria': 'lightsteelblue',
     'Measles': 'cornflowerblue',
     'TB (non-AIDS)': 'mediumslateblue',
+    'Schistosomiasis': 'skyblue',
 
     'Heart Disease': 'sienna',
     'Kidney Disease': 'chocolate',
@@ -824,15 +828,17 @@ CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP = MappingProxyType({
 
     'Transport Injuries': 'lightsalmon',
 
+    'Lower Back Pain': 'slategray',
+
     'Other': 'dimgrey',
 })
 
 
-def order_of_cause_of_death_label(
+def order_of_cause_of_death_or_daly_label(
     cause_of_death_label: Union[str, pd.Index]
 ) -> Union[int, pd.Index]:
     """Define a standard order for Cause-of-Death labels."""
-    ordered_cause_of_death_labels = list(CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.keys())
+    ordered_cause_of_death_labels = list(CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys())
     if isinstance(cause_of_death_label, str):
         return ordered_cause_of_death_labels.index(cause_of_death_label)
     else:
@@ -841,12 +847,12 @@ def order_of_cause_of_death_label(
         )
 
 
-def get_color_cause_of_death_label(cause_of_death_label: str) -> str:
+def get_color_cause_of_death_or_daly_label(cause_of_death_label: str) -> str:
     """Return the colour (as matplotlib string) assigned to this Cause-of-Death Label.
 
     Returns `np.nan` if label is not recognised.
     """
-    return CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.get(cause_of_death_label, np.nan)
+    return CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.get(cause_of_death_label, np.nan)
 
 
 def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabels=5, **kwargs):
@@ -1014,11 +1020,12 @@ def plot_stacked_bar_chart(
     ax.legend()
 
 
-def plot_clustered_stacked(dfall, ax, color_for_column_map=None, legends=True, H="/", **kwargs):
+def plot_clustered_stacked(dfall, ax, color_for_column_map=None, scaled=False, legends=True, H="/", **kwargs):
     """Given a dict of dataframes, with identical columns and index, create a clustered stacked bar plot.
     * H is the hatch used for identification of the different dataframe.
     * color_for_column_map should return a color for every column in the dataframes
     * legends=False, suppresses generation of the legends
+    With `scaled=True`, the height of the stacked-bar is scaled to 1.0.
     From: https://stackoverflow.com/questions/22787209/how-to-have-clusters-of-stacked-bars"""
 
     n_df = len(dfall)
@@ -1026,6 +1033,9 @@ def plot_clustered_stacked(dfall, ax, color_for_column_map=None, legends=True, H
     n_ind = len(list(dfall.values())[0].index)
 
     for i, df in enumerate(dfall.values()):  # for each data frame
+        if scaled:
+            df = df.apply(lambda row: (row / row.sum()).fillna(0.0), axis=1)
+
         ax = df.plot.bar(
             stacked=True,
             ax=ax,
