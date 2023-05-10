@@ -1,5 +1,5 @@
-"""Produce plots to show the health impact (deaths, dalys) each the healthcare system (overall health impact) when running under different
- MODES (scenario_impact_of_mode.py)"""
+"""Produce plots to show the health impact (deaths, dalys) each the healthcare system (overall health impact) when
+running under different MODES (scenario_impact_of_mode.py)"""
 
 import argparse
 from pathlib import Path
@@ -10,7 +10,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date
-from tlo.analysis.utils import extract_results, make_age_grp_lookup, summarize
+from tlo.analysis.utils import extract_results, summarize
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, ):
@@ -30,7 +30,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def get_parameter_names_from_scenario_file() -> Tuple[str]:
         """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-        from scripts.healthsystem.impact_of_mode.scenario_impact_of_mode import ImpactOfHealthSystemMode
+        from scripts.healthsystem.impact_of_mode.scenario_impact_of_mode import (
+            ImpactOfHealthSystemMode,
+        )
         e = ImpactOfHealthSystemMode()
         return tuple(e._scenarios.keys())
 
@@ -123,7 +125,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
-    num_deaths_summarized = summarize(num_deaths).loc[0].unstack()
+    # num_deaths_summarized = summarize(num_deaths).loc[0].unstack()
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
 
     # Deaths and DALYS averted relative to Default Healthcare System
@@ -170,7 +172,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Bar plots for deaths averted for each HealthCare Configuration Scenario
 
-
     # TOTAL DALYS
     name_of_plot = f'Total DALYS, {target_period()}'
     fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6)
@@ -180,7 +181,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
     plt.close(fig)
-
 
     # DEATHS AVERTED VS NO HEALTHCARE SYSTEM
     name_of_plot = f'Additional Deaths Averted vs No Healthcare System, {target_period()}'

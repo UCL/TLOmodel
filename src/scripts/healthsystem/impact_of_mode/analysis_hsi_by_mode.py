@@ -1,16 +1,14 @@
-"""Produce plots to show what HSI are happening under each the healthcare system (overall health impact) when running under different
- MODES (scenario_impact_of_mode.py)"""
+"""Produce plots to show what HSI are happening under each the healthcare system (overall health impact) when running
+under different MODES (scenario_impact_of_mode.py)"""
 
 import argparse
 from pathlib import Path
 from typing import Tuple
 
-import numpy as np
 import pandas as pd
-from matplotlib import pyplot as plt
 
 from tlo import Date
-from tlo.analysis.utils import extract_results, make_age_grp_lookup, summarize
+from tlo.analysis.utils import extract_results, summarize
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, ):
@@ -23,7 +21,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def get_parameter_names_from_scenario_file() -> Tuple[str]:
         """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-        from scripts.healthsystem.impact_of_mode.scenario_impact_of_mode import ImpactOfHealthSystemMode
+        from scripts.healthsystem.impact_of_mode.scenario_impact_of_mode import (
+            ImpactOfHealthSystemMode,
+        )
         e = ImpactOfHealthSystemMode()
         return tuple(e._scenarios.keys())
 
@@ -59,14 +59,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             module='tlo.methods.healthsystem.summary',
             key='HSI_Event',
             custom_generate_series=get_counts_of_hsi_by_treatment_id,
-            do_scaling=False, # Counts of HSI shouldn't be scaled for this investigation
+            do_scaling=False,  # Counts of HSI shouldn't be scaled for this investigation
         ).pipe(set_param_names_as_column_index_level_0),
         only_mean=True,
     )
 
     # copy to clipboard
     counts_of_hsi_by_treatment_id.fillna(0.0).to_clipboard(excel=True)
-
 
 
 if __name__ == "__main__":
