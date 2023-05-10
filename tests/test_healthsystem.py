@@ -1316,6 +1316,7 @@ def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
                 assert event_prev.rand_queue_counter < next_event_tuple.rand_queue_counter, 'Not respecting rand'
         event_prev = next_event_tuple
 
+
 @pytest.mark.slow
 def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
     """The priority set by the policy should overwrite the priority the event was scheduled with. If the priority
