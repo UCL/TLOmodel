@@ -155,6 +155,7 @@ def test_natural_history(seed):
     sim.modules['Tb'].parameters['scaling_factor_WHO'] = 50
     sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"] = 100
     sim.modules['Tb'].parameters['prop_smear_positive'] = 1.0
+    sim.modules['Tb'].parameters['prop_smear_positive_hiv'] = 1.0
 
     # Make the population
     sim.make_initial_population(n=popsize)
@@ -186,9 +187,9 @@ def test_natural_history(seed):
     assert df.at[tb_case, 'tb_date_active'] == sim.date
     assert df.at[tb_case, 'tb_smear']
 
-    # check symptoms
+    # check for TB-related symptoms
     symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
-    assert set(sim.modules['SymptomManager'].has_what(tb_case)) == symptom_list
+    assert symptom_list.issubset(sim.modules['SymptomManager'].has_what(tb_case))
 
     # Check person_id has a ScreeningAndRefer event scheduled by TbActiveEvent
     date_event, event = [
