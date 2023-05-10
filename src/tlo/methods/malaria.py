@@ -933,7 +933,7 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 
         new_symptomatic_severe = df.loc[
             df.is_alive
-            & (df.ma_inf_type == "clinical")
+            & (df.ma_inf_type == "severe")
             & (df.ma_date_symptoms == now)].index
 
         new_symptomatic_pregnant = df.loc[
