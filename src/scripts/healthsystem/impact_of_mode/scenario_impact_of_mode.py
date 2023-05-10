@@ -30,7 +30,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 1
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
@@ -69,25 +69,25 @@ class ImpactOfHealthSystemMode(BaseScenario):
         """
 
         return {
-            "No Healthcare System": {
-                'HealthSystem': {
-                    'Service_Availability': []
-                },
-            },
+          #  "No Healthcare System": {
+          #      'HealthSystem': {
+          #          'Service_Availability': []
+          #      },
+          #  },
 
-            "Mode 0": {
-                'HealthSystem': {
-                    'mode_appt_constraints': 0,
-                    "use_funded_or_actual_staffing": "actual",
-                },
-            },
+          #  "Mode 0": {
+          #      'HealthSystem': {
+          #          'mode_appt_constraints': 0,
+          #          "use_funded_or_actual_staffing": "actual",
+          #      },
+          #  },
 
-            "Mode 1": {
-                'HealthSystem': {
-                    'mode_appt_constraints': 1,
-                    "use_funded_or_actual_staffing": "actual",
-                },
-            },
+          #  "Mode 1": {
+          #      'HealthSystem': {
+          #          'mode_appt_constraints': 1,
+          #          "use_funded_or_actual_staffing": "actual",
+          #      },
+          #  },
 
             "Mode 2": {
                 'HealthSystem': {

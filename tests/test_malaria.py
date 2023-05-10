@@ -127,6 +127,7 @@ def test_remove_malaria_test(seed):
             mode_appt_constraints=0,
             cons_availability='all',
             ignore_priority=True,
+            adopt_priority_policy=False,  # overwrite default
             capabilities_coefficient=0.0,
             disable=False,  # disables the health system constraints so all HSI events run
         ),
