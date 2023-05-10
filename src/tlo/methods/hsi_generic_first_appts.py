@@ -158,7 +158,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
     if "Malaria" in sim.modules:
         if 'fever' in symptoms:
-            sim.modules['Malaria'].do_on_presentation_with_fever_under5(person_id=person_id, hsi_event=hsi_event)
+            sim.modules['Malaria'].do_on_non_emergency_presentation_with_fever(person_id=person_id, hsi_event=hsi_event)
 
     if age <= 5:
         # ----------------------------------- CHILD < 5 -----------------------------------

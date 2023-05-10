@@ -531,7 +531,7 @@ class Malaria(Module):
             # Treat / refer based on diagnosis
             if malaria_test_result == "severe_malaria":
                 df.at[person_id, "ma_dx_counter"] += 1
-                self.sim.modules['HealthSystem'].schedule_hsi(
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
                     HSI_Malaria_Treatment_Complicated(
                         person_id=person_id,
                         module=self),
@@ -542,7 +542,7 @@ class Malaria(Module):
             # return type "clinical_malaria" includes asymptomatic infection
             elif malaria_test_result == "clinical_malaria":
                 df.at[person_id, "ma_dx_counter"] += 1
-                self.sim.modules['HealthSystem'].schedule_hsi(
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
                     HSI_Malaria_Treatment(
                         person_id=person_id,
                         module=self),
@@ -565,7 +565,7 @@ class Malaria(Module):
                 df.at[person_id, "ma_dx_counter"] += 1
 
                 # Launch the HSI for treatment for Malaria, HSI_Malaria_Treatment will determine correct treatment
-                self.sim.modules['HealthSystem'].schedule_hsi(
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=HSI_Malaria_Treatment_Complicated(
                         person_id=person_id,
                         module=self),
