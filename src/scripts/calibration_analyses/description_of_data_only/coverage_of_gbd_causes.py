@@ -320,7 +320,7 @@ sim.simulate(end_date=Date(2010, 1, 1))
 _, deaths_mapper_from_gbd_causes = \
     sim.modules['Demography'].create_mappers_from_causes_of_death_to_label()
 _, dalys_mapper_from_gbd_causes = \
-    sim.modules['HealthBurden'].create_mappers_from_causes_of_death_to_label()
+    sim.modules['HealthBurden'].create_mappers_from_causes_of_disability_to_label()
 
 # %% Load GBD data:
 gbd = format_gbd(pd.read_csv(resourcefilepath / "gbd" / "ResourceFile_Deaths_And_DALYS_GBD2019.csv"))
