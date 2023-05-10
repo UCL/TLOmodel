@@ -26,7 +26,6 @@ from tlo.methods.epilepsy import HSI_Epilepsy_Start_Anti_Epileptic
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.labour import HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour
-from tlo.methods.malaria import HSI_Malaria_Treatment, HSI_Malaria_Treatment_Complicated
 from tlo.methods.measles import HSI_Measles_Treatment
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
 from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
@@ -261,7 +260,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                                             depr.parameters['pr_assessed_for_depression_in_generic_appt_'
                                                             'level1']):
                 depr.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
-
 
         if 'CardioMetabolicDisorders' in sim.modules:
             # Take a blood pressure measurement for proportion of individuals who have not been diagnosed and

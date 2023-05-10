@@ -574,7 +574,6 @@ class Malaria(Module):
                 )
 
 
-
 class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
