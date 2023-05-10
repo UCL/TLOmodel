@@ -973,8 +973,7 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # create list of all new symptomatic cases
-        all_new_infections = list(new_symptomatic_clinical)
-        all_new_infections.extend(x for x in new_symptomatic_severe if x not in all_new_infections)
+        all_new_infections = sorted(set(new_symptomatic_clinical).union(new_symptomatic_severe))
 
         # clinical counter
         df.loc[all_new_infections, "ma_clinical_counter"] += 1
