@@ -26,7 +26,11 @@ IN_PATIENT_ADMISSION = {'IPAdmission': 2}
 # in-patient require discharging). The limitation is that the discharge appointment occurs on the same day as the
 # admission. See: https://github.com/UCL/TLOmodel/issues/530
 
-IN_PATIENT_DAY = {'InpatientDays': 1}
+IN_PATIENT_DAY_FIRST_DAY = {'InpatientDays': 0}
+# There is no in-patient appointment day needed on the first day, as the care is covered under the admission.
+
+IN_PATIENT_DAY_SUBSEQUENT_DAYS = {'InpatientDays': 1}
+# Care required on days after the day of admission (including the day of discharge).
 
 
 class BedDays:
@@ -449,7 +453,7 @@ class BedDays:
     def add_first_day_inpatient_appts_to_footprint(appt_footprint):
         """Return an APPT_FOOTPRINT with the addition (if not already present) of the in-patient admission appointment
         and the in-patient day appointment type (for the first day of the in-patient stay)."""
-        return {**appt_footprint, **IN_PATIENT_ADMISSION, **IN_PATIENT_DAY}
+        return {**appt_footprint, **IN_PATIENT_ADMISSION, **IN_PATIENT_DAY_FIRST_DAY}
 
     def get_inpatient_appts(self) -> dict:
         """Return a dict of the form {<facility_id>: APPT_FOOTPRINT} giving the total APPT_FOOTPRINT required for the
@@ -465,7 +469,7 @@ class BedDays:
             return {appt_type: num_needed * _num for appt_type, num_needed in _footprint.items()}
 
         return {
-            fac_id: multiply_footprint(IN_PATIENT_DAY, num_inpatients)
+            fac_id: multiply_footprint(IN_PATIENT_DAY_SUBSEQUENT_DAYS, num_inpatients)
             for fac_id, num_inpatients in total_inpatients[total_inpatients > 0].to_dict().items()
         }
         # NB. As we haven't got a record of which person is in which bed, we cannot associate a person with a particular

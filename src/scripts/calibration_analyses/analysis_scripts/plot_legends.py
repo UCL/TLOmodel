@@ -6,7 +6,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import (
-    CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP,
+    CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
     get_coarse_appt_type,
     get_color_coarse_appt,
     get_color_short_treatment_id,
@@ -25,9 +25,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig, ax = plt.subplots()
         for i, (_label, _color) in enumerate(zip(labels, colors)):
             ax.bar(i, np.nan, color=_color, label=_label)
-        ax.legend(fontsize=14, ncol=2, loc='center')
+        ax.legend(fontsize=12, ncol=2, loc='center')
         ax.axis('off')
         ax.set_title(title, fontsize=14)
+        fig.tight_layout()
         fig.savefig(output_folder / f"{PREFIX_ON_FILENAME}_{title.replace(' ', '_')}.png")
         return fig, ax
 
@@ -63,9 +64,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # %% Cause of Death Labels
     fig, ax = plot_legend(
-        labels=list(CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.keys()),
-        colors=list(CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP.values()),
-        title="Cause-of-Death Labels",
+        labels=list(CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys()),
+        colors=list(CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.values()),
+        title="Cause-of-Death or -Disability Labels",
     )
     fig.show()
     plt.close(fig)

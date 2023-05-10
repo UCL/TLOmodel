@@ -67,10 +67,12 @@ class HSIEventQueueItem(NamedTuple):
     The order of the attributes in the tuple is important as the queue sorting is done
     by the order of the items in the tuple, i.e. first by `priority`, then `topen` and
     so on.
+
+    Ensure priority is above topen in order for held-over events with low priority not
+    to jump ahead higher priority ones which were opened later.
     """
-    topen: Date
-    # Note: for speed up in mode=2, include facility_ID: int here
     priority: int
+    topen: Date
     rand_queue_counter: int  # Ensure order of events with same topen & priority is not model-dependent
     queue_counter: int  # Include safety tie-breaker in unlikely event rand_queue_counter is equal
     tclose: Date
@@ -1101,7 +1103,7 @@ class HealthSystem(Module):
             rand_queue = self.hsi_event_queue_counter
 
         _new_item: HSIEventQueueItem = HSIEventQueueItem(
-            topen, priority, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event)
+            priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event)
 
         # Add to queue:
         hp.heappush(self.HSI_EVENT_QUEUE, _new_item)
@@ -1162,7 +1164,8 @@ class HealthSystem(Module):
             # It must have EXPECTED_APPT_FOOTPRINT, BEDDAYS_FOOTPRINT and ACCEPTED_FACILITY_LEVELS.
 
             # Correct formatted EXPECTED_APPT_FOOTPRINT
-            assert self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT)
+            assert self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT), \
+                f"the incorrectly formatted appt_footprint is {hsi_event.EXPECTED_APPT_FOOTPRINT}"
 
             # That it has an acceptable 'ACCEPTED_FACILITY_LEVEL' attribute
             assert hsi_event.ACCEPTED_FACILITY_LEVEL in self._facility_levels, \
@@ -1283,7 +1286,7 @@ class HealthSystem(Module):
         """
         # Check that all keys known appointment types and all values non-negative
         return isinstance(appt_footprint, dict) and all(
-            k in self._appointment_types and v > 0
+            k in self._appointment_types and v >= 0
             for k, v in appt_footprint.items()
         )
 
@@ -1446,12 +1449,21 @@ class HealthSystem(Module):
                 load_factor[officer] = max(call / availability - 1, 0.0)
 
         # 2) Convert these load-factors into an overall 'squeeze' signal for each HSI,
-        # based on the highest load-factor of any officer required (or zero if event
-        # has an empty footprint)
-        squeeze_factor_per_hsi_event = np.array([
-            max((load_factor[officer] for officer in footprint), default=0.0)
-            for footprint in footprints_per_event
-        ])
+        # based on the load-factor of the officer with the largest time requirement for that
+        # event (or zero if event has an empty footprint)
+        squeeze_factor_per_hsi_event = []
+        for footprint in footprints_per_event:
+            if len(footprint) > 0:
+                # If any of the required officers are not available at the facility, set overall squeeze to inf
+                require_missing_officer = any([load_factor[officer] == float('inf') for officer in footprint])
+
+                if require_missing_officer:
+                    squeeze_factor_per_hsi_event.append(float('inf'))
+                else:
+                    squeeze_factor_per_hsi_event.append(max(load_factor[footprint.most_common()[0][0]], 0.))
+            else:
+                squeeze_factor_per_hsi_event.append(0.0)
+        squeeze_factor_per_hsi_event = np.array(squeeze_factor_per_hsi_event)
 
         assert (squeeze_factor_per_hsi_event >= 0).all()
 
@@ -1521,6 +1533,8 @@ class HealthSystem(Module):
                 self._hsi_event_counts_log_period[event_details_key] += 1
             self._summary_counter.record_hsi_event(
                 treatment_id=event_details.treatment_id,
+                hsi_event_name=event_details.event_name,
+                squeeze_factor=squeeze_factor,
                 appt_footprint=event_details.appt_footprint,
                 level=event_details.facility_level,
             )
@@ -2017,10 +2031,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 pass
 
             elif self.sim.date < next_event_tuple.topen:
-                # The event is not yet due (before topen), and therefore neither will all subsequent ones.
-                # Break here, but first make sure the next_event_tuple is saved
+                # The event is not yet due (before topen)
                 hp.heappush(_list_of_events_not_due_today, next_event_tuple)
-                break
+
+                if next_event_tuple.priority == self.module.lowest_priority_considered:
+                    # Check the priority
+                    # If the next event is not due and has low priority, then stop looking through the heapq
+                    # as all other events will also not be due.
+                    break
 
             else:
                 # The event is now due to run today and the person is confirmed to be still alive
@@ -2032,8 +2050,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     _list_of_population_hsi_event_tuples_due_today.append(next_event_tuple)
                 else:
                     _list_of_individual_hsi_event_tuples_due_today.append(next_event_tuple)
-
-        assert len(_list_of_events_not_due_today) <= 1
 
         # add events from the _list_of_events_not_due_today back into the queue
         while len(_list_of_events_not_due_today) > 0:
@@ -2151,12 +2167,26 @@ class HealthSystemSummaryCounter:
         self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
         # <--Same as `self._appts` but also split by facility_level
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
+        self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
+        #                                                           treatment_id. Key is of the form:
+        #                                                           "<TREATMENT_ID>:<HSI_EVENT_NAME>"
 
-    def record_hsi_event(self, treatment_id: str, appt_footprint: Counter, level: str) -> None:
+    def record_hsi_event(self,
+                         treatment_id: str,
+                         hsi_event_name: str,
+                         squeeze_factor: float,
+                         appt_footprint: Counter,
+                         level: str
+                         ) -> None:
         """Add information about an `HSI_Event` to the running summaries."""
 
         # Count the treatment_id:
         self._treatment_ids[treatment_id] += 1
+
+        # Add the squeeze-factor to the list
+        self._squeeze_factor_by_hsi_event_name[
+            f"{treatment_id}:{hsi_event_name}"
+        ].append(squeeze_factor)
 
         # Count each type of appointment:
         for appt_type, number in appt_footprint:
@@ -2175,11 +2205,15 @@ class HealthSystemSummaryCounter:
         logger_summary.info(
             key="HSI_Event",
             description="Counts of the HSI_Events that have occurred in this calendar year by TREATMENT_ID, "
-                        "and counts of the 'Appt_Type's that have occurred in this calendar year.",
+                        "and counts of the 'Appt_Type's that have occurred in this calendar year,"
+                        "and the average squeeze_factor for HSIs that have occurred in this calendar year.",
             data={
                 "TREATMENT_ID": self._treatment_ids,
                 "Number_By_Appt_Type_Code": self._appts,
                 "Number_By_Appt_Type_Code_And_Level": self._appts_by_level,
+                'squeeze_factor': {
+                    k: sum(v) / len(v) for k, v in self._squeeze_factor_by_hsi_event_name.items()
+                }
             },
         )
 
