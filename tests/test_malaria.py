@@ -459,7 +459,7 @@ def test_severe_malaria_deaths_treatment_failure(sim):
 
 def get_sim(seed):
     """
-    get sim with the checks for configuration of properties running in the TB module
+    get sim with the checks for configuration of properties running in the malaria module
     """
 
     start_date = Date(2010, 1, 1)
@@ -503,7 +503,7 @@ def test_individual_testing_and_treatment(sim):
     # -------- clinical infection
     person_id = 0
 
-    # assign person_id active tb
+    # assign person_id malaria infection
     df.at[person_id, 'ma_is_infected'] = True
     df.at[person_id, 'ma_date_infected'] = sim.date
     df.at[person_id, 'ma_date_symptoms'] = sim.date
@@ -515,6 +515,7 @@ def test_individual_testing_and_treatment(sim):
     pollevent.run()
 
     assert not pd.isnull(df.at[person_id, "ma_date_symptoms"])
+    assert set(sim.modules['SymptomManager'].has_what(person_id)) == {"fever", "headache", "vomiting", "stomachache"}
 
     # check rdt is scheduled
     date_event, event = [
@@ -524,15 +525,13 @@ def test_individual_testing_and_treatment(sim):
     assert date_event > sim.date
 
     # screen and test person_id
-    rdt_appt = malaria.HSI_Malaria_rdt(person_id=person_id,
-                                       module=sim.modules['Malaria'])
-    rdt_appt.apply(person_id=person_id, squeeze_factor=0.0)
+    event.run(squeeze_factor=0.0)
 
     # check person diagnosed
     assert df.at[person_id, "ma_dx_counter"] == 1
 
     # check treatment event is scheduled
-    date_event, event = [
+    date_event, tx_event = [
         ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
         isinstance(ev[1], malaria.HSI_Malaria_Treatment)
     ][0]
@@ -540,9 +539,7 @@ def test_individual_testing_and_treatment(sim):
 
     # run treatment event and check person is treated and treatment counter incremented
     assert df.at[person_id, "ma_tx_counter"] == 0
-    tx_appt = malaria.HSI_Malaria_Treatment(person_id=person_id,
-                                            module=sim.modules['Malaria'])
-    tx_appt.apply(person_id=person_id, squeeze_factor=0.0)
+    tx_event.run(squeeze_factor=0.0)
 
     assert df.at[person_id, "ma_tx_counter"] == 1
     assert df.at[person_id, "ma_tx"]
@@ -550,7 +547,7 @@ def test_individual_testing_and_treatment(sim):
     # -------- asymptomatic infection
     person_id = 1
 
-    # assign person_id active tb
+    # assign person_id malaria
     df.at[person_id, 'ma_is_infected'] = True
     df.at[person_id, 'ma_date_infected'] = sim.date
     df.at[person_id, 'ma_date_symptoms'] = sim.date
@@ -597,7 +594,7 @@ def test_individual_testing_and_treatment(sim):
     # -------- severe infection
     person_id = 2
 
-    # assign person_id active tb
+    # assign person_id malaria
     df.at[person_id, 'ma_is_infected'] = True
     df.at[person_id, 'ma_date_infected'] = sim.date
     df.at[person_id, 'ma_date_symptoms'] = sim.date
@@ -665,12 +662,12 @@ def test_population_testing_and_treatment(sim):
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE = []
     sim.event_queue.queue = []
 
-    df.ma_is_infected = True
-    df.ma_date_infected = sim.date
-    df.ma_date_symptoms = sim.date
-    df.ma_inf_type = "clinical"
+    df.loc[df.is_alive, "ma_is_infected"] = True
+    df.loc[df.is_alive, "ma_date_infected"] = sim.date
+    df.loc[df.is_alive, "ma_date_symptoms"] = sim.date
+    df.loc[df.is_alive, "ma_inf_type"] = "clinical"
 
-    idx = list(df.index.values)
+    idx = list(df.loc[df.is_alive].index)
 
     # assign clinical symptoms and schedule rdt
     pollevent = malaria.MalariaUpdateEvent(module=sim.modules['Malaria'])
@@ -678,7 +675,7 @@ def test_population_testing_and_treatment(sim):
 
     assert df["ma_clinical_counter"].sum() == pop
 
-    # check 10 rdt are scheduled
+    # check one rdt is scheduled for each person in idx
     for person in idx:
         assert 1 == len([
             ev[0] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id=person) if
@@ -691,7 +688,7 @@ def test_population_testing_and_treatment(sim):
                                            module=sim.modules['Malaria'])
         rdt_appt.apply(person_id=person, squeeze_factor=0.0)
 
-    assert df["ma_dx_counter"].sum() == pop
+    assert df.loc[df.is_alive, "ma_clinical_counter"].sum() == len(df.loc[df.is_alive])
 
     # check 10 treatment events are scheduled
     for person in idx:
