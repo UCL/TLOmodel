@@ -512,7 +512,7 @@ def test_individual_testing_and_treatment(sim):
 
     # assign clinical symptoms and schedule rdt
     pollevent = malaria.MalariaUpdateEvent(module=sim.modules['Malaria'])
-    pollevent.apply(sim.population)
+    pollevent.run()
 
     assert not pd.isnull(df.at[person_id, "ma_date_symptoms"])
 
