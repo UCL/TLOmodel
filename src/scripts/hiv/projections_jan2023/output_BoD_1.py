@@ -10,6 +10,8 @@ import matplotlib.patches as mpatches
 from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
+
+import tlo
 from tlo.analysis.utils import extract_results, summarize
 from tlo import Date
 
@@ -18,9 +20,13 @@ resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 #outputpath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-with open(outputpath / "default_run.pickle", "rb") as f:
+# with open(outputpath / "default_run.pickle", "rb") as f:
+#     output = pickle.load(f)
+
+with open(outputpath / "NoXpert.pickle", "rb") as f:
     output = pickle.load(f)
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2012, 12, 31))
+
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2013, 12, 31))
 
 
 def get_num_deaths(_df):
@@ -81,6 +87,7 @@ def make_plot(_df, annotations=None):
 # num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
 
 print(output.keys())
+#print(output(tlo.methods.healthsystem.summary).keys())
 # output serialises availability of  CXR consumables
 cons_available = output['tlo.methods.healthsystem.summary']['Consumables'].drop(columns=[])
 cons_available .to_excel(outputpath / "cons_available_NoXpert.xlsx")
