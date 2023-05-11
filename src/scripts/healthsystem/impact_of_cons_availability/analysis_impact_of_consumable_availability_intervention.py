@@ -1,6 +1,11 @@
 """This file uses the results of the results of running `impact_of_consumable_availability_intervention.py`
 tob extract summary results for the manuscript - "Rethinking economic evaluation of
-system level interventions."""
+system level interventions.
+
+I plan to run the simulation for a short period of 5 years (2020 - 2025) because
+holding the consumable availability constant in the short run would be more justifiable
+than holding it constant for a long period.
+"""
 
 import argparse
 from pathlib import Path
