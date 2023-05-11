@@ -191,11 +191,26 @@ class CopdModels:
         self.rng = rng
 
         # The chance (in a 3-month period) of progressing to the next (greater) category of ch_lungfunction
-        self.__Prob_Progress_LungFunction__ = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            self.params['prob_progress_to_next_cat']
+        self.__Prob_Progress_LungFunction__ = LinearModel.multiplicative(
+            Predictor(
+                'ch_lungfunction',
+                conditions_are_exhaustive=True,
+                conditions_are_mutually_exclusive=True
+            ).when(0, self.params['prob_progress_to_next_cat'] *
+                   (self.params['rel_risk_progress_per_higher_cat'] ** [0]))
+             .when(1, self.params['prob_progress_to_next_cat'] *
+                   (self.params['rel_risk_progress_per_higher_cat'] ** [1]))
+             .when(2, self.params['prob_progress_to_next_cat'] *
+                   (self.params['rel_risk_progress_per_higher_cat'] ** [2]))
+             .when(3, self.params['prob_progress_to_next_cat'] *
+                   (self.params['rel_risk_progress_per_higher_cat'] ** [3]))
+             .when(4, self.params['prob_progress_to_next_cat'] *
+                   (self.params['rel_risk_progress_per_higher_cat'] ** [4]))
+             .when(5, self.params['prob_progress_to_next_cat'] *
+                   (self.params['rel_risk_progress_per_higher_cat'] ** [5]))
+             .when(6, self.params['prob_progress_to_next_cat'] *
+                   (self.params['rel_risk_progress_per_higher_cat'] ** [6]))
         )
-
         # The probability (in a 3-month period) of having a Moderate Exacerbation
         self.__Prob_ModerateExacerbation__ = LinearModel.multiplicative(
             Predictor(
