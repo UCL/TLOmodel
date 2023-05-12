@@ -1411,3 +1411,35 @@ def test_determinism_of_hsi_that_run_and_consumables_availabilities(seed, tmpdir
         # - HSI Events
         pd.testing.assert_frame_equal(next_run['hsi_event'], first_run['hsi_event'])
 
+
+def test_determinism_of_hsi_that_run_and_consumables(seed, tmpdir):
+    """Check the two identical runs of model can be produced when the service_availability is set using ['*'] and when
+     using the list of TREATMENT_IDs that occur during a run when the service_availability is set using ['*']. """
+
+    def get_hsi_log(service_availability) -> pd.DataFrame:
+        """Return the log of HSI_Events that occur when running the simulation with the `service_availability` set as
+        indicated."""
+        sim = Simulation(start_date=start_date, seed=seed, log_config={
+            'filename': 'tmpfile',
+            'directory': tmpdir,
+            'custom_levels': {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        })
+        sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+        sim.modules['HealthSystem'].parameters['Service_Availability'] = service_availability
+        sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
+        sim.make_initial_population(n=500)
+
+        sim.simulate(end_date=start_date + pd.DateOffset(days=7))
+
+        return parse_log_file(sim.log_filepath, level=logging.DEBUG)['tlo.methods.healthsystem']['HSI_Event']
+
+    # - when specifying service-availability as "*"
+    run_with_asterisk = get_hsi_log(service_availability=["*"])
+
+    # - when specifying service-availability as a list of TREATMENT_IDs
+    run_with_list = get_hsi_log(service_availability=list(set(run_with_asterisk['TREATMENT_ID'])))
+
+    # Check that HSI event logs are identical
+    pd.testing.assert_frame_equal(run_with_asterisk, run_with_list)
