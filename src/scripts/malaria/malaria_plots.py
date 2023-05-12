@@ -39,12 +39,17 @@ WHO_comm = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="WHO_TestData2023",
 )
 
+# NMCP rdt data
+NMCP_comm = pd.read_excel(
+    Path(resourcefilepath) / "ResourceFile_malaria.xlsx", sheet_name="NMCP",
+)
+
 # ---------------------------------------------------------------------- #
 # %%: MODEL OUTPUTS
 # ---------------------------------------------------------------------- #
 
 # load the results
-with open(outputpath / "default_run.pickle", "rb") as f:
+with open(outputpath / "malaria_run.pickle", "rb") as f:
     output = pickle.load(f)
 
 inc = output["tlo.methods.malaria"]["incidence"]
@@ -122,6 +127,7 @@ plt.tight_layout()
 ax3 = plt.subplot(223)  # numrows, numcols, fignum
 plt.plot(MAP_comm.Year, MAP_comm.RDT_Consumption_Public, color="crimson")  # MAP data
 plt.plot(WHO_comm.Year, WHO_comm.NumSuspectedCasesTestedByRDT, color="darkorchid")  # WHO data
+plt.plot(NMCP_comm.Year, NMCP_comm.NMCP_RDTs_Qty_Dispersed, color="lightblue")  # WHO data
 plt.plot(model_years, scaled_rdt_usage_model[1:10], color="mediumseagreen")  # model
 plt.title("RDT usage")
 plt.xlabel("Year")
@@ -129,7 +135,7 @@ plt.xticks(rotation=90)
 plt.ylabel("Numbers of RDTs used")
 plt.gca().set_xlim(start_date, end_date)
 plt.gca().set_ylim(0.0, 4.0e7)
-plt.legend(["MAP", "WHO", "Model"])
+plt.legend(["MAP", "WHO", "NMCP", "Model"])
 plt.tight_layout()
 
 # malaria rdt yield
