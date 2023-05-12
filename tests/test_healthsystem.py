@@ -1214,7 +1214,7 @@ def test_manipulation_of_service_availability(seed, tmpdir):
 
         sim.register(*fullmodel(resourcefilepath=resourcefilepath))
         sim.modules['HealthSystem'].parameters['Service_Availability'] = service_availability  # Change parameter
-        sim.modules['HealthSystem'].parameters['cons_availability'] = 'none'  # Change parameter
+        sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
         sim.make_initial_population(n=500)
         sim.simulate(end_date=start_date + pd.DateOffset(days=7))
 
