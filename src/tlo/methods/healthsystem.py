@@ -555,6 +555,7 @@ class HealthSystem(Module):
 
         self.adopt_priority_policy = adopt_priority_policy
 
+        self.rng_for_hsi_queue = None  # Will be a secondary RNG for the purpose of randomising the queue
         self.randomise_queue = randomise_queue
 
         self.include_fasttrack_routes = include_fasttrack_routes
@@ -685,6 +686,8 @@ class HealthSystem(Module):
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
+        # Create secondary RNG
+        self.rng_for_hsi_queue = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
 
         # Determine service_availability
         self.service_availability = self.get_service_availability()
@@ -1091,7 +1094,7 @@ class HealthSystem(Module):
         self.hsi_event_queue_counter += 1
 
         if self.randomise_queue:
-            rand_queue = self.rng.randint(0, 1000000)
+            rand_queue = self.rng_for_hsi_queue.randint(0, 1000000)
         else:
             rand_queue = self.hsi_event_queue_counter
 

@@ -1623,9 +1623,10 @@ def test_determinism_of_hsi_that_run_and_consumables_availabilities(seed, tmpdir
         pd.testing.assert_frame_equal(next_run['hsi_event'], first_run['hsi_event'])
 
 
-def test_determinism_of_hsi_that_run_and_consumables(seed, tmpdir):
+def test_service_availability_can_be_set_using_list_of_treatment_ids_expected_to_run(seed, tmpdir):
     """Check the two identical runs of model can be produced when the service_availability is set using ['*'] and when
-     using the list of TREATMENT_IDs that occur during a run when the service_availability is set using ['*']. """
+     using the list of TREATMENT_IDs that occur during a run when the service_availability is set using ['*'].
+     Here, there is no randomisation of the HSI Event queue."""
 
     def get_hsi_log(service_availability) -> pd.DataFrame:
         """Return the log of HSI_Events that occur when running the simulation with the `service_availability` set as
@@ -1637,7 +1638,8 @@ def test_determinism_of_hsi_that_run_and_consumables(seed, tmpdir):
                 "tlo.methods.healthsystem": logging.DEBUG,
             }
         })
-        sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+        sim.register(*fullmodel(resourcefilepath=resourcefilepath,
+                                module_kwargs={'HealthSystem': {'randomise_queue': False}}))
         sim.modules['HealthSystem'].parameters['Service_Availability'] = service_availability
         sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
         sim.make_initial_population(n=500)
@@ -1654,3 +1656,48 @@ def test_determinism_of_hsi_that_run_and_consumables(seed, tmpdir):
 
     # Check that HSI event logs are identical
     pd.testing.assert_frame_equal(run_with_asterisk, run_with_list)
+
+
+def test_hsi_events_that_run_with_and_without_randomisation_are_as_expected(seed, tmpdir):
+    """Check the two runs of model that are identical except for the option to randomise/not the HSI_Event queue
+     generate a log of HSI Events that are different in the manner expected (i.e. the same events, but shuffled to
+     occur in a different order in the day.)"""
+
+    def get_hsi_log(randomise_queue) -> pd.DataFrame:
+        """Return the log of HSI_Events that occur when running the simulation with the `service_availability` set as
+        indicated."""
+        sim = Simulation(start_date=start_date, seed=seed, log_config={
+            'filename': 'tmpfile',
+            'directory': tmpdir,
+            'custom_levels': {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        })
+        sim.register(*fullmodel(resourcefilepath=resourcefilepath,
+                                module_kwargs={
+                                    'HealthSystem': {
+                                        'randomise_queue': randomise_queue,
+                                        'mode_appt_constraints': 0,
+                                        'use_funded_or_actual_staffing': 'funded_plus',
+                                    }
+                                },
+                                )
+                     )
+        sim.modules['HealthSystem'].parameters['Service_Availability'] = ['*']
+        sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
+        sim.make_initial_population(n=500)
+
+        sim.simulate(end_date=start_date + pd.DateOffset(days=7))
+
+        return parse_log_file(sim.log_filepath, level=logging.DEBUG)['tlo.methods.healthsystem']['HSI_Event']
+
+    # Make two runs that differ only in whether the HSI event queue is randomised.
+    run1 = get_hsi_log(randomise_queue=True)
+    run2 = get_hsi_log(randomise_queue=False)
+
+    # We expect that the same HSI event should on each day, but in a different order. Check this, by imposing a sort
+    # on events and checking that this makes the logs identical.
+    pd.testing.assert_frame_equal(
+        run1.sort_values(by=['date', 'Event_Name', 'Person_ID']).reset_index(drop=True),
+        run2.sort_values(by=['date', 'Event_Name', 'Person_ID']).reset_index(drop=True),
+    )
