@@ -10,6 +10,8 @@ from matplotlib import pyplot as plt
 from tlo import Date
 from tlo.analysis.utils import (
     COARSE_APPT_TYPE_TO_COLOR_MAP,
+    SHORT_TREATMENT_ID_TO_COLOR_MAP,
+    _standardize_short_treatment_id,
     bin_hsi_event_details,
     compute_mean_across_runs,
     extract_results,
@@ -25,7 +27,7 @@ from tlo.analysis.utils import (
 PREFIX_ON_FILENAME = '3'
 
 # Declare period for which the results will be generated (defined inclusively)
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2010, 12, 31))
+TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 
 
 def drop_outside_period(_df):
@@ -155,7 +157,8 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
             True
         )
     )[0]
-    name_of_plot = 'Appointment Types Used'
+
+    name_of_plot = 'Appointment Used by Each TREATMENT_ID'
     fig, ax = plt.subplots()
     plot_stacked_bar_chart(
         ax,
@@ -167,15 +170,53 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
     ax.spines['right'].set_visible(False)
     ax.tick_params(axis='x', labelrotation=90)
     ax.legend(ncol=2, prop={'size': 8}, loc='upper left')
+    ax.legend().set_visible(False)  # suppress legend
     ax.set_ylabel('Number of appointments (millions)')
     ax.set_xlabel('TREATMENT_ID (Short)')
-    ax.set_ylim(0, 80)
+    ax.set_ylim(0, 600)
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     fig.tight_layout()
     fig.savefig(
         output_folder
         / f"{PREFIX_ON_FILENAME}_Fig2_{name_of_plot.replace(' ', '_')}.png"
     )
+    fig.show()
+    plt.close(fig)
+
+    # Pivot the data so that Appt Types are on Horizontal Axis
+    df = pd.Series(counts_by_treatment_id_and_coarse_appt_type).reset_index()
+    df['Appt_Type'] = df.level_1\
+        .astype(pd.CategoricalDtype(categories=list(COARSE_APPT_TYPE_TO_COLOR_MAP.keys()), ordered=True))
+    df['TREATMENT_ID'] = df.level_0\
+        .map(lambda x: _standardize_short_treatment_id(x))\
+        .astype(pd.CategoricalDtype(categories=list(SHORT_TREATMENT_ID_TO_COLOR_MAP.keys()), ordered=True))
+    df = df.sort_values(by=['Appt_Type', 'TREATMENT_ID'])
+    df = df.groupby(by=['Appt_Type', 'TREATMENT_ID'])[0].sum().unstack(fill_value=0).stack()
+    counts_by_coarse_appt_type_and_treatment_id = Counter(df.to_dict())
+
+    name_of_plot = 'Appointment Types Used'
+    fig, ax = plt.subplots()
+    plot_stacked_bar_chart(
+        ax,
+        counts_by_coarse_appt_type_and_treatment_id,
+        # SHORT_TREATMENT_ID_TO_COLOR_MAP,
+        count_scale=1e-6
+    )
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.tick_params(axis='x', labelrotation=90)
+    ax.legend(ncol=2, prop={'size': 8}, loc='upper left')
+    ax.legend().set_visible(False)  # suppress legend
+    ax.set_ylabel('Number of appointments (millions)')
+    ax.set_xlabel('Appointment Types')
+    ax.set_ylim(0, 600)
+    ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
+    fig.tight_layout()
+    fig.savefig(
+        output_folder
+        / f"{PREFIX_ON_FILENAME}_Fig2_{name_of_plot.replace(' ', '_')}.png"
+    )
+    fig.show()
     plt.close(fig)
 
 
@@ -566,6 +607,67 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
     plt.close(fig)
 
 
+def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcefilepath: Path):
+    """ 'Figure 7': Squeeze Factors for the HSIs"""
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_Fig7_{stub}.png"  # noqa: E731
+
+    def get_mean_squeeze_factor_by_hsi(_df):
+        """Get the counts of the short TREATMENT_IDs occurring"""
+        return _df \
+            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'squeeze_factor'] \
+            .apply(pd.Series) \
+            .mean()
+
+    squeeze_factor_by_hsi = summarize(
+        extract_results(
+            results_folder,
+            module='tlo.methods.healthsystem.summary',
+            key='HSI_Event',
+            custom_generate_series=get_mean_squeeze_factor_by_hsi,
+            do_scaling=False,
+        ),
+        only_mean=True,
+        collapse_columns=True,
+    )
+
+    # Index by Treatment_ID / HSI:
+    squeeze_factor_by_hsi.index = squeeze_factor_by_hsi.index.str.split(':', expand=True)
+    squeeze_factor_by_hsi = squeeze_factor_by_hsi.reset_index().rename(columns={
+        'level_0': '_TREATMENT_ID',
+        'level_1': 'HSI',
+        'mean': 'squeeze_factor',
+    })
+
+    # Add in short TREATMENT_ID
+    squeeze_factor_by_hsi['TREATMENT_ID'] = squeeze_factor_by_hsi['_TREATMENT_ID'].map(lambda x: x.split('_')[0] + "*")
+
+    # Sort to collect the same TREATMENT_ID together
+    squeeze_factor_by_hsi = squeeze_factor_by_hsi.sort_values('TREATMENT_ID',
+                                                              key=order_of_short_treatment_ids,
+                                                              ascending=False).reset_index(drop=True)
+
+    fig, ax = plt.subplots(figsize=(7.2, 10.5))
+    name_of_plot = 'Average Squeeze Factors for each Health System Interaction Event'
+    for i, row in squeeze_factor_by_hsi.iterrows():
+        ax.plot(
+            row['squeeze_factor'],
+            i,
+            marker='.',
+            markersize=10,
+            color=get_color_short_treatment_id(row['TREATMENT_ID'])
+        )
+    ax.set_xlabel('Average Squeeze Factor')
+    ax.set_ylabel('Health System Interaction Event')
+    ax.set_yticks(squeeze_factor_by_hsi.index)
+    ax.set_yticklabels(squeeze_factor_by_hsi['HSI'], fontsize=6)
+    ax.grid(axis='x')
+    fig.suptitle(name_of_plot, fontsize=12, weight='bold')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    fig.show()
+    plt.close(fig)
+
+
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
 
@@ -590,6 +692,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
 
     figure6_cons_use(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    figure7_squeeze_factors(
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
     )
 
