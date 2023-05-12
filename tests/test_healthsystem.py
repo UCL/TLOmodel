@@ -1362,3 +1362,52 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
         'DummyHSI_To_Run_On_Same_Day_Event',
         'DummyHSI_To_Run_On_Same_Day_HSI',
     ]
+
+
+def test_determinism_of_hsi_that_run_and_consumables_availabilities(seed, tmpdir):
+    """Check that two runs of model with the same seed gives the same sequence of HSI that run and the same state of
+    the Consumables class at initiation."""
+
+    def get_hsi_log_and_consumables_state() -> pd.DataFrame:
+        """Return state of Consumables at the start of a simulation and the HSI_Event log that occur when running the
+         simulation (when all services available)."""
+        sim = Simulation(start_date=start_date, seed=seed, log_config={
+            'filename': 'tmpfile',
+            'directory': tmpdir,
+            'custom_levels': {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        })
+        sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+        sim.modules['HealthSystem'].parameters['Service_Availability'] = ["*"]
+        sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
+        sim.make_initial_population(n=1_000)
+
+        # Initialise consumables and capture its state
+        sim.modules['HealthSystem'].consumables.on_start_of_day(sim.date)
+
+        consumables_state_at_init = dict(
+            unknown_items=sim.modules['HealthSystem'].consumables._is_unknown_item_available,
+            known_items=sim.modules['HealthSystem'].consumables._is_available,
+            random_samples=list(sim.modules['HealthSystem'].consumables._rng.random_sample(100))
+        )
+
+        sim.simulate(end_date=start_date + pd.DateOffset(days=7))
+
+        return {
+            'consumables_state_at_init': consumables_state_at_init,
+            'hsi_event': parse_log_file(sim.log_filepath, level=logging.DEBUG)['tlo.methods.healthsystem']['HSI_Event'],
+        }
+
+    first_run = get_hsi_log_and_consumables_state()
+
+    # Check that all runs (with the same seed to simulation) are identical
+    for _ in range(2):
+        next_run = get_hsi_log_and_consumables_state()
+
+        # - Consumables State at Initialisation
+        assert next_run['consumables_state_at_init'] == first_run['consumables_state_at_init']
+
+        # - HSI Events
+        pd.testing.assert_frame_equal(next_run['hsi_event'], first_run['hsi_event'])
+
