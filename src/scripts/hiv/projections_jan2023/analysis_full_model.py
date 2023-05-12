@@ -23,9 +23,9 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 12, 31)
-popsize = 10000
-scenario = 0
+end_date = Date(2030, 12, 31)
+popsize = 50_000
+scenario = 1
 
 # set up the log config
 # add deviance measure logger if needed
@@ -46,7 +46,7 @@ log_config = {
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
 # seed = random.randint(0, 50000)
-seed = 32  # set seed for reproducibility
+seed = 9064  # set seed for reproducibility
 
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(*fullmodel(
