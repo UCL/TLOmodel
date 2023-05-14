@@ -470,7 +470,6 @@ class HealthSystem(Module):
         randomise_queue: bool = True,
         ignore_priority: bool = False,
         adopt_priority_policy: bool = False,
-        priority_rank_dict: dict = None,
         include_fasttrack_routes: bool = False,
         list_fasttrack: Optional[List[str]] = None,
         lowest_priority_considered: int = 10,
