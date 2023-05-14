@@ -8,6 +8,7 @@ import pandas as pd
 import pytest
 
 from tlo import Date, Module, Simulation, logging
+from tlo.analysis.hsi_events import get_details_of_defined_hsi_events
 from tlo.analysis.utils import parse_log_file
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import (
@@ -1230,7 +1231,8 @@ def test_manipulation_of_service_availability(seed, tmpdir):
     everything = get_set_of_treatment_ids_that_run(service_availability=["*"])
 
     # Run model with everything specified individually
-    assert everything == get_set_of_treatment_ids_that_run(service_availability=list(everything))
+    all_treatment_ids = sorted(set([i.treatment_id for i in get_details_of_defined_hsi_events()]))
+    assert everything == get_set_of_treatment_ids_that_run(service_availability=all_treatment_ids)
 
     # Run model with nothing available
     assert set() == get_set_of_treatment_ids_that_run(service_availability=[])
@@ -1612,23 +1614,21 @@ def test_determinism_of_hsi_that_run_and_consumables_availabilities(seed, tmpdir
 
     first_run = get_hsi_log_and_consumables_state()
 
-    # Check that all runs (with the same seed to simulation) are identical
+    # Check that all runs (with the same seed to simulation) are identical to the first run
     for _ in range(2):
         next_run = get_hsi_log_and_consumables_state()
-
         # - Consumables State at Initialisation
         assert next_run['consumables_state_at_init'] == first_run['consumables_state_at_init']
-
         # - HSI Events
         pd.testing.assert_frame_equal(next_run['hsi_event'], first_run['hsi_event'])
 
 
-def test_service_availability_can_be_set_using_list_of_treatment_ids_expected_to_run(seed, tmpdir):
+def test_service_availability_can_be_set_using_list_of_treatment_ids_and_asterisk(seed, tmpdir):
     """Check the two identical runs of model can be produced when the service_availability is set using ['*'] and when
-     using the list of TREATMENT_IDs that occur during a run when the service_availability is set using ['*'].
-     Here, there is no randomisation of the HSI Event queue."""
+     using the list of TREATMENT_IDs that are defined. Repeated for with and without randomisation of the HSI Event
+     queue."""
 
-    def get_hsi_log(service_availability) -> pd.DataFrame:
+    def get_hsi_log(service_availability, randomise_hsi_queue) -> pd.DataFrame:
         """Return the log of HSI_Events that occur when running the simulation with the `service_availability` set as
         indicated."""
         sim = Simulation(start_date=start_date, seed=seed, log_config={
@@ -1639,7 +1639,7 @@ def test_service_availability_can_be_set_using_list_of_treatment_ids_expected_to
             }
         })
         sim.register(*fullmodel(resourcefilepath=resourcefilepath,
-                                module_kwargs={'HealthSystem': {'randomise_queue': False}}))
+                                module_kwargs={'HealthSystem': {'randomise_queue': randomise_hsi_queue}}))
         sim.modules['HealthSystem'].parameters['Service_Availability'] = service_availability
         sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
         sim.make_initial_population(n=500)
@@ -1648,20 +1648,30 @@ def test_service_availability_can_be_set_using_list_of_treatment_ids_expected_to
 
         return parse_log_file(sim.log_filepath, level=logging.DEBUG)['tlo.methods.healthsystem']['HSI_Event']
 
-    # - when specifying service-availability as "*"
-    run_with_asterisk = get_hsi_log(service_availability=["*"])
+    # Look-up all the treatment_ids that are defined to be run.
+    all_treatment_ids = sorted(set([i.treatment_id for i in get_details_of_defined_hsi_events()]))
 
-    # - when specifying service-availability as a list of TREATMENT_IDs
-    run_with_list = get_hsi_log(service_availability=list(set(run_with_asterisk['TREATMENT_ID'])))
+    for _randomise_hsi_queue in (False, True):
+        # - when specifying service-availability as "*"
+        run_with_asterisk = get_hsi_log(
+            service_availability=["*"],
+            randomise_hsi_queue=_randomise_hsi_queue,
+        )
 
-    # Check that HSI event logs are identical
-    pd.testing.assert_frame_equal(run_with_asterisk, run_with_list)
+        # - when specifying service-availability as a list of TREATMENT_IDs
+        run_with_list = get_hsi_log(
+            service_availability=all_treatment_ids,
+            randomise_hsi_queue=_randomise_hsi_queue,
+        )
+
+        # Check that HSI event logs are identical
+        pd.testing.assert_frame_equal(run_with_asterisk, run_with_list)
 
 
 def test_hsi_events_that_run_with_and_without_randomisation_are_as_expected(seed, tmpdir):
     """Check the two runs of model that are identical except for the option to randomise/not the HSI_Event queue
-     generate a log of HSI Events that are different in the manner expected (i.e. the same events, but shuffled to
-     occur in a different order in the day.)"""
+     generate a log of HSI Events that are different only in the manner expected (i.e. the same events run but
+     shuffled to occur in a different order in the day.)"""
 
     def get_hsi_log(randomise_queue) -> pd.DataFrame:
         """Return the log of HSI_Events that occur when running the simulation with the `service_availability` set as
