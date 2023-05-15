@@ -75,7 +75,7 @@ scaled_rdt_usage_model = [i * scaling_factor for i in rdt_usage_model]
 MAP_rdt_yield = (MAP_comm.Tested_Positive_Public / MAP_comm.RDT_Consumption_Public) * 100
 WHO_rdt_yield = (WHO_comm.NumPositiveCasesTestedByRDT / WHO_comm.NumSuspectedCasesTestedByRDT) * 100
 # model rdt yield
-model_yield = (rdt_usage_model[1:10] / inc.number_new_cases) * 100
+model_yield = (rdt_usage_model[:-1]  / inc.number_new_cases) * 100
 
 # get model output dates in correct format
 model_years = pd.to_datetime(inc.date)
@@ -127,15 +127,15 @@ plt.tight_layout()
 ax3 = plt.subplot(223)  # numrows, numcols, fignum
 plt.plot(MAP_comm.Year, MAP_comm.RDT_Consumption_Public, color="crimson")  # MAP data
 plt.plot(WHO_comm.Year, WHO_comm.NumSuspectedCasesTestedByRDT, color="darkorchid")  # WHO data
-plt.plot(NMCP_comm.Year, NMCP_comm.NMCP_RDTs_Qty_Dispersed, color="lightblue")  # WHO data
-plt.plot(model_years, scaled_rdt_usage_model[1:10], color="mediumseagreen")  # model
+plt.plot(NMCP_comm.Year, NMCP_comm.NMCP_RDTs_Qty_Dispersed, color="blue")  # WHO data
+plt.plot(model_years, scaled_rdt_usage_model[:-1], color="mediumseagreen")  # model
 plt.title("RDT usage")
 plt.xlabel("Year")
 plt.xticks(rotation=90)
 plt.ylabel("Numbers of RDTs used")
 plt.gca().set_xlim(start_date, end_date)
 plt.gca().set_ylim(0.0, 4.0e7)
-plt.legend(["MAP", "WHO", "NMCP", "Model"])
+plt.legend(labels=["MAP", "WHO", "NMCP", "Model"], )
 plt.tight_layout()
 
 # malaria rdt yield
