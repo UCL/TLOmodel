@@ -326,11 +326,11 @@ def extract_comp_inc_folders(folder, comps_df, neo_comps_df, pregnancy_df, birth
     return results
 
 
-def line_graph_with_ci_and_target_rate(sim_years, mean_list, lq_list, uq_list, target_data_dict, y_label, title,
+def line_graph_with_ci_and_target_rate(sim_years, data, target_data_dict, y_label, title,
                                        graph_location, file_name):
     fig, ax = plt.subplots()
-    ax.plot(sim_years, mean_list, label="Model", color='deepskyblue')
-    ax.fill_between(sim_years, lq_list, uq_list, color='b', alpha=.1)
+    ax.plot(sim_years, data[0], label="Model", color='deepskyblue')
+    ax.fill_between(sim_years, data[1], data[2], label="95% CI", color='b', alpha=.1)
 
     if target_data_dict['double']:
         plt.errorbar(target_data_dict['first']['year'], target_data_dict['first']['value'],
@@ -401,7 +401,7 @@ def simple_line_chart_with_target(sim_years, model_rate, target_rate, y_title, t
 def simple_line_chart_with_ci(sim_years, data, y_title, title, file_name, graph_location):
     fig, ax = plt.subplots()
     ax.plot(sim_years, data[0], label="Model (mean)", color='deepskyblue')
-    ax.fill_between(sim_years, data[1], data[2], color='b', alpha=.1, label="UI (2.5-97.5)")
+    ax.fill_between(sim_years, data[1], data[2], color='b', alpha=.1, label="95% CI")
     plt.ylabel(y_title)
     plt.xlabel('Year')
     plt.title(title)

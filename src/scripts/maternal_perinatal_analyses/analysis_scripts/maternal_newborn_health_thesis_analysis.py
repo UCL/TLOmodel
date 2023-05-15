@@ -610,9 +610,49 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             ax.set_title(f'Cause specific {d[1]} for {k} scenario')
             plt.savefig(f'{primary_oc_path}/{k}_{d[0]}mr_by_cause.png', bbox_inches='tight')
             plt.show()
-
     save_mr_by_cause_data_and_output_graphs('mat', cod_data)
     save_mr_by_cause_data_and_output_graphs('neo', cod_neo_data)
+
+    def get_cause_spef_mmrs_on_same_graph(group, cod_data):
+        csmmr_dict = dict()
+        for k in cod_data:
+            csmmr_dict.update({k: []})
+            mean_vals = list()
+            lq_vals = list()
+            uq_vals = list()
+            for key in cod_data[k]:
+                if 'avg' in key:
+                    mean_vals.append(cod_data[k][key][0])
+                    lq_vals.append(cod_data[k][key][1])
+                    uq_vals.append(cod_data[k][key][2])
+            csmmr_dict[k] = [mean_vals, lq_vals, uq_vals]
+        N = len(csmmr_dict['Status Quo'][0])
+        ind = np.arange(N)
+        if len(csmmr_dict.keys()) > 3:
+            width = 0.15
+        else:
+            width = 0.35
+        x_ticks = list()
+        for x in range(len(csmmr_dict['Status Quo'][0])):
+            x_ticks.append(x)
+        for k, position, colour in zip(csmmr_dict, [ind - width, ind, ind + width, ind + width * 2, ind + width * 3],
+                                       scen_colours):
+            ci = [(x - y) / 2 for x, y in zip(csmmr_dict[k][2], csmmr_dict[k][1])]
+            plt.bar(position, csmmr_dict[k][0], width, label=k, yerr=ci, color=colour)
+        cod_keys = list()
+        for k in cod_data[scenario_titles[0]].keys():
+            if 'df' in k:
+                cod_keys.append(k)
+        labels = [l.replace('_mmr_df', '') for l in cod_keys]
+        plt.gca().set_ylim(bottom=0, top=45)
+        plt.ylabel('Average deaths per 100,000 live births')
+        plt.xlabel('Cause of death')
+        plt.title('Cause specific MMR by scenario')
+        plt.legend(loc='best')
+        plt.xticks(x_ticks, labels=labels, rotation=90, size=7)
+        plt.savefig(f'{primary_oc_path}/cs_mmr_one_graph.png', bbox_inches='tight')
+        plt.show()
+        pass
 
     #  ---------------- STILLBIRTH GRAPHS ---------------
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
@@ -1118,7 +1158,6 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         'Neonatal PNC Coverage as Proportion of Neonatal Survivors',
         secondary_oc_path, 'neo_pnc_coverage_survivors')
 
-
     # COMPLICATION INCIDCENE
     def extract_comp_inc_folders(folder, comps_df, neo_comps_df, pregnancy_df, births_df, comp_preg_df):
         def get_rate_df(comp_df, denom_df, denom):
@@ -1420,7 +1459,6 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
              'Rate per 1000 Births',
              'Rate per 1000 Births',
              'Rate per 1000 Births',
-             'Rate per 1000 Births',
              'Prevalence at birth',
              'Prevalence following birth',
              'Rate per 100 Births',
@@ -1455,15 +1493,14 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
              'Mean Rate of Postpartum Maternal Sepsis per Year by Scenario',
              'Mean Rate of Postpartum Haemorrhage per Year by Scenario',
              'Mean Rate of Primary Postpartum Haemorrhage per Year by Scenario',
-             'Mean Rate of Secondary Postpartum Haemorrhage per Year by Scenario'
+             'Mean Rate of Secondary Postpartum Haemorrhage per Year by Scenario',
              'Mean Prevalence of Anaemia at birth per Year by Scenario',
              'Mean Prevalence of Anaemia following birth per Year by Scenario',
              'Mean Rate of Macrosomia per Year by Scenario',
              'Mean Rate of Small for Gestational Age per Year by Scenario',
              'Mean Rate of Low Birth Rate per Year by Scenario',
              'Mean Rate of  Newborn Respiratory Depression per Year by Scenario',
-             'Mean Rate of Preterm Respiratory Distress Syndrome per Year by '
-             'Scenario',
+             'Mean Rate of Preterm Respiratory Distress Syndrome per Year by Scenario',
              'Mean Rate of Neonatal Sepsis per Year by Scenario',
              'Mean Rate of Neonatal Encephalopathy per Year by Scenario'],
             rate_keys):
@@ -1497,8 +1534,14 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
              'Rate per 100 Births',
              'Rate per 1000 Births',
              'Rate per 1000 Births',
+             'Rate per 1000 Births',
+             'Rate per 1000 Births',
+             'Rate per 1000 Births',
+             'Rate per 1000 Births',
+             'Rate per 1000 Births',
              'Prevalence at birth',
              'Prevalence following birth',
+             'Rate per 100 Births',
              'Rate per 100 Births',
              'Rate per 100 Births',
              'Rate per 1000 Births',
@@ -1525,14 +1568,19 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
              'Mean Rate of Antepartum Haemorrhage During Intervention by Scenario',
              'Mean Rate of Preterm Labour During Intervention by Scenario',
              'Mean Rate of Maternal Sepsis During Intervention by Scenario',
+             'Mean Rate of Antenatal Maternal Sepsis During Intervention by Scenario',
+             'Mean Rate of Intrapartum Maternal Sepsis During Intervention by Scenario',
+             'Mean Rate of Postpartum Maternal Sepsis During Intervention by Scenario',
              'Mean Rate of Postpartum Haemorrhage During Intervention by Scenario',
+             'Mean Rate of Primary Postpartum Haemorrhage During Intervention by Scenario',
+             'Mean Rate of Secondary Postpartum Haemorrhage During Intervention by Scenario',
              'Mean Prevalence of Anaemia at birth During Intervention by Scenario',
              'Mean Prevalence of Anaemia following birth During Intervention by Scenario',
              'Mean Rate of Macrosomia During Intervention by Scenario',
              'Mean Rate of Small for Gestational Age During Intervention by Scenario',
+             'Mean Rate of Low Birth Weight During Intervention by Scenario',
              'Mean Rate of  Newborn Respiratory Depression During Intervention by Scenario',
-             'Mean Rate of Preterm Respiratory Distress Syndrome During Intervention by '
-             'Scenario',
+             'Mean Rate of Preterm Respiratory Distress Syndrome During Intervention by Scenario',
              'Mean Rate of Neonatal Sepsis During Intervention by Scenario',
              'Mean Rate of Neonatal Encephalopathy During Intervention by Scenario'],
             avg_keys):
