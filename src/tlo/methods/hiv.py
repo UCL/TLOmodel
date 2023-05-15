@@ -3202,7 +3202,7 @@ class DummyHivModule(Module):
     def initialise_population(self, population):
         df = population.props
         df.loc[df.is_alive, "hv_inf"] = self.rng.rand(sum(df.is_alive)) < self.hiv_prev
-        df.loc[df.is_alive, "hv_art"] = pd.Series(
+        df.loc[(df.is_alive & df.hv_inf), "hv_art"] = pd.Series(
             self.rng.rand(sum(df.is_alive)) < self.art_cov).replace({True: "on_VL_suppressed", False: "not"}).values
 
     def initialise_simulation(self, sim):
