@@ -554,7 +554,9 @@ class HealthSystem(Module):
 
         self.adopt_priority_policy = adopt_priority_policy
 
-        self.rng_for_hsi_queue = None  # Will be a secondary RNG for the purpose of randomising the queue
+        self.rng_for_hsi_queue = None  # Will be a dedicated RNG for the purpose of randomising the queue
+        self.rng_for_dx = None  # Will be a dedicated RNG for the purpose of determining Dx Test results
+
         self.randomise_queue = randomise_queue
 
         self.include_fasttrack_routes = include_fasttrack_routes
@@ -685,8 +687,10 @@ class HealthSystem(Module):
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
-        # Create secondary RNG
+        # Create dedicated RNGs for separate functions done by the HealthSystem module
         self.rng_for_hsi_queue = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
+        self.rng_for_dx = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
+        rng_for_consumables = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
 
         # Determine service_availability
         self.service_availability = self.get_service_availability()
@@ -700,7 +704,7 @@ class HealthSystem(Module):
 
         # Initialise the Consumables class
         self.consumables = Consumables(data=self.parameters['availability_estimates'],
-                                       rng=self.rng,
+                                       rng=rng_for_consumables,
                                        availability=self.get_cons_availability())
 
         # Convert PriorityRank dataframe to dictionary
