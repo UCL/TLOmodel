@@ -1519,7 +1519,10 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+
+        else:
+            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         return actual_appt_footprint
 
@@ -1607,7 +1610,11 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+
+        else:
+            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
         return actual_appt_footprint
 
     def did_not_run(self):
@@ -1680,7 +1687,11 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+
+        else:
+            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
         return actual_appt_footprint
 
     def did_not_run(self):
@@ -1749,7 +1760,11 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+
+        else:
+            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
         return actual_appt_footprint
 
     def did_not_run(self):
@@ -1815,7 +1830,11 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+
+        else:
+            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
         return actual_appt_footprint
 
     def did_not_run(self):
@@ -1877,7 +1896,11 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+
+        else:
+            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
         return actual_appt_footprint
 
     def did_not_run(self):
@@ -1933,7 +1956,11 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+
+        else:
+            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
         return actual_appt_footprint
 
     def did_not_run(self):
@@ -1981,7 +2008,11 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+
+        else:
+            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
         return actual_appt_footprint
 
     def did_not_run(self):
