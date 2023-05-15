@@ -58,8 +58,6 @@ class ImpactOfNOXpertDiagnosis(BaseScenario):
             },
         }
 
-
-
 if __name__ == '__main__':
 
     from tlo.cli import scenario_run
