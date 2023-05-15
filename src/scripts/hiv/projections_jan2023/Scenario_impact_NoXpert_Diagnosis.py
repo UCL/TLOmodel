@@ -31,7 +31,7 @@ class ImpactOfNOXpertDiagnosis(BaseScenario):
             end_date=Date(2033, 12, 31),
             initial_population_size=50_000,
             number_of_draws=1,
-            runs_per_draw=2,
+            runs_per_draw=4,
         )
 
     def log_configuration(self):
@@ -42,10 +42,8 @@ class ImpactOfNOXpertDiagnosis(BaseScenario):
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
                 'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.population': logging.INFO,
-                'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.Tb': logging.INFO,
-                'tlo.methods.HIV': logging.INFO,
+                'tlo.methods.Hiv': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
             }
         }
@@ -54,11 +52,7 @@ class ImpactOfNOXpertDiagnosis(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        return {
-            'HealthSystem': {
-                'cons_availability': ['default'][draw_number]
-            }
-        }
+        return
 
 
 if __name__ == '__main__':
