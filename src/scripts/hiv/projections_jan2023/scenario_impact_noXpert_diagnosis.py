@@ -3,13 +3,14 @@ This file defines an example scenario for analysing the impact of consumable ava
 
 It can be submitted on Azure Batch by running:
 
-    tlo batch-submit src/scripts/analysis_example/scenario_impact_of_consumables_availability.py
+   tlo batch-submit src/scripts/hiv/projections_jan2023/scenario_impact_noXpert_diagnosis.py
 
 or locally using:
 
     tlo scenario-run src/scripts/analysis_example/scenario_impact_of_consumables_availability.py
 
-    tlo batch-submit src/scripts/hiv/projections_jan2023/Scenario_impact_NoXpert_Diagnosis.py
+
+     tlo scenario-run src/scripts/hiv/projections_jan2023/scenario_impact_noXpert_diagnosis.py
 """
 import warnings
 
@@ -37,7 +38,7 @@ class ImpactOfNOXpertDiagnosis(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'impact_of_NoXpert_Diagnosis',
+            'filename': 'impact_of_noxpert_diagnosis',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,

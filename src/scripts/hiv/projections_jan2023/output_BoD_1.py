@@ -28,12 +28,10 @@ with open(outputpath / "NoXpert.pickle", "rb") as f:
 
 TARGET_PERIOD = (Date(2010, 1, 1), Date(2015, 12, 31))
 
-
 def get_num_deaths(_df):
     """Return total number of Deaths (total within the TARGET_PERIOD)
     """
     return pd.Series(data=len(_df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)]))
-
 
 def get_num_dalys(_df):
     """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD)"""

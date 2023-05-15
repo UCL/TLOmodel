@@ -22,7 +22,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 # %% Run the simulation
-start_date = Date(2010, 1, 1)
+start_date =Date(2010, 1, 1)
 end_date = Date(2015, 12, 31)
 popsize = 10_000
 scenario = 1
@@ -44,8 +44,7 @@ log_config = {
 }
 
 # Register the appropriate modules
-
-seed = 9064  # set seed for reproducibility
+seed = 5001  # set seed for reproducibility
 
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(*fullmodel(
