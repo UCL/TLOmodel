@@ -6,9 +6,6 @@ import pickle
 import time
 from pathlib import Path
 
-import pandas as pd
-from matplotlib import pyplot as plt
-
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
@@ -34,7 +31,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
+end_date = Date(2026, 1, 1)
 popsize = 5000
 
 # set up the log config
@@ -48,7 +45,7 @@ log_config = {
     },
 }
 # seed = random.randint(0, 50000)
-seed = 500
+seed = 200
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
 # Register the appropriate modules
