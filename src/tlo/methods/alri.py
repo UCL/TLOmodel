@@ -487,6 +487,14 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'odds ratio of death from ALRI for children with severe acute malnutrition'
                       ),
+        'or_death_ALRI_age2_59mo_-3<=WHZ<-2':
+            Parameter(Types.REAL,
+                      'odds ratio of death from ALRI for children with moderate wasting, -3<=WHZ<-2'
+                      ),
+        'or_death_ALRI_age2_59mo_WHZ<-3':
+            Parameter(Types.REAL,
+                      'odds ratio of death from ALRI for children with severe wasting, WHZ<-3'
+                      ),
         'or_death_ALRI_age2_59mo_SpO2<90%':
             Parameter(Types.REAL,
                       'odds ratio of death from ALRI for children aged 2 to 59 months with oxygen saturation <90%, '
@@ -3863,48 +3871,90 @@ class AlriPropertiesOfOtherModules(Module):
     ALTERNATIVE_TO = {'Hiv', 'Epi', 'Wasting'}
 
     PROPERTIES = {
-        'hv_inf': Property(Types.BOOL, 'temporary property'),
-        'hv_art': Property(Types.CATEGORICAL, 'temporary property',
-                           categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"]),
-        'nb_low_birth_weight_status': Property(Types.CATEGORICAL, 'temporary property',
-                                               categories=['extremely_low_birth_weight', 'very_low_birth_weight',
-                                                           'low_birth_weight', 'normal_birth_weight']),
+        'hv_inf': Property(Types.BOOL, 'DUMMY version of the property for hv_inf'),
+        'hv_art': Property(Types.CATEGORICAL, 'DUMMY version of the property for hv_art.',
+                           categories=['not', 'on_VL_suppressed', 'on_not_VL_suppressed']),
 
-        'nb_breastfeeding_status': Property(Types.CATEGORICAL, 'temporary property',
-                                            categories=['none', 'non_exclusive', 'exclusive']),
-        'va_pneumo_all_doses': Property(Types.BOOL, 'temporary property'),
-        'va_hib_all_doses': Property(Types.BOOL, 'temporary property'),
-        'va_measles_all_doses': Property(Types.BOOL, 'temporary property'),
-        'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'temporary property',
-                                                   categories=['MAM', 'SAM', 'well']),
-        'un_WHZ_category': Property(Types.CATEGORICAL, 'temporary property',
-                                    categories=['WHZ<-3', '-3<=WHZ<-2', 'WHZ>=-2']),
+        # NOTE: 'nb_breastfeeding_status' and 'nb_low_birth_weight_status' already in simplified births!!
+        # 'nb_breastfeeding_status': Property(
+        #     Types.CATEGORICAL, 'DUMMY version of the property for nb_breastfeeding_status'
+        #                        'How this neonate is being breastfed',
+        #     categories=['none', 'non_exclusive', 'exclusive']),
+
+        # 'nb_low_birth_weight_status': Property(
+        #     Types.CATEGORICAL, 'DUMMY version of the property for nb_low_birth_weight_status'
+        #                        'extremely low birth weight (<1000g), '
+        #                        'very low birth weight (<1500g), '
+        #                        'low birth weight (<2500g), '
+        #                        'normal birth weight (>2500g), macrosomia (>4000g)',
+        #     categories=['extremely_low_birth_weight', 'very_low_birth_weight',
+        #                 'low_birth_weight', 'normal_birth_weight', 'macrosomia']),
+
+        'va_pneumo_all_doses': Property(Types.BOOL, 'DUMMY version of the property for va_pneumo_all_doses '
+                                                    'whether all doses have been received of the pneumococcal vaccine'),
+        'va_hib_all_doses': Property(Types.BOOL, 'DUMMY version of the property for va_pneumo_all_doses '
+                                                 'whether all doses have been received of the Hib vaccine'),
+        'va_measles_all_doses': Property(Types.BOOL, 'DUMMY version of the property for va_pneumo_all_doses '
+                                                     'whether all doses have been received of the measles vaccine'),
+
+        'un_clinical_acute_malnutrition': Property(
+            Types.CATEGORICAL, 'DUMMY version of the property for un_clinical_acute_malnutrition'
+                               'clinical acute malnutrition state based on WHZ',
+            categories=['MAM', 'SAM', 'well']),
+        'un_WHZ_category': Property(
+            Types.CATEGORICAL, 'DUMMY version of the property for un_WHZ_category'
+                               'height-for-age z-score group',
+            categories=['WHZ<-3', '-3<=WHZ<-2', 'WHZ>=-2']),
     }
+
+    def __init__(self, name=None, hiv_prev=0.1, art_cov=0.75, moderate_wasting=0.034, severe_wasting=0.013,
+                 va_pcv13=0, va_hib=0.875, va_measles=0.772):  # mode wating 0.034
+        super().__init__(name)
+        self.hiv_prev = hiv_prev
+        self.art_cov = art_cov
+        self.moderate_wasting = moderate_wasting  # values from Data UNICEF 2015-16 Survey ID 41450
+        self.severe_wasting = severe_wasting  # -- 4.7% all wasted, 1.3% severe
+        self.va_pcv13 = va_pcv13
+        self.va_hib = va_hib
+        self.va_measles = va_measles
 
     def read_parameters(self, data_folder):
         pass
 
     def initialise_population(self, population):
         df = population.props
-        df.loc[df.is_alive, 'hv_inf'] = False
-        df.loc[df.is_alive, 'hv_art'] = 'not'
-        df.loc[df.is_alive, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
-        df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'non_exclusive'
-        df.loc[df.is_alive, 'va_pneumo_all_doses'] = False
-        df.loc[df.is_alive, 'va_hib_all_doses'] = False
-        df.loc[df.is_alive, 'va_measles_all_doses'] = False
-        df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
-        df.loc[df.is_alive, 'un_WHZ_category'] = 'WHZ>=-2'
+
+        df.loc[df.is_alive, "hv_inf"] = self.rng.rand(sum(df.is_alive)) < self.hiv_prev
+        df.loc[(df.is_alive & df.hv_inf), "hv_art"] = pd.Series(
+            self.rng.rand(sum(df.is_alive & df.hv_inf)) < self.art_cov).replace(
+            {True: "on_VL_suppressed", False: "not"}).values
+
+        # df.loc[df.is_alive, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
+        # df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'non_exclusive'
+        df.loc[df.is_alive, 'va_pneumo_all_doses'] = self.rng.rand(sum(df.is_alive)) < self.va_pcv13
+        df.loc[df.is_alive, 'va_hib_all_doses'] = self.rng.rand(sum(df.is_alive)) < self.va_hib
+        df.loc[df.is_alive, 'va_measles_all_doses'] = self.rng.rand(sum(df.is_alive)) < self.va_measles
+
+        df.loc[df.is_alive, 'un_WHZ_category'] = self.rng.choice(
+            ['WHZ<-3', '-3<=WHZ<-2', 'WHZ>=-2'],
+            p=[self.severe_wasting, self.moderate_wasting, 0.953], size=sum(df.is_alive))  # 0.953
+
+        df.loc[df.is_alive & (df.un_WHZ_category == 'WHZ>=-2'), 'un_clinical_acute_malnutrition'] = 'well'
+        df.loc[df.is_alive & (df.un_WHZ_category == '-3<=WHZ<-2'), 'un_clinical_acute_malnutrition'] = 'MAM'
+        df.loc[df.is_alive & (df.un_WHZ_category == 'WHZ<-3'), 'un_clinical_acute_malnutrition'] = 'SAM'
 
     def initialise_simulation(self, sim):
         pass
 
     def on_birth(self, mother, child):
         df = self.sim.population.props
-        df.at[child, 'hv_inf'] = False
-        df.at[child, 'hv_art'] = 'not'
-        df.at[child, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
-        df.at[child, 'nb_breastfeeding_status'] = 'non_exclusive'
+        df.at[child, "hv_inf"] = self.rng.rand() < self.hiv_prev
+
+        if df.at[child, "hv_inf"]:
+            df.at[child, "hv_art"] = "on_VL_suppressed" if self.rng.rand() < self.art_cov else "not"
+
+        # df.at[child, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
+        # df.at[child, 'nb_breastfeeding_status'] = 'non_exclusive'
         df.at[child, 'va_pneumo_all_doses'] = False
         df.at[child, 'va_hib_all_doses'] = False
         df.at[child, 'va_measles_all_doses'] = False

@@ -1,6 +1,5 @@
-"""This script will generate a table that describes a representative mix of all the IncidentCases that are created, and
- the associated diagnosis and risk of death for each under various conditions of treatments/non-treatment.
- Analysis plots focus on comparing policies of SpO2"""
+""" Script for CEA of all scenarios """
+
 import random
 from pathlib import Path
 from typing import List
@@ -9,7 +8,6 @@ import datetime
 # from tlo.util import random_date, sample_outcome
 
 import pandas as pd
-import numpy as np
 from matplotlib import pyplot as plt
 # import matplotlib.colors as mcolors
 
@@ -201,13 +199,14 @@ def generate_case_mix() -> pd.DataFrame:
         while len(new_alri) < MIN_SAMPLE_OF_NEW_CASES:
             new_alri.extend(
                 [(k, v) for k, v in
-                 sample_outcome(probs=probs_of_acquiring_pathogen, rng=alri_module_with_perfect_diagnosis_current_policy.rng).items()]
+                 sample_outcome(probs=probs_of_acquiring_pathogen,
+                                rng=alri_module_with_perfect_diagnosis_current_policy.rng).items()]
             )
 
         # Return dataframe in which person_id is replaced with age and sex (ignoring variation in vaccine /
         # under-nutrition).
         return pd.DataFrame(columns=['person_id', 'pathogen'], data=new_alri) \
-            .merge(sim1.population.props[['age_exact_years', 'sex',
+            .merge(sim1.population.props[['age_exact_years', 'sex', 'hv_inf', 'hv_art',
                                           'va_hib_all_doses', 'va_pneumo_all_doses', 'un_clinical_acute_malnutrition']],
                    right_index=True, left_on=['person_id'], how='left') \
             .drop(columns=['person_id'])
@@ -218,10 +217,12 @@ def generate_case_mix() -> pd.DataFrame:
                               va_hib_all_doses,
                               va_pneumo_all_doses,
                               un_clinical_acute_malnutrition,
+                              hv_inf, hv_art
                               ) -> dict:
         """Return the characteristics that are determined by IncidentCase (over 1000 iterations), given an infection
         caused by the pathogen"""
-        incident_case = AlriIncidentCase(module=alri_module_with_perfect_diagnosis_current_policy, person_id=None, pathogen=None)
+        incident_case = AlriIncidentCase(module=alri_module_with_perfect_diagnosis_current_policy,
+                                         person_id=None, pathogen=None)
 
         samples = []
         for _ in range(NUM_REPS_FOR_EACH_CASE):
@@ -240,6 +241,8 @@ def generate_case_mix() -> pd.DataFrame:
                                                  'va_hib_all_doses': va_hib_all_doses,
                                                  'va_pneumo_all_doses': va_pneumo_all_doses,
                                                  'un_clinical_acute_malnutrition': un_clinical_acute_malnutrition,
+                                                 'hv_inf': hv_inf,
+                                                 'hv_art': hv_art,
                                                  }
                             })
 
@@ -253,7 +256,8 @@ def generate_case_mix() -> pd.DataFrame:
         overall_case_mix.extend(
             char_of_incident_case(sex=x.sex, age_exact_years=x.age_exact_years, pathogen=x.pathogen,
                                   va_hib_all_doses=x.va_hib_all_doses, va_pneumo_all_doses=x.va_pneumo_all_doses,
-                                  un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition)
+                                  un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
+                                  hv_inf=x.hv_inf, hv_art=x.hv_art)
         )
 
     return pd.DataFrame(overall_case_mix)
@@ -752,48 +756,31 @@ def generate_table():
                     use_oximeter=False,
                 ),
 
-            # # * CLASSIFICATION BY LEVEL 1a *
-            # 'classification_for_treatment_decision_with_oximeter_perfect_accuracy_level1a':
-            #     hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
-            #         age_exact_years=x.age_exact_years,
-            #         symptoms=x.symptoms,
-            #         oxygen_saturation=x.oxygen_saturation,
-            #         facility_level='1a',
-            #         use_oximeter=True,
-            #     ),
-            #
-            # 'classification_for_treatment_decision_without_oximeter_perfect_accuracy_level1a':
-            #     hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
-            #         age_exact_years=x.age_exact_years,
-            #         symptoms=x.symptoms,
-            #         oxygen_saturation=x.oxygen_saturation,
-            #         facility_level='1a',
-            #         use_oximeter=False,
-            #     ),
+            # * CLASSIFICATION BY LEVEL 1a *
+            'classification_for_treatment_decision_with_oximeter_perfect_accuracy_level1a':
+                hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
+                    age_exact_years=x.age_exact_years,
+                    symptoms=x.symptoms,
+                    oxygen_saturation=x.oxygen_saturation,
+                    facility_level='1a',
+                    use_oximeter=True,
+                ),
 
-            # 'classification_for_treatment_decision_with_oximeter_imperfect_accuracy_level1a':
-            #     hsi_with_imperfect_diagnosis_and_imperfect_treatment._get_disease_classification_for_treatment_decision(
-            #         age_exact_years=x.age_exact_years,
-            #         symptoms=x.symptoms,
-            #         oxygen_saturation=x.oxygen_saturation,
-            #         facility_level='1a',
-            #         use_oximeter=True,
-            #     ),
-            #
-            # 'classification_for_treatment_decision_without_oximeter_imperfect_accuracy_level1a':
-            #     hsi_with_imperfect_diagnosis_and_imperfect_treatment._get_disease_classification_for_treatment_decision(
-            #         age_exact_years=x.age_exact_years,
-            #         symptoms=x.symptoms,
-            #         oxygen_saturation=x.oxygen_saturation,
-            #         facility_level='1a',
-            #         use_oximeter=False,
-            #     ),
+            'classification_for_treatment_decision_without_oximeter_perfect_accuracy_level1a':
+                hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
+                    age_exact_years=x.age_exact_years,
+                    symptoms=x.symptoms,
+                    oxygen_saturation=x.oxygen_saturation,
+                    facility_level='1a',
+                    use_oximeter=False,
+                ),
 
         })
     return df.join(pd.DataFrame(risk_of_death))
 
 
 if __name__ == "__main__":
+
     table = generate_table()
     table = table.assign(
         has_danger_signs=lambda df: df['symptoms'].apply(lambda x: 'danger_signs' in x),
@@ -990,70 +977,6 @@ if __name__ == "__main__":
     }
 
     results = (100_000 / len(table)) * pd.concat({k: pd.DataFrame(v) for k, v in res.items()}, axis=1)
-
-    # # Plot graph by * classification differences *
-    # # compare the classification differences
-    # res1 = {
-    #     "By hospital classification": {
-    #         "No Treatment": table['prob_die_if_no_treatment'].groupby(by=[disease_classification2, low_oxygen]).sum(),
-    #         "Antiobiotics only": (
-    #             table['prob_die_if_no_treatment'] *
-    #             (1.0 -
-    #              table[
-    #                  'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx_level1a'] / 100.0
-    #              )).groupby(by=[disease_classification2, low_oxygen]).sum(),
-    #         "+ oxygen": (
-    #             table['prob_die_if_no_treatment'] *
-    #             (1.0 -
-    #              table[
-    #                  'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx_level1a']
-    #              / 100.0
-    #              )).groupby(by=[disease_classification2, low_oxygen]).sum(),
-    #         "+ oximeter": (
-    #             table['prob_die_if_no_treatment'] *
-    #             (1.0 -
-    #              table[
-    #                  'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx_level1a'] / 100.0
-    #              )).groupby(by=[disease_classification2, low_oxygen]).sum(),
-    #         "+ oximeter & oxygen": (
-    #             table['prob_die_if_no_treatment'] *
-    #             (1.0 -
-    #              table[
-    #                  'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx_level1a'] / 100.0
-    #              )).groupby(by=[disease_classification2, low_oxygen]).sum(),
-    #     },
-    #
-    #     "By health centre classification": {
-    #         "No Treatment": table['prob_die_if_no_treatment'].groupby(by=[disease_classification1a, low_oxygen]).sum(),
-    #         "Antiobiotics only": (
-    #             table['prob_die_if_no_treatment'] *
-    #             (1.0 -
-    #              table[
-    #                  'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx_level1a'] / 100.0
-    #              )).groupby(by=[disease_classification1a, low_oxygen]).sum(),
-    #         "+ oxygen": (
-    #             table['prob_die_if_no_treatment'] *
-    #             (1.0 -
-    #              table[
-    #                  'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx_level1a']
-    #              / 100.0
-    #              )).groupby(by=[disease_classification1a, low_oxygen]).sum(),
-    #         "+ oximeter": (
-    #             table['prob_die_if_no_treatment'] *
-    #             (1.0 -
-    #              table[
-    #                  'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx_level1a'] / 100.0
-    #              )).groupby(by=[disease_classification1a, low_oxygen]).sum(),
-    #         "+ oximeter & oxygen": (
-    #             table['prob_die_if_no_treatment'] *
-    #             (1.0 -
-    #              table[
-    #                  'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx_level1a'] / 100.0
-    #              )).groupby(by=[disease_classification1a, low_oxygen]).sum(),
-    #     },
-    # }
-    #
-    # results = (100_000 / len(table)) * pd.concat({k: pd.DataFrame(v) for k, v in res1.items()}, axis=1)
 
     # reorder the index:
     reorderlist = list()
@@ -1265,13 +1188,13 @@ if __name__ == "__main__":
     deaths_ox_only_new_pol = (table['prob_die_if_no_treatment'] * (
         1.0 - table[
         f'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_{dx_accuracy}_hw_dx_new_pol'] / 100.0)
-                                  ).groupby(by=[disease_classification2, low_oxygen]).sum()
+                              ).groupby(by=[disease_classification2, low_oxygen]).sum()
 
     # antibiotics only under *current* policy --- CFR SAME FOR EITHER POLICY
     deaths_antibiotics_only_new_pol = (table['prob_die_if_no_treatment'] * (
         1.0 - table[
         f'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_{dx_accuracy}_hw_dx_new_pol'] / 100.0)
-                                           ).groupby(by=[disease_classification2, low_oxygen]).sum()
+                                       ).groupby(by=[disease_classification2, low_oxygen]).sum()
 
     # -------------- current policy ---------------------------
     # pulse oximeter only under *current* policy
@@ -1326,13 +1249,13 @@ if __name__ == "__main__":
                               (deaths_po_only_current_pol.sum() / number_cases.sum()) * 100,
                               (deaths_po_only_new_pol.sum() / number_cases.sum()) * 100,
                               (1 - ((deaths_po_only_new_pol.sum() / number_cases.sum()) / (
-                                      deaths_po_only_current_pol.sum() / number_cases.sum()))) * 100,
+                                  deaths_po_only_current_pol.sum() / number_cases.sum()))) * 100,
                               (deaths_antibiotics_only_new_pol.sum() / number_cases.sum()) * 100,
                               (deaths_ox_only_new_pol.sum() / number_cases.sum()) * 100,
                               (deaths_po_and_ox_current_pol.sum() / number_cases.sum()) * 100,
                               (deaths_po_and_ox_new_pol.sum() / number_cases.sum()) * 100,
                               (1 - ((deaths_po_and_ox_new_pol.sum() / number_cases.sum()) / (
-                                      deaths_po_and_ox_current_pol.sum() / number_cases.sum()))) * 100
+                                  deaths_po_and_ox_current_pol.sum() / number_cases.sum()))) * 100
                               ]
 
     # reorder the index:
@@ -1362,94 +1285,44 @@ if __name__ == "__main__":
 # -------------------------------------------------------------------------------------------------------------
 # CEA -----
 
-# CURRENT POLICY ---------------
-total_n_inpatient_without_PO = number_cases.sum(level=[0, 1]).reindex(
-    pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%'), ('danger_signs_pneumonia', '90-92%'),
-                               ('danger_signs_pneumonia', '>=93%')],
-                              names=number_cases.index.names), fill_value=0).sum()
+    # CURRENT POLICY ---------------
+    total_n_inpatient_without_PO = number_cases.sum(level=[0, 1]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%'), ('danger_signs_pneumonia', '90-92%'),
+                                   ('danger_signs_pneumonia', '>=93%')],
+                                  names=number_cases.index.names), fill_value=0).sum()
 
-total_eligible_for_Ox_without_PO = number_cases.sum(level=[0, 1]).reindex(
-    pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%'), ('danger_signs_pneumonia', '90-92%'),
-                               ('danger_signs_pneumonia', '>=93%')],
-                              names=number_cases.index.names), fill_value=0).sum()
+    total_eligible_for_Ox_without_PO = number_cases.sum(level=[0, 1]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%'), ('danger_signs_pneumonia', '90-92%'),
+                                   ('danger_signs_pneumonia', '>=93%')],
+                                  names=number_cases.index.names), fill_value=0).sum()
 
-total_n_inpatient_with_PO = number_cases.sum(level=[0, 1]).reindex(
-    pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%'), ('danger_signs_pneumonia', '90-92%'),
-                               ('danger_signs_pneumonia', '>=93%'),
-                               ('chest_indrawing_pneumonia', '<90%'), ('fast_breathing_pneumonia', '<90%'),
-                               ('cough_or_cold', '<90%')],
-                              names=number_cases.index.names), fill_value=0).sum()
+    total_n_inpatient_with_PO = number_cases.sum(level=[0, 1]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%'), ('danger_signs_pneumonia', '90-92%'),
+                                   ('danger_signs_pneumonia', '>=93%'),
+                                   ('chest_indrawing_pneumonia', '<90%'), ('fast_breathing_pneumonia', '<90%'),
+                                   ('cough_or_cold', '<90%')],
+                                  names=number_cases.index.names), fill_value=0).sum()
 
-total_eligible_for_Ox_with_PO = number_cases.sum(level=[0, 1]).reindex(
-    pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%'),
-                               ('chest_indrawing_pneumonia', '<90%'), ('fast_breathing_pneumonia', '<90%'),
-                               ('cough_or_cold', '<90%')],
-                              names=number_cases.index.names), fill_value=0).sum()
+    total_eligible_for_Ox_with_PO = number_cases.sum(level=[0, 1]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%'),
+                                   ('chest_indrawing_pneumonia', '<90%'), ('fast_breathing_pneumonia', '<90%'),
+                                   ('cough_or_cold', '<90%')],
+                                  names=number_cases.index.names), fill_value=0).sum()
 
-# NEW POLICY --------------
+    # NEW POLICY --------------
 
-total_n_inpatient_with_PO_np = number_cases.sum(level=[0, 1]).reindex(
-    pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%'), ('danger_signs_pneumonia', '90-92%'),
-                               ('danger_signs_pneumonia', '>=93%'),
-                               ('chest_indrawing_pneumonia', '<90%'), ('chest_indrawing_pneumonia', '90-92%'),
-                               ('fast_breathing_pneumonia', '<90%'), ('fast_breathing_pneumonia', '90-92%'),
-                               ('cough_or_cold', '<90%'), ('cough_or_cold', '90-92%')],
-                              names=number_cases.index.names), fill_value=0).sum()
+    total_n_inpatient_with_PO_np = number_cases.sum(level=[0, 1]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%'), ('danger_signs_pneumonia', '90-92%'),
+                                   ('danger_signs_pneumonia', '>=93%'),
+                                   ('chest_indrawing_pneumonia', '<90%'), ('chest_indrawing_pneumonia', '90-92%'),
+                                   ('fast_breathing_pneumonia', '<90%'), ('fast_breathing_pneumonia', '90-92%'),
+                                   ('cough_or_cold', '<90%'), ('cough_or_cold', '90-92%')],
+                                  names=number_cases.index.names), fill_value=0).sum()
 
-total_eligible_for_Ox_with_PO_np = number_cases.sum(level=[0, 1]).reindex(
-    pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%'), ('danger_signs_pneumonia', '90-92%'),
-                               ('chest_indrawing_pneumonia', '<90%'), ('chest_indrawing_pneumonia', '90-92%'),
-                               ('fast_breathing_pneumonia', '<90%'), ('fast_breathing_pneumonia', '90-92%'),
-                               ('cough_or_cold', '<90%'), ('cough_or_cold', '90-92%')],
-                              names=number_cases.index.names), fill_value=0).sum()
-
-
-# CALCULATE DALYS AT THE INDIVIDUAL LEVEL ---------------------------------
-def f_DALY(K, C=0.16243, r=None, beta=None, a_death=None, a_disability=None, YLL_L=None, D=None):
-    """ CALCULATE DALYS FOR AN INDIVIDUAL - Calculates disability-adjusted life years for an individual
-    Returns a list of Years of Life Lost (discounted), Years Lived in Disease, and total DALYs #
-
-    :param K: Age weighting modulation factor (1=use age weighting, 0=no age weighting)
-    :param C: contant (default = 0.16243)
-    :param r: discount rate (between 0-1 --- use 0.03)
-    :param beta: parameter of age weighting function (between 0-1 ---- use 0.04)
-    :param a_death: Age of premature death due to disease (in years)
-    :param a_disability: Age of disease onset (in years)
-    :param YLL_L: Life expectancy at age of death (in years)
-    :param D: Disability weight (between 0-1)
-    :return:
-    """
-
-    # calculate YLD_L
-    YLD_L = a_death - a_disability
-
-    if r == 0 and K != 0:
-        YLL = ((1 - K) * YLL_L) + (((K * C * np.exp(-beta * a_death)) / (beta ** 2)) * (np.exp(-beta * YLL_L) * ((-beta) * (YLL_L + a_death) - 1) - (-beta * a_death - 1)))
-        YLL_discounted = YLL
-        YLD = D * (((1 - K) * YLD_L) + (((K * C * np.exp(-beta * a_disability)) / (beta ** 2)) * (np.exp(-beta * YLD_L) * ((-beta) * (YLD_L + a_disability) - 1) - (-beta * a_disability - 1))))
-        DALY_total = YLL_discounted + YLD
-
-    elif r == 0 and K == 0:
-        YLL = ((1 - K) / 0.00000001) * (1 - np.exp(-0.00000001 * YLL_L))
-        YLD = D * (((1 - K) / 0.00000001) * (1 - np.exp(-0.00000001 * YLD_L)))
-        s = a_death - a_disability
-        YLL_discounted = YLL * np.exp(-(0.00000001 * s))
-        DALY_total = YLL_discounted + YLD
-
-    elif r != 0 and K == 0:
-        YLL = ((1 - K) / r) * (1 - np.exp(-r * YLL_L))
-        YLD = D * (((1 - K) / r) * (1 - np.exp(-r * YLD_L)))
-        s = a_death - a_disability
-        YLL_discounted = YLL * np.exp(-(r * s))
-        DALY_total = YLL_discounted + YLD
-
-    elif r != 0 and K != 0:
-        YLL = ((1 - K) / r) * (1 - np.exp(-r * YLL_L)) + (((K * C * np.exp(r * a_death)) / ((r + beta) ** 2)) * (np.exp(-(r + beta) * (YLL_L + a_death)) * (-(r + beta) * (YLL_L + a_death) - 1) - np.exp(-(r + beta) * a_death) * (-(r + beta) * a_death - 1)))
-        YLD = D * (((1 - K) / r) * (1 - np.exp(-r * YLD_L)) + (((K * C * np.exp(r * a_disability)) / ((r + beta) ** 2)) * (np.exp(-(r + beta) * (YLD_L + a_disability)) * (-(r + beta) * (YLD_L + a_disability) - 1) - np.exp(-(r + beta) * a_disability) * (-(r + beta) * a_disability - 1))))
-        s = a_death - a_disability
-        YLL_discounted = YLL * np.exp(-(r * s))
-        DALY_total = YLL_discounted + YLD
-
-    Amount = [YLL_discounted, YLD, DALY_total]
-    return Amount
+    total_eligible_for_Ox_with_PO_np = number_cases.sum(level=[0, 1]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%'), ('danger_signs_pneumonia', '90-92%'),
+                                   ('chest_indrawing_pneumonia', '<90%'), ('chest_indrawing_pneumonia', '90-92%'),
+                                   ('fast_breathing_pneumonia', '<90%'), ('fast_breathing_pneumonia', '90-92%'),
+                                   ('cough_or_cold', '<90%'), ('cough_or_cold', '90-92%')],
+                                  names=number_cases.index.names), fill_value=0).sum()
 
