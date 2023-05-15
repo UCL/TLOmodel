@@ -21,8 +21,9 @@ from tlo.scenario import BaseScenario
 # we will do so here for the purposes of this example to keep things simple.
 warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 
-#class ImpactOfConsumablesAvailability(BaseScenario):
-class ImpactOfNoXpertDignosisPathway(BaseScenario):
+
+class ImpactOfNOXpertDiagnosis(BaseScenario):
+
     def __init__(self):
         super().__init__(
             seed=0,
@@ -35,11 +36,12 @@ class ImpactOfNoXpertDignosisPathway(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'impact_of_TB_Diagnosis_pathways',
+            'filename': 'impact_of_NoXpert_Diagnosis',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
+                'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.population': logging.INFO,
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.Tb': logging.INFO,
@@ -47,3 +49,20 @@ class ImpactOfNoXpertDignosisPathway(BaseScenario):
                 'tlo.methods.healthsystem.summary': logging.INFO,
             }
         }
+
+    def modules(self):
+        return fullmodel(resourcefilepath=self.resources)
+
+    def draw_parameters(self, draw_number, rng):
+        return {
+            'HealthSystem': {
+                'cons_availability': ['default'][draw_number]
+            }
+        }
+
+
+if __name__ == '__main__':
+
+    from tlo.cli import scenario_run
+
+    scenario_run([__file__])

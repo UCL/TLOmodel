@@ -23,8 +23,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 3, 31)
-popsize = 200
+end_date = Date(2033, 12, 31)
+popsize = 50_000
 scenario = 1
 
 # set up the log config
@@ -44,8 +44,7 @@ log_config = {
 }
 
 # Register the appropriate modules
-# need to call epi before tb to get bcg vax
-# seed = random.randint(0, 50000)
+
 seed = 9064  # set seed for reproducibility
 
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
@@ -68,6 +67,7 @@ sim.register(*fullmodel(
 # set the scenario
 #sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.6
 sim.modules["Tb"].parameters["scenario"] =1
+sim.modules["Tb"].parameters["second_line_test"] =[]
 sim.modules["Tb"].parameters["scenario_start_date"] =start_date
 
 # Run the simulation and flush the logger
