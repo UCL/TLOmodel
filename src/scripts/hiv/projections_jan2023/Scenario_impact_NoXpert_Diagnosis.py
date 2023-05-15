@@ -9,7 +9,7 @@ or locally using:
 
     tlo scenario-run src/scripts/analysis_example/scenario_impact_of_consumables_availability.py
 
-    tlo batch-submit src/scripts/hiv/projections_jan2023/scenario1.py
+    tlo batch-submit src/scripts/hiv/projections_jan2023/Scenario_impact_NoXpert_Diagnosis.py
 """
 import warnings
 
