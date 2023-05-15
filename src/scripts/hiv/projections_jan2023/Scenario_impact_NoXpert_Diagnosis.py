@@ -8,6 +8,8 @@ It can be submitted on Azure Batch by running:
 or locally using:
 
     tlo scenario-run src/scripts/analysis_example/scenario_impact_of_consumables_availability.py
+
+    tlo batch-submit src/scripts/hiv/projections_jan2023/scenario1.py
 """
 import warnings
 
@@ -47,7 +49,6 @@ class ImpactOfNOXpertDiagnosis(BaseScenario):
                 'tlo.methods.healthsystem.summary': logging.INFO,
             }
         }
-
     def modules(self):
         return fullmodel(resourcefilepath=self.resources)
 
