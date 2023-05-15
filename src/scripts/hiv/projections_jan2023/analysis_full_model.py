@@ -67,7 +67,6 @@ sim.register(*fullmodel(
 # set the scenario
 #sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.6
 sim.modules["Tb"].parameters["scenario"] =1
-sim.modules["Tb"].parameters["second_line_test"] =[]
 sim.modules["Tb"].parameters["scenario_start_date"] =start_date
 
 # Run the simulation and flush the logger
