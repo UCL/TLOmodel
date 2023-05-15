@@ -75,7 +75,7 @@ scaled_rdt_usage_model = [i * scaling_factor for i in rdt_usage_model]
 MAP_rdt_yield = (MAP_comm.Tested_Positive_Public / MAP_comm.RDT_Consumption_Public) * 100
 WHO_rdt_yield = (WHO_comm.NumPositiveCasesTestedByRDT / WHO_comm.NumSuspectedCasesTestedByRDT) * 100
 # model rdt yield
-model_yield = (rdt_usage_model[:-1]  / inc.number_new_cases) * 100
+model_yield = (rdt_usage_model[:-1] / inc.number_new_cases) * 100
 
 # get model output dates in correct format
 model_years = pd.to_datetime(inc.date)

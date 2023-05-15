@@ -84,6 +84,3 @@ output = parse_log_file(sim.log_filepath)
 with open(outputpath / "malaria_run.pickle", "wb") as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
-
-
-
