@@ -52,11 +52,11 @@ params = extract_params(results_folder)
 
 # 1. DALYs averted
 #-----------------------------------------
-# 1.1 Difference in total DALYs accrued (? Is this the same as QALYs gained?)
+# 1.1 Difference in total DALYs accrued
 def extract_total_dalys(results_folder):
 
     def extract_dalys_total(df: pd.DataFrame) -> pd.Series:
-        return pd.Series({"Total": len(df)})
+        return pd.Series({"Total": df.drop(['date', 'sex', 'age_range', 'year'], axis = 1).sum().sum()})
 
     return extract_results(
         results_folder,
@@ -67,7 +67,6 @@ def extract_total_dalys(results_folder):
     )
 
 total_dalys_accrued = extract_total_dalys(results_folder)
-# ? Total DALYs are the same under both scenarios
 
 # 1.2 (Optional) Difference in total DALYs accrued by disease
 def _extract_dalys_by_disease(_df: pd.DataFrame) -> pd.Series:
@@ -90,6 +89,7 @@ dalys_extracted_by_disease = extract_results(
 #? some NCDs see a decline in DALYs accrued
 
 dalys_by_disease_summarized = summarize(dalys_extracted_by_disease)
+print(dalys_by_disease_summarized[[(0,  'mean'),(1,  'mean')]])
 # dalys_by_disease_summarized.to_csv(outputspath / 'dalys_by_disease.csv')
 
 # 2. Services delivered
