@@ -52,7 +52,12 @@ class ImpactOfNOXpertDiagnosis(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        return
+        return {
+            'Tb': {
+                'scenario': 1
+            },
+        }
+
 
 
 if __name__ == '__main__':
