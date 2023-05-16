@@ -65,8 +65,11 @@ summary_pred_computer <- df_pred_computer %>%
   group_by(district, fac_type, program_plot, item) %>%
   summarise_at(vars(available_predict, available), list(mean))
 
+# Calculate proportional change which can be applied to LMIS data
+summary_pred_computer$availability_change_prop = summary_pred_computer$available_predict/summary_pred_computer$available
+
 # Extract .csv for model simulation
-write.csv(summary_pred_computer,paste0(path_to_outputs, "predictions/summary_pred_computer.csv"), row.names = TRUE)
+write.csv(summary_pred_computer,paste0(path_to_outputs, "predictions/predicted_consumable_availability_computers_scenario.csv"), row.names = TRUE)
 
 # 3.2 All facilities have pharmacists managing drug orders
 ##########################################################
