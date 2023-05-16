@@ -1,10 +1,12 @@
 """
 Extracts DALYs and mortality from the TB module
  """
+# commands for running the analysis script in the terminal
+# python src/scripts/hiv/projections_jan2023/analysis_impact_of_noxpert_diagnosis.py --scenario-outputs-folder outputs/nic503@york.ac.uk --show-figures
+# python src/scripts/hiv/projections_jan2023/analysis_impact_of_noxpert_diagnosis.py --scenario-outputs-folder outputs/nic503@york.ac.uk --save-figures
 
 import argparse
 from pathlib import Path
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -20,12 +22,12 @@ from tlo.analysis.utils import (
 )
 from tlo import Date
 
-#results_folder = Path("./outputs")
+#outputspath = Path("./outputs")
 outputspath = Path("./outputs/nic503@york.ac.uk")
 
 def apply(results_folder: Path, outputspath: Path, resourcefilepath: Path = None):
 
-
+    target_period = (Date(2010, 1, 1), Date(2015, 12, 31))
 # Definitions of general helper functions
 make_graph_file_name = lambda stub: outputspath / f"{stub.replace('*', '_star_')}.png"   # noqa: E731
 
@@ -33,10 +35,11 @@ def target_period() -> str:
     """Returns the target period as a string of the form YYYY-YYYY"""
     return "-".join(str(t.year) for t in target_period)
 
-     target_period = (Date(2010, 1, 1), Date(2015, 12, 31))
+
 # collecting basic information associated with scenario
 # Find results_folder associated with a given batch_file and get most recent
 results_folder = get_scenario_outputs('scenario_impact_noXpert_diagnosis.py', outputspath)[-1]
+#results_folder = get_scenario_outputs('scenario_impact_noXpert_diagnosis.py', args.scenario_outputs_folder)[-1]
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
@@ -110,7 +113,6 @@ def make_plot(_df, annotations=None):
 
     return fig, ax
 
-
 # Plot for total number of DALYs from the scenario
 name_of_plot = f'Total DALYS, {target_period()}'
 fig, ax = make_plot(num_dalys_summarized / 1e6)
@@ -132,7 +134,9 @@ plt.show()
 
 
 if __name__ == "__main__":
-    rfp = Path('resources')
+
+    rfp = Path("./resources")
+   #rfp=Path("./resources")
 
     parser = argparse.ArgumentParser(
         description="generate scenario plot",
