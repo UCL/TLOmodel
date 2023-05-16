@@ -58,7 +58,7 @@ def get_num_dalys(_df):
     return pd.Series(
         data=_df
         .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])]
-        .drop(columns=['date', 'sex', 'age_range', 'year'])
+        .drop(columns=[])     #drop(columns=['date', 'sex', 'age_range', 'year'])
         .sum().sum()
     )
 
@@ -141,7 +141,7 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--output-path",
+        "--outputs-path",
         help=(
             "Directory to write outputs to. If not specified (set to None) outputs "
             "will be written to value of --results-path argument."
