@@ -23,19 +23,17 @@ from tlo import Date
 #results_folder = Path("./outputs")
 outputspath = Path("./outputs/nic503@york.ac.uk")
 
-def apply(outputs: Path, outputspath: Path, resourcefilepath: Path = None):
-
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2019, 12, 31))
+def apply(results_folder: Path, outputspath: Path, resourcefilepath: Path = None):
 
 
 # Definitions of general helper functions
-make_graph_file_name = lambda stub: outputspath / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
+make_graph_file_name = lambda stub: outputspath / f"{stub.replace('*', '_star_')}.png"   # noqa: E731
 
 def target_period() -> str:
     """Returns the target period as a string of the form YYYY-YYYY"""
-    return "-".join(str(t.year) for t in TARGET_PERIOD)
+    return "-".join(str(t.year) for t in target_period)
 
-
+     target_period = (Date(2010, 1, 1), Date(2015, 12, 31))
 # collecting basic information associated with scenario
 # Find results_folder associated with a given batch_file and get most recent
 results_folder = get_scenario_outputs('scenario_impact_noXpert_diagnosis.py', outputspath)[-1]
@@ -51,13 +49,13 @@ params = extract_params(results_folder)
 
 def get_num_deaths(_df):
     """Return total number of Deaths (total within the TARGET_PERIOD)"""
-    return pd.Series(data=len(_df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)]))
+    return pd.Series(data=len(_df.loc[pd.to_datetime(_df.date).between(*target_period)]))
 
 def get_num_dalys(_df):
     """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD)"""
     return pd.Series(
         data=_df
-        .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])]
+        .loc[_df.year.between(*[i.year for i in target_period])]
         .drop(columns=[])     #drop(columns=['date', 'sex', 'age_range', 'year'])
         .sum().sum()
     )
@@ -114,7 +112,7 @@ def make_plot(_df, annotations=None):
 
 
 # Plot for total number of DALYs from the scenario
-name_of_plot = f'Total DALYS, {TARGET_PERIOD()}'
+name_of_plot = f'Total DALYS, {target_period()}'
 fig, ax = make_plot(num_dalys_summarized / 1e6)
 ax.set_title(name_of_plot)
 ax.set_ylabel('DALYS (Millions)')
