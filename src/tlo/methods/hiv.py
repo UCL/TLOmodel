@@ -479,7 +479,7 @@ class Hiv(Module):
                 "age_years",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True)
-            .when("==0", 1)  # Weibull with shape=1 equivalent to exponential distribution
+            .when("==0", 1)   # Weibull with shape=1 equivalent to exponential distribution
             .when(".between(1,4)", p["infection_to_death_infant_infection_after_birth_weibull_shape"])
             .when(".between(5, 19)", p["infection_to_death_weibull_shape_1519"])
             .when(".between(20, 24)", p["infection_to_death_weibull_shape_2024"])
@@ -545,7 +545,7 @@ class Hiv(Module):
                       external=True,
                       conditions_are_mutually_exclusive=True,
                       conditions_are_exhaustive=True).when("<2020", p["prob_circ_for_child_before_2020"])
-            .otherwise(p["prob_circ_for_child_from_2020"])
+                                                     .otherwise(p["prob_circ_for_child_from_2020"])
         )
 
     def initialise_population(self, population):
@@ -1101,6 +1101,7 @@ class Hiv(Module):
 
             if "newborn_outcomes" not in self.sim.modules and (
                     self.rng.random_sample() < p['prob_hiv_test_for_newborn_infant']):
+
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=child_id,
@@ -1420,6 +1421,7 @@ class Hiv(Module):
             df.at[mother_id, 'hv_diagnosed'] and (
             df.at[child_id, 'nb_pnc_check'] == 1) and (
                 self.rng.random_sample() < self.parameters['prob_hiv_test_for_newborn_infant']):
+
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Hiv_TestAndRefer(
                     person_id=child_id,
@@ -1598,8 +1600,8 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             test_rates = p["hiv_testing_rates"]
 
             testing_rate_adults = test_rates.loc[
-                                      test_rates.year == current_year, "annual_testing_rate_adults"
-                                  ].values[0] * p["hiv_testing_rate_adjustment"]
+                test_rates.year == current_year, "annual_testing_rate_adults"
+            ].values[0] * p["hiv_testing_rate_adjustment"]
 
             # adult testing trends also informed by demographic characteristics
             # relative probability of testing - this may skew testing rates higher or lower than moh reports
@@ -1680,7 +1682,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     & (df.sex == "M")
                     & (df.age_years < 15)
                     & (~df.li_is_circ)
-                    ],
+                ],
                 self.module.rng,
                 year=self.sim.date.year,
             )
@@ -2304,7 +2306,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # if breastfeeding has ceased or child >18 months, no further prophylaxis required
-        if (df.at[person_id, "nb_breastfeeding_status"] == "none") \
+        if (df.at[person_id, "nb_breastfeeding_status"] == "none")\
                 or (df.at[person_id, "age_years"] >= 1.5):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
