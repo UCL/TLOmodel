@@ -26,7 +26,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2029, 12, 31)
+        self.end_date = Date(2015, 12, 31)
         self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -69,33 +69,12 @@ class ImpactOfHealthSystemMode(BaseScenario):
         """
 
         return {
-          #  "No Healthcare System": {
-          #      'HealthSystem': {
-          #          'Service_Availability': []
-          #      },
-          #  },
-
-          #  "Mode 0": {
-          #      'HealthSystem': {
-          #          'mode_appt_constraints': 0,
-          #          "use_funded_or_actual_staffing": "actual",
-          #      },
-          #  },
-
-          #  "Mode 1": {
-          #      'HealthSystem': {
-          #          'mode_appt_constraints': 1,
-          #          "use_funded_or_actual_staffing": "actual",
-          #      },
-          #  },
-
             "Mode 2": {
                 'HealthSystem': {
                     'mode_appt_constraints': 2,
                     "use_funded_or_actual_staffing": "actual",
-                },
-            },
-
+                 },
+             },
         }
 
 

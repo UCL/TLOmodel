@@ -2091,9 +2091,7 @@ class RTI(Module):
         if (df.at[person_id, 'rt_disability'] > 1):
             logger.warning(key="warning", data="rt disability > 1 in rti_alter_daly_post_treatment")
             df.at[person_id, 'rt_disability'] = 1
-      
-        #assert df.at[person_id, 'rt_disability'] >= 0, 'Negative disability burden'
-        #assert df.at[person_id, 'rt_disability'] <= 1, 'Too large disability burden'
+
         # remover the treated injury code from the person using rti_treated_injuries
         RTI.rti_treated_injuries(self, person_id, codes)
 
@@ -2160,9 +2158,6 @@ class RTI(Module):
         if (df.at[person_id, 'rt_disability'] > 1):
             logger.warning(key="warning", data="rt disability > 1 in rti_swap_injury_daly_upon_treatment")
             df.at[person_id, 'rt_disability'] = 1
-      
-        #assert df.at[person_id, 'rt_disability'] >= 0, 'Negative disability burden'
-        #assert df.at[person_id, 'rt_disability'] <= 1, 'Too large disability burden'
 
     def rti_determine_LOS(self, person_id):
         """

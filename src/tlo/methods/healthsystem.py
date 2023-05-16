@@ -484,19 +484,19 @@ class HealthSystem(Module):
         name: Optional[str] = None,
         resourcefilepath: Optional[Path] = None,
         service_availability: Optional[List[str]] = None,
-        mode_appt_constraints: Optional[int] = 0,
+        mode_appt_constraints: Optional[int] = None,
         cons_availability: Optional[str] = None,
         beds_availability: Optional[str] = None,
         randomise_queue: bool = True,
         ignore_priority: bool = False,
         adopt_priority_policy: bool = True,
         include_fasttrack_routes: bool = True,
-        lowest_priority_considered: int = 10,
+        lowest_priority_considered: int = 2,
         priority_rank_dict: dict = None,
         list_fasttrack: Optional[List[str]] = None,
         max_squeeze_by_priority: dict = None,
         capabilities_coefficient: Optional[float] = None,
-        use_funded_or_actual_staffing: Optional[str] = 'actual',
+        use_funded_or_actual_staffing: Optional[str] = None,
         disable: bool = False,
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
@@ -1156,8 +1156,8 @@ class HealthSystem(Module):
     def enforce_priority_policy(self, hsi_event) -> int:
         """Check the priority of the Treatment_ID based on policy under consideration """
 
-        if (hsi_event.TREATMENT_ID == 'FirstAttendance_Emergency' or 
-            hsi_event.TREATMENT_ID == 'FirstAttendance_SpuriousEmergencyCare'):
+        if (hsi_event.TREATMENT_ID == 'FirstAttendance_Emergency' or hsi_event.TREATMENT_ID ==
+           'FirstAttendance_SpuriousEmergencyCare'):
             return 0  # Emergency appointment have the highest priority by definition
         else:
 
