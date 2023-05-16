@@ -22,64 +22,14 @@ from tlo import Date
 
 #results_folder = Path("./outputs")
 outputspath = Path("./outputs/nic503@york.ac.uk")
-def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, ):
 
-    TARGET_PERIOD = (Date(2010, 1, 1), Date(2019, 12, 31))
-
-    # Definitions of general helper functions
-    make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
-
-    def target_period() -> str:
-        """Returns the target period as a string of the form YYYY-YYYY"""
-        return "-".join(str(t.year) for t in TARGET_PERIOD)
-
-    def get_num_deaths(_df):
-        """Return total number of Deaths (total within the TARGET_PERIOD)
-        """
-        return pd.Series(data=len(_df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)]))
-    def get_num_dalys(_df):
-        """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD)"""
-        return pd.Series(
-            data=_df
-            .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])]
-            .drop(columns=[])
-            .sum().sum()
-        )
-    def make_plot(_df, annotations=None):
-        """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
-         extent of the error bar."""
-        yerr = np.array([
-            (_df['mean'] - _df['lower']).values,
-            (_df['upper'] - _df['mean']).values,
-        ])
-
-        xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
-
-        fig, ax = plt.subplots()
-        ax.bar(
-            xticks.keys(),
-            _df['mean'].values,
-            yerr=yerr,
-            alpha=0.5,
-            ecolor='black',
-            capsize=10,
-        )
-        if annotations:
-            for xpos, ypos, text in zip(xticks.keys(), _df['mean'].values, annotations):
-                ax.text(xpos, ypos, text, horizontalalignment='center')
-        ax.set_xticks(list(xticks.keys()))
-        ax.set_xticklabels(list(xticks.values()), rotation=90)
-        ax.grid(axis="y")
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        fig.tight_layout()
-
-        return fig, ax
+def apply(outputs: Path, outputspath: Path, resourcefilepath: Path = None):
 
 TARGET_PERIOD = (Date(2010, 1, 1), Date(2019, 12, 31))
 
+
 # Definitions of general helper functions
-make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
+make_graph_file_name = lambda stub: outputspath / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
 
 def target_period() -> str:
     """Returns the target period as a string of the form YYYY-YYYY"""
@@ -132,35 +82,35 @@ num_deaths_summarized = summarize(num_deaths).loc[0].unstack()
 num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
 
 def make_plot(_df, annotations=None):
-    """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the extent of the error bar."""
+    """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
+     extent of the error bar."""
     yerr = np.array([
         (_df['mean'] - _df['lower']).values,
         (_df['upper'] - _df['mean']).values,
     ])
 
+    xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
 
-xticks={(i+0.5):k for i, k in enumerate(_df.index)}
+    fig, ax = plt.subplots()
+    ax.bar(
+        xticks.keys(),
+        _df['mean'].values,
+        yerr=yerr,
+        alpha=0.5,
+        ecolor='black',
+        capsize=10,
+    )
+    if annotations:
+        for xpos, ypos, text in zip(xticks.keys(), _df['mean'].values, annotations):
+            ax.text(xpos, ypos, text, horizontalalignment='center')
+    ax.set_xticks(list(xticks.keys()))
+    ax.set_xticklabels(list(xticks.values()), rotation=90)
+    ax.grid(axis="y")
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    fig.tight_layout()
 
-fig,ax=plt.subplots()
-ax.bar(
-xticks.keys(),
-_df['mean'].values,
-yerr=yerr,
-alpha=0.5,
-ecolor='black',
-capsize=10,
-)
-if annotations:
-for xpos,ypos,text in zip(xticks.keys(),_df['mean'].values, annotations):
-ax.text(xpos,ypos,text,horizontalalignment='center')
-ax.set_xticks(list(xticks.keys()))
-ax.set_xticklabels(list(xticks.values()),rotation=90)
-ax.grid(axis="y")
-ax.spines['top'].set_visible(False)
-ax.spines['right'].set_visible(False)
-fig.tight_layout()
-
-return fig,ax
+    return fig, ax
 
 
 # Plot for total number of DALYs from the scenario
