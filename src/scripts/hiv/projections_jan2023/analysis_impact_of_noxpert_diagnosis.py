@@ -44,14 +44,14 @@ def apply(results_folder: Path, outputspath: Path, resourcefilepath: Path = None
     # Find results_folder associated with a given batch_file and get the most recent
     # results_folder = get_scenario_outputs('scenario_impact_noXpert_diagnosis.py', args.scenario_outputs_folder)[-1]
 
-    # Look at one log (so can decide what to extract)
-    log = load_pickled_dataframes(results_folder)
-
-    # Get basic information about the results
-    info = get_scenario_info(results_folder)
+    # # Look at one log (so can decide what to extract)
+    # log = load_pickled_dataframes(results_folder)
+    #
+    # # Get basic information about the results
+    # info = get_scenario_info(results_folder)
 
     # 1) Extract the parameters that have varied over the set of simulations
-    params = extract_params(results_folder)
+    #params = extract_params(results_folder)
 
     def get_num_deaths(_df):
         """Return total number of Deaths (total within the TARGET_PERIOD)
