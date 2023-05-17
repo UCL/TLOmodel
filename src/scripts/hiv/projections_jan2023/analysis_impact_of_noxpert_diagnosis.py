@@ -9,11 +9,9 @@ Extracts DALYs and mortality from the TB module
 import argparse
 from pathlib import Path
 from typing import Tuple
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 from tlo import Date
 from tlo.analysis.utils import (
     extract_params,
@@ -22,7 +20,6 @@ from tlo.analysis.utils import (
     load_pickled_dataframes,
     summarize,
 )
-
 
 def apply(results_folder: Path, outputspath: Path, resourcefilepath: Path = None):
     target_period = (Date(2010, 1, 1), Date(2015, 12, 31))
@@ -36,7 +33,7 @@ def apply(results_folder: Path, outputspath: Path, resourcefilepath: Path = None
 
     def get_parameter_names_from_scenario_file() -> Tuple[str]:
         """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-        from scripts.hiv.projections_jan2023.scenario_impact_noXpert_diagnosis import ImpactOfNOXpertDiagnosis
+        from scripts.hiv.projections_jan2023.scenario_impact_noXpert_diagnosis import (ImpactOfNOXpertDiagnosis)
         e = ImpactOfNOXpertDiagnosis()
         return tuple(e._scenarios.keys())
 
@@ -92,8 +89,8 @@ def apply(results_folder: Path, outputspath: Path, resourcefilepath: Path = None
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
-    num_deaths_summarized = summarize(num_deaths).loc[0].unstack()
-    num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
+    # num_deaths_summarized = summarize(num_deaths).loc[0].unstack()
+    # num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
 
     def make_plot(_df, annotations=None):
         """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
@@ -147,52 +144,52 @@ def apply(results_folder: Path, outputspath: Path, resourcefilepath: Path = None
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
         fig.show()
         plt.close(fig)
+def apply(results_folder, output_folder, resourcefilepath):
+    # Your implementation here
+    pass
 
-        if __name__ == "__main__":
+if __name__ == "__main__":
+    rfp = Path("./resources")
 
-            rfp = Path("./resources")
-           #rfp=Path("./resources")
+    parser = argparse.ArgumentParser(
+        description="generate scenario plot",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--outputs-path",
+        help=(
+            "Directory to write outputs to. If not specified (set to None) outputs "
+            "will be written to value of --results-path argument."
+        ),
+        type=Path,
+        default=None,
+        required=False,
+    )
+    parser.add_argument(
+        "--resources-path",
+        help="Directory containing resource files",
+        type=Path,
+        default=Path('resources'),
+        required=False,
+    )
+    parser.add_argument(
+        "--results-path",
+        type=Path,
+        help=(
+            "Directory containing results from running "
+            "src/scripts/hiv/projections_jan2023/scenario_impact_of_noxpert_diagnosis.py "
+        ),
+        default=None,
+        required=False
+    )
+    args = parser.parse_args()
+    assert args.results_path is not None
+    results_path = args.results_path
 
-            parser = argparse.ArgumentParser(
-                description="generate scenario plot",
-                formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-            )
-            parser.add_argument(
-                "--outputs-path",
-                help=(
-                    "Directory to write outputs to. If not specified (set to None) outputs "
-                    "will be written to value of --results-path argument."
-                ),
-                type=Path,
-                default=None,
-                required=False,
-            )
-            parser.add_argument(
-                "--resources-path",
-                help="Directory containing resource files",
-                type=Path,
-                default=Path('resources'),
-                required=False,
-            )
-            parser.add_argument(
-                "--results-path",
-                type=Path,
-                help=(
-                    "Directory containing results from running "
-                    "src/scripts/hiv/projections_jan2023/scenario_impact_of_noxpert_diagnosis.py "
-                ),
-                default=None,
-                required=False
-            )
-            args = parser.parse_args()
-            assert args.results_path is not None
-            results_path = args.results_path
+    output_path = results_path if args.outputs_path is None else args.outputs_path
 
-            output_path = results_path if args.output_path is None else args.output_path
-
-            apply(
-                results_folder=results_path,
-                output_folder=output_path,
-                resourcefilepath=args.resources_path
-            )
-
+    apply(
+        results_folder=results_path,
+        output_folder=output_path,
+        resourcefilepath=args.resources_path
+    )

@@ -1,370 +1,257 @@
-"""This file uses the results of the batch file to make some summary statistics.
-The results of the batchrun were put into the 'outputspath' results_folder
-function weighted_mean_for_data_comparison can be used to select which parameter sets to use
-make plots for top 5 parameter sets just to make sure they are looking ok
-"""
+"""Produce plots to show the impact each the healthcare system (overall health impact) when running under different
+scenarios (scenario_impact_of_healthsystem.py)"""
 
-import datetime
+import argparse
 from pathlib import Path
+from typing import Tuple
 
-import matplotlib.lines as mlines
-import matplotlib.patches as mpatches
-import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
+from matplotlib import pyplot as plt
 
-from tlo.analysis.utils import (
-    compare_number_of_deaths,
-    extract_params,
-    extract_results,
-    get_scenario_info,
-    get_scenario_outputs,
-    load_pickled_dataframes,
-    summarize,
-)
-
-resourcefilepath = Path("./resources")
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-
-outputspath = Path("./outputs/nic503@york.ac.uk")
-
-# %% read in data files for plots
+from tlo import Date
+from tlo.analysis.utils import extract_results, make_age_grp_lookup, summarize
 
 
-# 0) Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("analysis_impact_of_noxpert_diagnosis.py", outputspath)[-1]
+def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, ):
+    """Produce standard set of plots describing the effect of each TREATMENT_ID.
+    - We estimate the epidemiological impact as the EXTRA deaths that would occur if that treatment did not occur.
+    - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
+    """
 
-# Declare path for output graphs from this script
-make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
+    TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 
-# look at one log (so can decide what to extract)
-log = load_pickled_dataframes(results_folder)
+    # Definitions of general helper functions
+    make_graph_file_name = lambda stub: output_folder / f"{stub.replace('*', '_star_')}.png"  # noqa: E731
 
-# get basic information about the results
-info = get_scenario_info(results_folder)
+    _, age_grp_lookup = make_age_grp_lookup()
 
-# 1) Extract the parameters that have varied over the set of simulations
-params = extract_params(results_folder)
+    def target_period() -> str:
+        """Returns the target period as a string of the form YYYY-YYYY"""
+        return "-".join(str(t.year) for t in TARGET_PERIOD)
 
-# choose which draw to summarise / visualise
-draw = 0
+    def get_parameter_names_from_scenario_file() -> Tuple[str]:
+        """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
+        from scripts.hiv.projections_jan2023.scenario_impact_noXpert_diagnosis import ImpactOfNOXpertDiagnosis
+        )
+        e =ImpactOfNOXpertDiagnosiss()
+        return tuple(e._scenarios.keys())
 
-# %% extract results
-# Load and format model results (with year as integer):
+    def get_num_deaths(_df):
+        """Return total number of Deaths (total within the TARGET_PERIOD)
+        """
+        return pd.Series(data=len(_df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)]))
 
+    def get_num_dalys(_df):
+        """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD)
+        """
+        return pd.Series(
+            data=_df
+            .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])]
+            .drop(columns=['date', 'sex', 'age_range', 'year'])
+            .sum().sum()
+        )
 
-# ---------------------------------- PERSON-YEARS ---------------------------------- #
+    def set_param_names_as_column_index_level_0(_df):
+        """Set the columns index (level 0) as the param_names."""
+        ordered_param_names_no_prefix = {i: x for i, x in enumerate(param_names)}
+        names_of_cols_level0 = [ordered_param_names_no_prefix.get(col) for col in _df.columns.levels[0]]
+        assert len(names_of_cols_level0) == len(_df.columns.levels[0])
+        _df.columns = _df.columns.set_levels(names_of_cols_level0, level=0)
+        return _df
 
-# function to extract person-years by year
-# call this for each run and then take the mean to use as denominator for mortality / incidence etc.
-def get_person_years(draw, run):
-    log = load_pickled_dataframes(results_folder, draw, run)
+    def find_difference_relative_to_comparison(_ser: pd.Series,
+                                               comparison: str,
+                                               scaled: bool = False,
+                                               drop_comparison: bool = True,
+                                               ):
+        """Find the difference in the values in a pd.Series with a multi-index, between the draws (level 0)
+        within the runs (level 1), relative to where draw = `comparison`.
+        The comparison is `X - COMPARISON`."""
+        return _ser \
+            .unstack(level=0) \
+            .apply(lambda x: (x - x[comparison]) / (x[comparison] if scaled else 1.0), axis=1) \
+            .drop(columns=([comparison] if drop_comparison else [])) \
+            .stack()
 
-    py_ = log["tlo.methods.demography"]["person_years"]
-    years = pd.to_datetime(py_["date"]).dt.year
-    py = pd.Series(dtype="int64", index=years)
-    for year in years:
-        tot_py = (
-            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series) +
-            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(pd.Series)
-        ).transpose()
-        py[year] = tot_py.sum().values[0]
+    def do_bar_plot_with_ci(_df, annotations=None):
+        """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
+         extent of the error bar."""
+        yerr = np.array([
+            (_df['mean'] - _df['lower']).values,
+            (_df['upper'] - _df['mean']).values,
+        ])
 
-    py.index = pd.to_datetime(years, format="%Y")
+        xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
 
-    return py
+        fig, ax = plt.subplots()
+        ax.bar(
+            xticks.keys(),
+            _df['mean'].values,
+            yerr=yerr,
+            alpha=0.5,
+            ecolor='black',
+            capsize=10,
+        )
+        if annotations:
+            for xpos, ypos, text in zip(xticks.keys(), _df['mean'].values, annotations):
+                ax.text(xpos, ypos, text, horizontalalignment='center')
+        ax.set_xticks(list(xticks.keys()))
+        ax.set_xticklabels(list(xticks.values()), rotation=90)
+        ax.grid(axis="y")
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        fig.tight_layout()
 
+        return fig, ax
 
-# for draw 0, get py for all runs
-number_runs = info["runs_per_draw"]
-py_summary = pd.DataFrame(data=None, columns=range(0, number_runs))
+    # %% Define parameter names
+    param_names = get_parameter_names_from_scenario_file()
 
-# draw number (default = 0) is specified above
-for run in range(0, number_runs):
-    py_summary.iloc[:, run] = get_person_years(draw, run)
+    # %% Quantify the health gains associated with all interventions combined.
 
-py_summary["mean"] = py_summary.mean(axis=1)
-
-# ---------------------------------- TB ---------------------------------- #
-
-model_tb_inc = summarize(
-    extract_results(
+    # Absolute Number of Deaths and DALYs
+    num_deaths = extract_results(
         results_folder,
-        module="tlo.methods.tb",
-        key="tb_incidence",
-        column="num_new_active_tb",
-        index="date",
-        do_scaling=False,
-    ),
-    collapse_columns=True,
-)
-model_tb_inc.index = model_tb_inc.index.year
-activeTB_inc_rate = (model_tb_inc.divide(py_summary["mean"].values[1:10], axis=0)) * 100000
+        module='tlo.methods.demography',
+        key='death',
+        custom_generate_series=get_num_deaths,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
 
-model_tb_mdr = summarize(
-    extract_results(
+    num_dalys = extract_results(
         results_folder,
-        module="tlo.methods.tb",
-        key="tb_mdr",
-        column="tbPropActiveCasesMdr",
-        index="date",
-        do_scaling=False,
-    ),
-    collapse_columns=True,
-)
+        module='tlo.methods.healthburden',
+        key='dalys_stacked',
+        custom_generate_series=get_num_dalys,
+        do_scaling=True
+    ).pipe(set_param_names_as_column_index_level_0)
 
-model_tb_mdr.index = model_tb_mdr.index.year
+    # num_deaths_summarized = summarize(num_deaths).loc[0].unstack()
+    # num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
 
-model_tb_hiv_prop = summarize(
-    extract_results(
-        results_folder,
-        module="tlo.methods.tb",
-        key="tb_incidence",
-        column="prop_active_tb_in_plhiv",
-        index="date",
-        do_scaling=False,
-    ),
-    collapse_columns=True,
-)
+    # Deaths and DALYS averted relative to Default Healthcare System
+    num_deaths_averted = summarize(
+        -1.0 *
+        pd.DataFrame(
+            find_difference_relative_to_comparison(
+                num_deaths.loc[0],
+                comparison='Defaults')
+        ).T
+    ).iloc[0].unstack().drop('No Healthcare System')
 
-model_tb_hiv_prop.index = model_tb_hiv_prop.index.year
+    pc_deaths_averted = 100.0 * summarize(
+        -1.0 *
+        pd.DataFrame(
+            find_difference_relative_to_comparison(
+                num_deaths.loc[0],
+                comparison='Defaults',
+                scaled=True)
+        ).T
+    ).iloc[0].unstack().drop('No Healthcare System')
 
-# ---------------------------------- Extracting relevant outcomes ---------------------------------- #
+    num_dalys_averted = summarize(
+        -1.0 *
+        pd.DataFrame(
+            find_difference_relative_to_comparison(
+                num_dalys.loc[0],
+                comparison='Defaults')
+        ).T
+    ).iloc[0].unstack().drop('No Healthcare System')
 
-results_deaths = extract_results(
-    results_folder,
-    module="tlo.methods.demography",
-    key="death",
-    custom_generate_series=(
-        lambda df: df.assign(year=df["date"].dt.year).groupby(
-            ["year", "cause"])["person_id"].count()
-    ),
-    do_scaling=False,
-)
+    pc_dalys_averted = 100.0 * summarize(
+        -1.0 *
+        pd.DataFrame(
+            find_difference_relative_to_comparison(
+                num_dalys.loc[0],
+                comparison='Defaults',
+                scaled=True)
+        ).T
+    ).iloc[0].unstack().drop('No Healthcare System')
 
-results_deaths = results_deaths.reset_index()
+    # Plots....
 
+    # Bar plots for deaths averted for each HealthCare Configuration Scenario
 
-results_deaths = extract_results(
-    results_folder,
-    module="tlo.methods.healthburden",
-    key="dalys_stacked",
-    custom_generate_series=(
-        lambda df: df.assign(year=df["date"].dt.year).groupby(
-            ["year", "cause"])["person_id"].count()
-    ),
-    do_scaling=False,
-)
+    order_of_bars = ['Perfect Healthcare Seeking', 'Perfect Consumables Availability', 'All Changes']
 
-results_deaths = results_deaths.reset_index()
-
-# summarise across runs
-aids_tb_deaths_table = results_deaths.loc[results_deaths.cause == "AIDS_TB"]
-tb_deaths_table = results_deaths.loc[results_deaths.cause == "TB"]
-
-# ------------ summarise deaths producing df for each draw
-
-# TB deaths excluding HIV
-tb_deaths = {}  # dict of df
-
-for draw in info["number_of_draws"]:
-    draw = draw
-
-    # rename dataframe
-    name = "model_deaths_TB_draw" + str(draw)
-    # select cause of death
-    tmp = results_deaths.loc[
-        (results_deaths.cause == "TB")
-    ]
-    # select draw - drop columns where draw != 0, but keep year and cause
-    tmp2 = tmp.loc[
-           :, ("draw" == draw)
-           ].copy()  # selects only columns for draw=0 (removes year/cause)
-    # join year and cause back to df - needed for groupby
-    frames = [tmp["year"], tmp["cause"], tmp2]
-    tmp3 = pd.concat(frames, axis=1)
-
-    # create new column names, dependent on number of runs in draw
-    base_columns = ["year", "cause"]
-    run_columns = ["run" + str(x) for x in range(0, info["runs_per_draw"])]
-    base_columns.extend(run_columns)
-    tmp3.columns = base_columns
-    tmp3 = tmp3.set_index("year")
-
-    # sum rows for each year (2 entries)
-    # for each run need to combine deaths in each year, may have different numbers of runs
-    tb_deaths[name] = pd.DataFrame(tmp3.groupby(["year"]).sum())
-
-    # double check all columns are float64 or quantile argument will fail
-    cols = [
-        col
-        for col in tb_deaths[name].columns
-        if tb_deaths[name][col].dtype == "float64"
-    ]
-    tb_deaths[name]["median"] = (
-        tb_deaths[name][cols].astype(float).quantile(0.5, axis=1)
+    # DEATHS
+    name_of_plot = f'Additional Deaths Averted vs Defaults, {target_period()}'
+    fig, ax = do_bar_plot_with_ci(
+        num_deaths_averted.clip(lower=0.0)
+        .loc[order_of_bars],
+        annotations=[
+            f"{round(row['mean'], 1)} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
+            for _, row in pc_deaths_averted.loc[order_of_bars].clip(lower=0.0).iterrows()
+        ]
     )
-    tb_deaths[name]["lower"] = (
-        tb_deaths[name][cols].astype(float).quantile(0.025, axis=1)
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('Additional Deaths Averted')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    # DALYS
+    name_of_plot = f'Additional DALYs Averted vs Defaults, {target_period()}'
+    fig, ax = do_bar_plot_with_ci(
+        (num_dalys_averted / 1e6).clip(lower=0.0)
+        .loc[order_of_bars],
+        annotations=[
+            f"{round(row['mean'], 1)} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
+            for _, row in pc_dalys_averted.loc[order_of_bars].clip(lower=0.0).iterrows()
+        ]
     )
-    tb_deaths[name]["upper"] = (
-        tb_deaths[name][cols].astype(float).quantile(0.975, axis=1)
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('Additional DALYS Averted (Millions)')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+
+if __name__ == "__main__":
+    rfp = Path('resources')
+
+    parser = argparse.ArgumentParser(
+        description="Produce plots to show the impact each set of treatments",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    parser.add_argument(
+        "--output-path",
+        help=(
+            "Directory to write outputs to. If not specified (set to None) outputs "
+            "will be written to value of --results-path argument."
+        ),
+        type=Path,
+        default=None,
+        required=False,
+    )
+    parser.add_argument(
+        "--resources-path",
+        help="Directory containing resource files",
+        type=Path,
+        default=Path('resources'),
+        required=False,
+    )
+    parser.add_argument(
+        "--results-path",
+        type=Path,
+        help=(
+            "Directory containing results from running src/scripts/healthsystem/"
+            "impact_of_healthsystem_under_diff_scenarios/scenario_impact_of_healthsystem.py "
+            "script."
+        ),
+        default=None,
+        required=False
+    )
+    args = parser.parse_args()
+    assert args.results_path is not None
+    results_path = args.results_path
+    output_path = results_path if args.output_path is None else args.output_path
 
-    # AIDS_TB mortality rates per 100k person-years
-    tb_deaths[name]["TB_death_rate_100kpy"] = (
-            tb_deaths[name]["median"].values / py_summary["mean"].values) * 100000
-
-    tb_deaths[name]["TB_death_rate_100kpy_lower"] = (
-        tb_deaths[name]["lower"].values / py_summary["mean"].values) * 100000
-
-    tb_deaths[name]["TB_death_rate_100kpy_upper"] = (
-        tb_deaths[name]["upper"].values / py_summary["mean"].values) * 100000
-
-
-# ---------------------------------- PROGRAM COVERAGE ---------------------------------- #
-
-# TB treatment coverage
-model_tb_tx = summarize(
-    extract_results(
-        results_folder,
-        module="tlo.methods.tb",
-        key="tb_treatment",
-        column="tbTreatmentCoverage",
-        index="date",
-        do_scaling=False,
-    ),
-    collapse_columns=True,
-)
-
-model_tb_tx.index = model_tb_tx.index.year
-
-# HIV treatment coverage
-model_hiv_tx = summarize(
-    extract_results(
-        results_folder,
-        module="tlo.methods.hiv",
-        key="hiv_program_coverage",
-        column="art_coverage_adult",
-        index="date",
-        do_scaling=False,
-    ),
-    collapse_columns=True,
-)
-
-model_hiv_tx.index = model_hiv_tx.index.year
-
-
-# %% Function to make standard plot to compare model and data
-def make_plot(
-    model=None,
-    model_low=None,
-    model_high=None,
-    data_name=None,
-    data_mid=None,
-    data_low=None,
-    data_high=None,
-    xlab=None,
-    ylab=None,
-    title_str=None,
-):
-    assert model is not None
-    assert title_str is not None
-
-    # Make plot
-    fig, ax = plt.subplots()
-    ax.plot(model.index, model.values, "-", color="C3")
-    if (model_low is not None) and (model_high is not None):
-        ax.fill_between(model_low.index, model_low, model_high, color="C3", alpha=0.2)
-
-    if data_mid is not None:
-        ax.plot(data_mid.index, data_mid.values, "-", color="C0")
-    if (data_low is not None) and (data_high is not None):
-        ax.fill_between(data_low.index, data_low, data_high, color="C0", alpha=0.2)
-
-    if xlab is not None:
-        ax.set_xlabel(xlab)
-
-    if ylab is not None:
-        ax.set_xlabel(ylab)
-
-    plt.title(title_str)
-    plt.legend(["TLO", data_name])
-    # plt.gca().set_ylim(bottom=0)
-    # plt.savefig(outputspath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
-
-
-#
-# # TB deaths (excluding HIV/TB deaths)
-# make_plot(
-#     title_str="TB mortality rate per 100,000 population",
-#     model=tot_tb_non_hiv_deaths_rate_100kpy,
-#     model_low=tot_tb_non_hiv_deaths_rate_100kpy_lower,
-#     model_high=tot_tb_non_hiv_deaths_rate_100kpy_upper,
-#     )
-# plt.savefig(make_graph_file_name("TB_mortality"))
-#
-# plt.show()
-#
-# # ---------------------------------------------------------------------- #
-#
-# # TB treatment coverage
-# make_plot(
-#     title_str="TB treatment coverage",
-#     model=model_tb_tx["mean"] * 100,
-#     model_low=model_tb_tx["lower"] * 100,
-#     model_high=model_tb_tx["upper"] * 100,
-#     data_name="NTP",
-#     data_mid=data_tb_ntp["treatment_coverage"],
-# )
-# # plt.savefig(make_graph_file_name("TB_treatment_coverage"))
-#
-# plt.show()
-#
-# # ---------------------------------------------------------------------- #
-#
-# # TB deaths
-# # select cause of death
-# tmp = results_deaths.loc[(results_deaths.cause == "TB")]
-# # select draw - drop columns where draw != 0, but keep year and cause
-# tmp2 = tmp.loc[
-#        :, ("draw" == draw)
-#        ].copy()  # selects only columns for draw=0 (removes year/cause)
-# # join year and cause back to df - needed for groupby
-# frames = [tmp["year"], tmp["cause"], tmp2]
-# tmp3 = pd.concat(frames, axis=1)
-#
-# # create new column names, dependent on number of runs in draw
-# base_columns = ["year", "cause"]
-# run_columns = ["run" + str(x) for x in range(0, info["runs_per_draw"])]
-# base_columns.extend(run_columns)
-# tmp3.columns = base_columns
-# tmp3 = tmp3.set_index("year")
-#
-# # sum rows for each year (2 entries)
-# # for each run need to combine deaths in each year, may have different numbers of runs
-# model_deaths_TB = pd.DataFrame(tmp3.groupby(["year"]).sum())
-#
-# # double check all columns are float64 or quantile argument will fail
-# model_2010_median = model_deaths_TB.iloc[2].quantile(0.5)
-# model_2015_median = model_deaths_TB.iloc[5].quantile(0.5)
-# model_2010_low = model_deaths_TB.iloc[2].quantile(0.025)
-# model_2015_low = model_deaths_TB.iloc[5].quantile(0.025)
-# model_2010_high = model_deaths_TB.iloc[2].quantile(0.975)
-# model_2015_high = model_deaths_TB.iloc[5].quantile(0.975)
-#
-# plt.bar(x_vals, y_vals, color=col)
-# plt.errorbar(
-#     x_vals, y_vals,
-#     yerr=[y_lower, y_upper],
-#     ls="none",
-#     marker="o",
-#     markeredgecolor="lightskyblue",
-#     markerfacecolor="lightskyblue",
-#     ecolor="lightskyblue",
-# )
-# plt.xticks(ticks=x_vals, labels=labels)
-# plt.title("Deaths per year due to TB")
-# plt.legend(handles=[blue_patch, green_patch, red_patch])
-# plt.tight_layout()
-# # plt.savefig(make_graph_file_name("TB_deaths_with_GBD"))
-# plt.show()
+    apply(
+        results_folder=results_path,
+        output_folder=output_path,
+        resourcefilepath=args.resources_path
+    )
