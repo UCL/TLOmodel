@@ -794,19 +794,25 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
             # Formulation for young children
             drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_young_children'],
-                optional_item_codes=self.module.item_codes_for_consumables_required['paracetamol_syrup'])
+                optional_item_codes=[self.module.item_codes_for_consumables_required['paracetamol_syrup'],
+                                     self.module.item_codes_for_consumables_required['malaria_rdt']]
+            )
 
         elif 5 <= age_of_person <= 15:
             # Formulation for older children
             drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_older_children'],
-                optional_item_codes=self.module.item_codes_for_consumables_required['paracetamol_syrup'])
+                optional_item_codes=[self.module.item_codes_for_consumables_required['paracetamol_syrup'],
+                                     self.module.item_codes_for_consumables_required['malaria_rdt']]
+            )
 
         else:
             # Formulation for adults
             drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['malaria_uncomplicated_adult'],
-                optional_item_codes=self.module.item_codes_for_consumables_required['paracetamol'])
+                optional_item_codes=[self.module.item_codes_for_consumables_required['paracetamol'],
+                                     self.module.item_codes_for_consumables_required['malaria_rdt']]
+            )
 
         return drugs_available
 
