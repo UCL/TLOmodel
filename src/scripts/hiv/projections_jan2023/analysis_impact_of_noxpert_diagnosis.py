@@ -133,6 +133,7 @@ def apply(results_folder: Path, outputspath: Path, resourcefilepath: Path = None
         ax.set_title(name_of_plot)
         ax.set_ylabel('DALYS (Millions)')
         fig.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
         fig.savefig("DALY_graph.png")
         plt.show()
 
@@ -143,6 +144,7 @@ def apply(results_folder: Path, outputspath: Path, resourcefilepath: Path = None
         ax.set_title(name_of_plot)
         ax.set_ylabel('Deaths (Millions)')
         fig.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
         fig.savefig("Mortality_graph.png")
         plt.show()
 
