@@ -164,7 +164,7 @@ if __name__ == "__main__":
         type=Path,
         help=(
             "Directory containing results from running "
-            "src/scripts/healthsystem/impact_of_mode/scenario_impact_of_mode.py "
+            "src/scripts/hiv/projections_jan2023/scenario_impact_of_noxpert_diagnosis.py "
         ),
         default=None,
         required=False
