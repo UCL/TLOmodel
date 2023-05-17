@@ -404,7 +404,7 @@ class Malaria(Module):
 
         # testing trends independent of any demographic characteristics
         # no rdt offered if currently on anti-malarials
-        random_draw = rng.random_sample(size=len(df[df.is_alive & ~df.ma_tx]))
+        random_draw = rng.random_sample(size=len(df))
         will_test_idx = df.loc[df.is_alive & ~df.ma_tx & (random_draw < annual_rdt_rate)].index
 
         for person_id in will_test_idx:
@@ -415,9 +415,7 @@ class Malaria(Module):
                 hsi_event=HSI_Malaria_rdt(person_id=person_id, module=self),
                 priority=1,
                 topen=date_test,
-                tclose=self.sim.date + pd.DateOffset(
-                    months=1
-                ),
+                tclose=date_test + pd.DateOffset(days=7),
             )
 
     def initialise_simulation(self, sim):
@@ -776,6 +774,53 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         logger.debug(key='message',
                      data='HSI_Malaria_rdt: did not run')
         pass
+
+
+class HSI_Malaria_rdt_community(HSI_Event, IndividualScopeEventMixin):
+    """
+    this is a point-of-care malaria rapid diagnostic test, with results within 2 minutes
+    this is performed in the community at facility level 0 by a DCSA
+    positive result will schedule a referral to HSI_Malaria_rdt at facility level 1a
+    where a confirmatory rdt will be performed and treatment will be scheduled
+    """
+
+    def __init__(self, module, person_id):
+
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Malaria)
+
+        self.TREATMENT_ID = "Malaria_Test"
+        df = self.sim.population.props
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
+        self.ACCEPTED_FACILITY_LEVEL = '0'
+
+    def apply(self, person_id, squeeze_factor):
+
+        df = self.sim.population.props
+        hs = self.sim.modules["HealthSystem"]
+
+        # Ignore this event if the person is no longer alive or already on treatment
+        if not df.at[person_id, 'is_alive'] or df.at[person_id, 'ma_tx']:
+            return hs.get_blank_appt_footprint()
+
+        # call the DxTest RDT to diagnose malaria
+        dx_result = hs.dx_manager.run_dx_test(
+            dx_tests_to_run='malaria_rdt',
+            hsi_event=self
+        )
+
+        # if positive, refer for a confirmatory test at level 1a
+        if dx_result:
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Malaria_rdt(person_id=person_id, module=self.module),
+                priority=1,
+                topen=self.sim.date,
+                tclose=self.sim.date + pd.DateOffset(
+                    months=self.frequency.months
+                ),  # (to occur before next polling)
+            )
+
+
 
 
 class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):

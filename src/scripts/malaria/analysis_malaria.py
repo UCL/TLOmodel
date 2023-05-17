@@ -70,9 +70,6 @@ sim.register(
     )
 )
 
-sim.modules["Malaria"].parameters["testing_adj"] = 0.6
-sim.modules["Malaria"].parameters["sensitivity_rdt"] = 0.95
-
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
