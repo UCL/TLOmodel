@@ -1519,12 +1519,11 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+            return  # return nothing implies that the footprint used matches the EXPECTED_APPT_FOOTPRINT
 
         else:
-            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-
-        return actual_appt_footprint
+            # return a blank footprint as the appointment could not run as intended
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareVisit: did not run')
@@ -1610,12 +1609,11 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+            return  # return nothing implies that the footprint used matches the EXPECTED_APPT_FOOTPRINT
 
         else:
-            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-
-        return actual_appt_footprint
+            # return a blank footprint as the appointment could not run as intended
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareVisit: did not run')
@@ -1687,12 +1685,11 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+            return  # return nothing implies that the footprint used matches the EXPECTED_APPT_FOOTPRINT
 
         else:
-            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-
-        return actual_appt_footprint
+            # return a blank footprint as the appointment could not run as intended
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact: did not run')
@@ -1760,12 +1757,11 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+            return  # return nothing implies that the footprint used matches the EXPECTED_APPT_FOOTPRINT
 
         else:
-            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-
-        return actual_appt_footprint
+            # return a blank footprint as the appointment could not run as intended
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact: did not run')
@@ -1830,12 +1826,11 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+            return  # return nothing implies that the footprint used matches the EXPECTED_APPT_FOOTPRINT
 
         else:
-            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-
-        return actual_appt_footprint
+            # return a blank footprint as the appointment could not run as intended
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact: did not run')
@@ -1896,12 +1891,11 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+            return  # return nothing implies that the footprint used matches the EXPECTED_APPT_FOOTPRINT
 
         else:
-            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-
-        return actual_appt_footprint
+            # return a blank footprint as the appointment could not run as intended
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact: did not run')
@@ -1956,12 +1950,11 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+            return  # return nothing implies that the footprint used matches the EXPECTED_APPT_FOOTPRINT
 
         else:
-            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-
-        return actual_appt_footprint
+            # return a blank footprint as the appointment could not run as intended
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact: did not run')
@@ -2008,12 +2001,11 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+            return  # return nothing implies that the footprint used matches the EXPECTED_APPT_FOOTPRINT
 
         else:
-            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-
-        return actual_appt_footprint
+            # return a blank footprint as the appointment could not run as intended
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact: did not run')
@@ -2076,7 +2068,8 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
             self.visit_number > 4 or
             self.visit_number != (df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] + 1)
         ):
-            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+            # return blank footprint as the appointment did not run as intended.
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # Women who are inpatients at the time the HSI should run will return at the next recommended point in
         # pregnancy
@@ -2092,7 +2085,8 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
             else:
                 df.at[person_id, 'ac_date_next_contact'] = visit_date
 
-            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+            # return blank footprint as the appointment did not run as intended.
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # Finally, if the squeeze factor is too high the event wont run and she will return tomorrow
         elif squeeze_factor > params['squeeze_factor_threshold_anc']:
@@ -2100,7 +2094,8 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
                                                                 topen=self.sim.date + DateOffset(days=1),
                                                                 tclose=self.sim.date + DateOffset(days=2))
 
-            actual_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+            # return blank footprint as the appointment did not run as intended.
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         else:
             self.module.anc_counter[self.visit_number] += 1
@@ -2145,10 +2140,6 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
             # If the woman has had any complications detected during ANC she is admitted for treatment to be initiated
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
-
-            actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
-
-        return actual_appt_footprint
 
 
 class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, IndividualScopeEventMixin):
