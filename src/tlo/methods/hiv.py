@@ -3202,12 +3202,16 @@ class DummyHivModule(Module):
     def initialise_population(self, population):
         df = population.props
         df.loc[df.is_alive, "hv_inf"] = self.rng.rand(sum(df.is_alive)) < self.hiv_prev
-        df.loc[df.is_alive, "hv_art"] = pd.Series(
-            self.rng.rand(sum(df.is_alive)) < self.art_cov).replace({True: "on_VL_suppressed", False: "not"}).values
+        df.loc[(df.is_alive & df.hv_inf), "hv_art"] = pd.Series(
+            self.rng.rand(sum(df.is_alive & df.hv_inf)) < self.art_cov).replace(
+            {True: "on_VL_suppressed", False: "not"}).values
 
     def initialise_simulation(self, sim):
         pass
 
     def on_birth(self, mother, child):
-        self.sim.population.props.at[child, "hv_inf"] = self.rng.rand() < self.hiv_prev
-        self.sim.population.props.at[child, "hv_art"] = "on_VL_suppressed" if self.rng.rand() < self.art_cov else "not"
+        df = self.sim.population.props
+        df.at[child, "hv_inf"] = self.rng.rand() < self.hiv_prev
+
+        if df.at[child, "hv_inf"]:
+            df.at[child, "hv_art"] = "on_VL_suppressed" if self.rng.rand() < self.art_cov else "not"
