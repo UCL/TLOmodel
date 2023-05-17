@@ -32,22 +32,22 @@ def apply(results_folder: Path, outputspath: Path, resourcefilepath: Path = None
     # Definitions of general helper functions
     make_graph_file_name = lambda stub: outputspath / f"{stub.replace('*', '_star_')}.png"   # noqa: E731
 
-# def target_period() -> str:
-#     """Returns the target period as a string of the form YYYY-YYYY"""
-#     return "-".join(str(t.year) for t in target_period)
+def target_period() -> str:
+    """Returns the target period as a string of the form YYYY-YYYY"""
+    return "-".join(str(t.year) for t in target_period)
 
 # collecting basic information associated with scenario
 # Find results_folder associated with a given batch_file and get most recent
-results_folder = get_scenario_outputs('scenario_impact_noXpert_diagnosis.py', outputspath)[-1]
-    #results_folder = get_scenario_outputs('scenario_impact_noXpert_diagnosis.py', args.scenario_outputs_folder)[-1]
-
-    # look at one log (so can decide what to extract)
+# results_folder = get_scenario_outputs('scenario_impact_noXpert_diagnosis.py', outputspath)[-1]
+#     #results_folder = get_scenario_outputs('scenario_impact_noXpert_diagnosis.py', args.scenario_outputs_folder)[-1]
+#
+#     # look at one log (so can decide what to extract)
     log = load_pickled_dataframes(results_folder)
-
-    # get basic information about the results
+#
+#     # get basic information about the results
     info = get_scenario_info(results_folder)
-
-    # 1) Extract the parameters that have varied over the set of simulations
+#
+#     # 1) Extract the parameters that have varied over the set of simulations
     params = extract_params(results_folder)
 
     # def get_num_deaths(_df):
@@ -74,14 +74,14 @@ results_folder = get_scenario_outputs('scenario_impact_noXpert_diagnosis.py', ou
         )
 
     num_deaths = extract_results(
-        results_folder,
+        outputspath,
         module='tlo.methods.demography',
         key='death',
         custom_generate_series=get_num_deaths,
         do_scaling=True
     )
     num_dalys = extract_results(
-        results_folder,
+        outputspath,
         module='tlo.methods.healthburden',
         key='dalys_stacked',
         custom_generate_series=get_num_dalys,
