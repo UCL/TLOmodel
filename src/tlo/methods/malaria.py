@@ -790,7 +790,6 @@ class HSI_Malaria_rdt_community(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, Malaria)
 
         self.TREATMENT_ID = "Malaria_Test"
-        df = self.sim.population.props
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
         self.ACCEPTED_FACILITY_LEVEL = '0'
 

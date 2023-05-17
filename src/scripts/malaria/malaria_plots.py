@@ -84,7 +84,7 @@ model_years = model_years.dt.year
 years_of_simulation = len(model_years)
 # ------------------------------------- FIGURES -----------------------------------------#
 start_date = 2010
-end_date = 2022
+end_date = 2026
 
 # FIGURES
 plt.style.use("ggplot")
