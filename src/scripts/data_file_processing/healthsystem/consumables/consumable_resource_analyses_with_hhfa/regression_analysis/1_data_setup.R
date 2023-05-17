@@ -2,7 +2,7 @@
 
 # 1. Load HHFA data
 ####################
-df_orig <- read_csv(paste0(path_to_data, "cleaned_hhfa_2019.csv"), col_names = TRUE)
+df_orig <- read.csv(paste0(path_to_data, "cleaned_hhfa_2019.csv"))
 
 # 1.1 Assign a code to items
 #----------------------------

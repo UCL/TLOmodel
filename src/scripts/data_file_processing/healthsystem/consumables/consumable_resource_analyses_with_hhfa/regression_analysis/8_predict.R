@@ -6,13 +6,12 @@
 ###########################################################
 # 1.1 Run setup script
 #---------------------------------
+path_to_scripts = "C:/Users/sm2511/PycharmProjects/TLOmodel/src/scripts/data_file_processing/healthsystem/consumables/consumable_resource_analyses_with_hhfa/regression_analysis/"
 source(paste0(path_to_scripts, "3b_data_setup_for_regression.R"))
 
 ###########################################################
 # 2. Load model outputs
 ###########################################################
-load(paste0(path_to_outputs, "regression_results/model_lit.rdta"))
-load(paste0(path_to_outputs, "regression_results/model_base.rdta"))
 load(paste0(path_to_outputs, "regression_results/model_fac_item_re.rdta"))
 
 ###########################################################
@@ -26,47 +25,54 @@ rep_str = c('acute lower respiratory infections'='alri','obstetric and newborn c
 df_regress$program_plot <- str_replace_all(df_regress$program_plot, rep_str)
 df_regress <- df_regress[unlist(c(chosen_varlist_for_fac_re, 'program_plot'))]
 
+# Drop one item which seems to be causing a but in the prediction
+drop_items = c("Dipsticks for urine ketone bodies for rapid diagnostic ")
+df_regress <- df_regress %>%
+  filter(!(item %in% drop_items) # Second line ARVs
+  )
+
+# Generate a column with regression based predictions
+df_regress <- df_regress %>% 
+  mutate(available_prob_predicted = predict(model_fac_item_re,newdata=df_regress, type = "response"))
+
 # 3.1 Scenario - All facilities have computers
 ###############################################
 df_pred_computer <- df_regress
 df_pred_computer['functional_computer'] = 1 # Set computer availability
-df_pred_computer$available_prob <- rep(NA,nrow(df_pred_computer)) # empty column
 
-newpred_computer <- predict(model_fac_item_re,newdata=df_pred_computer, type = "response") # Predict availability
-df_pred_computer$available_prob <- newpred_computer 
-
-# Update probability values to binary
-df_pred_computer$available_predict <- rep(0,nrow(df_pred_computer))
-df_pred_computer$available_predict[df_pred_computer$available_prob <0.5] <- 0
-df_pred_computer$available_predict[df_pred_computer$available_prob >0.5] <- 1
+newpred_computer <- predict(model_fac_item_re,newdata=df_pred_computer, type = "response") # Predict availability when all facilities have computers
+df_pred_computer$available_prob_predicted_computer <- newpred_computer 
 
 # Check that the prediction improves availability from the base case
-stopifnot(mean(df_pred_computer$available, na.rm = TRUE) < 
-            mean(df_pred_computer$available_predict, na.rm = TRUE))
+stopifnot(mean(df_pred_computer$available_prob_predicted, na.rm = TRUE) < 
+            mean(df_pred_computer$available_prob_predicted_computer, na.rm = TRUE))
 
 # Count the number of instances where the availability reduces
 df_pred_computer$functional_computer_orig <- df_regress$functional_computer
 
 length(unique(df_regress[which(df_regress$functional_computer == 1),]$fac_code))
 
-a <- sum((df_pred_computer$available_predict > df_pred_computer$available) &
+a <- sum((df_pred_computer$available_prob_predicted_computer > df_pred_computer$available_prob_predicted) &
       (df_pred_computer$functional_computer_orig < df_pred_computer$functional_computer))/
   sum((df_pred_computer$functional_computer_orig < df_pred_computer$functional_computer))
-b <- sum((df_pred_computer$available_predict < df_pred_computer$available) &
+b <- sum((df_pred_computer$available_prob_predicted_computer < df_pred_computer$available_prob_predicted) &
       (df_pred_computer$functional_computer_orig < df_pred_computer$functional_computer))/
   sum((df_pred_computer$functional_computer_orig < df_pred_computer$functional_computer))
 c <- length(unique(df_regress[which(df_regress$functional_computer == 0),]$fac_code))
+d <- sum((df_pred_computer$available_prob_predicted_computer < df_pred_computer$available_prob_predicted) &
+           (df_pred_computer$functional_computer_orig == 1))/
+  sum((df_pred_computer$functional_computer_orig ==1))
 
-print(paste0("Among ",c,  " facilities which previously did not have computers, availability changed from 0 to 1 in ",
-             round(a*100,2), " % of instances, and changed from 1 to 0 in ", round(b*100,2), " % of the instances."))
+print(paste0("Among ",c,  " facilities which previously did not have computers, availability increased in ",
+             round(a*100,2), " % of instances, and reduced in ", round(b*100,2), " % of the instances."))
+
+# Calculate proportional change which can be applied to LMIS data
+df_pred_computer$availability_change_prop = df_pred_computer$available_prob_predicted_computer/df_pred_computer$available_prob_predicted
 
 # Collapse data
 summary_pred_computer <- df_pred_computer %>% 
   group_by(district, fac_type, program_plot, item) %>%
-  summarise_at(vars(available_predict, available), list(mean))
-
-# Calculate proportional change which can be applied to LMIS data
-summary_pred_computer$availability_change_prop = summary_pred_computer$available_predict/summary_pred_computer$available
+  summarise_at(vars(availability_change_prop), list(mean))
 
 # Extract .csv for model simulation
 write.csv(summary_pred_computer,paste0(path_to_outputs, "predictions/predicted_consumable_availability_computers_scenario.csv"), row.names = TRUE)
@@ -75,28 +81,24 @@ write.csv(summary_pred_computer,paste0(path_to_outputs, "predictions/predicted_c
 ##########################################################
 df_pred_pharma <- df_regress
 df_pred_pharma['incharge_drug_orders'] = 'pharmacist or pharmacy technician' 
-df_pred_pharma$available_prob <- rep(NA,nrow(df_pred_pharma)) # empty column
 
-newpred_pharma <- predict(model_fac_item_re,newdata=df_pred_pharma, type = "response") # Predict availability
-save(newpred_pharma, file = "2 outputs/predictions/pred_pharma_all.rdta")
-df_pred_pharma$available_prob <- newpred_pharma 
-
-# Update probability values to binary
-df_pred_pharma$available_predict <- rep(0,nrow(df_pred_pharma))
-df_pred_pharma$available_predict[df_pred_pharma$available_prob <0.5] <- 0
-df_pred_pharma$available_predict[df_pred_pharma$available_prob >0.5] <- 1
+newpred_pharma <- predict(model_fac_item_re,newdata=df_pred_pharma, type = "response") # Predict availability when all facilities have pharmacist managing drug orders
+df_pred_pharma$available_prob_predicted_stockmgt_pharmacist <- newpred_pharma 
 
 # Check that the prediction improves availability from the base case
-stopifnot(mean(df_pred_pharma$available, na.rm = TRUE) < 
-            mean(df_pred_pharma$available_predict, na.rm = TRUE))
+stopifnot(mean(df_pred_pharma$available_prob_predicted, na.rm = TRUE) < 
+            mean(df_pred_pharma$available_prob_predicted_stockmgt_pharmacist, na.rm = TRUE))
+
+# Calculate proportional change which can be applied to LMIS data
+df_pred_pharma$availability_change_prop = df_pred_pharma$available_prob_predicted_stockmgt_pharmacist/df_pred_pharma$available_prob_predicted
 
 # Collapse data
 summary_pred_pharma <- df_pred_pharma %>% 
   group_by(district, fac_type, program_plot, item) %>%
-  summarise_at(vars(available_predict, available), list(mean))
+  summarise_at(vars(availability_change_prop), list(mean))
 
 # Extract .csv for model simulation
-write.csv(summary_pred_pharma,paste0(path_to_outputs, "predictions/summary_pred_pharma.csv"), row.names = TRUE)
+write.csv(summary_pred_pharma,paste0(path_to_outputs, "predictions/predicted_consumable_availability_pharmacists_scenario.csv"), row.names = TRUE)
 
 #################################
 # 4. Plot predicted availability

@@ -71,7 +71,7 @@ tlo_availability_df = tlo_availability_df.merge(programs, on = ['item_code'], ho
 
 # 1.2 Import scenario data
 #------------------------------------------------------
-scenario_availability_df = pd.read_csv(outputfilepath / "regression_analysis/predictions/predicted_consumable_availability_computers_scenario.csv")
+scenario_availability_df = pd.read_csv(outputfilepath / "regression_analysis/predictions/predicted_consumable_availability_pharmacists_scenario.csv")
 scenario_availability_df = scenario_availability_df.drop(['Unnamed: 0'], axis=1)
 scenario_availability_df = scenario_availability_df.rename({'item': 'item_hhfa'}, axis=1)
 
@@ -94,7 +94,8 @@ copy_source_to_destination = {
     'Mzimba': 'Mzuzu City',
     'Lilongwe': 'Lilongwe City',
     'Zomba': 'Zomba City',
-    'Blantyre': 'Blantyre City'
+    'Blantyre': 'Blantyre City',
+    'Nkhata Bay': 'Likoma' # based on anecdotal evidence, assume that they experience the same change in avaiability as a result of interventions based on regression results
 }
 for source, destination in copy_source_to_destination.items():
     new_rows = scenario_availability_df.loc[scenario_availability_df.district_std == source].copy()
@@ -278,7 +279,7 @@ average_change_across_districts_for_1a = average_change_across_districts[average
 average_change_across_districts_for_1b = average_change_across_districts[average_change_across_districts.Facility_Level == "1b"].rename({'availability_change_prop' : 'availability_change_prop_1b'}, axis = 1).drop('Facility_Level', axis = 1)
 ratio_of_change_across_districts_1b_to_1a = average_change_across_districts_for_1a.merge(average_change_across_districts_for_1b,
                                                                                          how = "left", on = ['item_code'])
-ratio_of_change_across_districts_1b_to_1a['ratio'] = ratio_of_change_across_districts_1b_to_1a.availability_change_prop_1b/ratio_of_change_across_districts_1b_to_1a.availability_change_prop_1a
+ratio_of_change_across_districts_1b_to_1a['ratio'] = (ratio_of_change_across_districts_1b_to_1a.availability_change_prop_1b-1)/(ratio_of_change_across_districts_1b_to_1a.availability_change_prop_1a - 1)
 ratio_of_change_across_districts_1b_to_1a.reset_index()
 
 # Use the above for those districts no level 1b facilities recorded in the HHFA data
@@ -296,7 +297,7 @@ df_missing_1b_imputed = df_missing_1b_imputed.drop('availability_change_prop', a
                                how = 'left', validate = "1:1", indicator = True)
 
 
-df_missing_1b_imputed['availability_change_prop'] = df_missing_1b_imputed['availability_change_prop'] * df_missing_1b_imputed['ratio']
+df_missing_1b_imputed['availability_change_prop'] = ((df_missing_1b_imputed['availability_change_prop']-1) * df_missing_1b_imputed['ratio']) + 1
 
 new_availability_df_imputed = pd.concat([new_availability_df[~(cond_1b_missing_district & cond_1b)], df_missing_1b_imputed], ignore_index = True)
 
@@ -323,13 +324,22 @@ pivot_table = pd.pivot_table(new_availability_df_imputed,
                              aggfunc=lambda x: sum(pd.isna(x))/len(x)*100)
 
 print(pivot_table[('availability_change_prop', '1b')])
+'''
+Cases which are still missing data:
+1. For the 5 districts without 1b facilities in HHFA (Balaka, Machinga, Mwanza, Ntchisi, Salima), data on 54 items
+for 1b is missing.
+2. Chitipa 1b is missing data on 5 consumables - 176, 177,178,179,181,192, 2675
+3. 184	187 are missing for nearly all districts
+
+Previously, Likoma did not have data from the regression analysis - I have now used values from Nkhata bay as proxy
+'''
 
 # 2.2.4 PLaceholder code to replace all other missing values
 # TODO Check why there are still instances of missing data when regression_application is assume average or proxy
 #------------------------------------------------------
 # For all other cases, assume no change
 missing_change_data = new_availability_df_imputed.availability_change_prop.isna()
-new_availability_df_imputed.loc[missing_change_data, 'availability_change_prop'] = 1
+new_availability_df_imputed.loc[missing_change_data, 'availability_change_prop'] = new_availability_df_imputed['availability_change_prop'].mean()
 
 # Where the merge_scenario == "left_only", we need to provide data on "availability_change_prop"
 # new_availability_df_imputed.to_csv(outputfilepath / 'current_status_of_scenario_merge.csv')
@@ -358,7 +368,6 @@ full_df_with_scenario.to_csv(
     index=False
 )
 # TODO: What about cases which do not exist in HHFA data?
-# TODO:  Some consumables have been matched for some levels of care but not others
 # TODO: Create a column providing the source of scenario data
 '''
 scenario_availability_facid_itemcode_merge['source_of_prop_change'] = np.nan
