@@ -13,19 +13,16 @@ from typing import Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
 from tlo import Date
 from tlo.analysis.utils import (
     extract_params,
     extract_results,
     get_scenario_info,
-    get_scenario_outputs,
     load_pickled_dataframes,
-    make_age_grp_lookup,
-    make_age_grp_types,
-    make_calendar_period_lookup,
-    make_calendar_period_type,
     summarize,
 )
+
 
 def apply(results_folder: Path, outputspath: Path, resourcefilepath: Path = None):
     target_period = (Date(2010, 1, 1), Date(2015, 12, 31))
@@ -57,10 +54,6 @@ def apply(results_folder: Path, outputspath: Path, resourcefilepath: Path = None
     params = extract_params(results_folder)
 
     def get_num_deaths(_df):
-        """Return the total number of Deaths (total within the TARGET_PERIOD)"""
-        return len(_df.loc[pd.to_datetime(_df['date'])])
-
-    def get_num_deaths(_df):
         """Return total number of Deaths (total within the TARGET_PERIOD)
         """
         return pd.Series(data=len(_df.loc[pd.to_datetime(_df.date).between(*target_period)]))
@@ -90,14 +83,14 @@ def apply(results_folder: Path, outputspath: Path, resourcefilepath: Path = None
         key='death',
         custom_generate_series=get_num_deaths,
         do_scaling=True
-    )
+    ).pipe(set_param_names_as_column_index_level_0)
     num_dalys = extract_results(
         results_folder,
         module='tlo.methods.healthburden',
         key='dalys_stacked',
         custom_generate_series=get_num_dalys,
         do_scaling=True
-    )
+    ).pipe(set_param_names_as_column_index_level_0)
 
     num_deaths_summarized = summarize(num_deaths).loc[0].unstack()
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
@@ -109,7 +102,6 @@ def apply(results_folder: Path, outputspath: Path, resourcefilepath: Path = None
             (_df['mean'] - _df['lower']).values,
             (_df['upper'] - _df['mean']).values,
         ])
-
         xticks = {(i + 0.5): k for i, k in enumerate(_df.index)}
 
         fig, ax = plt.subplots()
