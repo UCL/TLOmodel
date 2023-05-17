@@ -418,6 +418,11 @@ class Malaria(Module):
         # 3) ----------------------------------- CONSUMABLES -----------------------------------
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
+        # malaria rdt
+        self.item_codes_for_consumables_required['malaria_rdt'] = {
+            get_item_code("Malaria test kit (RDT)"): 1,
+        }
+
         # malaria treatment uncomplicated children <15kg
         self.item_codes_for_consumables_required['malaria_uncomplicated_young_children'] = {
             get_item_code("Lumefantrine 120mg/Artemether 20mg,  30x18_540_CMST"): 1,
