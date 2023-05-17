@@ -177,7 +177,7 @@ class Malaria(Module):
         p["irs_district"] = workbook["MAP_IRSrates"]
 
         p["sev_symp_prob"] = workbook["severe_symptoms"]
-        p["rdt_testing_rates"] = workbook["NMCP"]
+        p["rdt_testing_rates"] = workbook["WHO_TestData2023"]
 
         p["inf_inc"] = pd.read_csv(self.resourcefilepath / "ResourceFile_malaria_InfInc_expanded.csv")
         p["clin_inc"] = pd.read_csv(self.resourcefilepath / "ResourceFile_malaria_ClinInc_expanded.csv")
@@ -400,19 +400,19 @@ class Malaria(Module):
         # extract annual testing rates from NMCP reports
         # this is the # rdts issued divided by population size
         test_rates = p["rdt_testing_rates"]
-        annual_rdt_rate = test_rates.loc[(test_rates.Year == year), "Rate_rdt_testing"].values[0]
+        rdt_rate = test_rates.loc[(test_rates.Year == year), "Rate_rdt_testing"].values[0] / 12
 
         # testing trends independent of any demographic characteristics
         # no rdt offered if currently on anti-malarials
         random_draw = rng.random_sample(size=len(df))
-        will_test_idx = df.loc[df.is_alive & ~df.ma_tx & (random_draw < annual_rdt_rate)].index
+        will_test_idx = df.loc[df.is_alive & ~df.ma_tx & (random_draw < rdt_rate)].index
 
         for person_id in will_test_idx:
             date_test = self.sim.date + pd.DateOffset(
                 days=self.rng.randint(0, 30)
             )
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Malaria_rdt(person_id=person_id, module=self),
+                hsi_event=HSI_Malaria_rdt_community(person_id=person_id, module=self),
                 priority=1,
                 topen=date_test,
                 tclose=date_test + pd.DateOffset(days=7),
@@ -815,12 +815,8 @@ class HSI_Malaria_rdt_community(HSI_Event, IndividualScopeEventMixin):
                 hsi_event=HSI_Malaria_rdt(person_id=person_id, module=self.module),
                 priority=1,
                 topen=self.sim.date,
-                tclose=self.sim.date + pd.DateOffset(
-                    months=self.frequency.months
-                ),  # (to occur before next polling)
+                tclose=self.sim.date + pd.DateOffset(days=7),
             )
-
-
 
 
 class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
