@@ -442,6 +442,7 @@ class Malaria(Module):
         self.item_codes_for_consumables_required['malaria_complicated'] = get_item_code("Injectable artesunate")
 
         self.item_codes_for_consumables_required['malaria_complicated_optional_items'] = [
+            get_item_code("Malaria test kit (RDT)"),
             get_item_code("Cannula iv  (winged with injection pot) 18_each_CMST"),
             get_item_code("Disposables gloves, powder free, 100 pieces per box"),
             get_item_code("Gauze, absorbent 90cm x 40m_each_CMST"),
@@ -517,8 +518,10 @@ class Malaria(Module):
         else:
             return "negative_malaria_test"
 
-    def do_on_non_emergency_presentation_with_fever(self, person_id, hsi_event):
-        """This is called for a person (of any age) that attends non-emergency generic HSI and has a fever."""
+    def do_for_suspected_malaria_case(self, person_id, hsi_event):
+        """This is called for a person (of any age) that attends non-emergency generic HSI and has
+        any symptoms suggestive of malaria"""
+
         df = self.sim.population.props
 
         if not df.at[person_id, "ma_tx"]:
@@ -838,9 +841,8 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
 
             if self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['malaria_complicated'],
-                optional_item_codes=[
-                    self.module.item_codes_for_consumables_required['malaria_complicated_optional_items'],
-                    self.module.item_codes_for_consumables_required['malaria_rdt']]
+                optional_item_codes=self.module.item_codes_for_consumables_required[
+                    'malaria_complicated_optional_items']
             ):
                 logger.debug(key='message',
                              data=f'HSI_Malaria_Treatment_Complicated: giving complicated malaria treatment for '
