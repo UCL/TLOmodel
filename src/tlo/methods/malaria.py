@@ -119,11 +119,15 @@ class Malaria(Module):
         "irs_rates_lower": Parameter(
             Types.REAL, "indoor residual spraying low coverage"
         ),
-        "testing_adj": Parameter(
-            Types.REAL, "adjusted testing rates to match rdt/tx levels"
+        "prob_malaria_case_tests": Parameter(
+            Types.REAL, "probability that a malaria case will have a scheduled rdt"
         ),
         "itn": Parameter(
             Types.REAL, "projected future itn coverage"
+        ),
+        "rdt_testing_rates": Parameter(
+            Types.REAL,
+            "per capita rdt testing rate of general population",
         ),
     }
 
@@ -173,6 +177,7 @@ class Malaria(Module):
         p["irs_district"] = workbook["MAP_IRSrates"]
 
         p["sev_symp_prob"] = workbook["severe_symptoms"]
+        p["rdt_testing_rates"] = workbook["NMCP"]
 
         p["inf_inc"] = pd.read_csv(self.resourcefilepath / "ResourceFile_malaria_InfInc_expanded.csv")
         p["clin_inc"] = pd.read_csv(self.resourcefilepath / "ResourceFile_malaria_ClinInc_expanded.csv")
@@ -381,6 +386,40 @@ class Malaria(Module):
                 death_event, date_death
             )  # schedule the death
 
+    def general_population_rdt_scheduler(self, population):
+        """
+        schedule rdt for general population - performed in the community by DCSAs
+        independent of any current symptoms
+        rates are set to match rdt usage reports from WHO / NMCP
+        """
+        df = population.props
+        rng = self.rng
+        p = self.parameters
+        year = self.sim.date.year
+
+        # extract annual testing rates from NMCP reports
+        # this is the # rdts issued divided by population size
+        test_rates = p["rdt_testing_rates"]
+        annual_rdt_rate = test_rates.loc[(test_rates.Year == year), "Rate_rdt_testing"].values[0]
+
+        # testing trends independent of any demographic characteristics
+        # no rdt offered if currently on anti-malarials
+        random_draw = rng.random_sample(size=len(df[df.is_alive & ~df.ma_tx]))
+        will_test_idx = df.loc[df.is_alive & ~df.ma_tx & (random_draw < annual_rdt_rate)].index
+
+        for person_id in will_test_idx:
+            date_test = self.sim.date + pd.DateOffset(
+                days=self.rng.randint(0, 30)
+            )
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Malaria_rdt(person_id=person_id, module=self),
+                priority=1,
+                topen=date_test,
+                tclose=self.sim.date + pd.DateOffset(
+                    months=1
+                ),
+            )
+
     def initialise_simulation(self, sim):
         """
         * 1) Schedule the Main Regular Polling Events
@@ -582,6 +621,9 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
 
         # assigns new malaria infections
         self.module.malaria_poll2(population)
+
+        # schedule rdt for general population, rate increases over time
+        self.module.general_population_rdt_scheduler(population)
 
 
 class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
@@ -986,7 +1028,7 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 
         # sample those scheduled for rdt
         eligible_for_rdt = df.loc[df.is_alive & (df.ma_date_symptoms == now)].index
-        selected_for_rdt = self.module.rng.random_sample(size=len(eligible_for_rdt)) < p["testing_adj"]
+        selected_for_rdt = self.module.rng.random_sample(size=len(eligible_for_rdt)) < p["prob_malaria_case_tests"]
 
         for idx in eligible_for_rdt[selected_for_rdt]:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
