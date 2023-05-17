@@ -134,8 +134,8 @@ def apply(results_folder: Path, outputspath: Path, resourcefilepath: Path = None
         ax.set_ylabel('DALYS (Millions)')
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-        fig.savefig("DALY_graph.png")
-        plt.show()
+        fig.show()
+        plt.close(fig)
 
         # plot of total number of deaths from the scenario
 
@@ -145,8 +145,8 @@ def apply(results_folder: Path, outputspath: Path, resourcefilepath: Path = None
         ax.set_ylabel('Deaths (Millions)')
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
-        fig.savefig("Mortality_graph.png")
-        plt.show()
+        fig.show()
+        plt.close(fig)
 
         if __name__ == "__main__":
 
