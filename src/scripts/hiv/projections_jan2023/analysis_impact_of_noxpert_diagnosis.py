@@ -25,16 +25,16 @@ from tlo import Date
 #outputspath = Path("./outputs")
 outputspath = Path("./outputs/nic503@york.ac.uk")
 
+target_period = (Date(2010, 1, 1), Date(2015, 12, 31))
 def apply(results_folder: Path, outputspath: Path, resourcefilepath: Path = None):
 
     target_period = (Date(2010, 1, 1), Date(2015, 12, 31))
 # Definitions of general helper functions
 make_graph_file_name = lambda stub: outputspath / f"{stub.replace('*', '_star_')}.png"   # noqa: E731
 
-def target_period() -> str:
-    """Returns the target period as a string of the form YYYY-YYYY"""
-    return "-".join(str(t.year) for t in target_period)
-
+# def target_period() -> str:
+#     """Returns the target period as a string of the form YYYY-YYYY"""
+#     return "-".join(str(t.year) for t in target_period)
 
 # collecting basic information associated with scenario
 # Find results_folder associated with a given batch_file and get most recent
@@ -52,7 +52,17 @@ params = extract_params(results_folder)
 
 def get_num_deaths(_df):
     """Return total number of Deaths (total within the TARGET_PERIOD)"""
-    return pd.Series(data=len(_df.loc[pd.to_datetime(_df.date).between(*target_period)]))
+    return len(_df.loc[pd.to_datetime(_df['date'])])
+
+
+def get_num_deaths(_df):
+    """Return total number of deaths (Stacked) by label (total within the TARGET_PERIOD)"""
+    return pd.Series(
+        data=_df
+        .loc[_df.year.between(*[i.year for i in target_period])]
+        .drop(columns=[])     #drop(columns=['date', 'sex', 'age_range', 'year'])
+        .sum().sum()
+    )
 
 def get_num_dalys(_df):
     """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD)"""
@@ -63,16 +73,15 @@ def get_num_dalys(_df):
         .sum().sum()
     )
 
-
 num_deaths = extract_results(
-    outputspath,
+    results_folder,
     module='tlo.methods.demography',
     key='death',
     custom_generate_series=get_num_deaths,
     do_scaling=True
 )
 num_dalys = extract_results(
-    outputspath,
+    results_folder,
     module='tlo.methods.healthburden',
     key='dalys_stacked',
     custom_generate_series=get_num_dalys,
