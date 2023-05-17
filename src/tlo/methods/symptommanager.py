@@ -178,14 +178,21 @@ class SymptomManager(Module):
     PROPERTIES = dict()  # updated at ```pre-initialise population``` once symptoms have been registered.
 
     PARAMETERS = {
+        'spurious_symptoms': Parameter(
+            Types.BOOL, 'Whether symptoms should arise in persons spuriously (without any disease module causing'
+                        'them). N.B. This parameter is overriden if the argument is provided to the module initialiser.'
+        ),
         'generic_symptoms_spurious_occurrence': Parameter(
-            Types.DATA_FRAME, 'probability and duration of spurious occureneces of generic symptoms')
+            Types.DATA_FRAME, 'probability and duration of spurious occureneces of generic symptoms'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None, spurious_symptoms=False):
+    def __init__(self, name=None, resourcefilepath=None, spurious_symptoms=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.spurious_symptoms = spurious_symptoms
+
+        self.spurious_symptoms = None
+        self.arg_spurious_symptoms = spurious_symptoms
+
         self._persons_with_newly_onset_symptoms = set()
 
         self.generic_symptoms = {
@@ -219,6 +226,7 @@ class SymptomManager(Module):
         """Read in the generic symptoms and register them"""
         self.parameters['generic_symptoms_spurious_occurrence'] = \
             pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_GenericSymptoms_and_HealthSeeking.csv')
+        self.load_parameters_from_dataframe(pd.read_csv(self.resourcefilepath / 'ResourceFile_SymptomManager.csv'))
 
     def register_symptom(self, *symptoms_to_register: Symptom):
         """
@@ -267,6 +275,11 @@ class SymptomManager(Module):
         for symptom_name in sorted(self.symptom_names):
             symptom_column_name = self.get_column_name_for_symptom(symptom_name)
             SymptomManager.PROPERTIES[symptom_column_name] = Property(Types.INT, f'Presence of symptom {symptom_name}')
+
+        # Determine if there should be spurious symptoms (over-write the parameter if an argument is provided)
+        self.spurious_symptoms = self.parameters['spurious_symptoms'] \
+            if self.arg_spurious_symptoms is None \
+            else self.arg_spurious_symptoms
 
     def initialise_population(self, population):
         """
