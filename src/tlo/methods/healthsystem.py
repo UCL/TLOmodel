@@ -422,12 +422,18 @@ class HealthSystem(Module):
             Types.DATA_FRAME, 'Estimated availability of consumables in the LMIS dataset.'),
         'cons_availability': Parameter(
             Types.STRING,
-            "Availability of consumables. If 'default' then use the availability specified in the ResourceFile; if "
+            "Availability of consumables (up to when/if there is a change, per the parameters below). If 'default' then"
+            " use the availability specified in the ResourceFile; if "
             "'none', then let no consumable be  ever be available; if 'all', then all consumables are always available."
             "If any other scenario is specified, the probability of consumable availability is taken from the relavant "
             "column in the ResourceFile"
             " When using 'all' or 'none', requests for consumables are not logged. NB. This parameter is over-ridden"
             "if an argument is provided to the module initialiser."),
+        'change_cons_availability_to': Parameter(Types.STRING, "The new value for `cons_availability` if there should "
+                                                               "be a change during the simulation (or `NO_CHANGE` "
+                                                               "if there should not be a change)."),
+        'change_cons_availability_when': Parameter(Types.DATE, "The date on which any change in the consumables "
+                                                               "availability occurs."),
 
         # Infrastructure and Equipment
         'BedCapacity': Parameter(
@@ -684,6 +690,17 @@ class HealthSystem(Module):
         if not (self.disable or self.disable_and_reject_all):
             self.healthsystemscheduler = HealthSystemScheduler(self)
             sim.schedule_event(self.healthsystemscheduler, sim.date)
+
+        # Schedule the event that will change the Consumables class (if needed)
+        if self.parameters['change_cons_availability_to'] != "NO_CHANGE":
+            sim.schedule_event(
+                ChangeConsumablesClass(
+                    self,
+                    cons_availability=self.parameters['change_cons_availability_to'],
+                ),
+                date=self.parameters['change_cons_availability_when']
+            )
+
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -1929,3 +1946,21 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
 
         if 'beds_availability' in self._parameters:
             self.module.bed_days.availability = self._parameters['beds_availability']
+
+
+
+class ChangeConsumablesClass(Event, PopulationScopeEventMixin):
+    """Event that will replace the Consumables object in the HealthSystem with a new one with the specified argument
+    for consumables availability."""
+    def __init__(self, module: HealthSystem, cons_availability):
+        super().__init__(module)
+        self.cons_availability = cons_availability
+
+    def apply(self, population):
+        """Create, store and initialise a new Consumables object."""
+        self.module.consumables = Consumables(
+            data=self.module.parameters['availability_estimates'],
+            rng=self.module.rng,
+            availability=self.cons_availability
+        )
+        self.module.consumables.on_start_of_day(self.sim.date)
