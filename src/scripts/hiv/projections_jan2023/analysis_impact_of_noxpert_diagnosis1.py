@@ -42,7 +42,6 @@ def get_person_years(_df):
 
     return py
 
-
 py0 = extract_results(
     results_folder,
     module="tlo.methods.demography",
@@ -50,8 +49,6 @@ py0 = extract_results(
     custom_generate_series=get_person_years,
     do_scaling=False
 )
-
-# deaths due to TB (not including TB-HIV)
 def summarise_tb_deaths(results_folder, person_years):
     results_deaths = extract_results(
         results_folder,
@@ -60,39 +57,49 @@ def summarise_tb_deaths(results_folder, person_years):
         custom_generate_series=(
             lambda df: df.assign(year=df["date"].dt.year).groupby(
                 ["year", "cause"])["person_id"].count()
-        ),
+            ),
         do_scaling=False,
     )
     # removes multi-index
     results_deaths = results_deaths.reset_index()
-    results_deaths.to_excel(outputspath / "sample_summarised_deaths.xlsx", index=True)
+    return results_deaths
+
+    # removes multi-index
+    results_deaths = results_deaths.reset_index()
+    #summarise_tb_deaths(results_folder, person_years, outputspath / "sample_summarised_deaths.xlsx")
 
     # select only cause AIDS_TB and AIDS_non_TB
     tmp = results_deaths.loc[results_deaths.cause == "TB"]
 
     # group deaths by year
-    tmp2=pd.DataFrame(tmp.groupby(["year"]).sum())
+    tmp2 = pd.DataFrame(tmp.groupby(["year"]).sum())
+    tmp2.to_excel(outputspath / "my_summarised_deaths.xlsx", index=True)
+
     # divide each draw/run by the respective person-years from that run
     # need to reset index as they don't match exactly (date format)
     tmp3 = tmp2.reset_index(drop=True) / (person_years.reset_index(drop=True))
 
-   tb_deaths = {}  # empty dict
+    tb_deaths = {}  # empty dict
 
-tb_deaths["median_tb_deaths_rate_100kpy"] = (
-                                                        tmp3.astype(float).quantile(0.5, axis=1)
-                                                    ) * 100000
-tb_deaths["median_tb_deaths_rate_100kpy"] = (
-                                                       tmp3.astype(float).quantile(0.025, axis=1)
-                                                   ) * 100000
-tb_deaths["median_tb_deaths_rate_100kpy"] = (
-                                                       tmp3.astype(float).quantile(0.975, axis=1)
-                                                   ) * 100000
-return tb_deaths
+    tb_deaths["median_tb_deaths_rate_100kpy"] = (
+                                                    tmp3.astype(float).quantile(0.5, axis=1)
+                                                ) * 100000
+    tb_deaths["lower_tb_deaths_rate_100kpy"] = (
+                                                   tmp3.astype(float).quantile(0.025, axis=1)
+                                               ) * 100000
+    tb_deaths["upper_tb_deaths_rate_100kpy"] = (
+                                                   tmp3.astype(float).quantile(0.975, axis=1)
+                                               ) * 100000
 
+    return tb_deaths
+    #tb_deaths.to_excel (outputspath / "summarised_deaths.xlsx", index=True)
 
-tb_deaths.to_excel(outputspath / "summarised_deaths.xlsx", index=True)
-
-
+def compute_difference_in_deaths_across_runs(total_deaths, scenario_info):
+    deaths_difference_by_run = [
+        total_deaths[0][run_number]["Total"] - total_deaths[1][run_number]["Total"]
+        for run_number in range(scenario_info["runs_per_draw"])
+    ]
+    return np.mean(deaths_difference_by_run)
 # multiply by scaling factor to get numbers of expected infections
 
 # get scaling factor for numbers of tests performed and treatments requested
