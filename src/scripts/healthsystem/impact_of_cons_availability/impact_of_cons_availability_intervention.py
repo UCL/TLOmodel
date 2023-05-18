@@ -6,10 +6,10 @@ as a result of a supply chain intervention. The following scenarios are currentl
 The batch runs are for a large population for a long time with all disease modules and full use of HSIs.
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/healthsystem/impact_of_cons_availability/impact_of_consumable_availability_intervention.py```
+```tlo batch-submit src/scripts/healthsystem/impact_of_cons_availability/impact_of_cons_availability_intervention.py```
 
 or locally using:
-    ```tlo scenario-run src/scripts/healthsystem/impact_of_cons_availability/impact_of_consumable_availability_intervention.py```
+    ```tlo scenario-run src/scripts/healthsystem/impact_of_cons_availability/impact_of_cons_availability_intervention.py```
 
 """
 
