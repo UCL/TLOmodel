@@ -1084,9 +1084,6 @@ class HealthSystem(Module):
         # Check topen is not in the past
         assert topen >= self.sim.date
 
-        # Check that priority is in valid range
-        assert priority >= 0
-
         # Check that topen is strictly before tclose
         assert topen < tclose
 
@@ -1097,6 +1094,9 @@ class HealthSystem(Module):
         if self.adopt_priority_policy:
             # Look-up priority ranking of this treatment_ID in the policy adopted
             priority = self.enforce_priority_policy(hsi_event=hsi_event)
+
+        # Check that priority is in valid range
+        assert priority >= 0
 
         # If priority of HSI_Event lower than the lowest one considered, ignore event in scheduling
         if priority > self.lowest_priority_considered:
@@ -1130,9 +1130,16 @@ class HealthSystem(Module):
             # The HSI is allowed and will be added to the HSI_EVENT_QUEUE.
             # Let the HSI gather information about itself (facility_id and appt-footprint time requirements):
             hsi_event.initialise()
-            # Add the event to the queue:
-            self._add_hsi_event_queue_item_to_hsi_event_queue(
-                priority=priority, topen=topen, tclose=tclose, hsi_event=hsi_event)
+
+            # Correct formatted EXPECTED_APPT_FOOTPRINT
+            if isinstance(hsi_event.target, tlo.population.Population) is False and \
+               self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT):
+                # Add the event to the queue:
+                self._add_hsi_event_queue_item_to_hsi_event_queue(
+                    priority=priority, topen=topen, tclose=tclose, hsi_event=hsi_event)
+            else:
+                warnings.warn(UserWarning(f"Tried to schedule with improper EXPECTED_APPT_FOOTPRINT for TREATMENT_ID /n"
+                                          f"{hsi_event.TREATMENT_ID}"))
 
     def _add_hsi_event_queue_item_to_hsi_event_queue(self, priority, topen, tclose, hsi_event) -> None:
         """Add an event to the HSI_EVENT_QUEUE."""
@@ -1827,6 +1834,9 @@ class HealthSystem(Module):
                         assert event.facility_info is not None, \
                             f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
 
+                        # Expected appt footprint before running event
+                        _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
+
                         # Run event & get actual footprint
                         actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
 
@@ -1841,6 +1851,8 @@ class HealthSystem(Module):
                                 facility_info=event.facility_info,
                                 appt_footprint=actual_appt_footprint
                             )
+                        else:
+                            actual_appt_footprint = _appt_footprint_before_running
 
                         # Recalculate call on officers based on squeeze factor. Additionally enforce a realistic
                         # "1 min" floor, i.e. cannot realistically squeeze any appointment below 1 min.
@@ -1867,7 +1879,7 @@ class HealthSystem(Module):
                         # Write to the log
                         self.record_hsi_event(
                             hsi_event=event,
-                            actual_appt_footprint=updated_call,
+                            actual_appt_footprint=actual_appt_footprint,
                             squeeze_factor=squeeze_factor,
                             did_run=True,
                             priority=_priority
