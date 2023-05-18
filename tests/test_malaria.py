@@ -176,7 +176,7 @@ def test_remove_malaria_test(seed):
 def test_schedule_rdt_for_all(sim):
     # Run the simulation and flush the logger
     sim.make_initial_population(n=popsize)
-    sim.modules['Malaria'].parameters['testing_adj'] = 10
+    sim.modules['Malaria'].parameters['prob_malaria_case_tests'] = 10
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
 
@@ -490,7 +490,7 @@ def test_individual_testing_and_treatment(sim):
 
     sim = get_sim(seed)
 
-    sim.modules['Malaria'].parameters['testing_adj'] = 1.0  # all cases referred for rdt
+    sim.modules['Malaria'].parameters['prob_malaria_case_tests'] = 1.0  # all cases referred for rdt
     sim.modules["Malaria"].parameters["sensitivity_rdt"] = 1.0
 
     # Run the simulation and flush the logger
@@ -554,25 +554,21 @@ def test_individual_testing_and_treatment(sim):
     df.at[person_id, 'ma_inf_type'] = "asym"
     df.at[person_id, 'age_years'] = 3
 
-    # assign clinical symptoms and schedule rdt
+    # check no clinical symptoms set and no rdt scheduled
     pollevent = malaria.MalariaUpdateEvent(module=sim.modules['Malaria'])
     pollevent.apply(sim.population)
 
-    assert not pd.isnull(df.at[person_id, "ma_date_symptoms"])
+    assert sim.modules['SymptomManager'].has_what(person_id) == []
 
-    # check rdt is scheduled
-    date_event, event = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-        isinstance(ev[1], malaria.HSI_Malaria_rdt)
-    ][0]
-    assert date_event > sim.date
+    # check no rdt is scheduled
+    assert "malaria.HSI_Malaria_rdt" not in sim.modules['HealthSystem'].find_events_for_person(person_id)
 
     # screen and test person_id
     rdt_appt = malaria.HSI_Malaria_rdt(person_id=person_id,
                                        module=sim.modules['Malaria'])
     rdt_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
-    # check person diagnosed
+    # check person diagnosed (with asym infection but no clinical symptoms)
     assert df.at[person_id, "ma_dx_counter"] == 1
 
     # check treatment event is scheduled
@@ -647,7 +643,7 @@ def test_population_testing_and_treatment(sim):
 
     sim = get_sim(seed)
 
-    sim.modules['Malaria'].parameters['testing_adj'] = 1.0  # all cases referred for rdt
+    sim.modules['Malaria'].parameters['prob_malaria_case_tests'] = 1.0  # all cases referred for rdt
     sim.modules["Malaria"].parameters["sensitivity_rdt"] = 1.0
 
     pop = 100
