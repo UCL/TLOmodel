@@ -1,21 +1,17 @@
-"""Analyse the results of scenario to test impact of consumable availability."""
-
+"""Analyse the results of scenario to test impact of Noxpert diagnosis."""
+# python src/scripts/hiv/projections_jan2023/analysis_impact_of_noxpert_diagnosis2.py --scenario-outputs-folder outputs/nic503@york.ac.uk --show-figures
 import argparse
-from datetime import datetime
+import datetime
 from pathlib import Path
-
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
 from tlo.analysis.utils import (
     extract_params,
     extract_results,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    make_age_grp_lookup,
-    make_age_grp_types,
     summarize,
 )
 
@@ -23,6 +19,12 @@ resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 outputspath = Path("./outputs/nic503@york.ac.uk")
 results_folder = get_scenario_outputs('scenario_impact_noXpert_diagnosis.py', outputspath)[-1]
+
+# Load log (useful for checking what can be extracted)
+log = load_pickled_dataframes(results_folder)
+
+# Get basic information about the results
+scenario_info = get_scenario_info(results_folder)
 
 def extract_total_deaths(results_folder):
 
@@ -37,8 +39,7 @@ def extract_total_deaths(results_folder):
         do_scaling=True
     )
 
-
-def plot_summarized_total_deaths(summarized_total_deaths, param_strings):
+def make_plot(summarized_total_deaths, param_strings):
     fig, ax = plt.subplots()
     number_of_draws = len(param_strings)
     statistic_values = {
@@ -72,7 +73,7 @@ if __name__ == "__main__":
 
     # Parse command line arguments
     parser = argparse.ArgumentParser(
-        "Analyse scenario results for testing impact of consumables availability"
+        "Analyse scenario results for noXpert pathway"
     )
     parser.add_argument(
         "--scenario-outputs-folder",
@@ -94,14 +95,8 @@ if __name__ == "__main__":
 
     # Find results_folder associated with a given batch_file and get most recent
     results_folder = get_scenario_outputs(
-        "scenario_impact_of_consumables_availability.py", args.scenario_outputs_folder
+        "scenario_impact_noXpert_diagnosis.py", args.scenario_outputs_folder
     )[-1]
-
-    # Load log (useful for checking what can be extracted)
-    log = load_pickled_dataframes(results_folder)
-
-    # Get basic information about the results
-    scenario_info = get_scenario_info(results_folder)
 
     # Get the parameters that have varied over the set of simulations
     params = extract_params(results_folder)
@@ -119,13 +114,7 @@ if __name__ == "__main__":
     print(f"Mean difference in total deaths = {mean_deaths_difference_by_run:.3g}")
 
     # Plot the total deaths across the two scenario draws as a bar plot with error bars
-    fig_1, ax_1 = plot_summarized_total_deaths(summarize(total_deaths), param_strings)
-
-    # Now we look at things in more detail with an age breakdown
-    deaths_by_age = extract_deaths_by_age(results_folder)
-
-    # Plot the deaths by age across the two scenario draws as line plot with error bars
-    fig_2, ax_2 = plot_summarized_deaths_by_age(summarize(deaths_by_age), param_strings)
+    fig_1, ax_1 = make_plot(summarize(total_deaths), param_strings)
 
     # Show Matplotlib figure windows
     if args.show_figures:
@@ -133,4 +122,4 @@ if __name__ == "__main__":
 
     if args.save_figures:
         fig_1.savefig(results_folder / "total_deaths_across_scenario_draws.pdf")
-        fig_2.savefig(results_folder / "death_by_age_across_scenario_draws.pdf")
+
