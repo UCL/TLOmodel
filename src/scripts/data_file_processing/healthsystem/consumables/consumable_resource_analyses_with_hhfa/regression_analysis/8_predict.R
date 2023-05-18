@@ -1,0 +1,228 @@
+# This script loads the outputs of the final regression model
+# and generates predictions for consumable availability scenarios
+
+###########################################################
+# 1. Set up
+###########################################################
+# 1.1 Run setup script
+#---------------------------------
+path_to_scripts = "C:/Users/sm2511/PycharmProjects/TLOmodel/src/scripts/data_file_processing/healthsystem/consumables/consumable_resource_analyses_with_hhfa/regression_analysis/"
+source(paste0(path_to_scripts, "3b_data_setup_for_regression.R"))
+
+###########################################################
+# 2. Load model outputs
+###########################################################
+load(paste0(path_to_outputs, "regression_results/model_fac_item_re.rdta"))
+
+###########################################################
+# 3. Run predictions for policy evaluation
+###########################################################
+# Replace program string which shorter text for plotting
+df_regress <- df_for_fac_re_sorted
+df_regress$program_plot <- df_regress$program
+rep_str = c('acute lower respiratory infections'='alri','obstetric and newborn care'='obs&newb',
+            'other - infection prevention'='infection_prev', 'child health' = 'child')
+df_regress$program_plot <- str_replace_all(df_regress$program_plot, rep_str)
+df_regress <- df_regress[unlist(c(chosen_varlist_for_fac_re, 'program_plot'))]
+
+# Drop one item which seems to be causing a but in the prediction
+drop_items = c("Dipsticks for urine ketone bodies for rapid diagnostic ")
+df_regress <- df_regress %>%
+  filter(!(item %in% drop_items) # Second line ARVs
+  )
+
+# Generate a column with regression based predictions
+df_regress <- df_regress %>% 
+  mutate(available_prob_predicted = predict(model_fac_item_re,newdata=df_regress, type = "response"))
+
+# 3.1 Scenario - All facilities have computers
+###############################################
+df_pred_computer <- df_regress
+df_pred_computer['functional_computer'] = 1 # Set computer availability
+
+newpred_computer <- predict(model_fac_item_re,newdata=df_pred_computer, type = "response") # Predict availability when all facilities have computers
+df_pred_computer$available_prob_predicted_computer <- newpred_computer 
+
+# Check that the prediction improves availability from the base case
+stopifnot(mean(df_pred_computer$available_prob_predicted, na.rm = TRUE) < 
+            mean(df_pred_computer$available_prob_predicted_computer, na.rm = TRUE))
+
+# Count the number of instances where the availability reduces
+df_pred_computer$functional_computer_orig <- df_regress$functional_computer
+
+length(unique(df_regress[which(df_regress$functional_computer == 1),]$fac_code))
+
+a <- sum((df_pred_computer$available_prob_predicted_computer > df_pred_computer$available_prob_predicted) &
+      (df_pred_computer$functional_computer_orig < df_pred_computer$functional_computer))/
+  sum((df_pred_computer$functional_computer_orig < df_pred_computer$functional_computer))
+b <- sum((df_pred_computer$available_prob_predicted_computer < df_pred_computer$available_prob_predicted) &
+      (df_pred_computer$functional_computer_orig < df_pred_computer$functional_computer))/
+  sum((df_pred_computer$functional_computer_orig < df_pred_computer$functional_computer))
+c <- length(unique(df_regress[which(df_regress$functional_computer == 0),]$fac_code))
+d <- sum((df_pred_computer$available_prob_predicted_computer < df_pred_computer$available_prob_predicted) &
+           (df_pred_computer$functional_computer_orig == 1))/
+  sum((df_pred_computer$functional_computer_orig ==1))
+
+print(paste0("Among ",c,  " facilities which previously did not have computers, availability increased in ",
+             round(a*100,2), " % of instances, and reduced in ", round(b*100,2), " % of the instances."))
+
+# Calculate proportional change which can be applied to LMIS data
+df_pred_computer$availability_change_prop = df_pred_computer$available_prob_predicted_computer/df_pred_computer$available_prob_predicted
+
+# Collapse data
+summary_pred_computer <- df_pred_computer %>% 
+  group_by(district, fac_type, program_plot, item) %>%
+  summarise_at(vars(availability_change_prop), list(mean))
+
+# Extract .csv for model simulation
+write.csv(summary_pred_computer,paste0(path_to_outputs, "predictions/predicted_consumable_availability_computers_scenario.csv"), row.names = TRUE)
+
+# 3.2 All facilities have pharmacists managing drug orders
+##########################################################
+df_pred_pharma <- df_regress
+df_pred_pharma['incharge_drug_orders'] = 'pharmacist or pharmacy technician' 
+
+newpred_pharma <- predict(model_fac_item_re,newdata=df_pred_pharma, type = "response") # Predict availability when all facilities have pharmacist managing drug orders
+df_pred_pharma$available_prob_predicted_stockmgt_pharmacist <- newpred_pharma 
+
+# Check that the prediction improves availability from the base case
+stopifnot(mean(df_pred_pharma$available_prob_predicted, na.rm = TRUE) < 
+            mean(df_pred_pharma$available_prob_predicted_stockmgt_pharmacist, na.rm = TRUE))
+
+# Calculate proportional change which can be applied to LMIS data
+df_pred_pharma$availability_change_prop = df_pred_pharma$available_prob_predicted_stockmgt_pharmacist/df_pred_pharma$available_prob_predicted
+
+# Collapse data
+summary_pred_pharma <- df_pred_pharma %>% 
+  group_by(district, fac_type, program_plot, item) %>%
+  summarise_at(vars(availability_change_prop), list(mean))
+
+# Extract .csv for model simulation
+write.csv(summary_pred_pharma,paste0(path_to_outputs, "predictions/predicted_consumable_availability_pharmacists_scenario.csv"), row.names = TRUE)
+
+#################################
+# 4. Plot predicted availability
+###############################
+# 4.1 Computer
+###############################
+# Plot original values
+p_original <- ggplot(summary_pred_computer, aes(item, district,  fill= available)) + 
+  geom_tile() +
+  facet_wrap(~fac_type) +
+  scale_fill_viridis(discrete = FALSE, direction = -1) +
+  theme(axis.text.x = element_text(angle = 45 , vjust = 0.7, size = 1),
+        axis.title.x = element_text(size = 8), axis.title.y = element_text(size = 8), 
+        axis.text.y = element_text(size = 4),
+        legend.position = 'none',
+        plot.title = element_text(color="black", size=14, face="bold", hjust = 0.5)) +
+  labs(title = "Probability of consumable availability - actual", 
+       subtitle =paste0("Global average = ", round(mean(summary_pred_computer$available) *100, 2),"%")) +
+  xlab("consumable")
+
+# Plot predicted values
+p_predict <- ggplot(summary_pred_computer, aes(item, district,  fill= available_predict)) + 
+  geom_tile() +
+  facet_wrap(~fac_type) +
+  scale_fill_viridis(discrete = FALSE, direction = -1) +
+  theme(axis.text.x = element_text(angle = 45 , vjust = 0.7, size = 1),
+        axis.title.x = element_text(size = 8), axis.title.y = element_text(size = 8), 
+        axis.text.y = element_text(size = 4),
+        legend.position = 'none',
+        plot.title = element_text(color="black", size=14, face="bold", hjust = 0.5))  +
+  labs(title = "Probability of consumable availability - predicted \n (all facilities have computers)", 
+       subtitle =paste0("Global average = ", round(mean(summary_pred_computer$available_predict) *100, 2),"%")) +
+  xlab("consumable")
+
+
+
+figure <- ggpubr::ggarrange(p_original, p_predict, # list of plots
+                  labels = "AUTO", # labels
+                  common.legend = T, # COMMON LEGEND
+                  legend = "bottom", # legend position
+                  align = "hv", # Align them both, horizontal and vertical
+                  nrow = 2)  %>% # number of rows
+  ggexport(filename = paste0(path_to_outputs, "predictions/figures/pred_computer.pdf"))
+
+# 4.2 Person in-charge of drug orders
+#####################################
+# Plot original values
+p_original <- ggplot(summary_pred_pharma, aes(item, district,  fill= available)) + 
+  geom_tile() +
+  facet_wrap(~fac_type) +
+  scale_fill_viridis(discrete = FALSE, direction = -1) +
+  theme(axis.text.x = element_text(angle = 45 , vjust = 0.7, size = 1),
+        axis.title.x = element_blank(), axis.title.y = element_blank(), 
+        axis.text.y = element_text(size = 4),
+        legend.position = 'none',
+        plot.title = element_text(color="black", size=14, face="bold", hjust = 0.5)) +
+  labs(title = "Probability of consumable availability - actual", 
+       subtitle =paste0("Global average = ", round(mean(summary_pred_pharma$available) *100, 2),"%")) +
+  xlab("consumable")
+
+# Plot predicted values
+p_predict <- ggplot(summary_pred_pharma, aes(item, district,  fill= available_predict)) + 
+  geom_tile() +
+  facet_wrap(~fac_type) +
+  scale_fill_viridis(discrete = FALSE, direction = -1) +
+  theme(axis.text.x = element_text(angle = 45 , vjust = 0.7, size = 1),
+        axis.title.x = element_blank(), axis.title.y = element_blank(), 
+        axis.text.y = element_text(size = 4),
+        legend.position = 'none',
+        plot.title = element_text(color="black", size=14, face="bold", hjust = 0.5))  +
+  labs(title = "Probability of consumable availability - predicted \n (all facilities have pharmacists for drug stock management)", 
+       subtitle =paste0("Global average = ", round(mean(summary_pred_pharma$available_predict) *100, 2),"%")) +
+  xlab("consumable")
+
+
+ggpubr::ggarrange(p_original, p_predict, # list of plots
+                  labels = "AUTO", # labels
+                  common.legend = T, # COMMON LEGEND
+                  legend = "bottom", # legend position
+                  align = "hv", # Align them both, horizontal and vertical
+                  nrow = 2)  %>% # number of rows
+  ggexport(filename = paste0(path_to_outputs, "predictions/figures/pred_pharma.pdf"))
+
+# 4.3 Increase availability of HIV, TB, Malaria drugs by 10%
+############################################################
+global_fund_programs = c('hiv', 'tb', 'malaria')
+summary_pred_pharma %>% filter(program_plot %in% global_fund_programs) %>%
+  group_by(program_plot) %>%
+  summarise_at(vars(available_predict, available), list(mean))
+
+df_pred_globalfund_target <- df_regress
+
+summary_pred_globalfund <- df_pred_globalfund_target %>% 
+  group_by(district, fac_type, program_plot, item) %>%
+  summarise_at(vars(available), list(mean))
+
+summary_pred_globalfund$available_predict <- summary_pred_globalfund$available
+summary_pred_globalfund[which(summary_pred_globalfund$program_plot %in% global_fund_programs),]$available_predict <- 
+  summary_pred_globalfund[which(summary_pred_globalfund$program_plot %in% global_fund_programs),]$available*1.1
+summary_pred_globalfund[which(summary_pred_globalfund$available_predict > 1),]$available_predict = 1
+
+
+stopifnot(mean(summary_pred_globalfund$available, na.rm = TRUE) < 
+  mean(summary_pred_globalfund$available_predict, na.rm = TRUE))
+
+p_predict <- ggplot(summary_pred_globalfund, aes(item, district,  fill= available_predict)) + 
+  geom_tile() +
+  facet_wrap(~fac_type) +
+  scale_fill_viridis(discrete = FALSE, direction = -1) +
+  theme(axis.text.x = element_text(angle = 45 , vjust = 0.7, size = 1),
+        axis.title.x = element_blank(), axis.title.y = element_blank(), 
+        axis.text.y = element_text(size = 4),
+        legend.position = 'none',
+        plot.title = element_text(color="black", size=14, face="bold", hjust = 0.5))  +
+  labs(title = "Probability of consumable availability - predicted \n (Availability of HIV, TB, Malaria drugs increased by 10%)", 
+       subtitle =paste0("Global average = ", round(mean(summary_pred_globalfund$available_predict) *100, 2),"%")) +
+  xlab("consumable")
+
+
+ggpubr::ggarrange(p_original, p_predict, # list of plots
+                  labels = "AUTO", # labels
+                  common.legend = T, # COMMON LEGEND
+                  legend = "bottom", # legend position
+                  align = "hv", # Align them both, horizontal and vertical
+                  nrow = 2)  %>% # number of rows
+  ggexport(filename = paste0(path_to_outputs, "predictions/figures/pred_global_fund_target.pdf"))
+

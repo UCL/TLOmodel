@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from tlo import Date, Module, Simulation
+from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods import Metadata, demography, healthsystem
@@ -19,6 +19,7 @@ from tlo.methods.consumables import (
     get_item_code_from_item_name,
     get_item_codes_from_package_name,
 )
+from tlo.methods.fullmodel import fullmodel
 from tlo.methods.healthsystem import HSI_Event
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -554,3 +555,42 @@ def test_get_item_codes_from_package_name():
             pd.Series(_item_codes).sort_index(),
             check_names=False
         )
+
+
+@pytest.mark.slow
+def test_change_consumables_class(seed, tmpdir):
+    """Check the usage of the parameters that cause a change in the Consumables Class that is being used."""
+
+    # Define a simulation whereby consumables availability is initially 'none' and then switched to 'all'
+    sim = Simulation(
+        start_date=Date(2010, 1, 1),
+        seed=seed,
+        log_config={
+            'filename': 'tmp',
+            'directory': tmpdir,
+            'custom_levels': {
+                "*": logging.WARNING,
+                'tlo.methods.healthsystem': logging.INFO
+            }
+            }
+    )
+    sim.register(*fullmodel(resourcefilepath=resourcefilepath, use_simplified_births=True))
+
+    date_of_change = Date(2010, 2, 1)
+    sim.modules['HealthSystem'].parameters['cons_availability'] = 'none'  # <--- initially nothing is available
+    sim.modules['HealthSystem'].parameters['change_cons_availability_when'] = date_of_change   # <-- ... but then...
+    sim.modules['HealthSystem'].parameters['change_cons_availability_to'] = 'all'  # <-- ... everything is available
+
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=Date(2010, 3, 1), )
+
+    log = parse_log_file(sim.log_filepath)
+    cons = log['tlo.methods.healthsystem']['Consumables']
+
+    # Nothing should be available up to (but not including) the date when there is a change
+    before_change = cons.loc[cons['date'] < date_of_change]
+    assert (before_change['Item_Available'] == "{}").all()
+
+    # Everything should be available after the date of the change
+    after_change = cons.loc[cons['date'] >= date_of_change]
+    assert not (after_change['Item_Available'] == "{}").any()
