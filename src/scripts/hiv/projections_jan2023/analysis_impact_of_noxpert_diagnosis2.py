@@ -31,14 +31,27 @@ def extract_total_deaths(results_folder):
     def extract_deaths_total(df: pd.DataFrame) -> pd.Series:
         return pd.Series({"Total": len(df)})
 
-    return extract_results(
+    sum_deaths = extract_results(
         results_folder,
         module="tlo.methods.demography",
         key="death",
         custom_generate_series=extract_deaths_total,
         do_scaling=True
     )
+    sum_deaths.to_excel(outputspath/"total_deaths.xlsx", index=True)
+def extract_total_dalys(results_folder):
 
+    def extract_dalys_total(df: pd.DataFrame) -> pd.Series:
+        return pd.Series({"Total": len(df)})
+
+    sum_dalys= extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_stacked",
+        custom_generate_series=extract_dalys_total,
+        do_scaling=True
+    )
+    sum_dalys.to_excel(outputspath/"total_dalys.xlsx", index=True)
 def make_plot(summarized_total_deaths, param_strings):
     fig, ax = plt.subplots()
     number_of_draws = len(param_strings)
@@ -60,14 +73,12 @@ def make_plot(summarized_total_deaths, param_strings):
     fig.tight_layout()
     return fig, ax
 
-
 def compute_difference_in_deaths_across_runs(total_deaths, scenario_info):
     deaths_difference_by_run = [
         total_deaths[0][run_number]["Total"] - total_deaths[1][run_number]["Total"]
         for run_number in range(scenario_info["runs_per_draw"])
     ]
     return np.mean(deaths_difference_by_run)
-
 
 if __name__ == "__main__":
 
@@ -94,9 +105,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Find results_folder associated with a given batch_file and get most recent
-    results_folder = get_scenario_outputs(
-        "scenario_impact_noXpert_diagnosis.py", args.scenario_outputs_folder
-    )[-1]
+    results_folder = get_scenario_outputs("scenario_impact_noXpert_diagnosis.py", outputspath)[-1]
 
     # Get the parameters that have varied over the set of simulations
     params = extract_params(results_folder)
@@ -104,7 +113,7 @@ if __name__ == "__main__":
     # Create a list of strings summarizing the parameter values in the different draws
     param_strings = [f"{row.module_param}={row.value}" for _, row in params.iterrows()]
 
-    # We first look at total deaths in the scenario runs
+    # extracts deaths from runs
     total_deaths = extract_total_deaths(results_folder)
 
     # Compute and print the difference between the deaths across the scenario draws
