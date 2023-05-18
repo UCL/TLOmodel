@@ -46,7 +46,7 @@ class ImpactOfConsumablesAvailabilityIntervention(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'HealthSystem': {
-                'cons_availability':  ['alternate_scenario1', 'default'][draw_number]
+                'change_cons_availability_to': ['alternate_scenario1', 'NO_CHANGE'][draw_number]
                }
         }
 
