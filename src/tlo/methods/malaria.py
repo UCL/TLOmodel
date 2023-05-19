@@ -129,6 +129,11 @@ class Malaria(Module):
             Types.REAL,
             "per capita rdt testing rate of general population",
         ),
+        "scaling_factor_for_rdt_availability": Parameter(
+            Types.REAL,
+            "scaling factor applied to the reports of rdt usage to compensate for"
+            "non-availability of rdts at some facilities"
+        )
     }
 
     PROPERTIES = {
@@ -401,6 +406,8 @@ class Malaria(Module):
         # this is the # rdts issued divided by population size
         test_rates = p["rdt_testing_rates"]
         rdt_rate = test_rates.loc[(test_rates.Year == year), "Rate_rdt_testing"].values[0] / 12
+        # adjust rdt usage reported rate to reflect consumables availability
+        rdt_rate = rdt_rate * p["scaling_factor_for_rdt_availability"]
 
         # testing trends independent of any demographic characteristics
         # no rdt offered if currently on anti-malarials
