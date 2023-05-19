@@ -23,31 +23,29 @@ def extract_total_deaths(results_folder):
     def extract_deaths_total(df: pd.DataFrame) -> pd.Series:
         return pd.Series({"Total": len(df)})
 
-    sum_deaths = extract_results(
+    return  extract_results(
         results_folder,
         module="tlo.methods.demography",
         key="death",
         custom_generate_series=extract_deaths_total,
         do_scaling=True
     )
-    if sum_deaths is not None:
-        sum_deaths.to_excel(outputspath / "total_deaths.xlsx", index=True)
-    else:
-        print("Error: Unable to extract total deaths.")
+
+        #sum_deaths.to_excel(outputspath / "total_deaths.xlsx", index=True)
 
 def extract_total_dalys(results_folder):
 
     def extract_dalys_total(df: pd.DataFrame) -> pd.Series:
         return pd.Series({"Total": len(df)})
 
-    sum_dalys= extract_results(
+    return extract_results(
         results_folder,
         module="tlo.methods.healthburden",
         key="dalys_stacked",
         custom_generate_series=extract_dalys_total,
         do_scaling=True
     )
-    sum_dalys.to_excel(outputspath/"total_dalys.xlsx", index=True)
+  #  sum_dalys.to_excel(outputspath/"total_dalys.xlsx", index=True)
 def make_plot(summarized_total_deaths, param_strings):
     fig, ax = plt.subplots()
     number_of_draws = len(param_strings)
@@ -79,8 +77,6 @@ def compute_difference_in_deaths_across_runs(total_deaths, scenario_info):
 
 
 if __name__ == "__main__":
-    rfp = Path('resources')
-    # Parse command line arguments
     parser = argparse.ArgumentParser(
         description="Analyse scenario results for noXpert pathway"
     )
@@ -91,11 +87,11 @@ if __name__ == "__main__":
         help="Path to folder containing scenario outputs"
                 "src/scripts/hiv/projetions_jan2023/scenario_impact_noxpert_diagnosis.py"
     )
-    # parser.add_argument(
-    #     "--show-figures",
-    #     action="store_true",
-    #     help="Whether to interactively show generated Matplotlib figures",
-    # )
+    parser.add_argument(
+        "--show-figures",
+        action="store_true",
+        help="Whether to interactively show generated Matplotlib figures",
+    )
 
     parser.add_argument(
         "--resources-path",
