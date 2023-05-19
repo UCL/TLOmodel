@@ -62,11 +62,11 @@ def summarise_tb_deaths(results_folder, person_years):
     )
     # removes multi-index
     results_deaths = results_deaths.reset_index()
-    return results_deaths
+    #return results_deaths
 
     # removes multi-index
     results_deaths = results_deaths.reset_index()
-    #summarise_tb_deaths(results_folder, person_years, outputspath / "sample_summarised_deaths.xlsx")
+    #results_deaths(outputspath / "sample_summarised_deaths.xlsx")
 
     # select only cause AIDS_TB and AIDS_non_TB
     tmp = results_deaths.loc[results_deaths.cause == "TB"]
@@ -92,7 +92,22 @@ def summarise_tb_deaths(results_folder, person_years):
                                                ) * 100000
 
     return tb_deaths
-    #tb_deaths.to_excel (outputspath / "summarised_deaths.xlsx", index=True)
+
+
+# results_deaths = extract_results(
+#     results_folder,
+#     module="tlo.methods.demography",
+#     key="death",
+#     custom_generate_series=(
+#         lambda df: df.assign(year=df["date"].dt.year).groupby(
+#             ["year", "cause"])["person_id"].count()
+#     ),
+#     do_scaling=False,
+#
+# )
+tb_deaths0 = summarise_tb_deaths(results_folder, py0)
+tb_death=pd.DataFrame(tb_deaths0)
+tb_deaths0.to_excel (outputspath / "summarised_deaths.xlsx", index=True)
 
 def compute_difference_in_deaths_across_runs(total_deaths, scenario_info):
     deaths_difference_by_run = [

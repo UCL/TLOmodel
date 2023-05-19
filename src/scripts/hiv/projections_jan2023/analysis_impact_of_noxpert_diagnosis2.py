@@ -15,10 +15,11 @@ from tlo.analysis.utils import (
     summarize,
 )
 
-resourcefilepath = Path("./resources")
-datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-outputspath = Path("./outputs/nic503@york.ac.uk")
-results_folder = get_scenario_outputs("scenario_impact_noXpert_diagnosis.py", outputspath)[-1]
+#resourcefilepath = Path("./resources")
+#datestamp = datetime.date.today().strftime("__%Y_%m_%d")
+# outputspath = Path("./outputs/nic503@york.ac.uk")
+# results_folder = get_scenario_outputs("scenario_impact_noXpert_diagnosis.py", outputspath)[-1]
+
 def extract_total_deaths(results_folder):
     def extract_deaths_total(df: pd.DataFrame) -> pd.Series:
         return pd.Series({"Total": len(df)})
@@ -74,6 +75,13 @@ def compute_difference_in_deaths_across_runs(total_deaths, scenario_info):
     return np.mean(deaths_difference_by_run)
     deaths_difference_by_run.to_excel(outputspath/"total_dalys.xlsx", index=True)
 
+def compute_difference_in_dalys_across_runs(total_dalys, scenario_info):
+    dalys_difference_by_run = [
+        total_dalys[0][run_number]["total_dalys"] - total_dalys[1][run_number]["total_dalys"]
+        for run_number in range(scenario_info["runs_per_draw"])
+    ]
+    return np.mean(dalys_difference_by_run)
+    dalys_difference_by_run.to_excel(outputspath / "total_dalys.xlsx", index=True)
 
 
 if __name__ == "__main__":
@@ -82,7 +90,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--scenario-outputs-folder",
-        type=outputspath,
+        type=Path,
         required=True,
         help="Path to folder containing scenario outputs"
                 "src/scripts/hiv/projetions_jan2023/scenario_impact_noxpert_diagnosis.py"
@@ -104,7 +112,6 @@ if __name__ == "__main__":
         "--save-figures",
         action="store_true",
         help="Whether to save generated Matplotlib figures to results folder",
-        type=outputspath,
         default=None,
         required=False,
     )
@@ -127,14 +134,18 @@ if __name__ == "__main__":
 
     # Extract deaths from runs
     total_deaths = extract_total_deaths(results_folder)
+    total_dalys = extract_total_dalys(results_folder)
 
     # Compute and print the difference between the deaths across the scenario draws
     mean_deaths_difference_by_run = compute_difference_in_deaths_across_runs(total_deaths, scenario_info)
     print(f"Mean difference in total deaths = {mean_deaths_difference_by_run:.3g}")
 
+    mean_dalys_difference_by_run = compute_difference_in_dalys_across_runs (total_dalys, scenario_info)
+    print(f"Mean difference in total dalys = {mean_dalys_difference_by_run:.3g}")
+
     # Plot the total deaths across the two scenario draws as a bar plot with error bars
     fig_1, ax_1 = make_plot(summarize(total_deaths), param_strings)
-    # fig_2, ax_1 = make_plot(summarize(sum_dalys), param_strings)
+    fig_2, ax_1 = make_plot(summarize(total_dalys), param_strings)
 
     # Show Matplotlib figure windows
     if args.show_figures:
@@ -142,6 +153,8 @@ if __name__ == "__main__":
 
     if args.save_figures:
         fig_1.savefig(results_folder / "total_deaths_across_scenario_draws.pdf")
+        fig_2.savefig(results_folder / "total_dalys_across_scenario_draws.pdf")
+
 
 
 

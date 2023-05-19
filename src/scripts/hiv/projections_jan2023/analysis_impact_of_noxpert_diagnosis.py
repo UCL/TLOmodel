@@ -46,7 +46,7 @@ deaths_extracted = extract_results(
     module="tlo.methods.demography",
     key="death",
     custom_generate_series=get_num_deaths,
-    do_scaling=True
+    do_scaling=False
 )
 deaths_extracted.to_excel(outputspath / "summarised_deaths.xlsx", index=True)
 
@@ -63,7 +63,7 @@ dalys_extracted = extract_results(
     module="tlo.methods.healthburden",
     key="dalys_stacked",
     custom_generate_series=get_num_dalys,
-    do_scaling=True
+    do_scaling=False
 )
 # # Write the DataFrame to Excel
 deaths_extracted.to_excel(outputspath / "summarised_DALYs.xlsx", index=True)
@@ -71,10 +71,7 @@ deaths_extracted.to_excel(outputspath / "summarised_DALYs.xlsx", index=True)
 
 
 
-#
-#
-#
-#
+
 
 
 
