@@ -18,7 +18,7 @@ from tlo.analysis.utils import (
 resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 outputspath = Path("./outputs/nic503@york.ac.uk")
-
+results_folder = get_scenario_outputs("scenario_impact_noXpert_diagnosis.py", outputspath)[-1]
 def extract_total_deaths(results_folder):
     def extract_deaths_total(df: pd.DataFrame) -> pd.Series:
         return pd.Series({"Total": len(df)})
@@ -76,12 +76,10 @@ def compute_difference_in_deaths_across_runs(total_deaths, scenario_info):
     return np.mean(deaths_difference_by_run)
     deaths_difference_by_run.to_excel(outputspath/"total_dalys.xlsx", index=True)
 
-
 if __name__ == "__main__":
-
     # Parse command line arguments
     parser = argparse.ArgumentParser(
-        "Analyse scenario results for noXpert pathway"
+        description="Analyse scenario results for noXpert pathway"
     )
     parser.add_argument(
         "--scenario-outputs-folder",
@@ -102,7 +100,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Find results_folder associated with a given batch_file and get most recent
-    results_folder = get_scenario_outputs("scenario_impact_noXpert_diagnosis.py", outputspath)[-1]
+    results_folder = get_scenario_outputs("scenario_impact_noXpert_diagnosis.py", args.scenario_outputs_folder)[-1]
 
     # Load log (useful for checking what can be extracted)
     log = load_pickled_dataframes(results_folder)
@@ -115,18 +113,17 @@ if __name__ == "__main__":
 
     # Create a list of strings summarizing the parameter values in the different draws
     param_strings = [f"{row.module_param}={row.value}" for _, row in params.iterrows()]
-    # extracts deaths from runs
+
+    # Extract deaths from runs
     total_deaths = extract_total_deaths(results_folder)
 
     # Compute and print the difference between the deaths across the scenario draws
-    mean_deaths_difference_by_run = compute_difference_in_deaths_across_runs(
-        total_deaths, scenario_info
-    )
+    mean_deaths_difference_by_run = compute_difference_in_deaths_across_runs(total_deaths, scenario_info)
     print(f"Mean difference in total deaths = {mean_deaths_difference_by_run:.3g}")
 
     # Plot the total deaths across the two scenario draws as a bar plot with error bars
     fig_1, ax_1 = make_plot(summarize(total_deaths), param_strings)
-    #fig_2, ax_1 = make_plot(summarize(sum_dalys), param_strings)
+    # fig_2, ax_1 = make_plot(summarize(sum_dalys), param_strings)
 
     # Show Matplotlib figure windows
     if args.show_figures:

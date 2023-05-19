@@ -17,8 +17,6 @@ from tlo.analysis.utils import (
     make_age_grp_types,
     summarize,
 )
-
-
 def extract_total_deaths(results_folder):
 
     def extract_deaths_total(df: pd.DataFrame) -> pd.Series:
@@ -31,7 +29,6 @@ def extract_total_deaths(results_folder):
         custom_generate_series=extract_deaths_total,
         do_scaling=True
     )
-
 
 def plot_summarized_total_deaths(summarized_total_deaths, param_strings):
     fig, ax = plt.subplots()
