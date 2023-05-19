@@ -31,26 +31,13 @@ outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 # TB WHO data
 xls_tb = pd.ExcelFile(resourcefilepath / "ResourceFile_TB.xlsx")
 
-data_tb_who = pd.read_excel(xls_tb, sheet_name="WHO_activeTB2020")
+data_tb_who = pd.read_excel(xls_tb, sheet_name="WHO_activeTB2023")
 data_tb_who = data_tb_who.loc[
     (data_tb_who.year >= 2010)
 ]  # include only years post-2010
 data_tb_who.index = data_tb_who["year"]
 data_tb_who = data_tb_who.drop(columns=["year"])
 
-# TB latent data (Houben & Dodd 2016)
-data_tb_latent = pd.read_excel(xls_tb, sheet_name="latent_TB2014_summary")
-data_tb_latent_all_ages = data_tb_latent.loc[data_tb_latent.Age_group == "0_80"]
-data_tb_latent_estimate = data_tb_latent_all_ages.proportion_latent_TB.values[0]
-data_tb_latent_lower = abs(
-    data_tb_latent_all_ages.proportion_latent_TB_lower.values[0]
-    - data_tb_latent_estimate
-)
-data_tb_latent_upper = abs(
-    data_tb_latent_all_ages.proportion_latent_TB_upper.values[0]
-    - data_tb_latent_estimate
-)
-data_tb_latent_yerr = [data_tb_latent_lower, data_tb_latent_upper]
 
 # TB treatment coverage
 data_tb_ntp = pd.read_excel(xls_tb, sheet_name="NTP2019")
@@ -496,7 +483,7 @@ def make_plot(
     plt.title(title_str)
     plt.legend(["TLO", data_name])
     # plt.gca().set_ylim(bottom=0)
-    # plt.savefig(outputspath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
+    plt.savefig(outputspath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format='pdf')
 
 
 # %% make plots
@@ -561,7 +548,7 @@ plt.ylim((0, 15))
 plt.xlim(2010, 2023)
 
 # handles for legend
-red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
+red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO Model")
 blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="UNAIDS")
 green_cross = mlines.Line2D(
     [], [], linewidth=0, color="g", marker="x", markersize=7, label="MPHIA"
@@ -606,7 +593,7 @@ plt.ylim(0, 1.0)
 plt.xlim(2010, 2023)
 #
 # handles for legend
-red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
+red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO Model")
 blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="UNAIDS")
 orange_ci = mlines.Line2D(
     [], [], color="green", marker="x", markersize=8, label="MPHIA"
@@ -646,7 +633,7 @@ plt.plot(
 )
 
 # handles for legend
-red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
+red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO Model")
 blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="UNAIDS")
 green_cross = mlines.Line2D(
     [], [], linewidth=0, color="g", marker="x", markersize=7, label="MPHIA"
@@ -660,7 +647,7 @@ plt.show()
 
 # HIV Incidence Children
 make_plot(
-    title_str="HIV Incidence in Children Aged 0-14 per 100 population)",
+    title_str="HIV Incidence in Children Aged 0-14 per 100 population",
     model=model_hiv_child_inc["median"] * 100,
     model_low=model_hiv_child_inc["lower"] * 100,
     model_high=model_hiv_child_inc["upper"] * 100,
@@ -674,7 +661,7 @@ make_plot(
     ylim_upper=0.35
 )
 
-red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
+red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO Model")
 blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="UNAIDS")
 
 plt.legend(handles=[red_line, blue_line])
@@ -692,13 +679,13 @@ make_plot(
     model_low=model_hiv_fsw_prev["lower"] * 100,
     model_high=model_hiv_fsw_prev["upper"] * 100,
     xlab="Year",
-    ylab="HIV prevalence among FSW",
+    ylab="HIV prevalence (%) among FSW",
     xlim=2023,
     ylim_lower=0,
     ylim_upper=100
 )
 
-red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
+red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO Model")
 
 plt.legend(handles=[red_line])
 
@@ -711,7 +698,7 @@ plt.show()
 # Active TB incidence per 100,000 person-years - annual outputs
 
 make_plot(
-    title_str="Active TB Incidence (per 100,000 person-years)",
+    title_str="Active TB Incidence per 100,000 person-years",
     model=activeTB_inc_rate,
     model_low=activeTB_inc_rate_low,
     model_high=activeTB_inc_rate_high,
@@ -723,8 +710,11 @@ make_plot(
     ylab="Active TB incidence per 100,000 py",
     xlim=2023,
     ylim_lower=0,
-    ylim_upper=750
+    ylim_upper=1000
 )
+red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO Model")
+blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="WHO")
+plt.legend(handles=[red_line, blue_line])
 
 plt.savefig(make_graph_file_name("TB_Incidence"))
 
@@ -741,14 +731,14 @@ make_plot(
     model_high=model_tb_mdr["upper"],
     xlim=2023,
     ylim_lower=0,
-    ylim_upper=0.08,
+    ylim_upper=0.1,
     xlab="Year",
     ylab="Proportion of MDR cases"
 )
 # data from ResourceFile_TB sheet WHO_mdrTB2017
 plt.errorbar(model_tb_mdr.index[7], 0.0075, yerr=[[0.0059], [0.0105]], fmt="ob")
 
-red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
+red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO Model")
 blue_dot = mlines.Line2D([], [], color="b", marker=".", markersize=15, label="WHO")
 
 plt.legend(handles=[red_line, blue_dot])
@@ -763,20 +753,27 @@ plt.show()
 # expect around 60% falling to 50% by 2017
 
 make_plot(
-    title_str="Proportion of active cases that are HIV+",
-    model=model_tb_hiv_prop["median"],
-    model_low=model_tb_hiv_prop["lower"],
-    model_high=model_tb_hiv_prop["upper"],
+    title_str="Percentage of TB cases with HIV",
+    model=model_tb_hiv_prop["median"] * 100,
+    model_low=model_tb_hiv_prop["lower"] * 100,
+    model_high=model_tb_hiv_prop["upper"] * 100,
+    data_name="WHO",
+    data_mid=data_tb_who["percentage_tb_with_hiv"],
+    data_low=data_tb_who["percentage_tb_with_hiv_low"],
+    data_high=data_tb_who["percentage_tb_with_hiv_high"],
     xlim=2023,
     ylim_lower=0,
-    ylim_upper=1,
+    ylim_upper=100,
     xlab="Year",
-    ylab="Proportion of MDR cases"
+    ylab="Percentage of TB cases with HIV"
 )
+plt.plot(data_tb_ntp.index, data_tb_ntp.percent_hiv_positive, color="g")
 
-red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
 
-plt.legend(handles=[red_line])
+red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO Model")
+blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="WHO")
+green_line = mlines.Line2D([], [], color="g", markersize=15, label="NTP")
+plt.legend(handles=[red_line, blue_line, green_line])
 
 plt.savefig(make_graph_file_name("Proportion_TB_Cases_HIV"))
 
@@ -809,7 +806,7 @@ plt.xlim(2010, 2023)
 plt.title("AIDS mortality per 100,000 population")
 
 # handles for legend
-red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
+red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO Model")
 blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="UNAIDS")
 
 plt.legend(handles=[red_line, blue_line])
@@ -817,7 +814,7 @@ plt.legend(handles=[red_line, blue_line])
 plt.savefig(make_graph_file_name("AIDS_mortality"))
 
 plt.show()
-#
+
 
 # ---------------------------------------------------------------------- #
 
@@ -838,12 +835,12 @@ ax.fill_between(data_tb_who.index[0:14],
 ax.set_ylabel("TB mortality per 100,000")
 ax.set_xlabel("Year")
 
-plt.ylim((0, 100))
+plt.ylim((0, 150))
 plt.xlim(2010, 2023)
 plt.title("TB mortality per 100,000 population")
 
 # handles for legend
-red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO")
+red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO Model")
 blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="WHO")
 
 plt.legend(handles=[red_line, blue_line])
@@ -868,6 +865,12 @@ make_plot(
     xlab="Year",
     ylab="TB treatment coverage (%)"
 )
+
+red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO Model")
+blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="NTP")
+
+plt.legend(handles=[red_line, blue_line])
+
 plt.savefig(make_graph_file_name("TB_treatment_coverage"))
 
 plt.show()
@@ -890,6 +893,12 @@ make_plot(
     xlab="Year",
     ylab="HIV treatment coverage (%)"
 )
+
+red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO Model")
+blue_line = mlines.Line2D([], [], color="C0", markersize=15, label="UNAIDS")
+
+plt.legend(handles=[red_line, blue_line])
+
 
 plt.savefig(make_graph_file_name("HIV_treatment_coverage"))
 
@@ -941,9 +950,7 @@ model_2012_high = model_deaths_AIDS.iloc[2].quantile(0.975)
 model_2017_high = model_deaths_AIDS.iloc[5].quantile(0.975)
 
 # get GBD estimates from any log_filepath
-death_compare = compare_number_of_deaths('outputs/tb_transmission_runs__2022-09-07T181342.log', resourcefilepath)
-# death_compare = compare_number_of_deaths('outputs/t.mangal@imperial.ac.uk/scenario0-2022-08-25T104912Z.log',
-#                                          resourcefilepath)
+death_compare = compare_number_of_deaths("outputs/dev_runs__2023-05-19T120456.log", resourcefilepath)
 
 # sim.log_filepath example: 'outputs/Logfile__2021-10-04T155631.log'
 
@@ -952,15 +959,16 @@ deaths2010 = death_compare.loc[("2010-2014", slice(None), slice(None), "AIDS")].
 deaths2015 = death_compare.loc[("2015-2019", slice(None), slice(None), "AIDS")].sum()
 
 # include all ages and both sexes
-deaths2010_TB = death_compare.loc[("2010-2014", slice(None), slice(None), "non_AIDS_TB")].sum()
-deaths2015_TB = death_compare.loc[("2015-2019", slice(None), slice(None), "non_AIDS_TB")].sum()
+deaths2010_TB = death_compare.loc[("2010-2014", slice(None), slice(None), "TB (non-AIDS)")].sum()
+deaths2015_TB = death_compare.loc[("2015-2019", slice(None), slice(None), "TB (non-AIDS)")].sum()
 
 x_vals = [1, 2, 3, 4]
 labels = ["2010-2014", "2010-2014", "2015-2019", "2015-2019"]
 col = ["mediumblue", "mediumseagreen", "mediumblue", "mediumseagreen"]
+
 # handles for legend
 blue_patch = mpatches.Patch(color="mediumblue", label="GBD")
-green_patch = mpatches.Patch(color="mediumseagreen", label="TLO")
+green_patch = mpatches.Patch(color="mediumseagreen", label="TLO Model")
 
 # plot AIDS deaths
 y_vals = [
@@ -1025,9 +1033,10 @@ model_2015_high = model_deaths_TB.iloc[5].quantile(0.975)
 x_vals = [1, 2, 3, 4]
 labels = ["2010-2014", "2010-2014", "2015-2019", "2015-2019"]
 col = ["mediumblue", "mediumseagreen", "mediumblue", "mediumseagreen"]
+
 # handles for legend
 blue_patch = mpatches.Patch(color="mediumblue", label="GBD")
-green_patch = mpatches.Patch(color="mediumseagreen", label="TLO")
+green_patch = mpatches.Patch(color="mediumseagreen", label="TLO Model")
 
 # plot AIDS deaths
 y_vals = [
