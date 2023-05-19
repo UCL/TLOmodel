@@ -1378,8 +1378,6 @@ class HealthSystem(Module):
         appt_footprint of an HSI event.
         A value of 0.0 signifies that there is no squeezing (sufficient resources for
         the EXPECTED_APPT_FOOTPRINT).
-        A value of 99.99 signifies that the call is for an officer_type in a
-        health-facility that is not available.
 
         :param footprints_per_event: List, one entry per HSI event, containing the
             minutes required from each health officer in each health facility as a
