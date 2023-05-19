@@ -582,7 +582,7 @@ class Malaria(Module):
                     HSI_Malaria_Treatment(
                         person_id=person_id,
                         module=self),
-                    priority=0,
+                    priority=1,
                     topen=self.sim.date,
                     tclose=None)
 
@@ -767,7 +767,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
 
                 treat = HSI_Malaria_Treatment(self.module, person_id=person_id)
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    treat, priority=0, topen=self.sim.date, tclose=None
+                    treat, priority=1, topen=self.sim.date, tclose=None
                 )
 
     def did_not_run(self):
@@ -1073,7 +1073,7 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         for idx in eligible_for_rdt[selected_for_rdt]:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Malaria_rdt(self.module, person_id=idx),
-                priority=0,
+                priority=1,
                 topen=random_date(now + DateOffset(days=1),
                                   now + DateOffset(days=4),
                                   self.module.rng),
