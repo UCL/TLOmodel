@@ -76,26 +76,41 @@ def compute_difference_in_deaths_across_runs(total_deaths, scenario_info):
     return np.mean(deaths_difference_by_run)
     deaths_difference_by_run.to_excel(outputspath/"total_dalys.xlsx", index=True)
 
+
+
 if __name__ == "__main__":
+    rfp = Path('resources')
     # Parse command line arguments
     parser = argparse.ArgumentParser(
         description="Analyse scenario results for noXpert pathway"
     )
     parser.add_argument(
         "--scenario-outputs-folder",
-        type=Path,
+        type=outputspath,
         required=True,
-        help="Path to folder containing scenario outputs",
+        help="Path to folder containing scenario outputs"
+                "src/scripts/hiv/projetions_jan2023/scenario_impact_noxpert_diagnosis.py"
     )
+    # parser.add_argument(
+    #     "--show-figures",
+    #     action="store_true",
+    #     help="Whether to interactively show generated Matplotlib figures",
+    # )
+
     parser.add_argument(
-        "--show-figures",
-        action="store_true",
-        help="Whether to interactively show generated Matplotlib figures",
+        "--resources-path",
+        help="Directory containing resource files",
+        type=Path,
+        default=Path('resources'),
+        required=False,
     )
     parser.add_argument(
         "--save-figures",
         action="store_true",
         help="Whether to save generated Matplotlib figures to results folder",
+        type=outputspath,
+        default=None,
+        required=False,
     )
     args = parser.parse_args()
 
@@ -131,4 +146,11 @@ if __name__ == "__main__":
 
     if args.save_figures:
         fig_1.savefig(results_folder / "total_deaths_across_scenario_draws.pdf")
+
+
+
+
+
+
+
 
