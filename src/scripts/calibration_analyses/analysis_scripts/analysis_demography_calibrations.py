@@ -35,8 +35,6 @@ PREFIX_ON_FILENAME = '1'
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
 
-    print("The output folder I got is ", output_folder)
-
     # Declare path for output graphs from this script
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
@@ -105,13 +103,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             marker='o', markersize=10, linestyle='none', label='Census', zorder=10, color=colors['Census'])
     ax.plot(pop_model.index, pop_model['mean'] / 1e6,
             label='Model (mean)', color=colors['Model'])
-   # ax.fill_between(pop_model.index,
-   #                 pop_model['lower'] / 1e6,
-   #                 pop_model['upper'] / 1e6,
-   #                 color=colors['Model'],
-   #                 alpha=0.2,
-   #                 zorder=5
-   #                 )
+    ax.fill_between(pop_model.index,
+                    pop_model['lower'] / 1e6,
+                    pop_model['upper'] / 1e6,
+                    color=colors['Model'],
+                    alpha=0.2,
+                    zorder=5
+                    )
     ax.set_title("Population Size 2010-2030")
     ax.set_xlabel("Year")
     ax.set_ylabel("Population Size (millions)")
@@ -363,20 +361,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             label='Model',
             color=colors['Model']
         )
-        #ax.fill_between(births_loc.index,
-        #                births_loc['Model_lower'] / 1e6,
-         #               births_loc['Model_upper'] / 1e6,
-          #              facecolor=colors['Model'], alpha=0.2)
+        ax.fill_between(births_loc.index,
+                        births_loc['Model_lower'] / 1e6,
+                        births_loc['Model_upper'] / 1e6,
+                        facecolor=colors['Model'], alpha=0.2)
         ax.plot(
             births_loc.index,
             births_loc['WPP_continuous'] / 1e6,
             color=colors['WPP'],
             label='WPP'
         )
-        #ax.fill_between(births_loc.index,
-        #                births_loc['WPP_Low variant'] / 1e6,
-        #                births_loc['WPP_High variant'] / 1e6,
-        #                facecolor=colors['WPP'], alpha=0.2)
+        ax.fill_between(births_loc.index,
+                        births_loc['WPP_Low variant'] / 1e6,
+                        births_loc['WPP_High variant'] / 1e6,
+                        facecolor=colors['WPP'], alpha=0.2)
         ax.legend(loc='upper left')
         plt.xticks(rotation=90)
         ax.set_title(f"Number of Births {tp}")
@@ -546,8 +544,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         l1 = ax[i].plot(data_year, data_asfr, 'k-', label='WPP')
         l2 = ax[i].plot(model.index, model[(0, 'mean', _agegrp)], 'r-', label='Model')
-        #ax[i].fill_between(model.index, model[(0, 'lower', _agegrp)], model[(0, 'upper', _agegrp)],
-         #                  color='r', alpha=0.2)
+        ax[i].fill_between(model.index, model[(0, 'lower', _agegrp)], model[(0, 'upper', _agegrp)],
+                           color='r', alpha=0.2)
         ax[i].set_ylim(0, 0.4)
         ax[i].set_title(f'Age at Conception: {_agegrp}y', fontsize=6)
         ax[i].set_xlabel('Year')
@@ -571,16 +569,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         wpp.Variant.isin(['WPP_Estimates', 'WPP_Medium variant']), ['Age_Grp', 'Period', 'asfr']
     ].groupby(by=['Age_Grp', 'Period'])['asfr'].mean().unstack().T
 
-    fig, axs = plt.subplots(nrows=2, sharex=True, sharey=True)
-    for ax, _period in zip(axs, ['2010-2014', '2015-2019']):
-        to_plot = pd.concat([model_asfr.loc[_period], data_asfr.loc[_period]], axis=1)
-        ax.plot(to_plot.index, to_plot[_period], label='WPP', color=colors['WPP'])
-        ax.plot(to_plot.index, to_plot['mean'], label='Model', color=colors['Model'])
-        #ax.fill_between(to_plot.index, to_plot['lower'], to_plot['upper'], color=colors['Model'], alpha=0.2)
-        ax.set_xlabel('Age at Conception')
-        ax.set_ylabel('Live births per woman-year')
-        ax.set_title(f'{_period}')
-        ax.legend()
+    fig, ax = plt.subplots()
+    _period = '2015-2019'
+    to_plot = pd.concat([model_asfr.loc[_period], data_asfr.loc[_period]], axis=1)
+    ax.plot(to_plot.index, to_plot[_period], label='WPP', color=colors['WPP'])
+    ax.plot(to_plot.index, to_plot['mean'], label='Model', color=colors['Model'])
+    ax.fill_between(to_plot.index, to_plot['lower'], to_plot['upper'], color=colors['Model'], alpha=0.2)
+    ax.set_xlabel('Age at Conception')
+    ax.set_ylabel('Live births per woman-year')
+    ax.set_title(f'{_period}')
+    ax.legend()
     fig.suptitle('Live Births By Age of Mother At Conception')
     fig.tight_layout()
     fig.savefig(make_graph_file_name("asfr_model_vs_data_average_by_age_2015-2019"))
@@ -659,33 +657,33 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         deaths_by_period['WPP_continuous'] / 1e6,
         label='WPP',
         color=colors['WPP'])
-    #ax.fill_between(
-    #    deaths_by_period.index,
-    #    deaths_by_period['WPP_Low variant'] / 1e6,
-    #    deaths_by_period['WPP_High variant'] / 1e6,
-    #    facecolor=colors['WPP'], alpha=0.2)
+    ax.fill_between(
+        deaths_by_period.index,
+        deaths_by_period['WPP_Low variant'] / 1e6,
+        deaths_by_period['WPP_High variant'] / 1e6,
+        facecolor=colors['WPP'], alpha=0.2)
     ax.plot(
         deaths_by_period.index,
         deaths_by_period['GBD_Est'] / 1e6,
         label='GBD',
         color=colors['GBD']
     )
-   # ax.fill_between(
-   #     deaths_by_period.index,
-   #     deaths_by_period['GBD_Lower'] / 1e6,
-   #     deaths_by_period['GBD_Upper'] / 1e6,
-   #     facecolor=colors['GBD'], alpha=0.2)
+    ax.fill_between(
+        deaths_by_period.index,
+        deaths_by_period['GBD_Lower'] / 1e6,
+        deaths_by_period['GBD_Upper'] / 1e6,
+        facecolor=colors['GBD'], alpha=0.2)
     ax.plot(
         deaths_by_period.index,
         deaths_by_period['Model_mean'] / 1e6,
         label='Model',
         color=colors['Model']
     )
-   # ax.fill_between(
-    #    deaths_by_period.index,
-   #     deaths_by_period['Model_lower'] / 1e6,
-   #     deaths_by_period['Model_upper'] / 1e6,
-   #     facecolor=colors['Model'], alpha=0.2)
+    ax.fill_between(
+        deaths_by_period.index,
+        deaths_by_period['Model_lower'] / 1e6,
+        deaths_by_period['Model_upper'] / 1e6,
+        facecolor=colors['Model'], alpha=0.2)
 
     ax.set_title('Number of Deaths')
     ax.legend(loc='upper left')
@@ -740,11 +738,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     tot_deaths_byage['WPP_Medium variant'] / 1e3,
                     label='WPP',
                     color=colors['WPP'])
-                #ax[i].fill_between(
-                #    tot_deaths_byage.index,
-                #    tot_deaths_byage['WPP_Low variant'] / 1e3,
-                #    tot_deaths_byage['WPP_High variant'] / 1e3,
-                #    facecolor=colors['WPP'], alpha=0.2)
+                ax.fill_between(
+                    tot_deaths_byage.index,
+                    tot_deaths_byage['WPP_Low variant'] / 1e3,
+                    tot_deaths_byage['WPP_High variant'] / 1e3,
+                    facecolor=colors['WPP'], alpha=0.2)
             else:
                 ax.plot(
                     tot_deaths_byage.index,
@@ -758,22 +756,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     tot_deaths_byage['GBD_Est'] / 1e3,
                     label='GBD',
                     color=colors['GBD'])
-                #ax[i].fill_between(
-                #    tot_deaths_byage.index,
-                #    tot_deaths_byage['GBD_Lower'] / 1e3,
-                #    tot_deaths_byage['GBD_Upper'] / 1e3,
-                #    facecolor=colors['GBD'], alpha=0.2)
+                ax.fill_between(
+                    tot_deaths_byage.index,
+                    tot_deaths_byage['GBD_Lower'] / 1e3,
+                    tot_deaths_byage['GBD_Upper'] / 1e3,
+                    facecolor=colors['GBD'], alpha=0.2)
 
             ax.plot(
                 tot_deaths_byage.index,
                 tot_deaths_byage['Model_mean'] / 1e3,
                 label='Model',
                 color=colors['Model'])
-            #ax[i].fill_between(
-            #    tot_deaths_byage.index,
-            #    tot_deaths_byage['Model_lower'] / 1e3,
-            #    tot_deaths_byage['Model_upper'] / 1e3,
-            #    facecolor=colors['Model'], alpha=0.2)
+            ax.fill_between(
+                tot_deaths_byage.index,
+                tot_deaths_byage['Model_lower'] / 1e3,
+                tot_deaths_byage['Model_upper'] / 1e3,
+                facecolor=colors['Model'], alpha=0.2)
 
             ax.set_xticks(np.arange(len(tot_deaths_byage.index)))
             ax.set_xticklabels(tot_deaths_byage.index, rotation=90)
@@ -790,7 +788,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 if __name__ == "__main__":
-    outputspath = Path('./outputs/mm2908@ic.ac.uk')
+    outputspath = Path('./outputs/tbh03@ic.ac.uk')
     rfp = Path('./resources')
 
     # Find results folder (most recent run generated using that scenario_filename)

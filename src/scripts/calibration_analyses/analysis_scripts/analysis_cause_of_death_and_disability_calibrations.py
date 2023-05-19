@@ -272,12 +272,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                             label=dat,
                             color=colors[dat]
                         )
-                       # ax[row].fill_between(
-                       #     xs,
-                       #     outcomes_this_cause.loc[(sex,), (dat, 'upper', cause)].values,
-                       #     outcomes_this_cause.loc[(sex,), (dat, 'lower', cause)].values,
-                       #     facecolor=colors[dat], alpha=0.2
-                       # )
+                        ax[row].fill_between(
+                            xs,
+                            outcomes_this_cause.loc[(sex,), (dat, 'upper', cause)].values,
+                            outcomes_this_cause.loc[(sex,), (dat, 'lower', cause)].values,
+                            facecolor=colors[dat], alpha=0.2
+                        )
                     ax[row].legend()
                     ax[row].set_xticks(xs)
                     ax[row].set_xticklabels(x, rotation=90)
