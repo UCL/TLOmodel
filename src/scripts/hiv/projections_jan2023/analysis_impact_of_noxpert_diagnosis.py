@@ -39,7 +39,10 @@ info = get_scenario_info(results_folder)
 # 1) Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
 def get_num_deaths(_df):
-    return pd.Series(data=len(_df.loc[pd.to_datetime(_df.date).between(*target_period)]))
+   # return pd.Series(data=len(_df.loc[pd.to_datetime(_df.date).between(*target_period)]))
+   filtered_df = _df.loc[pd.to_datetime(_df.date).between(*target_period)]
+   num_deaths_by_year = filtered_df.groupby('year').size()
+   return num_deaths_by_year
 
 deaths_extracted = extract_results(
     results_folder,
@@ -55,7 +58,7 @@ def get_num_dalys(_df):
         return pd.Series(
             data=_df
             .loc[_df.year.between(*[i.year for i in target_period])]
-            .drop(columns=['date', 'sex', 'age_range', 'year'])
+            .drop(columns=['date', 'cause', 'sex', 'age_range', 'year'])
             .sum().sum()
         )
 dalys_extracted = extract_results(
@@ -71,7 +74,10 @@ deaths_extracted.to_excel(outputspath / "summarised_DALYs.xlsx", index=True)
 
 
 
-
+#
+#
+#
+#
 
 
 
