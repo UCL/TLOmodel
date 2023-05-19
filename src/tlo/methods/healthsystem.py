@@ -1,4 +1,4 @@
-"""
+""
 # Remaining to do:
 # - streamline input arguments
 # - let the level of the appointment be in the log
@@ -320,16 +320,29 @@ class HSI_Event:
             getattr(self, 'EXPECTED_APPT_FOOTPRINT', {})
             if actual_appt_footprint is None else actual_appt_footprint
         )
-        return HSIEventDetails(
-            event_name=type(self).__name__,
-            module_name=type(self.module).__name__,
-            treatment_id=self.TREATMENT_ID,
-            facility_level=getattr(self, 'ACCEPTED_FACILITY_LEVEL', None),
-            appt_footprint=tuple(sorted(appt_footprint.items())),
-            beddays_footprint=tuple(
-                sorted((k, v) for k, v in self.BEDDAYS_FOOTPRINT.items() if v > 0)
-            )
-        )
+        if appt_footprint is None:
+            logger.warning(
+                key="message",
+                data=(f"The expected footprint of {self.TREATMENT_ID} is None when logging.")
+                )
+        #    return HSIEventDetails(
+        #        event_name=type(self).__name__,
+        #        module_name=type(self.module).__name__,
+        #        treatment_id=self.TREATMENT_ID,
+        #        facility_level=getattr(self, 'ACCEPTED_FACILITY_LEVEL', None),
+        #        )
+
+        else:
+            return HSIEventDetails(
+                event_name=type(self).__name__,
+                module_name=type(self.module).__name__,
+                treatment_id=self.TREATMENT_ID,
+                facility_level=getattr(self, 'ACCEPTED_FACILITY_LEVEL', None),
+                appt_footprint=tuple(sorted(appt_footprint.items())),
+                beddays_footprint=tuple(
+                    sorted((k, v) for k, v in self.BEDDAYS_FOOTPRINT.items() if v > 0)
+                )
+                )
 
 
 class HSIEventWrapper(Event):
@@ -1798,6 +1811,11 @@ class HealthSystem(Module):
                     # run last event of the day. This seems more realistic than medical staff leaving earlier than
                     # planned if seeing another patient would take them into overtime.
 
+                    if self.appt_footprint_is_valid(event.EXPECTED_APPT_FOOTPRINT) is False:
+                        warnings.warn(UserWarning(f"Would have ran with improper EXPECTED_APPT_FOOT for TREAT_ID /n"
+                                      f"{event.TREATMENT_ID}"))
+                        out_of_resources = True
+
                     if out_of_resources:
                         # Do not run,
                         # Call did_not_run for the hsi_event
@@ -1809,7 +1827,17 @@ class HealthSystem(Module):
 
                         if not (rtn_from_did_not_run is False):
                             # reschedule event
-                            hp.heappush(_to_be_held_over, _list_of_individual_hsi_event_tuples[ev_num])
+
+                            # Correct formatted EXPECTED_APPT_FOOTPRINT
+                            if isinstance(event.target, tlo.population.Population) is False and \
+                               self.appt_footprint_is_valid(event.EXPECTED_APPT_FOOTPRINT):
+
+                                # Add the event to the queue:
+                                hp.heappush(_to_be_held_over, _list_of_individual_hsi_event_tuples[ev_num])
+
+                            else:
+                                warnings.warn(UserWarning(f"Attempted hold over with improper EXPECTED_APPT_FOOT for /n"
+                                              f"{event.TREATMENT_ID}"))
 
                         # Log that the event did not run
                         self.record_hsi_event(
