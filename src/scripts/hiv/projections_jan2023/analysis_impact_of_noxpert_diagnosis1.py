@@ -8,7 +8,7 @@ Extracts DALYs and mortality from the TB module
 import datetime
 from pathlib import Path
 
-#import lacroix
+
 import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
 import numpy as np
@@ -65,79 +65,74 @@ def summarise_tb_deaths(results_folder, person_years):
 
     # select only cause AIDS_TB and AIDS_non_TB
     #tmp = results_deaths.loc[results_deaths.cause == "TB"]
-  #  tmp = pd.DataFrame(results_deaths.loc[results_deaths.cause])
     tmp = results_deaths.loc[results_deaths['cause'].isin(["AIDS_TB", "AIDS_non_TB", "TB"])]
 
     # group deaths by year
     tmp2 = pd.DataFrame(tmp.groupby(["year", "cause"]).sum())
-    tmp2.to_excel(outputspath / "my_summarised_deaths.xlsx", index=True)
+    tmp2.to_excel(outputspath / "summarised_deaths.xlsx", index=True)
 
-    # # divide each draw/run by the respective person-years from that run
-    # # need to reset index as they don't match exactly (date format)
-    # tmp3 = tmp2.reset_index(drop=True) / (person_years.reset_index(drop=True))
-    #
-    # tb_deaths = {}  # empty dict
-    #
-    # tb_deaths["median_tb_deaths_rate_100kpy"] = (
-    #                                                 tmp3.astype(float).quantile(0.5, axis=1)
-    #                                             ) * 100000
-    # tb_deaths["lower_tb_deaths_rate_100kpy"] = (
-    #                                                tmp3.astype(float).quantile(0.025, axis=1)
-    #                                            ) * 100000
-    # tb_deaths["upper_tb_deaths_rate_100kpy"] = (
-    #                                                tmp3.astype(float).quantile(0.975, axis=1)
-    #                                            ) * 100000
-    #
-    # return tb_deaths
-
-
-# results_deaths = extract_results(
-#     results_folder,
-#     module="tlo.methods.demography",
-#     key="death",
-#     custom_generate_series=(
-#         lambda df: df.assign(year=df["date"].dt.year).groupby(
-#             ["year", "cause"])["person_id"].count()
-#     ),
-#     do_scaling=False,
-#
-# )
 tb_deaths0 = summarise_tb_deaths(results_folder, py0)
-tb_death=pd.DataFrame(tb_deaths0)
-tb_deaths0.to_excel (outputspath / "sample_summarised_deaths.xlsx", index=True)
+#tb_death=pd.DataFrame(tb_deaths0)
+#tb_deaths0.to_excel (outputspath / "sample_summarised_deaths.xlsx", index=True)
 
-import pandas as pd
-import numpy as np
+def summarise_tb_dalys(results_folder):
+    results_dalys = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_stacked",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year).groupby(
+                ["year", "cause"])["person_id"].count()
+            ),
+        do_scaling=False,
+    )
+    # removes multi-index
+    results_dalys = results_dalys.reset_index()
+
+    # select only cause AIDS_TB and AIDS_non_TB
+    #tmp = results_deaths.loc[results_deaths.cause == "TB"]
+    dmp = results_dalys.loc[results_dalys['cause'].isin(["AIDS_TB", "AIDS_non_TB", "TB"])]
+
+    # group deaths by year
+    dmp2 = pd.DataFrame(dmp.groupby(["year", "cause"]).sum())
+    dmp2.to_excel(outputspath / "summarised_dalys.xlsx", index=True)
+
+tb_dalys0 = summarise_tb_dalys(results_folder)
+#tb_death=pd.DataFrame(tb_deaths0)
+#tb_deaths0.to_excel (outputspath / "sample_summarised_deaths.xlsx", index=True)
 
 
-def compute_difference_in_deaths_across_runs(total_deaths, scenario_info, output_file):
-    deaths_difference_by_run = [
-        total_deaths[0][run_number]["Total"] - total_deaths[1][run_number]["Total"]
-        for run_number in range(scenario_info["runs_per_draw"])
-    ]
 
-    # Compute mean of deaths difference across runs
-    mean_difference = np.mean(deaths_difference_by_run)
 
-    # Create a DataFrame to store the results
-    result_df = pd.DataFrame({
-        "Difference in Deaths": deaths_difference_by_run
-    })
 
-    # Save results to Excel
-    result_df.to_excel(outputspath, index=False)
 
-    return mean_difference
-
-# multiply by scaling factor to get numbers of expected infections
-
-# get scaling factor for numbers of tests performed and treatments requested
-# scaling factor 145.39609
-# sf = extract_results(
-#     results_folder,
-#     module="tlo.methods.population",
-#     key="scaling_factor",
-#     column="scaling_factor",
-#     index="date",
-#     do_scaling=False)
-
+# def compute_difference_in_deaths_across_runs(total_deaths, scenario_info, output_file):
+#     deaths_difference_by_run = [
+#         total_deaths[0][run_number]["Total"] - total_deaths[1][run_number]["Total"]
+#         for run_number in range(scenario_info["runs_per_draw"])
+#     ]
+#     # Compute mean of deaths difference across runs
+#     mean_difference = np.mean(deaths_difference_by_run)
+#
+#     # Create a DataFrame to store the results
+#     result_df = pd.DataFrame({
+#         "Difference in Deaths": deaths_difference_by_run
+#     })
+#
+#     # Save results to Excel
+#     result_df.to_excel(outputspath, index=False)
+#
+#     return mean_difference
+#
+# # multiply by scaling factor to get numbers of expected infections
+#
+# # get scaling factor for numbers of tests performed and treatments requested
+# # scaling factor 145.39609
+# # sf = extract_results(
+# #     results_folder,
+# #     module="tlo.methods.population",
+# #     key="scaling_factor",
+# #     column="scaling_factor",
+# #     index="date",
+# #     do_scaling=False)
+#
