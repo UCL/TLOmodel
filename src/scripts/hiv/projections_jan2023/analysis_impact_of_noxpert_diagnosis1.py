@@ -75,6 +75,35 @@ tb_deaths0 = summarise_tb_deaths(results_folder, py0)
 #tb_death=pd.DataFrame(tb_deaths0)
 #tb_deaths0.to_excel (outputspath / "sample_summarised_deaths.xlsx", index=True)
 
+
+
+# def summarise_tb_dalys(results_folder):
+#     results_dalys = extract_results(
+#         results_folder,
+#         module="tlo.methods.healthburden",
+#         key="dalys_stacked",
+#         custom_generate_series=(
+#             lambda df: df.assign(year=df["date"].dt.year).groupby(
+#                 ["year", "cause"])["person_id"].count()
+#             ),
+#         do_scaling=False,
+#     )
+#     # removes multi-index
+#     results_dalys = results_dalys.reset_index()
+#
+#     # select only cause AIDS_TB and AIDS_non_TB
+#     #tmp = results_deaths.loc[results_deaths.cause == "TB"]
+#     dmp = results_dalys.loc[results_dalys['cause'].isin(["AIDS_TB", "AIDS_non_TB", "TB"])]
+#
+#     # group deaths by year
+#     dmp2 = pd.DataFrame(dmp.groupby(["year", "cause"]).sum())
+#     dmp2.to_excel(outputspath / "summarised_dalys.xlsx", index=True)
+#
+# tb_dalys0 = summarise_tb_dalys(results_folder)
+# #tb_death=pd.DataFrame(tb_deaths0)
+# #tb_deaths0.to_excel (outputspath / "sample_summarised_deaths.xlsx", index=True)
+
+
 def summarise_tb_dalys(results_folder):
     results_dalys = extract_results(
         results_folder,
@@ -82,24 +111,41 @@ def summarise_tb_dalys(results_folder):
         key="dalys_stacked",
         custom_generate_series=(
             lambda df: df.assign(year=df["date"].dt.year).groupby(
-                ["year", "cause"])["person_id"].count()
+                ["year", "cause"]).sum()  # Use sum() instead of count() to calculate DALYs
             ),
         do_scaling=False,
     )
-    # removes multi-index
+    # Removes multi-index
     results_dalys = results_dalys.reset_index()
 
-    # select only cause AIDS_TB and AIDS_non_TB
-    #tmp = results_deaths.loc[results_deaths.cause == "TB"]
+    # Select only causes "AIDS_TB", "AIDS_non_TB", and "TB"
     dmp = results_dalys.loc[results_dalys['cause'].isin(["AIDS_TB", "AIDS_non_TB", "TB"])]
 
-    # group deaths by year
-    dmp2 = pd.DataFrame(dmp.groupby(["year", "cause"]).sum())
-    dmp2.to_excel(outputspath / "summarised_dalys.xlsx", index=True)
+    # Group DALYs by year and cause
+    dmp2 = dmp.groupby(["year", "cause"]).sum().reset_index()  # Remove unnecessary DataFrame constructor
 
+    # Save the summarized DALYs to an Excel file
+    dmp2.to_excel(outputspath + "/summarised_dalys.xlsx", index=True)
+
+    return dmp2
+
+#results_folder = "<path_to_results_folder>"
 tb_dalys0 = summarise_tb_dalys(results_folder)
-#tb_death=pd.DataFrame(tb_deaths0)
-#tb_deaths0.to_excel (outputspath / "sample_summarised_deaths.xlsx", index=True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
