@@ -414,6 +414,7 @@ class CopdDeath(Event, IndividualScopeEventMixin):
                 cause='COPD',
                 originating_module=self.module,
             )
+            # log
 
 
 class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixin):

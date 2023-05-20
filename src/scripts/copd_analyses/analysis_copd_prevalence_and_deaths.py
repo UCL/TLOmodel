@@ -149,7 +149,6 @@ class CopdAnalyses:
     def plot_copd_deaths_by_age_group(self):
         """ compare modal and GBD deaths by age group """
         death_compare = compare_number_of_deaths(self.__logfile_path, resourcefilepath)
-        print(f'the compare deaths is {death_compare}')
         plot_df = death_compare.loc[(['2010-2014', '2015-2019'], slice(None), slice(None), 'COPD')].groupby(
             'age_grp').sum()
         ax = plot_df['model'].plot.bar(color='#ADD8E6', label='Model', rot=0)
@@ -204,27 +203,27 @@ def get_simulation(popsize):
 
 
 # run simulation and store logfile path
-# sim = get_simulation(1000)
-# path_to_logfile = sim.log_filepath
-path_to_logfile = Path('outputs')/'copd_analyses__2023-05-03T084637.log'
+sim = get_simulation(1000)
+path_to_logfile = sim.log_filepath
+# path_to_logfile = Path('outputs')/'copd_analyses__2023-05-03T084637.log'
 
 # initialise Copd analyses class
 copd_analyses = CopdAnalyses(logfile_path=path_to_logfile)
 
 # plot lung function categories per each category
-# copd_analyses.plot_lung_function()
+copd_analyses.plot_lung_function()
 
 # plot lung function categories by gender
-# copd_analyses.plot_lung_function_by_gender()
+copd_analyses.plot_lung_function_by_gender()
 
 # plot lung function categories by age group
-# copd_analyses.plot_lung_function_categories_by_age_group()
+copd_analyses.plot_lung_function_categories_by_age_group()
 
 # plot modal deaths against GBD deaths by gender
-# copd_analyses.plot_copd_deaths_by_gender()
+copd_analyses.plot_copd_deaths_by_gender()
 
 # plot modal deaths against GBD deaths by gender
 copd_analyses.plot_copd_deaths_by_age_group()
 
 # plot modal deaths against GBD deaths by age group
-# copd_analyses.plot_copd_deaths_by_lungfunction()
+copd_analyses.plot_copd_deaths_by_lungfunction()

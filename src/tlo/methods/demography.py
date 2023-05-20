@@ -419,12 +419,6 @@ class Demography(Module):
                 'pregnancy': person['is_pregnant'],
             })
 
-        if 'Copd' in self.sim.modules:
-            # add person's lung function
-            data_to_log_for_each_death.update({
-                'ch_lungfunction': person['ch_lungfunction']
-            })
-
         logger.info(key='death', data=data_to_log_for_each_death)
 
         # - log all the properties for the deceased person
