@@ -18,10 +18,6 @@ from tlo.analysis.utils import (
     load_pickled_dataframes,
     get_scenario_info,
     extract_params,
-    summarize,
-    make_age_grp_lookup,
-    make_age_grp_types,
-    extract_params,
 )
 
 outputspath =   Path('./outputs/nic503@york.ac.uk')
@@ -41,8 +37,8 @@ params = extract_params(results_folder)
 def get_num_deaths(_df):
    # return pd.Series(data=len(_df.loc[pd.to_datetime(_df.date).between(*target_period)]))
    filtered_df = _df.loc[pd.to_datetime(_df.date).between(*target_period)]
-   num_deaths_by_year = filtered_df.groupby('year').size()
-   return num_deaths_by_year
+   num_deaths = filtered_df.groupby('year').size()
+   return num_deaths
 
 deaths_extracted = extract_results(
     results_folder,
@@ -51,16 +47,17 @@ deaths_extracted = extract_results(
     custom_generate_series=get_num_deaths,
     do_scaling=False
 )
-deaths_extracted.to_excel(outputspath / "summarised_deaths.xlsx", index=True)
+deaths_extracted.to_excel(outputspath / "summary_deaths.xlsx", index=True)
+
+
+
+
 
 def get_num_dalys(_df):
-# """Return the total number of DALYS (Stacked) by label (total within the TARGET_PERIOD)"""
-        return pd.Series(
-            data=_df
-            .loc[_df.year.between(*[i.year for i in target_period])]
-            .drop(columns=['date', 'cause', 'sex', 'age_range', 'year'])
-            .sum().sum()
-        )
+    filtered_df = _df.loc[_df.year.between(*[i.year for i in target_period])]
+    total_dalys = filtered_df.drop(columns=['date', 'cause', 'sex', 'age_range', 'year']).sum().sum()
+    return pd.DataFrame({'Total DALYs': [total_dalys]})
+
 dalys_extracted = extract_results(
     results_folder,
     module="tlo.methods.healthburden",
@@ -68,8 +65,12 @@ dalys_extracted = extract_results(
     custom_generate_series=get_num_dalys,
     do_scaling=False
 )
+
+output_path = outputspath
+dalys_extracted.to_excel(output_path + "/summary_dalys.xlsx", index=False)
+
 # # Write the DataFrame to Excel
-deaths_extracted.to_excel(outputspath / "summarised_DALYs.xlsx", index=True)
+#deaths_extracted.to_excel(outputspath / "summary_DALYs.xlsx", index=True)
 
 
 

@@ -1,4 +1,5 @@
 """Analyse the results of scenario to test impact of Noxpert diagnosis."""
+
 # python src/scripts/hiv/projetions_jan2023/analysis_impact_of_noxpert_diagnosis2.py --scenario-outputs-folder outputs/nic503@york.ac.uk --show-figures
 import argparse
 import datetime
@@ -15,10 +16,10 @@ from tlo.analysis.utils import (
     summarize,
 )
 
-#resourcefilepath = Path("./resources")
+resourcefilepath = Path("./resources")
 #datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-# outputspath = Path("./outputs/nic503@york.ac.uk")
-# results_folder = get_scenario_outputs("scenario_impact_noXpert_diagnosis.py", outputspath)[-1]
+outputspath = Path("./outputs/nic503@york.ac.uk")
+#results_folder = get_scenario_outputs("scenario_impact_noXpert_diagnosis.py", outputspath)[-1]
 
 def extract_total_deaths(results_folder):
     def extract_deaths_total(df: pd.DataFrame) -> pd.Series:
@@ -32,7 +33,7 @@ def extract_total_deaths(results_folder):
         do_scaling=True
     )
 
-        #sum_deaths.to_excel(outputspath / "total_deaths.xlsx", index=True)
+#sum_deaths.to_excel(outputspath / "total_deaths.xlsx", index=True)
 
 def extract_total_dalys(results_folder):
 
@@ -46,7 +47,7 @@ def extract_total_dalys(results_folder):
         custom_generate_series=extract_dalys_total,
         do_scaling=True
     )
-  #  sum_dalys.to_excel(outputspath/"total_dalys.xlsx", index=True)
+
 def make_plot(summarized_total_deaths, param_strings):
     fig, ax = plt.subplots()
     number_of_draws = len(param_strings)
@@ -73,7 +74,7 @@ def compute_difference_in_deaths_across_runs(total_deaths, scenario_info):
         for run_number in range(scenario_info["runs_per_draw"])
     ]
     return np.mean(deaths_difference_by_run)
-    deaths_difference_by_run.to_excel(outputspath/"total_dalys.xlsx", index=True)
+    deaths_difference_by_run.to_excel(outputspath/"summary_deaths.xlsx", index=True)
 
 def compute_difference_in_dalys_across_runs(total_dalys, scenario_info):
     dalys_difference_by_run = [
@@ -81,44 +82,66 @@ def compute_difference_in_dalys_across_runs(total_dalys, scenario_info):
         for run_number in range(scenario_info["runs_per_draw"])
     ]
     return np.mean(dalys_difference_by_run)
-    dalys_difference_by_run.to_excel(outputspath / "total_dalys.xlsx", index=True)
+    dalys_difference_by_run.to_excel(outputspath / "summary_DALYs.xlsx", index=True)
 
 
 if __name__ == "__main__":
+    # parser = argparse.ArgumentParser(
+    #     description="Analyse scenario results for noXpert pathway"
+    # )
+    # parser.add_argument(
+    #     "--scenario-outputs-folder",
+    #     type=Path,
+    #     required=True,
+    #     help="Path to folder containing scenario outputs"
+    #             "src/scripts/hiv/projetions_jan2023/scenario_impact_noxpert_diagnosis.py"
+    # )
+    # parser.add_argument(
+    #     "--show-figures",
+    #     action="store_true",
+    #     help="Whether to interactively show generated Matplotlib figures",
+    # )
+    #
+    # parser.add_argument(
+    #     "--resources-path",
+    #     help="Directory containing resource files",
+    #     type=Path,
+    #     default=Path('resources'),
+    #     required=False,
+    # )
+    # parser.add_argument(
+    #     "--save-figures",
+    #     action="store_true",
+    #     help="Whether to save generated Matplotlib figures to results folder",
+    #     default=None,
+    #     required=False,
+    # )
+    # args = parser.parse_args()
+
+    # Parse command line arguments
     parser = argparse.ArgumentParser(
-        description="Analyse scenario results for noXpert pathway"
+        "Analyse scenario results for noxpert diagnosis pathway"
     )
     parser.add_argument(
         "--scenario-outputs-folder",
         type=Path,
         required=True,
-        help="Path to folder containing scenario outputs"
-                "src/scripts/hiv/projetions_jan2023/scenario_impact_noxpert_diagnosis.py"
+        help="Path to folder containing scenario outputs",
     )
     parser.add_argument(
         "--show-figures",
         action="store_true",
         help="Whether to interactively show generated Matplotlib figures",
     )
-
-    parser.add_argument(
-        "--resources-path",
-        help="Directory containing resource files",
-        type=Path,
-        default=Path('resources'),
-        required=False,
-    )
     parser.add_argument(
         "--save-figures",
         action="store_true",
         help="Whether to save generated Matplotlib figures to results folder",
-        default=None,
-        required=False,
     )
     args = parser.parse_args()
 
     # Find results_folder associated with a given batch_file and get most recent
-    results_folder = get_scenario_outputs("scenario_impact_noXpert_diagnosis.py", args.scenario_outputs_folder)[-1]
+    results_folder = get_scenario_outputs("scenario_impact_noXpert_diagnosis.py", outputspath)[-1]
 
     # Load log (useful for checking what can be extracted)
     log = load_pickled_dataframes(results_folder)
