@@ -103,9 +103,11 @@ if __name__ == "__main__":
     print(f"this is the results folder {results_folder}")
     # Load log (useful for checking what can be extracted)
     log = load_pickled_dataframes(results_folder)
-    print(f" the log is {log['tlo.methods.demography'].keys()}")
+    #print(f" the log is {log['tlo.methods.demography'].keys()}")
+    log = load_pickled_dataframes(results_folder)
+   # print(f" the log is {log['tlo.methods.population']['scaling_factor'].keys()}")
 
-    # output serialises mortality patterns
+    # # output serialises mortality patterns
     print(f"expected deaths {log['tlo.methods.demography']['death']}")
     #sample_deaths = log['tlo.methods.demography']['death'].groupby(['date', 'cause', 'sex']).size()
     summary_deaths = log['tlo.methods.demography']['death'].drop(columns=[])
@@ -130,7 +132,7 @@ if __name__ == "__main__":
     print(f"these are sample deaths {total_deaths}")
     total_deaths.to_excel(outputspath / "deaths_NoXpert.xlsx")
     total_dalys = extract_total_dalys(results_folder)
-    print(f"these are sample deaths {total_dalys}")
+    print(f"these are sample dalys draw {total_dalys}")
     total_dalys.to_excel(outputspath / "dalys_NoXpert.xlsx")
     # Compute and print the difference between the deaths across the scenario draws
     # mean_deaths_difference_by_run = compute_difference_in_deaths_across_runs(total_deaths, scenario_info)
