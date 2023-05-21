@@ -26,66 +26,56 @@ outputspath = Path("./outputs/nic503@york.ac.uk")
 def extract_total_deaths(results_folder):
     def extract_deaths_total(df: pd.DataFrame) -> pd.Series:
         return pd.Series({"Total": len(df)})
-
-    return  extract_results(
+    return extract_results(
         results_folder,
         module="tlo.methods.demography",
         key="death",
         custom_generate_series=extract_deaths_total,
         do_scaling=False
     )
+def extract_total_dalys(results_folder):
+    def extract_dalys_total(df: pd.DataFrame) -> pd.Series:
+        return pd.Series({"Total": len(df)})
+    return extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys",
+        custom_generate_series=extract_dalys_total,
+        do_scaling=False
+    )
+def make_plot(summarized_total_deaths, param_strings):
+    fig, ax = plt.subplots()
+    number_of_draws = len(param_strings)
+    statistic_values = {
+        s: np.array(
+            [summarized_total_deaths[(d, s)].values[0] for d in range(number_of_draws)]
+        )
+        for s in ["mean", "lower", "upper"]
+    }
+    ax.bar(
+        param_strings,
+        statistic_values["mean"],
+        yerr=[
+            statistic_values["mean"] - statistic_values["lower"],
+            statistic_values["upper"] - statistic_values["mean"]
+        ]
+    )
+    ax.set_ylabel("Total number of deaths")
+    fig.tight_layout()
+    return fig, ax
 
-  #sum_deaths.to_excel(outputspath / "total_deaths.xlsx", index=True)
-#
-# def extract_total_dalys(results_folder):
-#
-#     def extract_dalys_total(df: pd.DataFrame) -> pd.Series:
-#         return pd.Series({"Total": len(df)})
-#
-#     return extract_results(
-#         results_folder,
-#         module="tlo.methods.healthburden",
-#         key="dalys_stacked",
-#         custom_generate_series=extract_dalys_total,
-#         do_scaling=True
-#     )
-#
-# def make_plot(summarized_total_deaths, param_strings):
-#     fig, ax = plt.subplots()
-#     number_of_draws = len(param_strings)
-#     statistic_values = {
-#         s: np.array(
-#             [summarized_total_deaths[(d, s)].values[0] for d in range(number_of_draws)]
-#         )
-#         for s in ["mean", "lower", "upper"]
-#     }
-#     ax.bar(
-#         param_strings,
-#         statistic_values["mean"],
-#         yerr=[
-#             statistic_values["mean"] - statistic_values["lower"],
-#             statistic_values["upper"] - statistic_values["mean"]
-#         ]
-#     )
-#     ax.set_ylabel("Total number of deaths")
-#     fig.tight_layout()
-#     return fig, ax
-# def compute_difference_in_deaths_across_runs(total_deaths, scenario_info):
-#     deaths_difference_by_run = [
-#         total_deaths[0][run_number]["total_deaths"] - total_deaths[1][run_number]["total_deaths"]
-#         for run_number in range(scenario_info["runs_per_draw"])
-#     ]
-#     return np.mean(deaths_difference_by_run)
-#     deaths_difference_by_run.to_excel(outputspath/"summary_deaths.xlsx", index=True)
-#
-# def compute_difference_in_dalys_across_runs(total_dalys, scenario_info):
-#     dalys_difference_by_run = [
-#         total_dalys[0][run_number]["total_dalys"] - total_dalys[1][run_number]["total_dalys"]
-#         for run_number in range(scenario_info["runs_per_draw"])
-#     ]
-#     return np.mean(dalys_difference_by_run)
-#     dalys_difference_by_run.to_excel(outputspath / "summary_DALYs.xlsx", index=True)
-#
+def compute_difference_in_deaths_across_runs(total_deaths, scenario_info):
+    deaths_difference_by_run = [
+        total_deaths[0][run_number]["total_deaths"] - total_deaths[1][run_number]["total_deaths"]
+        for run_number in range(scenario_info["runs_per_draw"])
+    ]
+    return np.mean(deaths_difference_by_run)
+def compute_difference_in_dalys_across_runs(total_dalys, scenario_info):
+    dalys_difference_by_run = [
+        total_dalys[0][run_number]["total_dalys"] - total_dalys[1][run_number]["total_dalys"]
+        for run_number in range(scenario_info["runs_per_draw"])
+    ]
+    return np.mean(dalys_difference_by_run)
 
 if __name__ == "__main__":
 
@@ -140,32 +130,32 @@ if __name__ == "__main__":
     # Extract deaths from runs
     total_deaths = extract_total_deaths(results_folder)
     print(f"these are sample deaths {total_deaths}")
-    # total_dalys = extract_total_dalys(results_folder)
-    #
-    # # Compute and print the difference between the deaths across the scenario draws
-    # mean_deaths_difference_by_run = compute_difference_in_deaths_across_runs(total_deaths, scenario_info)
-    # print(f"Mean difference in total deaths = {mean_deaths_difference_by_run:.3g}")
-    #
-    # mean_dalys_difference_by_run = compute_difference_in_dalys_across_runs (total_dalys, scenario_info)
-    # print(f"Mean difference in total dalys = {mean_dalys_difference_by_run:.3g}")
-    #
-    # # Plot the total deaths across the two scenario draws as a bar plot with error bars
-    # fig_1, ax_1 = make_plot(summarize(total_deaths), param_strings)
-    # fig_2, ax_1 = make_plot(summarize(total_dalys), param_strings)
-    #
-    # # Show Matplotlib figure windows
-    # if args.show_figures:
-    #     plt.show()
-    #
-    # if args.save_figures:
-    #     fig_1.savefig(results_folder / "total_deaths_across_scenario_draws.pdf")
-    #     fig_2.savefig(results_folder / "total_dalys_across_scenario_draws.pdf")
-    #
-    #
-    #
-    #
-    #
-    #
-    #
-    #
+    total_dalys = extract_total_dalys(results_folder)
+
+    # Compute and print the difference between the deaths across the scenario draws
+    mean_deaths_difference_by_run = compute_difference_in_deaths_across_runs(total_deaths, scenario_info)
+    print(f"Mean difference in total deaths = {mean_deaths_difference_by_run:.3g}")
+
+    mean_dalys_difference_by_run = compute_difference_in_dalys_across_runs (total_dalys, scenario_info)
+    print(f"Mean difference in total dalys = {mean_dalys_difference_by_run:.3g}")
+
+    # Plot the total deaths across the two scenario draws as a bar plot with error bars
+    fig_1, ax_1 = make_plot(summarize(total_deaths), param_strings)
+    fig_2, ax_1 = make_plot(summarize(total_dalys), param_strings)
+
+    # Show Matplotlib figure windows
+    if args.show_figures:
+        plt.show()
+
+    if args.save_figures:
+        fig_1.savefig(results_folder / "total_deaths_across_scenario_draws.pdf")
+        fig_2.savefig(results_folder / "total_dalys_across_scenario_draws.pdf")
+
+
+
+
+
+
+
+
 
