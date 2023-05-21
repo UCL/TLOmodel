@@ -17,12 +17,10 @@ from tlo.analysis.utils import (
     load_pickled_dataframes,
     summarize,
 )
-
 resourcefilepath = Path("./resources")
 #datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 outputspath = Path("./outputs/nic503@york.ac.uk")
 #results_folder = get_scenario_outputs("scenario_impact_noXpert_diagnosis.py", outputspath)[-1]
-
 def extract_total_deaths(results_folder):
     def extract_deaths_total(df: pd.DataFrame) -> pd.Series:
         return pd.Series({"Total": len(df)})
@@ -63,19 +61,19 @@ def make_plot(summarized_total_deaths, param_strings):
     ax.set_ylabel("Total number of deaths")
     fig.tight_layout()
     return fig, ax
-
-def compute_difference_in_deaths_across_runs(total_deaths, scenario_info):
-    deaths_difference_by_run = [
-        total_deaths[0][run_number]["total_deaths"] - total_deaths[1][run_number]["total_deaths"]
-        for run_number in range(scenario_info["runs_per_draw"])
-    ]
-    return np.mean(deaths_difference_by_run)
-def compute_difference_in_dalys_across_runs(total_dalys, scenario_info):
-    dalys_difference_by_run = [
-        total_dalys[0][run_number]["total_dalys"] - total_dalys[1][run_number]["total_dalys"]
-        for run_number in range(scenario_info["runs_per_draw"])
-    ]
-    return np.mean(dalys_difference_by_run)
+#
+# def compute_difference_in_deaths_across_runs(total_deaths, scenario_info):
+#     deaths_difference_by_run = [
+#         total_deaths[0][run_number]["total_deaths"] - total_deaths[1][run_number]["total_deaths"]
+#         for run_number in range(scenario_info["runs_per_draw"])
+#     ]
+#     return np.mean(deaths_difference_by_run)
+# def compute_difference_in_dalys_across_runs(total_dalys, scenario_info):
+#     dalys_difference_by_run = [
+#         total_dalys[0][run_number]["total_dalys"] - total_dalys[1][run_number]["total_dalys"]
+#         for run_number in range(scenario_info["runs_per_draw"])
+#     ]
+#     return np.mean(dalys_difference_by_run)
 
 if __name__ == "__main__":
 
@@ -127,17 +125,20 @@ if __name__ == "__main__":
     # Create a list of strings summarizing the parameter values in the different draws
     param_strings = [f"{row.module_param}={row.value}" for _, row in params.iterrows()]
 
-    # Extract deaths from runs
+    # Extracts and prints health outcomes to excel-DALYs and mortality
     total_deaths = extract_total_deaths(results_folder)
     print(f"these are sample deaths {total_deaths}")
+    total_deaths.to_excel(outputspath / "deaths_NoXpert.xlsx")
     total_dalys = extract_total_dalys(results_folder)
+    print(f"these are sample deaths {total_dalys}")
+    total_dalys.to_excel(outputspath / "dalys_NoXpert.xlsx")
 
     # Compute and print the difference between the deaths across the scenario draws
-    mean_deaths_difference_by_run = compute_difference_in_deaths_across_runs(total_deaths, scenario_info)
-    print(f"Mean difference in total deaths = {mean_deaths_difference_by_run:.3g}")
-
-    mean_dalys_difference_by_run = compute_difference_in_dalys_across_runs (total_dalys, scenario_info)
-    print(f"Mean difference in total dalys = {mean_dalys_difference_by_run:.3g}")
+    # mean_deaths_difference_by_run = compute_difference_in_deaths_across_runs(total_deaths, scenario_info)
+    # print(f"Mean difference in total deaths = {mean_deaths_difference_by_run:.3g}")
+    #
+    # mean_dalys_difference_by_run = compute_difference_in_dalys_across_runs (total_dalys, scenario_info)
+    # print(f"Mean difference in total dalys = {mean_dalys_difference_by_run:.3g}")
 
     # Plot the total deaths across the two scenario draws as a bar plot with error bars
     fig_1, ax_1 = make_plot(summarize(total_deaths), param_strings)
@@ -148,8 +149,8 @@ if __name__ == "__main__":
         plt.show()
 
     if args.save_figures:
-        fig_1.savefig(results_folder / "total_deaths_across_scenario_draws.pdf")
-        fig_2.savefig(results_folder / "total_dalys_across_scenario_draws.pdf")
+        fig_1.savefig(results_folder / "total_deaths_across_noxpert.pdf")
+        fig_2.savefig(results_folder / "total_dalys_across_noxpert.pdf")
 
 
 
