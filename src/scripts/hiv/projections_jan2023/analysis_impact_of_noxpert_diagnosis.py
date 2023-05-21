@@ -1,13 +1,14 @@
 """Analyse the results of scenario to test impact of Noxpert diagnosis."""
 
-# python src/scripts/hiv/projetions_jan2023/analysis_impact_of_noxpert_diagnosis.py --scenario-outputs-folder outputs/nic503@york.ac.uk --show-figures
-# python src\scripts\hiv\projetions_jan2023\analysis_impact_of_noxpert_diagnosis.py --scenario-outputs-folder outputs\nic503@york.ac.uk
+# python src\scripts\hiv\projections_jan2023\analysis_impact_of_noxpert_diagnosis.py --scenario-outputs-folder outputs\nic503@york.ac.uk
 import argparse
 import datetime
 from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
+import tlo.methods.demography
 from tlo.analysis.utils import (
     extract_params,
     extract_results,
@@ -31,10 +32,10 @@ def extract_total_deaths(results_folder):
         module="tlo.methods.demography",
         key="death",
         custom_generate_series=extract_deaths_total,
-        do_scaling=True
+        do_scaling=False
     )
 
-# #sum_deaths.to_excel(outputspath / "total_deaths.xlsx", index=True)
+  #sum_deaths.to_excel(outputspath / "total_deaths.xlsx", index=True)
 #
 # def extract_total_dalys(results_folder):
 #
@@ -114,8 +115,20 @@ if __name__ == "__main__":
     print(f"this is the results folder {results_folder}")
     # Load log (useful for checking what can be extracted)
     log = load_pickled_dataframes(results_folder)
+    print(f" the log is {log['tlo.methods.demography'].keys()}")
 
-    # Get basic information about the resultsp
+    # output serialises mortality patterns
+    print(f"expected deaths {log['tlo.methods.demography']['death']}")
+    #sample_deaths = log['tlo.methods.demography']['death'].groupby(['date', 'cause', 'sex']).size()
+    summary_deaths = log['tlo.methods.demography']['death'].drop(columns=[])
+    summary_deaths.to_excel(outputspath / "Expected_mortality_NoXpert.xlsx")
+
+    print(f"expected dalys{log['tlo.methods.healthburden']['dalys_stacked']}")
+    # sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', 'sex']).size()
+    expected_dalys = log['tlo.methods.healthburden']['dalys_stacked'].drop(columns=[])
+    expected_dalys.to_excel(outputspath / "Expected_dalys_NoXpert.xlsx")
+
+    # Get basic information about the results
     scenario_info = get_scenario_info(results_folder)
 
     # Get the parameters that have varied over the set of simulations
