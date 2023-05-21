@@ -132,11 +132,10 @@ if __name__ == "__main__":
     total_dalys = extract_total_dalys(results_folder)
     print(f"these are sample deaths {total_dalys}")
     total_dalys.to_excel(outputspath / "dalys_NoXpert.xlsx")
-
     # Compute and print the difference between the deaths across the scenario draws
     # mean_deaths_difference_by_run = compute_difference_in_deaths_across_runs(total_deaths, scenario_info)
     # print(f"Mean difference in total deaths = {mean_deaths_difference_by_run:.3g}")
-    #
+
     # mean_dalys_difference_by_run = compute_difference_in_dalys_across_runs (total_dalys, scenario_info)
     # print(f"Mean difference in total dalys = {mean_dalys_difference_by_run:.3g}")
 
