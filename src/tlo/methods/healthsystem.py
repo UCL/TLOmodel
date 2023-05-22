@@ -458,10 +458,26 @@ class HealthSystem(Module):
                         ' to the module initialiser.'),
 
         # Priority policy
+        'Policy_Name': Parameter(
+            Types.STRING,
+            "Specifies which Priority Policy will be considered " 
+            "If 'Random', then priority of treatments is same and order is randomised;" 
+            "If 'Naive', emergencies prioritised and everything else randomised;" 
+            "If 'VerticalProg', prioritise specified vertical programmes;" 
+            "If 'RMNCH', prioritise RMNCH treatments and categories;" 
+            "If 'ClinicVuln', prioritise clinically vulnerable categories;"),
+        
+        # Priority policy
         'PriorityRank': Parameter(
             Types.DATA_FRAME, "Data on the priority ranking of each of the Treatment_IDs to be adopted by "
                               " the queueing system, where the lower the number the higher the priority, and on which"
                               " categories of individuals classify for fast-tracking for specific treatments"),
+
+        'include_fasttrack_routes': Parameter(
+            Types.BOOL, 'Whether or not to include fast-tracking options when considering a Priority Policy'),
+
+        'lowest_priority_considered': Parameter(
+            Types.INT, 'Lowest priority hsi events that will be ran under Priority Policy'),
 
         # Mode Appt Constraints
         'mode_appt_constraints': Parameter(
@@ -490,7 +506,8 @@ class HealthSystem(Module):
         randomise_queue: bool = True,
         ignore_priority: bool = False,
         adopt_priority_policy: bool = True,
-        include_fasttrack_routes: bool = True,
+        policy_name: str = "Naive",
+        include_fasttrack_routes: bool = False,
         lowest_priority_considered: int = 10,
         priority_rank_dict: dict = None,
         list_fasttrack: Optional[List[str]] = None,
@@ -577,13 +594,18 @@ class HealthSystem(Module):
 
         self.ignore_priority = ignore_priority
 
+        # Check that the name of policy being evaluated is included
+        if policy_name is not None:
+            assert policy_name in ['Random', 'Naive', 'RMNCH', 'VerticalProg', 'ClinicVuln']
+        self.policy_name = policy_name 
+
         self.lowest_priority_considered = lowest_priority_considered
+
+        self.include_fasttrack_routes = include_fasttrack_routes
 
         self.adopt_priority_policy = adopt_priority_policy
 
         self.randomise_queue = randomise_queue
-
-        self.include_fasttrack_routes = include_fasttrack_routes
 
         # Store the argument provided for service_availability
         self.arg_service_availabily = service_availability
@@ -703,8 +725,12 @@ class HealthSystem(Module):
             path_to_resourcefiles_for_healthsystem / 'infrastructure_and_equipment' / 'ResourceFile_Bed_Capacity.csv')
 
         # Data on the priority of each Treatment_ID that should be adopted in the queueing system
-        self.parameters['PriorityRank'] = pd.read_csv(
-            path_to_resourcefiles_for_healthsystem / 'ResourceFile_PriorityRanking.csv')
+        self.parameters['PriorityRank'] = pd.read_excel(
+            path_to_resourcefiles_for_healthsystem / 'priority_policies' / 'ResourceFile_PriorityRanking_Default.xlsx', sheet_name='Policy', skiprows=1)
+
+        self.load_parameters_from_dataframe(
+            pd.read_excel(path_to_resourcefiles_for_healthsystem /  'priority_policies' / 'ResourceFile_PriorityRanking_Default.xlsx', sheet_name='Parameter_values')
+        )
 
         # Check that no duplicates are included in priority input file
         # There might be a more suitable place to put this check
@@ -712,6 +738,10 @@ class HealthSystem(Module):
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
+
+        self.policy_name = self.get_policy_name()
+        self.lowest_priority_considered = self.get_lowest_priority_considered()
+        self.include_fasttrack_routes = self.get_include_fasttrack_routes()
 
         # Determine mode_appt_constraints
         self.mode_appt_constraints = self.get_mode_appt_constraints()
@@ -732,6 +762,23 @@ class HealthSystem(Module):
         self.consumables = Consumables(data=self.parameters['availability_estimates'],
                                        rng=self.rng,
                                        availability=self.get_cons_availability())
+
+        # In read_parameters, had loaded by default "Default" policy. If the policy name specified
+        # however is not random, need to re-load relevant parameters for correct policy. 
+        if self.policy_name != "Default":
+        
+            path_to_resourcefiles_for_healthsystem = Path(self.resourcefilepath) / 'healthsystem'
+
+            # Data on the priority of each Treatment_ID that should be adopted in the queueing system
+            self.parameters['PriorityRank'] = pd.read_excel(
+                path_to_resourcefiles_for_healthsystem / 'priority_policies' /  f'ResourceFile_PriorityRanking_{self.policy_name}.xlsx', sheet_name='Policy', skiprows=1)
+
+            self.load_parameters_from_dataframe(
+                pd.read_excel(path_to_resourcefiles_for_healthsystem / 'priority_policies' /  f'ResourceFile_PriorityRanking_{self.policy_name}.xlsx', sheet_name='Parameter_values')
+            )
+
+        self.include_fasttrack_routes = self.get_include_fasttrack_routes()
+        self.lowest_priority_considered = self.get_lowest_priority_considered()
 
         if self.adopt_priority_policy:
             self.priority_rank_dict = \
@@ -1055,6 +1102,30 @@ class HealthSystem(Module):
         return self.parameters['use_funded_or_actual_staffing'] \
             if self.arg_use_funded_or_actual_staffing is None \
             else self.arg_use_funded_or_actual_staffing
+
+    def get_policy_name(self) -> str:
+        """Returns `policy_name`. (Should be equal to what is specified by the parameter, but
+        overwrite with what was provided in argument if an argument was specified -- provided for backward
+        compatibility/debugging.)"""
+        return self.parameters['Policy_Name'] \
+            if self.policy_name is None \
+            else self.policy_name
+
+    def get_lowest_priority_considered(self) -> int:
+        """Returns `policy_name`. (Should be equal to what is specified by the parameter, but
+        overwrite with what was provided in argument if an argument was specified -- provided for backward
+        compatibility/debugging.)"""
+        return self.parameters['lowest_priority_considered'] #\
+        #    if self.lowest_priority_considered is None \
+        #    else self.lowest_priority_considered
+    
+    def get_include_fasttrack_routes(self) -> int:
+        """Returns `policy_name`. (Should be equal to what is specified by the parameter, but
+        overwrite with what was provided in argument if an argument was specified -- provided for backward
+        compatibility/debugging.)"""
+        return self.parameters['include_fasttrack_routes'] #\
+        #    if self.include_fasttrack_routes is None \
+        #    else self.include_fasttrack_routes
 
     def schedule_hsi_event(
         self,
