@@ -60,11 +60,9 @@ class ImpactOfHealthSystemMode(BaseScenario):
 
         2. "Mode 1":
             Mode 1 & Actual HR funding
-            Default consumables,
 
         3. "Mode 2":
             Mode 2 & Actual HR funding
-            100% availability of consumables,
 
         """
 
