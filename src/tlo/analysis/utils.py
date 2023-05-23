@@ -1094,3 +1094,34 @@ def get_mappers_in_fullmodel(resourcefilepath: Path, outputpath: Path):
         return pd.Series(key_tuple[0].get(key_tuple[1]).drop(columns={'date'}).loc[0]).to_dict()
 
     return {k[1]: extract_mapper(k) for k in keys}
+
+
+def get_parameters_for_status_quo() -> Dict:
+    """
+    Returns a dictionary of parameters and their updated values to indicate
+    the "Status Quo" scenario. This is the configuration that is the target
+    of calibrations.
+
+    The return dict is in the form:
+    e.g. {
+            'Depression': {
+                'pr_assessed_for_depression_for_perinatal_female': 1.0,
+                'pr_assessed_for_depression_in_generic_appt_level1': 1.0
+                },
+            'Hiv': {
+                'prob_start_art_or_vs': <<the dataframe named in the corresponding cell in the ResourceFile>>
+                }
+         }
+    """
+
+    return {
+        "SymptomManager": {
+            "spurious_symptoms": True,
+        },
+        "HealthSystem": {
+            "use_funded_or_actual_staffing": "actual",
+            "mode_appt_constraints": 1,
+            "cons_availability": "default",
+            "beds_availability": "default",
+        },
+    }
