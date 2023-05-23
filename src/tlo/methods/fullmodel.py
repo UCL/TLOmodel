@@ -68,10 +68,7 @@ def fullmodel(
     >>>     module_kwargs={"HealthSystem": {"disable": True}},
     >>> )
     """
-    if module_kwargs is None:
-        module_kwargs = {
-            "SymptomManager": {"spurious_symptoms": True},
-        }
+
     module_classes = [
         # Standard modules
         demography.Demography,
