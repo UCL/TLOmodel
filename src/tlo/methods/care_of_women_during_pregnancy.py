@@ -1125,7 +1125,6 @@ class CareOfWomenDuringPregnancy(Module):
         :returns True/False as to whether the event can run
         """
         df = self.sim.population.props
-        params = self.current_parameters
         mother = df.loc[individual_id]
 
         visit = HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
@@ -1183,7 +1182,6 @@ class CareOfWomenDuringPregnancy(Module):
         """
 
         df = self.sim.population.props
-        params = self.current_parameters
 
         date_difference = self.sim.date - df.at[individual_id, 'ac_date_next_contact']
 
@@ -2022,7 +2020,6 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
-        params = self.module.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # First we determine at what point in this womans pregnancy should she return for another visit

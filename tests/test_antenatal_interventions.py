@@ -478,7 +478,7 @@ def test_anc_contacts_that_should_not_run_wont_run(seed):
     assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 0)
     assert pd.isnull(df.at[mother_id, 'ac_date_next_contact'])
 
-    # Reset the gestational age 
+    # Reset the gestational age
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 10
 
     # Set woman as inpatient when she is due for her first ANC appointment
