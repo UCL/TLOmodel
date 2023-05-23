@@ -332,6 +332,7 @@ def make_simulation_health_system_functional(seed, cons_availability='all'):
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=False,
+                                           mode_appt_constraints=0,
                                            cons_availability=cons_availability
                                            ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),

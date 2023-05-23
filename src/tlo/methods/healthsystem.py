@@ -414,6 +414,17 @@ class HealthSystem(Module):
                               'based on the _potential_ number and distribution of staff estimated, with adjustments '
                               'to permit each appointment type that should be run at facility level to do so in every '
                               'district.'),
+        'use_funded_or_actual_staffing': Parameter(
+            Types.STRING, "If `actual`, then use the numbers and distribution of staff estimated to be available"
+                          " currently; If `funded`, then use the numbers and distribution of staff that are "
+                          "potentially available. If 'funded_plus`, then use a dataset in which the allocation of "
+                          "staff to facilities is tweaked so as to allow each appointment type to run at each "
+                          "facility_level in each district for which it is defined. N.B. This parameter is "
+                          "over-ridden if an argument is provided to the module initialiser.",
+            # N.B. This could have been of type `Types.CATEGORICAL` but this made over-writing through `Scenario`
+            # difficult, due to the requirement that the over-writing value and original value are of the same type
+            # (enforced at line 376 of scenario.py).
+        ),
 
         # Consumables
         'item_and_package_code_lookups': Parameter(
@@ -439,7 +450,16 @@ class HealthSystem(Module):
         # Service Availability
         'Service_Availability': Parameter(
             Types.LIST, 'List of services to be available. NB. This parameter is over-ridden if an argument is provided'
-                        ' to the module initialiser.')
+                        ' to the module initialiser. '),
+
+        # Mode Appt Constraints
+        'mode_appt_constraints': Parameter(
+            Types.INT, 'Integer code in `{0, 1, 2}` determining mode of constraints with regards to officer numbers '
+                       'and time - 0: no constraints, all HSI events run with no squeeze factor, 1: elastic constraints'
+                       ', all HSI events run with squeeze factor, 2: hard constraints, only HSI events with no squeeze '
+                       'factor run. N.B. This parameter is over-ridden if an argument is provided'
+                       ' to the module initialiser.',
+        )
     }
 
     PROPERTIES = {
@@ -453,12 +473,12 @@ class HealthSystem(Module):
         name: Optional[str] = None,
         resourcefilepath: Optional[Path] = None,
         service_availability: Optional[List[str]] = None,
-        mode_appt_constraints: int = 0,
+        mode_appt_constraints: Optional[int] = None,
         cons_availability: Optional[str] = None,
         beds_availability: Optional[str] = None,
         ignore_priority: bool = False,
         capabilities_coefficient: Optional[float] = None,
-        use_funded_or_actual_staffing: Optional[str] = 'funded_plus',
+        use_funded_or_actual_staffing: Optional[str] = None,
         disable: bool = False,
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
@@ -484,8 +504,9 @@ class HealthSystem(Module):
             officers, if ``None`` set to ratio of initial population to estimated 2010
             population.
         :param use_funded_or_actual_staffing: If `actual`, then use the numbers and distribution of staff estimated to
-        be available currently; If `funded`, then use the numbers and distribution of staff that are potentially
-        available.
+            be available currently; If `funded`, then use the numbers and distribution of staff that are potentially
+            available. If 'funded_plus`, then use a dataset in which the allocation of staff to facilities is tweaked
+            so as to allow each appointment type to run at each facility_level in each district for which it is defined.
         :param disable: If ``True``, disables the health system (no constraints and no
             logging) and every HSI event runs.
         :param disable_and_reject_all: If ``True``, disable health system and no HSI
@@ -511,9 +532,10 @@ class HealthSystem(Module):
         self.disable = disable
         self.disable_and_reject_all = disable_and_reject_all
 
-        assert mode_appt_constraints in {0, 1, 2}
-
-        self.mode_appt_constraints = mode_appt_constraints
+        self.mode_appt_constraints = None  # Will be the final determination of the `mode_appt_constraints'
+        if mode_appt_constraints is not None:
+            assert mode_appt_constraints in {0, 1, 2}
+        self.arg_mode_appt_constraints = mode_appt_constraints
 
         self.ignore_priority = ignore_priority
 
@@ -527,9 +549,10 @@ class HealthSystem(Module):
             assert isinstance(capabilities_coefficient, float)
         self.capabilities_coefficient = capabilities_coefficient
 
-        # Find which resourcefile to use - those for the actual staff available or the funded staff available
-        assert use_funded_or_actual_staffing in ['actual', 'funded', 'funded_plus']
-        self.use_funded_or_actual_staffing = use_funded_or_actual_staffing
+        # Find which set of assumptions to use - those for the actual staff available or the funded staff available
+        if use_funded_or_actual_staffing is not None:
+            assert use_funded_or_actual_staffing in ['actual', 'funded', 'funded_plus']
+        self.arg_use_funded_or_actual_staffing = use_funded_or_actual_staffing
 
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
         self.recognised_modules_names = []
@@ -588,7 +611,7 @@ class HealthSystem(Module):
 
         path_to_resourcefiles_for_healthsystem = Path(self.resourcefilepath) / 'healthsystem'
 
-        # Read parmaters for overall performance of the HealthSystem
+        # Read parameters for overall performance of the HealthSystem
         self.load_parameters_from_dataframe(pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'ResourceFile_HealthSystem_parameters.csv'
         ))
@@ -630,10 +653,15 @@ class HealthSystem(Module):
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
 
+        # Determine mode_appt_constraints
+        self.mode_appt_constraints = self.get_mode_appt_constraints()
+
         # Determine service_availability
         self.service_availability = self.get_service_availability()
 
-        self.process_human_resources_files()
+        self.process_human_resources_files(
+            use_funded_or_actual_staffing=self.get_use_funded_or_actual_staffing()
+        )
 
         # Initialise the BedDays class
         self.bed_days = BedDays(hs_module=self,
@@ -703,7 +731,7 @@ class HealthSystem(Module):
                 }
             )
 
-    def process_human_resources_files(self):
+    def process_human_resources_files(self, use_funded_or_actual_staffing: str):
         """Create the data-structures needed from the information read into the parameters."""
 
         # * Define Facility Levels
@@ -798,14 +826,14 @@ class HealthSystem(Module):
         self._facilities_for_each_district = facilities_per_level_and_district
 
         # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
-        self._daily_capabilities = self.format_daily_capabilities()
+        self._daily_capabilities = self.format_daily_capabilities(use_funded_or_actual_staffing)
 
         # Also, store the set of officers with non-zero daily availability
         # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
         # never available.)
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
 
-    def format_daily_capabilities(self) -> pd.Series:
+    def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> pd.Series:
         """
         This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to include
         every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity
@@ -817,7 +845,7 @@ class HealthSystem(Module):
         """
 
         # Get the capabilities data imported (according to the specified underlying assumptions).
-        capabilities = self.parameters[f'Daily_Capabilities_{self.use_funded_or_actual_staffing}']
+        capabilities = self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
         capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
 
         # Create dataframe containing background information about facility and officer types
@@ -889,7 +917,7 @@ class HealthSystem(Module):
         return service_availability
 
     def get_cons_availability(self) -> str:
-        """Set consumables availability. (Should be equal to what is specified by the parameter, but overwrite with
+        """Returns consumables availability. (Should be equal to what is specified by the parameter, but overwrite with
         what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
 
         if self.arg_cons_availability is None:
@@ -906,7 +934,7 @@ class HealthSystem(Module):
         return _cons_availability
 
     def get_beds_availability(self) -> str:
-        """Set beds availability. (Should be equal to what is specified by the parameter, but overwrite with
+        """Returns beds availability. (Should be equal to what is specified by the parameter, but overwrite with
         what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
 
         if self.arg_beds_availability is None:
@@ -926,6 +954,21 @@ class HealthSystem(Module):
                     )
 
         return _beds_availability
+
+    def get_mode_appt_constraints(self) -> int:
+        """Returns `mode_appt_constraints`. (Should be equal to what is specified by the parameter, but overwrite with
+        what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
+        return self.parameters['mode_appt_constraints'] \
+            if self.arg_mode_appt_constraints is None \
+            else self.arg_mode_appt_constraints
+
+    def get_use_funded_or_actual_staffing(self) -> str:
+        """Returns `use_funded_or_actual_staffing`. (Should be equal to what is specified by the parameter, but
+        overwrite with what was provided in argument if an argument was specified -- provided for backward
+        compatibility/debugging.)"""
+        return self.parameters['use_funded_or_actual_staffing'] \
+            if self.arg_use_funded_or_actual_staffing is None \
+            else self.arg_use_funded_or_actual_staffing
 
     def schedule_hsi_event(
         self,
