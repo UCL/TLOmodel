@@ -493,7 +493,7 @@ class HealthSystem(Module):
         priority_rank_dict: dict = None,
         include_fasttrack_routes: bool = False,
         list_fasttrack: Optional[List[str]] = None,
-        lowest_priority_considered: int = 10,
+        lowest_priority_considered: int = 2,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = None,
         disable: bool = False,
@@ -1134,8 +1134,8 @@ class HealthSystem(Module):
         self.hsi_event_queue_counter += 1
 
         if self.randomise_queue:
-            rand_queue = self.rng.randint(0, 1000000)  # Might be best to use float here, and if rand_queue is off 
-                                                       # just assign it a fixed value (?)
+            # Might be best to use float here, and if rand_queue is off just assign it a fixed value (?)
+            rand_queue = self.rng.randint(0, 1000000)
         else:
             rand_queue = self.hsi_event_queue_counter
 
@@ -1925,8 +1925,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                 if next_event_tuple.priority == self.module.lowest_priority_considered:
                     # Check the priority
-                    # If the next event is not due and has low priority, then stop looking through the heapq
-                    # as all other events will also not be due.
+                    # If the next event is not due and has lowest allowed priority, then stop looking
+                    # through the heapq as all other events will also not be due.
                     break
 
             else:
