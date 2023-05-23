@@ -1106,10 +1106,10 @@ def get_parameters_for_status_quo() -> Dict:
     e.g. {
             'Depression': {
                 'pr_assessed_for_depression_for_perinatal_female': 1.0,
-                'pr_assessed_for_depression_in_generic_appt_level1': 1.0
+                'pr_assessed_for_depression_in_generic_appt_level1': 1.0,
                 },
             'Hiv': {
-                'prob_start_art_or_vs': <<the dataframe named in the corresponding cell in the ResourceFile>>
+                'prob_start_art_or_vs': 1.0,
                 }
          }
     """
