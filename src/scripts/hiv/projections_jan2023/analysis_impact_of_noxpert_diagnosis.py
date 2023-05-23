@@ -1,6 +1,6 @@
 """Analyse the results of scenario to test impact of Noxpert diagnosis."""
 
-# python src\scripts\hiv\projections_jan2023\analysis_impact_of_noxpert_diagnosis.py --scenario-outputs-folder outputs\nic503@york.ac.uk
+# python src\scripts\hiv\projections_jan2023\analysis_impact_of_noXpert_diagnosis.py --scenario-outputs-folder outputs\nic503@york.ac.uk
 import argparse
 import datetime
 from pathlib import Path
