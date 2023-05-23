@@ -195,6 +195,7 @@ def test_run_in_mode_0_with_capacity(tmpdir, seed):
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
+                                           adopt_priority_policy=False,
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=0),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -247,6 +248,7 @@ def test_run_in_mode_0_no_capacity(tmpdir, seed):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=0.0,
+                                           adopt_priority_policy=False,
                                            mode_appt_constraints=0),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -300,6 +302,7 @@ def test_run_in_mode_1_with_capacity(tmpdir, seed):
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
+                                           adopt_priority_policy=False,
                                            mode_appt_constraints=1),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -516,6 +519,7 @@ def test_run_in_with_hs_disabled(tmpdir, seed):
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
                                            mode_appt_constraints=2,
+                                           adopt_priority_policy=False,
                                            disable=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -571,6 +575,7 @@ def test_run_in_mode_2_with_capacity_with_health_seeking_behaviour(tmpdir, seed)
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
                                            capabilities_coefficient=1.0,
+                                           adopt_priority_policy=False,
                                            mode_appt_constraints=2),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -749,6 +754,7 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  adopt_priority_policy=False,
                                   mode_appt_constraints=1,
                                   capabilities_coefficient=1e-10,  # <--- to give non-trivial squeeze-factors
                                   ),
@@ -1348,6 +1354,7 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
+                     adopt_priority_policy=False,
                      cons_availability='all',
                  ),
                  DummyModule(),
@@ -1495,10 +1502,9 @@ def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
                      resourcefilepath=resourcefilepath,
                      disable=False,
                      ignore_priority=False,
-                     include_fasttrack_routes=True,
                      adopt_priority_policy=True,
                      randomise_queue=True,
-                     lowest_priority_considered=3,
+                     policy_name="Test",
                      cons_availability='all',
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -1514,7 +1520,7 @@ def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
     sim.simulate(end_date=sim.start_date + pd.DateOffset(days=5))
     sim.modules['HealthSystem'].lowest_priority_considered = 3
     sim.modules['HealthSystem'].include_fasttrack_routes = True
- 
+
     sim.event_queue.queue = []  # clear the queue
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE = []  # clear the queue
     # Overwrite one of the Treatments with HSI_Dummy, and assign it a policy priority
