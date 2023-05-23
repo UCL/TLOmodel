@@ -1167,14 +1167,6 @@ class CareOfWomenDuringPregnancy(Module):
             df.at[individual_id, 'ps_date_of_anc1'] = visit_date
             return False
 
-        # Finally, if the squeeze factor is too high the event wont run and she will return tomorrow
-        if squeeze_factor > params['squeeze_factor_threshold_anc']:
-
-            self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
-                                                                topen=self.sim.date + DateOffset(days=1),
-                                                                tclose=self.sim.date + DateOffset(days=2))
-            return False
-
         return True
 
     def check_subsequent_anc_can_run(self, individual_id, this_contact, this_visit_number, squeeze_factor,
@@ -1214,13 +1206,6 @@ class CareOfWomenDuringPregnancy(Module):
         if df.at[individual_id, 'hs_is_inpatient']:
             self.antenatal_care_scheduler(individual_id, visit_to_be_scheduled=this_visit_number,
                                           recommended_gestation_next_anc=gest_age_next_contact)
-            return False
-
-        # If the squeeze factor is too high she will return tomorrow
-        if squeeze_factor > params['squeeze_factor_threshold_anc']:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(this_contact, priority=0,
-                                                                topen=self.sim.date + DateOffset(days=1),
-                                                                tclose=self.sim.date + DateOffset(days=2))
             return False
 
         return True
@@ -2084,15 +2069,6 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
                 df.at[person_id, 'ps_date_of_anc1'] = visit_date
             else:
                 df.at[person_id, 'ac_date_next_contact'] = visit_date
-
-            # return blank footprint as the appointment did not run as intended.
-            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-
-        # Finally, if the squeeze factor is too high the event wont run and she will return tomorrow
-        elif squeeze_factor > params['squeeze_factor_threshold_anc']:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(self, priority=0,
-                                                                topen=self.sim.date + DateOffset(days=1),
-                                                                tclose=self.sim.date + DateOffset(days=2))
 
             # return blank footprint as the appointment did not run as intended.
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
