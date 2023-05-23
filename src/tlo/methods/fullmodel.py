@@ -41,7 +41,7 @@ from tlo.methods import (
 def fullmodel(
     resourcefilepath: Path,
     use_simplified_births: bool = False,
-    module_kwargs: Optional[Dict[str, Dict]] = None,
+    module_kwargs: Optional[Dict[str, Dict]] = {},
 ) -> List[Module]:
     """Return a list of modules that should be registered in a run of the full model.
 
