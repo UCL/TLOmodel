@@ -1094,3 +1094,58 @@ def get_mappers_in_fullmodel(resourcefilepath: Path, outputpath: Path):
         return pd.Series(key_tuple[0].get(key_tuple[1]).drop(columns={'date'}).loc[0]).to_dict()
 
     return {k[1]: extract_mapper(k) for k in keys}
+
+
+def parameters_for_an_ideal_health_system(
+    resourcefilepath: Path,
+    max_healthsystem_function: Optional[bool] = False,
+    max_healthcare_seeking: Optional[bool] = False,
+) -> Dict:
+    """
+    Returns a dictionary of parameters and their updated values to indicate
+    an ideal healthcare system in terms of maximum health system function, and/or
+    maximum healthcare seeking.
+
+    The return dict is in the form:
+    e.g. {
+            'Depression': {
+                'pr_assessed_for_depression_for_perinatal_female': 1.0,
+                'pr_assessed_for_depression_in_generic_appt_level1': 1.0
+                },
+            'Hiv': {
+                'prob_start_art_or_vs': <<the dataframe named in the corresponding cell in the ResourceFile>>
+                }
+         }
+    """
+
+    def read_value(_value):
+        """Returns the value or a dataframe if the value point to a different sheet in the workbook"""
+        if isinstance(_value, str) and _value.startswith("#"):
+            return pd.read_excel(workbook, sheet_name=_value.lstrip("#").split('!')[0])
+        else:
+            return value
+
+    workbook = pd.ExcelFile(
+        resourcefilepath / 'healthsystem' / 'ResourceFile_Ideal_HealthCare_Provision_And_Seeking.xlsx')
+
+    # Load the ResourceFile for the list of parameters that may change
+    mainsheet = pd.read_excel(workbook, 'main').set_index(['Module', 'Parameter'])
+
+    # Select which columns for parameter changes to extract
+    cols = []
+    if max_healthsystem_function:
+        cols.append('max_healthsystem_function')
+
+    if max_healthcare_seeking:
+        cols.append('max_healthcare_seeking')
+
+    # Collect parameters that will be changed (collecting the first encountered non-NAN value)
+    params_to_change = mainsheet[cols].dropna(axis=0, how='all')\
+                                      .apply(lambda row: [v for v in row if not pd.isnull(v)][0], axis=1)
+
+    # Convert to dictionary
+    params = defaultdict(lambda: defaultdict(dict))
+    for idx, value in params_to_change.items():
+        params[idx[0]][idx[1]] = read_value(value)
+
+    return params

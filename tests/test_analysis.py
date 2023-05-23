@@ -18,7 +18,7 @@ from tlo.analysis.utils import (
     order_of_coarse_appt,
     order_of_short_treatment_ids,
     parse_log_file,
-    unflatten_flattened_multi_index_in_logging,
+    unflatten_flattened_multi_index_in_logging, parameters_for_an_ideal_health_system,
 )
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
@@ -265,3 +265,31 @@ def test_colormap_cause_of_death_label(seed):
     assert all([isinstance(_x, str) for _x in colors])  # All strings
     assert np.nan is get_color_coarse_appt('????')  # Return `np.nan` if label is not recognised.
     assert all(map(lambda x: x in colors_in_matplotlib(), colors))  # All colors recognised
+
+
+def test_switch_parameters():
+    """Check that `parameters_for_an_ideal_healthsystem` works as expected."""
+
+    assert isinstance(
+        parameters_for_an_ideal_health_system(
+            resourcefilepath=Path('./resources'),
+            max_healthsystem_function=True,
+            max_healthcare_seeking=False
+        ),
+        dict)
+
+    assert isinstance(
+        parameters_for_an_ideal_health_system(
+            resourcefilepath=Path('./resources'),
+            max_healthsystem_function=False,
+            max_healthcare_seeking=True
+        ),
+        dict)
+
+    assert isinstance(
+        parameters_for_an_ideal_health_system(
+            resourcefilepath=Path('./resources'),
+            max_healthsystem_function=True,
+            max_healthcare_seeking=True
+        ),
+        dict)
