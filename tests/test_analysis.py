@@ -272,7 +272,7 @@ def test_switch_parameters():
 
     assert isinstance(
         parameters_for_an_ideal_health_system(
-            resourcefilepath=Path('./resources'),
+            resourcefilepath=resourcefilepath,
             max_healthsystem_function=True,
             max_healthcare_seeking=False
         ),
@@ -280,7 +280,7 @@ def test_switch_parameters():
 
     assert isinstance(
         parameters_for_an_ideal_health_system(
-            resourcefilepath=Path('./resources'),
+            resourcefilepath=resourcefilepath,
             max_healthsystem_function=False,
             max_healthcare_seeking=True
         ),
@@ -288,7 +288,7 @@ def test_switch_parameters():
 
     assert isinstance(
         parameters_for_an_ideal_health_system(
-            resourcefilepath=Path('./resources'),
+            resourcefilepath=resourcefilepath,
             max_healthsystem_function=True,
             max_healthcare_seeking=True
         ),
