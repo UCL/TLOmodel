@@ -71,7 +71,6 @@ def fullmodel(
     if module_kwargs is None:
         module_kwargs = {
             "SymptomManager": {"spurious_symptoms": True},
-            "HealthSystem": {"mode_appt_constraints": 1},
         }
     module_classes = [
         # Standard modules
