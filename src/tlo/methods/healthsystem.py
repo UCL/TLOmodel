@@ -28,6 +28,7 @@ from tlo.methods.consumables import (
     get_item_codes_from_package_name,
 )
 from tlo.methods.dxmanager import DxManager
+from pandas.testing import assert_series_equal
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -35,6 +36,46 @@ logger.setLevel(logging.INFO)
 logger_summary = logging.getLogger(f"{__name__}.summary")
 logger_summary.setLevel(logging.INFO)
 
+
+def adjust_level_to_direct_1b_to_2(level: str) -> str:
+    """Adjust the facility level of an HSI_Event so that HSI_Events scheduled at level '1b' and '2' are both directed
+    to level '2'"""
+    return level if level != '1b' else '2'
+
+def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFrame:
+    """Return a modified version of the imported capabilities DataFrame to reflect that the capabilities of level 1b
+    are pooled with those of level 2, and all labelled as level 2."""
+
+    # Find total minutes and staff count after the allocation
+    tots_after_reallocation = df_original \
+        .assign(Facility_Level=lambda df: df.Facility_Level.replace({'1b': '2'})) \
+        .groupby(by=['Facility_Level', 'District', 'Officer_Category'])[['Total_Mins_Per_Day', 'Staff_Count']] \
+        .sum() \
+        .reset_index()
+
+    # Construct a new version of the dataframe that uses the new totals
+    df_updated = df_original \
+        .drop(columns=['Total_Mins_Per_Day', 'Staff_Count'])\
+        .merge(tots_after_reallocation,
+               on=['Facility_Level', 'District', 'Officer_Category'],
+               how='left',
+               ) \
+        .assign(
+            Total_Mins_Per_Day=lambda df: df.Total_Mins_Per_Day.fillna(0.0),
+            Staff_Count=lambda df: df.Staff_Count.fillna(0.0)
+        )
+
+    # Check that the *total* number of minutes per officer in each district is the same as before the change
+    assert_series_equal(
+        df_updated.groupby(by=['District', 'Officer_Category'])['Total_Mins_Per_Day'].sum(),
+        df_original.groupby(by=['District', 'Officer_Category'])['Total_Mins_Per_Day'].sum()
+    )
+
+    # Check size/shape of the updated dataframe is as expected
+    assert df_updated.shape == df_original.shape
+    assert (df_updated.dtypes == df_original.dtypes).all()
+
+    return df_updated
 
 class FacilityInfo(NamedTuple):
     """Information about a specific health facility."""
@@ -845,7 +886,8 @@ class HealthSystem(Module):
         """
 
         # Get the capabilities data imported (according to the specified underlying assumptions).
-        capabilities = self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
+        capabilities = pool_capabilities_at_levels_1b_and_2(
+            self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}'])
         capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
 
         # Create dataframe containing background information about facility and officer types
@@ -1214,7 +1256,7 @@ class HealthSystem(Module):
         """Helper function to find the facility at which an HSI event will take place based on their district of
         residence and the level of the facility of the HSI."""
         the_district = self.sim.population.props.at[hsi_event.target, 'district_of_residence']
-        the_level = hsi_event.ACCEPTED_FACILITY_LEVEL
+        the_level = adjust_level_to_direct_1b_to_2(hsi_event.ACCEPTED_FACILITY_LEVEL)
         return self._facilities_for_each_district[the_level][the_district]
 
     def get_appt_footprint_as_time_request(self, facility_info: FacilityInfo, appt_footprint: dict):
