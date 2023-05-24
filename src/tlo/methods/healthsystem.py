@@ -726,13 +726,32 @@ class HealthSystem(Module):
 
         # Data on the priority of each Treatment_ID that should be adopted in the queueing system.
         # Upload Random by default, over-write at time of pre_initialisation.
-        self.parameters['PriorityRank'] = pd.read_excel(
+
+        dict_df = pd.read_excel(path_to_resourcefiles_for_healthsystem / 'priority_policies' /
+            'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx', 
+                   sheet_name=['Random','Naive'])
+
+        Random_df = dict_df.get('Random')
+        Naive_df = dict_df.get('Naive')
+        print(Random_df)
+        print(Naive_df)
+        lowest_by_policy = Random_df.loc[Random_df['Treatment']=='lowest_priority_considered', 'Priority'].iloc[0]
+        print("Lowest by policy is ", lowest_by_policy)
+        lowest_by_policy = Naive_df.loc[Naive_df['Treatment']=='lowest_priority_considered', 'Priority'].iloc[0]
+        print("Lowest by policy is ", lowest_by_policy)
+        exit(-1)
+
+        self.parameters['PriorityRank'] = pd.concat(pd.read_excel(
             path_to_resourcefiles_for_healthsystem / 'priority_policies' /
-            'ResourceFile_PriorityRanking_Random.xlsx', sheet_name='Policy', skiprows=1)
+            'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx', sheet_name=None), ignore_index=False) #, sheet_name='Policy', skiprows=1)
+
+        pd.set_option('display.max_columns', None)
+        print(self.parameters['PriorityRank'])
+        exit(-1)
 
         self.load_parameters_from_dataframe(
             pd.read_excel(path_to_resourcefiles_for_healthsystem / 'priority_policies' /
-                          'ResourceFile_PriorityRanking_Random.xlsx', sheet_name='Parameter_values')
+                          'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx') #, sheet_name='Parameter_values')
         )
 
         # Check that no duplicates are included in priority input file
