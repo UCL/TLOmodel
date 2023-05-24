@@ -692,7 +692,7 @@ def test_hsi_weight_loss_and_medication(seed):
         # Refill_Medication event scheduled
 
         assert df.at[person_id, f"nc_{condition}_on_medication"]
-        assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4],
+        assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0].hsi_event,
                           HSI_CardioMetabolicDisorders_Refill_Medication)
 
         if condition != 'chronic_kidney_disease':  # those with CKD are not recommended to lose weight
@@ -762,7 +762,7 @@ def test_hsi_emergency_events(seed):
         assert df.at[person_id, f'nc_{event}_date_diagnosis'] == sim.date
         assert df.at[person_id, f'nc_{event}_on_medication']
         assert pd.isnull(df.at[person_id, f'nc_{event}_scheduled_date_death'])
-        assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4],
+        assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0].hsi_event,
                           HSI_CardioMetabolicDisorders_StartWeightLossAndMedication)
         assert f"{event}_damage" not in sim.modules['SymptomManager'].has_what(person_id)
 

@@ -452,7 +452,8 @@ def test_test_and_refer_event_scheduled_by_main_event_poll(seed):
 
     # Check number and dates of TestAndRefer events in the HSI Event Queue
     dates_of_tr_events = [
-        ev[1] for ev in sim.modules['HealthSystem'].HSI_EVENT_QUEUE if isinstance(ev[4], hiv.HSI_Hiv_TestAndRefer)
+        ev.topen for ev in sim.modules['HealthSystem'].HSI_EVENT_QUEUE if isinstance(ev.hsi_event,
+                                                                                     hiv.HSI_Hiv_TestAndRefer)
     ]
 
     df = sim.population.props
