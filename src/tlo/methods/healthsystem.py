@@ -490,7 +490,6 @@ class HealthSystem(Module):
         randomise_queue: bool = False,
         ignore_priority: bool = False,
         adopt_priority_policy: bool = False,
-        priority_rank_dict: dict = None,
         include_fasttrack_routes: bool = False,
         list_fasttrack: Optional[List[str]] = None,
         lowest_priority_considered: int = 2,
@@ -576,6 +575,9 @@ class HealthSystem(Module):
         self.lowest_priority_considered = lowest_priority_considered
 
         self.adopt_priority_policy = adopt_priority_policy
+
+        self.rng_for_hsi_queue = None  # Will be a dedicated RNG for the purpose of randomising the queue
+        self.rng_for_dx = None  # Will be a dedicated RNG for the purpose of determining Dx Test results
 
         self.randomise_queue = randomise_queue
 
@@ -708,6 +710,10 @@ class HealthSystem(Module):
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
+        # Create dedicated RNGs for separate functions done by the HealthSystem module
+        self.rng_for_hsi_queue = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
+        self.rng_for_dx = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
+        rng_for_consumables = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
 
         # Determine mode_appt_constraints
         self.mode_appt_constraints = self.get_mode_appt_constraints()
@@ -726,7 +732,7 @@ class HealthSystem(Module):
 
         # Initialise the Consumables class
         self.consumables = Consumables(data=self.parameters['availability_estimates'],
-                                       rng=self.rng,
+                                       rng=rng_for_consumables,
                                        availability=self.get_cons_availability())
 
         # Convert PriorityRank dataframe to dictionary
@@ -1135,7 +1141,7 @@ class HealthSystem(Module):
 
         if self.randomise_queue:
             # Might be best to use float here, and if rand_queue is off just assign it a fixed value (?)
-            rand_queue = self.rng.randint(0, 1000000)
+            rand_queue = self.rng_for_hsi_queue.randint(0, 1000000)
         else:
             rand_queue = self.hsi_event_queue_counter
 
