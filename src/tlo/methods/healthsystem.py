@@ -313,6 +313,9 @@ class HSI_Event:
         """
         health_system = self.sim.modules['HealthSystem']
 
+        # Over-write ACCEPTED_FACILITY_LEVEL to to redirect all '1b' appointments to '2'
+        self.ACCEPTED_FACILITY_LEVEL = adjust_level_to_direct_1b_to_2(self.ACCEPTED_FACILITY_LEVEL)
+
         if not isinstance(self.target, tlo.population.Population):
             self.facility_info = health_system.get_facility_info(self)
 
@@ -1256,7 +1259,7 @@ class HealthSystem(Module):
         """Helper function to find the facility at which an HSI event will take place based on their district of
         residence and the level of the facility of the HSI."""
         the_district = self.sim.population.props.at[hsi_event.target, 'district_of_residence']
-        the_level = adjust_level_to_direct_1b_to_2(hsi_event.ACCEPTED_FACILITY_LEVEL)
+        the_level = hsi_event.ACCEPTED_FACILITY_LEVEL
         return self._facilities_for_each_district[the_level][the_district]
 
     def get_appt_footprint_as_time_request(self, facility_info: FacilityInfo, appt_footprint: dict):
