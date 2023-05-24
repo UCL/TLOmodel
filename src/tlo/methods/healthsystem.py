@@ -487,7 +487,7 @@ class HealthSystem(Module):
         mode_appt_constraints: Optional[int] = None,
         cons_availability: Optional[str] = None,
         beds_availability: Optional[str] = None,
-        randomise_queue: Optional[bool] = None,
+        randomise_queue: bool = False,
         ignore_priority: bool = False,
         adopt_priority_policy: bool = False,
         priority_rank_dict: dict = None,
