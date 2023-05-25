@@ -552,8 +552,11 @@ class Malaria(Module):
         )
 
         # Log the test: line-list of summary information about each test
+        fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
         person_details_for_test = {
             'person_id': person_id,
+            'age': self.sim.population.props.at[person_id, 'age_years'],
+            'fever_present': fever_present,
             'rdt_result': dx_result,
             'facility_level': hsi_event.ACCEPTED_FACILITY_LEVEL,
             'called_by': hsi_event.TREATMENT_ID
@@ -772,8 +775,11 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         )
 
         # Log the test: line-list of summary information about each test
+        fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
         person_details_for_test = {
             'person_id': person_id,
+            'age': df.at[person_id, 'age_years'],
+            'fever_present': fever_present,
             'rdt_result': dx_result,
             'facility_level': self.ACCEPTED_FACILITY_LEVEL,
             'called_by': self.TREATMENT_ID
@@ -864,8 +870,11 @@ class HSI_Malaria_rdt_community(HSI_Event, IndividualScopeEventMixin):
         )
 
         # Log the test: line-list of summary information about each test
+        fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
         person_details_for_test = {
             'person_id': person_id,
+            'age': df.at[person_id, 'age_years'],
+            'fever_present': fever_present,
             'rdt_result': dx_result,
             'facility_level': self.ACCEPTED_FACILITY_LEVEL,
             'called_by': self.TREATMENT_ID
@@ -920,8 +929,11 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
 
                 # rdt is offered as part of the treatment package
                 # Log the test: line-list of summary information about each test
+                fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
                 person_details_for_test = {
                     'person_id': person_id,
+                    'age': df.at[person_id, 'age_years'],
+                    'fever_present': fever_present,
                     'rdt_result': True,
                     'facility_level': self.ACCEPTED_FACILITY_LEVEL,
                     'called_by': self.TREATMENT_ID
