@@ -551,6 +551,17 @@ class Malaria(Module):
             hsi_event=hsi_event
         )
 
+        # Log the test: line-list of summary information about each test
+        person_details_for_test = {
+            'person_id': person_id,
+            'rdt_result': dx_result,
+            'facility_level': hsi_event.ACCEPTED_FACILITY_LEVEL,
+            'called_by': hsi_event.TREATMENT_ID
+        }
+        logger.info(key='rdt_log', data=person_details_for_test)
+
+        # get facility level from hsi_event
+
         true_malaria_infection_type = self.sim.population.props.at[person_id, 'ma_inf_type']
 
         # severe malaria infection always returns positive RDT
@@ -758,6 +769,15 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
             hsi_event=self
         )
 
+        # Log the test: line-list of summary information about each test
+        person_details_for_test = {
+            'person_id': person_id,
+            'rdt_result': dx_result,
+            'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+            'called_by': self.TREATMENT_ID
+        }
+        logger.info(key='rdt_log', data=person_details_for_test)
+
         if dx_result:
             # ----------------------------------- SEVERE MALARIA -----------------------------------
 
@@ -841,6 +861,15 @@ class HSI_Malaria_rdt_community(HSI_Event, IndividualScopeEventMixin):
             hsi_event=self
         )
 
+        # Log the test: line-list of summary information about each test
+        person_details_for_test = {
+            'person_id': person_id,
+            'rdt_result': dx_result,
+            'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+            'called_by': self.TREATMENT_ID
+        }
+        logger.info(key='rdt_log', data=person_details_for_test)
+
         # if positive, refer for a confirmatory test at level 1a
         if dx_result:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -886,6 +915,16 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
                     df.at[person_id, 'ma_tx'] = True
                     df.at[person_id, 'ma_date_tx'] = self.sim.date
                     df.at[person_id, 'ma_tx_counter'] += 1
+
+                # rdt is offered as part of the treatment package
+                # Log the test: line-list of summary information about each test
+                person_details_for_test = {
+                    'person_id': person_id,
+                    'rdt_result': True,
+                    'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+                    'called_by': self.TREATMENT_ID
+                }
+                logger.info(key='rdt_log', data=person_details_for_test)
 
         # change footprint type if young child
         if person['age_years'] < 5:

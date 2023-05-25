@@ -155,3 +155,20 @@ plt.tight_layout()
 plt.show()
 
 plt.close()
+
+# ------------------------------------- plot rdt delivery -----------------------------------------#
+rdt_facilities = output["tlo.methods.malaria"]["rdt_log"]
+
+# calculate proportion of rdt delivered by facility level
+level0 = rdt_facilities['facility_level'].value_counts()['0'] / len(rdt_facilities)
+level1a = rdt_facilities['facility_level'].value_counts()['1a'] / len(rdt_facilities)
+level1b = rdt_facilities['facility_level'].value_counts()['1b'] / len(rdt_facilities)
+
+colours = ['#B7C3F3', '#DD7596', '#8EB897']
+plt.pie([level0, level1a, level1b], labels=['level 0', 'level 1a', 'level 1b'],
+        wedgeprops={'linewidth': 3, 'edgecolor': 'white'},
+        autopct='%.1f%%',
+        colors=colours)
+plt.title("Distribution of facility levels providing RDTs")
+
+plt.show()
