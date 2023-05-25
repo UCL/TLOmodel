@@ -17,8 +17,9 @@ from tlo.analysis.utils import (
     get_root_path,
     order_of_coarse_appt,
     order_of_short_treatment_ids,
+    parameters_for_an_ideal_health_system,
     parse_log_file,
-    unflatten_flattened_multi_index_in_logging, parameters_for_an_ideal_health_system,
+    unflatten_flattened_multi_index_in_logging,
 )
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
