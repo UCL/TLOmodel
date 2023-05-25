@@ -1452,7 +1452,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         # sets availability of xpert no none
         if scenario ==1:
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {187: 0})
+                {187: 0, 1356: 0,1598: 0})
 
 # ######################################################
 
