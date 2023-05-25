@@ -2147,48 +2147,6 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, Ind
         self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id), self.sim.date)
 
 
-class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment. It is schedule by the PregnancySupervisor Event
-    for women who choose to seek care for emergency treatment in pregnancy (due to severe pre-eclampsia/eclampsia,
-    antepartum haemorrhage, premature rupture of membranes or chorioamnionitis). It is assumed women present to this
-    event as their first point of contact for an emergency in pregnancy, and therefore circumnavigate regular A&E.
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, CareOfWomenDuringPregnancy)
-
-        self.TREATMENT_ID = 'AntenatalCare_Inpatient'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-
-        if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'is_pregnant']:
-            return
-
-        if not df.at[person_id, 'hs_is_inpatient'] and not df.at[person_id, 'la_currently_in_labour']:
-            admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
-                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
-
-            self.sim.modules['HealthSystem'].schedule_hsi_event(admission, priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=1))
-
-    def never_ran(self):
-        self.module.call_if_maternal_emergency_assessment_cant_run(self)
-
-    def did_not_run(self):
-        self.module.call_if_maternal_emergency_assessment_cant_run(self)
-        return False
-
-    def not_available(self):
-        self.module.call_if_maternal_emergency_assessment_cant_run(self)
-
-
 class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
     """
     This is HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare. This HSI can be scheduled by any of the ANC HSIs
