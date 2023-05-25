@@ -738,6 +738,7 @@ class HealthSystem(Module):
                                        rng=rng_for_consumables,
                                        availability=self.get_cons_availability())
 
+        # Convert PriorityRank dataframe to dictionary
         if self.adopt_priority_policy:
             self.priority_rank_dict = \
                 self.parameters['PriorityRank'].set_index("Treatment", drop=True).to_dict(orient="index")
