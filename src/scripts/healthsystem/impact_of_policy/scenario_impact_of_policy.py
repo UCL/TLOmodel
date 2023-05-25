@@ -27,7 +27,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2014, 12, 31)
-        self.pop_size = 100_000
+        self.pop_size = 10
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 1
@@ -56,17 +56,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
-        0. "No Healthcare System"
-
-        1. "Mode 0":
-            Mode 0 & Actual HR funding
-
-        2. "Mode 1":
-            Mode 1 & Actual HR funding
-
-        3. "Mode 2":
-            Mode 2 & Actual HR funding
-
         """
 
         return {
@@ -76,24 +65,62 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 },
             },
 
-            "Mode 0": {
+            "Unlimited Resources": {
                 'HealthSystem': {
                     'mode_appt_constraints': 0,
                     "use_funded_or_actual_staffing": "actual",
-                },
-            },
+                 },
+             },
 
-            "Mode 1": {
+            "Unlimited Efficiency": {
                 'HealthSystem': {
                     'mode_appt_constraints': 1,
                     "use_funded_or_actual_staffing": "actual",
-                },
-            },
+                 },
+             },
 
-            "Mode 2": {
+            "Random Priority Policy": {
                 'HealthSystem': {
                     'mode_appt_constraints': 2,
                     "use_funded_or_actual_staffing": "actual",
+                    "adopt_priority_policy": 1,
+                    "Policy_Name": "Random"
+                 },
+             },
+
+            "Naive Priority Policy": {
+                'HealthSystem': {
+                    'mode_appt_constraints': 2,
+                    "use_funded_or_actual_staffing": "actual",
+                    "adopt_priority_policy": 1,
+                    "Policy_Name": "Naive"
+                 },
+             },
+
+            "RMNCH Priority Policy": {
+                'HealthSystem': {
+                    'mode_appt_constraints': 2,
+                    "use_funded_or_actual_staffing": "actual",
+                    "adopt_priority_policy": 1,
+                    "Policy_Name": "RMNCH"
+                 },
+             },
+
+            "Cinically Vulnerable Priority Policy": {
+                'HealthSystem': {
+                    'mode_appt_constraints': 2,
+                    "use_funded_or_actual_staffing": "actual",
+                    "adopt_priority_policy": 1,
+                    "Policy_Name": "ClinicallyVulnerable"
+                 },
+             },
+
+            "Vertical Programmes Priority Policy": {
+                'HealthSystem': {
+                    'mode_appt_constraints': 2,
+                    "use_funded_or_actual_staffing": "actual",
+                    "adopt_priority_policy": 1,
+                    "Policy_Name": "VerticalProgrammes"
                  },
              },
         }

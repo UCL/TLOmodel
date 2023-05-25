@@ -1,4 +1,4 @@
-"""
+""
 # Remaining to do:
 # - streamline input arguments
 # - let the level of the appointment be in the log
@@ -320,16 +320,29 @@ class HSI_Event:
             getattr(self, 'EXPECTED_APPT_FOOTPRINT', {})
             if actual_appt_footprint is None else actual_appt_footprint
         )
-        return HSIEventDetails(
-            event_name=type(self).__name__,
-            module_name=type(self.module).__name__,
-            treatment_id=self.TREATMENT_ID,
-            facility_level=getattr(self, 'ACCEPTED_FACILITY_LEVEL', None),
-            appt_footprint=tuple(sorted(appt_footprint.items())),
-            beddays_footprint=tuple(
-                sorted((k, v) for k, v in self.BEDDAYS_FOOTPRINT.items() if v > 0)
-            )
-        )
+        if appt_footprint is None:
+            logger.warning(
+                key="message",
+                data=(f"The expected footprint of {self.TREATMENT_ID} is None when logging.")
+                )
+        #    return HSIEventDetails(
+        #        event_name=type(self).__name__,
+        #        module_name=type(self.module).__name__,
+        #        treatment_id=self.TREATMENT_ID,
+        #        facility_level=getattr(self, 'ACCEPTED_FACILITY_LEVEL', None),
+        #        )
+
+        else:
+            return HSIEventDetails(
+                event_name=type(self).__name__,
+                module_name=type(self.module).__name__,
+                treatment_id=self.TREATMENT_ID,
+                facility_level=getattr(self, 'ACCEPTED_FACILITY_LEVEL', None),
+                appt_footprint=tuple(sorted(appt_footprint.items())),
+                beddays_footprint=tuple(
+                    sorted((k, v) for k, v in self.BEDDAYS_FOOTPRINT.items() if v > 0)
+                )
+                )
 
 
 class HSIEventWrapper(Event):
@@ -1597,27 +1610,46 @@ class HealthSystem(Module):
         :param squeeze_factor: The squeeze factor (if individual event)
         """
 
-        if isinstance(hsi_event.target, tlo.population.Population):
-            # Population HSI-Event (N.B. This is not actually logged.)
-            log_info = dict()
-            log_info['TREATMENT_ID'] = hsi_event.TREATMENT_ID
-            log_info['Number_By_Appt_Type_Code'] = 'Population'  # remove the appt-types with zeros
-            log_info['Person_ID'] = -1  # Junk code
-            log_info['Squeeze_Factor'] = 0
-            log_info['did_run'] = did_run
-            log_info['priority'] = priority
+        try:
+            if isinstance(hsi_event.target, tlo.population.Population):
+                # Population HSI-Event (N.B. This is not actually logged.)
+                log_info = dict()
+                log_info['TREATMENT_ID'] = hsi_event.TREATMENT_ID
+                log_info['Number_By_Appt_Type_Code'] = 'Population'  # remove the appt-types with zeros
+                log_info['Person_ID'] = -1  # Junk code
+                log_info['Squeeze_Factor'] = 0
+                log_info['did_run'] = did_run
+                log_info['priority'] = priority
 
-        else:
-            # Individual HSI-Event
-            _squeeze_factor = squeeze_factor if squeeze_factor != np.inf else 100.0
-            self.write_to_hsi_log(
-                event_details=hsi_event.as_namedtuple(actual_appt_footprint),
-                person_id=hsi_event.target,
-                facility_id=hsi_event.facility_info.id,
-                squeeze_factor=_squeeze_factor,
-                did_run=did_run,
-                priority=priority,
-            )
+            else:
+                # Individual HSI-Event
+                _squeeze_factor = squeeze_factor if squeeze_factor != np.inf else 100.0
+                self.write_to_hsi_log(
+                    event_details=hsi_event.as_namedtuple(actual_appt_footprint),
+                    person_id=hsi_event.target,
+                    facility_id=hsi_event.facility_info.id,
+                    squeeze_factor=_squeeze_factor,
+                    did_run=did_run,
+                    priority=priority,
+                )
+        except Exception:
+            warnings.warn(UserWarning("Recording of event would have led to error."))
+            try:
+                event_details = hsi_event.as_namedtuple(actual_appt_footprint)
+                try:
+                    warnings.warn(UserWarning(f"Treatment_ID is {event_details.TREATMENT_ID}"))
+                except Exception:
+                    warnings.warn(UserWarning("I couldn't recover Treatment ID"))
+                try:
+                    warnings.warn(UserWarning(f"Event name is {event_details.event_name}"))
+                except Exception:
+                    warnings.warn(UserWarning("I couldn't recover event name"))
+                try:
+                    warnings.warn(UserWarning(f"Event did run or not is: {did_run}"))
+                except Exception:
+                    warnings.warn(UserWarning("I couldn't recover whether it ran or not"))
+            except Exception:
+                warnings.warn(UserWarning("I couldn't recover event details"))
 
     def write_to_hsi_log(
         self,
@@ -1865,6 +1897,11 @@ class HealthSystem(Module):
                     # run last event of the day. This seems more realistic than medical staff leaving earlier than
                     # planned if seeing another patient would take them into overtime.
 
+                    if self.appt_footprint_is_valid(event.EXPECTED_APPT_FOOTPRINT) is False:
+                        warnings.warn(UserWarning(f"Would have ran with improper EXPECTED_APPT_FOOT for TREAT_ID /n"
+                                      f"{event.TREATMENT_ID}"))
+                        out_of_resources = True
+
                     if out_of_resources:
                         # Do not run,
                         # Call did_not_run for the hsi_event
@@ -1876,16 +1913,28 @@ class HealthSystem(Module):
 
                         if not (rtn_from_did_not_run is False):
                             # reschedule event
-                            hp.heappush(_to_be_held_over, _list_of_individual_hsi_event_tuples[ev_num])
 
-                        # Log that the event did not run
-                        self.record_hsi_event(
-                            hsi_event=event,
-                            actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
-                            squeeze_factor=squeeze_factor,
-                            did_run=False,
-                            priority=_priority
-                        )
+                            # Correct formatted EXPECTED_APPT_FOOTPRINT
+                            if isinstance(event.target, tlo.population.Population) is False and \
+                               self.appt_footprint_is_valid(event.EXPECTED_APPT_FOOTPRINT):
+
+                                # Add the event to the queue:
+                                hp.heappush(_to_be_held_over, _list_of_individual_hsi_event_tuples[ev_num])
+
+                            else:
+                                warnings.warn(UserWarning(f"Attempted hold over with improper EXPECTED_APPT_FOOT for /n"
+                                              f"{event.TREATMENT_ID}"))
+
+                        if isinstance(event.target, tlo.population.Population) is False and \
+                           self.appt_footprint_is_valid(event.EXPECTED_APPT_FOOTPRINT):
+                            # Log that the event did not run
+                            self.record_hsi_event(
+                                hsi_event=event,
+                                actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
+                                squeeze_factor=squeeze_factor,
+                                did_run=False,
+                                priority=_priority
+                            )
 
                     # Have enough capabilities left to run event
                     else:
