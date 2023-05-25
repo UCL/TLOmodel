@@ -31,6 +31,8 @@ results0 = get_scenario_outputs("scenario0.py", outputspath)[-1]
 results1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
 results2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
 
+log = load_pickled_dataframes(results0)
+
 # colour scheme
 berry = lacroix.colorList('CranRaspberry')  # ['#F2B9B8', '#DF7878', '#E40035', '#009A90', '#0054A4', '#001563']
 baseline_colour = berry[5]  # '#001563'

@@ -4,6 +4,7 @@
 
 """
 
+import os
 import datetime
 from pathlib import Path
 
@@ -220,63 +221,200 @@ total_dalys_diff = [sc1_sc0_median['Column_Total'],
                     sc2_sc0_median['Column_Total']]
 
 # -------------------------- plots ---------------------------- #
-plt.style.use('ggplot')
-
-aids_colour = "#8949ab"
-tb_colour = "#ed7e7a"
-total_colour = "#eede77"
-
-years = list((range(2010, 2036, 1)))
-years_num = pd.Series(years)
-
-fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2,
-                               figsize=(14, 6))
-# constrained_layout=True)
-fig.suptitle('')
-
-# HCW time
-# labels = ['Baseline', 'Constrained scale-up', 'Unconstrained scale-up']
+# plt.style.use('ggplot')
+#
+# aids_colour = "#8949ab"
+# tb_colour = "#ed7e7a"
+# total_colour = "#eede77"
+#
+# years = list((range(2010, 2036, 1)))
+# years_num = pd.Series(years)
+#
+# fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2,
+#                                figsize=(14, 6))
+# # constrained_layout=True)
+# fig.suptitle('')
+#
+# # HCW time
+# # labels = ['Baseline', 'Constrained scale-up', 'Unconstrained scale-up']
+# # x = np.arange(len(labels))  # the label locations
+# width = 0.2  # the width of the bars
+#
+# ax1.bar(years_num[13:26], hcw1["median"].loc[13:25], width, color=sc1_colour)
+# ax1.bar(years_num[13:26] + width, hcw2["median"].loc[13:25], width, color=sc2_colour)
+#
+# ax1.set_ylabel("% difference HCW time", rotation=90, labelpad=15)
+# # ax1.set_ylim([-0.5, 1.5])
+#
+# ax1.yaxis.set_label_position("left")
+# ax1.legend(["Constrained scale-up", "Unconstrained scale-up"], frameon=False)
+#
+# # DALYs
+# labels = ['Constrained scale-up', 'Unconstrained scale-up']
 # x = np.arange(len(labels))  # the label locations
-width = 0.2  # the width of the bars
+# width = 0.2  # the width of the bars
+#
+# rects1 = ax2.bar(x - width, aids_dalys_diff, width, label='AIDS', color=aids_colour)
+# rects2 = ax2.bar(x, tb_dalys_diff, width, label='TB', color=tb_colour)
+# rects3 = ax2.bar(x + width, total_dalys_diff, width, label='Total', color=total_colour)
+#
+# # Add some text for labels, title and custom x-axis tick labels, etc.
+# ax2.set_ylabel('DALYs')
+# ax2.set_title('')
+# ax2.set_xticks(x)
+# ax2.set_xticklabels(labels)
+# ax2.legend(["AIDS", "TB", "Total"], frameon=False)
+#
+# font = {'family': 'sans-serif',
+#         'color': 'black',
+#         'weight': 'bold',
+#         'size': 11,
+#         }
+#
+# ax1.text(-0.15, 1.05, 'A)', horizontalalignment='center',
+#          verticalalignment='center', transform=ax1.transAxes, fontdict=font)
+#
+# ax2.text(-0.1, 1.05, 'B)', horizontalalignment='center',
+#          verticalalignment='center', transform=ax2.transAxes, fontdict=font)
+#
+# fig.tight_layout()
+# fig.savefig(outputspath / "HCW_DALYS.png")
+#
+# plt.show()
 
-ax1.bar(years_num[13:26], hcw1["median"].loc[13:25], width, color=sc1_colour)
-ax1.bar(years_num[13:26] + width, hcw2["median"].loc[13:25], width, color=sc2_colour)
 
-ax1.set_ylabel("% difference HCW time", rotation=90, labelpad=15)
-# ax1.set_ylim([-0.5, 1.5])
+# -------------------------- HCW by cadre -----------------------------------------------
+# PMTCT services embedded within ANC care
 
-ax1.yaxis.set_label_position("left")
-ax1.legend(["Constrained scale-up", "Unconstrained scale-up"], frameon=False)
+years_of_simulation = 26
 
-# DALYs
-labels = ['Constrained scale-up', 'Unconstrained scale-up']
-x = np.arange(len(labels))  # the label locations
-width = 0.2  # the width of the bars
 
-rects1 = ax2.bar(x - width, aids_dalys_diff, width, label='AIDS', color=aids_colour)
-rects2 = ax2.bar(x, tb_dalys_diff, width, label='TB', color=tb_colour)
-rects3 = ax2.bar(x + width, total_dalys_diff, width, label='Total', color=total_colour)
+def summarise_treatment_counts(df_list, treatment_id):
+    """ summarise the treatment counts across all draws/runs for one results folder
+        requires a list of dataframes with all treatments listed with associated counts
+    """
+    number_runs = len(df_list)
+    number_HSI_by_run = pd.DataFrame(index=np.arange(years_of_simulation), columns=np.arange(number_runs))
+    column_names = [
+        treatment_id + "_median",
+        treatment_id + "_lower",
+        treatment_id + "_upper"]
+    out = pd.DataFrame(columns=column_names)
 
-# Add some text for labels, title and custom x-axis tick labels, etc.
-ax2.set_ylabel('DALYs')
-ax2.set_title('')
-ax2.set_xticks(x)
-ax2.set_xticklabels(labels)
-ax2.legend(["AIDS", "TB", "Total"], frameon=False)
+    for i in range(number_runs):
+        if treatment_id in df_list[i].columns:
+            number_HSI_by_run.iloc[:, i] = pd.Series(df_list[i].loc[:, treatment_id])
 
-font = {'family': 'sans-serif',
-        'color': 'black',
-        'weight': 'bold',
-        'size': 11,
-        }
+    out.iloc[:, 0] = number_HSI_by_run.median(axis=1)
+    out.iloc[:, 1] = number_HSI_by_run.quantile(q=0.025, axis=1)
+    out.iloc[:, 2] = number_HSI_by_run.quantile(q=0.975, axis=1)
 
-ax1.text(-0.15, 1.05, 'A)', horizontalalignment='center',
-         verticalalignment='center', transform=ax1.transAxes, fontdict=font)
+    return out
 
-ax2.text(-0.1, 1.05, 'B)', horizontalalignment='center',
-         verticalalignment='center', transform=ax2.transAxes, fontdict=font)
 
-fig.tight_layout()
-fig.savefig(outputspath / "HCW_DALYS.png")
+def treatment_counts(results_folder, module, key, column):
+    info = get_scenario_info(results_folder)
 
-plt.show()
+    df_list = list()
+    for draw in range(info['number_of_draws']):
+        for run in range(info['runs_per_draw']):
+
+            # check if anything contained in folder (some runs failed)
+            folder = results_folder / str(draw) / str(run)
+            p: os.DirEntry
+            pickles = [p for p in os.scandir(folder) if p.name.endswith('.pickle')]
+            if pickles:
+                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+
+                new = df[['date', column]].copy()
+                df_list.append(pd.DataFrame(new[column].to_list()))
+
+    # for column in each df, get median
+    # list of treatment IDs
+    list_tx_id = list(df_list[0].columns)
+    results = pd.DataFrame(index=np.arange(years_of_simulation))
+
+    for treatment_id in list_tx_id:
+        tmp = summarise_treatment_counts(df_list, treatment_id)
+
+        # append output to dataframe
+        results = results.join(tmp)
+
+    return results
+
+
+def treatment_counts_full(results_folder, module, key, column, treatment_id):
+    info = get_scenario_info(results_folder)
+
+    df_list = list()
+    for draw in range(info['number_of_draws']):
+        for run in range(info['runs_per_draw']):
+
+            # check if anything contained in folder (some runs failed)
+            folder = results_folder / str(draw) / str(run)
+            p: os.DirEntry
+            pickles = [p for p in os.scandir(folder) if p.name.endswith('.pickle')]
+            if pickles:
+                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+
+                new = df[['date', column]].copy()
+                df_list.append(pd.DataFrame(new[column].to_list()))
+
+    # join all treatment_id outputs from every draw/run
+    results = pd.DataFrame(index=np.arange(years_of_simulation))
+    for i in range(len(df_list)):
+        tmp = df_list[i][treatment_id]
+        # append output to dataframe
+        results.loc[:, i] = tmp
+
+    return results
+
+
+tx_id0 = treatment_counts(results_folder=results0,
+                          module="tlo.methods.healthsystem.summary",
+                          key="HSI_Event",
+                          column="TREATMENT_ID")
+
+tx_id1 = treatment_counts(results_folder=results1,
+                          module="tlo.methods.healthsystem.summary",
+                          key="HSI_Event",
+                          column="TREATMENT_ID")
+
+tx_id2 = treatment_counts(results_folder=results2,
+                          module="tlo.methods.healthsystem.summary",
+                          key="HSI_Event",
+                          column="TREATMENT_ID")
+
+# extract numbers of hiv and tb appts scaled to full population size
+# compare scenario 1 and 2
+scaling_factor = 145.39609
+
+# produce lists of relevant columns
+tb_appts = [col for col in tx_id1 if col.startswith('Tb')]
+hiv_appts = [col for col in tx_id1 if col.startswith('Hiv')]
+all_appts = tb_appts + hiv_appts
+
+data0 = tx_id0[tx_id0.columns.intersection(all_appts)]
+data1 = tx_id1[tx_id1.columns.intersection(all_appts)]
+data2 = tx_id2[tx_id2.columns.intersection(all_appts)]
+
+# row 13 is 2023
+# sum all appts from 2023 for each scenario
+tmp0 = data0.iloc[13:26]
+tmp1 = data1.iloc[13:26]
+tmp2 = data2.iloc[13:26]
+
+# total number of hiv/tb appts 2023-2035 - sum only the "_median" columns
+median_appts = [col for col in tx_id1 if col.endswith('_median')]
+data0_median = tmp1[tmp1.columns.intersection(median_appts)]
+data1_median = tmp1[tmp1.columns.intersection(median_appts)]
+data2_median = tmp2[tmp2.columns.intersection(median_appts)]
+
+
+# map appts to footprint
+
+# scale to full population
+
+# extract minutes of clinical, nursing and pharmacy time
+
+
