@@ -1518,8 +1518,6 @@ def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
                  )
     sim.make_initial_population(n=100)
     sim.simulate(end_date=sim.start_date + pd.DateOffset(days=5))
-    sim.modules['HealthSystem'].lowest_priority_considered = 3
-    sim.modules['HealthSystem'].include_fasttrack_routes = True
 
     sim.event_queue.queue = []  # clear the queue
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE = []  # clear the queue
