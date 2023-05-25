@@ -818,8 +818,6 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                 )
 
         elif dx_result is None:
-            # Test was not possible, set blank footprint and schedule another test
-            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
 
             # repeat appt for rdt and move to level 1b regardless of current facility level
             self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -828,8 +826,10 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                 tclose=None,
                 priority=0,
             )
+            # Test was not possible, set blank footprint and schedule another test
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
 
-        return ACTUAL_APPT_FOOTPRINT
+            return ACTUAL_APPT_FOOTPRINT
 
 
 class HSI_Malaria_rdt_community(HSI_Event, IndividualScopeEventMixin):
@@ -1018,6 +1018,19 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
                 df.at[person_id, 'ma_tx'] = True
                 df.at[person_id, 'ma_date_tx'] = self.sim.date
                 df.at[person_id, 'ma_tx_counter'] += 1
+
+                # rdt is offered as part of the treatment package
+                # Log the test: line-list of summary information about each test
+                fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
+                person_details_for_test = {
+                    'person_id': person_id,
+                    'age': df.at[person_id, 'age_years'],
+                    'fever_present': fever_present,
+                    'rdt_result': True,
+                    'facility_level': self.ACCEPTED_FACILITY_LEVEL,
+                    'called_by': self.TREATMENT_ID
+                }
+                logger.info(key='rdt_log', data=person_details_for_test)
 
     def did_not_run(self):
         logger.debug(key='message',

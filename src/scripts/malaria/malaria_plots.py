@@ -159,16 +159,42 @@ plt.close()
 # ------------------------------------- plot rdt delivery -----------------------------------------#
 rdt_facilities = output["tlo.methods.malaria"]["rdt_log"]
 
-# calculate proportion of rdt delivered by facility level
-level0 = rdt_facilities['facility_level'].value_counts()['0'] / len(rdt_facilities)
-level1a = rdt_facilities['facility_level'].value_counts()['1a'] / len(rdt_facilities)
-level1b = rdt_facilities['facility_level'].value_counts()['1b'] / len(rdt_facilities)
+# limit to first tests only?
+rdt_all = rdt_facilities
+# rdt_all = rdt_facilities.loc[~(rdt_facilities.called_by == 'Malaria_Treatment')]
+
+# limit to children <5 yrs with fever
+rdt_child = rdt_facilities.loc[(rdt_facilities.age <= 5) & rdt_facilities.fever_present]
+# remove tests given for confirmation with treatment
+# rdt_child = rdt_child.loc[~(rdt_child.called_by == 'Malaria_Treatment')]
+
 
 colours = ['#B7C3F3', '#DD7596', '#8EB897']
+
+plt.rcParams["axes.titlesize"] = 9
+
+ax = plt.subplot(121)  # numrows, numcols, fignum
+# calculate proportion of rdt delivered by facility level
+level0 = rdt_all['facility_level'].value_counts()['0'] / len(rdt_all)
+level1a = rdt_all['facility_level'].value_counts()['1a'] / len(rdt_all)
+level1b = rdt_all['facility_level'].value_counts()['1b'] / len(rdt_all)
+
 plt.pie([level0, level1a, level1b], labels=['level 0', 'level 1a', 'level 1b'],
         wedgeprops={'linewidth': 3, 'edgecolor': 'white'},
         autopct='%.1f%%',
         colors=colours)
-plt.title("Distribution of facility levels providing RDTs")
+plt.title("Facility level giving any rdt \n all ages")
+
+ax2 = plt.subplot(122)  # numrows, numcols, fignum
+# calculate proportion of rdt delivered by facility level - children with fever
+level0 = rdt_child['facility_level'].value_counts()['0'] / len(rdt_child)
+level1a = rdt_child['facility_level'].value_counts()['1a'] / len(rdt_child)
+level1b = rdt_child['facility_level'].value_counts()['1b'] / len(rdt_child)
+plt.pie([level0, level1a, level1b], labels=['level 0', 'level 1a', 'level 1b'],
+        wedgeprops={'linewidth': 3, 'edgecolor': 'white'},
+        autopct='%.1f%%',
+        colors=colours)
+plt.title("Facility level giving any rdt  \n children with fever")
+plt.tight_layout()
 
 plt.show()
