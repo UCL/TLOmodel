@@ -1503,9 +1503,9 @@ def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
                  healthsystem.HealthSystem(
                      resourcefilepath=resourcefilepath,
                      disable=False,
+                     randomise_queue=True,
                      ignore_priority=False,
                      adopt_priority_policy=True,
-                     randomise_queue=True,
                      policy_name="Test",
                      cons_availability='all',
                  ),

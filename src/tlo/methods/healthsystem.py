@@ -1,4 +1,4 @@
-""
+"""
 # Remaining to do:
 # - streamline input arguments
 # - let the level of the appointment be in the log
@@ -617,6 +617,11 @@ class HealthSystem(Module):
 
         self.lowest_priority_considered = lowest_priority_considered
 
+        self.rng_for_hsi_queue = None  # Will be a dedicated RNG for the purpose of randomising the queue
+        self.rng_for_dx = None  # Will be a dedicated RNG for the purpose of determining Dx Test results
+
+        self.include_fasttrack_routes = include_fasttrack_routes
+
         # Store the argument provided for service_availability
         self.arg_service_availabily = service_availability
         self.service_availability = ['*']  # provided so that there is a default even before simulation is run
@@ -752,9 +757,6 @@ class HealthSystem(Module):
         self.rng_for_hsi_queue = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
         self.rng_for_dx = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
         rng_for_consumables = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
-
-        # Determine mode_appt_constraints
-        self.mode_appt_constraints = self.get_mode_appt_constraints()
 
         # Determine mode_appt_constraints
         self.mode_appt_constraints = self.get_mode_appt_constraints()
