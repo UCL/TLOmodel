@@ -15,6 +15,7 @@ from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from pandas.testing import assert_series_equal
 
 import tlo
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
@@ -28,7 +29,6 @@ from tlo.methods.consumables import (
     get_item_codes_from_package_name,
 )
 from tlo.methods.dxmanager import DxManager
-from pandas.testing import assert_series_equal
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -41,6 +41,7 @@ def adjust_level_to_direct_1b_to_2(level: str) -> str:
     """Adjust the facility level of an HSI_Event so that HSI_Events scheduled at level '1b' and '2' are both directed
     to level '2'"""
     return level if level != '1b' else '2'
+
 
 def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFrame:
     """Return a modified version of the imported capabilities DataFrame to reflect that the capabilities of level 1b
@@ -76,6 +77,7 @@ def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFr
     assert (df_updated.dtypes == df_original.dtypes).all()
 
     return df_updated
+
 
 class FacilityInfo(NamedTuple):
     """Information about a specific health facility."""
