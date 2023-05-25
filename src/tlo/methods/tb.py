@@ -1709,7 +1709,7 @@ class TbSelfCureEvent(RegularEvent, PopulationScopeEventMixin):
 
 class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
     """
-    The is the Screening-and-Refer HSI.
+    This the Screening-and-Refer HSI.
     A positive outcome from symptom-based screening will prompt referral to tb tests (sputum/xpert/xray)
     no consumables are required for screening (4 clinical questions)
 

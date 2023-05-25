@@ -24,7 +24,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date =Date(2010, 1, 1)
 end_date = Date(2015, 12, 31)
-popsize = 500
+popsize = 1000
 scenario = 1
 
 # set up the log config
@@ -44,7 +44,7 @@ log_config = {
 }
 
 # Register the appropriate modules
-seed = 5001  # set seed for reproducibility
+seed = 2025  # set seed for reproducibility
 
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(*fullmodel(
