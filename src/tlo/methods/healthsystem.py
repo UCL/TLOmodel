@@ -47,10 +47,11 @@ def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFr
     """Return a modified version of the imported capabilities DataFrame to reflect that the capabilities of level 1b
     are pooled with those of level 2, and all labelled as level 2."""
 
-    # Find total minutes and staff count after the allocation
+    # Find total minutes and staff count after the re-allocation of capabilities from '1b' to '2'
     tots_after_reallocation = df_original \
         .assign(Facility_Level=lambda df: df.Facility_Level.replace({'1b': '2'})) \
-        .groupby(by=['Facility_Level', 'District', 'Officer_Category'])[['Total_Mins_Per_Day', 'Staff_Count']] \
+        .groupby(by=['Facility_Level', 'District', 'Region', 'Officer_Category'], dropna=False)[[
+            'Total_Mins_Per_Day', 'Staff_Count']] \
         .sum() \
         .reset_index()
 
@@ -58,7 +59,7 @@ def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFr
     df_updated = df_original \
         .drop(columns=['Total_Mins_Per_Day', 'Staff_Count'])\
         .merge(tots_after_reallocation,
-               on=['Facility_Level', 'District', 'Officer_Category'],
+               on=['Facility_Level', 'District', 'Region', 'Officer_Category'],
                how='left',
                ) \
         .assign(
@@ -66,15 +67,25 @@ def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFr
             Staff_Count=lambda df: df.Staff_Count.fillna(0.0)
         )
 
-    # Check that the *total* number of minutes per officer in each district is the same as before the change
+    # Check that the *total* number of minutes per officer in each district/region is the same as before the change
     assert_series_equal(
-        df_updated.groupby(by=['District', 'Officer_Category'])['Total_Mins_Per_Day'].sum(),
-        df_original.groupby(by=['District', 'Officer_Category'])['Total_Mins_Per_Day'].sum()
+        df_updated.groupby(by=['District', 'Region', 'Officer_Category'], dropna=False)['Total_Mins_Per_Day'].sum(),
+        df_original.groupby(by=['District', 'Region', 'Officer_Category'], dropna=False)['Total_Mins_Per_Day'].sum()
     )
+
+    df_updated.groupby('Facility_Level')['Total_Mins_Per_Day'].sum()
 
     # Check size/shape of the updated dataframe is as expected
     assert df_updated.shape == df_original.shape
     assert (df_updated.dtypes == df_original.dtypes).all()
+
+    for _level in ['0', '1a', '3', '4']:
+        assert df_original.loc[df_original.Facility_Level == _level].equals(
+            df_updated.loc[df_updated.Facility_Level == _level])
+
+    assert df_updated.loc[df_updated.Facility_Level == '1b', 'Total_Mins_Per_Day'].sum() == 0.0
+    assert df_updated.loc[df_updated.Facility_Level == '2', 'Total_Mins_Per_Day'].sum() \
+           == df_updated.loc[df_updated.Facility_Level.isin(['1b', '2']), 'Total_Mins_Per_Day'].sum()
 
     return df_updated
 
