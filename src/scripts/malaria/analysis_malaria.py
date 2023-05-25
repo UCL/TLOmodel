@@ -40,12 +40,11 @@ log_config = {
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
-        "tlo.methods.malaria": logging.DEBUG,
+        "tlo.methods.malaria": logging.INFO,
         "tlo.methods.healthsystem.summary": logging.INFO,
     },
 }
-# seed = random.randint(0, 50000)
-seed = 200
+seed = 20
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
 # Register the appropriate modules
