@@ -761,8 +761,6 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive'] or df.at[person_id, 'ma_tx']:
             return hs.get_blank_appt_footprint()
 
-        ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
-
         district = df.at[person_id, 'district_num_of_residence']
         logger.debug(key='message',
                      data=f'HSI_Malaria_rdt: rdt test for person {person_id} '
@@ -831,10 +829,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
             )
 
-    def did_not_run(self):
-        logger.debug(key='message',
-                     data='HSI_Malaria_rdt: did not run')
-        pass
+        return ACTUAL_APPT_FOOTPRINT
 
 
 class HSI_Malaria_rdt_community(HSI_Event, IndividualScopeEventMixin):
