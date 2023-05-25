@@ -49,7 +49,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        return list(self._scenarios.values())[draw_number]
+        if draw_number < self.number_of_draws:
+            return list(self._scenarios.values())[draw_number]
+        else:
+            return
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
@@ -60,11 +63,9 @@ class ImpactOfHealthSystemMode(BaseScenario):
 
         2. "Mode 1":
             Mode 1 & Actual HR funding
-            Default consumables,
 
         3. "Mode 2":
             Mode 2 & Actual HR funding
-            100% availability of consumables,
 
         """
 

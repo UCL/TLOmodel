@@ -585,6 +585,9 @@ class HealthSystem(Module):
             assert mode_appt_constraints in {0, 1, 2}
         self.arg_mode_appt_constraints = mode_appt_constraints
 
+        self.rng_for_hsi_queue = None  # Will be a dedicated RNG for the purpose of randomising the queue
+        self.rng_for_dx = None  # Will be a dedicated RNG for the purpose of determining Dx Test results
+
         self.randomise_queue = randomise_queue
 
         self.ignore_priority = ignore_priority
@@ -732,6 +735,13 @@ class HealthSystem(Module):
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
+        # Create dedicated RNGs for separate functions done by the HealthSystem module
+        self.rng_for_hsi_queue = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
+        self.rng_for_dx = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
+        rng_for_consumables = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
+
+        # Determine mode_appt_constraints
+        self.mode_appt_constraints = self.get_mode_appt_constraints()
 
         # Determine mode_appt_constraints
         self.mode_appt_constraints = self.get_mode_appt_constraints()
@@ -750,7 +760,7 @@ class HealthSystem(Module):
 
         # Initialise the Consumables class
         self.consumables = Consumables(data=self.parameters['availability_estimates'],
-                                       rng=self.rng,
+                                       rng=rng_for_consumables,
                                        availability=self.get_cons_availability())
 
         # Check whether to adopt priority policy
@@ -1212,7 +1222,8 @@ class HealthSystem(Module):
         self.hsi_event_queue_counter += 1
 
         if self.randomise_queue:
-            rand_queue = self.rng.randint(0, 1000000)
+            # Might be best to use float here, and if rand_queue is off just assign it a fixed value (?)
+            rand_queue = self.rng_for_hsi_queue.randint(0, 1000000)
         else:
             rand_queue = self.hsi_event_queue_counter
 
@@ -1481,8 +1492,6 @@ class HealthSystem(Module):
         appt_footprint of an HSI event.
         A value of 0.0 signifies that there is no squeezing (sufficient resources for
         the EXPECTED_APPT_FOOTPRINT).
-        A value of 99.99 signifies that the call is for an officer_type in a
-        health-facility that is not available.
 
         :param footprints_per_event: List, one entry per HSI event, containing the
             minutes required from each health officer in each health facility as a
@@ -2151,8 +2160,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                 if next_event_tuple.priority == self.module.lowest_priority_considered:
                     # Check the priority
-                    # If the next event is not due and has low priority, then stop looking through the heapq
-                    # as all other events will also not be due.
+                    # If the next event is not due and has lowest allowed priority, then stop looking
+                    # through the heapq as all other events will also not be due.
                     break
 
             else:
