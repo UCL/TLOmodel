@@ -289,21 +289,21 @@ total_dalys_diff = [sc1_sc0_median['Column_Total'],
 years_of_simulation = 26
 
 
-def summarise_treatment_counts(df_list, treatment_id):
-    """ summarise the treatment counts across all draws/runs for one results folder
-        requires a list of dataframes with all treatments listed with associated counts
+def summarise_treatment_counts(df_list, appt_type):
+    """ summarise the appt types across all draws/runs for one results folder
+        requires a list of dataframes with all appts listed with associated counts
     """
     number_runs = len(df_list)
     number_HSI_by_run = pd.DataFrame(index=np.arange(years_of_simulation), columns=np.arange(number_runs))
     column_names = [
-        treatment_id + "_median",
-        treatment_id + "_lower",
-        treatment_id + "_upper"]
+        appt_type + "_median",
+        appt_type + "_lower",
+        appt_type + "_upper"]
     out = pd.DataFrame(columns=column_names)
 
     for i in range(number_runs):
-        if treatment_id in df_list[i].columns:
-            number_HSI_by_run.iloc[:, i] = pd.Series(df_list[i].loc[:, treatment_id])
+        if appt_type in df_list[i].columns:
+            number_HSI_by_run.iloc[:, i] = pd.Series(df_list[i].loc[:, appt_type])
 
     out.iloc[:, 0] = number_HSI_by_run.median(axis=1)
     out.iloc[:, 1] = number_HSI_by_run.quantile(q=0.025, axis=1)
@@ -312,7 +312,7 @@ def summarise_treatment_counts(df_list, treatment_id):
     return out
 
 
-def treatment_counts(results_folder, module, key, column):
+def appt_counts(results_folder, module, key, column):
     info = get_scenario_info(results_folder)
 
     df_list = list()
@@ -330,12 +330,12 @@ def treatment_counts(results_folder, module, key, column):
                 df_list.append(pd.DataFrame(new[column].to_list()))
 
     # for column in each df, get median
-    # list of treatment IDs
+    # list of appts
     list_tx_id = list(df_list[0].columns)
     results = pd.DataFrame(index=np.arange(years_of_simulation))
 
-    for treatment_id in list_tx_id:
-        tmp = summarise_treatment_counts(df_list, treatment_id)
+    for appt in list_tx_id:
+        tmp = summarise_treatment_counts(df_list, appt)
 
         # append output to dataframe
         results = results.join(tmp)
@@ -343,60 +343,34 @@ def treatment_counts(results_folder, module, key, column):
     return results
 
 
-def treatment_counts_full(results_folder, module, key, column, treatment_id):
-    info = get_scenario_info(results_folder)
-
-    df_list = list()
-    for draw in range(info['number_of_draws']):
-        for run in range(info['runs_per_draw']):
-
-            # check if anything contained in folder (some runs failed)
-            folder = results_folder / str(draw) / str(run)
-            p: os.DirEntry
-            pickles = [p for p in os.scandir(folder) if p.name.endswith('.pickle')]
-            if pickles:
-                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-
-                new = df[['date', column]].copy()
-                df_list.append(pd.DataFrame(new[column].to_list()))
-
-    # join all treatment_id outputs from every draw/run
-    results = pd.DataFrame(index=np.arange(years_of_simulation))
-    for i in range(len(df_list)):
-        tmp = df_list[i][treatment_id]
-        # append output to dataframe
-        results.loc[:, i] = tmp
-
-    return results
-
-
-tx_id0 = treatment_counts(results_folder=results0,
+appt_id0 = appt_counts(results_folder=results0,
                           module="tlo.methods.healthsystem.summary",
                           key="HSI_Event",
-                          column="TREATMENT_ID")
+                          column="Number_By_Appt_Type_Code")
 
-tx_id1 = treatment_counts(results_folder=results1,
+appt_id1 = appt_counts(results_folder=results1,
                           module="tlo.methods.healthsystem.summary",
                           key="HSI_Event",
-                          column="TREATMENT_ID")
+                          column="Number_By_Appt_Type_Code")
 
-tx_id2 = treatment_counts(results_folder=results2,
+appt_id2 = appt_counts(results_folder=results2,
                           module="tlo.methods.healthsystem.summary",
                           key="HSI_Event",
-                          column="TREATMENT_ID")
+                          column="Number_By_Appt_Type_Code")
 
 # extract numbers of hiv and tb appts scaled to full population size
 # compare scenario 1 and 2
 scaling_factor = 145.39609
 
 # produce lists of relevant columns
-tb_appts = [col for col in tx_id1 if col.startswith('Tb')]
-hiv_appts = [col for col in tx_id1 if col.startswith('Hiv')]
+tb_appts = ['TBFollowUp', 'TBNew', 'DiagRadio']
+hiv_appts = ['VCTNegative', 'VCTPositive', 'EstNonCom', 'NewAdult', 'Peds',
+             'MaleCirc']
 all_appts = tb_appts + hiv_appts
 
-data0 = tx_id0[tx_id0.columns.intersection(all_appts)]
-data1 = tx_id1[tx_id1.columns.intersection(all_appts)]
-data2 = tx_id2[tx_id2.columns.intersection(all_appts)]
+data0 = appt_id0[appt_id0.columns.intersection(all_appts)]
+data1 = appt_id1[appt_id1.columns.intersection(all_appts)]
+data2 = appt_id2[appt_id2.columns.intersection(all_appts)]
 
 # row 13 is 2023
 # sum all appts from 2023 for each scenario
@@ -405,13 +379,15 @@ tmp1 = data1.iloc[13:26]
 tmp2 = data2.iloc[13:26]
 
 # total number of hiv/tb appts 2023-2035 - sum only the "_median" columns
-median_appts = [col for col in tx_id1 if col.endswith('_median')]
+median_appts = [col for col in tmp0 if col.endswith('_median')]
 data0_median = tmp1[tmp1.columns.intersection(median_appts)]
 data1_median = tmp1[tmp1.columns.intersection(median_appts)]
 data2_median = tmp2[tmp2.columns.intersection(median_appts)]
 
 
-# map appts to footprint
+# use the appt footprints (they map 1:1 with treatment IDs)
+# the treatment ID can have different footprints depending on the person
+# then add in Over5OPD used by 3 different appt types
 
 # scale to full population
 
