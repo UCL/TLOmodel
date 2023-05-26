@@ -1200,7 +1200,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
             if mni[individual_id]['will_receive_pnc'] == 'late':
                 appt_date = self.sim.date + pd.DateOffset(self.module.rng.randint(0, 35))
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    pnc_one_maternal, priority=0, topen=appt_date, tclose=appt_date + pd.DateOffset(days=1))
+                    pnc_one_maternal, priority=0, topen=appt_date, tclose=appt_date + pd.DateOffset(days=2))
 
 
 class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
