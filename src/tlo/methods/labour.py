@@ -2804,7 +2804,7 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
                         early_event,
                         priority=0,
                         topen=self.sim.date,
-                        tclose=self.sim.date + DateOffset(days=1))
+                        tclose=self.sim.date + DateOffset(days=2))
 
                 else:
                     # For women who do not have prompt PNC, we determine if they will die from complications occurring
