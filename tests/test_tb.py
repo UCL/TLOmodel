@@ -982,3 +982,152 @@ def test_use_dummy_version(seed):
     sim.simulate(end_date=Date(2014, 12, 31))
 
     check_dtypes(sim)
+
+
+def test_hsi_scheduling(seed):
+    """
+    check HSI_Tb_ScreeningAndRefer schedules the correct events for children / adults / adults with HIV
+
+    children should have an xray and hiv test scheduled
+    adults should have treatment and hiv test scheduled
+    adults already diagnosed with hiv should not have further hiv test scheduled
+
+    assert multiple tests not being scheduled accidentally in each HSI_Tb_ScreeningAndRefer call
+
+    """
+    popsize = 10
+
+    sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
+
+    # Make the population
+    sim.make_initial_population(n=popsize)
+
+    # simulate for 0 days, just get everything set up (dxtests etc)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+    person_id = 0
+
+    # child under 5yrs
+    df.at[person_id, 'age_years'] = 2
+    df.at[person_id, 'tb_inf'] = 'active'
+    df.at[person_id, 'tb_date_active'] = sim.date
+    df.at[person_id, 'tb_strain'] = 'ds'
+    df.at[person_id, 'tb_smear'] = True
+    df.at[person_id, 'hv_inf'] = False
+
+    # give the symptoms
+    symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+
+    sim.modules["SymptomManager"].change_symptom(
+        person_id=person_id,
+        symptom_string=symptom_list,
+        add_or_remove="+",
+        disease_module=sim.modules['Tb'],
+        duration_in_days=None,
+    )
+
+    assert set(sim.modules['SymptomManager'].has_what(person_id)) == symptom_list
+
+    hsi_event = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb'])
+    hsi_event.run(squeeze_factor=0)
+
+    # Check person_id has a HSI_Tb_Xray event scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], tb.HSI_Tb_Xray_level1b)
+    ][0]
+    assert date_event == sim.date
+
+    # check HIV test scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], hiv.HSI_Hiv_TestAndRefer)
+    ][0]
+    assert date_event == sim.date
+
+    # check these are the only two events scheduled
+    tmp = sim.modules['HealthSystem'].find_events_for_person(person_id)
+    assert len(tmp) == 2
+
+    # repeat checks for person over 5 years
+    person_id = 1
+
+    df.at[person_id, 'age_years'] = 25
+    df.at[person_id, 'tb_inf'] = 'active'
+    df.at[person_id, 'tb_date_active'] = sim.date
+    df.at[person_id, 'tb_strain'] = 'ds'
+    df.at[person_id, 'tb_smear'] = True
+    df.at[person_id, 'hv_inf'] = False
+
+    # give the symptoms
+    symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+
+    sim.modules["SymptomManager"].change_symptom(
+        person_id=person_id,
+        symptom_string=symptom_list,
+        add_or_remove="+",
+        disease_module=sim.modules['Tb'],
+        duration_in_days=None,
+    )
+
+    assert set(sim.modules['SymptomManager'].has_what(person_id)) == symptom_list
+
+    hsi_event = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb'])
+    hsi_event.run(squeeze_factor=0)
+
+    # Check person_id has a treatment event scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], tb.HSI_Tb_StartTreatment)
+    ][0]
+    assert date_event == sim.date
+
+    # check HIV test scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], hiv.HSI_Hiv_TestAndRefer)
+    ][0]
+    assert date_event == sim.date
+
+    # check these are the only two events scheduled
+    tmp = sim.modules['HealthSystem'].find_events_for_person(person_id)
+    assert len(tmp) == 2
+
+    # repeat checks for person over 5 years, HIV+, smear-ve
+    person_id = 2
+
+    df.at[person_id, 'age_years'] = 25
+    df.at[person_id, 'tb_inf'] = 'active'
+    df.at[person_id, 'tb_date_active'] = sim.date
+    df.at[person_id, 'tb_strain'] = 'ds'
+    df.at[person_id, 'tb_smear'] = False
+    df.at[person_id, 'hv_inf'] = True
+    df.at[person_id, 'hv_diagnosed'] = True
+
+    # give the symptoms
+    symptom_list = {"fever", "respiratory_symptoms", "fatigue", "night_sweats"}
+
+    sim.modules["SymptomManager"].change_symptom(
+        person_id=person_id,
+        symptom_string=symptom_list,
+        add_or_remove="+",
+        disease_module=sim.modules['Tb'],
+        duration_in_days=None,
+    )
+
+    assert set(sim.modules['SymptomManager'].has_what(person_id)) == symptom_list
+
+    hsi_event = tb.HSI_Tb_ScreeningAndRefer(person_id=person_id, module=sim.modules['Tb'])
+    hsi_event.run(squeeze_factor=0)
+
+    # Check person_id has a treatment event scheduled
+    date_event, event = [
+        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+        isinstance(ev[1], tb.HSI_Tb_StartTreatment)
+    ][0]
+    assert date_event == sim.date
+
+    # check this is the only event scheduled
+    tmp = sim.modules['HealthSystem'].find_events_for_person(person_id)
+    assert len(tmp) == 1

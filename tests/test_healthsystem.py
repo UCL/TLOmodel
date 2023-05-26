@@ -1,3 +1,4 @@
+import heapq as hp
 import os
 from pathlib import Path
 from typing import Set
@@ -7,6 +8,7 @@ import pandas as pd
 import pytest
 
 from tlo import Date, Module, Simulation, logging
+from tlo.analysis.hsi_events import get_details_of_defined_hsi_events
 from tlo.analysis.utils import parse_log_file
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import (
@@ -14,11 +16,14 @@ from tlo.methods import (
     chronicsyndrome,
     demography,
     enhanced_lifestyle,
+    epi,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     mockitis,
     simplified_births,
     symptommanager,
+    tb,
 )
 from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_availability
 from tlo.methods.fullmodel import fullmodel
@@ -1210,6 +1215,7 @@ def test_manipulation_of_service_availability(seed, tmpdir):
 
         sim.register(*fullmodel(resourcefilepath=resourcefilepath))
         sim.modules['HealthSystem'].parameters['Service_Availability'] = service_availability  # Change parameter
+        sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
         sim.make_initial_population(n=500)
         sim.simulate(end_date=start_date + pd.DateOffset(days=7))
 
@@ -1225,7 +1231,8 @@ def test_manipulation_of_service_availability(seed, tmpdir):
     everything = get_set_of_treatment_ids_that_run(service_availability=["*"])
 
     # Run model with everything specified individually
-    assert everything == get_set_of_treatment_ids_that_run(service_availability=list(everything))
+    all_treatment_ids = sorted(set([i.treatment_id for i in get_details_of_defined_hsi_events()]))
+    assert everything == get_set_of_treatment_ids_that_run(service_availability=all_treatment_ids)
 
     # Run model with nothing available
     assert set() == get_set_of_treatment_ids_that_run(service_availability=[])
@@ -1356,9 +1363,351 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
     )['tlo.methods.healthsystem']['HSI_Event']
     assert 4 == len(log)  # 3 HSI events should have occurred
     assert (log['date'] == sim.start_date).all()
-    assert log['TREATMENT_ID'].to_list() == [
-        'DummyHSI_To_Run_On_Same_Day_initialise_simulation',
-        'DummyHSI_To_Run_On_First_Day_Of_Simulation',
-        'DummyHSI_To_Run_On_Same_Day_Event',
-        'DummyHSI_To_Run_On_Same_Day_HSI',
-    ]
+
+
+def test_hsi_event_queue_expansion_and_querying(seed, tmpdir):
+    """The correct number of events scheduled for today should be returned when querying the HSI_EVENT_QUEUE,
+    and the ordering in the queue should follow the correct logic."""
+
+    class DummyHSI(HSI_Event, IndividualScopeEventMixin):
+        """HSI event that schedules another HSI_Event for the same day"""
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = self.__class__.__name__
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        def apply(self, person_id, squeeze_factor):
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                DummyHSI(module=self.module, person_id=person_id,),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0)
+
+    class DummyModule(Module):
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    log_config = {
+        "filename": "log",
+        "directory": tmpdir,
+        "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
+    }
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     randomise_queue=True,
+                     disable=False,
+                     cons_availability='all',
+                 ),
+                 DummyModule(),
+                 check_all_dependencies=False,
+                 )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date + pd.DateOffset(days=5))
+    sim.event_queue.queue = []  # clear the queue
+
+    Ntoday = 10
+    Nlater = 90
+
+    for i in range(Nlater):
+        sim.modules['HealthSystem'].schedule_hsi_event(
+            DummyHSI(module=sim.modules['DummyModule'], person_id=0),
+            topen=sim.date + pd.DateOffset(days=sim.modules['DummyModule'].rng.randint(1, 30)),
+            tclose=None,
+            priority=sim.modules['DummyModule'].rng.randint(0, 3))
+
+    for i in range(Ntoday):
+        sim.modules['HealthSystem'].schedule_hsi_event(
+            DummyHSI(module=sim.modules['DummyModule'], person_id=0),
+            topen=sim.date,
+            tclose=None,
+            priority=sim.modules['DummyModule'].rng.randint(0, 3))
+
+    (list_of_individual_hsi_event_tuples_due_today,
+        list_of_population_hsi_event_tuples_due_today
+     ) = sim.modules['HealthSystem'].healthsystemscheduler._get_events_due_today()
+
+    # Check that HealthSystemScheduler is recovering the correct number of events for today
+    assert len(list_of_individual_hsi_event_tuples_due_today) == Ntoday
+
+    # Check that the remaining events obey ordering rules
+    event_prev = hp.heappop(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
+
+    while (len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE) > 0):
+        next_event_tuple = hp.heappop(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
+        assert event_prev.priority <= next_event_tuple.priority, 'Not respecting priority'
+        if (event_prev.priority == next_event_tuple.priority):
+            assert event_prev.topen <= next_event_tuple.topen, 'Not respecting topen'
+            if (event_prev.topen == next_event_tuple.topen):
+                assert event_prev.rand_queue_counter < next_event_tuple.rand_queue_counter, 'Not respecting rand'
+        event_prev = next_event_tuple
+
+
+@pytest.mark.slow
+def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
+    """The priority set by the policy should overwrite the priority the event was scheduled with. If the priority
+     is below the lowest one considered, the event will not be scheduled (call never_ran at tclose). If a TREATMENT_ID
+     and a person characteristic warrant it, fast-tracking is enabled."""
+
+    class DummyHSI(HSI_Event, IndividualScopeEventMixin):
+        """HSI event that schedules another HSI_Event for the same day"""
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'HSI_Dummy'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        def apply(self, person_id, squeeze_factor):
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                     DummyHSI(module=self.module, person_id=person_id),
+                     topen=self.sim.date,
+                     tclose=None,
+                     priority=0)
+
+    class DummyModule(Module):
+        """Schedules an HSI to occur on the first day of the simulation from initialise_simulation, and an event that
+         will schedule the event for the same day."""
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    log_config = {
+        "filename": "log",
+        "directory": tmpdir,
+        "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
+    }
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     disable=False,
+                     include_fasttrack_routes=True,
+                     adopt_priority_policy=True,
+                     randomise_queue=True,
+                     lowest_priority_considered=3,
+                     cons_availability='all',
+                 ),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
+                 tb.Tb(resourcefilepath=resourcefilepath),
+                 DummyModule(),
+                 check_all_dependencies=False,
+                 )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date + pd.DateOffset(days=5))
+    sim.event_queue.queue = []  # clear the queue
+    sim.modules['HealthSystem'].HSI_EVENT_QUEUE = []  # clear the queue
+    # Overwrite one of the Treatments with HSI_Dummy, and assign it a policy priority
+    dictio = sim.modules['HealthSystem'].priority_rank_dict
+    dictio['HSI_Dummy'] = dictio['Alri_Pneumonia_Treatment_Outpatient']
+    del dictio['Alri_Pneumonia_Treatment_Outpatient']
+    dictio['HSI_Dummy']['Priority'] = 0
+
+    # Schedule an 'HSI_Dummy' event with priority different from policy one
+    sim.modules['HealthSystem'].schedule_hsi_event(
+        DummyHSI(module=sim.modules['DummyModule'], person_id=0),
+        topen=sim.date + pd.DateOffset(days=sim.modules['DummyModule'].rng.randint(1, 30)),
+        tclose=None,
+        priority=1)  # Give a priority different than the one assumed by the policy for this Treatment_ID
+
+    assert len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE) == 1
+    event_prev = hp.heappop(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
+    assert event_prev.priority == 0  # Check that the event's priority is the policy one
+
+    # Make
+    # i) both policy priority and scheduled priority =2,
+    # ii) HSI_Dummy eligible for fast-tracking for tb_diagnosed individuals exclusively,
+    # iii) person for whom HSI will be scheduled tb-positive (hence fast-tracking eligible)
+    # and check that person is fast-tracked with priority=1
+    dictio['HSI_Dummy']['Priority'] = 2
+    dictio['HSI_Dummy']['FT_if_5orUnder'] = 0
+    dictio['HSI_Dummy']['FT_if_pregnant'] = 0
+    dictio['HSI_Dummy']['FT_if_Hivdiagnosed'] = 0
+    dictio['HSI_Dummy']['FT_if_tbdiagnosed'] = 1
+    sim.population.props.at[0, 'tb_diagnosed'] = True
+
+    # Schedule an 'HSI_Dummy' event with priority different to that with which it is scheduled
+    sim.modules['HealthSystem'].schedule_hsi_event(
+        DummyHSI(module=sim.modules['DummyModule'], person_id=0),
+        topen=sim.date + pd.DateOffset(days=sim.modules['DummyModule'].rng.randint(1, 30)),
+        tclose=None,
+        priority=2)  # Give a priority below fast tracking
+
+    assert len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE) == 1
+    event_prev = hp.heappop(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
+    assert event_prev.priority == 1  # Check that the event priority is the fast tracking one
+
+    # Repeat, but now assinging priority below threshold through policy, to check that the event is not scheduled.
+    # Person still tb positive, so ensure fast tracking is no longer available for this treatment to tb-diagnosed.
+    dictio['HSI_Dummy']['Priority'] = 7
+    dictio['HSI_Dummy']['FT_if_tbdiagnosed'] = 0
+    _tclose = sim.date + pd.DateOffset(days=35)
+
+    # Schedule an 'HSI_Dummy' event with priority different from policy one
+    sim.modules['HealthSystem'].schedule_hsi_event(
+                DummyHSI(module=sim.modules['DummyModule'], person_id=0),
+                topen=sim.date + pd.DateOffset(days=sim.modules['DummyModule'].rng.randint(1, 30)),
+                tclose=_tclose,
+                priority=1)  # Give a priority different than the one assumed by the policy for this Treatment_ID
+
+    # Check that event wasn't scheduled due to priority being below threshold
+    assert len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE) == 0
+
+    # Check that event was scheduled to never run on tclose
+    assert len(sim.event_queue) == 1
+    ev = hp.heappop(sim.event_queue.queue)
+    assert not ev[3].run_hsi
+    assert ev[0] == _tclose
+
+
+def test_determinism_of_hsi_that_run_and_consumables_availabilities(seed, tmpdir):
+    """Check that two runs of model with the same seed gives the same sequence of HSI that run and the same state of
+    the Consumables class at initiation."""
+
+    def get_hsi_log_and_consumables_state() -> pd.DataFrame:
+        """Return state of Consumables at the start of a simulation and the HSI_Event log that occur when running the
+         simulation (when all services available)."""
+        sim = Simulation(start_date=start_date, seed=seed, log_config={
+            'filename': 'tmpfile',
+            'directory': tmpdir,
+            'custom_levels': {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        })
+        sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+        sim.modules['HealthSystem'].parameters['Service_Availability'] = ["*"]
+        sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
+        sim.make_initial_population(n=1_000)
+
+        # Initialise consumables and capture its state
+        sim.modules['HealthSystem'].consumables.on_start_of_day(sim.date)
+
+        consumables_state_at_init = dict(
+            unknown_items=sim.modules['HealthSystem'].consumables._is_unknown_item_available,
+            known_items=sim.modules['HealthSystem'].consumables._is_available,
+            random_samples=list(sim.modules['HealthSystem'].consumables._rng.random_sample(100))
+        )
+
+        sim.simulate(end_date=start_date + pd.DateOffset(days=7))
+
+        return {
+            'consumables_state_at_init': consumables_state_at_init,
+            'hsi_event': parse_log_file(sim.log_filepath, level=logging.DEBUG)['tlo.methods.healthsystem']['HSI_Event'],
+        }
+
+    first_run = get_hsi_log_and_consumables_state()
+
+    # Check that all runs (with the same seed to simulation) are identical to the first run
+    for _ in range(2):
+        next_run = get_hsi_log_and_consumables_state()
+        # - Consumables State at Initialisation
+        assert next_run['consumables_state_at_init'] == first_run['consumables_state_at_init']
+        # - HSI Events
+        pd.testing.assert_frame_equal(next_run['hsi_event'], first_run['hsi_event'])
+
+
+def test_service_availability_can_be_set_using_list_of_treatment_ids_and_asterisk(seed, tmpdir):
+    """Check the two identical runs of model can be produced when the service_availability is set using ['*'] and when
+     using the list of TREATMENT_IDs that are defined. Repeated for with and without randomisation of the HSI Event
+     queue."""
+
+    def get_hsi_log(service_availability, randomise_hsi_queue) -> pd.DataFrame:
+        """Return the log of HSI_Events that occur when running the simulation with the `service_availability` set as
+        indicated."""
+        sim = Simulation(start_date=start_date, seed=seed, log_config={
+            'filename': 'tmpfile',
+            'directory': tmpdir,
+            'custom_levels': {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        })
+        sim.register(*fullmodel(resourcefilepath=resourcefilepath,
+                                module_kwargs={'HealthSystem': {'randomise_queue': randomise_hsi_queue}}))
+        sim.modules['HealthSystem'].parameters['Service_Availability'] = service_availability
+        sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
+        sim.make_initial_population(n=500)
+
+        sim.simulate(end_date=start_date + pd.DateOffset(days=7))
+
+        return parse_log_file(sim.log_filepath, level=logging.DEBUG)['tlo.methods.healthsystem']['HSI_Event']
+
+    # Look-up all the treatment_ids that are defined to be run.
+    all_treatment_ids = sorted(set([i.treatment_id for i in get_details_of_defined_hsi_events()]))
+
+    for _randomise_hsi_queue in (False, True):
+        # - when specifying service-availability as "*"
+        run_with_asterisk = get_hsi_log(
+            service_availability=["*"],
+            randomise_hsi_queue=_randomise_hsi_queue,
+        )
+
+        # - when specifying service-availability as a list of TREATMENT_IDs
+        run_with_list = get_hsi_log(
+            service_availability=all_treatment_ids,
+            randomise_hsi_queue=_randomise_hsi_queue,
+        )
+
+        # Check that HSI event logs are identical
+        pd.testing.assert_frame_equal(run_with_asterisk, run_with_list)
+
+
+def test_hsi_events_that_run_with_and_without_randomisation_are_as_expected(seed, tmpdir):
+    """Check the two runs of model that are identical except for the option to randomise/not the HSI_Event queue
+     generate a log of HSI Events that are different only in the manner expected (i.e. the same events run but
+     shuffled to occur in a different order in the day.)"""
+
+    def get_hsi_log(randomise_queue) -> pd.DataFrame:
+        """Return the log of HSI_Events that occur when running the simulation with the `service_availability` set as
+        indicated."""
+        sim = Simulation(start_date=start_date, seed=seed, log_config={
+            'filename': 'tmpfile',
+            'directory': tmpdir,
+            'custom_levels': {
+                "tlo.methods.healthsystem": logging.DEBUG,
+            }
+        })
+        sim.register(*fullmodel(resourcefilepath=resourcefilepath,
+                                module_kwargs={
+                                    'HealthSystem': {
+                                        'randomise_queue': randomise_queue,
+                                        'mode_appt_constraints': 0,
+                                        'use_funded_or_actual_staffing': 'funded_plus',
+                                    }
+                                },
+                                )
+                     )
+        sim.modules['HealthSystem'].parameters['Service_Availability'] = ['*']
+        sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
+        sim.make_initial_population(n=500)
+
+        sim.simulate(end_date=start_date + pd.DateOffset(days=7))
+
+        return parse_log_file(sim.log_filepath, level=logging.DEBUG)['tlo.methods.healthsystem']['HSI_Event']
+
+    # Make two runs that differ only in whether the HSI event queue is randomised.
+    run1 = get_hsi_log(randomise_queue=True)
+    run2 = get_hsi_log(randomise_queue=False)
+
+    # We expect that the same HSI event should on each day, but in a different order. Check this, by imposing a sort
+    # on events and checking that this makes the logs identical.
+    pd.testing.assert_frame_equal(
+        run1.sort_values(by=['date', 'Event_Name', 'Person_ID']).reset_index(drop=True),
+        run2.sort_values(by=['date', 'Event_Name', 'Person_ID']).reset_index(drop=True),
+    )
