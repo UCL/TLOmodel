@@ -124,7 +124,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         else:
             hblog = load_pickled_dataframes(results_folder)['tlo.methods.healthburden']
             mapper_from_gbd_causes = pd.Series(
-                hblog['mapper_from_gbd_cause_to_common_label'].drop(columns={'date'}).loc[0]
+                hblog['daly_mapper_from_gbd_cause_to_common_label'].drop(columns={'date'}).loc[0]
                 ).to_dict()
         gbd['label'] = gbd['cause_name'].map(mapper_from_gbd_causes)
         assert not gbd['label'].isna().any()
