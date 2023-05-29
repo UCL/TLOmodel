@@ -1451,8 +1451,12 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             return
         # sets availability of xpert no none
         if scenario ==1:
-            self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {187: 0})
+                Xpt = {
+                    self.sim.modules['HealthSystem'].get_item_code_from_item_name("Xpert"): 0}
+                self.sim.modules['HealthSystem'].override_availability_of_consumables(Xpt)
+                # self.item_codes_for_consumables_required['chest_xray']['175'']*0.1
+            # self.sim.modules['HealthSystem'].override_availability_of_consumables(
+            #     {187: 0})
 
 # ######################################################
 
