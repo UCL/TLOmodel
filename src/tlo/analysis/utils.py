@@ -1127,8 +1127,7 @@ def get_parameters_for_status_quo() -> Dict:
     }
 
 
-# todo - rename to make the above
-def parameters_for_an_ideal_health_system(
+def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
     resourcefilepath: Path,
     max_healthsystem_function: Optional[bool] = False,
     max_healthcare_seeking: Optional[bool] = False,

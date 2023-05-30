@@ -19,7 +19,7 @@ from tlo.analysis.utils import (
     order_of_coarse_appt,
     order_of_short_treatment_ids,
     parse_log_file,
-    unflatten_flattened_multi_index_in_logging, parameters_for_an_ideal_health_system,
+    unflatten_flattened_multi_index_in_logging, get_parameters_for_improved_healthsystem_and_healthcare_seeking,
 )
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
@@ -275,17 +275,17 @@ def test_get_parameter_functions(seed):
     # Function that are designed to provide set of parameters to be updated in a `fullmodel` simulation.
     funcs = [
         get_parameters_for_status_quo,
-        lambda: parameters_for_an_ideal_health_system(
+        lambda: get_parameters_for_improved_healthsystem_and_healthcare_seeking(
                 resourcefilepath=resourcefilepath,
                 max_healthsystem_function=True,
                 max_healthcare_seeking=False
             ),
-        lambda: parameters_for_an_ideal_health_system(
+        lambda: get_parameters_for_improved_healthsystem_and_healthcare_seeking(
             resourcefilepath=resourcefilepath,
             max_healthsystem_function=False,
             max_healthcare_seeking=True
             ),
-        lambda: parameters_for_an_ideal_health_system(
+        lambda: get_parameters_for_improved_healthsystem_and_healthcare_seeking(
             resourcefilepath=resourcefilepath,
             max_healthsystem_function=True,
             max_healthcare_seeking=True
@@ -311,5 +311,5 @@ def test_get_parameter_functions(seed):
 
                 # Check that the original value and the updated value are of the same type.
                 original = sim.modules[module].parameters[name]
-                assert type(original) is type(updated_value), f"Updated value type does not match original value type: " \
-                                                              f"{module}:{name} >> {updated_value=}, {original=}"
+                assert type(original) is type(updated_value), f"Updated value type does not match original value " \
+                                                              f"type: {module}:{name} >> {updated_value=}, {original=}"
