@@ -396,7 +396,7 @@ tmp2 = data2.iloc[12:26]
 # store for each year
 def extract_hcw_minutes(df):
     # set up empty df to store outputs
-    output = pd.DataFrame(0, index=df.index, columns=['clinical', 'nursing', 'pharmacy'])
+    output = pd.DataFrame(0, index=df.index, columns=['clinical', 'nursing', 'pharmacy', 'radiography'])
 
     # remove suffix _median from column names for mapping
     df = df.rename(columns=lambda x: x.replace('_median', ''))
@@ -445,3 +445,159 @@ hcw_minutes1 = extract_hcw_minutes(tmp1)
 hcw_minutes2 = extract_hcw_minutes(tmp2)
 
 
+# now add on Over5OPD and DiagRadio appts
+# extract using the treatment id then map to time
+def summarise_treatment_counts(df_list, treatment_id):
+    """ summarise the treatment counts across all draws/runs for one results folder
+        requires a list of dataframes with all treatments listed with associated counts
+    """
+    number_runs = len(df_list)
+    number_HSI_by_run = pd.DataFrame(index=np.arange(years_of_simulation), columns=np.arange(number_runs))
+    column_names = [
+        treatment_id + "_median",
+        treatment_id + "_lower",
+        treatment_id + "_upper"]
+    out = pd.DataFrame(columns=column_names)
+
+    for i in range(number_runs):
+        if treatment_id in df_list[i].columns:
+            number_HSI_by_run.iloc[:, i] = pd.Series(df_list[i].loc[:, treatment_id])
+
+    out.iloc[:, 0] = number_HSI_by_run.median(axis=1)
+    out.iloc[:, 1] = number_HSI_by_run.quantile(q=0.025, axis=1)
+    out.iloc[:, 2] = number_HSI_by_run.quantile(q=0.975, axis=1)
+
+    return out
+
+
+def treatment_counts(results_folder, module, key, column):
+    info = get_scenario_info(results_folder)
+
+    df_list = list()
+    for draw in range(info['number_of_draws']):
+        for run in range(info['runs_per_draw']):
+
+            # check if anything contained in folder (some runs failed)
+            folder = results_folder / str(draw) / str(run)
+            p: os.DirEntry
+            pickles = [p for p in os.scandir(folder) if p.name.endswith('.pickle')]
+            if pickles:
+                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+
+                new = df[['date', column]].copy()
+                df_list.append(pd.DataFrame(new[column].to_list()))
+
+    # for column in each df, get median
+    # list of treatment IDs
+    list_tx_id = list(df_list[0].columns)
+    results = pd.DataFrame(index=np.arange(years_of_simulation))
+
+    for treatment_id in list_tx_id:
+        tmp = summarise_treatment_counts(df_list, treatment_id)
+
+        # append output to dataframe
+        results = results.join(tmp)
+
+    return results
+
+
+tx_id0 = treatment_counts(results_folder=results0,
+                          module="tlo.methods.healthsystem.summary",
+                          key="HSI_Event",
+                          column="TREATMENT_ID")
+
+tx_id1 = treatment_counts(results_folder=results1,
+                          module="tlo.methods.healthsystem.summary",
+                          key="HSI_Event",
+                          column="TREATMENT_ID")
+
+tx_id2 = treatment_counts(results_folder=results2,
+                          module="tlo.methods.healthsystem.summary",
+                          key="HSI_Event",
+                          column="TREATMENT_ID")
+
+# produce lists of relevant columns
+treatment_id_to_include = ['Tb_Test_Screening', 'Hiv_Prevention_Prep', 'Tb_Test_Xray', 'Tb_Prevention_Ipt']
+pattern = '|'.join(treatment_id_to_include)
+tx_list0 = tx_id0.loc[:, tx_id0.columns.str.contains(pattern)]
+tx_list1 = tx_id1.loc[:, tx_id1.columns.str.contains(pattern)]
+tx_list2 = tx_id2.loc[:, tx_id2.columns.str.contains(pattern)]
+
+
+# extract minutes of clinical, nursing and pharmacy
+# add to output already created above
+def extract_additional_hcw_minutes(df, output):
+
+    # remove columns with uncertainty intervals
+    df = df.loc[:, ~df.columns.str.endswith('_lower')]
+    df = df.loc[:, ~df.columns.str.endswith('_upper')]
+
+    # remove suffix _median from column names for mapping
+    df = df.rename(columns=lambda x: x.replace('_median', ''))
+
+    # select years 2022-2035
+    df = df.iloc[12:26]
+
+    # rename columns for mapping
+    df = df.rename({'Tb_Test_Screening': 'Over5OPD',
+                    'Tb_Test_Xray': 'DiagRadio',
+                    'Tb_Prevention_Ipt': 'Over5OPD',
+                    'Hiv_Prevention_Prep': 'Over5OPD'}, axis=1)
+
+    # for each row, extract minutes of clinical time across columns
+    for column in range(0, len(df.columns)):
+        # extract clinical time
+        appt_type = df.columns[column]
+
+        if appt_type == 'DiagRadio':
+            facility_level = '1b'
+        else:
+            facility_level = '1a'
+
+        # extract clinical time
+        clinical_time = hcw_time.loc[
+            (hcw_time.Appt_Type_Code == appt_type) &
+            (hcw_time.Officer_Category == 'Clinical') &
+            (hcw_time.Facility_Level == facility_level), 'Time_Taken_Mins'
+            ]
+
+        # nursing time
+        nurse_time = hcw_time.loc[
+            (hcw_time.Appt_Type_Code == appt_type) &
+            (hcw_time.Officer_Category == 'Nursing_and_Midwifery') &
+            (hcw_time.Facility_Level == facility_level), 'Time_Taken_Mins'
+            ]
+
+        # pharmacy time
+        pharmacy_time = hcw_time.loc[
+            (hcw_time.Appt_Type_Code == appt_type) &
+            (hcw_time.Officer_Category == 'Pharmacy') &
+            (hcw_time.Facility_Level == facility_level), 'Time_Taken_Mins'
+            ]
+
+        # radiography time
+        radiography_time = hcw_time.loc[
+            (hcw_time.Appt_Type_Code == appt_type) &
+            (hcw_time.Officer_Category == 'Radiography') &
+            (hcw_time.Facility_Level == facility_level), 'Time_Taken_Mins'
+            ]
+
+        # multiply df row values by scaling factor then clinical_time then sum and store in output
+        if not clinical_time.empty:
+            output['clinical'] += df.iloc[:, column] * scaling_factor * clinical_time.values[0]
+
+        if not nurse_time.empty:
+            output['nursing'] += df.iloc[:, column] * scaling_factor * nurse_time.values[0]
+
+        if not pharmacy_time.empty:
+            output['pharmacy'] += df.iloc[:, column] * scaling_factor * pharmacy_time.values[0]
+
+        if not radiography_time.empty:
+            output['radiography'] += df.iloc[:, column] * scaling_factor * radiography_time.values[0]
+
+    return output
+
+
+hcw_minutes_full_0 = extract_additional_hcw_minutes(tx_list0, hcw_minutes0)
+hcw_minutes_full_1 = extract_additional_hcw_minutes(tx_list1, hcw_minutes1)
+hcw_minutes_full_2 = extract_additional_hcw_minutes(tx_list2, hcw_minutes2)
