@@ -1157,7 +1157,7 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
             return value
 
     workbook = pd.ExcelFile(
-        resourcefilepath / 'healthsystem' / 'ResourceFile_Ideal_HealthCare_Provision_And_Seeking.xlsx')
+        resourcefilepath / 'healthsystem' / 'ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx')
 
     # Load the ResourceFile for the list of parameters that may change
     mainsheet = pd.read_excel(workbook, 'main').set_index(['Module', 'Parameter'])
