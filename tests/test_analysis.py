@@ -272,48 +272,44 @@ def test_get_parameter_functions(seed):
     """Check that the functions that provide updated parameter values provide recognised parameter names and values
     of the appropriate type."""
 
+    # Function that are designed to provide set of parameters to be updated in a `fullmodel` simulation.
+    funcs = [
+        get_parameters_for_status_quo,
+        lambda: parameters_for_an_ideal_health_system(
+                resourcefilepath=resourcefilepath,
+                max_healthsystem_function=True,
+                max_healthcare_seeking=False
+            ),
+        lambda: parameters_for_an_ideal_health_system(
+            resourcefilepath=resourcefilepath,
+            max_healthsystem_function=False,
+            max_healthcare_seeking=True
+            ),
+        lambda: parameters_for_an_ideal_health_system(
+            resourcefilepath=resourcefilepath,
+            max_healthsystem_function=True,
+            max_healthcare_seeking=True
+        )
+    ]
+
     # Create simulation
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
     sim.register(*fullmodel(resourcefilepath=resourcefilepath))
 
-    # Get structure containing parameters to be updated:
-    params = get_parameters_for_status_quo()
+    for fn in funcs:
 
-    # Check each parameter
-    for module in params.keys():
-        for name, updated_value in params[module].items():
+        # Get structure containing parameters to be updated:
+        params = fn()
 
-            # Check that the parameter identified exists in the simulation
-            assert name in sim.modules[module].parameters, f"Parameter not recognised: {module}:{name}."
+        assert isinstance(params, dict)
+        # Check each parameter
+        for module in params.keys():
+            for name, updated_value in params[module].items():
 
-            # Check that the original value and the updated value are of the same type.
-            original = sim.modules[module].parameters[name]
-            assert type(original) is type(updated_value), f"Updated value type does not match original value type:" \
+                # Check that the parameter identified exists in the simulation
+                assert name in sim.modules[module].parameters, f"Parameter not recognised: {module}:{name}."
 
-# todo - link this to the one above                                                         f"{module}:{name} >> {updated_value=}, {original=}"
-def test_switch_parameters():
-    """Check that `parameters_for_an_ideal_healthsystem` works as expected."""
-
-    assert isinstance(
-        parameters_for_an_ideal_health_system(
-            resourcefilepath=resourcefilepath,
-            max_healthsystem_function=True,
-            max_healthcare_seeking=False
-        ),
-        dict)
-
-    assert isinstance(
-        parameters_for_an_ideal_health_system(
-            resourcefilepath=resourcefilepath,
-            max_healthsystem_function=False,
-            max_healthcare_seeking=True
-        ),
-        dict)
-
-    assert isinstance(
-        parameters_for_an_ideal_health_system(
-            resourcefilepath=resourcefilepath,
-            max_healthsystem_function=True,
-            max_healthcare_seeking=True
-        ),
-        dict)
+                # Check that the original value and the updated value are of the same type.
+                original = sim.modules[module].parameters[name]
+                assert type(original) is type(updated_value), f"Updated value type does not match original value type: " \
+                                                              f"{module}:{name} >> {updated_value=}, {original=}"
