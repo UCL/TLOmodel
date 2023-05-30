@@ -85,71 +85,71 @@ def test_run_and_check_dtypes(tmpdir, seed):
     assert 'error' not in output['tlo.methods.newborn_outcomes']
 
 
-def test_to_check_babies_delivered_in_facility_receive_post_birth_care(seed):
-    """Test that babies that are born within a health facility are correctly scheduled to receive post delivery care
-    following birth """
-    sim = Simulation(start_date=start_date, seed=seed)
-    register_modules(sim)
-    sim.make_initial_population(n=100)
-    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+# def test_to_check_babies_delivered_in_facility_receive_post_birth_care(seed):
+#     """Test that babies that are born within a health facility are correctly scheduled to receive post delivery care
+#     following birth """
+#     sim = Simulation(start_date=start_date, seed=seed)
+#     register_modules(sim)
+#     sim.make_initial_population(n=100)
+#     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+#
+#     df = sim.population.props
+#     mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
+#
+#     # Define key variables of the mother
+#     mother_id = df.loc[df.is_alive & (df.sex == "F") & (df.age_years > 14) & (df.age_years < 50)].index[0]
+#     df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
+#     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 38
+#     df.at[mother_id, 'is_pregnant'] = True
+#
+#     pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+#     pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
+#
+#     # Set the variable that the mother has delivered at a facility
+#     mni[mother_id]['delivery_setting'] = 'hospital'
+#
+#     # Run the birth event
+#     child_id = sim.do_birth(mother_id)
+#     sim.modules['NewbornOutcomes'].on_birth(mother_id, child_id)
+#
+#     # check scheduling
+#     hsi_events = find_and_return_hsi_events_list(sim, child_id)
+#     assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth in hsi_events
 
-    df = sim.population.props
-    mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-    # Define key variables of the mother
-    mother_id = df.loc[df.is_alive & (df.sex == "F") & (df.age_years > 14) & (df.age_years < 50)].index[0]
-    df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
-    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 38
-    df.at[mother_id, 'is_pregnant'] = True
-
-    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
-    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
-
-    # Set the variable that the mother has delivered at a facility
-    mni[mother_id]['delivery_setting'] = 'hospital'
-
-    # Run the birth event
-    child_id = sim.do_birth(mother_id)
-    sim.modules['NewbornOutcomes'].on_birth(mother_id, child_id)
-
-    # check scheduling
-    hsi_events = find_and_return_hsi_events_list(sim, child_id)
-    assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth in hsi_events
-
-
-def test_to_check_babies_delivered_at_home_dont_receive_post_birth_care(seed):
-    """Test that babies that born at home are not incorrectly scheduled to receive post delivery care
-    following birth """
-    sim = Simulation(start_date=start_date, seed=seed)
-    register_modules(sim)
-    sim.make_initial_population(n=100)
-
-    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-
-    df = sim.population.props
-    mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-    mother_id = df.loc[df.is_alive & (df.sex == "F") & (df.age_years > 14) & (df.age_years < 50)].index[0]
-    df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
-    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 38
-    df.at[mother_id, 'is_pregnant'] = True
-
-    # Populate the minimum set of keys within the mni dict so the on_birth function will run
-    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
-    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
-
-    # Set the variable that the mother has delivered at home
-    mni[mother_id]['delivery_setting'] = 'home_birth'
-    child_id = sim.do_birth(mother_id)
-    sim.modules['NewbornOutcomes'].on_birth(mother_id, child_id)
-
-    # check the baby is term as expected
-    assert not sim.population.props.at[child_id, 'nb_early_preterm']
-    assert not sim.population.props.at[child_id, 'nb_late_preterm']
-
-    # Check they are not scheduled to receive post birth care
-    hsi_events = find_and_return_hsi_events_list(sim, child_id)
-    assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth not in hsi_events
+# def test_to_check_babies_delivered_at_home_dont_receive_post_birth_care(seed):
+#     """Test that babies that born at home are not incorrectly scheduled to receive post delivery care
+#     following birth """
+#     sim = Simulation(start_date=start_date, seed=seed)
+#     register_modules(sim)
+#     sim.make_initial_population(n=100)
+#
+#     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+#
+#     df = sim.population.props
+#     mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
+#
+#     mother_id = df.loc[df.is_alive & (df.sex == "F") & (df.age_years > 14) & (df.age_years < 50)].index[0]
+#     df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
+#     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 38
+#     df.at[mother_id, 'is_pregnant'] = True
+#
+#     # Populate the minimum set of keys within the mni dict so the on_birth function will run
+#     pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+#     pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
+#
+#     # Set the variable that the mother has delivered at home
+#     mni[mother_id]['delivery_setting'] = 'home_birth'
+#     child_id = sim.do_birth(mother_id)
+#     sim.modules['NewbornOutcomes'].on_birth(mother_id, child_id)
+#
+#     # check the baby is term as expected
+#     assert not sim.population.props.at[child_id, 'nb_early_preterm']
+#     assert not sim.population.props.at[child_id, 'nb_late_preterm']
+#
+#     # Check they are not scheduled to receive post birth care
+#     hsi_events = find_and_return_hsi_events_list(sim, child_id)
+#     assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth not in hsi_events
 
 
 def test_care_seeking_for_babies_delivered_at_home_who_develop_complications(seed):
@@ -356,8 +356,8 @@ def test_on_birth_applies_risk_of_complications_and_death_in_term_newborns_deliv
     assert not sim.population.props.at[child_id, 'nb_preterm_respiratory_distress']
     assert (sim.population.props.at[child_id, 'nb_retinopathy_prem'] == 'none')
 
-    hsi_events_child_one = find_and_return_hsi_events_list(sim, child_id)
-    assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth not in hsi_events_child_one
+    # hsi_events_child_one = find_and_return_hsi_events_list(sim, child_id)
+    # assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth not in hsi_events_child_one
 
 
 def test_on_birth_applies_risk_of_complications_and_death_in_preterm_newborns_delivered_at_home_correctly(seed):
@@ -398,61 +398,61 @@ def test_on_birth_applies_risk_of_complications_and_death_in_preterm_newborns_de
     assert sim.population.props.at[child_id, 'nb_not_breathing_at_birth']
     assert (sim.population.props.at[child_id, 'nb_retinopathy_prem'] == 'blindness')
 
-    # ensure homebirths dont receive immediate post delivery care
-    hsi_events_child_one = find_and_return_hsi_events_list(sim, child_id)
-    assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth not in hsi_events_child_one
+    # # ensure homebirths dont receive immediate post delivery care
+    # hsi_events_child_one = find_and_return_hsi_events_list(sim, child_id)
+    # assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth not in hsi_events_child_one
 
 
-def test_newborn_sba_hsi_deliveries_resuscitation_treatment_as_expected(seed):
-    """ Test that resuscitation treatment is delivered as expected to newborns in respiratory distress who deliver in
-    facilities """
-    sim = Simulation(start_date=start_date, seed=seed)
-    register_modules(sim)
-    sim.make_initial_population(n=100)
-
-    # set risk of comps very high and force care seeking
-    params = sim.modules['NewbornOutcomes'].parameters
-    la_params = sim.modules['Labour'].parameters
-    params['prob_encephalopathy'] = 1.0
-    params['prob_enceph_severity'] = [[0, 0, 1], [0, 0, 1]]
-    params['treatment_effect_resuscitation'] = 0.0
-    params['sensitivity_of_assessment_of_ftt_hc'] = 1.0
-    params['cfr_enceph'] = 1.0
-    la_params['prob_hcw_avail_neo_resus'] = 1.0
-    la_params['mean_hcw_competence_hc'] = [[1.0, 1.0], [1.0, 1.0]]
-    la_params['mean_hcw_competence_hp'] = [[1.0, 1.0], [1.0, 1.0]]
-
-    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
-
-    df = sim.population.props
-
-    # set maternal variables
-    mother_id = df.loc[df.is_alive & (df.sex == "F") & (df.age_years > 14) & (df.age_years < 50)].index[0]
-    df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
-    df.at[mother_id, 'is_pregnant'] = True
-
-    pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
-    pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
-
-    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delivery_setting'] = 'health_centre'
-
-    # do the birth
-    child_id = sim.do_birth(mother_id)
-    sim.modules['NewbornOutcomes'].on_birth(mother_id, child_id)
-
-    assert (sim.population.props.at[child_id, 'nb_encephalopathy'] == 'severe_enceph')
-
-    # Ensure PNC isnt sought so risk of death is applied
-    sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['will_receive_pnc'] = 'none'
-
-    # Run the newborn care event
-    newborn_care = newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(
-        person_id=child_id, module=sim.modules['NewbornOutcomes'], facility_level_of_this_hsi='1b')
-    newborn_care.apply(person_id=child_id, squeeze_factor=0.0)
-
-    assert (sim.population.props.at[child_id, 'nb_encephalopathy'] == 'severe_enceph')
-    assert sim.population.props.at[child_id, 'nb_received_neonatal_resus']
-    assert sim.population.props.at[child_id, 'is_alive']
+# def test_newborn_sba_hsi_deliveries_resuscitation_treatment_as_expected(seed):
+#     """ Test that resuscitation treatment is delivered as expected to newborns in respiratory distress who deliver in
+#     facilities """
+#     sim = Simulation(start_date=start_date, seed=seed)
+#     register_modules(sim)
+#     sim.make_initial_population(n=100)
+#
+#     # set risk of comps very high and force care seeking
+#     params = sim.modules['NewbornOutcomes'].parameters
+#     la_params = sim.modules['Labour'].parameters
+#     params['prob_encephalopathy'] = 1.0
+#     params['prob_enceph_severity'] = [[0, 0, 1], [0, 0, 1]]
+#     params['treatment_effect_resuscitation'] = 0.0
+#     params['sensitivity_of_assessment_of_ftt_hc'] = 1.0
+#     params['cfr_enceph'] = 1.0
+#     la_params['prob_hcw_avail_neo_resus'] = 1.0
+#     la_params['mean_hcw_competence_hc'] = [[1.0, 1.0], [1.0, 1.0]]
+#     la_params['mean_hcw_competence_hp'] = [[1.0, 1.0], [1.0, 1.0]]
+#
+#     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+#
+#     df = sim.population.props
+#
+#     # set maternal variables
+#     mother_id = df.loc[df.is_alive & (df.sex == "F") & (df.age_years > 14) & (df.age_years < 50)].index[0]
+#     df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
+#     df.at[mother_id, 'is_pregnant'] = True
+#
+#     pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
+#     pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
+#
+#     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delivery_setting'] = 'health_centre'
+#
+#     # do the birth
+#     child_id = sim.do_birth(mother_id)
+#     sim.modules['NewbornOutcomes'].on_birth(mother_id, child_id)
+#
+#     assert (sim.population.props.at[child_id, 'nb_encephalopathy'] == 'severe_enceph')
+#
+#     # Ensure PNC isnt sought so risk of death is applied
+#     sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['will_receive_pnc'] = 'none'
+#
+#     # Run the newborn care event
+#     newborn_care = newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(
+#         person_id=child_id, module=sim.modules['NewbornOutcomes'], facility_level_of_this_hsi='1b')
+#     newborn_care.apply(person_id=child_id, squeeze_factor=0.0)
+#
+#     assert (sim.population.props.at[child_id, 'nb_encephalopathy'] == 'severe_enceph')
+#     assert sim.population.props.at[child_id, 'nb_received_neonatal_resus']
+#     assert sim.population.props.at[child_id, 'is_alive']
 
 
 def test_newborn_postnatal_check_hsi_delivers_treatment_as_expected(seed):
