@@ -1,0 +1,27 @@
+{
+  "scenario_script_path": "src/scripts/hiv/projections_jan2023/scenario_impact_of_TB_diagnosis_pathways.py",
+  "scenario_seed": 5001,
+  "runs_per_draw": 1,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 834220092,
+      "parameters": {
+        "Tb": {
+          "scenario": 0
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 514968391,
+      "parameters": {
+        "Tb": {
+          "scenario": 0
+        }
+      }
+    }
+  ],
+  "commit": "8fabf3f3d4917bb661ae06fb89af33cb440c0e8c",
+  "github": "https://github.com/UCL/TLOmodel/tree/8fabf3f3d4917bb661ae06fb89af33cb440c0e8c"
+}
