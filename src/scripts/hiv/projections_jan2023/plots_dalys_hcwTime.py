@@ -216,12 +216,13 @@ daly_averted_table['scenario2_upp'] = [int(round(x, -3)) for x in sc2_sc0_upper]
 
 daly_averted_table.to_csv(outputspath / "daly_averted_summary.csv")
 
-aids_dalys_diff = [sc1_sc0_median['AIDS'],
-                   sc2_sc0_median['AIDS']]
-tb_dalys_diff = [sc1_sc0_median['TB (non-AIDS)'],
-                 sc2_sc0_median['TB (non-AIDS)']]
-total_dalys_diff = [sc1_sc0_median['Column_Total'],
-                    sc2_sc0_median['Column_Total']]
+# todo this is now unconstrained scenario first!!
+aids_dalys_diff = [sc2_sc0_median['AIDS'],
+                   sc1_sc0_median['AIDS']]
+tb_dalys_diff = [sc2_sc0_median['TB (non-AIDS)'],
+                 sc1_sc0_median['TB (non-AIDS)']]
+total_dalys_diff = [sc2_sc0_median['Column_Total'],
+                    sc1_sc0_median['Column_Total']]
 
 # -------------------------- plots ---------------------------- #
 # plt.style.use('ggplot')
@@ -601,3 +602,294 @@ def extract_additional_hcw_minutes(df, output):
 hcw_minutes_full_0 = extract_additional_hcw_minutes(tx_list0, hcw_minutes0)
 hcw_minutes_full_1 = extract_additional_hcw_minutes(tx_list1, hcw_minutes1)
 hcw_minutes_full_2 = extract_additional_hcw_minutes(tx_list2, hcw_minutes2)
+
+# convert HCW minutes into hours
+hcw_minutes_full_0 = (hcw_minutes_full_0 / 60)
+hcw_minutes_full_1 = (hcw_minutes_full_1 / 60)
+hcw_minutes_full_2 = (hcw_minutes_full_2 / 60)
+
+# -------------------------- plots ---------------------------- #
+# HCW time by year - plot for each scenario
+
+# plt.style.use('ggplot')
+#
+# aids_colour = "#8949ab"
+# tb_colour = "#ed7e7a"
+# total_colour = "#eede77"
+#
+# clin_col = '#B7C3F3'
+# nurse_col = '#DD7596'
+# pharm_col = '#8EB897'
+# radio_col = '#4F6272'
+#
+# years = list((range(2010, 2036, 1)))
+# years_num = pd.Series(years)
+#
+# fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(nrows=2, ncols=2,
+#                                              figsize=(12, 10))
+# fig.suptitle('')
+#
+# # HCW time
+# labels = ['Clinical', 'Nursing', 'Pharmacy', 'Radiography']
+#
+# # baseline
+# ax1.bar(years_num[12:26], hcw_minutes_full_0.clinical, color=clin_col)
+# ax1.bar(years_num[12:26], hcw_minutes_full_0.nursing,
+#         bottom=hcw_minutes_full_0.clinical, color=nurse_col)
+# ax1.bar(years_num[12:26], hcw_minutes_full_0.pharmacy,
+#         bottom=hcw_minutes_full_0.clinical + hcw_minutes_full_0.nursing, color=pharm_col)
+# ax1.bar(years_num[12:26], hcw_minutes_full_0.radiography,
+#         bottom=hcw_minutes_full_0.clinical + hcw_minutes_full_0.nursing + hcw_minutes_full_0.pharmacy, color=radio_col)
+#
+# ax1.set_ylabel("HCW time (minutes)", rotation=90, labelpad=15)
+# ax1.set_ylim([0, 2e7])
+#
+# ax1.yaxis.set_label_position("left")
+# # ax1.legend(["Constrained scale-up", "Unconstrained scale-up"], frameon=False)
+#
+# # scenario 1
+# ax2.bar(years_num[12:26], hcw_minutes_full_1.clinical, color=clin_col)
+# ax2.bar(years_num[12:26], hcw_minutes_full_1.nursing,
+#         bottom=hcw_minutes_full_1.clinical, color=nurse_col)
+# ax2.bar(years_num[12:26], hcw_minutes_full_1.pharmacy,
+#         bottom=hcw_minutes_full_1.clinical + hcw_minutes_full_1.nursing, color=pharm_col)
+# ax2.bar(years_num[12:26], hcw_minutes_full_1.radiography,
+#         bottom=hcw_minutes_full_1.clinical + hcw_minutes_full_1.nursing + hcw_minutes_full_1.pharmacy, color=radio_col)
+#
+# ax2.set_ylabel("HCW time (minutes)", rotation=90, labelpad=15)
+# ax2.set_ylim([0, 2e7])
+#
+# ax2.yaxis.set_label_position("left")
+#
+# # scenario 2
+# ax3.bar(years_num[12:26], hcw_minutes_full_2.clinical, color=clin_col)
+# ax3.bar(years_num[12:26], hcw_minutes_full_2.nursing,
+#         bottom=hcw_minutes_full_2.clinical, color=nurse_col)
+# ax3.bar(years_num[12:26], hcw_minutes_full_2.pharmacy,
+#         bottom=hcw_minutes_full_2.clinical + hcw_minutes_full_2.nursing, color=pharm_col)
+# ax3.bar(years_num[12:26], hcw_minutes_full_2.radiography,
+#         bottom=hcw_minutes_full_2.clinical + hcw_minutes_full_2.nursing + hcw_minutes_full_2.pharmacy, color=radio_col)
+#
+# ax3.set_ylabel("HCW time (minutes)", rotation=90, labelpad=15)
+# ax3.set_ylim([0, 2e7])
+#
+# ax3.yaxis.set_label_position("left")
+#
+# # DALYs
+# labels = ['Constrained scale-up', 'Unconstrained scale-up']
+# x = np.arange(len(labels))  # the label locations
+# width = 0.2  # the width of the bars
+#
+# rects1 = ax4.bar(x - width, aids_dalys_diff, width, label='AIDS', color=aids_colour)
+# rects2 = ax4.bar(x, tb_dalys_diff, width, label='TB', color=tb_colour)
+# rects3 = ax4.bar(x + width, total_dalys_diff, width, label='Total', color=total_colour)
+#
+# # Add some text for labels, title and custom x-axis tick labels, etc.
+# ax4.set_ylabel('DALYs')
+# ax4.set_title('')
+# ax4.set_xticks(x)
+# ax4.set_xticklabels(labels)
+# ax4.legend(["AIDS", "TB", "Total"], frameon=False)
+#
+# font = {'family': 'sans-serif',
+#         'color': 'black',
+#         'weight': 'bold',
+#         'size': 11,
+#         }
+#
+# ax1.text(-0.15, 1.05, 'A)', horizontalalignment='center',
+#          verticalalignment='center', transform=ax1.transAxes, fontdict=font)
+#
+# ax2.text(-0.1, 1.05, 'B)', horizontalalignment='center',
+#          verticalalignment='center', transform=ax2.transAxes, fontdict=font)
+#
+# fig.tight_layout()
+# # fig.savefig(outputspath / "HCW_DALYS.png")
+#
+# plt.show()
+
+
+#--------------------------------------------------------------------------------------
+# -------------------------- plots ---------------------------- #
+# total minutes per cadre
+
+# hcw_minutes_full_0.loc['Total'] = hcw_minutes_full_0.sum(numeric_only=True, axis=0)
+# hcw_minutes_full_1.loc['Total'] = hcw_minutes_full_1.sum(numeric_only=True, axis=0)
+# hcw_minutes_full_2.loc['Total'] = hcw_minutes_full_2.sum(numeric_only=True, axis=0)
+#
+#
+# plt.style.use('ggplot')
+#
+# aids_colour = "#8949ab"
+# tb_colour = "#ed7e7a"
+# total_colour = "#eede77"
+#
+# fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2,
+#                                              figsize=(11, 5))
+# fig.suptitle('')
+#
+# # Total HCW time over 2022-2035
+# labels = ['Clinical', 'Nursing', 'Pharmacy', 'Radiography']
+# x = np.arange(len(labels))  # the label locations
+# width = 0.2  # the width of the bars
+#
+# rects1 = ax1.bar(x - width, hcw_minutes_full_0.loc['Total'], width, label='Baseline', color=baseline_colour)
+# rects2 = ax1.bar(x, hcw_minutes_full_1.loc['Total'], width, label='Constrained scale-up', color=sc1_colour)
+# rects3 = ax1.bar(x + width, hcw_minutes_full_2.loc['Total'], width, label='Unconstrained scale-up', color=sc2_colour)
+#
+# ax1.set_ylabel("HCW time (hours)", rotation=90, labelpad=15)
+# ax1.set_title('')
+# ax1.set_xticks(x)
+# ax1.set_xticklabels(labels)
+#
+# ax1.yaxis.set_label_position("left")
+# ax1.legend(["Baseline", "Constrained scale-up", "Unconstrained scale-up"], frameon=False)
+#
+# # DALYs
+# labels = ['Constrained scale-up', 'Unconstrained scale-up']
+# x = np.arange(len(labels))  # the label locations
+# width = 0.2  # the width of the bars
+#
+# rects1 = ax2.bar(x - width, aids_dalys_diff, width, label='AIDS', color=aids_colour)
+# rects2 = ax2.bar(x, tb_dalys_diff, width, label='TB', color=tb_colour)
+# rects3 = ax2.bar(x + width, total_dalys_diff, width, label='Total', color=total_colour)
+#
+# # Add some text for labels, title and custom x-axis tick labels, etc.
+# ax2.set_ylabel('DALYs')
+# ax2.set_title('')
+# ax2.set_xticks(x)
+# ax2.set_xticklabels(labels)
+# ax2.legend(["AIDS", "TB", "Total"], frameon=False)
+#
+# font = {'family': 'sans-serif',
+#         'color': 'black',
+#         'weight': 'bold',
+#         'size': 11,
+#         }
+#
+# ax1.text(-0.15, 1.05, 'A)', horizontalalignment='center',
+#          verticalalignment='center', transform=ax1.transAxes, fontdict=font)
+#
+# ax2.text(-0.1, 1.05, 'B)', horizontalalignment='center',
+#          verticalalignment='center', transform=ax2.transAxes, fontdict=font)
+#
+# fig.tight_layout()
+# # fig.savefig(outputspath / "HCW_DALYS.png")
+#
+# plt.show()
+
+
+# # -------------------------- plots ---------------------------- #
+#
+# # abs diff from baseline
+#
+# hcw_minutes_full_1.loc['Diff'] = hcw_minutes_full_1.loc['Total'] - hcw_minutes_full_0.loc['Total']
+# hcw_minutes_full_2.loc['Diff'] = hcw_minutes_full_2.loc['Total'] - hcw_minutes_full_0.loc['Total']
+#
+#
+# plt.style.use('ggplot')
+#
+# aids_colour = "#8949ab"
+# tb_colour = "#ed7e7a"
+# total_colour = "#eede77"
+#
+# fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2,
+#                                              figsize=(11, 5))
+# fig.suptitle('')
+#
+# # Total HCW time over 2022-2035
+# labels = ['Clinical', 'Nursing', 'Pharmacy', 'Radiography']
+# x = np.arange(len(labels))  # the label locations
+# width = 0.2  # the width of the bars
+#
+# rects1 = ax1.bar(x, hcw_minutes_full_1.loc['Diff'], width, label='Constrained scale-up', color=sc1_colour)
+# rects2 = ax1.bar(x + width, hcw_minutes_full_2.loc['Diff'], width, label='Unconstrained scale-up', color=sc2_colour)
+#
+# ax1.set_ylabel("Difference in HCW time (hours)", rotation=90, labelpad=15)
+# ax1.set_title('')
+# ax1.set_xticks(x)
+# ax1.set_xticklabels(labels)
+#
+# ax1.yaxis.set_label_position("left")
+# ax1.legend(["Constrained scale-up", "Unconstrained scale-up"], frameon=False)
+#
+# # DALYs
+# labels = ['Constrained scale-up', 'Unconstrained scale-up']
+# x = np.arange(len(labels))  # the label locations
+# width = 0.2  # the width of the bars
+#
+# rects1 = ax2.bar(x - width, aids_dalys_diff, width, label='AIDS', color=aids_colour)
+# rects2 = ax2.bar(x, tb_dalys_diff, width, label='TB', color=tb_colour)
+# rects3 = ax2.bar(x + width, total_dalys_diff, width, label='Total', color=total_colour)
+#
+# # Add some text for labels, title and custom x-axis tick labels, etc.
+# ax2.set_ylabel('DALYs')
+# ax2.set_title('')
+# ax2.set_xticks(x)
+# ax2.set_xticklabels(labels)
+# ax2.legend(["AIDS", "TB", "Total"], frameon=False)
+#
+# font = {'family': 'sans-serif',
+#         'color': 'black',
+#         'weight': 'bold',
+#         'size': 11,
+#         }
+#
+# ax1.text(-0.15, 1.05, 'A)', horizontalalignment='center',
+#          verticalalignment='center', transform=ax1.transAxes, fontdict=font)
+#
+# ax2.text(-0.1, 1.05, 'B)', horizontalalignment='center',
+#          verticalalignment='center', transform=ax2.transAxes, fontdict=font)
+#
+# fig.tight_layout()
+# # fig.savefig(outputspath / "HCW_DALYS.png")
+#
+# plt.show()
+
+# -------------------------- DALYs only plot ---------------------------- #
+
+plt.style.use('ggplot')
+
+aids_colour = "#8949ab"
+tb_colour = "#ed7e7a"
+total_colour = "#eede77"
+
+# present DALYs in millions
+million = 1000000
+aids_dalys_diff = [x / million for x in aids_dalys_diff]
+tb_dalys_diff = [x / million for x in tb_dalys_diff]
+total_dalys_diff = [x / million for x in total_dalys_diff]
+
+
+fig, ax1 = plt.subplots(nrows=1, ncols=1,
+                                             figsize=(5, 4))
+fig.suptitle('')
+
+# DALYs
+labels = ['Unconstrained scale-up', 'Constrained scale-up']
+x = np.arange(len(labels))  # the label locations
+width = 0.2  # the width of the bars
+
+rects1 = ax1.bar(x - width, aids_dalys_diff, width, label='AIDS', color=aids_colour)
+rects2 = ax1.bar(x, tb_dalys_diff, width, label='TB', color=tb_colour)
+rects3 = ax1.bar(x + width, total_dalys_diff, width, label='Total', color=total_colour)
+
+# Add some text for labels, title and custom x-axis tick labels, etc.
+ax1.set_ylabel('DALYs averted, millions')
+ax1.set_title('')
+ax1.set_xticks(x)
+ax1.set_xticklabels(labels)
+ax1.legend(["AIDS", "TB", "Total"], frameon=False)
+
+font = {'family': 'sans-serif',
+        'color': 'black',
+        'weight': 'bold',
+        'size': 11,
+        }
+
+fig.tight_layout()
+fig.savefig(outputspath / "DALYS.png")
+
+plt.show()
+
+
