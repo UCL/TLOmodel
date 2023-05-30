@@ -951,9 +951,9 @@ def test_severe_pneumonia_referral_from_hsi_first_appts(sim_hs_all_consumables):
     # Check that person 0 has an Emergency Generic HSI scheduled
     generic_appt = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
                     if isinstance(event_tuple[1], HSI_GenericEmergencyFirstApptAtFacilityLevel1)][0]
-
     # Run generic appt and check that there is an Outpatient `HSI_Alri_Treatment` scheduled
     generic_appt.run(squeeze_factor=0.0)
+
     hsi1 = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
             if isinstance(event_tuple[1], HSI_Alri_Treatment)
             ][0]
@@ -962,14 +962,15 @@ def test_severe_pneumonia_referral_from_hsi_first_appts(sim_hs_all_consumables):
     # Check not on treatment before referral:
     assert not df.at[person_id, 'ri_on_treatment']
 
+    print("Before hs1run", sim.modules['HealthSystem'].find_events_for_person(person_id))
     # run the first outpatient HSI ... which will lead to an in-patient HSI being scheduled
     hsi1.run(squeeze_factor=0.0)
-    hsi2 = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
-            if isinstance(event_tuple[1], HSI_Alri_Treatment)
-            ][1]
-    assert hsi2.TREATMENT_ID == 'Alri_Pneumonia_Treatment_Inpatient'
 
-    # Run the second HSI (an in-patient)
+    hsi2 = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
+            if (isinstance(event_tuple[1], HSI_Alri_Treatment) and
+                (event_tuple[1].TREATMENT_ID == 'Alri_Pneumonia_Treatment_Inpatient'))
+            ][0]
+
     hsi2.run(squeeze_factor=0.0)
 
     # Check that the person is now on treatment

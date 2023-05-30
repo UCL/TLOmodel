@@ -378,7 +378,7 @@ def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_only(seed,
     assert 'HSI_EmergencyCare_SpuriousSymptom' not in events_run_and_scheduled
 
     # And that the persons who have those HSI do have symptoms currently:
-    person_ids = [i[4].target for i in sim.modules['HealthSystem'].HSI_EVENT_QUEUE]
+    person_ids = [i.hsi_event.target for i in sim.modules['HealthSystem'].HSI_EVENT_QUEUE]
     for person in person_ids:
         assert 0 < len(sim.modules['SymptomManager'].has_what(person))
 

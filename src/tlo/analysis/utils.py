@@ -1096,6 +1096,38 @@ def get_mappers_in_fullmodel(resourcefilepath: Path, outputpath: Path):
     return {k[1]: extract_mapper(k) for k in keys}
 
 
+def get_parameters_for_status_quo() -> Dict:
+    """
+    Returns a dictionary of parameters and their updated values to indicate
+    the "Status Quo" scenario. This is the configuration that is the target
+    of calibrations.
+
+    The return dict is in the form:
+    e.g. {
+            'Depression': {
+                'pr_assessed_for_depression_for_perinatal_female': 1.0,
+                'pr_assessed_for_depression_in_generic_appt_level1': 1.0,
+                },
+            'Hiv': {
+                'prob_start_art_or_vs': 1.0,
+                }
+         }
+    """
+
+    return {
+        "SymptomManager": {
+            "spurious_symptoms": True,
+        },
+        "HealthSystem": {
+            "use_funded_or_actual_staffing": "actual",
+            "mode_appt_constraints": 1,
+            "cons_availability": "default",
+            "beds_availability": "default",
+        },
+    }
+
+
+# todo - rename to make the above
 def parameters_for_an_ideal_health_system(
     resourcefilepath: Path,
     max_healthsystem_function: Optional[bool] = False,

@@ -2147,11 +2147,6 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
                 params['prob_anc1_months_2_to_4'] = [1.0, 0, 0]
                 params['prob_late_initiation_anc4'] = 0
 
-                # Finally, remove squeeze factor threshold for ANC attendance to ensure that higher levels of ANC
-                # coverage can  be reached with current logic
-                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_anc'] = \
-                    10_000
-
             if params['alternative_anc_quality']:
 
                 # Override the availability of IPTp consumables with the set level of coverage
