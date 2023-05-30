@@ -2095,9 +2095,18 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, Tb)
 
         self.TREATMENT_ID = "Tb_Treatment"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"TBNew": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.number_of_occurrences = 0
+
+    @property
+    def EXPECTED_APPT_FOOTPRINT(self):
+        """
+        Return the expected appt footprint based on whether the HSI has been rescheduled due to unavailable treatment.
+        """
+        if self.number_of_occurrences == 0:
+            return self.make_appt_footprint({'TBNew': 1})
+        else:
+            return self.make_appt_footprint({'PharmDispensing': 1})
 
     def apply(self, person_id, squeeze_factor):
         """This is a Health System Interaction Event - start TB treatment
@@ -2156,6 +2165,9 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                     tclose=None,
                     priority=0,
                 )
+
+    def post_apply_hook(self):
+        self.number_of_occurrences += 1
 
     def select_treatment(self, person_id):
         """
