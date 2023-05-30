@@ -958,9 +958,10 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        mother_id = df.at[person_id, 'mother_id']
 
         if df.at[person_id, 'nb_not_breathing_at_birth']:
-            if mni['neo_will_receive_resus_if_needed']:
+            if mni[mother_id]['neo_will_receive_resus_if_needed']:
                 df.at[person_id, 'nb_received_neonatal_resus'] = True
                 # pregnancy_helper_functions.log_met_need(self, 'neo_resus', hsi_event)
             else:
