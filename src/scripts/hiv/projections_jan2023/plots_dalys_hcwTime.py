@@ -36,6 +36,9 @@ results0 = get_scenario_outputs("scenario0.py", outputspath)[-1]
 results1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
 results2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
 
+# hcw time
+hcw_time = pd.read_csv(resourcefilepath / "healthsystem/human_resources/definitions/ResourceFile_Appt_Time_Table.csv")
+
 # colour scheme
 berry = lacroix.colorList('CranRaspberry')  # ['#F2B9B8', '#DF7878', '#E40035', '#009A90', '#0054A4', '#001563']
 baseline_colour = berry[5]  # '#001563'
@@ -289,7 +292,7 @@ total_dalys_diff = [sc1_sc0_median['Column_Total'],
 years_of_simulation = 26
 
 
-def summarise_treatment_counts(df_list, appt_type):
+def summarise_appt_counts(df_list, appt_type):
     """ summarise the appt types across all draws/runs for one results folder
         requires a list of dataframes with all appts listed with associated counts
     """
@@ -335,7 +338,7 @@ def appt_counts(results_folder, module, key, column):
     results = pd.DataFrame(index=np.arange(years_of_simulation))
 
     for appt in list_tx_id:
-        tmp = summarise_treatment_counts(df_list, appt)
+        tmp = summarise_appt_counts(df_list, appt)
 
         # append output to dataframe
         results = results.join(tmp)
@@ -344,53 +347,101 @@ def appt_counts(results_folder, module, key, column):
 
 
 appt_id0 = appt_counts(results_folder=results0,
-                          module="tlo.methods.healthsystem.summary",
-                          key="HSI_Event",
-                          column="Number_By_Appt_Type_Code")
+                       module="tlo.methods.healthsystem.summary",
+                       key="HSI_Event",
+                       column="Number_By_Appt_Type_Code")
 
 appt_id1 = appt_counts(results_folder=results1,
-                          module="tlo.methods.healthsystem.summary",
-                          key="HSI_Event",
-                          column="Number_By_Appt_Type_Code")
+                       module="tlo.methods.healthsystem.summary",
+                       key="HSI_Event",
+                       column="Number_By_Appt_Type_Code")
 
 appt_id2 = appt_counts(results_folder=results2,
-                          module="tlo.methods.healthsystem.summary",
-                          key="HSI_Event",
-                          column="Number_By_Appt_Type_Code")
+                       module="tlo.methods.healthsystem.summary",
+                       key="HSI_Event",
+                       column="Number_By_Appt_Type_Code")
 
 # extract numbers of hiv and tb appts scaled to full population size
 # compare scenario 1 and 2
 scaling_factor = 145.39609
 
 # produce lists of relevant columns
-tb_appts = ['TBFollowUp', 'TBNew', 'DiagRadio']
+# todo excludes usage of Over5OPD and DiagRadio
+tb_appts = ['TBFollowUp', 'TBNew']
 hiv_appts = ['VCTNegative', 'VCTPositive', 'EstNonCom', 'NewAdult', 'Peds',
              'MaleCirc']
 all_appts = tb_appts + hiv_appts
 
-data0 = appt_id0[appt_id0.columns.intersection(all_appts)]
-data1 = appt_id1[appt_id1.columns.intersection(all_appts)]
-data2 = appt_id2[appt_id2.columns.intersection(all_appts)]
+# total number of hiv/tb appts 2023-2035 - keep only the "_median" columns
+median_appts = [col for col in appt_id0 if col.endswith('_median')]
+data0_median = appt_id0[appt_id0.columns.intersection(median_appts)]
+data1_median = appt_id1[appt_id1.columns.intersection(median_appts)]
+data2_median = appt_id2[appt_id2.columns.intersection(median_appts)]
 
-# row 13 is 2023
-# sum all appts from 2023 for each scenario
-tmp0 = data0.iloc[13:26]
-tmp1 = data1.iloc[13:26]
-tmp2 = data2.iloc[13:26]
+# keep only relevant appt types
+pattern = '|'.join(all_appts)
+data0 = data0_median.loc[:, data0_median.columns.str.contains(pattern)]
+data1 = data1_median.loc[:, data1_median.columns.str.contains(pattern)]
+data2 = data2_median.loc[:, data2_median.columns.str.contains(pattern)]
 
-# total number of hiv/tb appts 2023-2035 - sum only the "_median" columns
-median_appts = [col for col in tmp0 if col.endswith('_median')]
-data0_median = tmp1[tmp1.columns.intersection(median_appts)]
-data1_median = tmp1[tmp1.columns.intersection(median_appts)]
-data2_median = tmp2[tmp2.columns.intersection(median_appts)]
+# row 12 is 2022
+# all appts from 2022 for each scenario
+tmp0 = data0.iloc[12:26]
+tmp1 = data1.iloc[12:26]
+tmp2 = data2.iloc[12:26]
 
 
-# use the appt footprints (they map 1:1 with treatment IDs)
-# the treatment ID can have different footprints depending on the person
-# then add in Over5OPD used by 3 different appt types
+# for every column
+# extract minutes of clinical, nursing and pharmacy
+# store for each year
+def extract_hcw_minutes(df):
+    # set up empty df to store outputs
+    output = pd.DataFrame(0, index=df.index, columns=['clinical', 'nursing', 'pharmacy'])
 
-# scale to full population
+    # remove suffix _median from column names for mapping
+    df = df.rename(columns=lambda x: x.replace('_median', ''))
 
-# extract minutes of clinical, nursing and pharmacy time
+    # for each row, extract minutes of clinical time across columns
+    for column in range(0, len(df.columns)):
+        # extract clinical time
+        appt_type = df.columns[column]
+
+        # extract clinical time
+        clinical_time = hcw_time.loc[
+            (hcw_time.Appt_Type_Code == appt_type) &
+            (hcw_time.Officer_Category == 'Clinical') &
+            (hcw_time.Facility_Level == '1a'), 'Time_Taken_Mins'
+            ]
+
+        # nursing time
+        nurse_time = hcw_time.loc[
+            (hcw_time.Appt_Type_Code == appt_type) &
+            (hcw_time.Officer_Category == 'Nursing_and_Midwifery') &
+            (hcw_time.Facility_Level == '1a'), 'Time_Taken_Mins'
+            ]
+
+        # pharmacy time
+        pharmacy_time = hcw_time.loc[
+            (hcw_time.Appt_Type_Code == appt_type) &
+            (hcw_time.Officer_Category == 'Pharmacy') &
+            (hcw_time.Facility_Level == '1a'), 'Time_Taken_Mins'
+            ]
+
+        # multiply df row values by scaling factor then clinical_time then sum and store in output
+        if not clinical_time.empty:
+            output['clinical'] += df.iloc[:, column] * scaling_factor * clinical_time.values[0]
+
+        if not nurse_time.empty:
+            output['nursing'] += df.iloc[:, column] * scaling_factor * nurse_time.values[0]
+
+        if not pharmacy_time.empty:
+            output['pharmacy'] += df.iloc[:, column] * scaling_factor * pharmacy_time.values[0]
+
+    return output
+
+
+hcw_minutes0 = extract_hcw_minutes(tmp0)
+hcw_minutes1 = extract_hcw_minutes(tmp1)
+hcw_minutes2 = extract_hcw_minutes(tmp2)
 
 
