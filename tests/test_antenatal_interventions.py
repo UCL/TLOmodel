@@ -478,19 +478,10 @@ def test_anc_contacts_that_should_not_run_wont_run(seed):
     assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 0)
     assert pd.isnull(df.at[mother_id, 'ac_date_next_contact'])
 
-    # Reset the gestational age and set the squeeze factor of the HSI as very high. Woman will leave and HSI should not
-    # run
+    # Reset the gestational age
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 10
 
-    first_anc.apply(person_id=updated_mother_id, squeeze_factor=1001)  # todo: replace
-    assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 0)
-    assert pd.isnull(df.at[mother_id, 'ac_date_next_contact'])
-
-    # check that she will return for this event
-    hsi_events = find_and_return_hsi_events_list(sim, mother_id)
-    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact in hsi_events
-
-    # Finally set woman as inpatient when she is due for her first ANC appointment
+    # Set woman as inpatient when she is due for her first ANC appointment
     df.at[mother_id, 'hs_is_inpatient'] = True
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
 

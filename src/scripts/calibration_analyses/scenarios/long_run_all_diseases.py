@@ -11,6 +11,7 @@ or locally using:
 """
 
 from tlo import Date, logging
+from tlo.analysis.utils import get_parameters_for_status_quo
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
@@ -44,7 +45,7 @@ class LongRun(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        return  # Using default parameters in all cases
+        return get_parameters_for_status_quo()
 
 
 if __name__ == '__main__':

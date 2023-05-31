@@ -1125,7 +1125,6 @@ class CareOfWomenDuringPregnancy(Module):
         :returns True/False as to whether the event can run
         """
         df = self.sim.population.props
-        params = self.current_parameters
         mother = df.loc[individual_id]
 
         visit = HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
@@ -1167,14 +1166,6 @@ class CareOfWomenDuringPregnancy(Module):
             df.at[individual_id, 'ps_date_of_anc1'] = visit_date
             return False
 
-        # Finally, if the squeeze factor is too high the event wont run and she will return tomorrow
-        if squeeze_factor > params['squeeze_factor_threshold_anc']:
-
-            self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
-                                                                topen=self.sim.date + DateOffset(days=1),
-                                                                tclose=self.sim.date + DateOffset(days=2))
-            return False
-
         return True
 
     def check_subsequent_anc_can_run(self, individual_id, this_contact, this_visit_number, squeeze_factor,
@@ -1191,7 +1182,6 @@ class CareOfWomenDuringPregnancy(Module):
         """
 
         df = self.sim.population.props
-        params = self.current_parameters
 
         date_difference = self.sim.date - df.at[individual_id, 'ac_date_next_contact']
 
@@ -1214,13 +1204,6 @@ class CareOfWomenDuringPregnancy(Module):
         if df.at[individual_id, 'hs_is_inpatient']:
             self.antenatal_care_scheduler(individual_id, visit_to_be_scheduled=this_visit_number,
                                           recommended_gestation_next_anc=gest_age_next_contact)
-            return False
-
-        # If the squeeze factor is too high she will return tomorrow
-        if squeeze_factor > params['squeeze_factor_threshold_anc']:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(this_contact, priority=0,
-                                                                topen=self.sim.date + DateOffset(days=1),
-                                                                tclose=self.sim.date + DateOffset(days=2))
             return False
 
         return True
@@ -2037,7 +2020,6 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
-        params = self.module.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # First we determine at what point in this womans pregnancy should she return for another visit
@@ -2084,15 +2066,6 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
                 df.at[person_id, 'ps_date_of_anc1'] = visit_date
             else:
                 df.at[person_id, 'ac_date_next_contact'] = visit_date
-
-            # return blank footprint as the appointment did not run as intended.
-            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-
-        # Finally, if the squeeze factor is too high the event wont run and she will return tomorrow
-        elif squeeze_factor > params['squeeze_factor_threshold_anc']:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(self, priority=0,
-                                                                topen=self.sim.date + DateOffset(days=1),
-                                                                tclose=self.sim.date + DateOffset(days=2))
 
             # return blank footprint as the appointment did not run as intended.
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
@@ -2172,48 +2145,6 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, Ind
                                          f'{df.at[person_id, "ac_admitted_for_immediate_delivery"]} today')
 
         self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id), self.sim.date)
-
-
-class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment. It is schedule by the PregnancySupervisor Event
-    for women who choose to seek care for emergency treatment in pregnancy (due to severe pre-eclampsia/eclampsia,
-    antepartum haemorrhage, premature rupture of membranes or chorioamnionitis). It is assumed women present to this
-    event as their first point of contact for an emergency in pregnancy, and therefore circumnavigate regular A&E.
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, CareOfWomenDuringPregnancy)
-
-        self.TREATMENT_ID = 'AntenatalCare_Inpatient'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-
-        if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'is_pregnant']:
-            return
-
-        if not df.at[person_id, 'hs_is_inpatient'] and not df.at[person_id, 'la_currently_in_labour']:
-            admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
-                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
-
-            self.sim.modules['HealthSystem'].schedule_hsi_event(admission, priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=1))
-
-    def never_ran(self):
-        self.module.call_if_maternal_emergency_assessment_cant_run(self)
-
-    def did_not_run(self):
-        self.module.call_if_maternal_emergency_assessment_cant_run(self)
-        return False
-
-    def not_available(self):
-        self.module.call_if_maternal_emergency_assessment_cant_run(self)
 
 
 class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
