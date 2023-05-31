@@ -2961,17 +2961,18 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         # -------------------------- Newborn resuscitation ------------------------------------------------------------
         # We check in this HSI that if the mother has a live born baby who requires resucitation that they will receive
         # the intervention
-        # TODO: potential issue is that this consumable is being logged now for every birth as opposed to
-        #  for each birth where resuscitation of the newborn is required
-        avail = pregnancy_helper_functions.return_cons_avail(
-            self.module, self, self.module.item_codes_lab_consumables, core='resuscitation')
+        if not mni[person_id]['sought_care_for_complication']:
+            # TODO: potential issue is that this consumable is being logged now for every birth as opposed to
+            #  for each birth where resuscitation of the newborn is required
+            avail = pregnancy_helper_functions.return_cons_avail(
+                self.module, self, self.module.item_codes_lab_consumables, core='resuscitation')
 
-        # Run HCW check
-        sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.module,
-                                                                                   sf='neo_resus',
-                                                                                   hsi_event=self)
-        if sf_check and avail:
-            mni[person_id]['neo_will_receive_resus_if_needed'] = True
+            # Run HCW check
+            sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.module,
+                                                                                       sf='neo_resus',
+                                                                                       hsi_event=self)
+            if sf_check and avail:
+                mni[person_id]['neo_will_receive_resus_if_needed'] = True
 
         # ========================================== SCHEDULING CEMONC CARE =========================================
         # Finally women who require additional treatment have the appropriate HSI scheduled to deliver further care

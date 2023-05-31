@@ -960,6 +960,10 @@ class NewbornOutcomes(Module):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         mother_id = df.at[person_id, 'mother_id']
 
+        if mni[mother_id]['delivery_setting'] == 'home_birth':
+            logger.info(key='error', data=f'Child {person_id} has received resuscitation despite their '
+                                          f'mother delivering at home')
+
         if df.at[person_id, 'nb_not_breathing_at_birth']:
             if mni[mother_id]['neo_will_receive_resus_if_needed']:
                 df.at[person_id, 'nb_received_neonatal_resus'] = True
