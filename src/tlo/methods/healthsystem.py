@@ -470,17 +470,13 @@ class HealthSystem(Module):
             Types.LIST, 'List of services to be available. NB. This parameter is over-ridden if an argument is provided'
                         ' to the module initialiser.'),
 
-        # Priority Policy
-        'adopt_priority_policy': Parameter(
-            # This should be BOOL, but couldn't read it from resource parameters file
-            Types.INT, 'Whether or not to include a Priority Policy'),
         'Policy_Name': Parameter(
             Types.STRING, "Name of priority policy to be adopted"),
         'PriorityRank': Parameter(
-            Types.DATA_FRAME, "Data on the priority ranking of each of the Treatment_IDs to be adopted by "
-                              " the queueing system under different policies, where the lower the number the higher"
-                              " the priority, and on which categories of individuals classify for fast-tracking "
-                              " for specific treatments"),
+            Types.DICT, "Data on the priority ranking of each of the Treatment_IDs to be adopted by "
+                        " the queueing system under different policies, where the lower the number the higher"
+                        " the priority, and on which categories of individuals classify for fast-tracking "
+                        " for specific treatments"),
 
         # Mode Appt Constraints
         'mode_appt_constraints': Parameter(
@@ -509,13 +505,8 @@ class HealthSystem(Module):
         randomise_queue: bool = True,
         lowest_priority_considered: int = 2,
         ignore_priority: bool = False,
-        adopt_priority_policy: Optional[bool] = None,
         policy_name: Optional[str] = None,
-        # ============== Priority Policy ===============#
-        include_fasttrack_routes: Optional[bool] = False,
-        priority_rank_dict: dict = None,
-        list_fasttrack: Optional[List[str]] = None,
-        # ===============----------------===============#
+        include_fasttrack_routes: Optional[bool] = None,
         max_squeeze_by_priority: dict = None,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = None,
@@ -543,17 +534,10 @@ class HealthSystem(Module):
         :param ignore_priority: If ``True`` do not use the priority information in HSI
             event to schedule
         :param priority_name: name of priority policy that will be adopted
-        :param adopt_priority_policy: If 'True' then use priority specified in the PriorityRank ResourceFile instead
-            of that provided as argument when scheduling via `schedule_hsi_event`.
         :param include_fasttrack_routes: If 'True' then include fast-tracking options for vulnerable categories;
             otherwise ignore indicators for fast-tracking. Options are specified in the PriorityRank ResourceFile
         :param lowest_priority_considered: If priority lower (i.e. priority value greater than) this, do not schedule
             (and instead call `never_ran` at the time of `tclose`).
-        :param priority_rank_dict: contains priority and fast tracking channel eligibility given Treatment_ID
-        :param list_fasttrack: list of individual's attributes that will be relevant in
-            determining whether they should be eligible for fast tracking, and the corresponding
-            fast tracking channels that can be potentially available given the modules included in the simulation.
-            They are specified in the PriorityRank ResourceFile
         :max_squeeze_by_priority: contains maximum squeeze allowed under mode_appt_constraints=2 given priority of
             treatment
         :param capabilities_coefficient: Multiplier for the capabilities of health
@@ -585,8 +569,7 @@ class HealthSystem(Module):
         assert not (disable and disable_and_reject_all), (
             'Cannot have both disable and disable_and_reject_all selected'
         )
-
-        assert not (ignore_priority and adopt_priority_policy), (
+        assert not (ignore_priority and policy_name is not None), (
             'Cannot adopt a priority policy if the priority will be then ignored'
         )
 
@@ -605,9 +588,6 @@ class HealthSystem(Module):
 
         self.ignore_priority = ignore_priority
 
-        self.adopt_priority_policy = None
-        self.arg_adopt_priority_policy = adopt_priority_policy
-
         # Check that the name of policy being evaluated is included
         self.policy_name = None
         if policy_name is not None:
@@ -617,20 +597,15 @@ class HealthSystem(Module):
 
         self.lowest_priority_considered = lowest_priority_considered
 
-        self.rng_for_hsi_queue = None  # Will be a dedicated RNG for the purpose of randomising the queue
-        self.rng_for_dx = None  # Will be a dedicated RNG for the purpose of determining Dx Test results
-
         self.include_fasttrack_routes = include_fasttrack_routes
+
+        # Store the fast tracking channels that will be relevant for policy given the modules included
+        # self.arg_list_fasttrack = list_fasttrack
+        self.list_fasttrack = []  # provided so that there is a default even before simulation is run
 
         # Store the argument provided for service_availability
         self.arg_service_availabily = service_availability
         self.service_availability = ['*']  # provided so that there is a default even before simulation is run
-
-        # Store the attributes of a person that will be relevant in determining who can qualify
-        # for fast tracking
-        # Store the fast tracking channels that will be relevant for policy given the modules included
-        self.arg_list_fasttrack = list_fasttrack
-        self.list_fasttrack = []  # provided so that there is a default even before simulation is run
 
         # Check that the capabilities coefficient is correct
         if capabilities_coefficient is not None:
@@ -778,14 +753,11 @@ class HealthSystem(Module):
                                        rng=rng_for_consumables,
                                        availability=self.get_cons_availability())
 
-        # Check whether to adopt priority policy
-        self.adopt_priority_policy = self.get_adopt_priority_policy()
+        # Determine name of policy to be considered.
+        self.policy_name = self.get_policy_name()
 
         # If adopting policies, initialise here all other relevant variables.
-        if self.adopt_priority_policy:
-
-            # Determine name of policy to be considered.
-            self.policy_name = self.get_policy_name()
+        if self.policy_name != "None":
 
             # Select the chosen policy from dictionary of all possible policies
             Policy_df = self.parameters['PriorityRank'][self.policy_name]
@@ -795,10 +767,12 @@ class HealthSystem(Module):
 
             # If a policy is adopted, following variables *must* always be taken from policy.
             # Over-write any other values here.
-            self.include_fasttrack_routes = Policy_df.loc[Policy_df['Treatment'] == 'lowest_priority_considered',
-                                                          'Priority'].iloc[0]
-            self.lowest_priority_considered = Policy_df.loc[Policy_df['Treatment'] == 'include_fasttrack_routes',
+            self.lowest_priority_considered = Policy_df.loc[Policy_df['Treatment'] == 'lowest_priority_considered',
                                                             'Priority'].iloc[0]
+
+            if Policy_df.loc[Policy_df['Treatment'] == 'include_fasttrack_routes',
+                             'Priority'].iloc[0] == 1:
+                self.include_fasttrack_routes = True
 
             # Remove them from dataframe.
             Policy_df.drop(Policy_df.loc[Policy_df['Treatment'] == 'lowest_priority_considered'].index, inplace=True)
@@ -1128,14 +1102,6 @@ class HealthSystem(Module):
             if self.arg_use_funded_or_actual_staffing is None \
             else self.arg_use_funded_or_actual_staffing
 
-    def get_adopt_priority_policy(self) -> bool:
-        """Returns `adopt_priority_policy`. (Should be equal to what is specified by the parameter, but
-        overwrite with what was provided in argument if an argument was specified -- provided for backward
-        compatibility/debugging.)"""
-        return self.parameters['adopt_priority_policy'] \
-            if self.arg_adopt_priority_policy is None \
-            else self.arg_adopt_priority_policy
-
     def get_policy_name(self) -> str:
         """Returns `policy_name`. (Should be equal to what is specified by the parameter, but
         overwrite with what was provided in argument if an argument was specified -- provided for backward
@@ -1179,7 +1145,7 @@ class HealthSystem(Module):
         if self.ignore_priority:
             priority = 0
 
-        if self.adopt_priority_policy:
+        if self.policy_name != "None":
             # Look-up priority ranking of this treatment_ID in the policy adopted
             priority = self.enforce_priority_policy(hsi_event=hsi_event)
 
@@ -1870,7 +1836,6 @@ class HealthSystem(Module):
                 # call 'did_not_run' for each of them this may not be much faster, however printing
                 #  running_footprint + capabilities_monitor could replace individual 'did_not_run' calls.
                 for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
-
                     _priority = event.priority
                     event = event.hsi_event
 
@@ -1894,7 +1859,6 @@ class HealthSystem(Module):
                         # If officer doesn't exist, then out of resources by definition
                         else:
                             out_of_resources = True
-
                     # If officers still available, run event. Note: in current logic, a little overtime is allowed to
                     # run last event of the day. This seems more realistic than medical staff leaving earlier than
                     # planned if seeing another patient would take them into overtime.
@@ -1955,7 +1919,6 @@ class HealthSystem(Module):
 
                         # Expected appt footprint before running event
                         _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
-
                         # Run event & get actual footprint
                         actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
 

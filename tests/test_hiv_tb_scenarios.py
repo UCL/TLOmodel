@@ -46,7 +46,6 @@ def get_sim(seed):
             mode_appt_constraints=0,  # mode of constraints to do with officer numbers and time
             cons_availability="all",  # mode for consumable constraints (if ignored, all consumables available)
             ignore_priority=True,  # do not use the priority information in HSI event to schedule
-            adopt_priority_policy=False,  # overwrite default setting of adopting priority policy
             capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
             disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
             disable_and_reject_all=False,  # disable healthsystem and no HSI runs

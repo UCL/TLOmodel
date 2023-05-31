@@ -12,9 +12,10 @@ tlo scenario-run src/scripts/healthsystem/impact_of_mode/scenario_impact_of_mode
 ```
 
 """
-
 from pathlib import Path
 from typing import Dict
+
+import pandas as pd
 
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
@@ -26,8 +27,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2014, 12, 31)
-        self.pop_size = 10
+        self.end_date = self.start_date + pd.DateOffset(months=1)
+        self.pop_size = 50
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 1
@@ -83,7 +84,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 'HealthSystem': {
                     'mode_appt_constraints': 2,
                     "use_funded_or_actual_staffing": "actual",
-                    "adopt_priority_policy": 1,
                     "Policy_Name": "Random"
                  },
              },
@@ -92,7 +92,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 'HealthSystem': {
                     'mode_appt_constraints': 2,
                     "use_funded_or_actual_staffing": "actual",
-                    "adopt_priority_policy": 1,
                     "Policy_Name": "Naive"
                  },
              },
@@ -101,7 +100,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 'HealthSystem': {
                     'mode_appt_constraints': 2,
                     "use_funded_or_actual_staffing": "actual",
-                    "adopt_priority_policy": 1,
                     "Policy_Name": "RMNCH"
                  },
              },
@@ -110,7 +108,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 'HealthSystem': {
                     'mode_appt_constraints': 2,
                     "use_funded_or_actual_staffing": "actual",
-                    "adopt_priority_policy": 1,
                     "Policy_Name": "ClinicallyVulnerable"
                  },
              },
@@ -119,7 +116,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 'HealthSystem': {
                     'mode_appt_constraints': 2,
                     "use_funded_or_actual_staffing": "actual",
-                    "adopt_priority_policy": 1,
                     "Policy_Name": "VerticalProgrammes"
                  },
              },
