@@ -18,10 +18,11 @@ from tlo.analysis.utils import (
     get_parameters_for_improved_healthsystem_and_healthcare_seeking,
     get_parameters_for_status_quo,
     get_root_path,
+    mix_scenarios,
     order_of_coarse_appt,
     order_of_short_treatment_ids,
     parse_log_file,
-    unflatten_flattened_multi_index_in_logging, mix_scenarios,
+    unflatten_flattened_multi_index_in_logging,
 )
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
@@ -373,7 +374,7 @@ def test_mix_scenarios():
     with pytest.warns(UserWarning) as record:
         assert mix_scenarios(d1, d2, d3) == {
             'Mod1': {
-                'param_a': 'value_in_d1',  # <- only appears in d1, and is included despite d3 also having key for 'Mod1'
+                'param_a': 'value_in_d1',  # <- only appears in d1, and is included despite d3 also having 'Mod1' key
                 'param_b': 'value_in_d3',  # <- appears in d1 and d3, but d3 is right-most, so 'wins' (raises Warning)
                 'param_c': 'value_in_d3',  # <- only appears in d3
             },
@@ -385,4 +386,3 @@ def test_mix_scenarios():
 
     assert 1 == len(record)
     assert record.list[0].message.args[0] == 'Parameter is being updated more than once: module=Mod1, parameter=param_b'
-

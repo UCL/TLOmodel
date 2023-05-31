@@ -19,8 +19,11 @@ from pathlib import Path
 from typing import Dict
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_parameters_for_status_quo, \
-    get_parameters_for_improved_healthsystem_and_healthcare_seeking, mix_scenarios
+from tlo.analysis.utils import (
+    get_parameters_for_improved_healthsystem_and_healthcare_seeking,
+    get_parameters_for_status_quo,
+    mix_scenarios,
+)
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
