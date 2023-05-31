@@ -1150,11 +1150,43 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
     """
 
     def read_value(_value):
-        """Returns the value or a dataframe if the value point to a different sheet in the workbook"""
+        """Returns the value, or a dataframe if the value point to a different sheet in the workbook, or a series if the
+        value points to sheet in the workbook with only two columns (which become the index and the values)."""
+        drop_extra_columns = lambda df: df.dropna(how='all', axis=1)  # noqa E731
+        squeeze_single_col_df_to_series = lambda df: \
+            df.set_index(df[df.columns[0]])[df.columns[1]] if len(df.columns) == 2 else df  # noqa E731
+
+        def construct_multiindex_if_implied(df):
+            """Detect if a multi-index is implied (by the first column header having a "/" in it) and construct this."""
+            if isinstance(df, pd.DataFrame) and (len(df.columns) > 1) and ('/' in df.columns[0]):
+                idx = df[df.columns[0]].str.split('/', expand=True)
+                idx.columns = tuple(df.columns[0].split('/'))
+
+                # Make the dtype as `int` if possible
+                for col in idx.columns:
+                    try:
+                        idx[col] = idx[col].astype(int)
+                    except ValueError:
+                        pass
+
+                df.index = pd.MultiIndex.from_frame(idx)
+                return df.drop(columns=df.columns[0])
+            else:
+                return df
+
         if isinstance(_value, str) and _value.startswith("#"):
-            return pd.read_excel(workbook, sheet_name=_value.lstrip("#").split('!')[0])
+            sheet_name = _value.lstrip("#").split('!')[0]
+            return \
+                squeeze_single_col_df_to_series(
+                    drop_extra_columns(
+                        construct_multiindex_if_implied(
+                            pd.read_excel(workbook, sheet_name=sheet_name))))
+
+        elif isinstance(_value, str) and _value.startswith("["):
+            # this looks like its intended to be a list
+            return eval(_value)
         else:
-            return value
+            return _value
 
     workbook = pd.ExcelFile(
         resourcefilepath / 'ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx')
