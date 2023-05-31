@@ -5,6 +5,7 @@ import gzip
 import json
 import os
 import pickle
+import warnings
 from collections import Counter, defaultdict
 from collections.abc import Mapping
 from pathlib import Path
@@ -1213,3 +1214,22 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
         params[idx[0]][idx[1]] = read_value(value)
 
     return params
+
+
+def mix_scenarios(*dicts):
+    """Helper function to combine a Dicts that show which parameters should be over-written.
+     * Warnings are generated if a parameter appears in more than one Dict with a different value;
+     * Items under the same top-level key (i.e., for the Module) are merged rather than being over-written."""
+
+    d = defaultdict(lambda: defaultdict(dict))
+
+    for _d in dicts:
+        for mod, params_in_mod in _d.items():
+            for param, value in params_in_mod.items():
+                if param in d[mod]:
+                    if d[mod][param] != value:
+                        warnings.warn(f'Parameter is being updated more than once: module={mod}, parameter={param}',
+                                      UserWarning,)
+                d[mod].update({param: value})
+
+    return d

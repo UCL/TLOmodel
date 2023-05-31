@@ -4,6 +4,7 @@ from typing import List
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from tlo import Date, DateOffset, Module, Property, Simulation, Types, logging
 from tlo.analysis.utils import (
@@ -20,7 +21,7 @@ from tlo.analysis.utils import (
     order_of_coarse_appt,
     order_of_short_treatment_ids,
     parse_log_file,
-    unflatten_flattened_multi_index_in_logging,
+    unflatten_flattened_multi_index_in_logging, mix_scenarios,
 )
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
@@ -343,3 +344,45 @@ def test_get_parameter_functions(seed):
                     assert is_list_same_size_and_dtype(original, updated_value), \
                         print(f"List/tuple is not of the expected size and containing elements of expected type: "
                               f"{module}:{name} >> {updated_value=}, {type(original)=}, {type(updated_value)=}")
+
+
+def test_mix_scenarios():
+    """Check that `mix_scenarios` works as expected."""
+
+    d1 = {
+        'Mod1': {
+            'param_a': 'value_in_d1',
+            'param_b': 'value_in_d1',
+        }
+    }
+
+    d2 = {
+        'Mod2': {
+            'param_a': 'value_in_d2',
+            'param_b': 'value_in_d2',
+        }
+    }
+
+    d3 = {
+        'Mod1': {
+            'param_b': 'value_in_d3',
+            'param_c': 'value_in_d3'
+        }
+    }
+
+    with pytest.warns(UserWarning) as record:
+        assert mix_scenarios(d1, d2, d3) == {
+            'Mod1': {
+                'param_a': 'value_in_d1',  # <- only appears in d1, and is included despite d3 also having key for 'Mod1'
+                'param_b': 'value_in_d3',  # <- appears in d1 and d3, but d3 is right-most, so 'wins' (raises Warning)
+                'param_c': 'value_in_d3',  # <- only appears in d3
+            },
+            'Mod2': {
+                'param_a': 'value_in_d2',  # <- only appears in d2 (& attaches to Mod2 despite name being duplicated)
+                'param_b': 'value_in_d2',  # <- only appears in d2 (& attaches to Mod2 despite name being duplicated)
+            }
+        }
+
+    assert 1 == len(record)
+    assert record.list[0].message.args[0] == 'Parameter is being updated more than once: module=Mod1, parameter=param_b'
+
