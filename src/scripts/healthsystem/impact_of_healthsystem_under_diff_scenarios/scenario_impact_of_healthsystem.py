@@ -20,7 +20,7 @@ from typing import Dict
 
 from tlo import Date, logging
 from tlo.analysis.utils import get_parameters_for_status_quo, \
-    get_parameters_for_improved_healthsystem_and_healthcare_seeking
+    get_parameters_for_improved_healthsystem_and_healthcare_seeking, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
@@ -56,25 +56,7 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
         return list(self._scenarios.values())[draw_number]
 
     def _get_scenarios(self) -> Dict[str, Dict]:
-        """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
-        0. "No Healthcare System"
-
-        1. "Defaults":
-            Normal healthcare seeking,
-            Default consumables,
-
-        2. "Perfect Healthcare Seeking":
-            Perfect healthcare seeking,
-            Default consumables,
-
-        3. "Perfect Consumables":
-            Normal healthcare seeking,
-            100% availability of consumables,
-
-        4. All changes:
-            Perfect healthcare seeking,
-            100% availability of consumables,
-        """
+        """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
         return {
             "No Healthcare System": {
@@ -90,34 +72,37 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
             "Status Quo":
                 get_parameters_for_status_quo(),
 
-            "Perfect Healthcare Seeking": {
-                **get_parameters_for_status_quo(),
-                **get_parameters_for_improved_healthsystem_and_healthcare_seeking(
-                    resourcefilepath=self.resources,
-                    max_healthsystem_function=False,
-                    max_healthcare_seeking=True)
-            },
+            "Perfect Healthcare Seeking":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    get_parameters_for_improved_healthsystem_and_healthcare_seeking(
+                        resourcefilepath=self.resources,
+                        max_healthsystem_function=False,
+                        max_healthcare_seeking=True)
+                ),
 
-            "+ Perfect Clinical Practice":{
-                **get_parameters_for_status_quo(),
-                **get_parameters_for_improved_healthsystem_and_healthcare_seeking(
-                    resourcefilepath=self.resources,
-                    max_healthsystem_function=True,
-                    max_healthcare_seeking=True)
-            },
+            "+ Perfect Clinical Practice":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    get_parameters_for_improved_healthsystem_and_healthcare_seeking(
+                        resourcefilepath=self.resources,
+                        max_healthsystem_function=True,
+                        max_healthcare_seeking=True)
+                ),
 
-            "+ Perfect Consumables Availability": {
-                **get_parameters_for_status_quo(),
-                **get_parameters_for_improved_healthsystem_and_healthcare_seeking(
-                    resourcefilepath=self.resources,
-                    max_healthsystem_function=True,
-                    max_healthcare_seeking=True),
-                **{
-                    'HealthSystem': {
-                        'cons_availability': 'all',
-                    },
-                },
-            },
+            "+ Perfect Consumables Availability":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    get_parameters_for_improved_healthsystem_and_healthcare_seeking(
+                        resourcefilepath=self.resources,
+                        max_healthsystem_function=True,
+                        max_healthcare_seeking=True),
+                    {
+                        'HealthSystem': {
+                            'cons_availability': 'all',
+                        },
+                    }
+                ),
         }
 
 
