@@ -14,12 +14,13 @@ from tlo.analysis.utils import (
     get_color_coarse_appt,
     get_color_short_treatment_id,
     get_filtered_treatment_ids,
+    get_parameters_for_improved_healthsystem_and_healthcare_seeking,
     get_parameters_for_status_quo,
     get_root_path,
     order_of_coarse_appt,
     order_of_short_treatment_ids,
     parse_log_file,
-    unflatten_flattened_multi_index_in_logging, get_parameters_for_improved_healthsystem_and_healthcare_seeking,
+    unflatten_flattened_multi_index_in_logging,
 )
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
