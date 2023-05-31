@@ -160,13 +160,13 @@ plt.close()
 rdt_facilities = output["tlo.methods.malaria"]["rdt_log"]
 
 # limit to first tests only?
-rdt_all = rdt_facilities
-# rdt_all = rdt_facilities.loc[~(rdt_facilities.called_by == 'Malaria_Treatment')]
+# rdt_all = rdt_facilities
+rdt_all = rdt_facilities.loc[~(rdt_facilities.called_by == 'Malaria_Treatment')]
 
 # limit to children <5 yrs with fever
 rdt_child = rdt_facilities.loc[(rdt_facilities.age <= 5) & rdt_facilities.fever_present]
 # remove tests given for confirmation with treatment
-# rdt_child = rdt_child.loc[~(rdt_child.called_by == 'Malaria_Treatment')]
+rdt_child = rdt_child.loc[~(rdt_child.called_by == 'Malaria_Treatment')]
 
 
 colours = ['#B7C3F3', '#DD7596', '#8EB897']
@@ -183,7 +183,7 @@ plt.pie([level0, level1a, level1b], labels=['level 0', 'level 1a', 'level 1b'],
         wedgeprops={'linewidth': 3, 'edgecolor': 'white'},
         autopct='%.1f%%',
         colors=colours)
-plt.title("Facility level giving any rdt \n all ages")
+plt.title("Facility level giving first rdt \n all ages")
 
 ax2 = plt.subplot(122)  # numrows, numcols, fignum
 # calculate proportion of rdt delivered by facility level - children with fever
@@ -194,7 +194,7 @@ plt.pie([level0, level1a, level1b], labels=['level 0', 'level 1a', 'level 1b'],
         wedgeprops={'linewidth': 3, 'edgecolor': 'white'},
         autopct='%.1f%%',
         colors=colours)
-plt.title("Facility level giving any rdt  \n children with fever")
+plt.title("Facility level giving first rdt  \n children with fever")
 plt.tight_layout()
 
 plt.show()

@@ -31,7 +31,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2016, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 5000
 
 # set up the log config
@@ -60,7 +60,7 @@ sim.register(
         capabilities_coefficient=1.0,
         disable=False,
     ),
-    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
