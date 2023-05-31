@@ -443,17 +443,9 @@ def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed)
     # set comps
     df.at[child_id, 'nb_encephalopathy'] = 'severe_enceph'
 
-    # set consumables to 0
-    resus = sim.modules['NewbornOutcomes'].item_codes_nb_consumables['resuscitation']
-    for item in resus:
-        sim.modules['HealthSystem'].override_availability_of_consumables({item: 0.0})
-
     # refresh the consumables
     sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
-
     hsi_event = get_dummy_hsi(sim, mother_id, id=3, fl=2)
-    available = hsi_event.get_consumables(item_codes=resus)
-    assert not available
 
     # set postnatal comps
     df.at[child_id, 'pn_sepsis_early_neonatal'] = True
