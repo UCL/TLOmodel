@@ -19,6 +19,8 @@ from pathlib import Path
 from typing import Dict
 
 from tlo import Date, logging
+from tlo.analysis.utils import get_parameters_for_status_quo, \
+    get_parameters_for_improved_healthsystem_and_healthcare_seeking
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
@@ -81,43 +83,39 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
                 },
             },
 
-            "Defaults": {
-                'HealthSystem': {
-                    'Service_Availability': ['*'],
-                    'cons_availability': 'default',
-                },
-                'HealthSeekingBehaviour': {
-                    'force_any_symptom_to_lead_to_healthcareseeking': False
-                },
-            },
+            "With Hard Constraints":
+                # todo -- this will be the MODE 2 "Super-Rigid Constraints" scenario
+                get_parameters_for_status_quo(),
+
+            "Status Quo":
+                get_parameters_for_status_quo(),
 
             "Perfect Healthcare Seeking": {
-                'HealthSystem': {
-                    'Service_Availability': ['*'],
-                    'cons_availability': 'default',
-                },
-                'HealthSeekingBehaviour': {
-                    'force_any_symptom_to_lead_to_healthcareseeking': True
-                },
+                **get_parameters_for_status_quo(),
+                **get_parameters_for_improved_healthsystem_and_healthcare_seeking(
+                    resourcefilepath=self.resources,
+                    max_healthsystem_function=False,
+                    max_healthcare_seeking=True)
             },
 
-            "Perfect Consumables Availability": {
-                'HealthSystem': {
-                    'Service_Availability': ['*'],
-                    'cons_availability': 'all',
-                },
-                'HealthSeekingBehaviour': {
-                    'force_any_symptom_to_lead_to_healthcareseeking': False
-                },
+            "+ Perfect Clinical Practice":{
+                **get_parameters_for_status_quo(),
+                **get_parameters_for_improved_healthsystem_and_healthcare_seeking(
+                    resourcefilepath=self.resources,
+                    max_healthsystem_function=True,
+                    max_healthcare_seeking=True)
             },
 
-            "All Changes": {
-                'HealthSystem': {
-                    'Service_Availability': ['*'],
-                    'cons_availability': 'all',
-                },
-                'HealthSeekingBehaviour': {
-                    'force_any_symptom_to_lead_to_healthcareseeking': True
+            "+ Perfect Consumables Availability": {
+                **get_parameters_for_status_quo(),
+                **get_parameters_for_improved_healthsystem_and_healthcare_seeking(
+                    resourcefilepath=self.resources,
+                    max_healthsystem_function=True,
+                    max_healthcare_seeking=True),
+                **{
+                    'HealthSystem': {
+                        'cons_availability': 'all',
+                    },
                 },
             },
         }
