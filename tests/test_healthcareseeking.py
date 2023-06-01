@@ -1,5 +1,6 @@
 """Test for HealthCareSeeking Module"""
 import os
+from collections import Counter
 from pathlib import Path
 from typing import Iterable, List, Optional
 
@@ -23,6 +24,7 @@ from tlo.methods import (
     symptommanager,
 )
 from tlo.methods.healthseekingbehaviour import HIGH_ODDS_RATIO
+from tlo.methods.hsi_generic_first_appts import HSI_GenericNonEmergencyFirstAppt
 from tlo.methods.symptommanager import Symptom
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -163,8 +165,8 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_healthcareseek
     # Check that `HSI_GenericFirstApptAtFacilityLevel0` (but not `HSI_GenericEmergencyFirstApptAtFacilityLevel1`) are
     # triggered for some of persons with the symptom `idx_gets_symptom`
     events_run_and_scheduled = get_events_run_and_scheduled(sim)
-    assert 'HSI_GenericFirstApptAtFacilityLevel0' in events_run_and_scheduled
-    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' not in events_run_and_scheduled
+    assert 'HSI_GenericNonEmergencyFirstAppt' in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstAppt' not in events_run_and_scheduled
 
     # Check that there is no HSI for those with no symptom
     assert 0 == len(get_events_run_and_scheduled_for_person(sim, idx_no_symptom))
@@ -236,8 +238,8 @@ def test_healthcareseeking_does_not_occurs_from_symptom_that_do_not_give_healthc
     # Check no GenericFirstAppts at all
     events_run_and_scheduled = get_events_run_and_scheduled(sim)
     assert 0 == len(events_run_and_scheduled)
-    assert 'HSI_GenericFirstApptAtFacilityLevel0' not in events_run_and_scheduled
-    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' not in events_run_and_scheduled
+    assert 'HSI_GenericNonEmergencyFirstAppt' not in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstAppt' not in events_run_and_scheduled
 
 
 def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_healthcareseeking_behaviour(seed, tmpdir):
@@ -301,9 +303,9 @@ def test_healthcareseeking_does_occur_from_symptom_that_does_give_emergency_heal
     # Check that `HSI_GenericEmergencyFirstApptAtFacilityLevel1` are triggered for everyone (but not
     # `HSI_GenericFirstApptAtFacilityLevel0`)
     events_run_and_scheduled = get_events_run_and_scheduled(sim)
-    assert 'HSI_GenericFirstApptAtFacilityLevel0' not in events_run_and_scheduled
-    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' in events_run_and_scheduled
-    assert all(map(lambda x: x == 'HSI_GenericEmergencyFirstApptAtFacilityLevel1', events_run_and_scheduled))
+    assert 'HSI_GenericNonEmergencyFirstAppt' not in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstAppt' in events_run_and_scheduled
+    assert all(map(lambda x: x == 'HSI_GenericEmergencyFirstAppt', events_run_and_scheduled))
 
 
 def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules(seed, tmpdir):
@@ -329,8 +331,8 @@ def test_no_healthcareseeking_when_no_spurious_symptoms_and_no_disease_modules(s
     # Check no GenericFirstAppts at all
     events_run_and_scheduled = get_events_run_and_scheduled(sim)
     assert 0 == len(events_run_and_scheduled)
-    assert 'HSI_GenericFirstApptAtFacilityLevel0' not in events_run_and_scheduled
-    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' not in events_run_and_scheduled
+    assert 'HSI_GenericNonEmergencyFirstAppt' not in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstAppt' not in events_run_and_scheduled
     assert 'HSI_EmergencyCare_SpuriousSymptom' not in events_run_and_scheduled
 
 
@@ -370,11 +372,11 @@ def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_only(seed,
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # Check that 'HSI_GenericFirstApptAtFacilityLevel0' are triggerd (but not
-    # 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' nor 'HSI_EmergencyCare_SpuriousSymptom')
+    # Check that 'HSI_GenericNonEmergencyFirstAppt' are triggerd (but not
+    # 'HSI_GenericEmergencyFirstAppt' nor 'HSI_EmergencyCare_SpuriousSymptom')
     events_run_and_scheduled = get_events_run_and_scheduled(sim)
-    assert 'HSI_GenericFirstApptAtFacilityLevel0' in events_run_and_scheduled
-    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' not in events_run_and_scheduled
+    assert 'HSI_GenericNonEmergencyFirstAppt' in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstAppt' not in events_run_and_scheduled
     assert 'HSI_EmergencyCare_SpuriousSymptom' not in events_run_and_scheduled
 
     # And that the persons who have those HSI do have symptoms currently:
@@ -415,13 +417,13 @@ def test_healthcareseeking_occurs_with_emergency_spurious_symptom_only(seed, tmp
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # Check that 'HSI_EmergencyCare_SpuriousSymptom' and 'HSI_GenericEmergencyFirstApptAtFacilityLevel1'
+    # Check that 'HSI_EmergencyCare_SpuriousSymptom' and 'HSI_GenericEmergencyFirstAppt'
     # are triggerd (but not HSI_GenericFirstApptAtFacilityLevel0)
     # NB. HSI_Emergency_Care_SpuriousSymptom is the secondary HSI and HSI_GenericEmergencyFirstApptAtFacilityLevel1
     # is the primary HSI, i.e., if the secondary occurs then the primary must occur
     events_run_and_scheduled = get_events_run_and_scheduled(sim)
-    assert 'HSI_GenericFirstApptAtFacilityLevel0' not in events_run_and_scheduled
-    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' in events_run_and_scheduled
+    assert 'HSI_GenericNonEmergencyFirstAppt' not in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstAppt' in events_run_and_scheduled
     assert 'HSI_EmergencyCare_SpuriousSymptom' in events_run_and_scheduled
 
     # check that running this HSI does indeed remove the symptom from a person who has it
@@ -508,13 +510,13 @@ def test_healthcareseeking_occurs_with_emergency_and_nonemergency_spurious_sympt
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # Check that 'HSI_EmergencyCare_SpuriousSymptom', 'HSI_GenericEmergencyFirstApptAtFacilityLevel1', and
-    # 'HSI_GenericFirstApptAtFacilityLevel0' are all triggered.
+    # Check that 'HSI_EmergencyCare_SpuriousSymptom', 'HSI_GenericEmergencyFirstAppt', and
+    # 'HSI_GenericNonEmergencyFirstAppt' are all triggered.
     # precedence.)
     events_run_and_scheduled = get_events_run_and_scheduled(sim)
-    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstAppt' in events_run_and_scheduled
     assert 'HSI_EmergencyCare_SpuriousSymptom' in events_run_and_scheduled
-    assert 'HSI_GenericFirstApptAtFacilityLevel0' in events_run_and_scheduled
+    assert 'HSI_GenericNonEmergencyFirstAppt' in events_run_and_scheduled
 
 
 def test_healthcareseeking_occurs_when_triggerd_from_disease_modules(seed, tmpdir):
@@ -541,8 +543,8 @@ def test_healthcareseeking_occurs_when_triggerd_from_disease_modules(seed, tmpdi
 
     # Check that Emergency and Non-Emergency GenericFirstAppts are triggerd, but not HSI_EmergencyCare_SpuriousSymptom
     events_run_and_scheduled = get_events_run_and_scheduled(sim)
-    assert 'HSI_GenericFirstApptAtFacilityLevel0' in events_run_and_scheduled
-    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' in events_run_and_scheduled
+    assert 'HSI_GenericNonEmergencyFirstAppt' in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstAppt' in events_run_and_scheduled
     assert 'HSI_EmergencyCare_SpuriousSymptom' not in events_run_and_scheduled
 
 
@@ -578,8 +580,8 @@ def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_and_diseas
 
     # Check that Emergency and Non-Emergency GenericFirstAppts are triggerd, but not HSI_EmergencyCare_SpuriousSymptom
     events_run_and_scheduled = get_events_run_and_scheduled(sim)
-    assert 'HSI_GenericFirstApptAtFacilityLevel0' in events_run_and_scheduled
-    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' in events_run_and_scheduled
+    assert 'HSI_GenericNonEmergencyFirstAppt' in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstAppt' in events_run_and_scheduled
     assert 'HSI_EmergencyCare_SpuriousSymptom' not in events_run_and_scheduled
 
 
@@ -623,8 +625,8 @@ def test_healthcareseeking_occurs_with_emergency_spurious_symptom_and_disease_mo
 
     # check that all three HSI in his_generic_first_appts are triggered
     events_run_and_scheduled = get_events_run_and_scheduled(sim)
-    assert 'HSI_GenericFirstApptAtFacilityLevel0' in events_run_and_scheduled
-    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' in events_run_and_scheduled
+    assert 'HSI_GenericNonEmergencyFirstAppt' in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstAppt' in events_run_and_scheduled
     assert 'HSI_EmergencyCare_SpuriousSymptom' in events_run_and_scheduled
 
     # get the count of each HSI
@@ -674,8 +676,8 @@ def test_healthcareseeking_occurs_with_emergency_and_nonemergency_spurious_sympt
 
     # check that all three HSI in his_generic_first_appts are triggered
     events_run_and_scheduled = get_events_run_and_scheduled(sim)
-    assert 'HSI_GenericFirstApptAtFacilityLevel0' in events_run_and_scheduled
-    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' in events_run_and_scheduled
+    assert 'HSI_GenericNonEmergencyFirstAppt' in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstAppt' in events_run_and_scheduled
     assert 'HSI_EmergencyCare_SpuriousSymptom' in events_run_and_scheduled
 
 
@@ -717,17 +719,17 @@ def test_hsi_schedules_with_emergency_spurious_symptom_and_mockitis_module(seed,
     person_id = sim.population.props[sim.population.props.sy_extreme_pain_in_the_nose > 0].index.values
     sim.simulate(end_date=end_date)
 
-    # Check that 'HSI_EmergencyCare_SpuriousSymptom' and 'HSI_GenericEmergencyFirstApptAtFacilityLevel1'
+    # Check that 'HSI_EmergencyCare_SpuriousSymptom' and 'HSI_GenericEmergencyFirstAppt'
     # are triggerd (but not HSI_GenericFirstApptAtFacilityLevel0)
     events_run_and_scheduled = get_events_run_and_scheduled(sim)
-    assert 'HSI_GenericFirstApptAtFacilityLevel0' not in events_run_and_scheduled
-    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' in events_run_and_scheduled
+    assert 'HSI_GenericNonEmergencyFirstAppt' not in events_run_and_scheduled
+    assert 'HSI_GenericEmergencyFirstAppt' in events_run_and_scheduled
     assert 'HSI_EmergencyCare_SpuriousSymptom' in events_run_and_scheduled
 
     # further check hsi events by person
     for person in person_id:
         hsi_events_by_person = get_events_run_and_scheduled_for_person(sim, [person])
-        assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' in hsi_events_by_person
+        assert 'HSI_GenericEmergencyFirstAppt' in hsi_events_by_person
         assert 'HSI_EmergencyCare_SpuriousSymptom' in hsi_events_by_person
         assert 'HSI_Mockitis_PresentsForCareWithSevereSymptoms' in hsi_events_by_person
 
@@ -783,7 +785,7 @@ def test_one_generic_emergency_hsi_scheduled_per_day_when_two_emergency_symptoms
     # check that HSI_GenericEmergencyFirstApptAtFacilityLevel1 is triggered
     # and that only 1 HSI is triggered for this person
     hsi_event_count_df = get_dataframe_of_run_events_count(sim)
-    assert 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' == hsi_event_count_df.HSI_event.values
+    assert 'HSI_GenericEmergencyFirstAppt' == hsi_event_count_df.HSI_event.values
     assert 1 == hsi_event_count_df['count'].values
 
 
@@ -939,7 +941,7 @@ def test_force_healthcare_seeking_control_of_behaviour_through_parameters_and_ar
 
     value_in_resourcefile = bool(pd.read_csv(
         resourcefilepath / 'ResourceFile_HealthSeekingBehaviour.csv'
-    ).set_index('parameter_name').at['force_any_symptom_to_lead_to_healthcareseeking', 'value'])
+    ).set_index('parameter_name').apply(pd.eval).at['force_any_symptom_to_lead_to_healthcareseeking', 'value'])
 
     # No specification with argument --> behaviour is as per the parameter value in the ResourceFile
     sim = Simulation(start_date=start_date, seed=seed)
@@ -1058,13 +1060,13 @@ def test_same_day_healthcare_seeking_for_emergency_symptoms(seed, tmpdir):
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # Check that the 'HSI_GenericEmergencyFirstApptAtFacilityLevel1' was the only event to occur
+    # Check that the 'HSI_GenericEmergencyFirstAppt' was the only event to occur
     assert len(sim.modules['HealthSystem'].hsi_event_counts) == 1
     only_event_that_ran, count = sim.modules['HealthSystem'].hsi_event_counts.popitem()
     assert count == 1
     assert (
         only_event_that_ran.event_name
-        == 'HSI_GenericEmergencyFirstApptAtFacilityLevel1'
+        == 'HSI_GenericEmergencyFirstAppt'
     )
 
 
@@ -1137,11 +1139,11 @@ def test_same_day_healthcare_seeking_when_using_force_healthcareseeking(seed, tm
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
 
-    # Check that the 'HSI_GenericFirstApptAtFacilityLevel0' was the only event to occur
+    # Check that the 'HSI_GenericNonEmergencyFirstAppt' was the only event to occur
     assert len(sim.modules['HealthSystem'].hsi_event_counts) == 1
     only_event_that_ran, count = sim.modules['HealthSystem'].hsi_event_counts.popitem()
     assert count == 1
-    assert only_event_that_ran.event_name == 'HSI_GenericFirstApptAtFacilityLevel0'
+    assert only_event_that_ran.event_name == 'HSI_GenericNonEmergencyFirstAppt'
 
 
 def test_everyone_seeks_care_for_symptom_with_high_odds_ratio_of_seeking_care(seed):
