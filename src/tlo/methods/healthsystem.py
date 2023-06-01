@@ -769,6 +769,8 @@ class HealthSystem(Module):
         self.policy_name = self.get_policy_name()
 
         # If adopting policies, initialise here all other relevant variables.
+        # Use of "None" as string is not ideal, however couldn't seem to recover actual
+        # None from parameter file.
         if self.policy_name != "None":
 
             # Select the chosen policy from dictionary of all possible policies
@@ -1167,6 +1169,7 @@ class HealthSystem(Module):
         if self.ignore_priority:
             priority = 0
 
+        # Use of "None" as string not ideal, see note in initialise_population
         if self.policy_name != "None":
             # Look-up priority ranking of this treatment_ID in the policy adopted
             priority = self.enforce_priority_policy(hsi_event=hsi_event)
