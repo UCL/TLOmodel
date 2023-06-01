@@ -47,8 +47,9 @@ class HealthSeekingBehaviour(Module):
             Types.BOOL, "Whether every symptom [except those that declare they should not lead to any healthcare "
                         "seeking] should always lead to healthcare seeking immediately."),
         'prob_non_emergency_care_seeking_by_level': Parameter(
-            Types.LIST, "The probability that non-emergency care is sought at facility level 0 / 1a / 1b / 2."
-        ),
+            Types.LIST, "The probability of going to each facility-level when non-emergency care is sought. The "
+                        "values in the list are the probabilities of going to facility level 0 / 1a / 1b / 2, "
+                        "respectively, and these values must sum to 1.0."),
         'baseline_odds_of_healthcareseeking_children': Parameter(Types.REAL, 'odds of health-care seeking (children:'
                                                                              ' 0-14) if male, 0-5 years-old, living in'
                                                                              ' a rural setting in the Northern region,'
