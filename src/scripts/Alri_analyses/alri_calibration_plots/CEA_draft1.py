@@ -8,6 +8,7 @@ import datetime
 # from tlo.util import random_date, sample_outcome
 
 import pandas as pd
+import numpy as np
 from matplotlib import pyplot as plt
 # import matplotlib.colors as mcolors
 
@@ -269,6 +270,8 @@ def treatment_efficacy(
     oxygen_saturation,
     disease_type,
     complications,
+    hiv_infected_and_not_on_art,
+    un_clinical_acute_malnutrition,
     oximeter_available,
     oxygen_available,
     treatment_perfect,
@@ -360,8 +363,8 @@ def treatment_efficacy(
         age_exact_years=age_exact_years,
         symptoms=symptoms,
         complications=complications,
-        hiv_infected_and_not_on_art=False,
-        un_clinical_acute_malnutrition='well',
+        hiv_infected_and_not_on_art=hiv_infected_and_not_on_art,
+        un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
     )
 
     # for inpatients provide 2nd line IV antibiotic if 1st line failed
@@ -375,8 +378,8 @@ def treatment_efficacy(
             age_exact_years=age_exact_years,
             symptoms=symptoms,
             complications=complications,
-            hiv_infected_and_not_on_art=False,
-            un_clinical_acute_malnutrition='well',
+            hiv_infected_and_not_on_art=hiv_infected_and_not_on_art,
+            un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
         ))
 
     # Return percentage probability of treatment success
@@ -414,6 +417,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=(x.hv_inf and x.hv_art == 'not'),
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=True,
@@ -433,6 +438,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=(x.hv_inf and x.hv_art == 'not'),
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=True,
@@ -451,6 +458,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=(x.hv_inf and x.hv_art == 'not'),
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=False,
@@ -469,6 +478,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=(x.hv_inf and x.hv_art == 'not'),
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=True,
@@ -487,6 +498,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=(x.hv_inf and x.hv_art == 'not'),
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=False,
@@ -506,6 +519,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=(x.hv_inf and x.hv_art == 'not'),
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=True,
@@ -524,6 +539,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=(x.hv_inf and x.hv_art == 'not'),
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=False,
@@ -542,6 +559,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=(x.hv_inf and x.hv_art == 'not'),
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=True,
@@ -560,6 +579,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=(x.hv_inf and x.hv_art == 'not'),
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=False,
@@ -580,6 +601,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=(x.hv_inf and x.hv_art == 'not'),
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=True,
@@ -599,6 +622,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=(x.hv_inf and x.hv_art == 'not'),
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=True,
@@ -617,6 +642,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=(x.hv_inf and x.hv_art == 'not'),
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=False,
@@ -635,6 +662,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=(x.hv_inf and x.hv_art == 'not'),
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=True,
@@ -653,6 +682,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=(x.hv_inf and x.hv_art == 'not'),
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=False,
@@ -672,6 +703,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=(x.hv_inf and x.hv_art == 'not'),
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=True,
@@ -690,6 +723,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=(x.hv_inf and x.hv_art == 'not'),
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=False,
@@ -708,6 +743,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=(x.hv_inf and x.hv_art == 'not'),
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=True,
@@ -726,6 +763,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=(x.hv_inf and x.hv_art == 'not'),
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=False,
@@ -1325,4 +1364,53 @@ if __name__ == "__main__":
                                    ('fast_breathing_pneumonia', '<90%'), ('fast_breathing_pneumonia', '90-92%'),
                                    ('cough_or_cold', '<90%'), ('cough_or_cold', '90-92%')],
                                   names=number_cases.index.names), fill_value=0).sum()
+
+# CALCULATE DALYS AT THE INDIVIDUAL LEVEL ---------------------------------
+def f_DALY(K, C=0.16243, r=None, beta=None, a_death=None, a_disability=None, YLL_L=None, D=None):
+    """ CALCULATE DALYS FOR AN INDIVIDUAL - Calculates disability-adjusted life years for an individual
+    Returns a list of Years of Life Lost (discounted), Years Lived in Disease, and total DALYs #
+
+    :param K: Age weighting modulation factor (1=use age weighting, 0=no age weighting)
+    :param C: contant (default = 0.16243)
+    :param r: discount rate (between 0-1 --- use 0.03)
+    :param beta: parameter of age weighting function (between 0-1 ---- use 0.04)
+    :param a_death: Age of premature death due to disease (in years)
+    :param a_disability: Age of disease onset (in years)
+    :param YLL_L: Life expectancy at age of death (in years)
+    :param D: Disability weight (between 0-1)
+    :return:
+    """
+
+    # calculate YLD_L
+    YLD_L = a_death - a_disability  # years lived with disability
+
+    if r == 0 and K != 0:
+        YLL = ((1 - K) * YLL_L) + (((K * C * np.exp(-beta * a_death)) / (beta ** 2)) * (np.exp(-beta * YLL_L) * ((-beta) * (YLL_L + a_death) - 1) - (-beta * a_death - 1)))
+        YLL_discounted = YLL
+        YLD = D * (((1 - K) * YLD_L) + (((K * C * np.exp(-beta * a_disability)) / (beta ** 2)) * (np.exp(-beta * YLD_L) * ((-beta) * (YLD_L + a_disability) - 1) - (-beta * a_disability - 1))))
+        DALY_total = YLL_discounted + YLD
+
+    elif r == 0 and K == 0:
+        YLL = ((1 - K) / 0.00000001) * (1 - np.exp(-0.00000001 * YLL_L))
+        YLD = D * (((1 - K) / 0.00000001) * (1 - np.exp(-0.00000001 * YLD_L)))
+        s = a_death - a_disability
+        YLL_discounted = YLL * np.exp(-(0.00000001 * s))
+        DALY_total = YLL_discounted + YLD
+
+    elif r != 0 and K == 0:
+        YLL = ((1 - K) / r) * (1 - np.exp(-r * YLL_L))
+        YLD = D * (((1 - K) / r) * (1 - np.exp(-r * YLD_L)))
+        s = a_death - a_disability
+        YLL_discounted = YLL * np.exp(-(r * s))
+        DALY_total = YLL_discounted + YLD
+
+    elif r != 0 and K != 0:
+        YLL = ((1 - K) / r) * (1 - np.exp(-r * YLL_L)) + (((K * C * np.exp(r * a_death)) / ((r + beta) ** 2)) * (np.exp(-(r + beta) * (YLL_L + a_death)) * (-(r + beta) * (YLL_L + a_death) - 1) - np.exp(-(r + beta) * a_death) * (-(r + beta) * a_death - 1)))
+        YLD = D * (((1 - K) / r) * (1 - np.exp(-r * YLD_L)) + (((K * C * np.exp(r * a_disability)) / ((r + beta) ** 2)) * (np.exp(-(r + beta) * (YLD_L + a_disability)) * (-(r + beta) * (YLD_L + a_disability) - 1) - np.exp(-(r + beta) * a_disability) * (-(r + beta) * a_disability - 1))))
+        s = a_death - a_disability
+        YLL_discounted = YLL * np.exp(-(r * s))
+        DALY_total = YLL_discounted + YLD
+
+    Amount = [YLL_discounted, YLD, DALY_total]
+    return Amount
 
