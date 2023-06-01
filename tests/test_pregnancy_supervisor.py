@@ -550,9 +550,7 @@ def test_abortion_complications(seed):
         health_system = sim.modules['HealthSystem']
         hsi_events = health_system.find_events_for_person(person_id=mother_id)
         hsi_events = [e.__class__ for d, e in hsi_events]
-        from tlo.methods.hsi_generic_first_appts import (
-            HSI_GenericEmergencyFirstAppt,
-        )
+        from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
         assert HSI_GenericEmergencyFirstAppt in hsi_events
 
         emergency_appt = HSI_GenericEmergencyFirstAppt(person_id=mother_id,
