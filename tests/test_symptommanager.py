@@ -1,11 +1,13 @@
 import os
 from pathlib import Path
 
+import numpy as np
 import pytest
 from pandas import DateOffset
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, Module
 from tlo.methods import (
+    Metadata,
     chronicsyndrome,
     demography,
     enhanced_lifestyle,
@@ -40,56 +42,51 @@ def test_make_a_symptom():
 
     assert isinstance(symp, Symptom)
 
-    # check contents and the values defaulted to.
-    assert hasattr(symp, 'name')
-    assert hasattr(symp, 'no_healthcareseeking_in_children')
-    assert hasattr(symp, 'no_healthcareseeking_in_adults')
-    assert hasattr(symp, 'prob_seeks_emergency_appt_in_children')
-    assert hasattr(symp, 'prob_seeks_emergency_appt_in_adults')
-    assert hasattr(symp, 'odds_ratio_health_seeking_in_children')
-    assert hasattr(symp, 'odds_ratio_health_seeking_in_adults')
-
-    assert symp.no_healthcareseeking_in_children is False
-    assert symp.no_healthcareseeking_in_adults is False
-
-    assert symp.prob_seeks_emergency_appt_in_children == 0.0
-    assert symp.prob_seeks_emergency_appt_in_adults == 0.0
-
-    assert symp.odds_ratio_health_seeking_in_children == 1.0
-    assert symp.odds_ratio_health_seeking_in_adults == 1.0
+    for which in ('adults', 'children'):
+        assert symp.hcs[which]['no_healthcareseeking'] is False
+        assert symp.hcs[which]['odds_ratio_health_seeking'] == 1.0
+        assert isinstance(symp.hcs[which]['max_days_delays_in_health_seeking'], int) \
+               and 1 <= symp.hcs[which]['max_days_delays_in_health_seeking'] < 10
+        assert np.allclose(symp.hcs[which]['prob_health_seeking_by_facility_level'], [1.0, 0.0, 0.0, 0.0])
 
 
 def test_emergency_symptom_defined_through_static_method():
     """Check that can create an emergency symptom and that is has the expected properties by default"""
     # Emergency in adults and children
-    symp = Symptom.emergency('emergency_symptom')
+
+    def is_properties_for_original_emergency(x: dict):
+        """Returns True if the properties describe immediate care seeking at level 1b, which is the definition of the
+        original 'emergency' appointment. """
+        return (
+            (x['no_healthcareseeking'] is False)
+            and (x['odds_ratio_health_seeking'] == HIGH_ODDS_RATIO)
+            and (x['max_days_delays_in_health_seeking'] == 0)
+            and (np.allclose(x['prob_health_seeking_by_facility_level'], [0.0, 0.0, 1.0, 0.0]))
+        )
+
+    def is_properties_for_no_care_seeking(x: dict):
+        """Returns True if the properties describe no care seeking at all."""
+        return (
+            np.isclose(x['odds_ratio_health_seeking'], 0.0)
+        )
+
+    symp = Symptom.emergency('emergency_symptom', which='both')
     assert isinstance(symp, Symptom)
-    assert symp.no_healthcareseeking_in_children is False
-    assert symp.no_healthcareseeking_in_adults is False
-    assert symp.prob_seeks_emergency_appt_in_children == 1.0
-    assert symp.prob_seeks_emergency_appt_in_adults == 1.0
-    assert symp.odds_ratio_health_seeking_in_children >= HIGH_ODDS_RATIO
-    assert symp.odds_ratio_health_seeking_in_adults >= HIGH_ODDS_RATIO
+    for which in ('adults', 'children'):
+        assert is_properties_for_original_emergency(symp.hcs[which])
 
     # Emergency in adults only
     symp = Symptom.emergency(name='emergency_symptom', which='adults')
     assert isinstance(symp, Symptom)
-    assert symp.no_healthcareseeking_in_children is False
-    assert symp.no_healthcareseeking_in_adults is False
-    assert symp.prob_seeks_emergency_appt_in_children == 0.0
-    assert symp.prob_seeks_emergency_appt_in_adults == 1.0
-    assert symp.odds_ratio_health_seeking_in_children == 0.0
-    assert symp.odds_ratio_health_seeking_in_adults >= HIGH_ODDS_RATIO
+    assert is_properties_for_original_emergency(symp.hcs['adults'])
+    assert is_properties_for_no_care_seeking(symp.hcs['children'])
+
 
     # Emergency in children only
     symp = Symptom.emergency(name='emergency_symptom', which='children')
     assert isinstance(symp, Symptom)
-    assert symp.no_healthcareseeking_in_children is False
-    assert symp.no_healthcareseeking_in_adults is False
-    assert symp.prob_seeks_emergency_appt_in_children == 1.0
-    assert symp.prob_seeks_emergency_appt_in_adults == 0.0
-    assert symp.odds_ratio_health_seeking_in_children >= HIGH_ODDS_RATIO
-    assert symp.odds_ratio_health_seeking_in_adults == 0.0
+    assert is_properties_for_original_emergency(symp.hcs['children'])
+    assert is_properties_for_no_care_seeking(symp.hcs['adults'])
 
 
 def test_register_duplicate_symptoms():
@@ -722,3 +719,74 @@ def test_change_symptom_multiple_persons_multiple_symptoms(
         for s in disease_module_symptoms
         for p in alive_persons
     )
+
+
+def test_get_persons_with_newly_onset_symptoms(seed, disease_module):
+    """Check that `get_persons_with_newly_onset_symptoms` works as expected. It should return a dict of the form
+    {(symptom1, symptom2): [person_ids]}: i.e. for each set of symptoms, the list of the persons with those symptoms.
+    If a person has had symptoms added at different times, these should have been aggregated together."""
+
+    class DummyDisease(Module):
+        METADATA = {Metadata.USES_SYMPTOMMANAGER}
+
+        def read_parameters(self, data_folder):
+            self.sim.modules['SymptomManager'].register_symptom(Symptom('a'), Symptom('b'), Symptom('c'), Symptom('d'))
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+        def on_birth(self, mother, child):
+            pass
+
+
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 DummyDisease()
+                 )
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date)
+
+
+    def apply_symptom(person_id, symptom_string):
+        sim.modules['SymptomManager'].change_symptom(
+            person_id=person_id,
+            add_or_remove="+",
+            symptom_string=symptom_string,
+            disease_module=sim.modules['DummyDisease']
+        )
+
+
+    # Person 0 has symptom 'a' (... but will also get symptom 'b')
+    apply_symptom(person_id=0, symptom_string='a',)
+
+    # Person 1 has symptom 'b'
+    apply_symptom(person_id=1, symptom_string='b')
+
+    # Person 0 also has symptom 'b' (applied not together)
+    apply_symptom(person_id=0, symptom_string='b')
+
+    # Person 2 has symptoms 'a' and 'b'(applied together)
+    apply_symptom(person_id=2, symptom_string=['a', 'b'])
+
+    # Persons 3 and 4 each also have symptoms 'c' and 'd' (applied symptoms together to more than on person)
+    apply_symptom(person_id=[3, 4], symptom_string=['c', 'd'])
+
+    # Person 4 also actually has symptom 'a' (applied not together, and adding to a person that previously had symptoms
+    #  applied as part of a group of persons).
+    apply_symptom(person_id=4, symptom_string='a')
+
+    assert {
+               ('a', 'b',): [0, 2],
+               ('b',): [1],
+               ('c', 'd',): [3],
+               ('c', 'd', 'a',): [4],
+           } == sim.modules['SymptomManager'].get_persons_with_newly_onset_symptoms()

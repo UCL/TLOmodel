@@ -24,7 +24,8 @@ from tlo.methods.hsi_generic_first_appts import (
 # ---------------------------------------------------------------------------------------------------------
 
 HIGH_ODDS_RATIO = 1e5
-
+# 10_000 is an arbitrarily large odds ratio that will practically ensure that there is healthcare-seeking. `np.inf`
+# might have been used but this is not does not work within the LinearModel.
 
 class HealthSeekingBehaviour(Module):
     """
@@ -81,10 +82,6 @@ class HealthSeekingBehaviour(Module):
                                                                    'region is Southern'),
         'odds_ratio_adults_wealth_higher': Parameter(Types.REAL, 'odds ratio for health-care seeking (adults) if wealth'
                                                                  ' is in categories 4 or 5'),
-        'max_days_delay_to_generic_HSI_after_symptoms': Parameter(Types.INT,
-                                                                  'Maximum days delay between symptom onset and first'
-                                                                  'generic HSI. Actual delay is sample between 0 and '
-                                                                  'this value.')
     }
 
     # No properties to declare
@@ -275,7 +272,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         module = self.module
         symptom_manager = self.sim.modules["SymptomManager"]
         health_system = self.sim.modules["HealthSystem"]
-        max_delay = module.parameters['max_days_delay_to_generic_HSI_after_symptoms']
+        max_delay = 4  # todo this should be determined by looking at what is defined in the symptoms
         routine_hsi_event_class = HSI_GenericFirstApptAtFacilityLevel0
         emergency_hsi_event_class = HSI_GenericEmergencyFirstApptAtFacilityLevel1
 
