@@ -551,12 +551,12 @@ def test_abortion_complications(seed):
         hsi_events = health_system.find_events_for_person(person_id=mother_id)
         hsi_events = [e.__class__ for d, e in hsi_events]
         from tlo.methods.hsi_generic_first_appts import (
-            HSI_GenericEmergencyFirstApptAtFacilityLevel1,
+            HSI_GenericEmergencyFirstAppt,
         )
-        assert HSI_GenericEmergencyFirstApptAtFacilityLevel1 in hsi_events
+        assert HSI_GenericEmergencyFirstAppt in hsi_events
 
-        emergency_appt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=mother_id,
-                                                                       module=sim.modules['PregnancySupervisor'])
+        emergency_appt = HSI_GenericEmergencyFirstAppt(person_id=mother_id,
+                                                       module=sim.modules['PregnancySupervisor'])
         emergency_appt.apply(person_id=mother_id, squeeze_factor=0.0)
         hsi_events = health_system.find_events_for_person(person_id=mother_id)
         hsi_events = [e.__class__ for d, e in hsi_events]

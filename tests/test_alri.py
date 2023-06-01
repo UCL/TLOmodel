@@ -38,7 +38,7 @@ from tlo.methods.alri import (
     _make_treatment_ineffective,
     _make_treatment_perfect,
 )
-from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -950,7 +950,7 @@ def test_severe_pneumonia_referral_from_hsi_first_appts(sim_hs_all_consumables):
 
     # Check that person 0 has an Emergency Generic HSI scheduled
     generic_appt = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
-                    if isinstance(event_tuple[1], HSI_GenericEmergencyFirstApptAtFacilityLevel1)][0]
+                    if isinstance(event_tuple[1], HSI_GenericEmergencyFirstAppt)][0]
     # Run generic appt and check that there is an Outpatient `HSI_Alri_Treatment` scheduled
     generic_appt.run(squeeze_factor=0.0)
 
