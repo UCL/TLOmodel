@@ -13,7 +13,7 @@ Outstanding issues
 """
 from collections import defaultdict
 from pathlib import Path
-from typing import Sequence, Union
+from typing import Sequence, Union, Tuple, Optional
 
 import numpy as np
 import pandas as pd
@@ -30,6 +30,7 @@ logger.setLevel(logging.INFO)
 #   MODULE DEFINITIONS
 # ---------------------------------------------------------------------------------------------------------
 
+DEFAULT_MAX_DAYS_DELAYS_IN_HEALTH_SEEKING = 4
 
 class Symptom:
     """Data structure to hold the information about a symptom.
@@ -40,11 +41,11 @@ class Symptom:
       (`odds_ratio_health_seeking_in_`)
      * the probability that emergency care is sought, if care is sought at all (`prob_seeks_emergency_appt_in_`).
 
-    The default behaviour is for a symptom that causes healthcare-seeking for non-emergency care with the same
+    The default behaviour is for a symptom that causes healthcare-seeking at facility_level 0, and with the same
     probability as the "average symptom".
 
     The in-built method `emergency_symptom_with_automatic_healthcareseeking` produces another common type of symptom,
-    which gives a very high probability that emergency care is sought.
+    which gives a very high probability that care is sought immediately at level '1b'.
 
     The characteristics of Symptoms is separate for adults (peron aged 15+) and children (those aged aged <15).
     """
@@ -53,10 +54,12 @@ class Symptom:
                  name: str = None,
                  no_healthcareseeking_in_adults: bool = False,
                  no_healthcareseeking_in_children: bool = False,
-                 odds_ratio_health_seeking_in_adults: float = None,
-                 odds_ratio_health_seeking_in_children: float = None,
-                 prob_seeks_emergency_appt_in_adults: float = None,
-                 prob_seeks_emergency_appt_in_children: float = None,
+                 odds_ratio_health_seeking_in_adults: Optional[float] = None,
+                 odds_ratio_health_seeking_in_children: Optional[float] = None,
+                 max_days_delays_in_health_seeking_in_adults: Optional[int] = None,
+                 max_days_delays_in_health_seeking_in_children: Optional[int] = None,
+                 prob_health_seeking_by_facility_level_in_adults: Optional[Tuple[float]] = None,
+                 prob_health_seeking_by_facility_level_in_children: Optional[Tuple[float]] = None,
                  ):
 
         # Check that the types are correct and not nonsensical
@@ -69,50 +72,77 @@ class Symptom:
         # Check logic of the arguments: if the symptom does not cause healthcare-seeking behaviour then the other
         # arguments should not be provided.
         if no_healthcareseeking_in_children:
-            assert prob_seeks_emergency_appt_in_children is None
-            assert odds_ratio_health_seeking_in_children is None
+            assert max_days_delays_in_health_seeking_in_children is None
+            assert prob_health_seeking_by_facility_level_in_children is None
 
         if no_healthcareseeking_in_adults:
-            assert prob_seeks_emergency_appt_in_adults is None
-            assert odds_ratio_health_seeking_in_adults is None
+            assert max_days_delays_in_health_seeking_in_adults is None
+            assert prob_health_seeking_by_facility_level_in_adults is None
 
-        # Define the default behaviour:
-        if prob_seeks_emergency_appt_in_adults is None:
-            prob_seeks_emergency_appt_in_adults = 0.0  # i.e. Symptom will not cause h.c.s. for emergency care.
-
-        if prob_seeks_emergency_appt_in_children is None:
-            prob_seeks_emergency_appt_in_children = 0.0  # i.e. Symptom will not cause h.c.s. for emergency care.
-
+        # *** Define the default behaviour ****
+        # -- Same odds of care-seeking as the average Symptom...
         if odds_ratio_health_seeking_in_adults is None:
             odds_ratio_health_seeking_in_adults = 1.0  # i.e. Symptom has same odds of h.c.s. as the 'default'
-
         if odds_ratio_health_seeking_in_children is None:
             odds_ratio_health_seeking_in_children = 1.0  # i.e. Symptom has same odds of h.c.s. as the 'default'
 
-        # Check that the odds-ratio of healthcare seeking is greater than or equal to 0.0
+        # -- With care-seeking after a short delay....
+        if max_days_delays_in_health_seeking_in_adults is None:
+            max_days_delays_in_health_seeking_in_adults = DEFAULT_MAX_DAYS_DELAYS_IN_HEALTH_SEEKING
+        if max_days_delays_in_health_seeking_in_children is None:
+            max_days_delays_in_health_seeking_in_children = DEFAULT_MAX_DAYS_DELAYS_IN_HEALTH_SEEKING
+
+        # -- ... and seeking at level 0
+        if prob_health_seeking_by_facility_level_in_adults is None:
+            prob_health_seeking_by_facility_level_in_adults = (1.0, 0.0, 0.0, 0.0)  # levels 0 / 1a / 1b / 2
+        if prob_health_seeking_by_facility_level_in_children is None:
+            prob_health_seeking_by_facility_level_in_children = (1.0, 0.0, 0.0, 0.0)  # levels 0 / 1a / 1b / 2
+
+        # ** Sanity Checks **
+        # Check that the odds-ratio of healthcare seeking is greater than or equal to 0.0 and is a float
         assert isinstance(odds_ratio_health_seeking_in_adults, float)
         assert isinstance(odds_ratio_health_seeking_in_children, float)
         assert 0.0 <= odds_ratio_health_seeking_in_adults
         assert 0.0 <= odds_ratio_health_seeking_in_children
 
-        # Check that probability of seeking an emergency appointment must be between 0.0 and 1.0
-        assert isinstance(prob_seeks_emergency_appt_in_adults, float)
-        assert isinstance(prob_seeks_emergency_appt_in_children, float)
-        assert 0.0 <= prob_seeks_emergency_appt_in_adults <= 1.0
-        assert 0.0 <= prob_seeks_emergency_appt_in_children <= 1.0
+        # Check max_days_delays_in_health_seeking is an integer and not too long (less than 10 days)
+        assert isinstance(max_days_delays_in_health_seeking_in_adults, int)
+        assert isinstance(max_days_delays_in_health_seeking_in_children, int)
+        assert max_days_delays_in_health_seeking_in_adults < 10
+        assert max_days_delays_in_health_seeking_in_children < 10
 
-        # Store properties:
+        # Check that `prob_health_seeking_by_facility_level` is a list of the right length and sums to 1.0
+        def check_prob_health_seeking_by_facility_level(x):
+            return (
+                (len(x) == 4)
+                and (np.isfinite(x).all())
+                and (np.isclose(sum(x), 1.0))
+            )
+
+        assert check_prob_health_seeking_by_facility_level(prob_health_seeking_by_facility_level_in_adults)
+        assert check_prob_health_seeking_by_facility_level(prob_health_seeking_by_facility_level_in_children)
+
+        # Store name and the properties for Healthcare seeking (h.c.s.)
         self.name = name
-        self.no_healthcareseeking_in_children = no_healthcareseeking_in_children
-        self.no_healthcareseeking_in_adults = no_healthcareseeking_in_adults
-        self.prob_seeks_emergency_appt_in_adults = prob_seeks_emergency_appt_in_adults
-        self.prob_seeks_emergency_appt_in_children = prob_seeks_emergency_appt_in_children
-        self.odds_ratio_health_seeking_in_adults = odds_ratio_health_seeking_in_adults
-        self.odds_ratio_health_seeking_in_children = odds_ratio_health_seeking_in_children
+        self.hcs = {
+            'adults': {
+                'no_healthcareseeking': no_healthcareseeking_in_adults,
+                'odds_ratio_health_seeking': odds_ratio_health_seeking_in_adults,
+                'max_days_delays_in_health_seeking': max_days_delays_in_health_seeking_in_adults,
+                'prob_health_seeking_by_facility_level': prob_health_seeking_by_facility_level_in_adults,
+            },
+            'children': {
+                'no_healthcareseeking': no_healthcareseeking_in_children,
+                'odds_ratio_health_seeking': odds_ratio_health_seeking_in_children,
+                'max_days_delays_in_health_seeking': max_days_delays_in_health_seeking_in_children,
+                'prob_health_seeking_by_facility_level': prob_health_seeking_by_facility_level_in_children,
+            }
+        }
+
 
     @staticmethod
     def emergency(name: str, which: str = "both"):
-        """Return an instance of `Symptom` that will guarantee healthcare-seeking for an Emergency Appointment."""
+        """Return an instance of `Symptom` that will guarantee immediate healthcare-seeking at level 1b."""
         from tlo.methods.healthseekingbehaviour import HIGH_ODDS_RATIO
 
         if name is None:
@@ -128,13 +158,12 @@ class Symptom:
             name=name,
             no_healthcareseeking_in_adults=False,
             no_healthcareseeking_in_children=False,
-            prob_seeks_emergency_appt_in_adults=1.0 if emergency_in_adults else 0.0,
-            prob_seeks_emergency_appt_in_children=1.0 if emergency_in_children else 0.0,
             odds_ratio_health_seeking_in_adults=HIGH_ODDS_RATIO if emergency_in_adults else 0.0,
             odds_ratio_health_seeking_in_children=HIGH_ODDS_RATIO if emergency_in_children else 0.0,
-            #                                      10_000 is an arbitrarily large odds ratio that will practically
-            #                                       ensure that there is healthcare-seeking. `np.inf` might have been
-            #                                       used but this is not does not work within the LinearModel.
+            max_days_delays_in_health_seeking_in_adults=0,
+            max_days_delays_in_health_seeking_in_children=0,
+            prob_health_seeking_by_facility_level_in_adults=(0.0, 0.0, 1.0, 0.0),  # levels 0 / 1a / 1b / 2
+            prob_health_seeking_by_facility_level_in_children=(0.0, 0.0, 1.0, 0.0),  # levels 0 / 1a / 1b / 2
         )
 
     def __eq__(self, other):
@@ -142,16 +171,15 @@ class Symptom:
         NB. This seems neccessary to enable to checking of equivalency between symptoms registered in different
         places. Without this two instance of the object with the same properties are not recognised as being the 'same'.
         This is done in conjunction with over-riding the hash property."""
-        return isinstance(other, Symptom) and all(
-            [getattr(self, p) == getattr(other, p) for p in [
-                'name',
-                'no_healthcareseeking_in_children',
-                'no_healthcareseeking_in_adults',
-                'prob_seeks_emergency_appt_in_adults',
-                'prob_seeks_emergency_appt_in_children',
-                'odds_ratio_health_seeking_in_adults',
-                'odds_ratio_health_seeking_in_children']
-             ])
+
+        hcs_props = ['no_healthcareseeking', 'odds_ratio_health_seeking', 'max_days_delays_in_health_seeking',
+                     'prob_health_seeking_by_facility_level']
+        return (
+            isinstance(other, Symptom)
+            and self.name == other.name
+            and all([self.hcs['adults'][p] == other.hcs['adults'][p] for p in hcs_props])
+            and all([self.hcs['children'][p] == other.hcs['children'][p] for p in hcs_props])
+        )
 
     def __hash__(self):
         """Override the hash function to force set to rely on __eq__."""
@@ -179,7 +207,7 @@ class SymptomManager(Module):
 
     PARAMETERS = {
         'generic_symptoms_spurious_occurrence': Parameter(
-            Types.DATA_FRAME, 'probability and duration of spurious occureneces of generic symptoms'),
+            Types.DATA_FRAME, 'probability and duration of spurious occurrences of generic symptoms'),
         'spurious_symptoms': Parameter(
             Types.BOOL, 'whether or not there will be the spontaneous occurrence of generic symptoms. '
                         'NB. This is over-ridden if a module key-word argument is provided.'),
@@ -249,13 +277,20 @@ class SymptomManager(Module):
         # Check that information is contained in the ResourceFile for every generic symptom that must be defined
         assert self.generic_symptoms == set(df['name'].to_list())
 
+        # Use pd.eval to make the list stored as strings into real lists
+        for col in ['prob_health_seeking_by_facility_level_in_adults',
+                    'prob_health_seeking_by_facility_level_in_children']:
+            df[col] = df[col].apply(pd.eval)
+
         symptoms_to_register = df[
             [
                 'name',
-                'odds_ratio_health_seeking_in_children',
                 'odds_ratio_health_seeking_in_adults',
-                'prob_seeks_emergency_appt_in_adults',
-                'prob_seeks_emergency_appt_in_children',
+                'odds_ratio_health_seeking_in_children',
+                'max_days_delays_in_health_seeking_in_adults',
+                'max_days_delays_in_health_seeking_in_children',
+                'prob_health_seeking_by_facility_level_in_adults',
+                'prob_health_seeking_by_facility_level_in_children',
             ]
         ].set_index('name').loc[sorted(self.generic_symptoms)].reset_index()  # order as `sorted(self.generic_symptoms)`
 

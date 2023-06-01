@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import numpy as np
 import pytest
 from pandas import DateOffset
 
@@ -40,56 +41,51 @@ def test_make_a_symptom():
 
     assert isinstance(symp, Symptom)
 
-    # check contents and the values defaulted to.
-    assert hasattr(symp, 'name')
-    assert hasattr(symp, 'no_healthcareseeking_in_children')
-    assert hasattr(symp, 'no_healthcareseeking_in_adults')
-    assert hasattr(symp, 'prob_seeks_emergency_appt_in_children')
-    assert hasattr(symp, 'prob_seeks_emergency_appt_in_adults')
-    assert hasattr(symp, 'odds_ratio_health_seeking_in_children')
-    assert hasattr(symp, 'odds_ratio_health_seeking_in_adults')
-
-    assert symp.no_healthcareseeking_in_children is False
-    assert symp.no_healthcareseeking_in_adults is False
-
-    assert symp.prob_seeks_emergency_appt_in_children == 0.0
-    assert symp.prob_seeks_emergency_appt_in_adults == 0.0
-
-    assert symp.odds_ratio_health_seeking_in_children == 1.0
-    assert symp.odds_ratio_health_seeking_in_adults == 1.0
+    for which in ('adults', 'children'):
+        assert symp.hcs[which]['no_healthcareseeking'] is False
+        assert symp.hcs[which]['odds_ratio_health_seeking'] == 1.0
+        assert isinstance(symp.hcs[which]['max_days_delays_in_health_seeking'], int) \
+               and 1 <= symp.hcs[which]['max_days_delays_in_health_seeking'] < 10
+        assert np.allclose(symp.hcs[which]['prob_health_seeking_by_facility_level'], [1.0, 0.0, 0.0, 0.0])
 
 
 def test_emergency_symptom_defined_through_static_method():
     """Check that can create an emergency symptom and that is has the expected properties by default"""
     # Emergency in adults and children
-    symp = Symptom.emergency('emergency_symptom')
+
+    def is_properties_for_original_emergency(x: dict):
+        """Returns True if the properties describe immediate care seeking at level 1b, which is the definition of the
+        original 'emergency' appointment. """
+        return (
+            (x['no_healthcareseeking'] is False)
+            and (x['odds_ratio_health_seeking'] == HIGH_ODDS_RATIO)
+            and (x['max_days_delays_in_health_seeking'] == 0)
+            and (np.allclose(x['prob_health_seeking_by_facility_level'], [0.0, 0.0, 1.0, 0.0]))
+        )
+
+    def is_properties_for_no_care_seeking(x: dict):
+        """Returns True if the properties describe no care seeking at all."""
+        return (
+            np.isclose(x['odds_ratio_health_seeking'], 0.0)
+        )
+
+    symp = Symptom.emergency('emergency_symptom', which='both')
     assert isinstance(symp, Symptom)
-    assert symp.no_healthcareseeking_in_children is False
-    assert symp.no_healthcareseeking_in_adults is False
-    assert symp.prob_seeks_emergency_appt_in_children == 1.0
-    assert symp.prob_seeks_emergency_appt_in_adults == 1.0
-    assert symp.odds_ratio_health_seeking_in_children >= HIGH_ODDS_RATIO
-    assert symp.odds_ratio_health_seeking_in_adults >= HIGH_ODDS_RATIO
+    for which in ('adults', 'children'):
+        assert is_properties_for_original_emergency(symp.hcs[which])
 
     # Emergency in adults only
     symp = Symptom.emergency(name='emergency_symptom', which='adults')
     assert isinstance(symp, Symptom)
-    assert symp.no_healthcareseeking_in_children is False
-    assert symp.no_healthcareseeking_in_adults is False
-    assert symp.prob_seeks_emergency_appt_in_children == 0.0
-    assert symp.prob_seeks_emergency_appt_in_adults == 1.0
-    assert symp.odds_ratio_health_seeking_in_children == 0.0
-    assert symp.odds_ratio_health_seeking_in_adults >= HIGH_ODDS_RATIO
+    assert is_properties_for_original_emergency(symp.hcs['adults'])
+    assert is_properties_for_no_care_seeking(symp.hcs['children'])
+
 
     # Emergency in children only
     symp = Symptom.emergency(name='emergency_symptom', which='children')
     assert isinstance(symp, Symptom)
-    assert symp.no_healthcareseeking_in_children is False
-    assert symp.no_healthcareseeking_in_adults is False
-    assert symp.prob_seeks_emergency_appt_in_children == 1.0
-    assert symp.prob_seeks_emergency_appt_in_adults == 0.0
-    assert symp.odds_ratio_health_seeking_in_children >= HIGH_ODDS_RATIO
-    assert symp.odds_ratio_health_seeking_in_adults == 0.0
+    assert is_properties_for_original_emergency(symp.hcs['children'])
+    assert is_properties_for_no_care_seeking(symp.hcs['adults'])
 
 
 def test_register_duplicate_symptoms():
