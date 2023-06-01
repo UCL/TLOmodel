@@ -1852,13 +1852,13 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                 pregnancy_helper_functions.check_if_delayed_careseeking(self.module, person)
 
                 from tlo.methods.care_of_women_during_pregnancy import (
-                    HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment,
+                    HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare,
                 )
 
-                acute_pregnancy_hsi = HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(
+                inpatient_pregnancy_hsi = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
                     self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person)
 
-                self.sim.modules['HealthSystem'].schedule_hsi_event(acute_pregnancy_hsi, priority=0,
+                self.sim.modules['HealthSystem'].schedule_hsi_event(inpatient_pregnancy_hsi, priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
             else:
