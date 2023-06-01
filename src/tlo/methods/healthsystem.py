@@ -377,7 +377,10 @@ class HSIEventWrapper(Event):
                 # Run the event (with 0 squeeze_factor) and ignore the output
                 _ = self.hsi_event.run(squeeze_factor=0.0)
             else:
-                self.hsi_event.never_ran()
+                self.hsi_event.module.sim.modules["HealthSystem"].record_never_ran_hsi_event(
+                      hsi_event=self.hsi_event,
+                      priority=-1
+                     )
 
 
 def _accepts_argument(function: callable, argument: str) -> bool:
@@ -665,6 +668,15 @@ class HealthSystem(Module):
             self._hsi_event_counts_cumulative = Counter()
             # Dictionary mapping from HSI event details to unique integer keys
             self._hsi_event_details = dict()
+
+            # Counters for binning HSI events that never ran (by unique integer keys) over
+            # simulation period specified by hsi_event_count_log_period and cumulative
+            # counts over previous log periods
+            self._never_ran_hsi_event_counts_log_period = Counter()
+            self._never_ran_hsi_event_counts_cumulative = Counter()
+            # Dictionary mapping from HSI event details to unique integer keys
+            self._never_ran_hsi_event_details = dict()
+
         elif hsi_event_count_log_period is not None:
             raise ValueError(
                 "hsi_event_count_log_period argument should be one of 'day', 'month' "
@@ -848,13 +860,23 @@ class HealthSystem(Module):
         self.consumables.on_simulation_end()
         if self._hsi_event_count_log_period == "simulation":
             self._write_hsi_event_counts_to_log_and_reset()
+            self._write_never_ran_hsi_event_counts_to_log_and_reset()
         if self._hsi_event_count_log_period is not None:
             logger_summary.info(
                 key="hsi_event_details",
-                description="Map from integer keys to HSI event detail dictionaries",
+                description="Map from integer keys to hsi event detail dictionaries",
                 data={
                     "hsi_event_key_to_event_details": {
                         k: d._asdict() for d, k in self._hsi_event_details.items()
+                    }
+                }
+            )
+            logger_summary.info(
+                key="never_ran_hsi_event_details",
+                description="Map from integer keys to never ran hsi event detail dictionaries",
+                data={
+                    "never_ran_hsi_event_key_to_event_details": {
+                        k: d._asdict() for d, k in self._never_ran_hsi_event_details.items()
                     }
                 }
             )
@@ -1658,6 +1680,65 @@ class HealthSystem(Module):
                 level=event_details.facility_level,
             )
 
+    def record_never_ran_hsi_event(self, hsi_event, priority=None):
+        """
+        Record the fact that an HSI event was never ran.
+        If this is an individual-level HSI_Event, it will also record the actual appointment footprint
+        :param hsi_event: The HSI_Event (containing the initial expectations of footprints)
+        """
+        # Invoke never ran function here
+        hsi_event.never_ran()
+
+        try:
+            # Fully-defined HSI Event
+            self.write_to_never_ran_hsi_log(
+                 event_details=hsi_event.as_namedtuple(),
+                 person_id=hsi_event.target,
+                 facility_id=hsi_event.facility_info.id,
+                 priority=priority,
+                 )
+        except Exception:
+            # Fully-defined HSI Event
+            self.write_to_never_ran_hsi_log(
+                 event_details=hsi_event.as_namedtuple(),
+                 person_id=-1,
+                 facility_id=-1,
+                 priority=priority,
+                 )
+
+    def write_to_never_ran_hsi_log(
+        self,
+        event_details: HSIEventDetails,
+        person_id: int,
+        facility_id: Optional[int],
+        priority: int,
+    ):
+        """Write the log `HSI_Event` and add to the summary counter."""
+        logger.debug(
+            key="Never_ran_HSI_Event",
+            data={
+                'Event_Name': event_details.event_name,
+                'TREATMENT_ID': event_details.treatment_id,
+                'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
+                'Person_ID': person_id,
+                'priority': priority,
+                'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
+                'Facility_ID': facility_id if facility_id is not None else -99,
+            },
+            description="record of each HSI event that never ran"
+        )
+        if self._hsi_event_count_log_period is not None:
+            event_details_key = self._never_ran_hsi_event_details.setdefault(
+                event_details, len(self._never_ran_hsi_event_details)
+            )
+            self._never_ran_hsi_event_counts_log_period[event_details_key] += 1
+        self._summary_counter.record_never_ran_hsi_event(
+            treatment_id=event_details.treatment_id,
+            hsi_event_name=event_details.event_name,
+            appt_footprint=event_details.appt_footprint,
+            level=event_details.facility_level,
+        )
+
     def log_current_capabilities_and_usage(self):
         """
         This will log the percentage of the current capabilities that is used at each Facility Type, according the
@@ -1764,16 +1845,31 @@ class HealthSystem(Module):
         self._hsi_event_counts_cumulative += self._hsi_event_counts_log_period
         self._hsi_event_counts_log_period.clear()
 
+    def _write_never_ran_hsi_event_counts_to_log_and_reset(self):
+        logger_summary.info(
+            key="never_ran_hsi_event_counts",
+            description=(
+                f"Counts of the HSI events that never ran in this "
+                f"{self._hsi_event_count_log_period} with keys corresponding to integer"
+                f" keys recorded in dictionary in hsi_event_details log entry."
+            ),
+            data={"never_ran_hsi_event_key_to_counts": dict(self._never_ran_hsi_event_counts_log_period)},
+        )
+        self._never_ran_hsi_event_counts_cumulative += self._never_ran_hsi_event_counts_log_period
+        self._never_ran_hsi_event_counts_log_period.clear()
+
     def on_end_of_day(self) -> None:
         """Do jobs to be done at the end of the day (after all HSI run)"""
         self.bed_days.on_end_of_day()
         if self._hsi_event_count_log_period == "day":
             self._write_hsi_event_counts_to_log_and_reset()
+            self._write_never_ran_hsi_event_counts_to_log_and_reset()
 
     def on_end_of_month(self) -> None:
         """Do jobs to be done at the end of the month (after all HSI run)"""
         if self._hsi_event_count_log_period == "month":
             self._write_hsi_event_counts_to_log_and_reset()
+            self._write_never_ran_hsi_event_counts_to_log_and_reset()
 
     def on_end_of_year(self) -> None:
         """Write to log the current states of the summary counters and reset them."""
@@ -1782,6 +1878,7 @@ class HealthSystem(Module):
         self.bed_days.on_end_of_year()
         if self._hsi_event_count_log_period == "year":
             self._write_hsi_event_counts_to_log_and_reset()
+            self._write_never_ran_hsi_event_counts_to_log_and_reset()
 
     def run_population_level_events(self, _list_of_population_hsi_event_tuples: List[HSIEventQueueItem]) -> None:
         """Run a list of population level events."""
@@ -1869,6 +1966,7 @@ class HealthSystem(Module):
                         out_of_resources = True
 
                     if out_of_resources:
+
                         # Do not run,
                         # Call did_not_run for the hsi_event
                         rtn_from_did_not_run = event.did_not_run()
@@ -2091,6 +2189,30 @@ class HealthSystem(Module):
                 }
             )
 
+    @property
+    def never_ran_hsi_event_counts(self) -> Counter:
+        """Counts of details of HSI events which never ran so far in simulation.
+
+        Returns a ``Counter`` instance with keys ``HSIEventDetail`` named tuples
+        corresponding to details of HSI events that have never ran over simulation so far.
+        """
+        if self._hsi_event_count_log_period is None:
+            return Counter()
+        else:
+            # If in middle of log period _hsi_event_counts_log_period will not be empty
+            # and so overall total counts is sums of counts in both
+            # _hsi_event_counts_cumulative and _hsi_event_counts_log_period
+            total_never_ran_hsi_event_counts = (
+                self._never_ran_hsi_event_counts_cumulative + self._never_ran_hsi_event_counts_log_period
+            )
+            return Counter(
+                {
+                    event_details: total_never_ran_hsi_event_counts[event_details_key]
+                    for event_details, event_details_key
+                    in self._never_ran_hsi_event_details.items()
+                }
+            )
+
 
 class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
     """
@@ -2158,7 +2280,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
             if self.sim.date > next_event_tuple.tclose:
                 # The event has expired (after tclose) having never been run. Call the 'never_ran' function
-                event.never_ran()
+                self.module.record_never_ran_hsi_event(
+                      hsi_event=event,
+                      priority=next_event_tuple.priority
+                     )
 
             elif not (
                 isinstance(event.target, tlo.population.Population)
@@ -2303,6 +2428,12 @@ class HealthSystemSummaryCounter:
         self._treatment_ids = defaultdict(int)  # Running record of the `TREATMENT_ID`s of `HSI_Event`s
         self._appts = defaultdict(int)  # Running record of the Appointments of `HSI_Event`s that have run
         self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+
+        # Log HSI_Events that never ran to monitor shortcoming of Health System
+        self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
+        self._never_ran_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
+        self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+
         # <--Same as `self._appts` but also split by facility_level
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
@@ -2331,6 +2462,22 @@ class HealthSystemSummaryCounter:
             self._appts[appt_type] += number
             self._appts_by_level[level][appt_type] += number
 
+    def record_never_ran_hsi_event(self,
+                                   treatment_id: str,
+                                   hsi_event_name: str,
+                                   appt_footprint: Counter,
+                                   level: str
+                                   ) -> None:
+        """Add information about a never-ran `HSI_Event` to the running summaries."""
+
+        # Count the treatment_id:
+        self._never_ran_treatment_ids[treatment_id] += 1
+
+        # Count each type of appointment:
+        for appt_type, number in appt_footprint:
+            self._never_ran_appts[appt_type] += number
+            self._never_ran_appts_by_level[level][appt_type] += number
+
     def record_hs_status(self, fraction_time_used_across_all_facilities: float) -> None:
         """Record a current status metric of the HealthSystem."""
 
@@ -2352,6 +2499,18 @@ class HealthSystemSummaryCounter:
                 'squeeze_factor': {
                     k: sum(v) / len(v) for k, v in self._squeeze_factor_by_hsi_event_name.items()
                 }
+            },
+        )
+
+        # Log summary of HSI_Events that never ran
+        logger_summary.info(
+            key="Never_ran_HSI_Event",
+            description="Counts of the HSI_Events that never ran in this calendar year by TREATMENT_ID, "
+                        "and the respective 'Appt_Type's that have not occurred in this calendar year.",
+            data={
+                "TREATMENT_ID": self._never_ran_treatment_ids,
+                "Number_By_Appt_Type_Code": self._never_ran_appts,
+                "Number_By_Appt_Type_Code_And_Level": self._never_ran_appts_by_level,
             },
         )
 

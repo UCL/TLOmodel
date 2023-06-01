@@ -62,12 +62,14 @@ class ImpactOfHealthSystemMode(BaseScenario):
         return {
             "No Healthcare System": {
                 'HealthSystem': {
+                    'cons_availability': "all",
                     'Service_Availability': []
                 },
             },
 
             "Unlimited Resources": {
                 'HealthSystem': {
+                    'cons_availability': "all",
                     'mode_appt_constraints': 0,
                     "use_funded_or_actual_staffing": "actual",
                  },
@@ -75,6 +77,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
 
             "Unlimited Efficiency": {
                 'HealthSystem': {
+                    'cons_availability': "all",
                     'mode_appt_constraints': 1,
                     "use_funded_or_actual_staffing": "actual",
                  },
@@ -82,6 +85,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
 
             "Random Priority Policy": {
                 'HealthSystem': {
+                    'cons_availability': "all",
                     'mode_appt_constraints': 2,
                     "use_funded_or_actual_staffing": "actual",
                     "Policy_Name": "Random"
@@ -90,6 +94,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
 
             "Naive Priority Policy": {
                 'HealthSystem': {
+                    'cons_availability': "all",
                     'mode_appt_constraints': 2,
                     "use_funded_or_actual_staffing": "actual",
                     "Policy_Name": "Naive"
@@ -98,6 +103,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
 
             "RMNCH Priority Policy": {
                 'HealthSystem': {
+                    'cons_availability': "all",
                     'mode_appt_constraints': 2,
                     "use_funded_or_actual_staffing": "actual",
                     "Policy_Name": "RMNCH"
@@ -106,6 +112,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
 
             "Cinically Vulnerable Priority Policy": {
                 'HealthSystem': {
+                    'cons_availability': "all",
                     'mode_appt_constraints': 2,
                     "use_funded_or_actual_staffing": "actual",
                     "Policy_Name": "ClinicallyVulnerable"
@@ -114,6 +121,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
 
             "Vertical Programmes Priority Policy": {
                 'HealthSystem': {
+                    'cons_availability': "all",
                     'mode_appt_constraints': 2,
                     "use_funded_or_actual_staffing": "actual",
                     "Policy_Name": "VerticalProgrammes"
