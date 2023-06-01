@@ -30,7 +30,8 @@ resourcefilepath = Path("./resources")
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-log_filename = outputpath / 'GBD_lri_comparison_50k_pop__2022-03-15T111444.log'
+log_filename = 'none'
+# log_filename = outputpath / 'GBD_lri_comparison_50k_pop__2022-03-15T111444.log'
 # <-- insert name of log file to avoid re-running the simulation
 
 if not os.path.exists(log_filename):
@@ -39,16 +40,16 @@ if not os.path.exists(log_filename):
 
     start_date = Date(2010, 1, 1)
     end_date = Date(2025, 12, 31)
-    popsize = 50000
+    popsize = 15000
 
     log_config = {
-        "filename": "GBD_lri_comparison_50k_pop",
+        "filename": "GBD_lri_comparison_15k_pop",
         "directory": "./outputs",
         "custom_levels": {
             "*": logging.WARNING,
             "tlo.methods.alri": logging.DEBUG,
             "tlo.methods.demography": logging.INFO,
-            "tlo.methods.healthburden": logging.INFO,
+            # "tlo.methods.healthburden": logging.INFO,
         }
     }
 
@@ -66,7 +67,7 @@ if not os.path.exists(log_filename):
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  service_availability=['*']),
+                                  service_availability=['*'], cons_availability='all', disable=True),
         alri.Alri(resourcefilepath=resourcefilepath),
         alri.AlriPropertiesOfOtherModules()
     )
@@ -271,43 +272,43 @@ plt.show()
 # -------------------------------------------------------------------------------------------------------------
 # # # # # # # # # # ALRI DALYs # # # # # # # # # #
 # ------------------------------------------------------------------
-# Get the total DALYs from the output of health burden
-dalys = output['tlo.methods.healthburden']['dalys']
-dalys.drop(columns='Other', inplace=True)
-dalys.drop(columns='date', inplace=True)
-dalys.drop(dalys.loc[dalys['age_range'] != '0-4'].index, inplace=True)
-dalys.set_index(
-    'year',
-    drop=True,
-    inplace=True
-)
-sf = output['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
-dalys = dalys.groupby('year').sum() * sf
-
-plt.style.use("ggplot")
-plt.figure(1, figsize=(10, 10))
-fig4, ax4 = plt.subplots()
-
-# GBD estimates
-plt.plot(GBD_data.Year, GBD_data.DALYs)  # GBD data
-plt.fill_between(
-    GBD_data.Year,
-    GBD_data.DALYs_lower,
-    GBD_data.DALYs_upper,
-    alpha=0.5,
-)
-# model output
-plt.plot(dalys, color="mediumseagreen")  # model
-plt.title("ALRI DALYs")
-plt.xlabel("Year")
-plt.xticks(rotation=90)
-plt.ylabel("DALYs")
-plt.gca().set_xlim(start_date, end_date)
-plt.legend(["GBD", "Model"])
-plt.tight_layout()
-# plt.savefig(outputpath / ("ALRI_DALYs_model_comparison" + datestamp + ".png"), format='png')
-
-plt.show()
+# # Get the total DALYs from the output of health burden
+# dalys = output['tlo.methods.healthburden']['dalys']
+# dalys.drop(columns='Other', inplace=True)
+# dalys.drop(columns='date', inplace=True)
+# dalys.drop(dalys.loc[dalys['age_range'] != '0-4'].index, inplace=True)
+# dalys.set_index(
+#     'year',
+#     drop=True,
+#     inplace=True
+# )
+# sf = output['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+# dalys = dalys.groupby('year').sum() * sf
+#
+# plt.style.use("ggplot")
+# plt.figure(1, figsize=(10, 10))
+# fig4, ax4 = plt.subplots()
+#
+# # GBD estimates
+# plt.plot(GBD_data.Year, GBD_data.DALYs)  # GBD data
+# plt.fill_between(
+#     GBD_data.Year,
+#     GBD_data.DALYs_lower,
+#     GBD_data.DALYs_upper,
+#     alpha=0.5,
+# )
+# # model output
+# plt.plot(dalys, color="mediumseagreen")  # model
+# plt.title("ALRI DALYs")
+# plt.xlabel("Year")
+# plt.xticks(rotation=90)
+# plt.ylabel("DALYs")
+# plt.gca().set_xlim(start_date, end_date)
+# plt.legend(["GBD", "Model"])
+# plt.tight_layout()
+# # plt.savefig(outputpath / ("ALRI_DALYs_model_comparison" + datestamp + ".png"), format='png')
+#
+# plt.show()
 
 # -----------------------------------------------------------------------------------------------
 # check the case fatality rates (CFR)
@@ -332,3 +333,80 @@ plt.ylabel("CRF (%)")
 plt.legend(["Model"])
 plt.tight_layout()
 plt.show()
+# -----------------------------------------------------------------------------------------------
+# check the care-seeking proportion
+
+# using the tracker to get the number of cases per year
+number_of_cases = counts.incident_cases
+
+# using the tracker to get the number of deaths per year
+number_of_sought_care = counts.seeking_care
+
+# calculate the proportion of those who sought care
+sought_care_proportion = (number_of_sought_care / number_of_cases)
+
+fig6, ax6 = plt.subplots()
+
+# DHS care-seeking estimates
+dhs_years = [2010, 2015]
+dhs_care_seeking = [0.7, 0.78]
+plt.plot(dhs_years, dhs_care_seeking)  # GBD data
+
+# model output
+plt.plot(sought_care_proportion, color="mediumseagreen")  # model
+plt.title("ALRI care-seeking")
+plt.xlabel("Year")
+plt.xticks(rotation=90)
+plt.ylabel("sought care (%)")
+plt.gca().set_ylim(0.0, 1.0)
+plt.legend(["DHS", "Model"])
+plt.tight_layout()
+plt.show()
+
+# -----------------------------------------------------------------------------------------------
+# check the complicated cases proportion
+
+# using the tracker to get the number of cases per year
+number_of_cases = counts.incident_cases
+
+# using the tracker to get the number of hypoxaemic cases per year
+number_of_hypoxaemic_cases = counts.hypoxaemic_cases
+number_of_pulmonary_complications = counts.pulmonary_complication_cases
+number_of_systemic_complications = counts.systemic_complication_cases
+
+# calculate the proportion of those who are hypoxaemia SpO2<93%
+hypoxaemic_cases_proportion = (number_of_hypoxaemic_cases / number_of_cases)
+pulmonary_complications_proportion = (number_of_pulmonary_complications / number_of_cases)
+systemic_complications_proportion = (number_of_systemic_complications / number_of_cases)
+
+fig7, ax7 = plt.subplots()
+
+# DHS care-seeking estimates
+years = [2010, 2020]
+target_data = [0.31, 0.31]
+plt.plot(years, target_data)  # Rahman data
+
+# model output
+plt.plot(hypoxaemic_cases_proportion, color="mediumseagreen")  # model
+plt.plot(pulmonary_complications_proportion)  # model
+plt.plot(systemic_complications_proportion)  # model
+plt.title("% Complications - Target data vs model output")
+plt.xlabel("Year")
+plt.xticks(rotation=90)
+plt.ylabel("Proportion of hypoxaemic cases")
+plt.gca().set_ylim(0.0, 1.0)
+plt.legend(["Target hypoxaemia", "Model hypoxaemia", "Model pulmonary complications", "Model sepsis"])
+plt.tight_layout()
+plt.show()
+
+# -----------------------------------------------------------------------------------
+# counts = output['tlo.methods.alri']['classification']
+# counts['year'] = pd.to_datetime(counts['date']).dt.year
+# counts.drop(columns='date', inplace=True)
+# counts.set_index(
+#     'year',
+#     drop=True,
+#     inplace=True
+# )
+#
+# print(counts)

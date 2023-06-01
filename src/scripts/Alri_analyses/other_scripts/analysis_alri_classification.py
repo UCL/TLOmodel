@@ -5,6 +5,7 @@ This is the analysis script for the calibration of the ALRI model
 import datetime
 import os
 import random
+import pandas as pd
 from pathlib import Path
 
 from tlo import Date, Simulation, logging
@@ -85,6 +86,8 @@ output = parse_log_file(log_filename)
 
 # -----------------------------------------------------------------------------
 classification = output['tlo.methods.alri']['classification']
+classification['year'] = pd.to_datetime(classification['date']).dt.year
+classification.drop(columns='date', inplace=True)
 classification.set_index(
     'year',
     drop=True,
@@ -101,6 +104,7 @@ grouped = classification.groupby(['facility_level'])
 classification_level0 = grouped.get_group('0')
 classification_level1a = grouped.get_group('1a')
 classification_level1b = grouped.get_group('1b')
+classification_level2 = grouped.get_group('2')
 
 
 # total classifications at each facility level for the standard being oximeter-based classification
@@ -140,69 +144,69 @@ print(results)
 
 
 # ----------------------------
-#
-# import numpy as np
-# import pandas as pd
-# from matplotlib import pyplot as plt
-#
-# def survey(results, category_names):
-#     """
-#     Parameters
-#     ----------
-#     results : dict
-#         A mapping from question labels to a list of answers per category.
-#         It is assumed all lists contain the same number of entries and that
-#         it matches the length of *category_names*.
-#     category_names : list of str
-#         The category labels.
-#     """
-#     labels = list(results.keys())
-#     data = np.array(list(results.values()))
-#     data_cum = data.cumsum(axis=1)
-#     cmap = plt.get_cmap('RdYlGn')
-#     color_values = np.linspace(0.15, 0.85, 5)
-#     category_colors = cmap(color_values)
-#
-#     fig, ax = plt.subplots(figsize=(9.2, 5))
-#     ax.invert_yaxis()
-#     ax.xaxis.set_visible(False)
-#     ax.set_xlim(0, np.sum(data, axis=1).max())
-#
-#     for i, (colname, color) in enumerate(zip(category_names, category_colors)):
-#         widths = data[:, i]
-#         starts = data_cum[:, i] - widths
-#         rects = ax.barh(labels, widths, left=starts, height=0.5,
-#                         label=colname, color=color)
-#
-#         r, g, b, _ = color
-#         text_color = 'white' if r * g * b < 0.5 else 'darkgrey'
-#         ax.bar_label(rects, label_type='center', color=text_color)
-#     ax.legend(ncol=len(category_names), bbox_to_anchor=(0, 1),
-#               loc='lower left', fontsize='small')
-#
-#     return fig, ax
-#
-#
-# survey(results, category_names)
-# plt.show()
 
-# x = labels
-# # x = np.arange(len(labels))  # the label locations
-#
-# width = 0.1  # the width of the bars
-#
-# fig, ax = plt.subplots()
-# ax.bar(x, level0_pulse_ox_class, width, label='oximeter')
-# ax.bar(x, level0_symptom_class, width, label='symptom-based')
-# ax.bar(x, level0_hw_class, width, label='health worker')
-# ax.bar(x, level0_final_class, width, label='final')
-#
-# # Add some text for labels, title and custom x-axis tick labels, etc.
-# ax.set_ylabel('number of classifications')
-# ax.set_title('Classifications against pulse oximeter standard')
-# ax.set_xticks(x, labels)
-# ax.legend()
-#
-# fig.tight_layout()
-#
-# plt.show()
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
+
+def survey(results, category_names):
+    """
+    Parameters
+    ----------
+    results : dict
+        A mapping from question labels to a list of answers per category.
+        It is assumed all lists contain the same number of entries and that
+        it matches the length of *category_names*.
+    category_names : list of str
+        The category labels.
+    """
+    labels = list(results.keys())
+    data = np.array(list(results.values()))
+    data_cum = data.cumsum(axis=1)
+    cmap = plt.get_cmap('RdYlGn')
+    color_values = np.linspace(0.15, 0.85, 5)
+    category_colors = cmap(color_values)
+
+    fig, ax = plt.subplots(figsize=(9.2, 5))
+    ax.invert_yaxis()
+    ax.xaxis.set_visible(False)
+    ax.set_xlim(0, np.sum(data, axis=1).max())
+
+    for i, (colname, color) in enumerate(zip(category_names, category_colors)):
+        widths = data[:, i]
+        starts = data_cum[:, i] - widths
+        rects = ax.barh(labels, widths, left=starts, height=0.5,
+                        label=colname, color=color)
+
+        r, g, b, _ = color
+        text_color = 'white' if r * g * b < 0.5 else 'darkgrey'
+        ax.bar_label(rects, label_type='center', color=text_color)
+    ax.legend(ncol=len(category_names), bbox_to_anchor=(0, 1),
+              loc='lower left', fontsize='small')
+
+    return fig, ax
+
+
+survey(results, category_names)
+plt.show()
+
+x = labels
+x = np.arange(len(labels))  # the label locations
+
+width = 0.1  # the width of the bars
+
+fig, ax = plt.subplots()
+ax.bar(x, level0_pulse_ox_class, width, label='oximeter')
+ax.bar(x, level0_symptom_class, width, label='symptom-based')
+ax.bar(x, level0_hw_class, width, label='health worker')
+ax.bar(x, level0_final_class, width, label='final')
+
+# Add some text for labels, title and custom x-axis tick labels, etc.
+ax.set_ylabel('number of classifications')
+ax.set_title('Classifications against pulse oximeter standard')
+ax.set_xticks(x, labels)
+ax.legend()
+
+fig.tight_layout()
+
+plt.show()
