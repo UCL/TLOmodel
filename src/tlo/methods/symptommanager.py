@@ -13,7 +13,7 @@ Outstanding issues
 """
 from collections import defaultdict
 from pathlib import Path
-from typing import Sequence, Union, Tuple, Optional
+from typing import Sequence, Union, Tuple, Optional, Iterable, Dict, List
 
 import numpy as np
 import pandas as pd
@@ -218,7 +218,7 @@ class SymptomManager(Module):
         self.resourcefilepath = resourcefilepath
         self.spurious_symptoms = None
         self.arg_spurious_symptoms = spurious_symptoms
-        self._persons_with_newly_onset_symptoms = set()
+        self._persons_with_newly_onset_symptoms = list()
 
         self.generic_symptoms = {
             'fever',
@@ -360,6 +360,11 @@ class SymptomManager(Module):
         for property in self.PROPERTIES:
             df.at[child_id, property] = 0
 
+    def _record_persons_newly_onset_symptoms(self, person_id: Iterable, symptom_string: Iterable):
+        """Record that the person is newly onset with these symptoms
+        The internal storage container is a list containing tuples of the form ([person_ids], [symp1, symp2])."""
+        self._persons_with_newly_onset_symptoms.append((list(person_id), list(symptom_string)))
+
     def change_symptom(self, person_id, symptom_string, add_or_remove, disease_module,
                        duration_in_days=None, date_of_onset=None):
         """
@@ -420,10 +425,10 @@ class SymptomManager(Module):
 
         # Make the operation:
         if add_or_remove == '+':
-            # Add this disease module as a cause of this symptom
+            self._record_persons_newly_onset_symptoms(person_id=person_id, symptom_string=symptom_string)
 
+            # Add this disease module as a cause of this symptom
             self.bsh.set(person_id, disease_module.name, columns=sy_columns)
-            self._persons_with_newly_onset_symptoms = self._persons_with_newly_onset_symptoms.union(person_id)
 
             # If a duration is given, schedule the auto-resolve event to turn off these symptoms after specified time.
             if duration_in_days is not None:
@@ -582,8 +587,21 @@ class SymptomManager(Module):
 
         return symptoms_for_each_person
 
-    def get_persons_with_newly_onset_symptoms(self):
-        return self._persons_with_newly_onset_symptoms
+    def get_persons_with_newly_onset_symptoms(self) -> Dict[Tuple, List]:
+        """This returns a dict of the form {(symptom1, symptom2): [person_ids]}: i.e. for each combination of symptoms,
+         the set of person_ids for whom that is newly onset. This is created from the internal store of
+         `self._persons_with_newly_onset_symptoms`, which is list of the form  ([person_id]: [symptoms]) being careful
+         to allow for the fact that the same person could appear more than once in the list and so the symptoms that
+         they have needs to be merged together."""
+        return pd.DataFrame(self._persons_with_newly_onset_symptoms)\
+            .explode(0)\
+            .explode(1)\
+            .groupby(by=0)\
+            .agg(tuple)\
+            .reset_index()\
+            .groupby(by=1).\
+            agg(list)\
+            [0].to_dict()
 
     def reset_persons_with_newly_onset_symptoms(self):
         self._persons_with_newly_onset_symptoms.clear()

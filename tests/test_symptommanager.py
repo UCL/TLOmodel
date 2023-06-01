@@ -5,8 +5,9 @@ import numpy as np
 import pytest
 from pandas import DateOffset
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, Module
 from tlo.methods import (
+    Metadata,
     chronicsyndrome,
     demography,
     enhanced_lifestyle,
@@ -718,3 +719,74 @@ def test_change_symptom_multiple_persons_multiple_symptoms(
         for s in disease_module_symptoms
         for p in alive_persons
     )
+
+
+def test_get_persons_with_newly_onset_symptoms(seed, disease_module):
+    """Check that `get_persons_with_newly_onset_symptoms` works as expected. It should return a dict of the form
+    {(symptom1, symptom2): [person_ids]}: i.e. for each set of symptoms, the list of the persons with those symptoms.
+    If a person has had symptoms added at different times, these should have been aggregated together."""
+
+    class DummyDisease(Module):
+        METADATA = {Metadata.USES_SYMPTOMMANAGER}
+
+        def read_parameters(self, data_folder):
+            self.sim.modules['SymptomManager'].register_symptom(Symptom('a'), Symptom('b'), Symptom('c'), Symptom('d'))
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+        def on_birth(self, mother, child):
+            pass
+
+
+    sim = Simulation(start_date=start_date, seed=seed)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           disable=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 DummyDisease()
+                 )
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date)
+
+
+    def apply_symptom(person_id, symptom_string):
+        sim.modules['SymptomManager'].change_symptom(
+            person_id=person_id,
+            add_or_remove="+",
+            symptom_string=symptom_string,
+            disease_module=sim.modules['DummyDisease']
+        )
+
+
+    # Person 0 has symptom 'a' (... but will also get symptom 'b')
+    apply_symptom(person_id=0, symptom_string='a',)
+
+    # Person 1 has symptom 'b'
+    apply_symptom(person_id=1, symptom_string='b')
+
+    # Person 0 also has symptom 'b' (applied not together)
+    apply_symptom(person_id=0, symptom_string='b')
+
+    # Person 2 has symptoms 'a' and 'b'(applied together)
+    apply_symptom(person_id=2, symptom_string=['a', 'b'])
+
+    # Persons 3 and 4 each also have symptoms 'c' and 'd' (applied symptoms together to more than on person)
+    apply_symptom(person_id=[3, 4], symptom_string=['c', 'd'])
+
+    # Person 4 also actually has symptom 'a' (applied not together, and adding to a person that previously had symptoms
+    #  applied as part of a group of persons).
+    apply_symptom(person_id=4, symptom_string='a')
+
+    assert {
+               ('a', 'b',): [0, 2],
+               ('b',): [1],
+               ('c', 'd',): [3],
+               ('c', 'd', 'a',): [4],
+           } == sim.modules['SymptomManager'].get_persons_with_newly_onset_symptoms()
