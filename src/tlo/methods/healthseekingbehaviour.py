@@ -117,9 +117,11 @@ class HealthSeekingBehaviour(Module):
     def read_parameters(self, data_folder):
         """Read in ResourceFile"""
         # Load parameters from resource file:
-        self.load_parameters_from_dataframe(
-            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv')
-        )
+        wb = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv')
+        wb.loc[wb['parameter_name'] == 'force_any_symptom_to_lead_to_healthcareseeking', 'value'] = \
+            wb.loc[wb['parameter_name'] == 'force_any_symptom_to_lead_to_healthcareseeking', 'value'].apply(pd.eval)
+        # <-- Needed to prevent the contents being stored as strings
+        self.load_parameters_from_dataframe(wb)
 
         # Check that force_any_symptom_to_lead_to_healthcareseeking is a bool (this is returned in
         # `self.force_any_symptom_to_lead_to_healthcareseeking` without any further checking).
