@@ -60,21 +60,21 @@ class ImpactOfHealthSystemMode(BaseScenario):
         """
 
         return {
-            "No Healthcare System": {
-                'HealthSystem': {
-                    'cons_availability': "all",
-                    'Service_Availability': []
-                },
-            },
-
-            "Unlimited Resources": {
-                'HealthSystem': {
-                    'cons_availability': "all",
-                    'mode_appt_constraints': 0,
-                    "use_funded_or_actual_staffing": "actual",
-                 },
-             },
-
+#            "No Healthcare System": {
+#                'HealthSystem': {
+#                    'cons_availability': "all",
+#                    'Service_Availability': []
+#                },
+#            },
+#
+#            "Unlimited Resources": {
+#                'HealthSystem': {
+#                    'cons_availability': "all",
+#                    'mode_appt_constraints': 0,
+#                    "use_funded_or_actual_staffing": "actual",
+#                 },
+#             },
+#
             "Unlimited Efficiency": {
                 'HealthSystem': {
                     'cons_availability': "all",
