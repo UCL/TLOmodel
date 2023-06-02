@@ -863,6 +863,113 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
 
 
 @pytest.mark.slow
+def test_summary_logger_for_never_ran_hsi_event(seed, tmpdir):
+    """Check that under a mode_appt_constraints = 2 with zero resources, HSIs with a tclose
+       soon after topen will be correctly recorded in the summary logger, and that this can
+       be parsed correctly when a different set of HSI are never ran."""
+
+    # Create a dummy disease module (to be the parent of the dummy HSI)
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            # In 2010: Dummy1 only
+            sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Dummy1(self, person_id=0),
+                topen=self.sim.date,
+                tclose=self.sim.date+pd.DateOffset(days=2),
+                priority=0
+            )
+            # In 2011: Dummy2 & Dummy3
+            sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Dummy2(self, person_id=0),
+                topen=self.sim.date + pd.DateOffset(years=1),
+                tclose=self.sim.date + pd.DateOffset(years=1)+pd.DateOffset(days=2),
+                priority=0
+            )
+            sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_Dummy3(self, person_id=0),
+                topen=self.sim.date + pd.DateOffset(years=1),
+                tclose=self.sim.date + pd.DateOffset(years=1)+pd.DateOffset(days=2),
+                priority=0
+            )
+
+            # In 2011: to-do.....
+
+    # Create two different dummy HSI events:
+    class HSI_Dummy1(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy1'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    class HSI_Dummy2(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy2'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    class HSI_Dummy3(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy3'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+            self.ACCEPTED_FACILITY_LEVEL = '1b'
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    # Set up simulation:
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
+        'filename': 'tmpfile',
+        'directory': tmpdir,
+        'custom_levels': {
+            "tlo.methods.healthsystem": logging.DEBUG,
+            "tlo.methods.healthsystem.summary": logging.INFO
+        }
+    })
+
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                  mode_appt_constraints=2,
+                                  capabilities_coefficient=0.,  # <--- Ensure all events postponed
+                                  ),
+        DummyModule(),
+        sort_modules=False,
+        check_all_dependencies=False
+    )
+    sim.make_initial_population(n=1000)
+
+    sim.simulate(end_date=start_date + pd.DateOffset(years=2))
+    log = parse_log_file(sim.log_filepath, level=logging.DEBUG)
+
+    # Summary log:
+    summary_hsi_event = log["tlo.methods.healthsystem.summary"]["Never_ran_HSI_Event"]
+    pd.set_option('display.max_columns', None)
+
+    # In 2010, should have recorded one instance of Dummy1 having never ran
+    assert summary_hsi_event.loc[summary_hsi_event['date'] == Date(2010, 12, 31), 'TREATMENT_ID'][0] == {'Dummy1': 1}
+    # In 2011, should have recorded one instance of Dummy2 and one of Dummy3 having never ran
+    assert summary_hsi_event.loc[summary_hsi_event['date'] == Date(2011, 12, 31),
+                                 'TREATMENT_ID'][1] == {'Dummy2': 1, 'Dummy3': 1}
+
+
+@pytest.mark.slow
 def test_summary_logger_for_hsi_event_squeeze_factors(seed, tmpdir):
     """Check that the summary logger can be parsed correctly when a different set of HSI occur in different years."""
 
