@@ -163,6 +163,10 @@ rdt_facilities = output["tlo.methods.malaria"]["rdt_log"]
 # rdt_all = rdt_facilities
 rdt_all = rdt_facilities.loc[~(rdt_facilities.called_by == 'Malaria_Treatment')]
 
+# todo exclude people having repeat diagnostic tests (through malaria module and hsi_generic)
+# just exclude for this plot - they can occur in reality
+# could exclude tests in same person occurring within 1-4 days
+
 # limit to children <5 yrs with fever
 rdt_child = rdt_facilities.loc[(rdt_facilities.age <= 5) & rdt_facilities.fever_present]
 # remove tests given for confirmation with treatment
