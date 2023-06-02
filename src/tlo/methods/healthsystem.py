@@ -816,10 +816,10 @@ class HealthSystem(Module):
             self.max_squeeze_by_priority[i] = self.get_max_squeeze_based_on_priority(i)
 
         print("Health System considered:")
-        print("mode_appt_constraints:",self.mode_appt_constraints)
-        print("ignore_priority:",self.ignore_priority)
-        print("name of policy:",self.policy_name)
-        print("lowest_priority_considered:",self.lowest_priority_considered)
+        print("mode_appt_constraints:", self.mode_appt_constraints)
+        print("ignore_priority:", self.ignore_priority)
+        print("name of policy:", self.policy_name)
+        print("lowest_priority_considered:", self.lowest_priority_considered)
         print("include fasttracking routes:", self.include_fasttrack_routes)
 
     def initialise_population(self, population):
