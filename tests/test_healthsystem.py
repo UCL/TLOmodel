@@ -1671,7 +1671,8 @@ def test_service_availability_can_be_set_using_list_of_treatment_ids_and_asteris
 def test_hsi_events_that_run_with_and_without_randomisation_are_as_expected(seed, tmpdir):
     """Check the two runs of model that are identical except for the option to randomise/not the HSI_Event queue
      generate a log of HSI Events that are different only in the manner expected (i.e. the same events run but
-     shuffled to occur in a different order in the day.)"""
+     shuffled to occur in a different order in the day.) This is also a check that the ordering of HSI is not important.
+     """
 
     def get_hsi_log(randomise_queue) -> pd.DataFrame:
         """Return the log of HSI_Events that occur when running the simulation with the `service_availability` set as
@@ -1695,7 +1696,7 @@ def test_hsi_events_that_run_with_and_without_randomisation_are_as_expected(seed
                      )
         sim.modules['HealthSystem'].parameters['Service_Availability'] = ['*']
         sim.modules['HealthSystem'].parameters['cons_availability'] = 'default'
-        sim.make_initial_population(n=500)
+        sim.make_initial_population(n=1_000)
 
         sim.simulate(end_date=start_date + pd.DateOffset(days=7))
 
