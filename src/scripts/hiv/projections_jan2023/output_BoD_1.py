@@ -26,7 +26,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 with open(outputpath / "NoXpert.pickle", "rb") as f:
     output = pickle.load(f)
 
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2015, 12, 31))
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2012, 12, 31))
 
 def get_num_deaths(_df):
     """Return total number of Deaths (total within the TARGET_PERIOD)
