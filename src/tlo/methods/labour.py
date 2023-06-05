@@ -2213,12 +2213,11 @@ class Labour(Module):
         is called within HSI_Labour_ReceivesPostnatalCheck.
         :param hsi_event: HSI event in which the function has been called
         """
-        df = self.sim.population.props
         person_id = hsi_event.target
 
         if 'Depression' in self.sim.modules.keys():
-            if not df.at[person_id, 'de_ever_diagnosed_depression']:
-                self.sim.modules['Depression'].do_when_suspected_depression(person_id, hsi_event)
+            self.sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
+                                                                      hsi_event=hsi_event)
 
     def interventions_delivered_pre_discharge(self, hsi_event):
         """
@@ -2580,11 +2579,9 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                     mni[individual_id]['delay_one_two'] = True
 
                     # We assume women present to the health system through the generic a&e appointment
-                    from tlo.methods.hsi_generic_first_appts import (
-                        HSI_GenericEmergencyFirstApptAtFacilityLevel1,
-                    )
+                    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
 
-                    event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
+                    event = HSI_GenericEmergencyFirstAppt(
                         module=self.module,
                         person_id=individual_id)
 

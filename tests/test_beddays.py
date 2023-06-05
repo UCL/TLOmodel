@@ -391,7 +391,7 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
 
 def test_bed_days_released_on_death(tmpdir, seed):
     """Check that bed-days scheduled to be occupied are released upon the death of the person"""
-    _bed_type = bed_types[0]
+    _bed_type = 'general_bed'
     days_simulation_duration = 20
 
     class DummyModule(Module):
@@ -467,7 +467,7 @@ def test_bed_days_released_on_death(tmpdir, seed):
     })
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, beds_availability='all'),
         DummyModule()
     )
     sim.make_initial_population(n=100)
@@ -856,11 +856,15 @@ def test_bed_days_allocation_information_is_provided_to_HSI(seed):
 
 def test_in_patient_admission_included_in_appt_footprint_if_any_bed_days():
     """Check that helper function works which adds the in-patient admission appointment type to the APPT_FOOTPRINT. """
-    from tlo.methods.bed_days import IN_PATIENT_ADMISSION, IN_PATIENT_DAY
+    from tlo.methods.bed_days import (
+        IN_PATIENT_ADMISSION,
+        IN_PATIENT_DAY_FIRST_DAY,
+        IN_PATIENT_DAY_SUBSEQUENT_DAYS,
+    )
 
     footprint = {'Under5OPD': 1}
     footprint_with_correct_inpatient_admission_and_inpatient_day = {
-        **footprint, **IN_PATIENT_DAY, **IN_PATIENT_ADMISSION
+        **footprint, **IN_PATIENT_DAY_FIRST_DAY, **IN_PATIENT_ADMISSION
     }
 
     add_first_day_inpatient_appts_to_footprint = BedDays(hs_module=None).add_first_day_inpatient_appts_to_footprint
@@ -875,19 +879,19 @@ def test_in_patient_admission_included_in_appt_footprint_if_any_bed_days():
     assert footprint_with_correct_inpatient_admission_and_inpatient_day == \
            add_first_day_inpatient_appts_to_footprint({**footprint, **IN_PATIENT_ADMISSION})
     assert footprint_with_correct_inpatient_admission_and_inpatient_day == \
-           add_first_day_inpatient_appts_to_footprint({**footprint, **IN_PATIENT_DAY})
+           add_first_day_inpatient_appts_to_footprint({**footprint, **IN_PATIENT_DAY_SUBSEQUENT_DAYS})
 
     # If the in-patient admission is wrong, then it is corrected:
     assert footprint_with_correct_inpatient_admission_and_inpatient_day == \
            add_first_day_inpatient_appts_to_footprint({'Under5OPD': 1, 'IPAdmission': 99, 'InpatientDays': 99})
 
     # If the footprint is blank, then the bed-days appointments are added:
-    assert {**IN_PATIENT_DAY, **IN_PATIENT_ADMISSION} == add_first_day_inpatient_appts_to_footprint({})
+    assert {**IN_PATIENT_DAY_FIRST_DAY, **IN_PATIENT_ADMISSION} == add_first_day_inpatient_appts_to_footprint({})
 
 
 def test_in_patient_appt_included_and_logged(tmpdir, seed):
     """Check that in-patient appointments (admission and in-patients) are used correctly for in-patients when succ."""
-    from tlo.methods.bed_days import IN_PATIENT_ADMISSION, IN_PATIENT_DAY
+    from tlo.methods.bed_days import IN_PATIENT_ADMISSION, IN_PATIENT_DAY_SUBSEQUENT_DAYS
 
     # Create and run a simulation that includes in-patients
     _bed_type = bed_types[0]
@@ -957,8 +961,8 @@ def test_in_patient_appt_included_and_logged(tmpdir, seed):
         [
             pd.DataFrame(index=[date_of_admission],
                          data={k: num_persons * v for k, v in IN_PATIENT_ADMISSION.items()}),
-            pd.DataFrame(index=pd.date_range(date_of_admission, date_of_discharge),
-                         data={k: num_persons * v for k, v in IN_PATIENT_DAY.items()}),
+            pd.DataFrame(index=pd.date_range(date_of_admission + pd.DateOffset(days=1), date_of_discharge),
+                         data={k: num_persons * v for k, v in IN_PATIENT_DAY_SUBSEQUENT_DAYS.items()}),
             pd.DataFrame(index=[date_of_admission],
                          data={k: num_persons * v for k, v in footprint.items()}),
         ], axis=1).fillna(0).astype(int)

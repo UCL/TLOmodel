@@ -12,11 +12,11 @@ import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Types
 from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
-from tlo.lm import LinearModel, LinearModelType, Predictor
+from tlo.lm import LinearModel
 from tlo.methods import Metadata
 from tlo.methods.hsi_generic_first_appts import (
-    HSI_GenericEmergencyFirstApptAtFacilityLevel1,
-    HSI_GenericFirstApptAtFacilityLevel0,
+    HSI_GenericEmergencyFirstAppt,
+    HSI_GenericNonEmergencyFirstAppt,
 )
 
 # ---------------------------------------------------------------------------------------------------------
@@ -46,6 +46,10 @@ class HealthSeekingBehaviour(Module):
         'force_any_symptom_to_lead_to_healthcareseeking': Parameter(
             Types.BOOL, "Whether every symptom [except those that declare they should not lead to any healthcare "
                         "seeking] should always lead to healthcare seeking immediately."),
+        'prob_non_emergency_care_seeking_by_level': Parameter(
+            Types.LIST, "The probability of going to each facility-level when non-emergency care is sought. The "
+                        "values in the list are the probabilities of going to facility level 0 / 1a / 1b / 2, "
+                        "respectively, and these values must sum to 1.0."),
         'baseline_odds_of_healthcareseeking_children': Parameter(Types.REAL, 'odds of health-care seeking (children:'
                                                                              ' 0-14) if male, 0-5 years-old, living in'
                                                                              ' a rural setting in the Northern region,'
@@ -113,9 +117,11 @@ class HealthSeekingBehaviour(Module):
     def read_parameters(self, data_folder):
         """Read in ResourceFile"""
         # Load parameters from resource file:
-        self.load_parameters_from_dataframe(
-            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv')
-        )
+        wb = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv')
+        wb.loc[wb['parameter_name'] == 'force_any_symptom_to_lead_to_healthcareseeking', 'value'] = \
+            wb.loc[wb['parameter_name'] == 'force_any_symptom_to_lead_to_healthcareseeking', 'value'].apply(pd.eval)
+        # <-- Needed to prevent the contents being stored as strings
+        self.load_parameters_from_dataframe(wb)
 
         # Check that force_any_symptom_to_lead_to_healthcareseeking is a bool (this is returned in
         # `self.force_any_symptom_to_lead_to_healthcareseeking` without any further checking).
@@ -160,6 +166,10 @@ class HealthSeekingBehaviour(Module):
         # Define the linear models that govern healthcare seeking
         self.define_linear_models()
 
+        # Check that the parameters for 'prob_non_emergency_care_seeking_by_level' make sense
+        probs = self.parameters['prob_non_emergency_care_seeking_by_level']
+        assert all(np.isfinite(probs)) and np.isclose(sum(probs), 1.0)
+
     def on_birth(self, mother_id, child_id):
         """Nothing to handle on_birth
         """
@@ -169,41 +179,41 @@ class HealthSeekingBehaviour(Module):
         """Define linear models for health seeking behaviour for children and adults"""
         p = self.parameters
 
-        # Model for care seeking:
-        for subgroup, age_predictor, care_seeking_odds_ratios, in zip(
-            (
-                'children',
-                'adults'
-            ),
-            (
-                Predictor('age_years').when('>=5', p['odds_ratio_children_age_5to14']),
-                Predictor('age_years', conditions_are_mutually_exclusive=True
-                          ).when('.between(35,59)', p['odds_ratio_adults_age_35to59'])
-                           .when('>=60', p['odds_ratio_adults_age_60plus']),
-            ),
-            (
-                self.odds_ratio_health_seeking_in_children,
-                self.odds_ratio_health_seeking_in_adults
-            ),
+        # Use a custom function to represent the linear model for healthcare seeking
+        def predict_healthcareseeking(
+            self, df, rng=None, subgroup=None, care_seeking_odds_ratios=None
         ):
-            self.hsb_linear_models[subgroup] = LinearModel(
-                LinearModelType.LOGISTIC,
-                p[f'baseline_odds_of_healthcareseeking_{subgroup}'],
+            if subgroup is None or care_seeking_odds_ratios is None:
+                raise ValueError("subgroup and care_seeking_odds_ratios must both be specified")
 
-                # First set of predictors are for behaviour due to the 'average symptom'
-                age_predictor,
-                Predictor('li_urban').when(True, p[f'odds_ratio_{subgroup}_setting_urban']),
-                Predictor('sex').when('F', p[f'odds_ratio_{subgroup}_sex_Female']),
-                Predictor('region_of_residence', conditions_are_mutually_exclusive=True
-                          ).when('Central', p[f'odds_ratio_{subgroup}_region_Central'])
-                           .when('Southern', p[f'odds_ratio_{subgroup}_region_Southern']),
-                Predictor('li_wealth', conditions_are_mutually_exclusive=True
-                          ).when(4, p[f'odds_ratio_{subgroup}_wealth_higher'])
-                           .when(5, p[f'odds_ratio_{subgroup}_wealth_higher']),
+            result = pd.Series(data=p[f'baseline_odds_of_healthcareseeking_{subgroup}'], index=df.index)
+            # Predict behaviour due to the 'average symptom'
+            if subgroup == 'children':
+                result[df.age_years >= 5] *= p['odds_ratio_children_age_5to14']
+            if subgroup == 'adults':
+                result[df.age_years.between(35, 59)] *= p['odds_ratio_adults_age_35to59']
+                result[df.age_years >= 60] *= p['odds_ratio_adults_age_60plus']
+            result[df.li_urban] *= p[f'odds_ratio_{subgroup}_setting_urban']
+            result[df.sex == 'F'] *= p[f'odds_ratio_{subgroup}_sex_Female']
+            result[df.region_of_residence == 'Central'] *= p[f'odds_ratio_{subgroup}_region_Central']
+            result[df.region_of_residence == 'Southern'] *= p[f'odds_ratio_{subgroup}_region_Southern']
+            result[(df.li_wealth == 4) | (df.li_wealth == 5)] *= p[f'odds_ratio_{subgroup}_wealth_higher']
+            # Predict for symptom-specific odd ratios
+            for symptom, odds in care_seeking_odds_ratios.items():
+                result[df[f'sy_{symptom}'] > 0] *= odds
+            result = (1 / (1 + 1 / result))
+            # If a random number generator is supplied provide boolean outcomes, not probabilities
+            if rng:
+                outcome = rng.random_sample(len(result)) < result
+                return outcome
+            else:
+                return result
 
-                # Second set of predictors are the symptom-specific odd ratios
-                *(Predictor(f'sy_{symptom}').when('>0', odds) for symptom, odds in care_seeking_odds_ratios.items())
-            )
+        for subgroup in (
+            'children',
+            'adults'
+        ):
+            self.hsb_linear_models[subgroup] = LinearModel.custom(predict_function=predict_healthcareseeking)
 
         # Model for the care-seeking (if it occurs) to be for an EMERGENCY Appointment:
         def custom_predict(self, df, rng=None, **externals) -> pd.Series:
@@ -276,8 +286,8 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         symptom_manager = self.sim.modules["SymptomManager"]
         health_system = self.sim.modules["HealthSystem"]
         max_delay = module.parameters['max_days_delay_to_generic_HSI_after_symptoms']
-        routine_hsi_event_class = HSI_GenericFirstApptAtFacilityLevel0
-        emergency_hsi_event_class = HSI_GenericEmergencyFirstApptAtFacilityLevel1
+        routine_hsi_event_class = HSI_GenericNonEmergencyFirstAppt
+        emergency_hsi_event_class = HSI_GenericEmergencyFirstAppt
 
         # Get IDs of alive persons with new symptoms
         person_ids_with_newly_onset_symptoms = sorted(
@@ -296,14 +306,18 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         idx_where_true = lambda series: series.loc[series].index  # noqa: E731
 
         # Separately schedule HSI events for child and adult subgroups
-        for subgroup, symptoms_that_allow_healthcareseeking, hsb_model, emergency_appt_model in zip(
+        for subgroup, subgroup_name, care_seeking_odds_ratios, hsb_model, emergency_appt_model in zip(
             (
                 alive_newly_symptomatic_children,
                 alive_newly_symptomatic_adults
             ),
             (
-                module.odds_ratio_health_seeking_in_children.keys(),
-                module.odds_ratio_health_seeking_in_adults.keys(),
+                'children',
+                'adults'
+             ),
+            (
+                module.odds_ratio_health_seeking_in_children,
+                module.odds_ratio_health_seeking_in_adults,
             ),
             (
                 module.hsb_linear_models['children'],
@@ -314,6 +328,7 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 module.emergency_appt_linear_models['adults']
             ),
         ):
+            symptoms_that_allow_healthcareseeking = care_seeking_odds_ratios.keys()
             # Determine who will seek care:
             if module.force_any_symptom_to_lead_to_healthcareseeking:
                 # If forcing any person with symptoms to seek care, find all those with any symptoms which cause
@@ -321,14 +336,13 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
                 # behaviour).
                 will_seek_care = idx_where_true(self._has_any_symptoms(subgroup, symptoms_that_allow_healthcareseeking))
             else:
-                # If not forcing, run the linear model to predict which persons will seek care, from among those with
-                # symptoms that cause any degree of healthcare seeking.
+                # If not forcing, run the custom model to predict which persons will seek care, from among those
+                # with symptoms that cause any degree of healthcare seeking.
                 will_seek_care = idx_where_true(
                     hsb_model.predict(
                         subgroup.loc[self._has_any_symptoms(subgroup, symptoms_that_allow_healthcareseeking)],
                         module.rng,
-                        squeeze_single_row_output=False
-                    )
+                        subgroup=subgroup_name, care_seeking_odds_ratios=care_seeking_odds_ratios)
                 )
 
                 # Force the addition to this set those who are already in-patient. (In-patients will always get the
@@ -365,11 +379,21 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
             else:
                 care_seeking_dates = np.full(len(will_seek_non_emergency_care), self.sim.date)
 
-            health_system.schedule_batch_of_individual_hsi_events(
-                hsi_event_class=routine_hsi_event_class,
-                person_ids=sorted(will_seek_non_emergency_care),
-                priority=0,
-                topen=map(Date, care_seeking_dates),
-                tclose=None,
-                module=module
-            )
+            # Determine the level at which care is sought
+            fac_levels = ('0', '1a', '1b', '2')
+            level_assigned = self.module.rng.choice(
+                fac_levels,
+                p=self.module.parameters['prob_non_emergency_care_seeking_by_level'],
+                size=len(will_seek_non_emergency_care))
+
+            for level in fac_levels:
+                mask_to_this_level = np.where(level_assigned == level)
+                health_system.schedule_batch_of_individual_hsi_events(
+                    hsi_event_class=routine_hsi_event_class,
+                    facility_level=level,
+                    person_ids=sorted(will_seek_non_emergency_care[mask_to_this_level]),
+                    priority=0,
+                    topen=map(Date, care_seeking_dates[mask_to_this_level]),
+                    tclose=None,
+                    module=module
+                )

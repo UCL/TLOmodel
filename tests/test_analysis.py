@@ -10,10 +10,11 @@ from tlo.analysis.utils import (
     colors_in_matplotlib,
     flatten_multi_index_series_into_dict_for_logging,
     get_coarse_appt_type,
-    get_color_cause_of_death_label,
+    get_color_cause_of_death_or_daly_label,
     get_color_coarse_appt,
     get_color_short_treatment_id,
     get_filtered_treatment_ids,
+    get_parameters_for_status_quo,
     get_root_path,
     order_of_coarse_appt,
     order_of_short_treatment_ids,
@@ -259,9 +260,33 @@ def test_colormap_cause_of_death_label(seed):
 
     all_labels = get_all_cause_of_death_labels(seed)
 
-    colors = [get_color_cause_of_death_label(_label) for _label in all_labels]
+    colors = [get_color_cause_of_death_or_daly_label(_label) for _label in all_labels]
 
     assert len(set(colors)) == len(colors)  # No duplicates
     assert all([isinstance(_x, str) for _x in colors])  # All strings
     assert np.nan is get_color_coarse_appt('????')  # Return `np.nan` if label is not recognised.
     assert all(map(lambda x: x in colors_in_matplotlib(), colors))  # All colors recognised
+
+
+def test_get_parameter_functions(seed):
+    """Check that the functions that provide updated parameter values provide recognised parameter names and values
+    of the appropriate type."""
+
+    # Create simulation
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
+    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+
+    # Get structure containing parameters to be updated:
+    params = get_parameters_for_status_quo()
+
+    # Check each parameter
+    for module in params.keys():
+        for name, updated_value in params[module].items():
+
+            # Check that the parameter identified exists in the simulation
+            assert name in sim.modules[module].parameters, f"Parameter not recognised: {module}:{name}."
+
+            # Check that the original value and the updated value are of the same type.
+            original = sim.modules[module].parameters[name]
+            assert type(original) is type(updated_value), f"Updated value type does not match original value type:" \
+                                                          f"{module}:{name} >> {updated_value=}, {original=}"

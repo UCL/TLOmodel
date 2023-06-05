@@ -470,9 +470,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.legend(loc=7)
         fig.tight_layout()
         fig.subplots_adjust(right=0.65)
-        plt.savefig(make_graph_file_name(f"Contraception_{_age}"))
+        plt.savefig(make_graph_file_name(f"Contraception_use_over_time_{_age}"))
         plt.show()
         plt.close(fig)
+
+    # Show Distribution of use at different ages at one time point (2015)
+    year_of_interest = 2015
+    contaceptive_use_in_year_of_interest = mean_usage_by_age.loc[(year_of_interest, slice(None))].T
+    fig, ax = plt.subplots()
+    contaceptive_use_in_year_of_interest.plot.bar(stacked=True, ax=ax, legend=False)
+    ax.set_title(f'Contraceptive Method Use in {year_of_interest}')
+    ax.set_xlabel('Age-Group')
+    ax.set_ylabel('Proportion')
+    fig.tight_layout()
+    fig.show()
+    fig.savefig(make_graph_file_name(f"Contraception_use_by_age_in_year_{year_of_interest}"))
+    plt.close(fig)
 
     # %% Age-specific fertility
 
@@ -545,8 +558,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    # Plot with respect to age, averaged in the five year periods:
-
+    # Plot with respect to age, averaged in the five-year periods:
     model_asfr = asfr.unstack() \
                      .droplevel(axis=1, level=0) \
                      .groupby(by=asfr.index.levels[0].map(calperiodlookup)) \
@@ -557,19 +569,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         wpp.Variant.isin(['WPP_Estimates', 'WPP_Medium variant']), ['Age_Grp', 'Period', 'asfr']
     ].groupby(by=['Age_Grp', 'Period'])['asfr'].mean().unstack().T
 
-    fig, axs = plt.subplots(nrows=2, sharex=True, sharey=True)
-    for ax, _period in zip(axs, ['2010-2014', '2015-2019']):
-        to_plot = pd.concat([model_asfr.loc[_period], data_asfr.loc[_period]], axis=1)
-        ax.plot(to_plot.index, to_plot[_period], label='WPP', color=colors['WPP'])
-        ax.plot(to_plot.index, to_plot['mean'], label='Model', color=colors['Model'])
-        ax.fill_between(to_plot.index, to_plot['lower'], to_plot['upper'], color=colors['Model'], alpha=0.2)
-        ax.set_xlabel('Age at Conception')
-        ax.set_ylabel('Live births per woman-year')
-        ax.set_title(f'{_period}')
-        ax.legend()
+    fig, ax = plt.subplots()
+    _period = '2015-2019'
+    to_plot = pd.concat([model_asfr.loc[_period], data_asfr.loc[_period]], axis=1)
+    ax.plot(to_plot.index, to_plot[_period], label='WPP', color=colors['WPP'])
+    ax.plot(to_plot.index, to_plot['mean'], label='Model', color=colors['Model'])
+    ax.fill_between(to_plot.index, to_plot['lower'], to_plot['upper'], color=colors['Model'], alpha=0.2)
+    ax.set_xlabel('Age at Conception')
+    ax.set_ylabel('Live births per woman-year')
+    ax.set_title(f'{_period}')
+    ax.legend()
     fig.suptitle('Live Births By Age of Mother At Conception')
     fig.tight_layout()
-    fig.savefig(make_graph_file_name("asfr_model_vs_data_average_by_age"))
+    fig.savefig(make_graph_file_name("asfr_model_vs_data_average_by_age_2015-2019"))
     fig.show()
     plt.close(fig)
 
@@ -710,9 +722,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     for period in calperiods_selected:
 
-        fig, ax = plt.subplots(ncols=1, nrows=2, sharey=True, sharex=True)
         for i, sex in enumerate(['F', 'M']):
 
+            fig, ax = plt.subplots()
             tot_deaths_byage = pd.DataFrame(
                 deaths_by_agesexperiod.loc[
                     (deaths_by_agesexperiod['Period'] == period) & (deaths_by_agesexperiod['Sex'] == sex)].groupby(
@@ -721,58 +733,58 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             tot_deaths_byage = tot_deaths_byage.transpose()
 
             if 'WPP_Medium variant' in tot_deaths_byage.columns:
-                ax[i].plot(
+                ax.plot(
                     tot_deaths_byage.index,
                     tot_deaths_byage['WPP_Medium variant'] / 1e3,
                     label='WPP',
                     color=colors['WPP'])
-                ax[i].fill_between(
+                ax.fill_between(
                     tot_deaths_byage.index,
                     tot_deaths_byage['WPP_Low variant'] / 1e3,
                     tot_deaths_byage['WPP_High variant'] / 1e3,
                     facecolor=colors['WPP'], alpha=0.2)
             else:
-                ax[i].plot(
+                ax.plot(
                     tot_deaths_byage.index,
                     tot_deaths_byage['WPP_Estimates'] / 1e3,
                     label='WPP',
                     color=colors['WPP'])
 
             if 'GBD_Est' in tot_deaths_byage.columns:
-                ax[i].plot(
+                ax.plot(
                     tot_deaths_byage.index,
                     tot_deaths_byage['GBD_Est'] / 1e3,
                     label='GBD',
                     color=colors['GBD'])
-                ax[i].fill_between(
+                ax.fill_between(
                     tot_deaths_byage.index,
                     tot_deaths_byage['GBD_Lower'] / 1e3,
                     tot_deaths_byage['GBD_Upper'] / 1e3,
                     facecolor=colors['GBD'], alpha=0.2)
 
-            ax[i].plot(
+            ax.plot(
                 tot_deaths_byage.index,
                 tot_deaths_byage['Model_mean'] / 1e3,
                 label='Model',
                 color=colors['Model'])
-            ax[i].fill_between(
+            ax.fill_between(
                 tot_deaths_byage.index,
                 tot_deaths_byage['Model_lower'] / 1e3,
                 tot_deaths_byage['Model_upper'] / 1e3,
                 facecolor=colors['Model'], alpha=0.2)
 
-            ax[i].set_xticks(np.arange(len(tot_deaths_byage.index)))
-            ax[i].set_xticklabels(tot_deaths_byage.index, rotation=90)
-            ax[i].set_title(f"Number of Deaths {period}: {sexname(sex)}")
-            ax[i].legend(loc='upper left')
-            ax[i].set_xlabel('Age Group')
-            ax[i].set_ylabel('Deaths per period (thousands)')
-            ax[i].set_ylim(0, 80)
+            ax.set_xticks(np.arange(len(tot_deaths_byage.index)))
+            ax.set_xticklabels(tot_deaths_byage.index, rotation=90)
+            ax.set_title(f"Number of Deaths {period}: {sexname(sex)}")
+            ax.legend(loc='upper right')
+            ax.set_xlabel('Age Group')
+            ax.set_ylabel('Deaths per period (thousands)')
+            ax.set_ylim(0, 120)
 
-        fig.tight_layout()
-        plt.savefig(make_graph_file_name(f"Deaths_By_Age_{period}"))
-        plt.show()
-        plt.close(fig)
+            fig.tight_layout()
+            fig.savefig(make_graph_file_name(f"Deaths_By_Age_{sex}_{period}"))
+            fig.show()
+            plt.close(fig)
 
 
 if __name__ == "__main__":
