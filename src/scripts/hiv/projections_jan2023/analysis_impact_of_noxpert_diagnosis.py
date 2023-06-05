@@ -129,10 +129,10 @@ if __name__ == "__main__":
 
     # Extracts and prints health outcomes to excel-DALYs and mortality
     total_deaths = extract_total_deaths(results_folder)
-    print(f"these are sample deaths {total_deaths}")
+    print(f"these are expected deaths {total_deaths}")
     total_deaths.to_excel(outputspath / "deaths_NoXpert.xlsx")
     total_dalys = extract_total_dalys(results_folder)
-    print(f"these are sample dalys draw {total_dalys}")
+    print(f"these are expected dalys draw {total_dalys}")
     total_dalys.to_excel(outputspath / "dalys_NoXpert.xlsx")
     # Compute and print the difference between the deaths across the scenario draws
     # mean_deaths_difference_by_run = compute_difference_in_deaths_across_runs(total_deaths, scenario_info)
