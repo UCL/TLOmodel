@@ -1,0 +1,27 @@
+{
+  "scenario_script_path": "src/scripts/hiv/projections_jan2023/scenario_impact_of_CXR_Scale_upX.py",
+  "scenario_seed": 5001,
+  "runs_per_draw": 1,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 834220092,
+      "parameters": {
+        "Tb": {
+          "scenario": 3
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "draw_seed": 514968391,
+      "parameters": {
+        "Tb": {
+          "scenario": 3
+        }
+      }
+    }
+  ],
+  "commit": "ac34f0ca53a43f317209e7c3a8c59985fda5541a",
+  "github": "https://github.com/UCL/TLOmodel/tree/ac34f0ca53a43f317209e7c3a8c59985fda5541a"
+}
