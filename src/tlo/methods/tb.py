@@ -751,11 +751,11 @@ class Tb(Module):
         )
 
         # TB GeneXpert
-        # self.item_codes_for_consumables_required['xpert_test'] = \
-        #     hs.get_item_codes_from_package_name("Xpert test")
+        self.item_codes_for_consumables_required['xpert_test'] = \
+        hs.get_item_codes_from_package_name("Xpert test")
 
-        self.item_codes_for_consumables_required['xpert_test'] ={
-            hs.get_item_codes_from_item_name("Xpert"):1 }
+        # self.item_codes_for_consumables_required['xpert_test'] ={
+        #     hs.get_item_codes_from_item_name("Xpert"):1 }
 
         # sensitivity/specificity set for smear status of cases
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
@@ -1454,11 +1454,11 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             return
         # sets availability of xpert no none
         if scenario ==1:
-                Xpt = {
-                self.sim.modules['HealthSystem'].get_item_code_from_item_name("Xpert"): 0}
-                # self.sim.modules['HealthSystem'].override_availability_of_consumables(Xpt)
+                # Xpt = {
+                # self.sim.modules['HealthSystem'].get_item_code_from_item_name("Xpert"): 0}
+                # # self.sim.modules['HealthSystem'].override_availability_of_consumables(Xpt)
                 self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {Xpt: 0})
+                {187: 0})
 
 # ######################################################
 
