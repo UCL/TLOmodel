@@ -19,12 +19,9 @@ from pathlib import Path
 from typing import Dict
 
 from tlo import Date, logging
-from tlo.analysis.utils import (
-    get_parameters_for_improved_healthsystem_and_healthcare_seeking,
-    get_parameters_for_status_quo,
-    mix_scenarios,
-)
+from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
+from tlo.methods.scenario_switcher import ScenarioSwitcher
 from tlo.scenario import BaseScenario
 
 
@@ -53,7 +50,7 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources)
+        return fullmodel(resourcefilepath=self.resources) + [ScenarioSwitcher(resourcefilepath=self.resources)]
 
     def draw_parameters(self, draw_number, rng):
         return list(self._scenarios.values())[draw_number]
@@ -70,41 +67,32 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
 
             "With Hard Constraints":
                 # todo -- this will be the MODE 2 "Super-Rigid Constraints" scenario
-                get_parameters_for_status_quo(),
+                mix_scenarios(
+                    get_parameters_for_status_quo()
+                ),
 
             "Status Quo":
-                get_parameters_for_status_quo(),
+                mix_scenarios(
+                    get_parameters_for_status_quo()
+                ),
 
             "Perfect Healthcare Seeking":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
-                    get_parameters_for_improved_healthsystem_and_healthcare_seeking(
-                        resourcefilepath=self.resources,
-                        max_healthsystem_function=False,
-                        max_healthcare_seeking=True)
+                    {'ScenarioSwitcher': {'max_healthsystem_function': False, 'max_healthcare_seeking': True}},
                 ),
 
             "+ Perfect Clinical Practice":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
-                    get_parameters_for_improved_healthsystem_and_healthcare_seeking(
-                        resourcefilepath=self.resources,
-                        max_healthsystem_function=True,
-                        max_healthcare_seeking=True)
+                    {'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
 
             "+ Perfect Consumables Availability":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
-                    get_parameters_for_improved_healthsystem_and_healthcare_seeking(
-                        resourcefilepath=self.resources,
-                        max_healthsystem_function=True,
-                        max_healthcare_seeking=True),
-                    {
-                        'HealthSystem': {
-                            'cons_availability': 'all',
-                        },
-                    }
+                    {'ScenarioSwitcher': {'max_healthsystem_function': False, 'max_healthcare_seeking': True}},
+                    {'HealthSystem': {'cons_availability': 'all'}}
                 ),
         }
 
