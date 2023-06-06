@@ -507,7 +507,7 @@ class Depression(Module):
 
         return av_daly_wt_last_month
 
-    def do_on_presentation_to_care(self, person_id, hsi_event, squeeze_factor=0.0):
+    def do_on_presentation_to_care(self, person_id, hsi_event):
         """This member function is called when a person is in an HSI, and there may need to be screening for depression.
         """
         df = self.sim.population.props
