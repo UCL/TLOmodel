@@ -427,3 +427,7 @@ def test_scenario_switcher(seed):
                 assert all([t == v for t, v in zip(target_value, actual)])
             else:
                 assert target_value == actual
+
+    # Spot check for health care seeking being forced to occur for all symptoms
+    hcs = sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking
+    assert isinstance(hcs, bool) and hcs
