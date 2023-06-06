@@ -427,4 +427,3 @@ def test_scenario_switcher(seed):
                 assert all([t == v for t, v in zip(target_value, actual)])
             else:
                 assert target_value == actual
-
