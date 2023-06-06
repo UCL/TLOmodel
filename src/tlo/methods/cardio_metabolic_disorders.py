@@ -137,12 +137,13 @@ class CardioMetabolicDisorders(Module):
                                                  'weight loss treatment')
     }
 
-    PARAMETERS = {**onset_conditions_param_dicts, **removal_conditions_param_dicts, **hsi_conditions_param_dicts,
-                  **onset_events_param_dicts, **death_conditions_param_dicts, **death_events_param_dicts,
-                  **hsi_events_param_dicts, **initial_prev_param_dicts, **other_params_dict,
-                  'prob_care_provided_given_seek_emergency_care': Parameter(
-                      Types.REAL, "The probability that correct care is fully provided to persons that have sought"
-                                  "emergency care for a Cardio-metabolic disorder.")
+    PARAMETERS = {
+        **onset_conditions_param_dicts, **removal_conditions_param_dicts, **hsi_conditions_param_dicts,
+        **onset_events_param_dicts, **death_conditions_param_dicts, **death_events_param_dicts,
+        **hsi_events_param_dicts, **initial_prev_param_dicts, **other_params_dict,
+        'prob_care_provided_given_seek_emergency_care': Parameter(
+            Types.REAL, "The probability that correct care is fully provided to persons that have sought emergency care"
+                        " for a Cardio-metabolic disorder.")
     }
 
     # Convert conditions and events to dicts and merge together into PROPERTIES
