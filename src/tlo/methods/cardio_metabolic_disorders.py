@@ -139,7 +139,11 @@ class CardioMetabolicDisorders(Module):
 
     PARAMETERS = {**onset_conditions_param_dicts, **removal_conditions_param_dicts, **hsi_conditions_param_dicts,
                   **onset_events_param_dicts, **death_conditions_param_dicts, **death_events_param_dicts,
-                  **hsi_events_param_dicts, **initial_prev_param_dicts, **other_params_dict}
+                  **hsi_events_param_dicts, **initial_prev_param_dicts, **other_params_dict,
+                  'prob_care_provided_given_seek_emergency_care': Parameter(
+                      Types.REAL, "The probability that correct care is fully provided to persons that have sought"
+                                  "emergency care for a Cardio-metabolic disorder.")
+    }
 
     # Convert conditions and events to dicts and merge together into PROPERTIES
     condition_list = {
@@ -274,6 +278,8 @@ class CardioMetabolicDisorders(Module):
         events_death = pd.read_excel(cmd_path / "ResourceFile_cmd_events_death.xlsx", sheet_name=None)
         events_symptoms = pd.read_excel(cmd_path / "ResourceFile_cmd_events_symptoms.xlsx", sheet_name=None)
         events_hsi = pd.read_excel(cmd_path / "ResourceFile_cmd_events_hsi.xlsx", sheet_name=None)
+
+        self.load_parameters_from_dataframe(pd.read_csv(cmd_path / "ResourceFile_cmd_parameters.csv"))
 
         def get_values(params, value):
             """replaces nans in the 'value' key with specified value"""
@@ -1724,8 +1730,8 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             # Record date of diagnosis
             df.at[person_id, f'nc_{self.event}_date_diagnosis'] = self.sim.date
             df.at[person_id, f'nc_{self.event}_ever_diagnosed'] = True
-            if squeeze_factor < 0.5:
-                # If squeeze factor is not too large:
+            if self.module.parameters['prob_care_provided_given_seek_emergency_care'] > self.module.rng.random_sample():
+                # If care is provided....
                 if self.get_consumables(
                     item_codes=self.module.parameters[f'{self.event}_hsi'].get(
                         'emergency_medication_item_code').astype(int)
@@ -1757,10 +1763,6 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                 else:
                     # Consumables not available
                     logger.debug(key='debug', data='Treatment will not be provided due to no available consumables')
-
-            else:
-                # Squeeze factor is too large
-                logger.debug(key='debug', data='Treatment will not be provided due to squeeze factor.')
 
         # Also run a test for hypertension according to some probability, since both events are related to hypertension:
         if self.module.rng.rand() < self.module.parameters['hypertension_hsi']['pr_assessed_other_symptoms']:
