@@ -27,6 +27,7 @@ from tlo.analysis.utils import (
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
 from tlo.methods.fullmodel import fullmodel
+from tlo.methods.scenario_switcher import ScenarioSwitcher
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -315,7 +316,6 @@ def test_get_parameter_functions(seed):
                 # Check that the original value and the updated value are of the same type.
                 original = sim.modules[module].parameters[name]
 
-                # defined_type = sim.modules[module].PARAMETERS[name].python_type
                 assert type(original) is type(updated_value), \
                     f"Updated value type does not match original type: " \
                     f"{module}:{name} >> {updated_value=}, " \
@@ -341,7 +341,7 @@ def test_get_parameter_functions(seed):
                               f"{module}:{name} >> {updated_value=}, {type(original)=}, {type(updated_value)=}")
 
                 # Check that, if the updated value is a list/tuple, it has the same dimensions as the original
-                if isinstance(original, (list, tuple)):
+                elif isinstance(original, (list, tuple)):
                     assert is_list_same_size_and_dtype(original, updated_value), \
                         print(f"List/tuple is not of the expected size and containing elements of expected type: "
                               f"{module}:{name} >> {updated_value=}, {type(original)=}, {type(updated_value)=}")
@@ -386,3 +386,45 @@ def test_mix_scenarios():
 
     assert 1 == len(record)
     assert record.list[0].message.args[0] == 'Parameter is being updated more than once: module=Mod1, parameter=param_b'
+
+
+def test_scenario_switcher(seed):
+    """Check the `ScenarioSwitcher` module can update parameter values in a manner similar to them being changed
+    directly after registration in the simulation (as would be done by the Scenario class)."""
+
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
+    sim.register(*(
+        fullmodel(resourcefilepath=resourcefilepath) + [ScenarioSwitcher(resourcefilepath=resourcefilepath)]
+    ))
+
+    # Check that the 'ScenarioSwitcher` is the first registered module.
+    assert 'ScenarioSwitcher' == list(sim.modules.keys())[0]
+
+    # Change the parameters for max_healthsystem_function and max_healthcare_seeking via the ScenarioSwitcher
+    sim.modules['ScenarioSwitcher'].parameters['max_healthsystem_function'] = True
+    sim.modules['ScenarioSwitcher'].parameters['max_healthcare_seeking'] = True
+
+    # Initialise the population
+    sim.make_initial_population(n=100)
+
+    # Check that all the parameter values in the simulation are updated to be the value expected.
+    updated_values = get_parameters_for_improved_healthsystem_and_healthcare_seeking(
+        resourcefilepath=resourcefilepath,
+        max_healthsystem_function=True,
+        max_healthcare_seeking=True
+    )
+
+    for module, param in updated_values.items():
+        for name, target_value in param.items():
+
+            actual = sim.modules[module].parameters[name]
+
+            if isinstance(target_value, pd.Series):
+                pd.testing.assert_series_equal(target_value, actual)
+            elif isinstance(target_value, pd.DataFrame):
+                pd.testing.assert_frame_equal(target_value, actual)
+            elif isinstance(target_value, list):
+                assert all([t == v for t, v in zip(target_value, actual)])
+            else:
+                assert target_value == actual
+
