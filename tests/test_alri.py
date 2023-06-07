@@ -38,7 +38,7 @@ from tlo.methods.alri import (
     _make_treatment_ineffective,
     _make_treatment_perfect,
 )
-from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -950,7 +950,7 @@ def test_severe_pneumonia_referral_from_hsi_first_appts(sim_hs_all_consumables):
 
     # Check that person 0 has an Emergency Generic HSI scheduled
     generic_appt = [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id)
-                    if isinstance(event_tuple[1], HSI_GenericEmergencyFirstApptAtFacilityLevel1)][0]
+                    if isinstance(event_tuple[1], HSI_GenericEmergencyFirstAppt)][0]
     # Run generic appt and check that there is an Outpatient `HSI_Alri_Treatment` scheduled
     generic_appt.run(squeeze_factor=0.0)
 
@@ -1002,6 +1002,10 @@ def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months
     def force_any_symptom_to_lead_to_healthcareseeking(sim):
         sim.modules['HealthSeekingBehaviour'].parameters['force_any_symptom_to_lead_to_healthcareseeking'] = True
 
+    def make_all_non_emergency_care_seeking_go_first_to_level_0(sim):
+        sim.modules['HealthSeekingBehaviour'].parameters['prob_non_emergency_care_seeking_by_level'] =\
+            [1.0, 0.0, 0.0, 0.0]
+
     def make_followup_treatment_always_happen(sim):
         sim.modules['Alri'].parameters['prob_for_followup_if_treatment_failure'] = 1.0
 
@@ -1009,6 +1013,7 @@ def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months
     make_hw_assesement_perfect(sim)
     make_non_emergency_hsi_happen_immediately(sim)
     force_any_symptom_to_lead_to_healthcareseeking(sim)
+    make_all_non_emergency_care_seeking_go_first_to_level_0(sim)
     make_followup_treatment_always_happen(sim)
 
     # Control effectiveness of treatment:
