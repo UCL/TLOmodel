@@ -9,9 +9,9 @@ or locally using:
     ```tlo scenario-run src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py```
 
 """
-import pandas as pd
 
 from tlo import Date, logging
+from tlo.analysis.utils import get_parameters_for_status_quo
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
@@ -21,7 +21,7 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=20)
+        self.end_date = Date(2030, 1, 1)
         self.pop_size = 20_000
         self.number_of_draws = 1
         self.runs_per_draw = 10
@@ -45,7 +45,7 @@ class LongRun(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        return  # Using default parameters in all cases
+        return get_parameters_for_status_quo()
 
 
 if __name__ == '__main__':

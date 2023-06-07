@@ -452,7 +452,8 @@ def test_test_and_refer_event_scheduled_by_main_event_poll(seed):
 
     # Check number and dates of TestAndRefer events in the HSI Event Queue
     dates_of_tr_events = [
-        ev[1] for ev in sim.modules['HealthSystem'].HSI_EVENT_QUEUE if isinstance(ev[4], hiv.HSI_Hiv_TestAndRefer)
+        ev.topen for ev in sim.modules['HealthSystem'].HSI_EVENT_QUEUE if isinstance(ev.hsi_event,
+                                                                                     hiv.HSI_Hiv_TestAndRefer)
     ]
 
     df = sim.population.props
@@ -640,6 +641,78 @@ def test_hsi_testandrefer_and_circ(seed):
     # Check that the person is now circumcised
     assert df.at[person_id, "li_is_circ"]
     assert df.at[person_id, "hv_number_tests"] > 0
+
+
+def test_child_circ(seed):
+    """Test that the route of VMMC for <15 yrs male works as intended,
+    given a value (1.0 or 0.0) for the probability of circumcision."""
+    def find_event_scheduled(cons_availability='all', prob=1.0):
+        start_date = Date(2010, 1, 1)
+        popsize = 1000
+        sim = Simulation(start_date=start_date, seed=seed)
+
+        # Register the appropriate modules, using simplified birth
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability=cons_availability),
+                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                     epi.Epi(resourcefilepath=resourcefilepath),
+                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=True),
+                     tb.Tb(resourcefilepath=resourcefilepath),
+                     )
+
+        # Re-set the probability of being circumcised
+        sim.modules['Hiv'].parameters["prob_circ_for_child_before_2020"] = prob
+
+        # Make the population
+        sim.make_initial_population(n=popsize)
+
+        sim = start_sim_and_clear_event_queues(sim)
+
+        df = sim.population.props
+
+        # Set properties for the target person: a 10 year-olds male not circumcised
+        target_person = 0
+        df.at[target_person, "sex"] = "M"
+        df.at[target_person, "li_is_circ"] = False
+        df.at[target_person, "age_years"] = 10
+
+        # Run HivRegularPollingEvent on the population
+        pollevent = hiv.HivRegularPollingEvent(module=sim.modules["Hiv"])
+        pollevent.apply(sim.population)
+
+        # Find the VMMC event scheduled for this person
+        event = [
+            ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(target_person) if
+            isinstance(ev[1], hiv.HSI_Hiv_Circ)
+        ]
+
+        # Store the li_is_circ before applying HSI_Hiv_Circ
+        circ_status_0 = df.at[target_person, "li_is_circ"].copy()
+
+        # Apply HSI_Hiv_Circ and store the updated li_is_circ
+        if len(event) > 0:
+            event[0].apply(person_id=target_person, squeeze_factor=0.0)
+            circ_status_1 = df.at[target_person, "li_is_circ"].copy()
+        else:
+            circ_status_1 = circ_status_0.copy()
+
+        return event, circ_status_0, circ_status_1
+
+    # check that if prob = 0.0, there should be no HSI_HIV_Circ scheduled and circ status is not upated
+    event, circ_status_0, circ_status_1 = find_event_scheduled(prob=0.0)
+    assert len(event) == 0
+    assert not circ_status_0
+    assert not circ_status_1
+
+    # check that if prob = 1.0, there should be one HSI_HIV_Circ scheduled by the Poll event;
+    # and by applying HSI_Hiv_Circ, the li_is_circ status should be updated (i.e., the circumcision is provided)
+    event, circ_status_0, circ_status_1 = find_event_scheduled(prob=1.0)
+    assert len(event) == 1
+    assert not circ_status_0
+    assert circ_status_1
 
 
 def test_hsi_testandrefer_and_behavchg(seed):

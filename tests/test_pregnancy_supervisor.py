@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from tlo import Date, Simulation
+from tlo import DAYS_IN_MONTH, DAYS_IN_YEAR, Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
@@ -291,7 +291,7 @@ def test_store_dalys_in_mni_function_and_daly_calculations(seed):
 
     # This woman has had this complication for the entire month (01/01/2010 - 01/02/2010) and it has not resolved,
     # therefore we expect her to have accrued 1 months weight
-    sev_anemia_weight = round((params['ps_daly_weights']['severe_anaemia'] / 365.25) * (365.25 / 12), 2)
+    sev_anemia_weight = round((params['ps_daly_weights']['severe_anaemia'] / DAYS_IN_YEAR) * DAYS_IN_MONTH, 2)
     reported_weight = round(dalys_from_pregnancy.loc[mother_id], 2)
     assert sev_anemia_weight == reported_weight
 
@@ -311,7 +311,7 @@ def test_store_dalys_in_mni_function_and_daly_calculations(seed):
     assert pd.isnull(mni[mother_id]['severe_anaemia_resolution'])
 
     # We know she has experience 15 days of complication this month, check the function returns the correct daly weight
-    sev_anemia_weight = round((params['ps_daly_weights']['severe_anaemia'] / 365.25) * 15, 3)
+    sev_anemia_weight = round((params['ps_daly_weights']['severe_anaemia'] / DAYS_IN_YEAR) * 15, 3)
     reported_weight = round(dalys_from_pregnancy.loc[mother_id], 3)
 
     assert sev_anemia_weight == reported_weight
@@ -930,7 +930,7 @@ def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage(se
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=mother_id)
     hsi_events = [e.__class__ for d, e in hsi_events]
-    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare in hsi_events
 
     # Now clear the event queue and reset haemorrhage variables
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
@@ -1003,7 +1003,7 @@ def test_pregnancy_supervisor_pre_eclampsia_and_progression(seed):
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=mother_id)
     hsi_events = [e.__class__ for d, e in hsi_events]
-    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare in hsi_events
 
     # Now clear the event queue
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
@@ -1156,7 +1156,7 @@ def test_pregnancy_supervisor_chorio_and_prom(seed):
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=mother_id)
     hsi_events = [e.__class__ for d, e in hsi_events]
-    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare in hsi_events
 
     # Now clear the event queue
     df.loc[pregnant_women.index, 'ps_gestational_age_in_weeks'] = \

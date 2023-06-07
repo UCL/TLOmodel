@@ -83,6 +83,18 @@ def collect_causes_from_disease_modules(all_modules, collect, acceptable_causes:
     return collected_causes
 
 
+def get_gbd_causes_not_represented_in_disease_modules(causes: dict, gbd_causes: set):
+    """
+    Find the causes in the GBD datasets (`gbd_causes`) that are *not* represented within the Causes defined in `causes`
+    :return: set of gbd_causes that are not represented.
+    """
+    all_gbd_causes_in_sim = set()
+    for c in causes.values():
+        all_gbd_causes_in_sim.update(c.gbd_causes)
+
+    return gbd_causes - all_gbd_causes_in_sim
+
+
 def create_mappers_from_causes_to_label(causes: dict, all_gbd_causes: set = None):
     """Helper function to create two mapping dicts to map to (1) tlo_cause --> label; and (2) gbd_cause --> label.
     Optionally, can provide checking that the mapping from gbd_causes exhaustively covers all gbd_causes.

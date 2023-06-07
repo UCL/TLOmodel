@@ -121,7 +121,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
     # Gather useful shortcuts
     sim = hsi_event.sim
-    rng = hsi_event.module.rng
     person_id = hsi_event.target
     df = hsi_event.sim.population.props
     symptoms = hsi_event.sim.modules['SymptomManager'].has_what(person_id=person_id)
@@ -307,11 +306,9 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     tclose=None)
 
         if 'Depression' in sim.modules:
-            depr = sim.modules['Depression']
-            if (squeeze_factor == 0.0) and (rng.rand() <
-                                            depr.parameters['pr_assessed_for_depression_in_generic_appt_'
-                                                            'level1']):
-                depr.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
+            sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
+                                                                 hsi_event=hsi_event,
+                                                                 squeeze_factor=squeeze_factor)
 
         if "Malaria" in sim.modules:
             if 'fever' in symptoms:
@@ -390,9 +387,9 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                 schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
 
     if "Depression" in sim.modules:
-        if 'Injuries_From_Self_Harm' in symptoms:
-            sim.modules['Depression'].do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
-            # TODO: Trigger surgical care for injuries.
+        sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
+                                                             hsi_event=hsi_event,
+                                                             squeeze_factor=squeeze_factor)
 
     if "Malaria" in sim.modules:
         # Quick diagnosis algorithm - just perfectly recognises the symptoms of severe malaria

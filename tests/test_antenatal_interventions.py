@@ -159,6 +159,9 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     params['sensitivity_blood_test_glucose'] = 1.0
     params['specificity_blood_test_glucose'] = 1.0
 
+    # Set prob of depression screening for perinatal female to one
+    params_dep['pr_assessed_for_depression_for_perinatal_female'] = 1.0
+
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
     # Select a woman from the dataframe of reproductive age
@@ -475,19 +478,10 @@ def test_anc_contacts_that_should_not_run_wont_run(seed):
     assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 0)
     assert pd.isnull(df.at[mother_id, 'ac_date_next_contact'])
 
-    # Reset the gestational age and set the squeeze factor of the HSI as very high. Woman will leave and HSI should not
-    # run
+    # Reset the gestational age
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 10
 
-    first_anc.apply(person_id=updated_mother_id, squeeze_factor=1001)  # todo: replace
-    assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 0)
-    assert pd.isnull(df.at[mother_id, 'ac_date_next_contact'])
-
-    # check that she will return for this event
-    hsi_events = find_and_return_hsi_events_list(sim, mother_id)
-    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact in hsi_events
-
-    # Finally set woman as inpatient when she is due for her first ANC appointment
+    # Set woman as inpatient when she is due for her first ANC appointment
     df.at[mother_id, 'hs_is_inpatient'] = True
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
 

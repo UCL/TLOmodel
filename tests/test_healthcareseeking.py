@@ -10,6 +10,7 @@ from pandas import DateOffset
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.events import Event, IndividualScopeEventMixin
+from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import (
     Metadata,
     chronicsyndrome,
@@ -27,11 +28,11 @@ from tlo.methods.symptommanager import Symptom
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 log_config = lambda _tmpdir: {  # noqa: E731
-        'filename': 'temp',
-        'directory': _tmpdir,
-        'custom_levels': {
-            "tlo.methods.healthsystem": logging.DEBUG
-        }
+    'filename': 'temp',
+    'directory': _tmpdir,
+    'custom_levels': {
+        "tlo.methods.healthsystem": logging.DEBUG
+    }
 }
 
 
@@ -377,7 +378,7 @@ def test_healthcareseeking_occurs_with_nonemergency_spurious_symptoms_only(seed,
     assert 'HSI_EmergencyCare_SpuriousSymptom' not in events_run_and_scheduled
 
     # And that the persons who have those HSI do have symptoms currently:
-    person_ids = [i[4].target for i in sim.modules['HealthSystem'].HSI_EVENT_QUEUE]
+    person_ids = [i.hsi_event.target for i in sim.modules['HealthSystem'].HSI_EVENT_QUEUE]
     for person in person_ids:
         assert 0 < len(sim.modules['SymptomManager'].has_what(person))
 
@@ -908,8 +909,11 @@ def test_force_healthcare_seeking(seed):
         sim.modules['HealthSeekingBehaviour'].theHealthSeekingBehaviourPoll.run()
 
         # See what HSI are scheduled to occur for the person on the same day
-        evs = [x[1].TREATMENT_ID for x in
-               sim.modules['HealthSystem'].find_events_for_person(0) if x[0].date() == start_date]
+        evs = [
+            event.TREATMENT_ID
+            for date, event in sim.modules['HealthSystem'].find_events_for_person(0)
+            if date == start_date
+        ]
 
         return 'FirstAttendance_NonEmergency' in evs
 
@@ -1199,12 +1203,18 @@ def test_everyone_seeks_care_for_symptom_with_high_odds_ratio_of_seeking_care(se
     # Check that the linear model of health-care seeking show that the prob of seeking care is ~1.0
     hsb = sim.modules['HealthSeekingBehaviour']
     assert np.allclose(
-        hsb.hsb_linear_models['children'].predict(df.loc[df.is_alive & (df.age_years < 15)]),
+        hsb.hsb_linear_models['children'].predict(df.loc[df.is_alive & (df.age_years < 15)],
+                                                  subgroup='children',
+                                                  care_seeking_odds_ratios=hsb.odds_ratio_health_seeking_in_children
+                                                  ),
         1.0,
         atol=0.001
     )
     assert np.allclose(
-        hsb.hsb_linear_models['adults'].predict(df.loc[df.is_alive & (df.age_years >= 15)]),
+        hsb.hsb_linear_models['adults'].predict(df.loc[df.is_alive & (df.age_years >= 15)],
+                                                subgroup='adults',
+                                                care_seeking_odds_ratios=hsb.odds_ratio_health_seeking_in_adults
+                                                ),
         1.0,
         atol=0.001
     )
@@ -1315,6 +1325,7 @@ def test_care_seeking_from_symptoms_with_different_levels_of_prob_emergency(seed
         """Returns a pd.Series describing the events scheduled for each person after running the HealthcareSeeking poll,
         in a simulation when a Symptom is defined with a high degree of healthcare-seeking and the specified probability
         of seeking emergency care."""
+
         class DummyDisease(Module):
             METADATA = {Metadata.USES_SYMPTOMMANAGER}
             """Dummy Disease - it's only job is to create a symptom and impose it on everyone"""
@@ -1387,7 +1398,6 @@ def test_care_seeking_from_symptoms_with_different_levels_of_prob_emergency(seed
         return evs
 
     for prob_seeks_emergency_appt in [0.0, 0.25, 0.5, 0.75, 1.0]:
-
         evs = get_evs_generated_by_hcs_poll(prob_seeks_emergency_appt=prob_seeks_emergency_appt)
 
         # - check that all people have exactly one HSI
@@ -1484,3 +1494,133 @@ def test_persons_have_maximum_of_one_hsi_scheduled(seed):
     # - check that all persons have exactly one HSI scheduled
     assert not evs.index.has_duplicates  # index would have been duplicated by `pd.Series.explode` if a person had more
     #                                      than one appt.
+
+
+def test_custom_function_is_equivalent_to_linear_model(seed):
+    """Check that for persons with a mixture of symptoms, some emergency and some not, the linear model that predicts
+    the health seeking behaviour for children and adults is equivalent to the healthseekingbehaviour custom function."""
+
+    class DummyDisease(Module):
+        METADATA = {Metadata.USES_SYMPTOMMANAGER}
+
+        def read_parameters(self, data_folder):
+            self.sim.modules['SymptomManager'].register_symptom(
+                Symptom(name='EmergencySymptom',
+                        odds_ratio_health_seeking_in_adults=1.0,  # <--- intermediate degree of healthcare seeking
+                        odds_ratio_health_seeking_in_children=1.0,  # <--- intermediate degree of healthcare seeking
+                        prob_seeks_emergency_appt_in_adults=0.5,  # <--- possibility of seeking emergency care
+                        prob_seeks_emergency_appt_in_children=0.5,  # <--- possibility of seeking emergency care
+                        ),
+                Symptom(name='NonEmergencySymptom',
+                        odds_ratio_health_seeking_in_adults=1.0,  # <--- intermediate degree of healthcare seeking
+                        odds_ratio_health_seeking_in_children=1.0,  # <--- intermediate degree of healthcare seeking
+                        prob_seeks_emergency_appt_in_adults=0.0,  # <--- will not seek emergency care
+                        prob_seeks_emergency_appt_in_children=0.0,  # <--- will not seek emergency care
+                        ),
+            )
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            """Give all persons both symptoms"""
+            df = self.sim.population.props
+            idx_all_alive_persons = df.loc[df.is_alive].index.to_list()
+            self.sim.modules['SymptomManager'].change_symptom(
+                person_id=idx_all_alive_persons,
+                disease_module=self,
+                symptom_string=['EmergencySymptom', 'NonEmergencySymptom'],
+                add_or_remove='+'
+            )
+
+        def on_birth(self, mother, child):
+            pass
+
+    start_date = Date(2010, 1, 1)
+    sim = Simulation(start_date=start_date, seed=seed)
+
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=False),
+                 healthseekingbehaviour.HealthSeekingBehaviour(
+                     resourcefilepath=resourcefilepath,
+                     force_any_symptom_to_lead_to_healthcareseeking=False,
+                 ),
+                 DummyDisease()
+                 )
+
+    # Initialise the simulation (run the simulation for 0 days)
+    popsize = 1000
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date)
+
+    person_ids_with_newly_onset_symptoms = sorted(
+        sim.modules["SymptomManager"].get_persons_with_newly_onset_symptoms())
+    newly_symptomatic_persons = sim.population.props.loc[person_ids_with_newly_onset_symptoms]
+    alive_newly_symptomatic_persons = newly_symptomatic_persons[newly_symptomatic_persons.is_alive]
+    sim.modules["SymptomManager"].reset_persons_with_newly_onset_symptoms()
+
+    are_under_15 = alive_newly_symptomatic_persons.age_years < 15
+    alive_newly_symptomatic_children = alive_newly_symptomatic_persons[are_under_15]
+    alive_newly_symptomatic_adults = alive_newly_symptomatic_persons[~are_under_15]
+
+    def _has_any_symptoms(persons, symptoms):
+        """Which rows in `persons` have non-zero values for columns in `symptoms`."""
+        if len(symptoms) == 0:
+            raise ValueError('At least one symptom must be specified')
+        return (persons[[f'sy_{symptom}' for symptom in symptoms]] != 0).any(axis=1)
+
+    # Linear model for care seeking:
+    def linear_model(subgroup, age_predictor, care_seeking_odds_ratios, p):
+        lm = LinearModel(
+            LinearModelType.LOGISTIC,
+            p[f'baseline_odds_of_healthcareseeking_{subgroup}'],
+
+            # First set of predictors are for behaviour due to the 'average symptom'
+            age_predictor,
+            Predictor('li_urban').when(True, p[f'odds_ratio_{subgroup}_setting_urban']),
+            Predictor('sex').when('F', p[f'odds_ratio_{subgroup}_sex_Female']),
+            Predictor('region_of_residence', conditions_are_mutually_exclusive=True
+                      ).when('Central', p[f'odds_ratio_{subgroup}_region_Central'])
+            .when('Southern', p[f'odds_ratio_{subgroup}_region_Southern']),
+            Predictor('li_wealth', conditions_are_mutually_exclusive=True
+                      ).when(4, p[f'odds_ratio_{subgroup}_wealth_higher'])
+            .when(5, p[f'odds_ratio_{subgroup}_wealth_higher']),
+
+            # Second set of predictors are the symptom-specific odd ratios
+            *(Predictor(f'sy_{symptom}').when('>0', odds) for symptom, odds in care_seeking_odds_ratios.items())
+        )
+        return lm
+
+    p = sim.modules["HealthSeekingBehaviour"].parameters
+    for subgroup, subgroup_name, age_predictor, care_seeking_odds_ratios, in zip(
+        (
+            alive_newly_symptomatic_children,
+            alive_newly_symptomatic_adults
+        ),
+        (
+            'children',
+            'adults'
+        ),
+        (
+            Predictor('age_years').when('>=5', p['odds_ratio_children_age_5to14']),
+            Predictor('age_years', conditions_are_mutually_exclusive=True
+                      ).when('.between(35,59)', p['odds_ratio_adults_age_35to59']
+                             ).when('>=60', p['odds_ratio_adults_age_60plus']),
+        ),
+        (
+            sim.modules["HealthSeekingBehaviour"].odds_ratio_health_seeking_in_children,
+            sim.modules["HealthSeekingBehaviour"].odds_ratio_health_seeking_in_adults
+        ),
+    ):
+        will_seek_care_lm = linear_model(subgroup_name, age_predictor, care_seeking_odds_ratios, p).predict(
+            subgroup.loc[_has_any_symptoms(subgroup, care_seeking_odds_ratios.keys())],
+            subgroup=subgroup_name, care_seeking_odds_ratios=care_seeking_odds_ratios)
+
+        will_seek_care_cf = sim.modules["HealthSeekingBehaviour"].hsb_linear_models[subgroup_name].predict(
+            subgroup.loc[_has_any_symptoms(subgroup, care_seeking_odds_ratios.keys())],
+            subgroup=subgroup_name, care_seeking_odds_ratios=care_seeking_odds_ratios)
+
+        # assert that the linear model and custom model give the same results
+        assert np.allclose(will_seek_care_lm, will_seek_care_cf)

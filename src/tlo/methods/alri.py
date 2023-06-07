@@ -29,7 +29,7 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -1943,7 +1943,7 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
     def fraction_of_year_between_polling_event(self):
         """Return the fraction of a year that elapses between polling event. This is used to adjust the risk of
         infection"""
-        return (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'Y')
+        return (self.sim.date + self.frequency - self.sim.date) / pd.Timedelta(days=DAYS_IN_YEAR)
 
     def get_probs_of_acquiring_pathogen(self, interval_as_fraction_of_a_year: float):
         """Return the probability of each person in the dataframe acquiring each pathogen, during the time interval

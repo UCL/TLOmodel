@@ -226,27 +226,26 @@ def get_simulation(popsize):
 
 
 # run simulation and store logfile path
-# sim = get_simulation(10000)
-# path_to_logfile = sim.log_filepath
-path_to_logfile = Path('outputs') / 'copd_analyses__2023-06-07T134731.log'
+sim = get_simulation(1000)
+path_to_logfile = sim.log_filepath
 
 # initialise Copd analyses class
 copd_analyses = CopdAnalyses(logfile_path=path_to_logfile)
 
 # plot lung function categories per each category
-# copd_analyses.plot_lung_function()
+copd_analyses.plot_lung_function()
 
 # plot lung function categories by gender
-# copd_analyses.plot_lung_function_by_gender()
+copd_analyses.plot_lung_function_by_gender()
 
 # plot lung function categories by age group
 copd_analyses.plot_lung_function_categories_by_age_group()
 
 # plot modal deaths against GBD deaths by gender
-# copd_analyses.plot_copd_deaths_by_gender()
+copd_analyses.plot_copd_deaths_by_gender()
 
 # plot modal deaths against GBD deaths by gender
-# copd_analyses.plot_copd_deaths_by_age_group()
+copd_analyses.plot_copd_deaths_by_age_group()
 
-# plot modal deaths against GBD deaths by age group
-# copd_analyses.plot_copd_deaths_by_lungfunction()
+# plot modal Copd deaths by age group
+copd_analyses.plot_copd_deaths_by_lungfunction()

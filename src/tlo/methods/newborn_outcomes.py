@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, demography, newborn_outcomes_lm, pregnancy_helper_functions
@@ -737,17 +737,16 @@ class NewbornOutcomes(Module):
             # align with GBD estimates
             elif 'anomaly' in potential_cause_of_death:
 
-                days_per_year = 365.25
                 # Generate the minimum and maximum number of days within the age group to allow for random
                 # distribution within each group
                 days_per_age_group = \
                     {'early_n': [0, 6],
                      'late_n': [7, 28],
                      'post_n': [29, 364],
-                     '1-4': [days_per_year, ((5 * days_per_year) - 1)],
-                     '5-9': [(5 * days_per_year), ((10 * days_per_year) - 1)],
-                     '10-14': [(10 * days_per_year), ((15 * days_per_year) - 1)],
-                     '15-69': [(15 * days_per_year), ((70 * days_per_year) - 1)]}
+                     '1-4': [DAYS_IN_YEAR, ((5 * DAYS_IN_YEAR) - 1)],
+                     '5-9': [(5 * DAYS_IN_YEAR), ((10 * DAYS_IN_YEAR) - 1)],
+                     '10-14': [(10 * DAYS_IN_YEAR), ((15 * DAYS_IN_YEAR) - 1)],
+                     '15-69': [(15 * DAYS_IN_YEAR), ((70 * DAYS_IN_YEAR) - 1)]}
 
                 random_draw = self.rng.choice(list(days_per_age_group.keys()), p=params['prob_cba_death_by_age_group'])
 
