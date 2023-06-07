@@ -2667,7 +2667,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 )
                 if treatment_outcome == 'failure':
                     # apply 30% chance of following-up
-                    if self.rng.rand() < p['prob_for_followup_if_treatment_failure']:
+                    if self.module.rng.rand() < p['prob_for_followup_if_treatment_failure']:
                         self._schedule_follow_up_following_treatment_failure()
 
         def _do_if_fast_breathing_pneumonia():
