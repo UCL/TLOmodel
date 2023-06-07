@@ -7,7 +7,7 @@ import pandas as pd
 from tlo import Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
-from tlo.lm import LinearModel, LinearModelType, Predictor
+from tlo.lm import LinearModel, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
@@ -65,6 +65,9 @@ class Copd(Module):
         ),
         'prob_will_survive_given_oxygen': Parameter(
             Types.REAL, 'probability that an individual with severe copd will not die when given oxygen '
+        ),
+        'rel_risk_progress_per_higher_cat': Parameter(
+            Types.REAL, 'relative risk of progression to the next higher level of lung function for each higher level '
         )
     }
 
@@ -141,7 +144,7 @@ class Copd(Module):
         self.item_codes = {
             'bronchodilater_inhaler': 293,
             'steroid_inhaler': 294,
-            'oxygen': 301,
+            'oxygen': 127,
             'aminophylline': 292,
             'amoxycillin': 125,
             'prednisolone': 291
@@ -150,7 +153,7 @@ class Copd(Module):
     def do_logging(self):
         """Log current states."""
         df = self.sim.population.props
-        counts = df.loc[df.is_alive].groupby(by=['sex', 'age_range', 'ch_lungfunction']).size()
+        counts = df.loc[df.is_alive].groupby(by=['sex', 'age_range', 'li_tob', 'ch_lungfunction']).size()
         # proportions = counts.unstack().apply(lambda row: row / row.sum(), axis=1).stack()
         logger.info(
             key='copd_prevalence',
@@ -197,19 +200,19 @@ class CopdModels:
                 conditions_are_exhaustive=True,
                 conditions_are_mutually_exclusive=True
             ).when(0, self.params['prob_progress_to_next_cat'] *
-                   (self.params['rel_risk_progress_per_higher_cat'] ** [0]))
-             .when(1, self.params['prob_progress_to_next_cat'] *
-                   (self.params['rel_risk_progress_per_higher_cat'] ** [1]))
-             .when(2, self.params['prob_progress_to_next_cat'] *
-                   (self.params['rel_risk_progress_per_higher_cat'] ** [2]))
-             .when(3, self.params['prob_progress_to_next_cat'] *
-                   (self.params['rel_risk_progress_per_higher_cat'] ** [3]))
-             .when(4, self.params['prob_progress_to_next_cat'] *
-                   (self.params['rel_risk_progress_per_higher_cat'] ** [4]))
-             .when(5, self.params['prob_progress_to_next_cat'] *
-                   (self.params['rel_risk_progress_per_higher_cat'] ** [5]))
-             .when(6, self.params['prob_progress_to_next_cat'] *
-                   (self.params['rel_risk_progress_per_higher_cat'] ** [6]))
+                   (self.params['rel_risk_progress_per_higher_cat'] ** 0))
+            .when(1, self.params['prob_progress_to_next_cat'] *
+                  (self.params['rel_risk_progress_per_higher_cat'] ** 1))
+            .when(2, self.params['prob_progress_to_next_cat'] *
+                  (self.params['rel_risk_progress_per_higher_cat'] ** 2))
+            .when(3, self.params['prob_progress_to_next_cat'] *
+                  (self.params['rel_risk_progress_per_higher_cat'] ** 3))
+            .when(4, self.params['prob_progress_to_next_cat'] *
+                  (self.params['rel_risk_progress_per_higher_cat'] ** 4))
+            .when(5, self.params['prob_progress_to_next_cat'] *
+                  (self.params['rel_risk_progress_per_higher_cat'] ** 5))
+            .when(6, self.params['prob_progress_to_next_cat'] *
+                  (self.params['rel_risk_progress_per_higher_cat'] ** 6))
         )
         # The probability (in a 3-month period) of having a Moderate Exacerbation
         self.__Prob_ModerateExacerbation__ = LinearModel.multiplicative(
@@ -218,12 +221,12 @@ class CopdModels:
                 conditions_are_exhaustive=True,
                 conditions_are_mutually_exclusive=True
             ).when(0, self.params['prob_mod_exacerb'][0])
-             .when(1, self.params['prob_mod_exacerb'][1])
-             .when(2, self.params['prob_mod_exacerb'][2])
-             .when(3, self.params['prob_mod_exacerb'][3])
-             .when(4, self.params['prob_mod_exacerb'][4])
-             .when(5, self.params['prob_mod_exacerb'][5])
-             .when(6, self.params['prob_mod_exacerb'][6])
+            .when(1, self.params['prob_mod_exacerb'][1])
+            .when(2, self.params['prob_mod_exacerb'][2])
+            .when(3, self.params['prob_mod_exacerb'][3])
+            .when(4, self.params['prob_mod_exacerb'][4])
+            .when(5, self.params['prob_mod_exacerb'][5])
+            .when(6, self.params['prob_mod_exacerb'][6])
         )
 
         # The probability (in a 3-month period) of having a Severe Exacerbation
@@ -233,27 +236,33 @@ class CopdModels:
                 conditions_are_exhaustive=True,
                 conditions_are_mutually_exclusive=True
             ).when(0, self.params['prob_sev_exacerb'][0])
-             .when(1, self.params['prob_sev_exacerb'][1])
-             .when(2, self.params['prob_sev_exacerb'][2])
-             .when(3, self.params['prob_sev_exacerb'][3])
-             .when(4, self.params['prob_sev_exacerb'][4])
-             .when(5, self.params['prob_sev_exacerb'][5])
-             .when(6, self.params['prob_sev_exacerb'][6])
+            .when(1, self.params['prob_sev_exacerb'][1])
+            .when(2, self.params['prob_sev_exacerb'][2])
+            .when(3, self.params['prob_sev_exacerb'][3])
+            .when(4, self.params['prob_sev_exacerb'][4])
+            .when(5, self.params['prob_sev_exacerb'][5])
+            .when(6, self.params['prob_sev_exacerb'][6])
         )
 
     def init_lung_function(self, df: pd.DataFrame) -> pd.Series:
         """Returns the values for ch_lungfunction for an initial population described in `df`."""
-        # For over-15s, random selection of ch_lungfunction
-        idx_over15 = df.index[df.age_years >= 15]
-        cats = ch_lungfunction_cats
+        # For individuals over-15s, assign a lung function of either 2 or 3
+        cats = ch_lungfunction_cats[2:4]
+        idx_over15_no_tob = df.index[(df.age_years >= 15) & ~df.li_tob]
         probs = np.ones(len(cats)) / len(cats)
-        cats_for_over15s = dict(zip(idx_over15, self.rng.choice(cats, p=probs, size=len(idx_over15))))
+        cats_for_over15s_no_tob = dict(zip(idx_over15_no_tob, self.rng.choice(cats, p=probs,
+                                                                              size=len(idx_over15_no_tob))))
 
+        # For individuals over-15s and do smoke tobacco, assign a lung function of either 4 or 5
+        cats = ch_lungfunction_cats[4:6]
+        idx_over15_tob = df.index[(df.age_years >= 15) & df.li_tob]
+        cats_for_over15s_tob = dict(zip(idx_over15_tob, self.rng.choice(cats, p=probs,
+                                                                        size=len(idx_over15_tob))))
         # For under-15s, assign the category that would be given at birth
         idx_notover15 = df.index[df.age_years < 15]
         cats_for_under15s = {idx: self.at_birth_lungfunction(idx) for idx in idx_notover15}
 
-        return pd.Series(index=df.index, data={**cats_for_over15s, **cats_for_under15s})
+        return pd.Series(index=df.index, data={**cats_for_over15s_no_tob, **cats_for_over15s_tob, **cats_for_under15s})
 
     def at_birth_lungfunction(self, person_id: int) -> int:
         """Returns value for ch_lungfunction for the person at birth."""
@@ -406,7 +415,8 @@ class CopdDeath(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        person = self.sim.population.props.loc[person_id, ['is_alive', 'ch_will_die_this_episode']]
+        df = self.sim.population.props
+        person = df.loc[person_id, ['is_alive', 'ch_will_die_this_episode']]
         # Check if they should still die and, if so, cause the death
         if person.is_alive and person.ch_will_die_this_episode:
             self.sim.modules['Demography'].do_death(
@@ -414,16 +424,29 @@ class CopdDeath(Event, IndividualScopeEventMixin):
                 cause='COPD',
                 originating_module=self.module,
             )
-            # log
+            # log deaths by lung function
+            log_deaths_by_ch_lungfunction = {
+                'person_id': person_id,
+                'ch_lungfunction': df.loc[person_id, 'ch_lungfunction']
+            }
+            logger.info(
+                key="deaths_by_lung_function",
+                data=log_deaths_by_ch_lungfunction
+            )
 
 
 class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixin):
-
+    """ HSI event for issuing treatment to all individuals with severe exacerbation. We first check the availability of
+    oxygen at the default facility(1a). If no oxygen is found we refer individuals to the next higher level facility
+    until either we find oxygen or we are at the highest facility level. Here facility levels are ["1a", "1b", "2"]"""
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
+        self.facility_levels_index = 0    # an index to facility levels
+        self.all_facility_levels = ["1a", "1b", "2"]    # available facility levels
+
         self.TREATMENT_ID = "Copd_Treatment"
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = self.all_facility_levels[self.facility_levels_index]
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
 
@@ -432,11 +455,19 @@ class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixi
          * Provide treatment: whatever is available at this facility at this time (no referral).
         """
         df = self.sim.population.props
+        if not self.get_consumables(self.module.item_codes['oxygen']):
+            # refer to the next higher facility if the current facility has no oxygen
+            self.facility_levels_index += 1
+            if self.facility_levels_index >= len(self.all_facility_levels):
+                return
+            self.ACCEPTED_FACILITY_LEVEL = self.all_facility_levels[self.facility_levels_index]
+            self.sim.modules['HealthSystem'].schedule_hsi_event(self, topen=self.sim.date, priority=0)
 
-        # Give oxygen and AminoPhylline, if possible, ... and cancel death if the treatment is successful.
-        prob_treatment_success = self.module.models.prob_livesaved_given_treatment(
-            oxygen=self.get_consumables(self.module.item_codes['oxygen']),
-            amino_phylline=self.get_consumables(self.module.item_codes['aminophylline'])
-        )
-        if self.module.rng.random_sample() < prob_treatment_success:
-            df.at[person_id, 'ch_will_die_this_episode'] = False
+        else:
+            # Give oxygen and AminoPhylline, if possible, ... and cancel death if the treatment is successful.
+            prob_treatment_success = self.module.models.prob_livesaved_given_treatment(
+                oxygen=self.get_consumables(self.module.item_codes['oxygen']),
+                amino_phylline=self.get_consumables(self.module.item_codes['aminophylline'])
+            )
+            if self.module.rng.random_sample() < prob_treatment_success:
+                df.at[person_id, 'ch_will_die_this_episode'] = False

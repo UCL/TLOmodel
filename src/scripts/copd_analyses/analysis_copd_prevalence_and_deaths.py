@@ -2,6 +2,7 @@
  * 1) Prevalence of each category of lungfunction by age/sex [stacked bar chart by age/sex] at in 2010, 2020, 2030
  * 2) Number of deaths compared to the GBD dataset
 """
+import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -66,7 +67,7 @@ class CopdAnalyses:
 
     def plot_lung_function(self):
         """ plot for all people per each lung function """
-        re_ordered_copd_prev = self.__copd_prev.reorder_levels([2, 0, 1], axis=1)
+        re_ordered_copd_prev = self.__copd_prev.reorder_levels([3, 0, 1, 2], axis=1)
         plot_df = pd.DataFrame()
         for _lung_func, _ in enumerate(self.__lung_func_cats):
             plot_df[_lung_func] = re_ordered_copd_prev[f'{_lung_func}'].sum(axis=1)
@@ -84,7 +85,7 @@ class CopdAnalyses:
 
     def plot_lung_function_by_gender(self):
         """ plot for all people per each lung funtion """
-        re_ordered_df = self.__copd_prev.reorder_levels([0, 2, 1], axis=1)
+        re_ordered_df = self.__copd_prev.reorder_levels([0, 3, 2, 1], axis=1)
         _df_dict = dict()
         _rows_counter: int = 0  # a counter to set the number of rows when plotting
         fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 5))
@@ -110,21 +111,44 @@ class CopdAnalyses:
     def plot_lung_function_categories_by_age_group(self):
         """ plot for lung function for all age groups in the year 2022 """
         # select logs from the latest year. In this case we are selecting year 2022
-        re_ordered_df = self.__copd_prev.reorder_levels([2, 0, 1], axis=1)
+        re_ordered_df = self.__copd_prev.reorder_levels([3, 0, 2, 1], axis=1)
+        re_ordered_df = re_ordered_df.droplevel(2, axis=1)
         plot_df = pd.DataFrame()
         mask = (re_ordered_df.index > pd.to_datetime('2022-01-01')) & (
             re_ordered_df.index <= pd.to_datetime('2023-01-01'))
         re_ordered_df = re_ordered_df.loc[mask]
         for _lung_func, _ in enumerate(self.__lung_func_cats):
-            plot_df[f'{_lung_func}'] = re_ordered_df[f'{_lung_func}']["M"].sum(axis=0) + \
-                                       re_ordered_df[f'{_lung_func}']["F"].sum(axis=0)
+            plot_df[f'{_lung_func}'] = re_ordered_df[f'{_lung_func}']['M'].sum(axis=0) + \
+                                       re_ordered_df[f'{_lung_func}']['F'].sum(axis=0)
 
+        fig, ax = plt.subplots()
         plot_df = plot_df.apply(lambda row: row / row.sum(), axis=1)
-        ax = plot_df.plot(kind='bar', stacked=True)
+        ax = plot_df.plot(kind='bar', ax=ax, stacked=True)
         ax.legend(self.__lung_func_cats, loc="upper right")
         ax.set_title("Proportion of each lung function category per each age group in 2022")
         ax.set_xlabel("age group")
         ax.set_ylabel("Proportion of each lung function category")
+        plt.show()
+
+    def plot_copd_deaths_by_lungfunction(self):
+        """ a function to plot COPD deaths by lung function/obstruction """
+        # get COPD deaths by lung function from copd logs
+        deaths_lung_func = self.__logs_dict['deaths_by_lung_function']
+        # group by date and lung function
+        deaths_grouped = deaths_lung_func.groupby(['date', 'ch_lungfunction']).size()
+        unstack_df = deaths_grouped.unstack()
+        plot_lung_func_deaths = unstack_df.groupby(unstack_df.index.year).sum()
+        plot_lung_func_deaths = plot_lung_func_deaths.apply(lambda row: row / row.sum(), axis=1)
+        # do plotting
+        fig, ax = plt.subplots()
+        plot_lung_func_deaths.plot(kind='bar', stacked=True, ax=ax, title="COPD deaths by lung function",
+                                   xlabel="Year", ylabel="proportion of COPD deaths per each lung function")
+        ax.legend([self.__lung_func_cats[column_name] for column_name in plot_lung_func_deaths.columns],
+                  loc="upper right")
+        plt.savefig(
+            outputpath / ('copd_deaths_by_lung_function' + datestamp + ".pdf"), format="pdf"
+        )
+        plt.savefig(Path('.outputs'))
         plt.show()
 
     def plot_copd_deaths_by_gender(self):
@@ -164,16 +188,15 @@ class CopdAnalyses:
         plt.tight_layout()
         plt.show()
 
-    def plot_copd_deaths_by_lungfunction(self):
-        pass
-
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2030, 1, 1)
+end_date = Date(2050, 1, 1)
 
 resourcefilepath = Path("./resources")  # Path to resource files
 
 outputpath = Path('./outputs')  # path to outputs folder
+
+datestamp = datetime.date.today().strftime("__%Y_%m_%d") + datetime.datetime.now().strftime("%H_%M_%S")
 
 
 def get_simulation(popsize):
@@ -203,27 +226,27 @@ def get_simulation(popsize):
 
 
 # run simulation and store logfile path
-sim = get_simulation(1000)
-path_to_logfile = sim.log_filepath
-# path_to_logfile = Path('outputs')/'copd_analyses__2023-05-03T084637.log'
+# sim = get_simulation(10000)
+# path_to_logfile = sim.log_filepath
+path_to_logfile = Path('outputs') / 'copd_analyses__2023-06-07T134731.log'
 
 # initialise Copd analyses class
 copd_analyses = CopdAnalyses(logfile_path=path_to_logfile)
 
 # plot lung function categories per each category
-copd_analyses.plot_lung_function()
+# copd_analyses.plot_lung_function()
 
 # plot lung function categories by gender
-copd_analyses.plot_lung_function_by_gender()
+# copd_analyses.plot_lung_function_by_gender()
 
 # plot lung function categories by age group
 copd_analyses.plot_lung_function_categories_by_age_group()
 
 # plot modal deaths against GBD deaths by gender
-copd_analyses.plot_copd_deaths_by_gender()
+# copd_analyses.plot_copd_deaths_by_gender()
 
 # plot modal deaths against GBD deaths by gender
-copd_analyses.plot_copd_deaths_by_age_group()
+# copd_analyses.plot_copd_deaths_by_age_group()
 
 # plot modal deaths against GBD deaths by age group
-copd_analyses.plot_copd_deaths_by_lungfunction()
+# copd_analyses.plot_copd_deaths_by_lungfunction()
