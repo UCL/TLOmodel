@@ -752,7 +752,7 @@ class Tb(Module):
 
         # TB GeneXpert
         self.item_codes_for_consumables_required['xpert_test'] = \
-        hs.get_item_codes_from_package_name("Xpert test")
+        hs.get_item_codes_from_package_name("xpert test")
 
         # self.item_codes_for_consumables_required['xpert_test'] ={
         #     hs.get_item_codes_from_item_name("Xpert"):1}
@@ -948,7 +948,7 @@ class Tb(Module):
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(days=0))
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
-        # schedule outreach xrays for tb screening from 2018 but set to privisionally set to zero to assess model behavior
+        # schedule outreach xrays for tb screening from 2023
         sim.schedule_event(TbCommunityXray(self), sim.date + DateOffset(years=100))
 
         # log at the end of the year
