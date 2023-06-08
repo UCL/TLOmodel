@@ -95,7 +95,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                  },
              },
 
-            "Cinically Vulnerable Priority Policy": {
+            "Clinically Vulnerable Priority Policy": {
                 'HealthSystem': {
                     'cons_availability': "all",
                     'mode_appt_constraints': 2,
