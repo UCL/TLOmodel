@@ -2666,7 +2666,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     oxygen_provided=oxygen_provided
                 )
                 if treatment_outcome == 'failure':
-                    # apply 30% chance of following-up
                     if self.module.rng.rand() < p['prob_for_followup_if_treatment_failure']:
                         self._schedule_follow_up_following_treatment_failure()
 
