@@ -27,8 +27,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=5)
-        self.pop_size = 100_000
+        self.end_date = self.start_date + pd.DateOffset(months=5)
+        self.pop_size = 1_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 1
@@ -60,7 +60,22 @@ class ImpactOfHealthSystemMode(BaseScenario):
         """
 
         return {
-            "Unlimited Efficiency": {
+            "No Healthcare System": {
+                'HealthSystem': {
+                    'cons_availability': "all",
+                    'Service_Availability': []
+                },
+            },
+
+            "Unlimited Resources all cons": {
+                'HealthSystem': {
+                    'cons_availability': "all",
+                    'mode_appt_constraints': 0,
+                    "use_funded_or_actual_staffing": "actual",
+                 },
+             },
+
+            "Unlimited Efficiency all cons": {
                 'HealthSystem': {
                     'cons_availability': "all",
                     'mode_appt_constraints': 1,
@@ -68,7 +83,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                  },
              },
 
-            "Random Priority Policy": {
+            "Random all cons": {
                 'HealthSystem': {
                     'cons_availability': "all",
                     'mode_appt_constraints': 2,
@@ -77,7 +92,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                  },
              },
 
-            "Naive Priority Policy": {
+            "Naive all cons": {
                 'HealthSystem': {
                     'cons_availability': "all",
                     'mode_appt_constraints': 2,
@@ -86,7 +101,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                  },
              },
 
-            "RMNCH Priority Policy": {
+            "RMNCH all cons": {
                 'HealthSystem': {
                     'cons_availability': "all",
                     'mode_appt_constraints': 2,
@@ -95,7 +110,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                  },
              },
 
-            "Cinically Vulnerable Priority Policy": {
+            "Clinically Vulnerable all cons": {
                 'HealthSystem': {
                     'cons_availability': "all",
                     'mode_appt_constraints': 2,
@@ -104,7 +119,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                  },
              },
 
-            "Vertical Programmes Priority Policy": {
+            "Vertical Programmes all cons": {
                 'HealthSystem': {
                     'cons_availability': "all",
                     'mode_appt_constraints': 2,
@@ -112,6 +127,103 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     "Policy_Name": "VerticalProgrammes"
                  },
              },
+
+            "EHP1_binary all cons": {
+                'HealthSystem': {
+                    'cons_availability': "all",
+                    'mode_appt_constraints': 2,
+                    "use_funded_or_actual_staffing": "actual",
+                    "Policy_Name": "EHP1_binary"
+                 },
+             },
+
+            "EHP3_LPP_binary all cons": {
+                'HealthSystem': {
+                    'cons_availability': "all",
+                    'mode_appt_constraints': 2,
+                    "use_funded_or_actual_staffing": "actual",
+                    "Policy_Name": "EHP3_LPP_binary"
+                 },
+             },
+
+			 "Unlimited Resources default cons": {
+				 'HealthSystem': {
+					 'cons_availability': "default",
+					 'mode_appt_constraints': 0,
+					 "use_funded_or_actual_staffing": "actual",
+				  },
+			  },
+
+			 "Unlimited Efficiency default cons": {
+				 'HealthSystem': {
+					 'cons_availability': "default",
+					 'mode_appt_constraints': 1,
+					 "use_funded_or_actual_staffing": "actual",
+				  },
+			  },
+
+			 "Random default cons": {
+				 'HealthSystem': {
+					 'cons_availability': "default",
+					 'mode_appt_constraints': 2,
+					 "use_funded_or_actual_staffing": "actual",
+					 "Policy_Name": "Random"
+				  },
+			  },
+
+			 "Naive default cons": {
+				 'HealthSystem': {
+					 'cons_availability': "default",
+					 'mode_appt_constraints': 2,
+					 "use_funded_or_actual_staffing": "actual",
+					 "Policy_Name": "Naive"
+				  },
+			  },
+
+			 "RMNCH default cons": {
+				 'HealthSystem': {
+					 'cons_availability': "default",
+					 'mode_appt_constraints': 2,
+					 "use_funded_or_actual_staffing": "actual",
+					 "Policy_Name": "RMNCH"
+				  },
+			  },
+
+			 "Clinically Vulnerable default cons": {
+				 'HealthSystem': {
+					 'cons_availability': "default",
+					 'mode_appt_constraints': 2,
+					 "use_funded_or_actual_staffing": "actual",
+					 "Policy_Name": "ClinicallyVulnerable"
+				  },
+			  },
+
+			 "Vertical Programmes default cons": {
+				 'HealthSystem': {
+					 'cons_availability': "default",
+					 'mode_appt_constraints': 2,
+					 "use_funded_or_actual_staffing": "actual",
+					 "Policy_Name": "VerticalProgrammes"
+				  },
+			  },
+
+			 "EHP1_binary default cons": {
+				 'HealthSystem': {
+					 'cons_availability': "default",
+					 'mode_appt_constraints': 2,
+					 "use_funded_or_actual_staffing": "actual",
+					 "Policy_Name": "EHP1_binary"
+				  },
+			  },
+
+			 "EHP3_LPP_binary default cons": {
+				 'HealthSystem': {
+					 'cons_availability': "default",
+					 'mode_appt_constraints': 2,
+					 "use_funded_or_actual_staffing": "actual",
+					 "Policy_Name": "EHP3_LPP_binary"
+				  },
+			  },
         }
 
 

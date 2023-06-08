@@ -595,7 +595,9 @@ class HealthSystem(Module):
         self.policy_name = None
         if policy_name is not None:
             assert policy_name in ['None', 'Default', 'Test', 'Random', 'Naive', 'RMNCH',
-                                   'VerticalProgrammes', 'ClinicallyVulnerable']
+                                   'VerticalProgrammes', 'ClinicallyVulnerable', 'EHP1_binary',
+                                   'EHP1_ordered','EHP3_LPP_binary','EHP4_LPP_ordered']
+
         self.arg_policy_name = policy_name
 
         self.lowest_priority_considered = lowest_priority_considered
@@ -736,7 +738,11 @@ class HealthSystem(Module):
                                                                     'Naive',
                                                                     'ClinicallyVulnerable',
                                                                     'VerticalProgrammes',
-                                                                    'RMNCH'])
+                                                                    'RMNCH',
+                                                                    'EHP1_binary',
+                                                                    'EHP2_ordered',
+                                                                    'EHP3_LPP_binary',
+                                                                    'EHP4_LPP_ordered'])
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
