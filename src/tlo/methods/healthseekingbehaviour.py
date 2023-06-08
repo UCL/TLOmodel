@@ -15,8 +15,8 @@ from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata
 from tlo.methods.hsi_generic_first_appts import (
-    HSI_GenericEmergencyFirstApptAtFacilityLevel1,
-    HSI_GenericFirstApptAtFacilityLevel0,
+    HSI_GenericEmergencyFirstAppt,
+    HSI_GenericNonEmergencyFirstAppt,
 )
 
 # ---------------------------------------------------------------------------------------------------------
@@ -46,6 +46,10 @@ class HealthSeekingBehaviour(Module):
         'force_any_symptom_to_lead_to_healthcareseeking': Parameter(
             Types.BOOL, "Whether every symptom [except those that declare they should not lead to any healthcare "
                         "seeking] should always lead to healthcare seeking immediately."),
+        'prob_non_emergency_care_seeking_by_level': Parameter(
+            Types.LIST, "The probability of going to each facility-level when non-emergency care is sought. The "
+                        "values in the list are the probabilities of going to facility level 0 / 1a / 1b / 2, "
+                        "respectively, and these values must sum to 1.0."),
         'baseline_odds_of_healthcareseeking_children': Parameter(Types.REAL, 'odds of health-care seeking (children:'
                                                                              ' 0-14) if male, 0-5 years-old, living in'
                                                                              ' a rural setting in the Northern region,'
@@ -113,9 +117,11 @@ class HealthSeekingBehaviour(Module):
     def read_parameters(self, data_folder):
         """Read in ResourceFile"""
         # Load parameters from resource file:
-        self.load_parameters_from_dataframe(
-            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv')
-        )
+        wb = pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_HealthSeekingBehaviour.csv')
+        wb.loc[wb['parameter_name'] == 'force_any_symptom_to_lead_to_healthcareseeking', 'value'] = \
+            wb.loc[wb['parameter_name'] == 'force_any_symptom_to_lead_to_healthcareseeking', 'value'].apply(pd.eval)
+        # <-- Needed to prevent the contents being stored as strings
+        self.load_parameters_from_dataframe(wb)
 
         # Check that force_any_symptom_to_lead_to_healthcareseeking is a bool (this is returned in
         # `self.force_any_symptom_to_lead_to_healthcareseeking` without any further checking).
@@ -159,6 +165,10 @@ class HealthSeekingBehaviour(Module):
 
         # Define the linear models that govern healthcare seeking
         self.define_linear_models()
+
+        # Check that the parameters for 'prob_non_emergency_care_seeking_by_level' make sense
+        probs = self.parameters['prob_non_emergency_care_seeking_by_level']
+        assert all(np.isfinite(probs)) and np.isclose(sum(probs), 1.0)
 
     def on_birth(self, mother_id, child_id):
         """Nothing to handle on_birth
@@ -276,8 +286,8 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
         symptom_manager = self.sim.modules["SymptomManager"]
         health_system = self.sim.modules["HealthSystem"]
         max_delay = module.parameters['max_days_delay_to_generic_HSI_after_symptoms']
-        routine_hsi_event_class = HSI_GenericFirstApptAtFacilityLevel0
-        emergency_hsi_event_class = HSI_GenericEmergencyFirstApptAtFacilityLevel1
+        routine_hsi_event_class = HSI_GenericNonEmergencyFirstAppt
+        emergency_hsi_event_class = HSI_GenericEmergencyFirstAppt
 
         # Get IDs of alive persons with new symptoms
         person_ids_with_newly_onset_symptoms = sorted(
@@ -369,11 +379,21 @@ class HealthSeekingBehaviourPoll(RegularEvent, PopulationScopeEventMixin):
             else:
                 care_seeking_dates = np.full(len(will_seek_non_emergency_care), self.sim.date)
 
-            health_system.schedule_batch_of_individual_hsi_events(
-                hsi_event_class=routine_hsi_event_class,
-                person_ids=sorted(will_seek_non_emergency_care),
-                priority=0,
-                topen=map(Date, care_seeking_dates),
-                tclose=None,
-                module=module
-            )
+            # Determine the level at which care is sought
+            fac_levels = ('0', '1a', '1b', '2')
+            level_assigned = self.module.rng.choice(
+                fac_levels,
+                p=self.module.parameters['prob_non_emergency_care_seeking_by_level'],
+                size=len(will_seek_non_emergency_care))
+
+            for level in fac_levels:
+                mask_to_this_level = np.where(level_assigned == level)
+                health_system.schedule_batch_of_individual_hsi_events(
+                    hsi_event_class=routine_hsi_event_class,
+                    facility_level=level,
+                    person_ids=sorted(will_seek_non_emergency_care[mask_to_this_level]),
+                    priority=0,
+                    topen=map(Date, care_seeking_dates[mask_to_this_level]),
+                    tclose=None,
+                    module=module
+                )

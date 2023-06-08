@@ -656,6 +656,7 @@ def update_mni_dictionary(self, individual_id):
                             'amtsl_given': False,
                             'cpd': False,
                             'mode_of_delivery': 'vaginal_delivery',
+                            'neo_will_receive_resus_if_needed': False,
                             # vaginal_delivery, instrumental, caesarean_section
                             'hsi_cant_run': False,  # True (T) or False (F)
                             'sought_care_for_complication': False,  # True (T) or False (F)
