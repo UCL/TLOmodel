@@ -28,8 +28,8 @@ class ImpactOfNOXpertDiagnosis(BaseScenario):
             start_date=Date(2010, 1, 1),
             end_date=Date(2033, 12, 31),
             initial_population_size=50_000,
-            number_of_draws=2,
-            runs_per_draw=1,
+            number_of_draws=1,  #  I think you want 1 draw with 2 runs as the params don't change
+            runs_per_draw=2,
         )
 
     def log_configuration(self):
@@ -45,15 +45,18 @@ class ImpactOfNOXpertDiagnosis(BaseScenario):
                 'tlo.methods.healthsystem.summary': logging.INFO,
             }
         }
+
     def modules(self):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
         return {
             'Tb': {
-                'scenario': 1
+                'scenario': 1,
+                'scenario_start_date': Date(2010, 1, 1),
             },
         }
+
 
 if __name__ == '__main__':
 

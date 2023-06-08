@@ -22,9 +22,9 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 # %% Run the simulation
-start_date =Date(2010, 1, 1)
+start_date = Date(2010, 1, 1)
 end_date = Date(2012, 12, 31)
-popsize = 1000
+popsize = 5000
 scenario = 1
 
 # set up the log config
@@ -65,8 +65,8 @@ sim.register(*fullmodel(
 
 # set the scenario
 #sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.6
-sim.modules["Tb"].parameters["scenario"] =1
-sim.modules["Tb"].parameters["scenario_start_date"] =start_date
+sim.modules["Tb"].parameters["scenario"] = 1
+sim.modules["Tb"].parameters["scenario_start_date"] = start_date
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)
