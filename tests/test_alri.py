@@ -1006,11 +1006,15 @@ def generate_hsi_sequence(sim, incident_case_event, age_of_person_under_2_months
         sim.modules['HealthSeekingBehaviour'].parameters['prob_non_emergency_care_seeking_by_level'] =\
             [1.0, 0.0, 0.0, 0.0]
 
+    def make_followup_treatment_always_happen(sim):
+        sim.modules['Alri'].parameters['prob_for_followup_if_treatment_failure'] = 1.0
+
     make_population_children_only(sim)
     make_hw_assesement_perfect(sim)
     make_non_emergency_hsi_happen_immediately(sim)
     force_any_symptom_to_lead_to_healthcareseeking(sim)
     make_all_non_emergency_care_seeking_go_first_to_level_0(sim)
+    make_followup_treatment_always_happen(sim)
 
     # Control effectiveness of treatment:
     if treatment_effect == "perfectly_effective":
