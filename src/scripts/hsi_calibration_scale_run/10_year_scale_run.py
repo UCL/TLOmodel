@@ -3,10 +3,10 @@ This file defines a batch run of a large population for a long time with all dis
 It's used for calibrations (demographic patterns, health burdens and healthsystem usage)
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py```
+```tlo batch-submit src/scripts/hsi_calibration_scale_run/10_year_scale_run.py```
 
 or locally using:
-    ```tlo scenario-run src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py```
+    ```tlo scenario-run src/scripts/hsi_calibration_scale_run/10_year_scale_run.py```
 
 """
 
@@ -47,7 +47,7 @@ class LongRun(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {**get_parameters_for_status_quo(),
                 **{'Labour': {
-                    'residual_prob_caesarean': [[0.0188, 0.022], [0.094, 0.11], [0.188, 0.22]]
+                    'residual_prob_caesarean': [[0.0188, 0.022], [0.094, 0.11], [0.188, 0.22]][draw_number]
                 }
                 }
                 }
