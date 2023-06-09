@@ -1,3 +1,5 @@
+import pickle
+from collections.abc import Mapping
 from io import StringIO
 
 import pandas as pd
@@ -33,7 +35,7 @@ def log_input():
     log_input.col4_cat = log_input.col4_cat.astype('category')
     log_input.col5_set = log_input.col5_set.apply(lambda x: eval(x))  # use python eval to create a column of sets
     log_input.col6_list = log_input.col6_list.apply(lambda x: eval(x))  # use python eval to create a column of lists
-    log_input.col7_date = log_input.col7_date.astype('datetime64')
+    log_input.col7_date = log_input.col7_date.astype('datetime64[ns]')
     log_input.col8_fixed_list = log_input.col8_fixed_list.apply(
         lambda x: eval(x))  # use python eval to create a column of lists
     return log_input
@@ -99,7 +101,7 @@ def log_path(tmpdir_factory, log_input, class_scoped_seed):
     # test categorical
     for item in log_input.col4_cat:
         logger.info(key='categorical',
-                    data={'cat': pd.Categorical(item, categories=['cat1', 'cat2'])})
+                    data={'cat': pd.Categorical([item], categories=['cat1', 'cat2'])})
 
     # end the simulation
     sim.simulate(end_date=sim.date)
@@ -142,10 +144,10 @@ class TestWriteAndReadLog:
         # within nested dicts/entire df, need manual setting of special types
         log_output.col4_cat = log_output.col4_cat.astype('category')
         log_input.col5_set = log_input.col5_set.apply(list)
-        log_output.col7_date = log_output.col7_date.astype('datetime64')
+        log_output.col7_date = log_output.col7_date.astype('datetime64[ns]')
         # deal with index matching by resetting index
         log_output.reset_index(inplace=True, drop=True)
-        expected_output = log_input.append(log_input, ignore_index=True)
+        expected_output = pd.concat((log_input, log_input), ignore_index=True)
 
         assert expected_output.equals(log_output)
 
@@ -174,18 +176,13 @@ class TestWriteAndReadLog:
         assert log_input.col4_cat.equals(log_df.cat)
 
 
-class TestParseLogAtLoggingLevel:
-    def test_same_level(self, log_path):
-        parsed_log = parse_log_file(log_path, level=logging.INFO)
+def test_parse_log_file(log_path):
+    parsed_log = parse_log_file(log_path)
+    assert isinstance(parsed_log, Mapping)
+    assert 'tlo.test' in parsed_log
 
-        assert 'tlo.test' in parsed_log.keys()
 
-    def test_parse_log_at_higher_level(self, log_path):
-        parsed_log = parse_log_file(log_path, level=logging.CRITICAL)
-
-        assert parsed_log == {}
-
-    def test_parse_log_at_lower_level(self, log_path):
-        parsed_log = parse_log_file(log_path, level=logging.DEBUG)
-
-        assert 'tlo.test' in parsed_log.keys()
+def test_parsed_log_object_pickleable(log_path, tmp_path):
+    parsed_log = parse_log_file(log_path)
+    with open(tmp_path / "parsed_log.pickle", "wb") as pickle_file:
+        pickle.dump(parsed_log, pickle_file, pickle.HIGHEST_PROTOCOL)

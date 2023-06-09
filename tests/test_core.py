@@ -13,16 +13,25 @@ def test_categorical():
     s = p.create_series('Sex', 10)
     assert s.dtype.name == 'category'
     assert list(s.cat.categories) == categories
-
+    # by default if ordered is not set categories will be unordered. test this is true
+    assert not s.cat.ordered
     # assignment of valid category
-    try:
-        s[0] = 'M'
-    except ValueError:
-        pytest.fail('Unexpected ValueError')
-
+    s[0] = 'M'
     # assignment of invalid category
-    with pytest.raises(ValueError):
+    # depending on Pandas version this may raise either a ValueError or TypeError so we
+    # allow both but also check exception message to minimize chance of false positives
+    with pytest.raises(
+        (ValueError, TypeError),
+        match="Cannot setitem on a Categorical with a new category"
+    ):
         s[0] = 'A'
+
+    # test we can create ordered categories.
+    # set ordered argument to True
+    prop = Property(Types.CATEGORICAL, description='Ordered Categories', categories=[0, 1, 2, 3], ordered=True)
+    ser = prop.create_series('ordered_cat', 10)
+    # check we now have created ordered categories
+    assert ser.cat.ordered, 'categories are not ordered'
 
 
 def test_dict():
@@ -95,7 +104,10 @@ class TestLoadParametersFromDataframe:
 
         should raise an Exception"""
         resource = self.resource.copy()
-        resource = resource.append({"parameter_name": "new_value", "value": 1}, ignore_index=True)
+        resource = pd.concat(
+            (resource, pd.DataFrame({"parameter_name": ["new_value"], "value": [1]})),
+            ignore_index=True
+        )
         with pytest.raises(KeyError):
             self.module.load_parameters_from_dataframe(resource)
 

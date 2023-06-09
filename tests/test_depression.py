@@ -5,8 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo import Date, Simulation
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
     demography,
@@ -104,6 +103,13 @@ def test_configuration_of_properties(seed):
     assert df.loc[df['date_of_birth'] < sim.start_date, 'de_ever_depr'].sum()
 
 
+def get_hsi_events_run(sim):
+    return {
+        event_details.event_name
+        for event_details in sim.modules['HealthSystem'].hsi_event_counts.keys()
+    }
+
+
 @pytest.mark.slow
 def test_hsi_functions(tmpdir, seed):
     # With health seeking and healthsystem functioning and no constraints --
@@ -118,7 +124,8 @@ def test_hsi_functions(tmpdir, seed):
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=0,
-                                           cons_availability='all'),
+                                           cons_availability='all',
+                                           hsi_event_count_log_period="simulation"),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -130,8 +137,6 @@ def test_hsi_functions(tmpdir, seed):
         LinearModelType.MULTIPLICATIVE,
         sim.modules['Depression'].parameters['prob_3m_selfharm_depr']
     )
-
-    f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
 
     sim.make_initial_population(n=2000)
 
@@ -153,15 +158,13 @@ def test_hsi_functions(tmpdir, seed):
 
     df = sim.population.props
 
-    output = parse_log_file(f)
-
     # Check that there have been been some cases of Talking Therapy and anti-depressants
     assert df['de_ever_talk_ther'].sum()
 
-    hsi = output['tlo.methods.healthsystem']['HSI_Event']
-    assert 'Depression_TalkingTherapy' in hsi['TREATMENT_ID'].values
-    assert 'Depression_Antidepressant_Start' in hsi['TREATMENT_ID'].values
-    assert 'Depression_Antidepressant_Refill' in hsi['TREATMENT_ID'].values
+    hsi_events_run = get_hsi_events_run(sim)
+    assert 'HSI_Depression_TalkingTherapy' in hsi_events_run
+    assert 'HSI_Depression_Start_Antidepressant' in hsi_events_run
+    assert 'HSI_Depression_Refill_Antidepressant' in hsi_events_run
 
 
 @pytest.mark.slow
@@ -180,7 +183,8 @@ def test_hsi_functions_no_medication_available(tmpdir, seed):
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            mode_appt_constraints=0,
-                                           cons_availability='none'),
+                                           cons_availability='none',
+                                           hsi_event_count_log_period="simulation"),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -192,8 +196,6 @@ def test_hsi_functions_no_medication_available(tmpdir, seed):
         LinearModelType.MULTIPLICATIVE,
         sim.modules['Depression'].parameters['prob_3m_selfharm_depr']
     )
-
-    f = sim.configure_logging("log", directory=tmpdir, custom_levels={"*": logging.INFO})
 
     sim.make_initial_population(n=2000)
 
@@ -215,16 +217,14 @@ def test_hsi_functions_no_medication_available(tmpdir, seed):
 
     df = sim.population.props
 
-    output = parse_log_file(f)
-
     # Check that there have been been some cases of Talking Therapy but no-one on anti-depressants
     assert df['de_ever_talk_ther'].sum()
     assert 0 == df['de_on_antidepr'].sum()
 
-    hsi = output['tlo.methods.healthsystem']['HSI_Event']
-    assert 'Depression_TalkingTherapy' in hsi['TREATMENT_ID'].values
-    assert 'Depression_Antidepressant_Start' in hsi['TREATMENT_ID'].values
-    assert 'Depression_Antidepressant_Refill' not in hsi['TREATMENT_ID'].values
+    hsi_events_run = get_hsi_events_run(sim)
+    assert 'HSI_Depression_TalkingTherapy' in hsi_events_run
+    assert 'HSI_Depression_Start_Antidepressant' in hsi_events_run
+    assert 'HSI_Depression_Refill_Antidepressant' not in hsi_events_run
 
 
 @pytest.mark.slow
@@ -246,9 +246,7 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir, seed):
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           mode_appt_constraints=2,
-                                           cons_availability='all',
-                                           capabilities_coefficient=0.0),
+                                           disable_and_reject_all=True),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -281,14 +279,6 @@ def test_hsi_functions_no_healthsystem_capability(tmpdir, seed):
 
     df = sim.population.props
 
-    output = parse_log_file(sim.log_filepath)
-
-    # Check that there have been been no some cases of talking Therapy and anti-depressants
+    # Check that there have been been no use of talking therapy or anti-depressants
     assert 0 == df['de_ever_talk_ther'].sum()
     assert 0 == df['de_on_antidepr'].sum()
-
-    hsi = output['tlo.methods.healthsystem']['HSI_Event']
-    assert 0 == hsi['did_run'].sum()
-
-    # Check no antidepresants used
-    assert 'Consumables' not in output['tlo.methods.healthsystem']

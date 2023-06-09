@@ -18,7 +18,7 @@ logger.setLevel(logging.INFO)
 
 class DxManager:
     """
-    The is the Diagnostic Tests Manager (DxManager).
+    This is the Diagnostic Tests Manager (DxManager).
     It simplifies the process of conducting diagnostic tests on a person.
     It can store and then apply Diagnostic Tests (DxTest) and return the result.
 
@@ -58,14 +58,14 @@ class DxManager:
                     assert all(elem in property_categories
                                for elem in d.target_categories), 'not all target_categories are valid categories'
 
-            # Ensure that name is unqiue and will not over-write a test already registered
+            # Ensure that name is unique and will not over-write a test already registered
             if name not in self.dx_tests:
                 # Add the list of DxTests to the dict of registered DxTests (name is not already used)
                 self.dx_tests[name] = dx_test
             else:
                 # Determine whether to throw an error due to the same name being used as a test already registered
                 try:
-                    # If the name is alrady used, then the DxTest must be identical to the one already registered
+                    # If the name is already used, then the DxTest must be identical to the one already registered
                     assert self.dx_tests[name] == dx_test
                 except (AssertionError):
                     raise ValueError(
@@ -113,11 +113,11 @@ class DxManager:
 
             # Loop through the list of DxTests that are registered under this name:
             for i, test in enumerate(self.dx_tests[dx_test]):
-                test_result = test.apply(hsi_event, self.hs_module)
+                test_result = test.apply(hsi_event=hsi_event, rng=self.hs_module.rng_for_dx)
 
                 if test_result is not None:
                     # The DxTest was successful. Log the use of that DxTest
-                    # Logging using the the name of the DxTest and the number of the test that was tried within it
+                    # Logging using the name of the DxTest and the number of the test that was tried within it
                     the_dxtests_tried[f"{dx_test}_{i}"] = True
                     break
                 else:
@@ -167,9 +167,11 @@ class DxTest:
             :param target_categories: if property is categorical, a list of categories corresponding
                                       to a positive result.
     """
+
     def __init__(self,
                  property: str,
                  item_codes: Union[np.integer, int, list, set, dict] = None,
+                 optional_item_codes: Union[np.integer, int, list, set, dict] = None,
                  sensitivity: float = None,
                  specificity: float = None,
                  measure_error_stdev: float = None,
@@ -185,6 +187,11 @@ class DxTest:
         if item_codes is not None:
             assert isinstance(item_codes, (np.integer, int, list, set, dict)), 'item_codes in incorrect format.'
         self.item_codes = item_codes
+
+        if optional_item_codes is not None:
+            assert isinstance(optional_item_codes, (np.integer, int, list, set, dict)), \
+                'optional_item_codes in incorrect format.'
+        self.optional_item_codes = optional_item_codes
 
         # Store performance characteristics (if sensitivity and specificity are not supplied than assume perfect)
         _assert_float_or_none(sensitivity, 'Sensitivity is given in incorrect format.')
@@ -224,7 +231,7 @@ class DxTest:
             return self.__hash_key() == other.__hash_key()
         return NotImplemented
 
-    def apply(self, hsi_event, hs_module):
+    def apply(self, hsi_event, rng):
         """
         This is where the test is applied.
         If this test returns None this means the test has failed due to there not being the required consumables.
@@ -234,32 +241,33 @@ class DxTest:
         """
         # Must be an individual level HSI and not a population level HSI
         assert isinstance(hsi_event, IndividualScopeEventMixin), 'DxManager requires individual-level HSI_Event'
-        assert isinstance(hsi_event.target, int), 'DxManager requires individual-level HSI_Event'
+        assert pd.notnull(hsi_event.target) and isinstance(hsi_event.target, (
+            int, np.integer)), f'DxManager error "{hsi_event.target}" is not an integer'
         person_id = hsi_event.target
 
         # Get the "true value" of the property being examined
-        df: pd.DataFrame = hs_module.sim.population.props
+        df: pd.DataFrame = hsi_event.sim.population.props
         assert self.property in df.columns, \
             f'The property "{self.property}" is not found in the population dataframe'
         true_value = df.at[person_id, self.property]
 
         # If a consumable is required and it is not available, return None
         if self.item_codes is not None:
-            if not hsi_event.get_consumables(item_codes=self.item_codes):
+            if not hsi_event.get_consumables(item_codes=self.item_codes, optional_item_codes=self.optional_item_codes):
                 return None
 
         # Apply the test:
         if is_bool_dtype(df[self.property]):
             if true_value:
                 # Apply the sensitivity:
-                test_value = hs_module.rng.rand() < self.sensitivity
+                test_value = rng.rand() < self.sensitivity
             else:
                 # Apply the specificity:
-                test_value = not (hs_module.rng.rand() < self.specificity)
+                test_value = not (rng.rand() < self.specificity)
 
         elif is_float_dtype(df[self.property]):
             # Apply the normally distributed zero-mean error
-            reading = true_value + hs_module.rng.normal(0.0, self.measure_error_stdev)
+            reading = true_value + rng.normal(0.0, self.measure_error_stdev)
 
             # If no threshold value is provided, then return the reading; otherwise apply the threshold
             if self.threshold is None:
@@ -273,10 +281,10 @@ class DxTest:
 
             if is_match_to_cat:
                 # Apply the sensitivity:
-                test_value = hs_module.rng.rand() < self.sensitivity
+                test_value = rng.rand() < self.sensitivity
             else:
                 # Apply the specificity:
-                test_value = not (hs_module.rng.rand() < self.specificity)
+                test_value = not (rng.rand() < self.specificity)
 
         else:
             test_value = true_value

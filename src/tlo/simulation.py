@@ -12,7 +12,7 @@ import numpy as np
 
 from tlo import Date, Population, logging
 from tlo.dependencies import check_dependencies_present, topologically_sort_modules
-from tlo.events import IndividualScopeEventMixin
+from tlo.events import Event, IndividualScopeEventMixin
 from tlo.progressbar import ProgressBar
 
 logger = logging.getLogger(__name__)
@@ -110,7 +110,7 @@ class Simulation:
                 # save the configuration and apply in the `register` phase
                 self._custom_log_levels = custom_levels
 
-        if filename:
+        if filename and directory:
             timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H%M%S')
             log_path = Path(directory) / f"{filename}__{timestamp}.log"
             self.output_file = logging.set_output_file(log_path)
@@ -224,10 +224,16 @@ class Simulation:
 
             if self.show_progress_bar:
                 simulation_day = (date - start_date).days
-                progress_bar.update(
-                    simulation_day,
-                    stats_dict={"date": str(date.date())}
-                )
+                stats_dict = {
+                    "date": str(date.date()),
+                    "dataframe size": str(len(self.population.props)),
+                    "queued events": str(len(self.event_queue)),
+                }
+                if "HealthSystem" in self.modules:
+                    stats_dict["queued HSI events"] = str(
+                        len(self.modules["HealthSystem"].HSI_EVENT_QUEUE)
+                    )
+                progress_bar.update(simulation_day, stats_dict=stats_dict)
 
             if date >= end_date:
                 self.date = end_date
@@ -242,19 +248,24 @@ class Simulation:
         for module in self.modules.values():
             module.on_simulation_end()
 
-        # complete logging
-        if self.output_file:
-            self.output_file.flush()
-            self.output_file.close()
-
         logger.info(key='info', data=f'simulate() {time.time() - start} s')
+
+        # From Python logging.shutdown
+        if self.output_file:
+            try:
+                self.output_file.acquire()
+                self.output_file.flush()
+                self.output_file.close()
+            except (OSError, ValueError):
+                pass
+            finally:
+                self.output_file.release()
 
     def schedule_event(self, event, date):
         """Schedule an event to happen on the given future date.
 
         :param event: the Event to schedule
         :param date: when the event should happen
-        :param force_over_from_healthsystem: allows an HSI event to enter the scheduler
         """
         assert date >= self.date, 'Cannot schedule events in the past'
 
@@ -262,8 +273,9 @@ class Simulation:
             'This looks like an HSI event. It should be handed to the healthsystem scheduler'
         assert (event.__str__().find('HSI_') < 0), \
             'This looks like an HSI event. It should be handed to the healthsystem scheduler'
+        assert isinstance(event, Event)
 
-        self.event_queue.schedule(event, date)
+        self.event_queue.schedule(event=event, date=date)
 
     def fire_single_event(self, event, date):
         """Fires the event once for the given date
@@ -297,7 +309,7 @@ class Simulation:
         """
         person_events = list()
 
-        for date, counter, event in self.event_queue.queue:
+        for date, _, _, event in self.event_queue.queue:
             if isinstance(event, IndividualScopeEventMixin):
                 if event.target == person_id:
                     person_events.append((date, event))
@@ -323,8 +335,7 @@ class EventQueue:
         :param event: the event to schedule
         :param date: when it should happen
         """
-
-        entry = (date, next(self.counter), event)
+        entry = (date, event.priority, next(self.counter), event)
         heapq.heappush(self.queue, entry)
 
     def next_event(self):
@@ -332,7 +343,7 @@ class EventQueue:
 
         :returns: an (event, date) pair
         """
-        date, count, event = heapq.heappop(self.queue)
+        date, _, _, event = heapq.heappop(self.queue)
         return event, date
 
     def __len__(self):

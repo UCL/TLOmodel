@@ -183,7 +183,11 @@ class Depression(Module):
 
         'anti_depressant_medication_item_code': Parameter(Types.INT,
                                                           'The item code used for one month of anti-depressant '
-                                                          'treatment')
+                                                          'treatment'),
+
+        'pr_assessed_for_depression_for_perinatal_female': Parameter(
+            Types.REAL,
+            'Probability that a perinatal female is assessed for depression during antenatal or postnatal services'),
     }
 
     # Properties of individuals 'owned' by this module
@@ -324,12 +328,8 @@ class Depression(Module):
             )
 
         # Symptom that this module will use
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(
-                name='Injuries_From_Self_Harm',
-                emergency_in_adults=True
-            ),
-        )
+        self.sim.modules['SymptomManager'].register_symptom(Symptom.emergency(name='Injuries_From_Self_Harm',
+                                                                              which='adults'))
 
     def apply_linear_model(self, lm, df):
         """
@@ -506,6 +506,35 @@ class Depression(Module):
             fraction_of_month_depr * self.daly_wts['average_per_day_during_any_episode'], fill_value=0.0)
 
         return av_daly_wt_last_month
+
+    def do_on_presentation_to_care(self, person_id, hsi_event):
+        """This member function is called when a person is in an HSI, and there may need to be screening for depression.
+        """
+        df = self.sim.population.props
+        if hsi_event.TREATMENT_ID == "FirstAttendance_NonEmergency":
+            if self.rng.rand() < self.parameters['pr_assessed_for_depression_in_generic_appt_level1']:
+                self.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
+
+        elif hsi_event.TREATMENT_ID == "FirstAttendance_Emergency":
+            symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+            if 'Injuries_From_Self_Harm' in symptoms:
+                self.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
+                # TODO: Trigger surgical care for injuries.
+
+        elif hsi_event.TREATMENT_ID == "AntenatalCare_Outpatient":  # module care_of_women_during_pregnancy
+            if (not df.at[person_id, 'de_ever_diagnosed_depression']) and (
+                self.rng.rand() < self.parameters['pr_assessed_for_depression_for_perinatal_female']
+            ):
+                self.do_when_suspected_depression(person_id, hsi_event)
+
+        elif hsi_event.TREATMENT_ID == "PostnatalCare_Maternal":  # module labour
+            if (not df.at[person_id, 'de_ever_diagnosed_depression']) and (
+                self.rng.rand() < self.parameters['pr_assessed_for_depression_for_perinatal_female']
+            ):
+                self.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
+
+        else:
+            raise NotImplementedError
 
     def do_when_suspected_depression(self, person_id, hsi_event):
         """
@@ -741,27 +770,36 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------------------------------------
 
 class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is a Health System Interaction Event in which a person receives a short period of talking therapy.
-    This only happens if the squeeze-factor is sufficiently low.
-    The facility_level is modified as a input parameter.
-    """
+    """This is a Health System Interaction Event in which a person receives a session of talking therapy. It is one
+    of a course of 5 sessions (at months 0, 6, 12, 18, 24). If one of these HSI does not happen
+    then no further sessions occur. Sessions after the first have no direct effect, as the only property affected is
+    reflects ever having had one session of talking therapy."""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        # Define the necessary information for an HSI
         self.TREATMENT_ID = 'Depression_TalkingTherapy'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MentOPD': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.num_of_sessions_had = 0  # A counter for the number of sessions of talking therapy had
 
     def apply(self, person_id, squeeze_factor):
-        if squeeze_factor == 0.0:
-            self.sim.population.props.at[person_id, 'de_ever_talk_ther'] = True
-        else:
-            # If squeeze_factor non-zero then do nothing and do not take up any time.
-            return self.sim.modules['HealthSystem'].get_blank_appt_footprint()
+        """Set the property `de_ever_talk_ther` to be True and schedule the next session in the course if the person
+        has not yet had 5 sessions."""
+
+        self.num_of_sessions_had += 1
+
+        df = self.sim.population.props
+        if not df.at[person_id, 'de_ever_talk_ther']:
+            df.at[person_id, 'de_ever_talk_ther'] = True
+
+        if self.num_of_sessions_had < 5:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=self,
+                topen=self.sim.date + pd.DateOffset(months=6),
+                tclose=None,
+                priority=1
+            )
 
 
 class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
@@ -773,11 +811,9 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Depression_Antidepressant_Start'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
+        self.TREATMENT_ID = 'Depression_Treatment'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MentOPD': 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -816,11 +852,9 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Depression_Antidepressant_Refill'
+        self.TREATMENT_ID = 'Depression_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props

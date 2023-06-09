@@ -6,33 +6,13 @@ import pandas as pd
 import pytest
 from pytest import approx
 
-from tlo import Date, Module, Simulation, logging
+from tlo import DAYS_IN_MONTH, DAYS_IN_YEAR, Date, Module, Simulation, logging
 from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
-from tlo.methods import (
-    Metadata,
-    bladder_cancer,
-    breast_cancer,
-    cardio_metabolic_disorders,
-    care_of_women_during_pregnancy,
-    contraception,
-    demography,
-    depression,
-    diarrhoea,
-    enhanced_lifestyle,
-    healthsystem,
-    hiv,
-    labour,
-    malaria,
-    newborn_outcomes,
-    oesophagealcancer,
-    postnatal_supervisor,
-    pregnancy_supervisor,
-    prostate_cancer,
-    symptommanager,
-)
+from tlo.methods import Metadata, demography
 from tlo.methods.causes import Cause
 from tlo.methods.demography import AgeUpdateEvent
 from tlo.methods.diarrhoea import increase_risk_of_death, make_treatment_perfect
+from tlo.methods.fullmodel import fullmodel
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2015, 1, 1)
@@ -124,30 +104,14 @@ def test_cause_of_death_being_registered(tmpdir, seed):
             'tlo.methods.demography': logging.INFO
         }
     })
-    sim.register(
-        demography.Demography(resourcefilepath=rfp),
-        symptommanager.SymptomManager(resourcefilepath=rfp),
-        breast_cancer.BreastCancer(resourcefilepath=rfp),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=rfp),
-        healthsystem.HealthSystem(resourcefilepath=rfp, disable_and_reject_all=True),
-        bladder_cancer.BladderCancer(resourcefilepath=rfp),
-        prostate_cancer.ProstateCancer(resourcefilepath=rfp),
-        depression.Depression(resourcefilepath=rfp),
-        diarrhoea.Diarrhoea(resourcefilepath=rfp),
-        hiv.Hiv(resourcefilepath=rfp),
-        malaria.Malaria(resourcefilepath=rfp),
-        cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=rfp),
-        oesophagealcancer.OesophagealCancer(resourcefilepath=rfp),
-        contraception.Contraception(resourcefilepath=rfp),
-        labour.Labour(resourcefilepath=rfp),
-        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=rfp),
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=rfp),
-        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=rfp),
-        newborn_outcomes.NewbornOutcomes(resourcefilepath=rfp),
 
-        # Supporting modules:
-        diarrhoea.DiarrhoeaPropertiesOfOtherModules()
+    sim.register(
+        *fullmodel(
+            resourcefilepath=rfp,
+            module_kwargs={"HealthSystem": {"disable": True}},
+        )
     )
+
     # Increase risk of death of Diarrhoea to ensure that are at least some deaths
     increase_risk_of_death(sim.modules['Diarrhoea'])
     make_treatment_perfect(sim.modules['Diarrhoea'])
@@ -216,6 +180,10 @@ def test_calc_of_scaling_factor(tmpdir, seed):
     sf = output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor']
     assert sf == approx(14.5e6 / popsize, rel=0.10)
 
+    # Check that the scaling factor is also logged in `tlo.methods.population`
+    assert output['tlo.methods.demography']['scaling_factor'].at[0, 'scaling_factor'] == \
+           output['tlo.methods.population']['scaling_factor'].at[0, 'scaling_factor']
+
 
 def test_py_calc(simulation):
     # make population of one person:
@@ -226,9 +194,8 @@ def test_py_calc(simulation):
     simulation.date += pd.DateOffset(days=1)
     age_update = AgeUpdateEvent(simulation.modules['Demography'], simulation.modules['Demography'].AGE_RANGE_LOOKUP)
     now = simulation.date
-    one_year = np.timedelta64(1, 'Y')
-    one_month = np.timedelta64(1, 'M')
-
+    one_year = pd.Timedelta(days=DAYS_IN_YEAR)
+    one_month = pd.Timedelta(days=DAYS_IN_MONTH)
     calc_py_lived_in_last_year = simulation.modules['Demography'].calc_py_lived_in_last_year
 
     # calc py: person is born and died before sim.date
@@ -270,21 +237,21 @@ def test_py_calc(simulation):
     df.is_alive = True
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year)
-    np.testing.assert_almost_equal(0.5, df_py['M'][19])
-    np.testing.assert_almost_equal(0.5, df_py['M'][20])
+    np.testing.assert_allclose(0.5, df_py['M'][19])
+    np.testing.assert_allclose(0.5, df_py['M'][20])
 
     # calc person who is alive and aged 19, has birthday mid-way through the last year, and died 3 months ago
     df.date_of_birth = now - (one_year * 20) - (one_month * 6)
-    df.date_of_death = now - np.timedelta64(3, 'M')
+    df.date_of_death = now - (one_month * 3)
     # we have to set the age at time of death - usually this would have been set by the AgeUpdateEvent
     df.age_exact_years = (df.date_of_death - df.date_of_birth) / one_year
     df.age_years = df.age_exact_years.astype('int64')
     df.is_alive = False
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year)
-    assert 0.75 == df_py['M'].sum()
-    assert 0.5 == df_py['M'][19]
-    assert 0.25 == df_py['M'][20]
+    np.testing.assert_allclose(0.75, df_py['M'].sum())
+    np.testing.assert_allclose(0.5, df_py['M'][19])
+    np.testing.assert_allclose(0.25, df_py['M'][20])
 
     # 0/1 year-old with first birthday during the last year
     df.date_of_birth = now - (one_month * 15)
@@ -292,8 +259,8 @@ def test_py_calc(simulation):
     df.is_alive = True
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year)
-    assert 0.75 == df_py['M'][0]
-    assert 0.25 == df_py['M'][1]
+    np.testing.assert_allclose(0.75, df_py['M'][0])
+    np.testing.assert_allclose(0.25, df_py['M'][1])
 
     # 0 year born in the last year
     df.date_of_birth = now - (one_month * 9)
@@ -301,8 +268,8 @@ def test_py_calc(simulation):
     df.is_alive = True
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year)
-    assert 0.75 == df_py['M'][0]
-    assert (0 == df_py['M'][1:]).all()
+    np.testing.assert_allclose(0.75, df_py['M'][0])
+    np.testing.assert_allclose(0, df_py['M'][1:])
 
     # 99 years-old turning 100 in the last year
     df.date_of_birth = now - (one_year * 100) - (one_month * 6)
@@ -310,8 +277,8 @@ def test_py_calc(simulation):
     df.is_alive = True
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year)
-    assert 0.5 == df_py['M'][99]
-    assert 1 == df_py['M'].sum()
+    np.testing.assert_allclose(0.5, df_py['M'][99])
+    np.testing.assert_allclose(1, df_py['M'].sum())
 
 
 def test_py_calc_w_mask(simulation):
@@ -325,7 +292,7 @@ def test_py_calc_w_mask(simulation):
     simulation.date += pd.DateOffset(days=1)
     age_update = AgeUpdateEvent(simulation.modules['Demography'], simulation.modules['Demography'].AGE_RANGE_LOOKUP)
     now = simulation.date
-    one_year = np.timedelta64(1, 'Y')
+    one_year = pd.Timedelta(days=DAYS_IN_YEAR)
 
     calc_py_lived_in_last_year = simulation.modules['Demography'].calc_py_lived_in_last_year
 
@@ -352,3 +319,58 @@ def test_py_calc_w_mask(simulation):
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year, mask=mask)
     np.testing.assert_almost_equal(1.0, df_py['M'][19])
+
+
+def test_max_age_initial(seed):
+    """Check that the parameter in the `Demography` module, `max_age_initial`, works as expected
+     * `max_age_initial=X`: only persons up to and including age_years (age in whole years) up to X are included in the
+      initial population.
+     * `max_age_initial=0` or `>MAX_AGE`: results in an error being thrown.
+    """
+
+    from tlo.methods.demography import MAX_AGE
+
+    def max_age_in_sim_with_max_age_initial_argument(_max_age_initial):
+        """Return the greatest value of `age_years` in a population that is created."""
+        resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+        sim = Simulation(start_date=start_date, seed=seed)
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath)
+        )
+        sim.modules['Demography'].parameters['max_age_initial'] = _max_age_initial
+        sim.make_initial_population(n=50_000)
+        return sim.population.props.age_years.max()
+
+    # `max_age_initial=5` (using integer)
+    assert max_age_in_sim_with_max_age_initial_argument(5) <= 5
+
+    # `max_age_initial=5.5` (using float)
+    assert max_age_in_sim_with_max_age_initial_argument(5.5) <= int(5.5)
+
+    # `max_age_initial=0`
+    with pytest.raises(ValueError):
+        max_age_in_sim_with_max_age_initial_argument(0)
+
+    # `max_age_initial>MAX_AGE`
+    with pytest.raises(ValueError):
+        max_age_in_sim_with_max_age_initial_argument(MAX_AGE + 1)
+
+
+def test_ageing_of_old_people_up_to_max_age(simulation):
+    """Check persons can age naturally up to MAX_AGE and are then assumed to die with cause 'Other'."""
+
+    # Populate the model with persons aged 90 years
+    simulation.make_initial_population(n=1000)
+    df = simulation.population.props
+    df.loc[df.is_alive, 'date_of_birth'] = simulation.start_date - pd.DateOffset(years=90)
+    ever_alive = df.loc[df.is_alive].index
+
+    # Make the intrinsic risk of death zero (to enable ageing up to MAX_AGE)
+    simulation.modules['Demography'].parameters['all_cause_mortality_schedule']['death_rate'] = 0.0
+
+    # Simulate the model for 40 years (such that the persons would be 130 years old, greater than MAX_AGE)
+    simulation.simulate(end_date=simulation.start_date + pd.DateOffset(years=40))
+
+    # All persons should have died, with a cause of 'Other'
+    assert not df.loc[ever_alive].is_alive.any()
+    assert (df.loc[ever_alive, 'cause_of_death'] == 'Other').all()

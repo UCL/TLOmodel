@@ -18,6 +18,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_availability
 from tlo.methods.dxmanager import DxManager, DxTest
 from tlo.methods.healthsystem import HSI_Event
 
@@ -59,7 +60,7 @@ def bundle(seed):
 
     # Run the simulation and flush the logger
     sim.make_initial_population(n=2000)
-    sim.simulate(end_date=Date(year=2010, month=1, day=31))
+    sim.simulate(end_date=sim.start_date)
 
     # Create a dummy HSI event from which the use of diagnostics can be tested
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
@@ -73,16 +74,27 @@ def bundle(seed):
         def apply(self, person_id, squeeze_factor):
             pass
 
-    hsi_event = HSI_Dummy(module=sim.modules['Mockitis'], person_id=-99)
+    hsi_event = HSI_Dummy(module=sim.modules['Mockitis'], person_id=0)
+    hsi_event.initialise()
+    # Force that the Facility_ID associated is facility_id=0 (as this is the facility for which availability of
+    #  consumables is manipulated in the below).
+    hsi_event.facility_info = sim.modules['HealthSystem']._facility_by_facility_id[0]
 
-    # Create consumable codes that are always and never available
-    cons_items = sim.modules['HealthSystem'].cons_available_today['Item_Code']
-
+    # Update Consumables module with  consumable codes that are always and never available
     item_code_for_consumable_that_is_not_available = 0
     item_code_for_consumable_that_is_available = 1
 
-    cons_items.loc[item_code_for_consumable_that_is_not_available, cons_items.columns] = False
-    cons_items.loc[item_code_for_consumable_that_is_available, cons_items.columns] = True
+    sim.modules['HealthSystem'].consumables = Consumables(
+        data=create_dummy_data_for_cons_availability(
+            intrinsic_availability={
+                item_code_for_consumable_that_is_not_available: 0.0,
+                item_code_for_consumable_that_is_available: 1.0},
+            facility_ids=[0],
+            months=[sim.date.month]),
+        rng=sim.modules['HealthSystem'].rng,
+        availability='default'
+    )
+    sim.modules['HealthSystem'].consumables.on_start_of_day(sim.date)
 
     assert hsi_event.get_consumables(item_codes=item_code_for_consumable_that_is_available)
     assert not hsi_event.get_consumables(item_codes=item_code_for_consumable_that_is_not_available)
@@ -290,6 +302,48 @@ def test_create_dx_tests_with_consumable_useage_given_by_item_code_only(bundle):
 
     # Confirm that my_test2 does give result
     assert None is not dx_manager.run_dx_test(dx_tests_to_run='my_test2',
+                                              hsi_event=hsi_event,
+                                              )
+
+
+def test_dx_tests_with_optional_consumable(bundle):
+    """Check that DxTest can be specified with optional consumables, the non-availability of which does not block
+     getting the result."""
+    sim = bundle.simulation
+    hsi_event = bundle.hsi_event
+    item_code_for_consumable_that_is_not_available = bundle.item_code_for_consumable_that_is_not_available
+
+    # Define the DxTests
+    my_test_with_item_code_not_available_and_mandatory = DxTest(
+        item_codes=item_code_for_consumable_that_is_not_available,
+        property='mi_status'
+    )
+
+    my_test_with_item_code_not_available_and_optional = DxTest(
+        optional_item_codes=item_code_for_consumable_that_is_not_available,
+        property='mi_status'
+    )
+
+    # Create new DxManager
+    dx_manager = DxManager(sim.modules['HealthSystem'])
+
+    # Register the single and the compound tests with DxManager:
+    dx_manager.register_dx_test(
+        my_test_with_item_code_not_available_and_mandatory=my_test_with_item_code_not_available_and_mandatory,
+        my_test_with_item_code_not_available_and_optional=my_test_with_item_code_not_available_and_optional,
+    )
+
+    # pick a person
+    person_id = 0
+    hsi_event.target = person_id
+
+    # Confirm the my_test_with_item_code_not_available_and_mandatory does not give result
+    assert None is dx_manager.run_dx_test(dx_tests_to_run='my_test_with_item_code_not_available_and_mandatory',
+                                          hsi_event=hsi_event,
+                                          )
+
+    # Confirm that my_test_with_item_code_not_available_and_optional does give result
+    assert None is not dx_manager.run_dx_test(dx_tests_to_run='my_test_with_item_code_not_available_and_optional',
                                               hsi_event=hsi_event,
                                               )
 

@@ -39,14 +39,19 @@ def test_scale_run_script_deterministic(tmp_path):
         "--save-final-population",
     ]
     final_population_dataframes = []
+    env = dict(os.environ)
     for hash_seed in (564059029, 1143360992):
-        subprocess.run(
-            command_args,
-            env={'PYTHONHASHSEED': str(hash_seed)},
+        env["PYTHONHASHSEED"] = str(hash_seed)
+        completed_process = subprocess.run(command_args, env=env)
+        assert completed_process.returncode == 0, (
+            f"Running {' '.join(command_args)} fails to successfully complete "
+            f"with stderr output\n\n{completed_process.stderr}"
         )
-        final_population_dataframes.append(
-            pd.read_pickle(tmp_path / "final_population.pkl")
+        final_population_pickle_path = tmp_path / "final_population.pkl"
+        assert os.path.exists(final_population_pickle_path), (
+            "Pickle of final population dataframe not found"
         )
+        final_population_dataframes.append(pd.read_pickle(final_population_pickle_path))
     pd.testing.assert_frame_equal(*final_population_dataframes), (
         f"Running {' '.join(command_args)} twice produces different final populations. "
         "This may be due to for example using an unseeded random number generator such "

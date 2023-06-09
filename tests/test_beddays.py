@@ -39,15 +39,13 @@ def test_beddays_in_isolation(tmpdir, seed):
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
     )
 
-    # call HealthSystem Module to initialise BedDays class
-    hs = sim.modules['HealthSystem']
-
     # Update BedCapacity data with a simple table:
     level2_facility_ids = [128, 129, 130]  # <-- the level 2 facilities for each region
     cap_bedtype1 = 5
     cap_bedtype2 = 100
 
     # create a simple bed capacity dataframe
+    hs = sim.modules['HealthSystem']
     hs.parameters['BedCapacity'] = pd.DataFrame(
         data={
             'Facility_ID': level2_facility_ids,
@@ -56,8 +54,8 @@ def test_beddays_in_isolation(tmpdir, seed):
         }
     )
 
-    # Create a 21 day simulation
-    days_sim = hs.bed_days.days_until_last_day_of_bed_tracker
+    # Create a 21-day simulation
+    days_sim = 21
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=days_sim))
 
@@ -71,18 +69,18 @@ def test_beddays_in_isolation(tmpdir, seed):
 
     sim.date = start_date
     hs.bed_days.impose_beddays_footprint(person_id=person_id, footprint=footprint)
-    tracker = hs.bed_days.bed_tracker['bedtype1'][hs.bed_days.get_facility_id_for_beds(person_id)]
+    tracker = hs.bed_days.bed_tracker['bedtype1'][hs.bed_days.get_facility_id_for_beds(person_id)][0: days_sim]
 
     # check if impose footprint works as expected
-    assert ([cap_bedtype1 - 1] * dur_bedtype1 + [cap_bedtype1] * (days_sim + 1 - dur_bedtype1) == tracker.values).all()
+    assert ([cap_bedtype1 - 1] * dur_bedtype1 + [cap_bedtype1] * (days_sim - dur_bedtype1) == tracker.values).all()
 
     # 2) cause someone to die and relieve their footprint from the bed-days tracker
     hs.bed_days.remove_beddays_footprint(person_id)
-    assert ([cap_bedtype1] * (days_sim + 1) == tracker.values).all()
+    assert ([cap_bedtype1] * days_sim == tracker.values).all()
 
     # 3) check that removing bed-days from a person without bed-days does nothing
     hs.bed_days.remove_beddays_footprint(2)
-    assert ([cap_bedtype1] * (days_sim + 1) == tracker.values).all()
+    assert ([cap_bedtype1] * days_sim == tracker.values).all()
 
 
 def check_dtypes(simulation):
@@ -158,13 +156,19 @@ def test_bed_days_basics(tmpdir, seed):
 
     for bed_type in [f"bed_tracker_{bed}" for bed in hs.bed_days.bed_types]:
         # Check dates are as expected:
-        dates_in_log = pd.to_datetime(log[bed_type]['date_of_bed_occupancy'])
-        date_range = pd.date_range(sim.start_date, sim.end_date, freq='D', closed='left')
+        dates_in_log = pd.to_datetime(log[bed_type]['date'])
+        # Default behaviour of date_range is to include both start and end date in range
+        # therefore offset end by minus one day to get all days up to but not including
+        # end date. closed / inclusive kwarg avoided here to keep compatibility across
+        # Pandas versions
+        date_range = pd.date_range(
+            sim.start_date, sim.end_date - pd.DateOffset(days=1), freq='D'
+        )
         assert set(date_range) == set(dates_in_log)
 
         # Check columns (for each facility_ID) are as expected:
         assert ([str(x) for x in hs.parameters['BedCapacity']['Facility_ID'].values] ==
-                log[bed_type].columns.drop(['date', 'date_of_bed_occupancy']).values).all()
+                log[bed_type].columns.drop(['date', 'date']).values).all()
 
     # 1) Create instances of the HSIs for a person
     person_id = 0
@@ -257,7 +261,7 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
         METADATA = {Metadata.USES_HEALTHSYSTEM}
 
         def read_parameters(self, data_folder):
-            # get 21 day bed days tracking period
+            # set 21 day bed days tracking period
             self.parameters['tracking_period'] = 21
 
         def initialise_population(self, population):
@@ -267,7 +271,7 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
             # Schedule event that will query the status of the property 'is_inpatient' each day
             self.sim.schedule_event(
                 QueryInPatientStatus(self),
-                self.sim.date
+                self.sim.date + pd.DateOffset(days=1)
             )
             self.in_patient_status = pd.DataFrame(
                 index=pd.date_range(self.sim.start_date, self.sim.start_date + pd.DateOffset(days=self.parameters[
@@ -309,10 +313,14 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
             super().__init__(module, frequency=pd.DateOffset(days=1))
 
         def apply(self, population):
-            self.module.in_patient_status.loc[self.sim.date] = \
+            # This event occurs _before_ the HealthSystemScheduler event, which determines changes in status. Therefore,
+            # this event is reporting on the status that existed following "yesterday's" HealthSystemScheduler. So,
+            # the "reporting date" is yesterday.
+            reporting_date = self.sim.date - pd.DateOffset(days=1)
+            self.module.in_patient_status.loc[reporting_date] = \
                 population.props.loc[[0, 1, 2], 'hs_is_inpatient'].values
 
-    # Create a dummy HSI with both-types of Bed Day specified
+    # Create a dummy HSI with one particular type of bed needed fo4 5 days
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):
             super().__init__(module, person_id=person_id)
@@ -335,7 +343,7 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
     })
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, beds_availability='all'),
         DummyModule()
     )
     sim.make_initial_population(n=100)
@@ -344,7 +352,7 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
 
     # Load the logged tracker for general beds
     log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
-    tracker = log[f'bed_tracker_{_bed_type}'].drop(columns={'date'}).set_index('date_of_bed_occupancy')
+    tracker = log[f'bed_tracker_{_bed_type}'].set_index('date')
     tracker.index = pd.to_datetime(tracker.index)
 
     # Load the in-patient status store:
@@ -352,7 +360,7 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
     ips.index = pd.to_datetime(ips.index)
 
     # check that the daily checks on 'is_inpatient' are as expected:
-    false_ser = pd.Series(index=pd.date_range(sim.start_date, sim.end_date - pd.DateOffset(days=1), freq='D'),
+    false_ser = pd.Series(index=pd.date_range(sim.start_date, sim.end_date - pd.DateOffset(days=2), freq='D'),
                           data=False)
 
     # person 0
@@ -374,12 +382,16 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
     tot_time_as_in_patient = ips.sum(axis=1)
     beds_occupied = tracker.sum(axis=1)[0] - tracker.sum(axis=1)
 
-    assert beds_occupied.equals(tot_time_as_in_patient)
+    def assert_two_series_are_the_same_where_index_overlaps(a, b):
+        return pd.concat([tot_time_as_in_patient, beds_occupied], axis=1)\
+            .dropna().apply(lambda row: row[0] == row[1], axis=1).all()
+
+    assert assert_two_series_are_the_same_where_index_overlaps(beds_occupied, tot_time_as_in_patient)
 
 
 def test_bed_days_released_on_death(tmpdir, seed):
     """Check that bed-days scheduled to be occupied are released upon the death of the person"""
-    _bed_type = bed_types[0]
+    _bed_type = 'general_bed'
     days_simulation_duration = 20
 
     class DummyModule(Module):
@@ -455,7 +467,7 @@ def test_bed_days_released_on_death(tmpdir, seed):
     })
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, beds_availability='all'),
         DummyModule()
     )
     sim.make_initial_population(n=100)
@@ -468,7 +480,7 @@ def test_bed_days_released_on_death(tmpdir, seed):
 
     # Load the logged tracker for general beds
     log = parse_log_file(sim.log_filepath)['tlo.methods.healthsystem']
-    tracker = log[f'bed_tracker_{_bed_type}'].drop(columns={'date'}).set_index('date_of_bed_occupancy')
+    tracker = log[f'bed_tracker_{_bed_type}'].set_index('date')
     tracker.index = pd.to_datetime(tracker.index)
 
     # compute beds occupied
@@ -585,8 +597,8 @@ def test_the_use_of_beds_from_multiple_facilities(seed):
         }
     )
 
-    # Create a simulation that has the same duration as the window of the tracker
-    days_sim = hs.bed_days.days_until_last_day_of_bed_tracker
+    # Create a 21-day simulation
+    days_sim = 21
     sim.make_initial_population(n=100)
     sim.simulate(end_date=start_date + pd.DateOffset(days=days_sim))
 
@@ -619,11 +631,13 @@ def test_the_use_of_beds_from_multiple_facilities(seed):
         _fac_id = person_info[_person_id][1]
 
         # check if impose footprint works as expected
-        tracker = hs.bed_days.bed_tracker['bedtype1'][_fac_id]
+        tracker = hs.bed_days.bed_tracker['bedtype1'][_fac_id][0: days_sim]
 
-        assert ([bedtype1_capacity.loc[bedtype1_capacity.index[_person_id]] - 1] * bedtype1_dur + [
-            bedtype1_capacity.loc[bedtype1_capacity.index[_person_id]]] * (
-                    days_sim + 1 - bedtype1_dur) == tracker.values).all()
+        assert (
+            [bedtype1_capacity.loc[bedtype1_capacity.index[_person_id]] - 1] * bedtype1_dur
+            + [bedtype1_capacity.loc[bedtype1_capacity.index[_person_id]]] * (days_sim - bedtype1_dur)
+            == tracker.values
+        ).all()
 
     # -- Check that there is an error if there is demand for beddays in a region for which no capacity is defined
     # person 2 is in the Southern region for which no beddays capacity is defimed
@@ -654,10 +668,8 @@ def test_bed_days_allocation_to_HSI(seed):
                 'bed_B': 1,
             }
         )
-        # Re-initialise the Bed-days instance (so that these new parameter are used)
-        hs.bed_days = BedDays(hs)
 
-        # Simulate for 0 days to get everything established
+        # Simulate for 0 days to get everything initialised
         sim.make_initial_population(n=1)
         sim.simulate(end_date=start_date)
         return sim
@@ -832,8 +844,6 @@ def test_bed_days_allocation_information_is_provided_to_HSI(seed):
             'bed_B': 1,
         }
     )
-    # Re-initialise the Bed-days instance (so that these new parameter are used)
-    hs.bed_days = BedDays(hs)
 
     # Simulate
     sim.make_initial_population(n=1)
@@ -842,3 +852,124 @@ def test_bed_days_allocation_information_is_provided_to_HSI(seed):
 
     # Return the information provided to the HSI
     assert {'bed_A': 1, 'bed_B': 5} == sim.modules['DummyModule'].hsi_event._received_info_about_bed_days
+
+
+def test_in_patient_admission_included_in_appt_footprint_if_any_bed_days():
+    """Check that helper function works which adds the in-patient admission appointment type to the APPT_FOOTPRINT. """
+    from tlo.methods.bed_days import (
+        IN_PATIENT_ADMISSION,
+        IN_PATIENT_DAY_FIRST_DAY,
+        IN_PATIENT_DAY_SUBSEQUENT_DAYS,
+    )
+
+    footprint = {'Under5OPD': 1}
+    footprint_with_correct_inpatient_admission_and_inpatient_day = {
+        **footprint, **IN_PATIENT_DAY_FIRST_DAY, **IN_PATIENT_ADMISSION
+    }
+
+    add_first_day_inpatient_appts_to_footprint = BedDays(hs_module=None).add_first_day_inpatient_appts_to_footprint
+
+    # If in-patient admission appointment is present already, no change is made:
+    assert footprint_with_correct_inpatient_admission_and_inpatient_day == \
+           add_first_day_inpatient_appts_to_footprint(footprint_with_correct_inpatient_admission_and_inpatient_day)
+
+    # If in-patient admission or in-patient appointment is not present or is incomplete, is it added:
+    assert footprint_with_correct_inpatient_admission_and_inpatient_day == \
+           add_first_day_inpatient_appts_to_footprint(footprint)
+    assert footprint_with_correct_inpatient_admission_and_inpatient_day == \
+           add_first_day_inpatient_appts_to_footprint({**footprint, **IN_PATIENT_ADMISSION})
+    assert footprint_with_correct_inpatient_admission_and_inpatient_day == \
+           add_first_day_inpatient_appts_to_footprint({**footprint, **IN_PATIENT_DAY_SUBSEQUENT_DAYS})
+
+    # If the in-patient admission is wrong, then it is corrected:
+    assert footprint_with_correct_inpatient_admission_and_inpatient_day == \
+           add_first_day_inpatient_appts_to_footprint({'Under5OPD': 1, 'IPAdmission': 99, 'InpatientDays': 99})
+
+    # If the footprint is blank, then the bed-days appointments are added:
+    assert {**IN_PATIENT_DAY_FIRST_DAY, **IN_PATIENT_ADMISSION} == add_first_day_inpatient_appts_to_footprint({})
+
+
+def test_in_patient_appt_included_and_logged(tmpdir, seed):
+    """Check that in-patient appointments (admission and in-patients) are used correctly for in-patients when succ."""
+    from tlo.methods.bed_days import IN_PATIENT_ADMISSION, IN_PATIENT_DAY_SUBSEQUENT_DAYS
+
+    # Create and run a simulation that includes in-patients
+    _bed_type = bed_types[0]
+    date_of_admission = Date(2010, 1, 3)
+    dur_stay_in_days = 5
+    date_of_discharge = date_of_admission + pd.DateOffset(days=dur_stay_in_days - 1)
+    footprint = {'Over5OPD': 1}
+    num_persons = 3
+
+    class DummyModule(Module):
+        METADATA = {Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            # Schedule some persons to attend care on `date_of_admission`
+            for person_id in range(num_persons):
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    HSI_Dummy(self, person_id=person_id),
+                    topen=date_of_admission,
+                    tclose=None,
+                    priority=0)
+
+    # Create a dummy HSI with one type of Bed Day specified - but no inpatient admission/care appointments specified.
+    class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'Dummy'
+            self.ACCEPTED_FACILITY_LEVEL = '2'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint(footprint)
+            self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({_bed_type: dur_stay_in_days})
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    # Create simulation with the health system and DummyModule
+    sim = Simulation(start_date=start_date, seed=seed, log_config={
+        'filename': 'temp',
+        'directory': tmpdir,
+        'custom_levels': {
+            "tlo.methods.healthsystem": logging.DEBUG,
+        }
+    })
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+        DummyModule()
+    )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=start_date + pd.DateOffset(days=100))
+    check_dtypes(sim)
+
+    # Load the logged tracker for general beds
+    log_hsi = parse_log_file(
+        sim.log_filepath, logging.DEBUG
+    )['tlo.methods.healthsystem']['HSI_Event']
+    log_hsi.index = pd.to_datetime(log_hsi.date)
+    appts_freq_by_date = log_hsi[
+        'Number_By_Appt_Type_Code'].apply(pd.Series).fillna(0).astype(int).groupby(level=0).sum()
+
+    # Check that what is logged equals what is expected
+    expectation = pd.concat(
+        [
+            pd.DataFrame(index=[date_of_admission],
+                         data={k: num_persons * v for k, v in IN_PATIENT_ADMISSION.items()}),
+            pd.DataFrame(index=pd.date_range(date_of_admission + pd.DateOffset(days=1), date_of_discharge),
+                         data={k: num_persons * v for k, v in IN_PATIENT_DAY_SUBSEQUENT_DAYS.items()}),
+            pd.DataFrame(index=[date_of_admission],
+                         data={k: num_persons * v for k, v in footprint.items()}),
+        ], axis=1).fillna(0).astype(int)
+
+    pd.testing.assert_frame_equal(appts_freq_by_date, expectation,
+                                  check_dtype=False, check_names=False, check_freq=False)
+
+    # Check that the facility_id is included for each entry in the `HSI_Events` log, including HSI Events for
+    # in-patient appointments.
+    assert not (log_hsi['Facility_ID'] == -99).any()

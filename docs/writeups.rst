@@ -30,7 +30,7 @@ Representation of the Healthcare System
 ========================================
 * **HealthSystem**: Tracks the availability and usage of the resources of the healthcare system with respect to healthcare worker time, consumables and equipment for in-patient care. :download:`.docx <./write-ups/HealthSystem.docx>`
 
-* **Routine Immunization**: The services that deliver a set of immunizations to children. (Forthcoming)
+* **Routine Immunization**: The services that deliver a set of immunizations to children. :download:`.docx <./write-ups/EPI.docx>`
 
 
 Contraception, Pregnancy and Labour
@@ -61,13 +61,13 @@ Communicable Diseases
 ========================
 * **HIV**: HIV/AIDS and associated prevention and treatment programmes. :download:`.docx <./write-ups/Hiv.docx>`
 
-* **Measles**: Measles-related disease and associated prevention and treatment programmes. (Forthcoming)
+* **TB**: Tuberculosis and associated prevention and treatment programmes. :download:`.docx <./write-ups/TB.docx>`
 
 * **Malaria**: Malaria disease and associated prevention and treatment programmes. :download:`.docx <./write-ups/Malaria.docx>`
 
-* **Schistosomiasis**: Schistosomiasis disease and associated prevention and treatment programmes. :download:`.docx <./write-ups/Schistosomiasis.docx>`
+* **Measles**: Measles-related disease and associated prevention and treatment programmes. :download:`.docx <./write-ups/Measles.docx>`
 
-* **Tuberculosis**: Tuberculosis disease and associated prevention and treatment programmes. (Forthcoming)
+* **Schistosomiasis**: Schistosomiasis disease and associated prevention and treatment programmes. :download:`.docx <./write-ups/Schistosomiasis.docx>`
 
 
 Non-Communicable Conditions
