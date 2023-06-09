@@ -23,7 +23,7 @@ class LongRun(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2020, 1, 1)
         self.pop_size = 20_000
-        self.number_of_draws = 3
+        self.number_of_draws = 2
         self.runs_per_draw = 10
 
     def log_configuration(self):
@@ -47,7 +47,7 @@ class LongRun(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {**get_parameters_for_status_quo(),
                 **{'Labour': {
-                    'residual_prob_caesarean': [[0.0188, 0.022], [0.094, 0.11], [0.188, 0.22]][draw_number]
+                    'residual_prob_caesarean': [[0.0376, 0.044], [0.047, 0.055]][draw_number]
                 }
                 }
                 }
