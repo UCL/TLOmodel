@@ -494,6 +494,7 @@ def test_if_medication_prevents_all_death(seed):
 
         # set probability of treatment working to 1
         p[f'{event}_hsi']["pr_treatment_works"] = 1
+        p['prob_care_provided_given_seek_emergency_care'] = 1.0
 
         # simulate for one year
         sim.simulate(end_date=Date(year=2011, month=1, day=1))
@@ -731,6 +732,7 @@ def test_hsi_emergency_events(seed):
         # change treatment parameter to always work
         p = sim.modules['CardioMetabolicDisorders'].parameters
         p[f'{event}_hsi']["pr_treatment_works"] = 1
+        p['prob_care_provided_given_seek_emergency_care'] = 1.0
 
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
