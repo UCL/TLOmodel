@@ -35,9 +35,8 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2013, 1, 1)
-popsize = 5000
+popsize = 1000
 
-scenario = 0
 
 # set up the log config
 log_config = {
@@ -45,13 +44,10 @@ log_config = {
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
-        # "tlo.methods.deviance_measure": logging.INFO,
-        # "tlo.methods.epi": logging.INFO,
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
         # "tlo.methods.healthsystem.summary": logging.INFO,
-        # "tlo.methods.healthsystem": logging.INFO,
         # "tlo.methods.healthburden": logging.INFO,
     },
 }
@@ -82,13 +78,12 @@ sim.register(
     epi.Epi(resourcefilepath=resourcefilepath),
     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
     tb.Tb(resourcefilepath=resourcefilepath),
-    # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
 
 # set the scenario
-sim.modules["Tb"].parameters["scenario"] = 1
+sim.modules["Tb"].parameters["scenario"] = 2
 sim.modules["Tb"].parameters["scenario_start_date"] = start_date
-sim.modules["Tb"].parameters["outreach_xray_start_date"] = Date(2099, 1, 1)
+sim.modules["Tb"].parameters["outreach_xray_start_date"] = Date(2010, 1, 1)
 
 
 # Run the simulation and flush the logger
