@@ -954,11 +954,11 @@ def test_scheduling_and_treatment_effect_of_post_abortion_care(seed):
 
     # Import and run HSI_GenericEmergencyFirstApptAtFacilityLevel1, where women with abortion complications are
     # scheduled to present via Pregnancy Supervisor
-    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
 
     # Run the event
-    emergency_appt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=updated_mother_id,
-                                                                   module=sim.modules['PregnancySupervisor'])
+    emergency_appt = HSI_GenericEmergencyFirstAppt(person_id=updated_mother_id,
+                                                   module=sim.modules['PregnancySupervisor'])
     emergency_appt.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
     # Check that this event correctly identified abortion complications and scheduled the correct HSI
@@ -1018,13 +1018,13 @@ def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management(se
     ectopic_event.apply(mother_id)
 
     # Check the woman has correctly sought care via HSI_GenericEmergencyFirstApptAtFacilityLevel1
-    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
     hsi_list = find_and_return_hsi_events_list(sim, mother_id)
-    assert HSI_GenericEmergencyFirstApptAtFacilityLevel1 in hsi_list
+    assert HSI_GenericEmergencyFirstAppt in hsi_list
 
     # Run the event
-    emergency_appt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=updated_mother_id,
-                                                                   module=sim.modules['PregnancySupervisor'])
+    emergency_appt = HSI_GenericEmergencyFirstAppt(person_id=updated_mother_id,
+                                                   module=sim.modules['PregnancySupervisor'])
     emergency_appt.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
     # Check she has correctly been scheduled treatment for ectopic pregnancy
@@ -1045,9 +1045,9 @@ def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management(se
     df.at[mother_id, 'ps_ectopic_pregnancy'] = 'ruptured'
 
     # Check sheduling through generic HSI event (as above)
-    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
-    emergency_appt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=updated_mother_id,
-                                                                   module=sim.modules['PregnancySupervisor'])
+    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
+    emergency_appt = HSI_GenericEmergencyFirstAppt(person_id=updated_mother_id,
+                                                   module=sim.modules['PregnancySupervisor'])
     emergency_appt.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
     # Check that this event correctly identified ectopic complications and scheduled the correct HSI

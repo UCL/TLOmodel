@@ -523,7 +523,7 @@ def test_aids_symptoms_lead_to_treatment_being_initiated(seed):
     hsp = HealthSeekingBehaviourPoll(module=sim.modules['HealthSeekingBehaviour'])
     hsp.apply(sim.population)
     ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-          isinstance(ev[1], hsi_generic_first_appts.HSI_GenericFirstApptAtFacilityLevel0)][0]
+          isinstance(ev[1], hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)][0]
     ge.apply(ge.target, squeeze_factor=0.0)
 
     # Check that the person has a TestAndReferEvent scheduled

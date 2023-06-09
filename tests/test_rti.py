@@ -19,7 +19,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
-from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
 
 # create simulation parameters
 start_date = Date(2010, 1, 1)
@@ -114,7 +114,7 @@ def test_all_injuries_run(seed):
     # Schedule the generic emergency appointment
     for person_id in sim.population.props.index:
         sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_GenericEmergencyFirstApptAtFacilityLevel1(module=sim.modules['RTI'], person_id=person_id),
+            hsi_event=HSI_GenericEmergencyFirstAppt(module=sim.modules['RTI'], person_id=person_id),
             priority=0,
             topen=sim.date
         )
@@ -183,7 +183,7 @@ def test_all_injuries_run_no_healthsystem(seed):
     # Schedule the generic emergency appointment
     for person_id in sim.population.props.index:
         sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_GenericEmergencyFirstApptAtFacilityLevel1(module=sim.modules['RTI'], person_id=person_id),
+            hsi_event=HSI_GenericEmergencyFirstAppt(module=sim.modules['RTI'], person_id=person_id),
             priority=0,
             topen=sim.date
         )
