@@ -384,6 +384,10 @@ class Tb(Module):
             Types.STRING,
             "sub-set of scenarios used for sensitivity analysis"
         ),
+        "outreach_xray_start_date": Parameter(
+            Types.DATE,
+            "date from which outreach xray starts"
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -752,7 +756,7 @@ class Tb(Module):
 
         # TB GeneXpert
         self.item_codes_for_consumables_required['xpert_test'] = \
-        hs.get_item_codes_from_package_name("Xpert test")
+            hs.get_item_codes_from_package_name("Xpert test")
 
         # sensitivity/specificity set for smear status of cases
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
@@ -946,7 +950,7 @@ class Tb(Module):
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
         # schedule outreach xrays for tb screening from 2023
-        sim.schedule_event(TbCommunityXray(self), sim.date + DateOffset(years=100))
+        sim.schedule_event(TbCommunityXray(self), self.parameters["outreach_xray_start_date"])
 
         # log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
@@ -1449,15 +1453,16 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         # baseline scenario 0: no change to parameters/functions
         if scenario == 0:
             return
-        # sets availability of xpert no none
+
+        # sets availability of xpert
         if scenario == 1:
-                 # Xpt = {
-                 # self.sim.modules['HealthSystem'].get_item_code_from_item_name("Xpert"): 0}
-                 #
-                 # self.sim.modules['HealthSystem'].override_availability_of_consumables(Xpt)
-                self.sim.modules['HealthSystem'].override_availability_of_consumables(
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {187: 0.0})
 
+        # sets availability of xray
+        if scenario == 2:
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {175: 0.0})
 
 
 # ######################################################
@@ -1483,12 +1488,12 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         prop_untreated_mdr = self.module.calculate_untreated_proportion(population, strain="mdr")
 
         scaled_incidence_ds = incidence_year * \
-            p["scaling_factor_WHO"] * \
-            prop_untreated_ds
+                              p["scaling_factor_WHO"] * \
+                              prop_untreated_ds
         scaled_incidence_mdr = incidence_year * \
-            p["prop_mdr2010"] * \
-            p["scaling_factor_WHO"] * \
-            prop_untreated_mdr
+                               p["prop_mdr2010"] * \
+                               p["scaling_factor_WHO"] * \
+                               prop_untreated_mdr
 
         # transmission ds-tb
         self.module.assign_active_tb(population, strain="ds", incidence=scaled_incidence_ds)
@@ -2232,7 +2237,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             & (person["age_years"] <= 16) \
             & ~(person["tb_smear"]) \
             & ~person["tb_ever_treated"] \
-                & ~person["tb_diagnosed_mdr"]:
+            & ~person["tb_diagnosed_mdr"]:
             # shorter treatment for child with minimal tb
             treatment_regimen = "tb_tx_child_shorter"
 
@@ -2289,7 +2294,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 
         # if previously treated:
         if ((person["tb_treatment_regimen"] == "tb_retx_adult") or
-                (person["tb_treatment_regimen"] == "tb_retx_child")):
+            (person["tb_treatment_regimen"] == "tb_retx_child")):
 
             # if strain is ds and person previously treated:
             sputum_fup = follow_up_times["ds_retreatment_sputum"].dropna()
