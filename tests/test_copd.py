@@ -123,6 +123,7 @@ def test_ch_lungfunction():
     # set probability of progressing to next lung function to 1. This will ensure everyone progresses
     # to the next lung function
     copd_module.parameters['prob_progress_to_next_cat'] = 1.0
+    copd_module.parameters['rel_risk_progress_per_higher_cat'] = 1.0
     # re-initialise models to use updated parameters
     copd_module.pre_initialise_population()
 
@@ -447,12 +448,12 @@ def test_referral_logic():
 
     # check that an instance of HSI_GenericFirstApptAtFacilityLevel1 is created
     assert isinstance(sim.modules['HealthSystem'].find_events_for_person(person_id)[0][1],
-                      hsi_generic_first_appts.HSI_GenericEmergencyFirstApptAtFacilityLevel1)
+                      hsi_generic_first_appts.HSI_GenericEmergencyFirstAppt)
 
     # Run HSI_GenericFirstApptAtFacilityLevel1 event
     hsi_emergency_event = \
         [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-         isinstance(event_tuple[1], hsi_generic_first_appts.HSI_GenericEmergencyFirstApptAtFacilityLevel1)][0]
+         isinstance(event_tuple[1], hsi_generic_first_appts.HSI_GenericEmergencyFirstAppt)][0]
 
     hsi_emergency_event.run(0.0)
 

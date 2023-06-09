@@ -112,14 +112,18 @@ class CopdAnalyses:
         """ plot for lung function for all age groups in the year 2022 """
         # select logs from the latest year. In this case we are selecting year 2022
         re_ordered_df = self.__copd_prev.reorder_levels([3, 0, 2, 1], axis=1)
-        re_ordered_df = re_ordered_df.droplevel(2, axis=1)
         plot_df = pd.DataFrame()
         mask = (re_ordered_df.index > pd.to_datetime('2022-01-01')) & (
             re_ordered_df.index <= pd.to_datetime('2023-01-01'))
         re_ordered_df = re_ordered_df.loc[mask]
         for _lung_func, _ in enumerate(self.__lung_func_cats):
-            plot_df[f'{_lung_func}'] = re_ordered_df[f'{_lung_func}']['M'].sum(axis=0) + \
-                                       re_ordered_df[f'{_lung_func}']['F'].sum(axis=0)
+            males = re_ordered_df[f'{_lung_func}']['M']['True'].sum(axis=0) + \
+                    re_ordered_df[f'{_lung_func}']['M']['False'].sum(axis=0)
+
+            females = re_ordered_df[f'{_lung_func}']['F']['True'].sum(axis=0) + \
+                re_ordered_df[f'{_lung_func}']['F']['False'].sum(axis=0)
+
+            plot_df[f'{_lung_func}'] = males + females
 
         fig, ax = plt.subplots()
         plot_df = plot_df.apply(lambda row: row / row.sum(), axis=1)
@@ -228,7 +232,6 @@ def get_simulation(popsize):
 # run simulation and store logfile path
 sim = get_simulation(1000)
 path_to_logfile = sim.log_filepath
-
 # initialise Copd analyses class
 copd_analyses = CopdAnalyses(logfile_path=path_to_logfile)
 

@@ -24,7 +24,7 @@ class Copd(Module):
     """The module responsible for determining Chronic Obstructive Pulmonary Diseases (COPD) status and outcomes.
      and initialises parameters and properties associated with COPD plus functions and events related to COPD."""
 
-    INIT_DEPENDENCIES = {'SymptomManager', }
+    INIT_DEPENDENCIES = {'SymptomManager', 'Lifestyle'}
     ADDITIONAL_DEPENDENCIES = set()
 
     METADATA = {
@@ -370,7 +370,6 @@ class CopdPollEvent(RegularEvent, PopulationScopeEventMixin):
         """ make individuals progress to a next higher lung function """
         idx_will_progress_to_next_category = self.module.models.will_progres_to_next_cat_of_lungfunction(
             df.loc[eligible_to_progress_to_next_lung_function(df)])
-
         df.loc[idx_will_progress_to_next_category, 'ch_lungfunction'] = self.increment_category(
             df.loc[idx_will_progress_to_next_category, 'ch_lungfunction'])
 
