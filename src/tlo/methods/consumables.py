@@ -254,19 +254,21 @@ def check_format_of_consumables_file(df, fac_ids):
     """Check that we have a complete set of estimates, for every region & facility_type, as defined in the model."""
     months = set(range(1, 13))
     item_codes = set(df.item_code.unique())
+    availability_estimates_columns = ['available_prop', 'available_prop_scenario1']
 
-    assert set(df.columns) == {'Facility_ID', 'month', 'item_code', 'available_prop'}
+    assert set(df.columns) == {'Facility_ID', 'month', 'item_code'} | set(availability_estimates_columns)
 
     # Check that all permutations of Facility_ID, month and item_code are present
-    pd.testing.assert_index_equal(
-        df.set_index(['Facility_ID', 'month', 'item_code']).index,
-        pd.MultiIndex.from_product([fac_ids, months, item_codes], names=['Facility_ID', 'month', 'item_code']),
-        check_order=False
-    )
+    for column in availability_estimates_columns:
+        pd.testing.assert_index_equal(
+            df.set_index(['Facility_ID', 'month', 'item_code']).index,
+            pd.MultiIndex.from_product([fac_ids, months, item_codes], names=['Facility_ID', 'month', 'item_code']),
+            check_order=False
+        )
 
-    # Check that every entry for a probability is a float on [0,1]
-    assert (df.available_prop <= 1.0).all() and (df.available_prop >= 0.0).all()
-    assert not pd.isnull(df.available_prop).any()
+        # Check that every entry for a probability is a float on [0,1]
+        assert (df[column] <= 1.0).all() and (df[column] >= 0.0).all()
+        assert not pd.isnull(df[column]).any()
 
 
 class ConsumablesSummaryCounter:
