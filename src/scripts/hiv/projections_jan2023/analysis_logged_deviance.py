@@ -47,8 +47,8 @@ log_config = {
         "tlo.methods.hiv": logging.INFO,
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
-        # "tlo.methods.healthsystem.summary": logging.INFO,
-        # "tlo.methods.healthburden": logging.INFO,
+        "tlo.methods.healthsystem.summary": logging.INFO,
+        "tlo.methods.healthburden": logging.INFO,
     },
 }
 
@@ -81,7 +81,7 @@ sim.register(
 )
 
 # set the scenario
-sim.modules["Tb"].parameters["scenario"] = 1
+sim.modules["Tb"].parameters["scenario"] = 0
 sim.modules["Tb"].parameters["scenario_start_date"] = start_date
 sim.modules["Tb"].parameters["outreach_xray_start_date"] = Date(2099, 1, 1)
 
