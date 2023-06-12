@@ -312,47 +312,47 @@ xvals = np.linspace(start=data_x.min(), stop=data_x.max(), num=num_interp)
 
 # hiv testing
 hiv_test0 = create_smoothed_lines(data_x,
-                                   tx_id0["Hiv_Test_median"][11:25] * sf[0][0].values[0])
+                                   (tx_id0["Hiv_Test_median"][11:25] * sf[0][0].values[0]) / 1000000)
 hiv_test0_l = create_smoothed_lines(data_x,
-                                    tx_id0["Hiv_Test_lower"][11:25] * sf[0][0].values[0])
+                                    (tx_id0["Hiv_Test_lower"][11:25] * sf[0][0].values[0]) / 1000000)
 hiv_test0_u = create_smoothed_lines(data_x,
-                                    tx_id0["Hiv_Test_upper"][11:25] * sf[0][0].values[0])
+                                    (tx_id0["Hiv_Test_upper"][11:25] * sf[0][0].values[0]) / 1000000)
 
 hiv_test1 = create_smoothed_lines(data_x,
-                                   tx_id1["Hiv_Test_median"][11:25] * sf[0][0].values[0])
+                                   (tx_id1["Hiv_Test_median"][11:25] * sf[0][0].values[0]) / 1000000)
 hiv_test1_l = create_smoothed_lines(data_x,
-                                    tx_id1["Hiv_Test_lower"][11:25] * sf[0][0].values[0])
+                                    (tx_id1["Hiv_Test_lower"][11:25] * sf[0][0].values[0]) / 1000000)
 hiv_test1_u = create_smoothed_lines(data_x,
-                                    tx_id1["Hiv_Test_upper"][11:25] * sf[0][0].values[0])
+                                    (tx_id1["Hiv_Test_upper"][11:25] * sf[0][0].values[0]) / 1000000)
 
 hiv_test2 = create_smoothed_lines(data_x,
-                                   tx_id2["Hiv_Test_median"][11:25] * sf[0][0].values[0])
+                                   (tx_id2["Hiv_Test_median"][11:25] * sf[0][0].values[0]) / 1000000)
 hiv_test2_l = create_smoothed_lines(data_x,
-                                    tx_id2["Hiv_Test_lower"][11:25] * sf[0][0].values[0])
+                                    (tx_id2["Hiv_Test_lower"][11:25] * sf[0][0].values[0]) / 1000000)
 hiv_test2_u = create_smoothed_lines(data_x,
-                                    tx_id2["Hiv_Test_upper"][11:25] * sf[0][0].values[0])
+                                    (tx_id2["Hiv_Test_upper"][11:25] * sf[0][0].values[0]) / 1000000)
 
 # hiv treatment
 hiv_treat0 = create_smoothed_lines(data_x,
-                                   tx_id0["Hiv_Treatment_median"][11:25] * sf[0][0].values[0])
+                                   (tx_id0["Hiv_Treatment_median"][11:25] * sf[0][0].values[0]) / 1000000)
 hiv_treat0_l = create_smoothed_lines(data_x,
-                                    tx_id0["Hiv_Treatment_lower"][11:25] * sf[0][0].values[0])
+                                    (tx_id0["Hiv_Treatment_lower"][11:25] * sf[0][0].values[0]) / 1000000)
 hiv_treat0_u = create_smoothed_lines(data_x,
-                                    tx_id0["Hiv_Treatment_upper"][11:25] * sf[0][0].values[0])
+                                    (tx_id0["Hiv_Treatment_upper"][11:25] * sf[0][0].values[0]) / 1000000)
 
 hiv_treat1 = create_smoothed_lines(data_x,
-                                   tx_id1["Hiv_Treatment_median"][11:25] * sf[0][0].values[0])
+                                   (tx_id1["Hiv_Treatment_median"][11:25] * sf[0][0].values[0]) / 1000000)
 hiv_treat1_l = create_smoothed_lines(data_x,
-                                    tx_id1["Hiv_Treatment_lower"][11:25] * sf[0][0].values[0])
+                                    (tx_id1["Hiv_Treatment_lower"][11:25] * sf[0][0].values[0]) / 1000000)
 hiv_treat1_u = create_smoothed_lines(data_x,
-                                    tx_id1["Hiv_Treatment_upper"][11:25] * sf[0][0].values[0])
+                                    (tx_id1["Hiv_Treatment_upper"][11:25] * sf[0][0].values[0]) / 1000000)
 
 hiv_treat2 = create_smoothed_lines(data_x,
-                                   tx_id2["Hiv_Treatment_median"][11:25] * sf[0][0].values[0])
+                                   (tx_id2["Hiv_Treatment_median"][11:25] * sf[0][0].values[0]) / 1000000)
 hiv_treat2_l = create_smoothed_lines(data_x,
-                                    tx_id2["Hiv_Treatment_lower"][11:25] * sf[0][0].values[0])
+                                    (tx_id2["Hiv_Treatment_lower"][11:25] * sf[0][0].values[0]) / 1000000)
 hiv_treat2_u = create_smoothed_lines(data_x,
-                                    tx_id2["Hiv_Treatment_upper"][11:25] * sf[0][0].values[0])
+                                    (tx_id2["Hiv_Treatment_upper"][11:25] * sf[0][0].values[0]) / 1000000)
 
 # hiv prop treated
 hiv_prop_treat0 = create_smoothed_lines(data_x, hiv_tx0["median"][11:25])
@@ -369,47 +369,47 @@ hiv_prop_treat2_u = create_smoothed_lines(data_x, hiv_tx2["upper"][11:25])
 
 # tb testing
 tb_test0 = create_smoothed_lines(data_x,
-                                   tx_id0["Tb_Test_Screening_median"][11:25] * sf[0][0].values[0])
+                                   (tx_id0["Tb_Test_Screening_median"][11:25] * sf[0][0].values[0]) / 1000000)
 tb_test0_l = create_smoothed_lines(data_x,
-                                    tx_id0["Tb_Test_Screening_lower"][11:25] * sf[0][0].values[0])
+                                    (tx_id0["Tb_Test_Screening_lower"][11:25] * sf[0][0].values[0]) / 1000000)
 tb_test0_u = create_smoothed_lines(data_x,
-                                    tx_id0["Tb_Test_Screening_upper"][11:25] * sf[0][0].values[0])
+                                    (tx_id0["Tb_Test_Screening_upper"][11:25] * sf[0][0].values[0]) / 1000000)
 
 tb_test1 = create_smoothed_lines(data_x,
-                                   tx_id1["Tb_Test_Screening_median"][11:25] * sf[0][0].values[0])
+                                   (tx_id1["Tb_Test_Screening_median"][11:25] * sf[0][0].values[0]) / 1000000)
 tb_test1_l = create_smoothed_lines(data_x,
-                                    tx_id1["Tb_Test_Screening_lower"][11:25] * sf[0][0].values[0])
+                                    (tx_id1["Tb_Test_Screening_lower"][11:25] * sf[0][0].values[0]) / 1000000)
 tb_test1_u = create_smoothed_lines(data_x,
-                                    tx_id1["Tb_Test_Screening_upper"][11:25] * sf[0][0].values[0])
+                                    (tx_id1["Tb_Test_Screening_upper"][11:25] * sf[0][0].values[0]) / 1000000)
 
 tb_test2 = create_smoothed_lines(data_x,
-                                   tx_id2["Tb_Test_Screening_median"][11:25] * sf[0][0].values[0])
+                                   (tx_id2["Tb_Test_Screening_median"][11:25] * sf[0][0].values[0]) / 1000000)
 tb_test2_l = create_smoothed_lines(data_x,
-                                    tx_id2["Tb_Test_Screening_lower"][11:25] * sf[0][0].values[0])
+                                    (tx_id2["Tb_Test_Screening_lower"][11:25] * sf[0][0].values[0]) / 1000000)
 tb_test2_u = create_smoothed_lines(data_x,
-                                    tx_id2["Tb_Test_Screening_upper"][11:25] * sf[0][0].values[0])
+                                    (tx_id2["Tb_Test_Screening_upper"][11:25] * sf[0][0].values[0]) / 1000000)
 
 # tb treatment
 tb_treat0 = create_smoothed_lines(data_x,
-                                   tx_id0["Tb_Treatment_median"][11:25] * sf[0][0].values[0])
+                                   (tx_id0["Tb_Treatment_median"][11:25] * sf[0][0].values[0]) / 1000000)
 tb_treat0_l = create_smoothed_lines(data_x,
-                                    tx_id0["Tb_Treatment_lower"][11:25] * sf[0][0].values[0])
+                                    (tx_id0["Tb_Treatment_lower"][11:25] * sf[0][0].values[0]) / 1000000)
 tb_treat0_u = create_smoothed_lines(data_x,
-                                    tx_id0["Tb_Treatment_upper"][11:25] * sf[0][0].values[0])
+                                    (tx_id0["Tb_Treatment_upper"][11:25] * sf[0][0].values[0]) / 1000000)
 
 tb_treat1 = create_smoothed_lines(data_x,
-                                   tx_id1["Tb_Treatment_median"][11:25] * sf[0][0].values[0])
+                                   (tx_id1["Tb_Treatment_median"][11:25] * sf[0][0].values[0]) / 1000000)
 tb_treat1_l = create_smoothed_lines(data_x,
-                                    tx_id1["Tb_Treatment_lower"][11:25] * sf[0][0].values[0])
+                                    (tx_id1["Tb_Treatment_lower"][11:25] * sf[0][0].values[0]) / 1000000)
 tb_treat1_u = create_smoothed_lines(data_x,
-                                    tx_id1["Tb_Treatment_upper"][11:25] * sf[0][0].values[0])
+                                    (tx_id1["Tb_Treatment_upper"][11:25] * sf[0][0].values[0]) / 1000000)
 
 tb_treat2 = create_smoothed_lines(data_x,
-                                   tx_id2["Tb_Treatment_median"][11:25] * sf[0][0].values[0])
+                                   (tx_id2["Tb_Treatment_median"][11:25] * sf[0][0].values[0]) / 1000000)
 tb_treat2_l = create_smoothed_lines(data_x,
-                                    tx_id2["Tb_Treatment_lower"][11:25] * sf[0][0].values[0])
+                                    (tx_id2["Tb_Treatment_lower"][11:25] * sf[0][0].values[0]) / 1000000)
 tb_treat2_u = create_smoothed_lines(data_x,
-                                    tx_id2["Tb_Treatment_upper"][11:25] * sf[0][0].values[0])
+                                    (tx_id2["Tb_Treatment_upper"][11:25] * sf[0][0].values[0]) / 1000000)
 
 # tb prop treated
 tb_prop_treat0 = create_smoothed_lines(data_x, tb_tx0["median"][11:25])
@@ -434,6 +434,9 @@ font = {'family': 'sans-serif',
         'size': 11,
         }
 
+xlabel_pos = [2022, 2024, 2026, 2028, 2030, 2032, 2034]
+xlabel = ["2022", "2024", "2026", "2028", "2030", "2032", "2034"]
+
 # Make 6-panel plot
 fig, ((ax1, ax2, ax3), (ax4, ax5, ax6)) = plt.subplots(nrows=2, ncols=3,
                                              constrained_layout=True,
@@ -450,11 +453,11 @@ ax1.fill_between(xvals, hiv_test1_l, hiv_test1_u, color=sc1_colour, alpha=0.2)
 ax1.plot(xvals, hiv_test2, "-", color=sc2_colour)
 ax1.fill_between(xvals, hiv_test2_l, hiv_test2_u, color=sc2_colour, alpha=0.2)
 
-ax1.set_ylim([3e+6, 7e+6])
+ax1.set_ylim([2, 7.5])
+ax1.set_xticklabels([])
 
 ax1.set(title='',
-       ylabel='No. testing appts')
-ax1.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+       ylabel='No. test appts (millions)')
 
 # HIV start treatment appts
 ax2.plot(xvals, hiv_treat0, "-", color=baseline_colour)
@@ -466,12 +469,12 @@ ax2.fill_between(xvals, hiv_treat1_l, hiv_treat1_u, color=sc1_colour, alpha=0.2)
 ax2.plot(xvals, hiv_treat2, "-", color=sc2_colour)
 ax2.fill_between(xvals, hiv_treat2_l, hiv_treat2_u, color=sc2_colour, alpha=0.2)
 
-ax2.set_ylim([2.5e+6, 5.5e+6])
+ax2.set_ylim([1, 5.5])
+ax2.set_xticklabels([])
 
 ax2.set(title='',
-       ylabel='No. treatment appts')
-ax2.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
-# ax1.set_ylim(0, 2000000)
+       ylabel='No. treatment appts (millions)')
+
 
 # HIV proportion treated
 ax3.plot(xvals, hiv_prop_treat0, "-", color=baseline_colour)
@@ -484,6 +487,7 @@ ax3.plot(xvals, hiv_prop_treat2, "-", color=sc2_colour)
 ax3.fill_between(xvals, hiv_prop_treat2_l, hiv_prop_treat2_u, color=sc2_colour, alpha=0.2)
 
 ax3.set_ylim([0, 1.1])
+ax3.set_xticklabels([])
 
 ax3.set(title='',
        ylabel='Proportion treated')
@@ -500,10 +504,12 @@ ax4.fill_between(xvals, tb_test1_l, tb_test1_u, color=sc1_colour, alpha=0.2)
 ax4.plot(xvals, tb_test0, "-", color=sc2_colour)
 ax4.fill_between(xvals, tb_test0_l, tb_test0_u, color=sc2_colour, alpha=0.2)
 
-ax4.set_ylim([0.9e+7, 1.5e+7])
+ax4.set_ylim([6, 15])
+ax4.set_xticks(xlabel_pos)
+ax4.set_xticklabels(xlabel)
 
 ax4.set(title='',
-       ylabel='No. test appts')
+       ylabel='No. test appts (millions)')
 
 # TB start treatment
 ax5.plot(xvals, tb_treat0, "-", color=baseline_colour)
@@ -515,11 +521,12 @@ ax5.fill_between(xvals, tb_treat1_l, tb_treat1_u, color=sc1_colour, alpha=0.2)
 ax5.plot(xvals, tb_treat2, "-", color=sc2_colour)
 ax5.fill_between(xvals, tb_treat2_l, tb_treat2_u, color=sc2_colour, alpha=0.2)
 
-ax5.set_ylim([1e+4, 8e+4])
+ax5.set_ylim([0, 0.10])
+ax5.set_xticks(xlabel_pos)
+ax5.set_xticklabels(xlabel)
 
 ax5.set(title='',
-       ylabel='No. treatment appts')
-ax5.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+       ylabel='No. treatment appts (millions)')
 
 # TB treatment coverage
 ax6.plot(xvals, tb_prop_treat0, "-", color=baseline_colour)
@@ -532,6 +539,8 @@ ax6.plot(xvals, tb_prop_treat2, "-", color=sc2_colour)
 ax6.fill_between(xvals, tb_prop_treat2_l, tb_prop_treat2_u, color=sc2_colour, alpha=0.2)
 
 ax6.set_ylim([0, 1.1])
+ax6.set_xticks(xlabel_pos)
+ax6.set_xticklabels(xlabel)
 
 ax6.set(title='',
        ylabel='Proportion treated')
@@ -556,7 +565,7 @@ ax5.text(-0.15, 1.05, 'E)', horizontalalignment='center',
 ax6.text(-0.1, 1.05, 'F)', horizontalalignment='center',
     verticalalignment='center', transform=ax6.transAxes, fontdict=font)
 
-fig.savefig(outputspath / "Treatment_cascade_6panel.png")
+# fig.savefig(outputspath / "Treatment_cascade_6panel.png")
 
 plt.show()
 

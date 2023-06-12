@@ -2282,6 +2282,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         self._treatment_id_stub = 'Alri_Pneumonia_Treatment'
         self._facility_levels = ("0", "1a", "1b", "2")  # Health facility levels at which care may be provided
         assert facility_level in self._facility_levels
+        assert facility_level in self._facility_levels
         self.is_followup_following_treatment_failure = is_followup_following_treatment_failure
 
         if not inpatient:
