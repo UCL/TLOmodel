@@ -565,7 +565,7 @@ ax5.text(-0.15, 1.05, 'E)', horizontalalignment='center',
 ax6.text(-0.1, 1.05, 'F)', horizontalalignment='center',
     verticalalignment='center', transform=ax6.transAxes, fontdict=font)
 
-# fig.savefig(outputspath / "Treatment_cascade_6panel.png")
+fig.savefig(outputspath / "Treatment_cascade_6panel.png")
 
 plt.show()
 
