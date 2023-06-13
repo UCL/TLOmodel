@@ -23,7 +23,6 @@ pacman::p_load(magrittr, # for %>% to work
                # Regression packages
                nlme, # random effects regression - lme
                lmerTest, # random effects regression - lmer
-               frm, # Fractional regression model
                ggfortify, # for diagnostic plots
                glmmTMB, # Multilevel regression model
                MASS, # to run stepAIC with BIC criterion

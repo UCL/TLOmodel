@@ -34,71 +34,113 @@ df_regress <- df_regress %>%
 # Generate a column with regression based predictions
 df_regress <- df_regress %>% 
   mutate(available_prob_predicted = predict(model_fac_item_re,newdata=df_regress, type = "response"))
+df_regress$fac_type_original = df_regress$fac_type # because predictions are run on fac_type and then data collapsed on the basis of this variable
 
-# 3.1 Scenario - All facilities have computers
-###############################################
-df_pred_computer <- df_regress
-df_pred_computer['functional_computer'] = 1 # Set computer availability
-
-newpred_computer <- predict(model_fac_item_re,newdata=df_pred_computer, type = "response") # Predict availability when all facilities have computers
-df_pred_computer$available_prob_predicted_computer <- newpred_computer 
-
-# Check that the prediction improves availability from the base case
-stopifnot(mean(df_pred_computer$available_prob_predicted, na.rm = TRUE) < 
-            mean(df_pred_computer$available_prob_predicted_computer, na.rm = TRUE))
-
-# Count the number of instances where the availability reduces
-df_pred_computer$functional_computer_orig <- df_regress$functional_computer
-
-length(unique(df_regress[which(df_regress$functional_computer == 1),]$fac_code))
-
-a <- sum((df_pred_computer$available_prob_predicted_computer > df_pred_computer$available_prob_predicted) &
-      (df_pred_computer$functional_computer_orig < df_pred_computer$functional_computer))/
-  sum((df_pred_computer$functional_computer_orig < df_pred_computer$functional_computer))
-b <- sum((df_pred_computer$available_prob_predicted_computer < df_pred_computer$available_prob_predicted) &
-      (df_pred_computer$functional_computer_orig < df_pred_computer$functional_computer))/
-  sum((df_pred_computer$functional_computer_orig < df_pred_computer$functional_computer))
-c <- length(unique(df_regress[which(df_regress$functional_computer == 0),]$fac_code))
-d <- sum((df_pred_computer$available_prob_predicted_computer < df_pred_computer$available_prob_predicted) &
-           (df_pred_computer$functional_computer_orig == 1))/
-  sum((df_pred_computer$functional_computer_orig ==1))
-
-print(paste0("Among ",c,  " facilities which previously did not have computers, availability increased in ",
-             round(a*100,2), " % of instances, and reduced in ", round(b*100,2), " % of the instances."))
-
-# Calculate proportional change which can be applied to LMIS data
-df_pred_computer$availability_change_prop = df_pred_computer$available_prob_predicted_computer/df_pred_computer$available_prob_predicted
-
-# Collapse data
-summary_pred_computer <- df_pred_computer %>% 
-  group_by(district, fac_type, program_plot, item) %>%
-  summarise_at(vars(availability_change_prop), list(mean))
-
-# Extract .csv for model simulation
-write.csv(summary_pred_computer,paste0(path_to_outputs, "predictions/predicted_consumable_availability_computers_scenario.csv"), row.names = TRUE)
-
-# 3.2 All facilities have pharmacists managing drug orders
+# 3.1 Run predictions on individual characteristics
 ##########################################################
-df_pred_pharma <- df_regress
-df_pred_pharma['incharge_drug_orders'] = 'pharmacist or pharmacy technician' 
 
-newpred_pharma <- predict(model_fac_item_re,newdata=df_pred_pharma, type = "response") # Predict availability when all facilities have pharmacist managing drug orders
-df_pred_pharma$available_prob_predicted_stockmgt_pharmacist <- newpred_pharma 
+ideal_features_for_cons_availability <- list('fac_type' = 'Facility_level_1b',
+                                         'fac_owner' = 'CHAM', 
+                                         'functional_computer' = 1, 
+                                         'incharge_drug_orders' = 'pharmacist or pharmacy technician',
+                                         'functional_emergency_vehicle' = 1, 
+                                         'service_diagnostic' = 1,
+                                         'dist_todh_cat' = '0-10 kms', 
+                                         'dist_torms_cat' = '0-10 kms', 
+                                         'drug_order_fulfilment_freq_last_3mts_cat' = '3')
+#, #urban
+
+i = 1
+for (feature in names(ideal_features_for_cons_availability)){
+  print(paste0("Running predictions for ", feature, " = ", ideal_features_for_cons_availability[feature]))
+  df <- df_regress
+  df[feature] = ideal_features_for_cons_availability[feature]
+  
+  new_prediction = predict(model_fac_item_re,newdata=df, type = "response") # Predict availability when all facilities have pharmacist managing drug orders
+  df$available_prob_new_prediction <- new_prediction 
+  
+  # Check that the prediction improves availability from the base case
+  stopifnot(mean(df$available_prob_predicted, na.rm = TRUE) < 
+              mean(df$available_prob_new_prediction, na.rm = TRUE))
+  
+  # Calculate proportional change which can be applied to LMIS data
+  df$availability_change_prop = df$available_prob_new_prediction/df$available_prob_predicted
+  
+  # Collapse data
+  summary_pred <- df %>% 
+    group_by(district, fac_type_original, program_plot, item) %>%
+    summarise_at(vars(availability_change_prop), list(mean))
+  
+  pred_col_number = length(colnames(summary_pred))
+  colnames(summary_pred)[pred_col_number] <- paste0('change_proportion_', names(ideal_features_for_cons_availability)[i])
+  
+  if (i == 1){
+    all_predictions_df = summary_pred
+  } else{
+    all_predictions_df = merge(all_predictions_df, summary_pred, by = c('district', 'fac_type_original', 'program_plot', 'item'))
+  }
+  i = i + 1
+}
+
+# 3.2 Run predictions on all characteristics being changed simulataneously
+# to arrive at a theoretical maximum
+#############################################################################
+df <- df_regress
+for (feature in names(ideal_features_for_cons_availability)){
+  print(paste0("Editing ", feature, " = ", ideal_features_for_cons_availability[feature]))
+  df[feature] = ideal_features_for_cons_availability[feature]
+}
+
+new_prediction = predict(model_fac_item_re,newdata=df, type = "response") # Predict availability when all facilities have pharmacist managing drug orders
+df$available_prob_new_prediction <- new_prediction 
 
 # Check that the prediction improves availability from the base case
-stopifnot(mean(df_pred_pharma$available_prob_predicted, na.rm = TRUE) < 
-            mean(df_pred_pharma$available_prob_predicted_stockmgt_pharmacist, na.rm = TRUE))
+stopifnot(mean(df$available_prob_predicted, na.rm = TRUE) < 
+            mean(df$available_prob_new_prediction, na.rm = TRUE))
 
 # Calculate proportional change which can be applied to LMIS data
-df_pred_pharma$availability_change_prop = df_pred_pharma$available_prob_predicted_stockmgt_pharmacist/df_pred_pharma$available_prob_predicted
+df$change_proportion_all_features = df$available_prob_new_prediction/df$available_prob_predicted
 
 # Collapse data
-summary_pred_pharma <- df_pred_pharma %>% 
-  group_by(district, fac_type, program_plot, item) %>%
-  summarise_at(vars(availability_change_prop), list(mean))
+summary_pred <- df %>% 
+  group_by(district, fac_type_original, program_plot, item) %>%
+  summarise_at(vars(change_proportion_all_features), list(mean))
 
 # Extract .csv for model simulation
-write.csv(summary_pred_pharma,paste0(path_to_outputs, "predictions/predicted_consumable_availability_pharmacists_scenario.csv"), row.names = TRUE)
+all_predictions_df = merge(all_predictions_df, summary_pred, by = c('district', 'fac_type_original', 'program_plot', 'item'))
+all_predictions_df = all_predictions_df %>% rename(fac_type = fac_type_original)
+
+#i = 1
+#for (feature in names(ideal_features_for_cons_availability)){
+#  print(paste0("Testing ", feature, " = ", ideal_features_for_cons_availability[feature]))
+#  var = paste0('change_proportion_', names(ideal_features_for_cons_availability)[i])
+#  stopifnot(all_predictions_df['change_proportion_all_features'] >= all_predictions_df[var])
+#  i = i + 1
+#}
+
+for (i in length(colnames(summary_pred))+1:length(colnames(all_predictions_df))-1){
+  print(paste0("Testing ", colnames(all_predictions_df)[i]))
+  stopifnot(all_predictions_df['change_proportion_all_features'] >= all_predictions_df[,i])
+}
+stopifnot(all_predictions_df['change_proportion_all_features'] >= all_predictions_df[,13])
+
+subset_df <- all_predictions_df[all_predictions_df['change_proportion_all_features'] < all_predictions_df[,13], ]
+# this is true in only one instance so we can ignore it?
+
+write.csv(all_predictions_df,paste0(path_to_outputs, "predictions/predicted_consumable_availability_regression_scenarios.csv"), row.names = TRUE)
+
+
+#test = merge(all_predictions_df, summary_pred_computer, by = c('district', 'fac_type', 'program_plot', 'item'))
+#stopifnot(test$change_proportion_functional_computer == test$availability_change_prop)
+
+# Make sure the prediction on fac_type makes sense (no change should be observed for level 1b)
+stopifnot(mean(all_predictions_df[which(all_predictions_df$fac_type == 'Facility_level_1b'),]$change_proportion_fac_type) == 1)
+
+# Another prediction could be increasing the availability by each fac_type and district 
+# to what the average availability is for programs served by parallel supply chains
+
+# 
+
 
 #################################
 # 4. Plot predicted availability
