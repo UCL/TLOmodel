@@ -1376,6 +1376,106 @@ def test_manipulation_of_service_availability(seed, tmpdir):
     assert len(run_everything_except_hiv_anything.union(everything))
 
 
+def test_hsi_run_on_same_day_if_scheduled_for_same_day_under_mode2(seed, tmpdir):
+    """An HSI_Event which is scheduled for the current day should run on the current day under mode 2 provided
+    enough resources are available. Here we make capabilities extremely large under mode 2 and test whether
+    this is the case whether the HSI_Event is scheduled from initialise_simulation, a normal event, or an HSI_Event."""
+
+    class DummyHSI_To_Run_On_Same_Day(HSI_Event, IndividualScopeEventMixin):
+        """HSI event that will demonstrate it has been run."""
+
+        def __init__(self, module, person_id, source):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = f"{self.__class__.__name__}_{source}"
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        def apply(self, person_id, squeeze_factor):
+            pass
+
+    class DummyHSI_To_Run_On_First_Day_Of_Simulation(HSI_Event, IndividualScopeEventMixin):
+        """HSI event that schedules another HSI_Event for the same day"""
+
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = self.__class__.__name__
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        def apply(self, person_id, squeeze_factor):
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                DummyHSI_To_Run_On_Same_Day(module=self.module, person_id=person_id, source='HSI'),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0)
+
+    class Event_To_Run_On_First_Day_Of_Simulation(Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+
+        def apply(self, person_id):
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                DummyHSI_To_Run_On_Same_Day(module=self.module, person_id=person_id, source='Event'),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0)
+
+    class DummyModule(Module):
+        """Schedules an HSI to occur on the first day of the simulation from initialise_simulation, and an event that
+         will schedule the event for the same day."""
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            # Schedule the HSI to run on the same day
+            sim.modules['HealthSystem'].schedule_hsi_event(
+                DummyHSI_To_Run_On_Same_Day(self, person_id=0, source='initialise_simulation'),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0)
+
+            # Schedule an HSI that will schedule a further HSI to run on the same day
+            sim.modules['HealthSystem'].schedule_hsi_event(
+                DummyHSI_To_Run_On_First_Day_Of_Simulation(module=self, person_id=0),
+                topen=self.sim.date,
+                tclose=None,
+                priority=0)
+
+            # Schedule an event that will schedule an HSI to run on the same day
+            sim.schedule_event(Event_To_Run_On_First_Day_Of_Simulation(self, person_id=0), sim.date)
+
+    log_config = {
+        "filename": "log",
+        "directory": tmpdir,
+        "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
+    }
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(
+                     resourcefilepath=resourcefilepath,
+                     mode_appt_constraints=2,
+                     capabilities_coefficient=10000.0,
+                     disable=False,
+                     cons_availability='all',
+                 ),
+                 DummyModule(),
+                 check_all_dependencies=False,
+                 )
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date + pd.DateOffset(days=5))
+
+    # Check that all events ran on the same day, the first day of the simulation.
+    log = parse_log_file(
+        sim.log_filepath, level=logging.DEBUG
+    )['tlo.methods.healthsystem']['HSI_Event']
+    assert 4 == len(log)  # 3 HSI events should have occurred
+    assert (log['date'] == sim.start_date).all()
+
+
 def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
     """An HSI_Event which is scheduled for the current day should run on the current day. This should be the case
     whether the HSI_Event is scheduled from initialise_simulation, a normal event, or an HSI_Event."""
