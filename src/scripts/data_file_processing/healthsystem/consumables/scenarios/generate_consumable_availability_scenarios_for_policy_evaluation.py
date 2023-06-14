@@ -6,7 +6,7 @@ Outputs:
  simulation) which includes new consumable availability estimates for policy evaluation scenarios
 
 Inputs:
-* outputs/regression_analysis/predictions/predicted_consumable_availability_computers_scenario.csv - This file is hosted
+* outputs/regression_analysis/predictions/predicted_consumable_availability_regression_scenarios.csv - This file is hosted
 locally after running consumable_resource_analyses_with_hhfa/regression_analysis/8_predict.R
 * ResourceFile_Consumables_availability_small.csv` - This file contains the original consumable availability estimates
 from OpenLMIS 2018 data
@@ -17,7 +17,7 @@ It creates one row for each consumable for availability at a specific facility a
 the OpenLMIS dataset and one row for each consumable for availability aggregated across all facilities when the data is
 extracted from the Harmonised Health Facility Assessment 2018/19.
 
-Consumable availability is measured as probability of stockout at any point in time.
+Consumable availability is measured as probability of consumable being available at any point in time.
 """
 
 import calendar
@@ -54,9 +54,11 @@ path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
 # 1.1 Import TLO model availability data
 #------------------------------------------------------
 tlo_availability_df = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv")
+# Drop any scenario data previously included in the resourcefile
+tlo_availability_df = tlo_availability_df[['Facility_ID', 'month', 'item_code', 'available_prop']]
 
-# 1.1.1 Attach district and facility level to this dataset
-#------------------------------------------------------
+# 1.1.1 Attach district, facility level, program to this dataset
+#----------------------------------------------------------------
 # Get TLO Facility_ID for each district and facility level
 mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
 districts = set(pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_Population_2010.csv')['District'])
@@ -71,7 +73,7 @@ tlo_availability_df = tlo_availability_df.merge(programs, on = ['item_code'], ho
 
 # 1.2 Import scenario data
 #------------------------------------------------------
-scenario_availability_df = pd.read_csv(outputfilepath / "regression_analysis/predictions/predicted_consumable_availability_pharmacists_scenario.csv")
+scenario_availability_df = pd.read_csv(outputfilepath / "regression_analysis/predictions/predicted_consumable_availability_regression_scenarios.csv")
 scenario_availability_df = scenario_availability_df.drop(['Unnamed: 0'], axis=1)
 scenario_availability_df = scenario_availability_df.rename({'item': 'item_hhfa'}, axis=1)
 
@@ -193,7 +195,7 @@ df_new = pd.concat([df_new, df_existing], ignore_index = True)
 
 #df_new.to_csv(outputfilepath / 'temp_scenario_file_with_adequate_rows.csv')
 scenario_final_df = df_new
-len(scenario_final_df[~scenario_final_df['availability_change_prop'].isna()])
+len(scenario_final_df[~scenario_final_df['change_proportion_incharge_drug_orders'].isna()])
 
 # Now provide availability_change_prop for rows where this data is not available
 
@@ -204,7 +206,15 @@ len(scenario_final_df[~scenario_final_df['availability_change_prop'].isna()])
 scenario_final_df = scenario_final_df.drop('module_name', axis = 1).merge(programs,
                                             on = ['item_code'], validate = "m:1",
                                             how = "left")
-scenario_averages_by_program_and_facid = scenario_final_df.groupby(['Facility_ID','category'])['availability_change_prop'].mean().reset_index()
+list_of_scenario_variables = ['change_proportion_fac_type',
+       'change_proportion_fac_owner', 'change_proportion_functional_computer',
+       'change_proportion_incharge_drug_orders',
+       'change_proportion_functional_emergency_vehicle',
+       'change_proportion_service_diagnostic',
+       'change_proportion_dist_todh_cat', 'change_proportion_dist_torms_cat',
+       'change_proportion_drug_order_fulfilment_freq_last_3mts_cat',
+       'change_proportion_all_features']
+scenario_averages_by_program_and_facid = scenario_final_df.groupby(['Facility_ID','category'])[list_of_scenario_variables].mean().reset_index()
 
 # a. Some consumables which were matched with a corresponding HHFA item do not appear in the above dataset because
 # they were excluded from the regression analysis due to missing availability information on them
@@ -221,21 +231,24 @@ unmatched_items_category2 = (items_not_matched) & (scenario_final_df['regression
 
 # Replace missing instances with the above average values for categories 1 and 2
 scenario_cat1_and_cat2 = scenario_final_df[(unmatched_items_category1|unmatched_items_category2)]
-scenario_cat1_and_cat2 = scenario_cat1_and_cat2.drop('availability_change_prop', axis = 1)
+scenario_cat1_and_cat2 = scenario_cat1_and_cat2.drop(list_of_scenario_variables, axis = 1)
 
 scenario_cat1_and_cat2 = scenario_cat1_and_cat2.merge(scenario_averages_by_program_and_facid,
                                                       on = ['Facility_ID','category'], validate = "m:1",
                                                       how = "left")
-scenario_cat1_and_cat2['availability_imputed'] = scenario_cat1_and_cat2['availability_change_prop']
-scenario_final_df = scenario_final_df.merge(scenario_cat1_and_cat2[['Facility_ID','item_code', 'availability_imputed']],
-                                                      on = ['Facility_ID','item_code'], validate = "1:1",
-                                                      how = "left")
-scenario_final_df.loc[(unmatched_items_category1|unmatched_items_category2), 'availability_change_prop'] = scenario_final_df['availability_imputed']
+for var in list_of_scenario_variables:
+    var_imputed = var + '_imputed'
+    scenario_cat1_and_cat2[var_imputed] = scenario_cat1_and_cat2[var]
+    scenario_final_df = scenario_final_df.merge(scenario_cat1_and_cat2[['Facility_ID','item_code', var_imputed]],
+                                                          on = ['Facility_ID','item_code'], validate = "1:1",
+                                                          how = "left")
+    scenario_final_df.loc[(unmatched_items_category1|unmatched_items_category2), var] = scenario_final_df[var_imputed]
 
 # c. 'not relevant to logistic regression analysis'
 unmatched_items_category3 = (items_not_matched) & (scenario_final_df['regression_application'] == 'not relevant to logistic regression analysis')
 # For category 3, replace availability_change_prop with 1, since we assume that the system-level intervention does not change availability
-scenario_final_df.loc[unmatched_items_category3,'availability_change_prop'] = 1
+for var in list_of_scenario_variables:
+    scenario_final_df.loc[unmatched_items_category3,var] = 1
 
 # d. any other categories of unmatched consumables
 unmatched_items_category4 = ~unmatched_items_category1 & ~unmatched_items_category2 & ~unmatched_items_category3 & items_not_matched
@@ -244,15 +257,21 @@ assert(sum(unmatched_items_category4) == 0) # check that we haven't missed any c
 # 1.2.6.2 Inf values
 #------------------------------------------------------
 # Where the values are Inf because the availability changed from 0 to X, replace with the average for the category and Facility_ID
-change_value_is_infinite = scenario_final_df.availability_change_prop.isin([np.inf])
-df_inf = scenario_final_df[change_value_is_infinite].reset_index()
+for var in list_of_scenario_variables:
+    print(f"Running scenario {var}")
+    change_value_is_infinite = scenario_final_df[var].isin([np.inf])
+    print(sum(change_value_is_infinite))
+    '''
+    # None of the values is infinite so we don't have to run the code below
+    df_inf = scenario_final_df[change_value_is_infinite].reset_index()
 
-average_change_across_category_and_facid = scenario_final_df[~change_value_is_infinite].groupby(['Facility_ID','category'])['availability_change_prop'].mean().reset_index()
+    average_change_across_category_and_facid = scenario_final_df[~change_value_is_infinite].groupby(['Facility_ID','category'])[var].mean().reset_index()
 
-df_inf_replaced = df_inf.drop('availability_change_prop', axis = 1).merge(average_change_across_category_and_facid,
-                               on = ['Facility_ID','category'],
-                               how = 'left', validate = "m:1")
-scenario_final_df = pd.concat([scenario_final_df[~change_value_is_infinite], df_inf_replaced], ignore_index = True)
+    df_inf_replaced = df_inf.drop(var, axis = 1).merge(average_change_across_category_and_facid,
+                                   on = ['Facility_ID','category'],
+                                   how = 'left', validate = "m:1")
+    scenario_final_df = pd.concat([scenario_final_df[~change_value_is_infinite], df_inf_replaced], ignore_index = True)
+    '''
 
 #cond1 = scenario_final_df.District.isin(districts_with_no_scenario_data_for_1b_only)
 #cond2 = scenario_final_df.Facility_Level == '1b'
@@ -262,7 +281,9 @@ scenario_final_df = pd.concat([scenario_final_df[~change_value_is_infinite], df_
 #*************************************************************************
 # 2.1 Merge the two datasets
 #------------------------------------------------------
-new_availability_df = tlo_availability_df.merge(scenario_final_df[['item_code','Facility_ID','availability_change_prop', 'regression_application']],
+id_variables = ['item_code','Facility_ID','regression_application']
+
+new_availability_df = tlo_availability_df.merge(scenario_final_df[id_variables + list_of_scenario_variables],
                                how='left', on=['Facility_ID', 'item_code'], indicator = True)
 new_availability_df = new_availability_df.rename({'_merge': 'merge_scenario'}, axis=1)
 new_availability_df = new_availability_df.drop_duplicates(['Facility_ID', 'item_code', 'month'])
@@ -273,13 +294,21 @@ new_availability_df = new_availability_df.drop_duplicates(['Facility_ID', 'item_
 # that the change is equal to the product of the (ratio of average change across districts for level 1b to
 # average change across districts for level 1a) and change for each item_code for level 1a for that district
 #------------------------------------------------------
-average_change_across_districts = scenario_final_df.groupby(['Facility_Level','item_code'])['availability_change_prop'].mean().reset_index()
+average_change_across_districts = scenario_final_df.groupby(['Facility_Level','item_code'])[list_of_scenario_variables].mean().reset_index()
+
 #average_change_across_districts = scenario_final_df.groupby(['Facility_Level','item_code']).agg({'availability_change_prop': lambda x: x.mean(skipna = False)}).reset_index()
-average_change_across_districts_for_1a = average_change_across_districts[average_change_across_districts.Facility_Level == "1a"].rename({'availability_change_prop' : 'availability_change_prop_1a'}, axis = 1).drop('Facility_Level', axis = 1)
-average_change_across_districts_for_1b = average_change_across_districts[average_change_across_districts.Facility_Level == "1b"].rename({'availability_change_prop' : 'availability_change_prop_1b'}, axis = 1).drop('Facility_Level', axis = 1)
+new_colnames_1a = {col: col + '_1a' if col in list_of_scenario_variables else col for col in average_change_across_districts.columns}
+new_colnames_1b = {col: col + '_1b' if col in list_of_scenario_variables else col for col in average_change_across_districts.columns}
+average_change_across_districts_for_1a = average_change_across_districts[average_change_across_districts.Facility_Level == "1a"].rename(new_colnames_1a, axis = 1).drop('Facility_Level', axis = 1)
+average_change_across_districts_for_1b = average_change_across_districts[average_change_across_districts.Facility_Level == "1b"].rename(new_colnames_1b, axis = 1).drop('Facility_Level', axis = 1)
 ratio_of_change_across_districts_1b_to_1a = average_change_across_districts_for_1a.merge(average_change_across_districts_for_1b,
                                                                                          how = "left", on = ['item_code'])
-ratio_of_change_across_districts_1b_to_1a['ratio'] = (ratio_of_change_across_districts_1b_to_1a.availability_change_prop_1b-1)/(ratio_of_change_across_districts_1b_to_1a.availability_change_prop_1a - 1)
+# START HERE
+for var in list_of_scenario_variables:
+    var_ratio = 'ratio_' + var
+    var_1a = var + '_1a'
+    var_1b = var + '_1b'
+    ratio_of_change_across_districts_1b_to_1a[var_ratio] = (ratio_of_change_across_districts_1b_to_1a[var_1b]-1)/(ratio_of_change_across_districts_1b_to_1a[var_1a] - 1)
 ratio_of_change_across_districts_1b_to_1a.reset_index()
 
 # Use the above for those districts no level 1b facilities recorded in the HHFA data
@@ -288,16 +317,23 @@ cond_1b = new_availability_df.Facility_Level == '1b'
 cond_1a = new_availability_df.Facility_Level == '1a'
 df_missing_1b = new_availability_df[cond_1b_missing_district & cond_1b]
 df_1a = new_availability_df[cond_1b_missing_district & cond_1a]
-df_missing_1b_imputed = df_missing_1b.merge(ratio_of_change_across_districts_1b_to_1a[['item_code', 'ratio']],
+
+ratio_vars = ['ratio_' + item for item in list_of_scenario_variables]
+item_var = ['item_code']
+df_missing_1b_imputed = df_missing_1b.merge(ratio_of_change_across_districts_1b_to_1a[item_var + ratio_vars],
                                on = ['item_code'],
                                how = 'left', validate = "m:1")
-assert np.isnan(df_missing_1b_imputed['availability_change_prop'].unique()).all()
-df_missing_1b_imputed = df_missing_1b_imputed.drop('availability_change_prop', axis = 1).merge(df_1a[['availability_change_prop', 'District', 'item_code', 'month']],
-                               on = ['District', 'item_code', 'month'],
+for var in list_of_scenario_variables:
+    # check that the values we are replacing are in fact missing
+    assert np.isnan(df_missing_1b_imputed[var].unique()).all()
+
+id_vars_level1a = ['District', 'item_code', 'month']
+df_missing_1b_imputed = df_missing_1b_imputed.drop(list_of_scenario_variables, axis = 1).merge(df_1a[id_vars_level1a + list_of_scenario_variables],
+                               on = id_vars_level1a,
                                how = 'left', validate = "1:1", indicator = True)
 
-
-df_missing_1b_imputed['availability_change_prop'] = ((df_missing_1b_imputed['availability_change_prop']-1) * df_missing_1b_imputed['ratio']) + 1
+for var in list_of_scenario_variables:
+    df_missing_1b_imputed[var] = ((df_missing_1b_imputed[var]-1) * df_missing_1b_imputed['ratio_' + var]) + 1
 
 new_availability_df_imputed = pd.concat([new_availability_df[~(cond_1b_missing_district & cond_1b)], df_missing_1b_imputed], ignore_index = True)
 
@@ -318,12 +354,12 @@ assert(len(new_availability_df_imputed) == len(tlo_availability_df))
 # 2.3.2. Browse missingness in the availability_change_prop variable
 #------------------------------------------------------
 pivot_table = pd.pivot_table(new_availability_df_imputed,
-                             values=['availability_change_prop'],
+                             values=list_of_scenario_variables,
                              index=['category'],
                              columns=['Facility_Level'],
                              aggfunc=lambda x: sum(pd.isna(x))/len(x)*100)
 
-print(pivot_table[('availability_change_prop', '1b')])
+print(pivot_table[('change_proportion_all_features', '1b')])
 '''
 Cases which are still missing data:
 1. For the 5 districts without 1b facilities in HHFA (Balaka, Machinga, Mwanza, Ntchisi, Salima), data on 54 items
@@ -338,8 +374,9 @@ Previously, Likoma did not have data from the regression analysis - I have now u
 # TODO Check why there are still instances of missing data when regression_application is assume average or proxy
 #------------------------------------------------------
 # For all other cases, assume no change
-missing_change_data = new_availability_df_imputed.availability_change_prop.isna()
-new_availability_df_imputed.loc[missing_change_data, 'availability_change_prop'] = new_availability_df_imputed['availability_change_prop'].mean()
+for var in list_of_scenario_variables:
+    missing_change_data = new_availability_df_imputed[var].isna()
+    new_availability_df_imputed.loc[missing_change_data, var] = new_availability_df_imputed[var].mean()
 
 # Where the merge_scenario == "left_only", we need to provide data on "availability_change_prop"
 # new_availability_df_imputed.to_csv(outputfilepath / 'current_status_of_scenario_merge.csv')
@@ -350,18 +387,25 @@ new_availability_df_imputed.loc[missing_change_data, 'availability_change_prop']
 # Create new consumable availability estimates for TLO model consumables using
 # estimates of proportional change from the regression analysis based on HHFA data
 #------------------------------------------------------
-new_availability_df_imputed['available_prop_scenario1'] = new_availability_df_imputed['available_prop'] * new_availability_df_imputed['availability_change_prop']
+prefix = 'change_proportion_'
+list_of_scenario_suffixes = [s.replace(prefix, '') for s in list_of_scenario_variables]
 
-availability_greater_than_1 = new_availability_df_imputed['available_prop_scenario1'] > 1
-new_availability_df_imputed.loc[availability_greater_than_1, 'available_prop_scenario1'] = 1
+for scenario in list_of_scenario_suffixes:
+    new_availability_df_imputed['available_prop_scenario_' + scenario] = new_availability_df_imputed['available_prop'] * new_availability_df_imputed['change_proportion_' + scenario]
+    availability_greater_than_1 = new_availability_df_imputed['available_prop_scenario_' + scenario] > 1
+    new_availability_df_imputed.loc[availability_greater_than_1, 'available_prop_scenario_' + scenario] = 1
 
-assert(sum(new_availability_df_imputed.available_prop_scenario1.isna()) ==
-       sum(new_availability_df_imputed.availability_change_prop.isna()))
+    assert(sum(new_availability_df_imputed['available_prop_scenario_' + scenario].isna()) ==
+           sum(new_availability_df_imputed['change_proportion_' + scenario].isna()))
 
 # Save
 #------------------------------------------------------
-full_df_with_scenario = new_availability_df_imputed[['Facility_ID', 'month', 'item_code', 'available_prop', 'available_prop_scenario1']].reset_index().drop('index', axis = 1)
-# full_df_with_scenario.to_csv(outputfilepath / "temp_consumable_resourcefile.csv", index=False)
+final_list_of_scenario_vars = ['available_prop_scenario_' + item for item in list_of_scenario_suffixes]
+old_vars = ['Facility_ID', 'month', 'item_code', 'available_prop']
+full_df_with_scenario = new_availability_df_imputed[old_vars + final_list_of_scenario_vars].reset_index().drop('index', axis = 1)
+# Remove suffix for column names ending with '_cat' to mean 'categorised'
+full_df_with_scenario.columns = [col.replace('_cat', '') if col.endswith('_cat') else col for col in full_df_with_scenario.columns]
+
 # Save updated consumable availability resource file with scenario data
 full_df_with_scenario.to_csv(
     path_for_new_resourcefiles / "ResourceFile_Consumables_availability_small.csv",

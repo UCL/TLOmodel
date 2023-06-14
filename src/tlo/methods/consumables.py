@@ -25,7 +25,7 @@ class Consumables:
     :param: `availability`: Determines the availability of consumables. If 'default' then use the availability
      specified in the ResourceFile; if 'none', then let no consumable be ever be available; if 'all', then all
      consumables are always available. When using 'all' or 'none', requests for consumables are not logged.
-     If other scenarios are specified (eg. 'alternate_scenario1'), the probability of consumable availability is drawn
+     If other scenarios are specified (eg. 'scenario_fac_owner'), the probability of consumable availability is drawn
      from the relevant column of the ResourceFile.
 
     If an item_code is requested that is not recognised (not included in `data`), a `UserWarning` is issued, and the
@@ -34,7 +34,11 @@ class Consumables:
 
     def __init__(self, data: pd.DataFrame = None, rng: np.random = None, availability: str = 'default') -> None:
 
-        assert availability in ('none', 'default', 'all', 'alternate_scenario1'), "Argument `availability` is not recognised."
+        assert availability in ('none', 'default', 'all', 'scenario_fac_type', 'scenario_fac_owner',
+                                          'scenario_functional_computer', 'scenario_incharge_drug_orders',
+                                          'scenario_functional_emergency_vehicle', 'scenario_service_diagnostic',
+                                          'scenario_dist_todh', 'scenario_dist_torms',
+                                          'scenario_drug_order_fulfilment_freq_last_3mts', 'scenario_all_features'), "Argument `availability` is not recognised."
         self.cons_availability = availability  # Governs availability  - none/default/all/...(alternate scenarios)
         self.item_codes = set()  # All item_codes that are recognised.
 
@@ -71,8 +75,12 @@ class Consumables:
             self.override_availability(dict(zip(self.item_codes, repeat(1.0))))
         elif self.cons_availability == 'none':
             self.override_availability(dict(zip(self.item_codes, repeat(0.0))))
-        elif self.cons_availability == 'alternate_scenario1':
-            self._prob_item_codes_available = df.set_index(['month', 'Facility_ID', 'item_code'])['available_prop_scenario1']
+        elif self.cons_availability in ['scenario_fac_type', 'scenario_fac_owner',
+                                          'scenario_functional_computer', 'scenario_incharge_drug_orders',
+                                          'scenario_functional_emergency_vehicle', 'scenario_service_diagnostic',
+                                          'scenario_dist_todh', 'scenario_dist_torms',
+                                          'scenario_drug_order_fulfilment_freq_last_3mts', 'scenario_all_features']:
+            self._prob_item_codes_available = df.set_index(['month', 'Facility_ID', 'item_code'])['available_prop_' + self.cons_availability]
 
     def _refresh_availability_of_consumables(self, date: datetime.datetime):
         """Update the availability of all items based on the data for the probability of availability, givem the current
@@ -179,7 +187,11 @@ class Consumables:
             # If `facility_info` is None, it implies that the HSI has not been initialised because the HealthSystem
             #  is running with `disable=True`. Therefore, accept the default behaviour indicated by the argument saved
             #  in `self.cons_availability`. If the behaviour is `default`, then let the consumable be available.
-            if self.cons_availability in ('all', 'default', 'alternate_scenario1'):
+            if self.cons_availability in ('all', 'default', 'scenario_fac_type', 'scenario_fac_owner',
+                                          'scenario_functional_computer', 'scenario_incharge_drug_orders',
+                                          'scenario_functional_emergency_vehicle', 'scenario_service_diagnostic',
+                                          'scenario_dist_todh', 'scenario_dist_torms',
+                                          'scenario_drug_order_fulfilment_freq_last_3mts', 'scenario_all_features'):
                 return {_i: True for _i in item_codes}
             else:
                 return {_i: False for _i in item_codes}
@@ -254,7 +266,15 @@ def check_format_of_consumables_file(df, fac_ids):
     """Check that we have a complete set of estimates, for every region & facility_type, as defined in the model."""
     months = set(range(1, 13))
     item_codes = set(df.item_code.unique())
-    availability_estimates_columns = ['available_prop', 'available_prop_scenario1']
+    availability_estimates_columns = ['available_prop', 'available_prop_scenario_fac_type', 'available_prop_scenario_fac_owner',
+       'available_prop_scenario_functional_computer',
+       'available_prop_scenario_incharge_drug_orders',
+       'available_prop_scenario_functional_emergency_vehicle',
+       'available_prop_scenario_service_diagnostic',
+       'available_prop_scenario_dist_todh',
+       'available_prop_scenario_dist_torms',
+       'available_prop_scenario_drug_order_fulfilment_freq_last_3mts',
+       'available_prop_scenario_all_features']
 
     assert set(df.columns) == {'Facility_ID', 'month', 'item_code'} | set(availability_estimates_columns)
 
