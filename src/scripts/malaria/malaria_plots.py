@@ -139,18 +139,18 @@ plt.legend(labels=["MAP", "WHO", "NMCP", "Model"], )
 plt.tight_layout()
 
 # malaria rdt yield
-ax4 = plt.subplot(224)  # numrows, numcols, fignum
-plt.plot(MAP_comm.Year, MAP_rdt_yield, color="crimson")  # MAP data
-plt.plot(WHO_comm.Year, WHO_rdt_yield, color="darkorchid")  # WHO data
-plt.plot(model_years, model_yield, color="mediumseagreen")  # model
-plt.title("RDT yield (positive / suspected)")
-plt.xlabel("Year")
-plt.xticks(rotation=90)
-plt.ylabel("RDT yield (%)")
-plt.gca().set_xlim(start_date, end_date)
-plt.gca().set_ylim(0.0, 100)
-plt.legend(["MAP (Public)", "WHO", "Model"])
-plt.tight_layout()
+# ax4 = plt.subplot(224)  # numrows, numcols, fignum
+# plt.plot(MAP_comm.Year, MAP_rdt_yield, color="crimson")  # MAP data
+# plt.plot(WHO_comm.Year, WHO_rdt_yield, color="darkorchid")  # WHO data
+# plt.plot(model_years, model_yield, color="mediumseagreen")  # model
+# plt.title("RDT yield (positive / suspected)")
+# plt.xlabel("Year")
+# plt.xticks(rotation=90)
+# plt.ylabel("RDT yield (%)")
+# plt.gca().set_xlim(start_date, end_date)
+# plt.gca().set_ylim(0.0, 100)
+# plt.legend(["MAP (Public)", "WHO", "Model"])
+# plt.tight_layout()
 
 plt.show()
 
