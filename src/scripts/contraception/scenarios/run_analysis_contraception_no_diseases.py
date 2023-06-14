@@ -12,7 +12,6 @@ used modules:
 * Demography
 * HealthSystem
     - cons_availability="all", i.e. all consumables are assumed to be always available,
-    - disable=False, i.e. the health system is disabled (hence no constraints and no logging) and every HSI event runs
 * Contraception, for which SimplifiedPregnancyAndLabour is used
     - use_interventions=False/True according to what we need (False => without interventions,
     True => interventions since 2023)
@@ -72,8 +71,7 @@ class RunAnalysisCo(BaseScenario):
             # Core Modules
             demography.Demography(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources,
-                                      cons_availability="all",
-                                      disable=False),  # <-- HealthSystem functioning
+                                      cons_availability="all"),
 
             # - Contraception and replacement for Labour etc.
             contraception.Contraception(resourcefilepath=self.resources,
