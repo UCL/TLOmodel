@@ -264,8 +264,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
         if 'Depression' in sim.modules:
             sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
-                                                                 hsi_event=hsi_event,
-                                                                 squeeze_factor=squeeze_factor)
+                                                                 hsi_event=hsi_event)
 
         if 'CardioMetabolicDisorders' in sim.modules:
             # Take a blood pressure measurement for proportion of individuals who have not been diagnosed and
@@ -322,8 +321,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
 
     if "Depression" in sim.modules:
         sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
-                                                             hsi_event=hsi_event,
-                                                             squeeze_factor=squeeze_factor)
+                                                             hsi_event=hsi_event)
 
     if "Malaria" in sim.modules:
         if 'severe_malaria' in symptoms:
