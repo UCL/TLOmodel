@@ -596,7 +596,7 @@ class HealthSystem(Module):
         if policy_name is not None:
             assert policy_name in ['None', 'Default', 'Test', 'Random', 'Naive', 'RMNCH',
                                    'VerticalProgrammes', 'ClinicallyVulnerable', 'EHP1_binary',
-                                   'EHP1_ordered','EHP3_LPP_binary','EHP4_LPP_ordered']
+                                   'EHP1_ordered', 'EHP3_LPP_binary', 'EHP4_LPP_ordered']
 
         self.arg_policy_name = policy_name
 

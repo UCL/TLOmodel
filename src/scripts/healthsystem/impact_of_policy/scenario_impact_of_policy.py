@@ -73,7 +73,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     'mode_appt_constraints': 0,
                     "use_funded_or_actual_staffing": "actual",
                  },
-             },
+            },
 
             "Unlimited Efficiency all cons": {
                 'HealthSystem': {
@@ -81,7 +81,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     'mode_appt_constraints': 1,
                     "use_funded_or_actual_staffing": "actual",
                  },
-             },
+            },
 
             "Random all cons": {
                 'HealthSystem': {
@@ -90,7 +90,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     "use_funded_or_actual_staffing": "actual",
                     "Policy_Name": "Random"
                  },
-             },
+            },
 
             "Naive all cons": {
                 'HealthSystem': {
@@ -99,7 +99,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     "use_funded_or_actual_staffing": "actual",
                     "Policy_Name": "Naive"
                  },
-             },
+            },
 
             "RMNCH all cons": {
                 'HealthSystem': {
@@ -108,7 +108,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     "use_funded_or_actual_staffing": "actual",
                     "Policy_Name": "RMNCH"
                  },
-             },
+            },
 
             "Clinically Vulnerable all cons": {
                 'HealthSystem': {
@@ -117,7 +117,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     "use_funded_or_actual_staffing": "actual",
                     "Policy_Name": "ClinicallyVulnerable"
                  },
-             },
+            },
 
             "Vertical Programmes all cons": {
                 'HealthSystem': {
@@ -126,7 +126,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     "use_funded_or_actual_staffing": "actual",
                     "Policy_Name": "VerticalProgrammes"
                  },
-             },
+            },
 
             "EHP1_binary all cons": {
                 'HealthSystem': {
@@ -135,7 +135,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     "use_funded_or_actual_staffing": "actual",
                     "Policy_Name": "EHP1_binary"
                  },
-             },
+            },
 
             "EHP3_LPP_binary all cons": {
                 'HealthSystem': {
@@ -144,122 +144,104 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     "use_funded_or_actual_staffing": "actual",
                     "Policy_Name": "EHP3_LPP_binary"
                  },
-             },
+            },
 
-			 "Unlimited Resources default cons": {
-				 'HealthSystem': {
-					 'cons_availability': "default",
-					 'mode_appt_constraints': 0,
-					 "use_funded_or_actual_staffing": "actual",
-				  },
-			  },
+            "Unlimited Resources default cons": {
+                 'HealthSystem': {
+                     'cons_availability': "default",
+                     'mode_appt_constraints': 0,
+                     "use_funded_or_actual_staffing": "actual",
+                  },
+            },
 
-			 "Unlimited Efficiency default cons": {
-				 'HealthSystem': {
-					 'cons_availability': "default",
-					 'mode_appt_constraints': 1,
-					 "use_funded_or_actual_staffing": "actual",
-				  },
-			  },
+            "Unlimited Efficiency default cons": {
+                 'HealthSystem': {
+                     'cons_availability': "default",
+                     'mode_appt_constraints': 1,
+                     "use_funded_or_actual_staffing": "actual",
+                  },
+            },
 
-			 "Random default cons": {
-				 'HealthSystem': {
-					 'cons_availability': "default",
-					 'mode_appt_constraints': 2,
-					 "use_funded_or_actual_staffing": "actual",
-					 "Policy_Name": "Random"
-				  },
-			  },
+            "Random default cons": {
+                 'HealthSystem': {
+                     'cons_availability': "default",
+                     'mode_appt_constraints': 2,
+                     "use_funded_or_actual_staffing": "actual",
+                     "Policy_Name": "Random"
+                  },
+            },
 
-			 "Naive default cons": {
-				 'HealthSystem': {
-					 'cons_availability': "default",
-					 'mode_appt_constraints': 2,
-					 "use_funded_or_actual_staffing": "actual",
-					 "Policy_Name": "Naive"
-				  },
-			  },
+            "Naive default cons": {
+                  'HealthSystem': {
+                     'cons_availability': "default",
+                     'mode_appt_constraints': 2,
+                     "use_funded_or_actual_staffing": "actual",
+                     "Policy_Name": "Naive"
+                  },
+            },
 
-			 "Naive default cons funded": {
-				 'HealthSystem': {
-					 'cons_availability': "default",
-					 'mode_appt_constraints': 2,
-					 "use_funded_or_actual_staffing": "funded",
-					 "Policy_Name": "Naive"
-				  },
-			  },
+            "Naive default cons funded": {
+                  'HealthSystem': {
+                     'cons_availability': "default",
+                     'mode_appt_constraints': 2,
+                     "use_funded_or_actual_staffing": "funded",
+                     "Policy_Name": "Naive"
+                  },
+            },
 
-			 "Naive default cons funded plus": {
-				 'HealthSystem': {
-					 'cons_availability': "default",
-					 'mode_appt_constraints': 2,
-					 "use_funded_or_actual_staffing": "funded_plus",
-					 "Policy_Name": "Naive"
-				  },
-			  },
+            "Naive default cons funded plus": {
+                  'HealthSystem': {
+                     'cons_availability': "default",
+                     'mode_appt_constraints': 2,
+                     "use_funded_or_actual_staffing": "funded_plus",
+                     "Policy_Name": "Naive"
+                  },
+            },
 
-			 "RMNCH default cons": {
-				 'HealthSystem': {
-					 'cons_availability': "default",
-					 'mode_appt_constraints': 2,
-					 "use_funded_or_actual_staffing": "actual",
-					 "Policy_Name": "RMNCH"
-				  },
-			  },
+            "RMNCH default cons": {
+                 'HealthSystem': {
+                     'cons_availability': "default",
+                     'mode_appt_constraints': 2,
+                     "use_funded_or_actual_staffing": "actual",
+                     "Policy_Name": "RMNCH"
+                  },
+            },
 
-			 "Clinically Vulnerable default cons": {
-				 'HealthSystem': {
-					 'cons_availability': "default",
-					 'mode_appt_constraints': 2,
-					 "use_funded_or_actual_staffing": "actual",
-					 "Policy_Name": "ClinicallyVulnerable"
-				  },
-			  },
+            "Clinically Vulnerable default cons": {
+                 'HealthSystem': {
+                     'cons_availability': "default",
+                     'mode_appt_constraints': 2,
+                     "use_funded_or_actual_staffing": "actual",
+                     "Policy_Name": "ClinicallyVulnerable"
+                  },
+            },
 
-			 "Vertical Programmes default cons": {
-				 'HealthSystem': {
-					 'cons_availability': "default",
-					 'mode_appt_constraints': 2,
-					 "use_funded_or_actual_staffing": "actual",
-					 "Policy_Name": "VerticalProgrammes"
-				  },
-			  },
+            "Vertical Programmes default cons": {
+                 'HealthSystem': {
+                     'cons_availability': "default",
+                     'mode_appt_constraints': 2,
+                     "use_funded_or_actual_staffing": "actual",
+                     "Policy_Name": "VerticalProgrammes"
+                  },
+            },
 
-			 "EHP1_binary default cons": {
-				 'HealthSystem': {
-					 'cons_availability': "default",
-					 'mode_appt_constraints': 2,
-					 "use_funded_or_actual_staffing": "actual",
-					 "Policy_Name": "EHP1_binary"
-				  },
-			  },
+            "EHP1_binary default cons": {
+                 'HealthSystem': {
+                     'cons_availability': "default",
+                     'mode_appt_constraints': 2,
+                     "use_funded_or_actual_staffing": "actual",
+                     "Policy_Name": "EHP1_binary"
+                  },
+            },
 
-			 "EHP3_LPP_binary default cons": {
-				 'HealthSystem': {
-					 'cons_availability': "default",
-					 'mode_appt_constraints': 2,
-					 "use_funded_or_actual_staffing": "actual",
-					 "Policy_Name": "EHP3_LPP_binary"
-				  },
-			  },
-
-			 "Naive default cons funded": {
-				 'HealthSystem': {
-					 'cons_availability': "default",
-					 'mode_appt_constraints': 2,
-					 "use_funded_or_actual_staffing": "funded",
-					 "Policy_Name": "Naive"
-				  },
-			  },
-
-			 "Naive default cons funded plus": {
-				 'HealthSystem': {
-					 'cons_availability': "default",
-					 'mode_appt_constraints': 2,
-					 "use_funded_or_actual_staffing": "funded_plus",
-					 "Policy_Name": "Naive"
-				  },
-			  },
+            "EHP3_LPP_binary default cons": {
+                 'HealthSystem': {
+                     'cons_availability': "default",
+                     'mode_appt_constraints': 2,
+                     "use_funded_or_actual_staffing": "actual",
+                     "Policy_Name": "EHP3_LPP_binary"
+                 },
+            },
         }
 
 
