@@ -70,19 +70,19 @@ class CareOfWomenDuringPregnancy(Module):
 
         # CARE SEEKING...
         'prob_seek_anc2': Parameter(
-            Types.LIST, 'Probability a women who is not predicted to attended four or more ANC visits will attend '
+            Types.LIST, 'Probability a woman who is not predicted to attended four or more ANC visits will attend '
                         'ANC2'),
         'prob_seek_anc3': Parameter(
-            Types.LIST, 'Probability a women who is not predicted to attended four or more ANC visits will attend '
+            Types.LIST, 'Probability a woman who is not predicted to attended four or more ANC visits will attend '
                         'ANC3'),
         'prob_seek_anc5': Parameter(
-            Types.LIST, 'Probability a women who is predicted to attend four or more ANC visits will attend ANC5'),
+            Types.LIST, 'Probability a woman who is predicted to attend four or more ANC visits will attend ANC5'),
         'prob_seek_anc6': Parameter(
-            Types.LIST, 'Probability a women who is predicted to attend four or more ANC visits will attend ANC6'),
+            Types.LIST, 'Probability a woman who is predicted to attend four or more ANC visits will attend ANC6'),
         'prob_seek_anc7': Parameter(
-            Types.LIST, 'Probability a women who is predicted to attend four or more ANC visits will attend ANC7'),
+            Types.LIST, 'Probability a woman who is predicted to attend four or more ANC visits will attend ANC7'),
         'prob_seek_anc8': Parameter(
-            Types.LIST, 'Probability a women who is predicted to attend four or more ANC visits will attend ANC8'),
+            Types.LIST, 'Probability a woman who is predicted to attend four or more ANC visits will attend ANC8'),
 
         # TREATMENT EFFECTS...
         'effect_of_ifa_for_resolving_anaemia': Parameter(
