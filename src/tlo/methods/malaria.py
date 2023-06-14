@@ -438,7 +438,7 @@ class Malaria(Module):
         sim.schedule_event(MalariaPollingEventDistrict(self), sim.date + DateOffset(days=0))
 
         sim.schedule_event(MalariaUpdateEvent(self), sim.date + DateOffset(days=0))
-        sim.schedule_event(MalariaParasiteClearanceEvent(self), sim.date + DateOffset(days=30.5))
+        sim.schedule_event(MalariaParasiteClearanceEvent(self), sim.date + DateOffset(months=1))
 
         if 'CareOfWomenDuringPregnancy' not in self.sim.modules:
             sim.schedule_event(MalariaIPTp(self), sim.date + DateOffset(days=30.5))
@@ -446,7 +446,7 @@ class Malaria(Module):
         # add logger events
         sim.schedule_event(MalariaLoggingEvent(self), sim.date + DateOffset(years=1))
         sim.schedule_event(MalariaTxLoggingEvent(self), sim.date + DateOffset(years=1))
-        sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(days=30.5))
+        sim.schedule_event(MalariaPrevDistrictLoggingEvent(self), sim.date + DateOffset(months=1))
 
         # 2) ----------------------------------- DIAGNOSTIC TESTS -----------------------------------
         # Create the diagnostic test representing the use of RDT for malaria diagnosis

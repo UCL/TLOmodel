@@ -173,7 +173,7 @@ rdt_child = rdt_facilities.loc[(rdt_facilities.age <= 5) & rdt_facilities.fever_
 rdt_child = rdt_child.loc[~(rdt_child.called_by == 'Malaria_Treatment')]
 
 
-colours = ['#B7C3F3', '#DD7596', '#8EB897']
+colours = ['#B7C3F3', '#DD7596', '#8EB897', '#FFF68F']
 
 plt.rcParams["axes.titlesize"] = 9
 
@@ -182,8 +182,9 @@ ax = plt.subplot(121)  # numrows, numcols, fignum
 level0 = rdt_all['facility_level'].value_counts()['0'] / len(rdt_all)
 level1a = rdt_all['facility_level'].value_counts()['1a'] / len(rdt_all)
 level1b = rdt_all['facility_level'].value_counts()['1b'] / len(rdt_all)
+level2 = rdt_all['facility_level'].value_counts()['2'] / len(rdt_all)
 
-plt.pie([level0, level1a, level1b], labels=['level 0', 'level 1a', 'level 1b'],
+plt.pie([level0, level1a, level1b, level2], labels=['level 0', 'level 1a', 'level 1b', 'level 2'],
         wedgeprops={'linewidth': 3, 'edgecolor': 'white'},
         autopct='%.1f%%',
         colors=colours)
@@ -194,7 +195,9 @@ ax2 = plt.subplot(122)  # numrows, numcols, fignum
 level0 = rdt_child['facility_level'].value_counts()['0'] / len(rdt_child)
 level1a = rdt_child['facility_level'].value_counts()['1a'] / len(rdt_child)
 level1b = rdt_child['facility_level'].value_counts()['1b'] / len(rdt_child)
-plt.pie([level0, level1a, level1b], labels=['level 0', 'level 1a', 'level 1b'],
+level2 = rdt_child['facility_level'].value_counts()['2'] / len(rdt_child)
+
+plt.pie([level0, level1a, level1b, level2], labels=['level 0', 'level 1a', 'level 1b', 'level 2'],
         wedgeprops={'linewidth': 3, 'edgecolor': 'white'},
         autopct='%.1f%%',
         colors=colours)

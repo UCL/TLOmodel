@@ -70,6 +70,8 @@ sim.register(
 )
 
 # Run the simulation and flush the logger
+sim.modules["HealthSeekingBehaviour"].parameters["prob_non_emergency_care_seeking_by_level"] = [0.13, 0.54, 0.24, 0.09]
+
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
