@@ -304,7 +304,8 @@ def extract_results(results_folder: Path,
     return _concat
 
 
-def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False, focus: str = None) -> pd.DataFrame:
+def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False,
+              focus: str = None) -> pd.DataFrame:
     """Utility function to compute summary statistics
 
     Finds mean value and 95% interval across the runs for each draw.
@@ -324,7 +325,6 @@ def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: 
     summary.loc[:, (slice(None), "mean")] = results.groupby(axis=1, by='draw').mean().values
     summary.loc[:, (slice(None), "lower")] = results.groupby(axis=1, by='draw').quantile(0.025).values
     summary.loc[:, (slice(None), "upper")] = results.groupby(axis=1, by='draw').quantile(0.975).values
-
 
     if only_mean and (not collapse_columns):
         # Remove other metrics and simplify if 'only_mean' across runs for each draw is required:
