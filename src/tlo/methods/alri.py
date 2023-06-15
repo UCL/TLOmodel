@@ -734,6 +734,11 @@ class Alri(Module):
                       'availability; "Yes" forces them to be available; "No" forces them to not be available',
                       categories=['Yes', 'No', 'Default']
                       ),
+
+        'prob_for_followup_if_treatment_failure':
+            Parameter(Types.REAL,
+                      'The probability for scheduling a follow-up appointment following treatment failure'
+                      ),
     }
 
     PROPERTIES = {
@@ -2621,6 +2626,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         entails referrals upwards and/or admission at in-patient, and when at the appropriate level, trying to provide
         the ideal treatment."""
 
+        p = self.module.parameters
+
         def _provide_consumable_and_refer(cons: str) -> None:
             """Provide a consumable (ignoring availability) and refer patient to next level up."""
             if cons is not None:
@@ -2659,7 +2666,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     oxygen_provided=oxygen_provided
                 )
                 if treatment_outcome == 'failure':
-                    self._schedule_follow_up_following_treatment_failure()
+                    if self.module.rng.rand() < p['prob_for_followup_if_treatment_failure']:
+                        self._schedule_follow_up_following_treatment_failure()
 
         def _do_if_fast_breathing_pneumonia():
             """What to do if classification is `fast_breathing`."""

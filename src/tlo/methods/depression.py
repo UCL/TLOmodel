@@ -507,13 +507,12 @@ class Depression(Module):
 
         return av_daly_wt_last_month
 
-    def do_on_presentation_to_care(self, person_id, hsi_event, squeeze_factor=0.0):
+    def do_on_presentation_to_care(self, person_id, hsi_event):
         """This member function is called when a person is in an HSI, and there may need to be screening for depression.
         """
         df = self.sim.population.props
         if hsi_event.TREATMENT_ID == "FirstAttendance_NonEmergency":
-            if (squeeze_factor == 0.0) and (self.rng.rand() <
-                                            self.parameters['pr_assessed_for_depression_in_generic_appt_level1']):
+            if self.rng.rand() < self.parameters['pr_assessed_for_depression_in_generic_appt_level1']:
                 self.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
 
         elif hsi_event.TREATMENT_ID == "FirstAttendance_Emergency":

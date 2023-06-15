@@ -1541,12 +1541,10 @@ class PregnancySupervisor(Module):
 
             # We assume women will seek care via HSI_GenericEmergencyFirstApptAtFacilityLevel1 and will be admitted for
             # care in CareOfWomenDuringPregnancy module
-            from tlo.methods.hsi_generic_first_appts import (
-                HSI_GenericEmergencyFirstApptAtFacilityLevel1,
-            )
+            from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
 
-            event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(self.sim.modules['PregnancySupervisor'],
-                                                                  person_id=individual_id)
+            event = HSI_GenericEmergencyFirstAppt(self.sim.modules['PregnancySupervisor'],
+                                                  person_id=individual_id)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=0,
@@ -1852,13 +1850,13 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                 pregnancy_helper_functions.check_if_delayed_careseeking(self.module, person)
 
                 from tlo.methods.care_of_women_during_pregnancy import (
-                    HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment,
+                    HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare,
                 )
 
-                acute_pregnancy_hsi = HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(
+                inpatient_pregnancy_hsi = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
                     self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person)
 
-                self.sim.modules['HealthSystem'].schedule_hsi_event(acute_pregnancy_hsi, priority=0,
+                self.sim.modules['HealthSystem'].schedule_hsi_event(inpatient_pregnancy_hsi, priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
             else:
