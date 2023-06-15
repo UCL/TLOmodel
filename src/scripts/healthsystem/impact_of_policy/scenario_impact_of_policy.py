@@ -180,24 +180,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
                   },
             },
 
-            "Naive default cons funded": {
-                  'HealthSystem': {
-                     'cons_availability': "default",
-                     'mode_appt_constraints': 2,
-                     "use_funded_or_actual_staffing": "funded",
-                     "Policy_Name": "Naive"
-                  },
-            },
-
-            "Naive default cons funded plus": {
-                  'HealthSystem': {
-                     'cons_availability': "default",
-                     'mode_appt_constraints': 2,
-                     "use_funded_or_actual_staffing": "funded_plus",
-                     "Policy_Name": "Naive"
-                  },
-            },
-
             "RMNCH default cons": {
                  'HealthSystem': {
                      'cons_availability': "default",
