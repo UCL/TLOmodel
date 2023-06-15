@@ -194,7 +194,7 @@ class CopdAnalyses:
 
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2050, 1, 1)
+end_date = Date(2023, 1, 1)
 
 resourcefilepath = Path("./resources")  # Path to resource files
 

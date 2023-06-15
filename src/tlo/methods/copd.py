@@ -68,7 +68,14 @@ class Copd(Module):
         ),
         'rel_risk_progress_per_higher_cat': Parameter(
             Types.REAL, 'relative risk of progression to the next higher level of lung function for each higher level '
-        )
+        ),
+        'rel_risk_tob': Parameter(
+            Types.REAL, 'relative effect of current tobacco smoking on the rate of lung function progression'
+        ),
+        'rel_risk_wood_burn_stove': Parameter(
+            Types.REAL, 'relative risk of wood burn stove on the rate of lung function progression'
+        ),
+
     }
 
     PROPERTIES = {
@@ -161,6 +168,13 @@ class Copd(Module):
             data=flatten_multi_index_series_into_dict_for_logging(counts)
         )
 
+        _ex_tobacco_smokers = df.loc[df.is_alive].groupby(by=['ch_lungfunction']).size()
+        logger.info(
+            key='ex_smokers',
+            description='Proportion of alive persons in each COPD category ever smoked tobacco',
+            data=flatten_multi_index_series_into_dict_for_logging(_ex_tobacco_smokers)
+        )
+
     def give_inhaler(self, person_id: int, hsi_event: HSI_Event):
         """Give inhaler if person does not already have one"""
         df = self.sim.population.props
@@ -210,9 +224,17 @@ class CopdModels:
             .when(4, self.params['prob_progress_to_next_cat'] *
                   (self.params['rel_risk_progress_per_higher_cat'] ** 4))
             .when(5, self.params['prob_progress_to_next_cat'] *
-                  (self.params['rel_risk_progress_per_higher_cat'] ** 5))
-            .when(6, self.params['prob_progress_to_next_cat'] *
-                  (self.params['rel_risk_progress_per_higher_cat'] ** 6))
+                  (self.params['rel_risk_progress_per_higher_cat'] ** 5)),
+            Predictor(
+                'li_tob',
+                conditions_are_exhaustive=True,
+                conditions_are_mutually_exclusive=True
+            ).when(True, self.params['rel_risk_tob']),
+            Predictor(
+                'li_wood_burn_stove',
+                conditions_are_exhaustive=True,
+                conditions_are_mutually_exclusive=True
+            ).when(True, self.params['rel_risk_wood_burn_stove'])
         )
         # The probability (in a 3-month period) of having a Moderate Exacerbation
         self.__Prob_ModerateExacerbation__ = LinearModel.multiplicative(
@@ -438,11 +460,12 @@ class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixi
     """ HSI event for issuing treatment to all individuals with severe exacerbation. We first check the availability of
     oxygen at the default facility(1a). If no oxygen is found we refer individuals to the next higher level facility
     until either we find oxygen or we are at the highest facility level. Here facility levels are ["1a", "1b", "2"]"""
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.facility_levels_index = 0    # an index to facility levels
-        self.all_facility_levels = ["1a", "1b", "2"]    # available facility levels
+        self.facility_levels_index = 0  # an index to facility levels
+        self.all_facility_levels = ["1a", "1b", "2"]  # available facility levels
 
         self.TREATMENT_ID = "Copd_Treatment"
         self.ACCEPTED_FACILITY_LEVEL = self.all_facility_levels[self.facility_levels_index]
