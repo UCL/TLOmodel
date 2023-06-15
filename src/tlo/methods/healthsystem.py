@@ -1102,9 +1102,6 @@ class HealthSystem(Module):
         )
         assert facilities_with_any_differences.issubset(level2_facilities)
 
-        # check that the availabilities at '2' are exactly equal to those of '1b'
-
-
         return df_updated
 
     def get_service_availability(self) -> List[str]:
