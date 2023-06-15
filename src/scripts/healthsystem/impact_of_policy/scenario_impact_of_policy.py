@@ -18,10 +18,10 @@ from typing import Dict
 import pandas as pd
 
 from tlo import Date, logging
-from tlo.methods.fullmodel import fullmodel
 from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
-from tlo.scenario import BaseScenario
+from tlo.methods.fullmodel import fullmodel
 from tlo.methods.scenario_switcher import ScenarioSwitcher
+from tlo.scenario import BaseScenario
 
 
 class ImpactOfHealthSystemMode(BaseScenario):
@@ -66,12 +66,12 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
-                    'HealthSystem': {
+                     'HealthSystem': {
                         'cons_availability': "all",
                         'mode_appt_constraints': 1,
                         "use_funded_or_actual_staffing": "actual",
-                    },
-                    'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
+                     },
+                     'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
             },
 
@@ -79,13 +79,13 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
-                    'HealthSystem': {
+                     'HealthSystem': {
                         'cons_availability': "all",
                         'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
                         "Policy_Name": "Random"
-                    },
-                    'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
+                     },
+                     'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
             },
 
@@ -93,13 +93,13 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
-                    'HealthSystem': {
+                     'HealthSystem': {
                         'cons_availability': "all",
                         'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
                         "Policy_Name": "Naive"
-                    },
-                    'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
+                     },
+                     'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
             },
 
@@ -107,13 +107,13 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
-                    'HealthSystem': {
+                     'HealthSystem': {
                         'cons_availability': "all",
                         'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
                         "Policy_Name": "RMNCH"
                      },
-                    'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
+                     'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
             },
 
@@ -121,13 +121,13 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
-                    'HealthSystem': {
+                     'HealthSystem': {
                         'cons_availability': "all",
                         'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
                         "Policy_Name": "ClinicallyVulnerable"
-                    },
-                    'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
+                     },
+                     'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
             },
 
@@ -135,13 +135,13 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
-                    'HealthSystem': {
+                     'HealthSystem': {
                         'cons_availability': "all",
                         'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
                         "Policy_Name": "VerticalProgrammes"
-                    },
-                    'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
+                     },
+                     'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
             },
 
@@ -149,13 +149,13 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
-                    'HealthSystem': {
+                     'HealthSystem': {
                         'cons_availability': "all",
                         'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
                         "Policy_Name": "EHP1_binary"
-                    },
-                    'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
+                     },
+                     'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
             },
 
@@ -163,13 +163,13 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
-                    'HealthSystem': {
+                     'HealthSystem': {
                         'cons_availability': "all",
                         'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
                         "Policy_Name": "EHP3_LPP_binary"
-                    },
-                    'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
+                     },
+                     'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
             },
 
@@ -177,7 +177,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
-                    'HealthSystem': {
+                     'HealthSystem': {
                          'cons_availability': "default",
                          'mode_appt_constraints': 1,
                          "use_funded_or_actual_staffing": "actual",
@@ -208,7 +208,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                          'mode_appt_constraints': 2,
                          "use_funded_or_actual_staffing": "actual",
                          "Policy_Name": "Naive"
-                    },
+                     },
                     }
                     )
             },
@@ -248,7 +248,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                          'mode_appt_constraints': 2,
                          "use_funded_or_actual_staffing": "actual",
                          "Policy_Name": "ClinicallyVulnerable"
-                  },
+                     },
                     })
             },
 
@@ -256,12 +256,12 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
-                 'HealthSystem': {
+                     'HealthSystem': {
                          'cons_availability': "default",
                          'mode_appt_constraints': 2,
                          "use_funded_or_actual_staffing": "actual",
                          "Policy_Name": "VerticalProgrammes"
-                  },
+                     },
                     })
             },
 
@@ -269,12 +269,12 @@ class ImpactOfHealthSystemMode(BaseScenario):
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
-                 'HealthSystem': {
+                     'HealthSystem': {
                          'cons_availability': "default",
                          'mode_appt_constraints': 2,
                          "use_funded_or_actual_staffing": "actual",
                          "Policy_Name": "EHP1_binary"
-                  },
+                     },
                     })
             },
 
