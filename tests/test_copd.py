@@ -223,14 +223,14 @@ def test_moderate_exacerbation():
 
     # check non-emergency care event is scheduled
     assert isinstance(sim.modules['HealthSystem'].find_events_for_person(person_id)[0][1],
-                      hsi_generic_first_appts.HSI_GenericFirstApptAtFacilityLevel0)
+                      hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)
 
     # check an individual has no inhaler before  scheduling facility care event
     assert not df.loc[person_id, "ch_has_inhaler"]
 
     # Run the created instance of HSI_GenericFirstApptAtFacilityLevel0 and check no emergency care was sought
     ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-          isinstance(ev[1], hsi_generic_first_appts.HSI_GenericFirstApptAtFacilityLevel0)][0]
+          isinstance(ev[1], hsi_generic_first_appts.HSI_GenericNonEmergencyFirstAppt)][0]
     ge.run(squeeze_factor=0.0)
 
     # check that no HSI_CopdTreatmentOnSevereExacerbation event is scheduled. Only inhaler should be given
@@ -271,14 +271,14 @@ def test_severe_exacerbation():
     hsp.run()
     # check that an instance of HSI_GenericFirstApptAtFacilityLevel1 is created
     assert isinstance(sim.modules['HealthSystem'].find_events_for_person(person_id)[0][1],
-                      hsi_generic_first_appts.HSI_GenericEmergencyFirstApptAtFacilityLevel1)
+                      hsi_generic_first_appts.HSI_GenericEmergencyFirstAppt)
 
     # check an individual has no inhaler before  scheduling facility care event
     assert not df.loc[person_id, "ch_has_inhaler"]
 
     # Run the created instance of HSI_GenericEmergencyFirstApptAtFacilityLevel1 and check emergency care was sort
     ge = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-          isinstance(ev[1], hsi_generic_first_appts.HSI_GenericEmergencyFirstApptAtFacilityLevel1)][0]
+          isinstance(ev[1], hsi_generic_first_appts.HSI_GenericEmergencyFirstAppt)][0]
     ge.run(squeeze_factor=0.0)
 
     # check that HSI_CopdTreatmentOnSevereExacerbation event is scheduled. Inhaler should also be given
