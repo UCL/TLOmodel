@@ -4,6 +4,7 @@ from typing import List
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from tlo import Date, DateOffset, Module, Property, Simulation, Types, logging
 from tlo.analysis.utils import (
@@ -14,8 +15,10 @@ from tlo.analysis.utils import (
     get_color_coarse_appt,
     get_color_short_treatment_id,
     get_filtered_treatment_ids,
+    get_parameters_for_improved_healthsystem_and_healthcare_seeking,
     get_parameters_for_status_quo,
     get_root_path,
+    mix_scenarios,
     order_of_coarse_appt,
     order_of_short_treatment_ids,
     parse_log_file,
@@ -24,6 +27,7 @@ from tlo.analysis.utils import (
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.methods import demography
 from tlo.methods.fullmodel import fullmodel
+from tlo.methods.scenario_switcher import ScenarioSwitcher
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -272,21 +276,158 @@ def test_get_parameter_functions(seed):
     """Check that the functions that provide updated parameter values provide recognised parameter names and values
     of the appropriate type."""
 
+    # Function that are designed to provide set of parameters to be updated in a `fullmodel` simulation.
+    funcs = [
+        get_parameters_for_status_quo,
+        lambda: get_parameters_for_improved_healthsystem_and_healthcare_seeking(
+                resourcefilepath=resourcefilepath,
+                max_healthsystem_function=True,
+                max_healthcare_seeking=False
+            ),
+        lambda: get_parameters_for_improved_healthsystem_and_healthcare_seeking(
+            resourcefilepath=resourcefilepath,
+            max_healthsystem_function=False,
+            max_healthcare_seeking=True
+            ),
+        lambda: get_parameters_for_improved_healthsystem_and_healthcare_seeking(
+            resourcefilepath=resourcefilepath,
+            max_healthsystem_function=True,
+            max_healthcare_seeking=True
+        )
+    ]
+
     # Create simulation
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
     sim.register(*fullmodel(resourcefilepath=resourcefilepath))
 
-    # Get structure containing parameters to be updated:
-    params = get_parameters_for_status_quo()
+    for fn in funcs:
 
-    # Check each parameter
-    for module in params.keys():
-        for name, updated_value in params[module].items():
+        # Get structure containing parameters to be updated:
+        params = fn()
 
-            # Check that the parameter identified exists in the simulation
-            assert name in sim.modules[module].parameters, f"Parameter not recognised: {module}:{name}."
+        assert isinstance(params, dict)
+        # Check each parameter
+        for module in params.keys():
+            for name, updated_value in params[module].items():
 
-            # Check that the original value and the updated value are of the same type.
-            original = sim.modules[module].parameters[name]
-            assert type(original) is type(updated_value), f"Updated value type does not match original value type:" \
-                                                          f"{module}:{name} >> {updated_value=}, {original=}"
+                # Check that the parameter identified exists in the simulation
+                assert name in sim.modules[module].parameters, f"Parameter not recognised: {module}:{name}."
+
+                # Check that the original value and the updated value are of the same type.
+                original = sim.modules[module].parameters[name]
+
+                assert type(original) is type(updated_value), \
+                    f"Updated value type does not match original type: " \
+                    f"{module}:{name} >> {updated_value=}, " \
+                    f"{type(original)=}, {type(updated_value)=}"
+
+                def is_df_same_size_and_dtype(df1, df2):
+                    return (
+                        df1.index.equals(df2.index) and
+                        all(df1.dtypes == df2.dtypes) and
+                        all(df1.columns == df2.columns) if isinstance(df1, pd.DataFrame) else True
+                    )
+
+                def is_list_same_size_and_dtype(l1, l2):
+                    return (
+                        (len(l1) == len(l2)) and
+                        all([type(_i) is type(_j) for _i, _j in zip(l1, l2)])
+                    )
+
+                # Check that, if the updated value is a pd.DataFrame, it has the same indicies as the original
+                if isinstance(original, (pd.DataFrame, pd.Series)):
+                    assert is_df_same_size_and_dtype(original, updated_value), \
+                        print(f"Dataframe or series if not of the expected size and shape:"
+                              f"{module}:{name} >> {updated_value=}, {type(original)=}, {type(updated_value)=}")
+
+                # Check that, if the updated value is a list/tuple, it has the same dimensions as the original
+                elif isinstance(original, (list, tuple)):
+                    assert is_list_same_size_and_dtype(original, updated_value), \
+                        print(f"List/tuple is not of the expected size and containing elements of expected type: "
+                              f"{module}:{name} >> {updated_value=}, {type(original)=}, {type(updated_value)=}")
+
+
+def test_mix_scenarios():
+    """Check that `mix_scenarios` works as expected."""
+
+    d1 = {
+        'Mod1': {
+            'param_a': 'value_in_d1',
+            'param_b': 'value_in_d1',
+        }
+    }
+
+    d2 = {
+        'Mod2': {
+            'param_a': 'value_in_d2',
+            'param_b': 'value_in_d2',
+        }
+    }
+
+    d3 = {
+        'Mod1': {
+            'param_b': 'value_in_d3',
+            'param_c': 'value_in_d3'
+        }
+    }
+
+    with pytest.warns(UserWarning) as record:
+        assert mix_scenarios(d1, d2, d3) == {
+            'Mod1': {
+                'param_a': 'value_in_d1',  # <- only appears in d1, and is included despite d3 also having 'Mod1' key
+                'param_b': 'value_in_d3',  # <- appears in d1 and d3, but d3 is right-most, so 'wins' (raises Warning)
+                'param_c': 'value_in_d3',  # <- only appears in d3
+            },
+            'Mod2': {
+                'param_a': 'value_in_d2',  # <- only appears in d2 (& attaches to Mod2 despite name being duplicated)
+                'param_b': 'value_in_d2',  # <- only appears in d2 (& attaches to Mod2 despite name being duplicated)
+            }
+        }
+
+    assert 1 == len(record)
+    assert record.list[0].message.args[0] == 'Parameter is being updated more than once: module=Mod1, parameter=param_b'
+
+
+def test_scenario_switcher(seed):
+    """Check the `ScenarioSwitcher` module can update parameter values in a manner similar to them being changed
+    directly after registration in the simulation (as would be done by the Scenario class)."""
+
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
+    sim.register(*(
+        fullmodel(resourcefilepath=resourcefilepath) + [ScenarioSwitcher(resourcefilepath=resourcefilepath)]
+    ))
+
+    # Check that the 'ScenarioSwitcher` is the first registered module.
+    assert 'ScenarioSwitcher' == list(sim.modules.keys())[0]
+
+    # Change the parameters for max_healthsystem_function and max_healthcare_seeking via the ScenarioSwitcher
+    sim.modules['ScenarioSwitcher'].parameters['max_healthsystem_function'] = True
+    sim.modules['ScenarioSwitcher'].parameters['max_healthcare_seeking'] = True
+
+    # Initialise the population
+    sim.make_initial_population(n=100)
+
+    # Check that all the parameter values in the simulation are updated to be the value expected.
+    updated_values = get_parameters_for_improved_healthsystem_and_healthcare_seeking(
+        resourcefilepath=resourcefilepath,
+        max_healthsystem_function=True,
+        max_healthcare_seeking=True
+    )
+
+    for module, param in updated_values.items():
+        for name, target_value in param.items():
+
+            actual = sim.modules[module].parameters[name]
+
+            if isinstance(target_value, pd.Series):
+                pd.testing.assert_series_equal(target_value, actual)
+            elif isinstance(target_value, pd.DataFrame):
+                pd.testing.assert_frame_equal(target_value, actual)
+            elif isinstance(target_value, list):
+                assert all([t == v for t, v in zip(target_value, actual)])
+            else:
+                assert target_value == actual
+
+    # Spot check for health care seeking being forced to occur for all symptoms
+    hcs = sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking
+    assert isinstance(hcs, bool) and hcs
