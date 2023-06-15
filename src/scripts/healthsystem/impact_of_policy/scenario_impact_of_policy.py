@@ -62,7 +62,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         """
 
         return {
-            "Unlimited Efficiency all cons": {
+            "Unlimited Efficiency all cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -73,9 +73,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                      'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
-            },
 
-            "Random all cons": {
+            "Random all cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -87,9 +86,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                      'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
-            },
 
-            "Naive all cons": {
+            "Naive all cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -101,9 +99,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                      'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
-            },
 
-            "RMNCH all cons": {
+            "RMNCH all cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -115,9 +112,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                      'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
-            },
 
-            "Clinically Vulnerable all cons": {
+            "Clinically Vulnerable all cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -129,9 +125,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                      'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
-            },
 
-            "Vertical Programmes all cons": {
+            "Vertical Programmes all cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -143,9 +138,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                      'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
-            },
 
-            "EHP1_binary all cons": {
+            "EHP1_binary all cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -157,9 +151,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                      'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
-            },
 
-            "EHP3_LPP_binary all cons": {
+            "EHP3_LPP_binary all cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -171,9 +164,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                      'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
-            },
 
-            "Unlimited Efficiency default cons": {
+            "Unlimited Efficiency default cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -183,10 +175,9 @@ class ImpactOfHealthSystemMode(BaseScenario):
                          "use_funded_or_actual_staffing": "actual",
                      },
                     }
-                )
-            },
+                ),
 
-            "Random default cons": {
+            "Random default cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -196,10 +187,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                          "use_funded_or_actual_staffing": "actual",
                          "Policy_Name": "Random"
                      },
-                    })
-            },
+                    }
+                ),
 
-            "Naive default cons": {
+            "Naive default cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -210,10 +201,9 @@ class ImpactOfHealthSystemMode(BaseScenario):
                          "Policy_Name": "Naive"
                      },
                     }
-                    )
-            },
+                ),
 
-            "Naive default cons funded plus": {
+            "Naive default cons funded plus":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -223,10 +213,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                          "use_funded_or_actual_staffing": "funded_plus",
                          "Policy_Name": "Naive"
                      },
-                    })
-            },
+                    }
+                ),
 
-            "RMNCH default cons": {
+            "RMNCH default cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -236,10 +226,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                          "use_funded_or_actual_staffing": "actual",
                          "Policy_Name": "RMNCH"
                       },
-                    })
-            },
+                    }
+                ),
 
-            "Clinically Vulnerable default cons": {
+            "Clinically Vulnerable default cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -249,10 +239,9 @@ class ImpactOfHealthSystemMode(BaseScenario):
                          "use_funded_or_actual_staffing": "actual",
                          "Policy_Name": "ClinicallyVulnerable"
                      },
-                    })
-            },
+                    }),
 
-            "Vertical Programmes default cons": {
+            "Vertical Programmes default cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -262,10 +251,9 @@ class ImpactOfHealthSystemMode(BaseScenario):
                          "use_funded_or_actual_staffing": "actual",
                          "Policy_Name": "VerticalProgrammes"
                      },
-                    })
-            },
+                    }),
 
-            "EHP1_binary default cons": {
+            "EHP1_binary default cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -275,10 +263,9 @@ class ImpactOfHealthSystemMode(BaseScenario):
                          "use_funded_or_actual_staffing": "actual",
                          "Policy_Name": "EHP1_binary"
                      },
-                    })
-            },
+                    }),
 
-            "EHP3_LPP_binary default cons": {
+            "EHP3_LPP_binary default cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -288,8 +275,8 @@ class ImpactOfHealthSystemMode(BaseScenario):
                          "use_funded_or_actual_staffing": "actual",
                          "Policy_Name": "EHP3_LPP_binary"
                      },
-                    })
-            },
+                    }
+                )
         }
 
 
