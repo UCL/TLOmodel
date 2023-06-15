@@ -258,19 +258,19 @@ class Schisto(Module):
                             'prob_sent_to_lab_test_adults',
                             'PZQ_efficacy',
                             ):
-            parameters[_param_name] = param_list[_param_name]
+            parameters[_param_name] = float(param_list[_param_name])
 
         # MDA coverage - historic
         historical_mda = workbook['MDA_historical_Coverage'].set_index(['District', 'Year'])[
             ['Coverage PSAC', 'Coverage SAC', 'Coverage Adults']]
         historical_mda.columns = historical_mda.columns.str.replace('Coverage ', '')
-        parameters['MDA_coverage_historical'] = historical_mda
+        parameters['MDA_coverage_historical'] = historical_mda.astype(float)
 
         # MDA coverage - prognosed
         prognosed_mda = workbook['MDA_prognosed_Coverage'].set_index(['District', 'Frequency'])[
             ['Coverage PSAC', 'Coverage SAC', 'Coverage Adults']]
         prognosed_mda.columns = prognosed_mda.columns.str.replace('Coverage ', '')
-        parameters['MDA_coverage_prognosed'] = prognosed_mda
+        parameters['MDA_coverage_prognosed'] = prognosed_mda.astype(float)
 
         return parameters
 
