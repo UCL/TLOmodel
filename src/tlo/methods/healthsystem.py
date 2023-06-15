@@ -1045,8 +1045,7 @@ class HealthSystem(Module):
 
         # Declare the assumption for the availability of consumables at the merged levels '1b' and '2'. This can be a
         #  list of facility_levels over which an average is taken (within a district): e.g. ['1b', '2'].
-
-        AVAILABILITY_AT_MERGED_LEVELS_1B_AND_2 = ['1b']  # <-- Implies that availability at merged level '1b & 2' is
+        availability_at_merged_levels_1_b_and_2 = ['1b']  # <-- Implies that availability at merged level '1b & 2' is
         #                                                       equal to availability at level '1b'. This is reasonable
         #                                                       because the '1b' are more numerous than those of '2' and
         #                                                       have more overall capacity, so probably account for the
@@ -1065,7 +1064,7 @@ class HealthSystem(Module):
 
         # compute the updated availability at the level 2
         availability_at_1b_and_2 = \
-            dfx.drop(dfx.index[~dfx['Facility_Level'].isin(AVAILABILITY_AT_MERGED_LEVELS_1B_AND_2)]) \
+            dfx.drop(dfx.index[~dfx['Facility_Level'].isin(availability_at_merged_levels_1_b_and_2)]) \
                .groupby(by=['District', 'month', 'item_code'])['available_prop'] \
                .mean() \
                .reset_index()\
@@ -1102,6 +1101,9 @@ class HealthSystem(Module):
             mfl.loc[mfl['Facility_Level'] == '2', 'Facility_ID']
         )
         assert facilities_with_any_differences.issubset(level2_facilities)
+
+        # check that the availabilities at '2' are exactly equal to those of '1b'
+
 
         return df_updated
 
