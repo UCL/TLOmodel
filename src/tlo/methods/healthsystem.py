@@ -37,11 +37,23 @@ logger.setLevel(logging.INFO)
 logger_summary = logging.getLogger(f"{__name__}.summary")
 logger_summary.setLevel(logging.INFO)
 
+# Declare the level which will be used to represent the merging of levels '1b' and '2'
+LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2 = '2'
 
-def adjust_level_to_direct_1b_to_2(level: str) -> str:
+# Declare the assumption for the availability of consumables at the merged levels '1b' and '2'. This can be a
+#  list of facility_levels over which an average is taken (within a district): e.g. ['1b', '2'].
+AVAILABILITY_OF_CONSUMABLES_AT_MERGED_LEVELS_1B_AND_2 = ['1b']  # <-- Implies that availability at merged level '1b & 2'
+#                                                                     is equal to availability at level '1b'. This is
+#                                                                     reasonable because the '1b' are more numerous than
+#                                                                     those of '2' and have more overall capacity, so
+#                                                                     probably account for the majority of the
+#                                                                     interactions.
+
+
+def adjust_facility_level_to_merge_1b_and_2(level: str) -> str:
     """Adjust the facility level of an HSI_Event so that HSI_Events scheduled at level '1b' and '2' are both directed
     to level '2'"""
-    return level if level != '1b' else '2'
+    return level if level not in ('1b', '2') else LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2
 
 
 def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFrame:
@@ -50,7 +62,10 @@ def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFr
 
     # Find total minutes and staff count after the re-allocation of capabilities from '1b' to '2'
     tots_after_reallocation = df_original \
-        .assign(Facility_Level=lambda df: df.Facility_Level.replace({'1b': '2'})) \
+        .assign(Facility_Level=lambda df: df.Facility_Level.replace({
+                            '1b': LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2,
+                            '2': LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2})
+                ) \
         .groupby(by=['Facility_Level', 'District', 'Region', 'Officer_Category'], dropna=False)[[
             'Total_Mins_Per_Day', 'Staff_Count']] \
         .sum() \
@@ -84,8 +99,8 @@ def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFr
         assert df_original.loc[df_original.Facility_Level == _level].equals(
             df_updated.loc[df_updated.Facility_Level == _level])
 
-    assert df_updated.loc[df_updated.Facility_Level == '1b', 'Total_Mins_Per_Day'].sum() == 0.0
-    assert df_updated.loc[df_updated.Facility_Level == '2', 'Total_Mins_Per_Day'].sum() \
+    assert df_updated.loc[df_updated.Facility_Level == LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2,
+                          'Total_Mins_Per_Day'].sum() \
            == df_updated.loc[df_updated.Facility_Level.isin(['1b', '2']), 'Total_Mins_Per_Day'].sum()
 
     return df_updated
@@ -332,7 +347,7 @@ class HSI_Event:
         health_system = self.sim.modules['HealthSystem']
 
         # Over-write ACCEPTED_FACILITY_LEVEL to to redirect all '1b' appointments to '2'
-        self.ACCEPTED_FACILITY_LEVEL = adjust_level_to_direct_1b_to_2(self.ACCEPTED_FACILITY_LEVEL)
+        self.ACCEPTED_FACILITY_LEVEL = adjust_facility_level_to_merge_1b_and_2(self.ACCEPTED_FACILITY_LEVEL)
 
         if not isinstance(self.target, tlo.population.Population):
             self.facility_info = health_system.get_facility_info(self)
@@ -789,7 +804,7 @@ class HealthSystem(Module):
 
         # Initialise the Consumables class
         self.consumables = Consumables(
-            data=self.update_consumables_availability_at_level_2(
+            data=self.update_consumables_availability_to_represent_merging_of_levels_1b_and_2(
                 self.parameters['availability_estimates']),
             rng=rng_for_consumables,
             availability=self.get_cons_availability()
@@ -1039,17 +1054,9 @@ class HealthSystem(Module):
         # return the pd.Series of `Total_Minutes_Per_Day' indexed for each type of officer at each facility
         return capabilities_ex['Total_Minutes_Per_Day']
 
-    def update_consumables_availability_at_level_2(self, df_original):
+    def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
         availability of consumables at level 2 with new values."""
-
-        # Declare the assumption for the availability of consumables at the merged levels '1b' and '2'. This can be a
-        #  list of facility_levels over which an average is taken (within a district): e.g. ['1b', '2'].
-        availability_at_merged_levels_1_b_and_2 = ['1b']  # <-- Implies that availability at merged level '1b & 2' is
-        #                                                       equal to availability at level '1b'. This is reasonable
-        #                                                       because the '1b' are more numerous than those of '2' and
-        #                                                       have more overall capacity, so probably account for the
-        #                                                       majority of the interactions.
 
         # get master facilities list
         mfl = self.parameters['Master_Facilities_List']
@@ -1062,13 +1069,13 @@ class HealthSystem(Module):
             how='left'
         )
 
-        # compute the updated availability at the level 2
+        # compute the updated availability at the merged level '1b' and '2'
         availability_at_1b_and_2 = \
-            dfx.drop(dfx.index[~dfx['Facility_Level'].isin(availability_at_merged_levels_1_b_and_2)]) \
+            dfx.drop(dfx.index[~dfx['Facility_Level'].isin(AVAILABILITY_OF_CONSUMABLES_AT_MERGED_LEVELS_1B_AND_2)]) \
                .groupby(by=['District', 'month', 'item_code'])['available_prop'] \
                .mean() \
                .reset_index()\
-               .assign(Facility_Level='2')
+               .assign(Facility_Level=LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2)
 
         # assign facility_id
         availability_at_1b_and_2 = availability_at_1b_and_2.merge(
@@ -1080,7 +1087,7 @@ class HealthSystem(Module):
 
         # assign these availabilities to the corresponding level 2 facilities (dropping the original values)
         df_updated = pd.concat([
-            dfx.drop(dfx.index[dfx['Facility_Level'] == '2']),
+            dfx.drop(dfx.index[dfx['Facility_Level'] == LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2]),
             availability_at_1b_and_2[dfx.columns],
             ]
         ).drop(columns=['Facility_Level', 'District'])\
