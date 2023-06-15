@@ -788,9 +788,12 @@ class HealthSystem(Module):
         self.bed_days.pre_initialise_population()
 
         # Initialise the Consumables class
-        self.consumables = Consumables(data=self.parameters['availability_estimates'],
-                                       rng=rng_for_consumables,
-                                       availability=self.get_cons_availability())
+        self.consumables = Consumables(
+            data=self.update_consumables_availability_at_level_2_with_average_of_availability_at_levels_1b_and_2(
+                self.parameters['availability_estimates']),
+            rng=rng_for_consumables,
+            availability=self.get_cons_availability()
+        )
 
         # Convert PriorityRank dataframe to dictionary
         if self.adopt_priority_policy:
@@ -1035,6 +1038,63 @@ class HealthSystem(Module):
 
         # return the pd.Series of `Total_Minutes_Per_Day' indexed for each type of officer at each facility
         return capabilities_ex['Total_Minutes_Per_Day']
+
+    def update_consumables_availability_at_level_2_with_average_of_availability_at_levels_1b_and_2(self, df_original):
+        """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
+        availability of consumables at level 2 with the average of availability for each consumable at level 1b and 2
+        within the district."""
+
+        mfl = self.parameters['Master_Facilities_List']
+
+        # merge in facility level
+        dfx = df_original.merge(
+            mfl[['Facility_ID', 'District', 'Facility_Level']],
+            left_on='Facility_ID',
+            right_on='Facility_ID',
+            how='left'
+        )
+
+        # compute the updated availability at the level 2 (average of 1b and 2 within the same district)
+        availability_at_1b_and_2 = \
+            dfx.drop(dfx.index[~dfx['Facility_Level'].isin(['1b', '2'])]) \
+               .groupby(by=['District', 'month', 'item_code'])['available_prop'] \
+               .mean() \
+               .reset_index()\
+               .assign(Facility_Level='2')
+
+        # assign facility_id
+        availability_at_1b_and_2 = availability_at_1b_and_2.merge(
+            mfl[['Facility_ID', 'District', 'Facility_Level']],
+            left_on=['District', 'Facility_Level'],
+            right_on=['District', 'Facility_Level'],
+            how='left'
+        )
+
+        # assign these availabilities to level the corresponding level 2 facilities (dropping the original values)
+        df_updated = pd.concat([
+            dfx.drop(dfx.index[dfx['Facility_Level'] == '2']),
+            availability_at_1b_and_2[dfx.columns],
+            ]
+        ).drop(columns=['Facility_Level', 'District'])\
+         .sort_values(['Facility_ID', 'month', 'item_code']).reset_index(drop=True)
+
+        # check size/shape/dtypes preserved
+        assert df_updated.shape == df_original.shape
+        assert (df_updated.columns == df_original.columns).all()
+        assert (df_updated.dtypes == df_original.dtypes).all()
+
+        # check values the same for everything apart from the facility level '2' facilities
+        facilities_with_any_differences = set(
+            df_updated.loc[
+                ~(df_original == df_updated).all(axis=1),
+                'Facility_ID']
+        )
+        level2_facilities = set(
+            mfl.loc[mfl['Facility_Level'] == '2', 'Facility_ID']
+        )
+        assert facilities_with_any_differences.issubset(level2_facilities)
+
+        return df_updated
 
     def get_service_availability(self) -> List[str]:
         """Returns service availability. (Should be equal to what is specified by the parameter, but overwrite with what
