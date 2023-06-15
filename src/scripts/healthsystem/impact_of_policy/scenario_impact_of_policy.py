@@ -27,11 +27,11 @@ class ImpactOfHealthSystemMode(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(months=5)
-        self.pop_size = 100
+        self.end_date = self.start_date + pd.DateOffset(years=30)
+        self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 1
+        self.runs_per_draw = 4
 
     def log_configuration(self):
         return {
@@ -176,6 +176,24 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      'cons_availability': "default",
                      'mode_appt_constraints': 2,
                      "use_funded_or_actual_staffing": "actual",
+                     "Policy_Name": "Naive"
+                  },
+            },
+
+            "Naive default cons funded": {
+                  'HealthSystem': {
+                     'cons_availability': "default",
+                     'mode_appt_constraints': 2,
+                     "use_funded_or_actual_staffing": "funded",
+                     "Policy_Name": "Naive"
+                  },
+            },
+
+            "Naive default cons funded plus": {
+                  'HealthSystem': {
+                     'cons_availability': "default",
+                     'mode_appt_constraints': 2,
+                     "use_funded_or_actual_staffing": "funded_plus",
                      "Policy_Name": "Naive"
                   },
             },
