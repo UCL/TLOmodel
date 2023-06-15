@@ -1227,32 +1227,6 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     dalys_data = pd.read_csv(Path('./resources/gbd') / 'ResourceFile_Deaths_and_DALYS_GBD2019.CSV')
     gbd_years = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019]
 
-    # ============================================HELPER FUNCTIONS... =================================================
-    def simple_line_chart_two_targets(model_rate, target_rate_one, target_rate_two, x_title, y_title, title, file_name):
-        plt.plot(sim_years, model_rate, 'o-g', label="Model", color='deepskyblue')
-        plt.plot(sim_years, target_rate_one, 'o-g', label="Target", color='darkseagreen')
-        plt.plot(sim_years, target_rate_two, 'o-g', label="Target (adj.)", color='powderblue')
-        plt.xlabel(x_title)
-        plt.ylabel(y_title)
-        plt.title(title)
-        plt.legend()
-        plt.savefig(f'{graph_location}/{file_name}.png')
-        plt.show()
-
-    def get_target_rate(first_rate, second_rate):
-        target_rate = list()
-        target_rate_adjusted = list()
-
-        for year in sim_years:
-            if year < 2015:
-                target_rate.append(first_rate)
-                target_rate_adjusted.append(first_rate * 0.64)
-            else:
-                target_rate.append(second_rate)
-                target_rate_adjusted.append(second_rate * 0.70)
-
-        return [target_rate, target_rate_adjusted]
-
     # =========================================  Direct maternal causes of death... ===================================
     direct_causes = ['ectopic_pregnancy', 'spontaneous_abortion', 'induced_abortion',
                      'severe_gestational_hypertension', 'severe_pre_eclampsia', 'eclampsia', 'antenatal_sepsis',
@@ -1261,32 +1235,58 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     # ==============================================  YEARLY MMR... ==================================================
     # Output direct deaths...
-    direct_deaths = extract_results(
-        results_folder,
-        module="tlo.methods.demography",
-        key="death",
-        custom_generate_series=(
-            lambda df: df.loc[(df['label'] == 'Maternal Disorders')].assign(
-                year=df['date'].dt.year).groupby(['year'])['year'].count()))
-    direct_deaths_final = direct_deaths.fillna(0)
+    def get_maternal_death_dfs(scaled):
+        direct_deaths = extract_results(
+            results_folder,
+            module="tlo.methods.demography",
+            key="death",
+            custom_generate_series=(
+                lambda df: df.loc[(df['label'] == 'Maternal Disorders')].assign(
+                    year=df['date'].dt.year).groupby(['year'])['year'].count()),
+            do_scaling=scaled)
+        direct_deaths_final = direct_deaths.fillna(0)
 
-    indirect_deaths = extract_results(
-        results_folder,
-        module="tlo.methods.demography.detail",
-        key="properties_of_deceased_persons",
-        custom_generate_series=(
-            lambda df: df.loc[(df['is_pregnant'] | df['la_is_postpartum']) &
-                              df['cause_of_death'].str.contains(
-                                  'AIDS_non_TB|AIDS_TB|TB|Malaria|Suicide|ever_stroke|diabetes|'
-                                  'chronic_ischemic_hd|ever_heart_attack|chronic_kidney_disease')].assign(
-                year=df['date'].dt.year).groupby(['year'])['year'].count()))
-    indirect_deaths_final = indirect_deaths.fillna(0)
+        indirect_deaths_non_hiv = extract_results(
+            results_folder,
+            module="tlo.methods.demography.detail",
+            key="properties_of_deceased_persons",
+            custom_generate_series=(
+                lambda df: df.loc[(df['is_pregnant'] | df['la_is_postpartum']) &
+                                  (df['cause_of_death'].str.contains('Malaria|Suicide|ever_stroke|diabetes|'
+                                                                     'chronic_ischemic_hd|ever_heart_attack|'
+                                                                     'chronic_kidney_disease') |
+                                   (df['cause_of_death'] == 'TB'))].assign(
+                    year=df['date'].dt.year).groupby(['year'])['year'].count()),
+            do_scaling=scaled)
+        indirect_deaths_non_hiv_final = indirect_deaths_non_hiv.fillna(0)
 
-    total_deaths = direct_deaths_final + indirect_deaths_final
+        hiv_pd = extract_results(
+            results_folder,
+            module="tlo.methods.demography.detail",
+            key="properties_of_deceased_persons",
+            custom_generate_series=(
+                lambda df: df.loc[(df['is_pregnant'] | df['la_is_postpartum']) &
+                                  (df['cause_of_death'].str.contains('AIDS_non_TB|AIDS_TB'))].assign(
+                    year=df['date'].dt.year).groupby(['year'])['year'].count()),
+            do_scaling=scaled)
 
-    direct_mmr_by_year = return_rate(direct_deaths_final, births_results_exc_2010, 100_000)
-    indirect_mmr_by_year = return_rate(indirect_deaths_final, births_results_exc_2010, 100_000)
-    total_mmr_by_year = return_rate(total_deaths, births_results_exc_2010, 100_000)
+        hiv_pd_fill = hiv_pd.fillna(0)
+        hiv_indirect = hiv_pd_fill * 0.3
+        hiv_indirect_maternal_deaths = hiv_indirect.round(0)
+
+        indirect_deaths_final = indirect_deaths_non_hiv_final + hiv_indirect_maternal_deaths
+
+        total_deaths = direct_deaths_final + indirect_deaths_final
+
+        return {'direct_deaths_final':direct_deaths_final,
+                'indirect_deaths_final': indirect_deaths_final,
+                'total_deaths':total_deaths}
+
+    mat_d_unscaled = get_maternal_death_dfs(False)
+
+    direct_mmr_by_year = return_rate(mat_d_unscaled['direct_deaths_final'], births_results_exc_2010, 100_000)
+    indirect_mmr_by_year = return_rate(mat_d_unscaled['indirect_deaths_final'], births_results_exc_2010, 100_000)
+    total_mmr_by_year = return_rate(mat_d_unscaled['total_deaths'], births_results_exc_2010, 100_000)
 
     unmmeig = [513, 496, 502, 473, 442, 445, 430, 375, 392, 370, 381]
     unmmeig_lower = [408, 394, 397, 374, 349, 348, 330, 283, 291, 268, 269]
@@ -1321,10 +1321,12 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         fig, ax = plt.subplots()
         ax.plot(sim_years, data[0], label="Model (95% CI)", color='deepskyblue')
         ax.fill_between(sim_years, data[1], data[2], color='b', alpha=.1)
-        plt.errorbar(2010, dhs_10_adj[0], yerr=(dhs_10_adj[2]-dhs_10_adj[1])/2, label='DHS 2010 (95% CI)', fmt='o', color='green',
+        plt.errorbar(2010, dhs_10_adj[0], yerr=(dhs_10_adj[2]-dhs_10_adj[1])/2, label='DHS 2010 (95% CI)', fmt='o',
+                     color='green',
                      ecolor='mediumseagreen',
                      elinewidth=3, capsize=0)
-        plt.errorbar(2015, dhs_15_adj[0], yerr=(dhs_15_adj[2]-dhs_15_adj[1])/2, label='DHS 2015 (95% CI)', fmt='o', color='green',
+        plt.errorbar(2015, dhs_15_adj[0], yerr=(dhs_15_adj[2]-dhs_15_adj[1])/2, label='DHS 2015 (95% CI)', fmt='o',
+                     color='green',
                      ecolor='mediumseagreen',
                      elinewidth=3, capsize=0)
         ax.plot(unmmeig_yrs, unmmeig_adj, label="UN MMEIG 2020 (Uncertainty interval)", color='cadetblue')
@@ -1333,9 +1335,9 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         ax.fill_between(gbd_years_mmr, gbd_l_adj, gbd_u_adj, color='slateblue',alpha=.1)
 
         if title == 'Total':
-            ax.set(ylim=(0, 1250))
+            ax.set(ylim=(0, 900))
         else:
-            ax.set(ylim=(0, 600))
+            ax.set(ylim=(0, 400))
         plt.xlabel('Year')
         plt.ylabel("Deaths per 100 000 live births")
         plt.title(f'{title} Maternal Mortality Ratio per Year')
@@ -1361,9 +1363,9 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         key="properties_of_deceased_persons",
         custom_generate_series=(
             lambda df: df.loc[(df['is_pregnant'] | df['la_is_postpartum']) &
-                              df['cause_of_death'].str.contains(
-                                  'AIDS_non_TB|AIDS_TB|TB|Malaria|Suicide|ever_stroke|diabetes|chronic_ischemic_hd|'
-                                  'ever_heart_attack|chronic_kidney_disease')].assign(
+                              (df['cause_of_death'].str.contains(
+                                  'AIDS_non_TB|AIDS_TB|Malaria|Suicide|ever_stroke|diabetes|chronic_ischemic_hd|'
+                                  'ever_heart_attack|chronic_kidney_disease') | (df['cause_of_death'] == 'TB'))].assign(
                 year=df['date'].dt.year).groupby(['year', 'cause_of_death'])['year'].count()))
     id_by_cause_df = indirect_deaths_by_cause.fillna(0)
 
@@ -1379,6 +1381,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
             if complication in id_by_cause_df.loc[year].index:
                 births = births_results_exc_2010.loc[year].mean()
                 deaths = id_by_cause_df.loc[year, complication].mean()
+                if 'AIDS' in complication:
+                    deaths = deaths * 0.3
                 indirect_deaths_means[complication].append((deaths/births) * 100000)
             else:
                 indirect_deaths_means[complication].append(0)
@@ -1456,7 +1460,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
            color='slategrey')
     ax.bar(labels, indirect_deaths_means['AIDS_non_TB'], width, label='AIDS_non_TB', color='hotpink')
 
-    ax.set(ylim=(0, 850))
+    ax.set(ylim=(0, 350))
     ax.set_ylabel('Deaths per 100,000 live births')
     ax.set_xlabel('Year')
     ax.set_title('Indirect causes of maternal death within the TLO model')
@@ -1465,17 +1469,11 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     plt.show()
 
     # ==============================================  DEATHS... ======================================================
-    s_d = extract_results(
-        results_folder,
-        module="tlo.methods.demography",
-        key="death",
-        custom_generate_series=(
-            lambda df: df.assign(year=df['date'].dt.year).groupby(['year', 'label'])['year'].count()),
-        do_scaling=True
-    )
-    scaled_deaths = s_d.fillna(0)
-    m_deaths = analysis_utility_functions.return_95_CI_across_runs(
-        scaled_deaths.loc[(slice(None), 'Maternal Disorders'), slice(None)].droplevel(1), gbd_years)
+    mat_d_scaled = get_maternal_death_dfs(True)
+
+    m_deaths = analysis_utility_functions.return_95_CI_across_runs(mat_d_scaled['total_deaths'], gbd_years)
+    # m_deaths = analysis_utility_functions.return_95_CI_across_runs(
+    #     scaled_deaths.loc[(slice(None), 'Maternal Disorders'), slice(None)].droplevel(1), gbd_years)
     def extract_deaths_gbd_data(group):
         dalys_df = dalys_data.loc[(dalys_data['measure_name'] == 'Deaths') &
                                   (dalys_data['cause_name'] == group) & (dalys_data['Year'] > 2009)]
@@ -1499,7 +1497,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     ind = np.arange(N)
     width = 0.35
     plt.bar(ind, m_deaths[0], width, label='Model (95% CI)', yerr=model_ci, color='teal')
-    plt.bar(ind + width, gbd_deaths_2010_2019_data[0], width, label='GBD (upper & lower bounds)', yerr=gbd_ci, color='olivedrab')
+    plt.bar(ind + width, gbd_deaths_2010_2019_data[0], width, label='GBD (upper & lower bounds)', yerr=gbd_ci,
+            color='olivedrab')
     plt.ylabel('Total Deaths Maternal Deaths (scaled)')
     plt.title('Yearly Modelled Maternal Deaths Compared to GBD')
     plt.xticks(ind + width / 2, gbd_years)
@@ -1900,12 +1899,21 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     # ------------------------------------------ CRUDE DEATHS PER YEAR ------------------------------------------------
     # Neonatal Disorders...
+    scaled_neo_deaths = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=(
+            lambda df: df.assign(
+                year=df['date'].dt.year).groupby(['year', 'label'])['year'].count()),
+        do_scaling=True)
+
     neo_deaths = analysis_utility_functions.return_95_CI_across_runs(
-        scaled_deaths.loc[(slice(None), 'Neonatal Disorders'), slice(None)].droplevel(1), gbd_years)
+        scaled_neo_deaths.loc[(slice(None), 'Neonatal Disorders'), slice(None)].droplevel(1), gbd_years)
 
     # Congenital Anomalies...
     ca_deaths = analysis_utility_functions.return_95_CI_across_runs(
-        scaled_deaths.loc[(slice(None), 'Congenital birth defects'), slice(None)].droplevel(1), gbd_years)
+        scaled_neo_deaths.loc[(slice(None), 'Congenital birth defects'), slice(None)].droplevel(1), gbd_years)
 
     # GBD data...
     gbd_neo_deaths = extract_deaths_gbd_data('Neonatal disorders')
@@ -1939,8 +1947,6 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     direct_neonatal_causes = ['early_onset_sepsis', 'late_onset_sepsis', 'encephalopathy', 'preterm_other',
                               'respiratory_distress_syndrome', 'neonatal_respiratory_depression']
-
-
 
     causes_prop = dict()
     for cause in direct_neonatal_causes:
@@ -2231,6 +2237,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         dalys_stacked.loc[(slice(None), 'Maternal Disorders'), slice(None)].droplevel(1), sim_years)})
     neo_model_dalys_data.update({'total': analysis_utility_functions.return_95_CI_across_runs(
         dalys_stacked.loc[(slice(None), 'Neonatal Disorders'), slice(None)].droplevel(1), sim_years)})
+
     def get_daly_graphs(group, model_data, gbd_data):
 
         # Total

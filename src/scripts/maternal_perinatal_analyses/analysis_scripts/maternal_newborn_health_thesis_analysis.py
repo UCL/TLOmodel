@@ -215,6 +215,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
     # ------------------------------------ PRIMARY OUTCOMES... -------------------------------------------------------
     def extract_death_and_stillbirth_data_frames_and_summ_outcomes(folder, birth_df):
         # MATERNAL
+
         direct_deaths = extract_results(
             folder,
             module="tlo.methods.demography",
@@ -225,20 +226,38 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             do_scaling=True)
         direct_deaths_final = direct_deaths.fillna(0)
 
-        indirect_deaths = extract_results(
+        indirect_deaths_non_hiv = extract_results(
             folder,
             module="tlo.methods.demography.detail",
             key="properties_of_deceased_persons",
             custom_generate_series=(
                 lambda df: df.loc[(df['is_pregnant'] | df['la_is_postpartum']) &
-                                  df['cause_of_death'].str.contains(
-                                      'AIDS_non_TB|AIDS_TB|TB|Malaria|Suicide|ever_stroke|diabetes|'
-                                      'chronic_ischemic_hd|ever_heart_attack|chronic_kidney_disease')].assign(
+                                  (df['cause_of_death'].str.contains('Malaria|Suicide|ever_stroke|diabetes|'
+                                                                     'chronic_ischemic_hd|ever_heart_attack|'
+                                                                     'chronic_kidney_disease') |
+                                   (df['cause_of_death'] == 'TB'))].assign(
                     year=df['date'].dt.year).groupby(['year'])['year'].count()),
-            do_scaling=True
-        )
-        indirect_deaths_final = indirect_deaths.fillna(0)
+            do_scaling=True)
+        indirect_deaths_non_hiv_final = indirect_deaths_non_hiv.fillna(0)
+
+        hiv_pd = extract_results(
+            folder,
+            module="tlo.methods.demography.detail",
+            key="properties_of_deceased_persons",
+            custom_generate_series=(
+                lambda df: df.loc[(df['is_pregnant'] | df['la_is_postpartum']) &
+                                  (df['cause_of_death'].str.contains('AIDS_non_TB|AIDS_TB'))].assign(
+                    year=df['date'].dt.year).groupby(['year'])['year'].count()),
+            do_scaling=True)
+
+        hiv_pd_fill = hiv_pd.fillna(0)
+        hiv_indirect = hiv_pd_fill * 0.3
+        hiv_indirect_maternal_deaths = hiv_indirect.round(0)
+
+        indirect_deaths_final = indirect_deaths_non_hiv_final + hiv_indirect_maternal_deaths
+
         total_deaths = direct_deaths_final + indirect_deaths_final
+
 
         mmr = (total_deaths / birth_df) * 100_000
         total_mmr_by_year = return_95_CI_across_runs(mmr, sim_years)
@@ -275,8 +294,8 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         total_direct_mmr_aggregated = get_mean_95_CI_from_list(mean_d_mmr_by_year_int)
 
         # INDIRECT MATERNAL DEATHS PER YEAR
-        mean_indirect_deaths_by_year = return_95_CI_across_runs(indirect_deaths, sim_years)
-        mean_indirect_deaths_by_year_int = return_95_CI_across_runs(indirect_deaths, intervention_years)
+        mean_indirect_deaths_by_year = return_95_CI_across_runs(indirect_deaths_final, sim_years)
+        mean_indirect_deaths_by_year_int = return_95_CI_across_runs(indirect_deaths_final, intervention_years)
 
         # TOTAL INDIRECT MATERNAL DEATHS DURING INTERVENTION
         in_int = indirect_deaths_final.loc[intervention_years[0]: intervention_years[-1]]
@@ -284,7 +303,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         total_indirect_deaths_by_scenario = get_mean_95_CI_from_list(sum_in_mat_death_int_by_run)
 
         # INDIRECT MMR BY YEAR
-        in_mmr_df = (indirect_deaths / birth_df) * 100_000
+        in_mmr_df = (indirect_deaths_final / birth_df) * 100_000
         total_indirect_mmr_by_year = return_95_CI_across_runs(in_mmr_df, sim_years)
 
         # AVERAGE INDIRECT MMR DURING INTERVENTION
@@ -524,6 +543,10 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
         def extract_mmr_data(cause, df):
             death_df = df.loc[(slice(None), cause), slice(None)].droplevel(1)
+
+            if 'AIDS' in cause:
+                death_df = death_df * 0.3
+
             mmr_df = (death_df / births_df) * 100_000
             results.update({f'{cause}_mmr_df': mmr_df})
             mmr_df_int = mmr_df.loc[intervention_years[0]:intervention_years[-1]]
