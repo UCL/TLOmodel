@@ -194,7 +194,7 @@ class CopdAnalyses:
 
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2023, 1, 1)
+end_date = Date(2030, 1, 1)
 
 resourcefilepath = Path("./resources")  # Path to resource files
 
@@ -230,7 +230,7 @@ def get_simulation(popsize):
 
 
 # run simulation and store logfile path
-sim = get_simulation(1000)
+sim = get_simulation(50_000)
 path_to_logfile = sim.log_filepath
 # initialise Copd analyses class
 copd_analyses = CopdAnalyses(logfile_path=path_to_logfile)
