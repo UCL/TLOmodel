@@ -32,9 +32,9 @@ class ImpactOfConsumablesAvailabilityIntervention(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2021, 1, 1)
-        self.pop_size = 100 # large population size for final simulation
-        self.number_of_draws = 3  # <- one scenario
+        self.end_date = Date(2025, 12, 31)
+        self.pop_size = 100_000 # large population size for final simulation
+        self.number_of_draws = 11  # <- 11 scenarios
         self.runs_per_draw = 3  # <- repeated this many times
 
     def log_configuration(self):
@@ -55,7 +55,12 @@ class ImpactOfConsumablesAvailabilityIntervention(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'HealthSystem': {
-                'change_cons_availability_to': ['scenario_all_features', 'scenario_fac_type', 'scenario_incharge_drug_orders'][draw_number]
+                'change_cons_availability_to': ['NO_CHANGE', 'scenario_fac_type', 'scenario_fac_owner',
+                                                'scenario_functional_computer', 'scenario_incharge_drug_orders',
+                                                'scenario_functional_emergency_vehicle', 'scenario_service_diagnostic',
+                                                'scenario_dist_todh', 'scenario_dist_torms',
+                                                'scenario_drug_order_fulfilment_freq_last_3mts',
+                                                'scenario_all_features'][draw_number]
                }
         }
 
