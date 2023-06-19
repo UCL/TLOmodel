@@ -404,9 +404,9 @@ class Malaria(Module):
 
         # extract annual testing rates from NMCP reports
         # this is the # rdts issued divided by population size
-        test_rates = p['rdt_testing_rates']
-        year = min(test_rates.Year.max(), self.sim.date.year)  # year of the simulation, or the latest year of data
-        rdt_rate = test_rates.loc[(test_rates.Year == year), 'Rate_rdt_testing'].values[0] / 12
+        test_rates = p['rdt_testing_rates'].set_index('Year')['Rate_rdt_testing'].dropna()
+        rdt_rate = test_rates.loc[min(test_rates.index.max(), self.sim.date.year)] / 12
+
         # adjust rdt usage reported rate to reflect consumables availability
         rdt_rate = rdt_rate * p['scaling_factor_for_rdt_availability']
 
