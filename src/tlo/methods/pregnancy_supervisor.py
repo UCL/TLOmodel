@@ -1541,12 +1541,10 @@ class PregnancySupervisor(Module):
 
             # We assume women will seek care via HSI_GenericEmergencyFirstApptAtFacilityLevel1 and will be admitted for
             # care in CareOfWomenDuringPregnancy module
-            from tlo.methods.hsi_generic_first_appts import (
-                HSI_GenericEmergencyFirstApptAtFacilityLevel1,
-            )
+            from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
 
-            event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(self.sim.modules['PregnancySupervisor'],
-                                                                  person_id=individual_id)
+            event = HSI_GenericEmergencyFirstAppt(self.sim.modules['PregnancySupervisor'],
+                                                  person_id=individual_id)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=0,
@@ -2152,9 +2150,8 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
                 # Override the availability of IPTp consumables with the set level of coverage
                 if 'Malaria' in self.sim.modules:
                     iptp = self.sim.modules['Malaria'].item_codes_for_consumables_required['malaria_iptp']
-                    ic = list(iptp.keys())[0]
                     self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                        {ic: params['anc_availability_probability']})
+                        {iptp: params['anc_availability_probability']})
 
                 # And then override the quality parameters in the model
                 for parameter in ['prob_intervention_delivered_urine_ds', 'prob_intervention_delivered_bp',
