@@ -401,7 +401,8 @@ class Malaria(Module):
         df = population.props
         rng = self.rng
         p = self.parameters
-        year = self.sim.date.year
+        now = self.sim.date
+        year = now.year if now.year <= 2020 else 2020
 
         # extract annual testing rates from NMCP reports
         # this is the # rdts issued divided by population size
