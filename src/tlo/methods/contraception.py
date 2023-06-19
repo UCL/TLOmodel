@@ -2,6 +2,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import warnings
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
@@ -959,6 +960,10 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
             return self.make_appt_footprint({'FamPlan': 1})
         elif self.new_contraceptive in ['other_modern', 'pill']:
             return self.make_appt_footprint({'PharmDispensing': 1})
+        else:
+            return self.make_appt_footprint({})
+            warnings.warn(UserWarning("Assumed empty footprint for Contraception Routine appt because couldn't find"
+                                      "actual case."))
 
     def apply(self, person_id, squeeze_factor):
         """If the relevant consumable is available, do change in contraception and log it"""
