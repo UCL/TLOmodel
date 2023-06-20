@@ -1199,13 +1199,8 @@ class RTI(Module):
         for probability in probabilities:
             assert 0 <= probability <= 1, "Probability is not a feasible value"
         # create a generic severe trauma symptom, which forces people into the health system
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(
-                name='severe_trauma',
-                emergency_in_adults=True,
-                emergency_in_children=True
-            )
-        )
+        self.sim.modules['SymptomManager'].register_symptom(Symptom.emergency('severe_trauma'))
+
         # create an injury lookup table to handle all assigning injuries/daly weights and daly weight changes. The table
         # is writted in the following format: [[1], 2, 3, 4]. [1] contains information used in assigning injuries e.g.
         # probability of injury occuring followed by information used in logging, specifically injury location, injury
@@ -1985,7 +1980,7 @@ class RTI(Module):
         columns_to_return = []
         codes_to_return = []
         # iterate over the codes in the list codes and also the injury columns
-        for col, val in person_injuries.iteritems():
+        for col, val in person_injuries.items():
             # Search a sub-dataframe that is non-empty if the code is present is in that column and empty if not
             if val in codes:
                 columns_to_return.append(col)
@@ -2024,7 +2019,7 @@ class RTI(Module):
 
         daly_change = selected_for_rti_inj.applymap(
             lambda code: self.ASSIGN_INJURIES_AND_DALY_CHANGES[code][1]
-        ).sum(axis=1)
+        ).sum(axis=1, numeric_only=True)
         df.loc[injured_index, 'rt_disability'] += daly_change
 
         # Store the true sum of DALY weights in the df
@@ -2087,8 +2082,16 @@ class RTI(Module):
                          data=f"person {person_id} has had too many daly weights removed")
             df.at[person_id, 'rt_debugging_DALY_wt'] = 0
         # the reported disability should satisfy 0<=disability<=1, check that they do
-        assert df.at[person_id, 'rt_disability'] >= 0, 'Negative disability burden'
-        assert df.at[person_id, 'rt_disability'] <= 1, 'Too large disability burden'
+
+        # Check the daly weights fall within the accepted bounds
+        if (df.at[person_id, 'rt_disability'] < 0):
+            logger.warning(key="warning", data="rt disability < 0 in rti_alter_daly_post_treatment")
+            df.at[person_id, 'rt_disability'] = 0
+
+        if (df.at[person_id, 'rt_disability'] > 1):
+            logger.warning(key="warning", data="rt disability > 1 in rti_alter_daly_post_treatment")
+            df.at[person_id, 'rt_disability'] = 1
+
         # remover the treated injury code from the person using rti_treated_injuries
         RTI.rti_treated_injuries(self, person_id, codes)
 
@@ -2146,9 +2149,15 @@ class RTI(Module):
             df.at[person_id, 'rt_disability'] = 1
         else:
             df.at[person_id, 'rt_disability'] = df.at[person_id, 'rt_debugging_DALY_wt']
+
         # Check the daly weights fall within the accepted bounds
-        assert df.at[person_id, 'rt_disability'] >= 0, 'Negative disability burden'
-        assert df.at[person_id, 'rt_disability'] <= 1, 'Too large disability burden'
+        if (df.at[person_id, 'rt_disability'] < 0):
+            logger.warning(key="warning", data="rt disability < 0 in rti_swap_injury_daly_upon_treatment")
+            df.at[person_id, 'rt_disability'] = 0
+
+        if (df.at[person_id, 'rt_disability'] > 1):
+            logger.warning(key="warning", data="rt disability > 1 in rti_swap_injury_daly_upon_treatment")
+            df.at[person_id, 'rt_disability'] = 1
 
     def rti_determine_LOS(self, person_id):
         """
@@ -2395,7 +2404,7 @@ class RTI(Module):
                        'Polytrauma': sum(i > 2 for i in injais) > 1,
                        'MAIS': max(injmais),
                        'Number_of_injuries': ninj}
-            inj_df = inj_df.append(new_row, ignore_index=True)
+            inj_df.loc[len(inj_df)] = new_row
             # If person has an ISS score less than 15 they have a mild injury, otherwise severe
             if new_row['ISS'] < 15:
                 severity_category.append('mild')
@@ -3174,7 +3183,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = 'Rti_MedicalIntervention'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 8})
 
@@ -3720,7 +3729,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, RTI)
 
         self.TREATMENT_ID = 'Rti_ShockTreatment'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
     def apply(self, person_id, squeeze_factor):
@@ -3812,7 +3821,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, RTI)
 
         self.TREATMENT_ID = 'Rti_FractureCast'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
     def apply(self, person_id, squeeze_factor):
@@ -5392,38 +5401,26 @@ class RTI_Logging_Event(RegularEvent, PopulationScopeEventMixin):
         # Make some summary statistics
         # Get the dataframe and isolate the important information
         df = population.props
-        # dump dataframe each month if population size is large (used to find the minimum viable population size)
-        time_stamped_file_name = "df_at_" + str(self.sim.date.month) + "_" + str(self.sim.date.year)
-        if len(df.loc[df.is_alive]) > 750000:
-            df.to_csv(f"C:/Users/Robbie Manning Smith/Documents/Dataframe_dump/{time_stamped_file_name}.csv")
-        thoseininjuries = df.loc[df.rt_road_traffic_inc]
+        population_with_injuries = df.loc[df.rt_road_traffic_inc]
         # ================================= Injury severity ===========================================================
-        sev = thoseininjuries['rt_inj_severity']
-        rural_injuries = df.loc[df.rt_road_traffic_inc & ~df.li_urban]
-        if len(rural_injuries) > 0:
-            percent_sev_rural = \
-                len(rural_injuries.loc[rural_injuries['rt_inj_severity'] == 'severe']) / len(rural_injuries)
-        else:
-            percent_sev_rural = 'none_injured'
-        urban_injuries = df.loc[df.rt_road_traffic_inc & df.li_urban]
-        if len(urban_injuries) > 0:
-            percent_sev_urban = \
-                len(urban_injuries.loc[urban_injuries['rt_inj_severity'] == 'severe']) / len(urban_injuries)
-        else:
-            percent_sev_urban = 'none_injured'
-        severity, severitycount = np.unique(sev, return_counts=True)
-        if 'mild' in severity:
-            idx = np.where(severity == 'mild')
-            self.totmild += len(idx)
-        if 'severe' in severity:
-            idx = np.where(severity == 'severe')
-            self.totsevere += len(idx)
+        population_subsets_with_injuries = {
+            "rural": population_with_injuries.loc[~population_with_injuries.li_urban],
+            "urban": population_with_injuries.loc[population_with_injuries.li_urban],
+        }
+        proportion_severely_injured = {
+            label: (
+                len(pop_subset.loc[pop_subset['rt_inj_severity'] == 'severe'])
+                / len(pop_subset)
+            ) if len(pop_subset) > 0 else "none_injured"
+            for label, pop_subset in population_subsets_with_injuries.items()
+        }
+        self.totmild += (population_with_injuries.rt_inj_severity == "mild").sum()
+        self.totsevere += (population_with_injuries.rt_inj_severity == "severe").sum()
         dict_to_output = {
             'total_mild_injuries': self.totmild,
-            ''
-            '_severe_injuries': self.totsevere,
-            'Percent_severe_rural': percent_sev_rural,
-            'Percent_severe_urban': percent_sev_urban
+            'total_severe_injuries': self.totsevere,
+            'proportion_severe_rural': proportion_severely_injured["rural"],
+            'proportion_severe_urban': proportion_severely_injured["urban"],
         }
         logger.info(key='injury_severity',
                     data=dict_to_output,

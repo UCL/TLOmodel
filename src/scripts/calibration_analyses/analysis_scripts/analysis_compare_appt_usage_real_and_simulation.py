@@ -40,7 +40,7 @@ def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
         def unpack_nested_dict_in_series(_raw: pd.Series):
             return pd.concat(
                 {
-                  idx: pd.DataFrame.from_dict(mydict) for idx, mydict in _raw.iteritems()
+                  idx: pd.DataFrame.from_dict(mydict) for idx, mydict in _raw.items()
                  }
              ).unstack().fillna(0.0).astype(int)
 
@@ -146,6 +146,14 @@ def get_real_usage(resourcefilepath) -> pd.DataFrame:
     real_usage = pd.read_csv(
         resourcefilepath / 'healthsystem' / 'real_appt_usage_data' / 'real_monthly_usage_of_appt_type.csv')
 
+    # add Csection usage to Delivery, as Delivery has excluded Csection in real data file (to avoid overlap)
+    # whereas Delivery in tlo output has included Csection
+    real_delivery = real_usage.loc[(real_usage.Appt_Type == 'Delivery') | (real_usage.Appt_Type == 'Csection')
+                                   ].groupby(['Year', 'Month', 'Facility_ID']).agg({'Usage': 'sum'}).reset_index()
+    real_delivery['Appt_Type'] = 'Delivery'
+    real_usage = pd.concat([real_usage.drop(real_usage[real_usage.Appt_Type == 'Delivery'].index),
+                            real_delivery])
+
     # get facility_level for each record
     real_usage = real_usage.merge(mfl[['Facility_ID', 'Facility_Level']], left_on='Facility_ID', right_on='Facility_ID')
 
@@ -170,6 +178,24 @@ def get_real_usage(resourcefilepath) -> pd.DataFrame:
     annual_mean_TB = totals_by_year_TB.groupby(level=[1, 2]).mean().unstack()
 
     return pd.concat([annual_mean, annual_mean_TB], axis=0).T
+
+
+def adjust_real_usage_on_mentalall(real_usage_df) -> pd.DataFrame:
+    """This is to adjust the average annual MentalAll usage in real usage dataframe that is output by get_real_usage.
+    The MentalAll usage was not adjusted in the preprocessing stage considering individual facilities and very low
+    reporting rates.
+    We now directly adjust its annual usage by facility level using the aggregated average annual reporting rates by
+    facility level. The latter is calculated based on DHIS2 Mental Health Report reporting rates."""
+    # the average annual reporting rates for Mental Health Report by facility level (%), 2015-2019
+    # could turn the reporting rates data into a ResourceFile if necessary
+    rr = {'0': None, '1a': 70.93, '1b': 31.25, '2': 46.78, '3': 47.50, '4': None}
+    rr_df = pd.DataFrame.from_dict(rr, orient='index').rename(columns={0: 'avg_annual_rr'})
+    # make the adjustment assuming 100% reporting rates
+    real_usage_df.loc[['1a', '1b', '2', '3'], 'MentalAll'] = (
+        real_usage_df.loc[['1a', '1b', '2', '3'], 'MentalAll'] * 100 /
+        rr_df.loc[['1a', '1b', '2', '3'], 'avg_annual_rr'])
+
+    return real_usage_df
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -198,6 +224,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     simulation_usage = get_simulation_usage(results_folder)
 
     real_usage = get_real_usage(resourcefilepath)
+    real_usage = adjust_real_usage_on_mentalall(real_usage)
 
     # Plot Simulation vs Real usage (Across all levels) (trimmed to 0.1 and 10)
     rel_diff_all_levels = (

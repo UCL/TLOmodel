@@ -32,7 +32,7 @@ from tlo.methods.diarrhoea import (
     increase_risk_of_death,
     make_treatment_perfect,
 )
-from tlo.methods.hsi_generic_first_appts import HSI_GenericFirstApptAtFacilityLevel0
+from tlo.methods.hsi_generic_first_appts import HSI_GenericNonEmergencyFirstAppt
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
@@ -305,9 +305,9 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
                      )
         # Edit rate of spurious symptoms to be limited to additional cases of diarrhoea:
         sp_symps = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
-        for symp in sp_symps['generic_symptom_name']:
+        for symp in sp_symps['name']:
             sp_symps.loc[
-                sp_symps['generic_symptom_name'] == symp,
+                sp_symps['name'] == symp,
                 ['prob_spurious_occurrence_in_adults_per_day', 'prob_spurious_occurrence_in_children_per_day']
             ] = 5.0 / 1000 if symp == 'diarrhoea' else 0.0
 
@@ -400,7 +400,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration(seed):
         'gi_treatment_date': pd.NaT,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
+    generic_hsi = HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
 
     # 1) If DxTest of danger signs perfect and 100% chance of referral --> Inpatient HSI should be created
@@ -475,7 +475,7 @@ def test_do_when_presentation_with_diarrhoea_severe_dehydration_dxtest_notfuncti
         'gi_treatment_date': pd.NaT,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
+    generic_hsi = HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
 
     # Only an out-patient appointment should be created as the DxTest for danger signs is not functional.
@@ -539,7 +539,7 @@ def test_do_when_presentation_with_diarrhoea_non_severe_dehydration(seed):
         'gi_treatment_date': pd.NaT,
     }
     df.loc[person_id, props_new.keys()] = props_new.values()
-    generic_hsi = HSI_GenericFirstApptAtFacilityLevel0(
+    generic_hsi = HSI_GenericNonEmergencyFirstAppt(
         module=sim.modules['HealthSeekingBehaviour'], person_id=person_id)
 
     # 1) Outpatient HSI should be created
@@ -914,6 +914,10 @@ def test_effect_of_vaccine(seed):
     # Get the method that determines dehydration
     get_dehydration = sim.modules['Diarrhoea'].models.get_dehydration
 
+    # increase probability to ensure at least one case of severe dehydration when vaccine is imperfect
+    sim.modules['Diarrhoea'].parameters['prob_dehydration_by_rotavirus'] = 1.0
+    sim.modules['Diarrhoea'].parameters['prob_dehydration_by_shigella'] = 1.0
+
     # 1) Make effect of vaccine perfect
     sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] = 0.0
     sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo'] = 0.0
@@ -931,8 +935,8 @@ def test_effect_of_vaccine(seed):
                         for _ in range(100)]
 
     # 2) Make effect of vaccine imperfect
-    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] = 1.0
-    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo'] = 1.0
+    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_under1yo'] = 0.5
+    sim.modules['Diarrhoea'].parameters['rr_severe_dehydration_due_to_rotavirus_with_R1_over1yo'] = 0.5
 
     # Check that if the vaccine is imperfect and the person is infected with rotavirus, then there sometimes is severe
     # dehydration.

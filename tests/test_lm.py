@@ -264,7 +264,7 @@ def test_logistic_application_low_ex():
     lm_low_ex_probs = eq.predict(df.loc[df.is_alive & (df.age_years >= 15)])
 
     # 4) confirm that the two methods agree
-    assert lm_low_ex_probs.equals(low_ex_probs)
+    pd.testing.assert_series_equal(lm_low_ex_probs, low_ex_probs)
 
 
 def test_logistic_application_tob():

@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import pytest
 
@@ -27,6 +26,7 @@ from tlo.methods.cardio_metabolic_disorders import (
     HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment,
     HSI_CardioMetabolicDisorders_StartWeightLossAndMedication,
 )
+from tlo.methods.demography import AgeUpdateEvent, age_at_date
 from tlo.methods.healthsystem import HealthSystemScheduler
 
 try:
@@ -165,8 +165,7 @@ def test_basic_run_with_high_incidence_hypertension(seed):
     # restrict population to individuals aged >=20 at beginning of sim
     start_date = pd.Timestamp(year=2010, month=1, day=1)
     df['start_date'] = pd.to_datetime(start_date)
-    df['diff_years'] = df.start_date - df.date_of_birth
-    df['diff_years'] = df.diff_years / np.timedelta64(1, 'Y')
+    df['diff_years'] = age_at_date(df.start_date, df.date_of_birth)
     df = df[df['diff_years'] >= 20]
     df = df[df.is_alive]
 
@@ -333,6 +332,7 @@ def make_simulation_health_system_functional(seed, cons_availability='all'):
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=False,
+                                           mode_appt_constraints=0,
                                            cons_availability=cons_availability
                                            ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -494,6 +494,7 @@ def test_if_medication_prevents_all_death(seed):
 
         # set probability of treatment working to 1
         p[f'{event}_hsi']["pr_treatment_works"] = 1
+        p['prob_care_provided_given_seek_emergency_care'] = 1.0
 
         # simulate for one year
         sim.simulate(end_date=Date(year=2011, month=1, day=1))
@@ -692,7 +693,7 @@ def test_hsi_weight_loss_and_medication(seed):
         # Refill_Medication event scheduled
 
         assert df.at[person_id, f"nc_{condition}_on_medication"]
-        assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4],
+        assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0].hsi_event,
                           HSI_CardioMetabolicDisorders_Refill_Medication)
 
         if condition != 'chronic_kidney_disease':  # those with CKD are not recommended to lose weight
@@ -731,6 +732,7 @@ def test_hsi_emergency_events(seed):
         # change treatment parameter to always work
         p = sim.modules['CardioMetabolicDisorders'].parameters
         p[f'{event}_hsi']["pr_treatment_works"] = 1
+        p['prob_care_provided_given_seek_emergency_care'] = 1.0
 
         # simulate for zero days
         sim = start_sim_and_clear_event_queues(sim)
@@ -762,7 +764,7 @@ def test_hsi_emergency_events(seed):
         assert df.at[person_id, f'nc_{event}_date_diagnosis'] == sim.date
         assert df.at[person_id, f'nc_{event}_on_medication']
         assert pd.isnull(df.at[person_id, f'nc_{event}_scheduled_date_death'])
-        assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0][4],
+        assert isinstance(sim.modules['HealthSystem'].HSI_EVENT_QUEUE[0].hsi_event,
                           HSI_CardioMetabolicDisorders_StartWeightLossAndMedication)
         assert f"{event}_damage" not in sim.modules['SymptomManager'].has_what(person_id)
 
@@ -864,3 +866,31 @@ def test_no_availability_of_consumables_for_events(seed):
 
         assert not df.at[person_id, 'is_alive']
         assert df.at[person_id, 'cause_of_death'] == f'{event}'
+
+
+def test_logging_works_for_person_older_than_100(seed):
+    """Check that no error is caused when someone older than 100 years is onset with a prevalent condition. (This has
+    previously caused an error.) """
+
+    sim = make_simulation_health_system_functional(seed=seed)
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date)
+
+    cdm = sim.modules['CardioMetabolicDisorders']
+    age_update_event = AgeUpdateEvent(
+        module=sim.modules['Demography'],
+        age_range_lookup=sim.modules['Demography'].AGE_RANGE_LOOKUP
+    )
+
+    event = cdm.events[0]
+    person_id = 0
+
+    for age in (80.0, 90.0, 100.0, 110.0, 120.0, 121.0):
+
+        # Make one person that age
+        df = sim.population.props
+        df.at[person_id, 'date_of_birth'] = sim.date - pd.DateOffset(days=age * 365)
+        age_update_event.run()
+
+        # Call the tracker
+        cdm.trackers['prevalent_event'].add(event, {df.at[person_id, 'age_range']: 1})

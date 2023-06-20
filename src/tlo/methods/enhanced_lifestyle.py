@@ -2,13 +2,12 @@
 Lifestyle module
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
-import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.util import get_person_id_to_inherit_from
 
@@ -344,9 +343,9 @@ class Lifestyle(Module):
 
         self.load_parameters_from_dataframe(dfd)
         # Manually set dates for campaign starts for now todo - fix this
-        p['start_date_campaign_exercise_increase'] = datetime.date(2010, 7, 1)
-        p['start_date_campaign_quit_smoking'] = datetime.date(2010, 7, 1)
-        p['start_date_campaign_alcohol_reduction'] = datetime.date(2010, 7, 1)
+        p['start_date_campaign_exercise_increase'] = Date(2010, 7, 1)
+        p['start_date_campaign_quit_smoking'] = Date(2010, 7, 1)
+        p['start_date_campaign_alcohol_reduction'] = Date(2010, 7, 1)
 
     def initialise_population(self, population):
         """Set our property values for the initial population.
@@ -1286,7 +1285,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         newly_not_high_salt_idx = high_salt_idx[random_draw < eff_rate_not_high_salt]
         df.loc[newly_not_high_salt_idx, 'li_high_salt'] = False
 
-        all_idx_campaign_salt_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
+        all_idx_campaign_salt_reduction = df.index[df.is_alive & (self.sim.date == Date(2010, 7, 1))]
         df.loc[all_idx_campaign_salt_reduction, 'li_exposed_to_campaign_salt_reduction'] = True
 
         # -------------------- HIGH SUGAR ----------------------------------------------------------
@@ -1307,7 +1306,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         newly_not_high_sugar_idx = high_sugar_idx[random_draw < eff_rate_not_high_sugar]
         df.loc[newly_not_high_sugar_idx, 'li_high_sugar'] = False
 
-        all_idx_campaign_sugar_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
+        all_idx_campaign_sugar_reduction = df.index[df.is_alive & (self.sim.date == Date(2010, 7, 1))]
         df.loc[all_idx_campaign_sugar_reduction, 'li_exposed_to_campaign_sugar_reduction'] = True
 
         # -------------------- BMI ----------------------------------------------------------
@@ -1348,7 +1347,7 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         newly_decrease_bmi_cat_idx = bmi_cat_3_to_5_idx[random_draw < eff_rate_lower_bmi]
         df.loc[newly_decrease_bmi_cat_idx, 'li_bmi'] = df['li_bmi'] - 1
 
-        all_idx_campaign_weight_reduction = df.index[df.is_alive & (self.sim.date == datetime.date(2010, 7, 1))]
+        all_idx_campaign_weight_reduction = df.index[df.is_alive & (self.sim.date == Date(2010, 7, 1))]
         df.loc[all_idx_campaign_weight_reduction, 'li_exposed_to_campaign_weight_reduction'] = True
 
         # --- FSW ---

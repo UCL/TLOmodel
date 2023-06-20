@@ -1,4 +1,4 @@
-# """
+"""
 # Remaining to do:
 # - streamline input arguments
 # - let the level of the appointment be in the log
@@ -7,6 +7,7 @@
 import datetime
 import heapq as hp
 import itertools
+import warnings
 from collections import Counter, defaultdict
 from collections.abc import Iterable
 from itertools import repeat
@@ -66,10 +67,14 @@ class HSIEventQueueItem(NamedTuple):
     The order of the attributes in the tuple is important as the queue sorting is done
     by the order of the items in the tuple, i.e. first by `priority`, then `topen` and
     so on.
+
+    Ensure priority is above topen in order for held-over events with low priority not
+    to jump ahead higher priority ones which were opened later.
     """
     priority: int
     topen: Date
-    queue_counter: int
+    rand_queue_counter: int  # Ensure order of events with same topen & priority is not model-dependent
+    queue_counter: int  # Include safety tie-breaker in unlikely event rand_queue_counter is equal
     tclose: Date
     # Define HSI_Event type as string to avoid NameError exception as HSI_Event defined
     # later in module (see https://stackoverflow.com/a/36286947/4798943)
@@ -100,7 +105,9 @@ class HSI_Event:
 
         # Defaults for the HSI information:
         self.TREATMENT_ID = ''
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        # self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})  # HSI needs this property, but it is not defined
+        #                                                                 in the Base class to allow overwriting with a
+        #                                                                 property function.
         self.ACCEPTED_FACILITY_LEVEL = None
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
 
@@ -412,6 +419,17 @@ class HealthSystem(Module):
                               'based on the _potential_ number and distribution of staff estimated, with adjustments '
                               'to permit each appointment type that should be run at facility level to do so in every '
                               'district.'),
+        'use_funded_or_actual_staffing': Parameter(
+            Types.STRING, "If `actual`, then use the numbers and distribution of staff estimated to be available"
+                          " currently; If `funded`, then use the numbers and distribution of staff that are "
+                          "potentially available. If 'funded_plus`, then use a dataset in which the allocation of "
+                          "staff to facilities is tweaked so as to allow each appointment type to run at each "
+                          "facility_level in each district for which it is defined. N.B. This parameter is "
+                          "over-ridden if an argument is provided to the module initialiser.",
+            # N.B. This could have been of type `Types.CATEGORICAL` but this made over-writing through `Scenario`
+            # difficult, due to the requirement that the over-writing value and original value are of the same type
+            # (enforced at line 376 of scenario.py).
+        ),
 
         # Consumables
         'item_and_package_code_lookups': Parameter(
@@ -437,7 +455,22 @@ class HealthSystem(Module):
         # Service Availability
         'Service_Availability': Parameter(
             Types.LIST, 'List of services to be available. NB. This parameter is over-ridden if an argument is provided'
-                        ' to the module initialiser.')
+                        ' to the module initialiser.'),
+
+        # Priority policy
+        'PriorityRank': Parameter(
+            Types.DATA_FRAME, "Data on the priority ranking of each of the Treatment_IDs to be adopted by "
+                              " the queueing system, where the lower the number the higher the priority, and on which"
+                              " categories of individuals classify for fast-tracking for specific treatments"),
+
+        # Mode Appt Constraints
+        'mode_appt_constraints': Parameter(
+            Types.INT, 'Integer code in `{0, 1, 2}` determining mode of constraints with regards to officer numbers '
+                       'and time - 0: no constraints, all HSI events run with no squeeze factor, 1: elastic constraints'
+                       ', all HSI events run with squeeze factor, 2: hard constraints, only HSI events with no squeeze '
+                       'factor run. N.B. This parameter is over-ridden if an argument is provided'
+                       ' to the module initialiser.',
+        )
     }
 
     PROPERTIES = {
@@ -451,12 +484,17 @@ class HealthSystem(Module):
         name: Optional[str] = None,
         resourcefilepath: Optional[Path] = None,
         service_availability: Optional[List[str]] = None,
-        mode_appt_constraints: int = 0,
+        mode_appt_constraints: Optional[int] = None,
         cons_availability: Optional[str] = None,
         beds_availability: Optional[str] = None,
+        randomise_queue: bool = False,
         ignore_priority: bool = False,
+        adopt_priority_policy: bool = False,
+        include_fasttrack_routes: bool = False,
+        list_fasttrack: Optional[List[str]] = None,
+        lowest_priority_considered: int = 2,
         capabilities_coefficient: Optional[float] = None,
-        use_funded_or_actual_staffing: Optional[str] = 'funded_plus',
+        use_funded_or_actual_staffing: Optional[str] = None,
         disable: bool = False,
         disable_and_reject_all: bool = False,
         compute_squeeze_factor_to_district_level: bool = True,
@@ -476,14 +514,27 @@ class HealthSystem(Module):
         or 'none', requests for consumables are not logged.
         :param beds_availability: If 'default' then use the availability specified in the ResourceFile; if 'none', then
         let no beds be ever be available; if 'all', then all beds are always available.
+        :param randomise_queue ensure that the queue is not model-dependent, i.e. properly randomised for equal topen
+            and priority
         :param ignore_priority: If ``True`` do not use the priority information in HSI
             event to schedule
+        :param adopt_priority_policy: If 'True' then use priority specified in the PriorityRank ResourceFile instead
+            of that provided as argument when scheduling via `schedule_hsi_event`.
+        :param priority_rank_dict: contains priority and fast tracking channel eligibility given Treatment_ID
+        :param include_fasttrack_routes: If 'True' then include fast-tracking options for vulnerable categories;
+            otherwise ignore indicators for fast-tracking. Options are specified in the PriorityRank ResourceFile
+        :param list_fasttrack: list of individual's attributes that will be relevant in
+            determining whether they should be eligible for fast tracking, and the corresponding
+            fast tracking channels that can be potentially available given the modules included in the simulation.
+        :param lowest_priority_considered: If priority lower (i.e. priority value greater than) this, do not schedule
+            (and instead call `never_ran` at the time of `tclose`).
         :param capabilities_coefficient: Multiplier for the capabilities of health
             officers, if ``None`` set to ratio of initial population to estimated 2010
             population.
         :param use_funded_or_actual_staffing: If `actual`, then use the numbers and distribution of staff estimated to
-        be available currently; If `funded`, then use the numbers and distribution of staff that are potentially
-        available.
+            be available currently; If `funded`, then use the numbers and distribution of staff that are potentially
+            available. If 'funded_plus`, then use a dataset in which the allocation of staff to facilities is tweaked
+            so as to allow each appointment type to run at each facility_level in each district for which it is defined.
         :param disable: If ``True``, disables the health system (no constraints and no
             logging) and every HSI event runs.
         :param disable_and_reject_all: If ``True``, disable health system and no HSI
@@ -506,18 +557,41 @@ class HealthSystem(Module):
         assert not (disable and disable_and_reject_all), (
             'Cannot have both disable and disable_and_reject_all selected'
         )
+
+        assert not (ignore_priority and adopt_priority_policy), (
+            'Cannot adopt a priority policy if the priority will be then ignored'
+        )
+
         self.disable = disable
         self.disable_and_reject_all = disable_and_reject_all
 
-        assert mode_appt_constraints in {0, 1, 2}
-
-        self.mode_appt_constraints = mode_appt_constraints
+        self.mode_appt_constraints = None  # Will be the final determination of the `mode_appt_constraints'
+        if mode_appt_constraints is not None:
+            assert mode_appt_constraints in {0, 1, 2}
+        self.arg_mode_appt_constraints = mode_appt_constraints
 
         self.ignore_priority = ignore_priority
+
+        self.lowest_priority_considered = lowest_priority_considered
+
+        self.adopt_priority_policy = adopt_priority_policy
+
+        self.rng_for_hsi_queue = None  # Will be a dedicated RNG for the purpose of randomising the queue
+        self.rng_for_dx = None  # Will be a dedicated RNG for the purpose of determining Dx Test results
+
+        self.randomise_queue = randomise_queue
+
+        self.include_fasttrack_routes = include_fasttrack_routes
 
         # Store the argument provided for service_availability
         self.arg_service_availabily = service_availability
         self.service_availability = ['*']  # provided so that there is a default even before simulation is run
+
+        # Store the attributes of a person that will be relevant in determining who can qualify
+        # for fast tracking
+        # Store the fast tracking channels that will be relevant for policy given the modules included
+        self.arg_list_fasttrack = list_fasttrack
+        self.list_fasttrack = []  # provided so that there is a default even before simulation is run
 
         # Check that the capabilities coefficient is correct
         if capabilities_coefficient is not None:
@@ -525,9 +599,10 @@ class HealthSystem(Module):
             assert isinstance(capabilities_coefficient, float)
         self.capabilities_coefficient = capabilities_coefficient
 
-        # Find which resourcefile to use - those for the actual staff available or the funded staff available
-        assert use_funded_or_actual_staffing in ['actual', 'funded', 'funded_plus']
-        self.use_funded_or_actual_staffing = use_funded_or_actual_staffing
+        # Find which set of assumptions to use - those for the actual staff available or the funded staff available
+        if use_funded_or_actual_staffing is not None:
+            assert use_funded_or_actual_staffing in ['actual', 'funded', 'funded_plus']
+        self.arg_use_funded_or_actual_staffing = use_funded_or_actual_staffing
 
         # Define (empty) list of registered disease modules (filled in at `initialise_simulation`)
         self.recognised_modules_names = []
@@ -586,7 +661,7 @@ class HealthSystem(Module):
 
         path_to_resourcefiles_for_healthsystem = Path(self.resourcefilepath) / 'healthsystem'
 
-        # Read parmaters for overall performance of the HealthSystem
+        # Read parameters for overall performance of the HealthSystem
         self.load_parameters_from_dataframe(pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'ResourceFile_HealthSystem_parameters.csv'
         ))
@@ -625,13 +700,30 @@ class HealthSystem(Module):
         self.parameters['BedCapacity'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'infrastructure_and_equipment' / 'ResourceFile_Bed_Capacity.csv')
 
+        # Data on the priority of each Treatment_ID that should be adopted in the queueing system
+        self.parameters['PriorityRank'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'ResourceFile_PriorityRanking.csv')
+
+        # Check that no duplicates are included in priority input file
+        # There might be a more suitable place to put this check
+        assert not self.parameters['PriorityRank']['Treatment'].duplicated().any()
+
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
+        # Create dedicated RNGs for separate functions done by the HealthSystem module
+        self.rng_for_hsi_queue = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
+        self.rng_for_dx = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
+        rng_for_consumables = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
+
+        # Determine mode_appt_constraints
+        self.mode_appt_constraints = self.get_mode_appt_constraints()
 
         # Determine service_availability
         self.service_availability = self.get_service_availability()
 
-        self.process_human_resources_files()
+        self.process_human_resources_files(
+            use_funded_or_actual_staffing=self.get_use_funded_or_actual_staffing()
+        )
 
         # Initialise the BedDays class
         self.bed_days = BedDays(hs_module=self,
@@ -640,8 +732,26 @@ class HealthSystem(Module):
 
         # Initialise the Consumables class
         self.consumables = Consumables(data=self.parameters['availability_estimates'],
-                                       rng=self.rng,
+                                       rng=rng_for_consumables,
                                        availability=self.get_cons_availability())
+
+        # Convert PriorityRank dataframe to dictionary
+        if self.adopt_priority_policy:
+            self.priority_rank_dict = \
+                self.parameters['PriorityRank'].set_index("Treatment", drop=True).to_dict(orient="index")
+
+        # The attributes that can be looked up to determine whether a person might be eligible
+        # for fast-tracking, as well as the corresponding fast-tracking channels, depend on the modules
+        # included in the simulation. Store the attributes&channels pairs allowed given the modules included
+        # to avoid having to recheck which modules are saved every time an HSI_Event is scheduled.
+        if self.include_fasttrack_routes:
+            self.list_fasttrack.append(('age_exact_years', 'FT_if_5orUnder'))
+            if 'Contraception' in self.sim.modules or 'SimplifiedBirths' in self.sim.modules:
+                self.list_fasttrack.append(('is_pregnant', 'FT_if_pregnant'))
+            if 'Hiv' in self.sim.modules:
+                self.list_fasttrack.append(('hv_diagnosed', 'FT_if_Hivdiagnosed'))
+            if 'Tb' in self.sim.modules:
+                self.list_fasttrack.append(('tb_diagnosed', 'FT_if_tbdiagnosed'))
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -701,7 +811,7 @@ class HealthSystem(Module):
                 }
             )
 
-    def process_human_resources_files(self):
+    def process_human_resources_files(self, use_funded_or_actual_staffing: str):
         """Create the data-structures needed from the information read into the parameters."""
 
         # * Define Facility Levels
@@ -796,14 +906,14 @@ class HealthSystem(Module):
         self._facilities_for_each_district = facilities_per_level_and_district
 
         # * Store 'DailyCapabilities' in correct format and using the specified underlying assumptions
-        self._daily_capabilities = self.format_daily_capabilities()
+        self._daily_capabilities = self.format_daily_capabilities(use_funded_or_actual_staffing)
 
         # Also, store the set of officers with non-zero daily availability
         # (This is used for checking that scheduled HSI events do not make appointment requiring officers that are
         # never available.)
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
 
-    def format_daily_capabilities(self) -> pd.Series:
+    def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> pd.Series:
         """
         This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to include
         every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity
@@ -815,7 +925,7 @@ class HealthSystem(Module):
         """
 
         # Get the capabilities data imported (according to the specified underlying assumptions).
-        capabilities = self.parameters[f'Daily_Capabilities_{self.use_funded_or_actual_staffing}']
+        capabilities = self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
         capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
 
         # Create dataframe containing background information about facility and officer types
@@ -887,7 +997,7 @@ class HealthSystem(Module):
         return service_availability
 
     def get_cons_availability(self) -> str:
-        """Set consumables availability. (Should be equal to what is specified by the parameter, but overwrite with
+        """Returns consumables availability. (Should be equal to what is specified by the parameter, but overwrite with
         what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
 
         if self.arg_cons_availability is None:
@@ -904,7 +1014,7 @@ class HealthSystem(Module):
         return _cons_availability
 
     def get_beds_availability(self) -> str:
-        """Set beds availability. (Should be equal to what is specified by the parameter, but overwrite with
+        """Returns beds availability. (Should be equal to what is specified by the parameter, but overwrite with
         what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
 
         if self.arg_beds_availability is None:
@@ -924,6 +1034,25 @@ class HealthSystem(Module):
                     )
 
         return _beds_availability
+
+    def schedule_to_call_never_ran_on_date(self, hsi_event: 'HSI_Event', tdate: datetime.datetime):
+        """Function to schedule never_ran being called on a given date"""
+        self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tdate)
+
+    def get_mode_appt_constraints(self) -> int:
+        """Returns `mode_appt_constraints`. (Should be equal to what is specified by the parameter, but overwrite with
+        what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
+        return self.parameters['mode_appt_constraints'] \
+            if self.arg_mode_appt_constraints is None \
+            else self.arg_mode_appt_constraints
+
+    def get_use_funded_or_actual_staffing(self) -> str:
+        """Returns `use_funded_or_actual_staffing`. (Should be equal to what is specified by the parameter, but
+        overwrite with what was provided in argument if an argument was specified -- provided for backward
+        compatibility/debugging.)"""
+        return self.parameters['use_funded_or_actual_staffing'] \
+            if self.arg_use_funded_or_actual_staffing is None \
+            else self.arg_use_funded_or_actual_staffing
 
     def schedule_hsi_event(
         self,
@@ -954,7 +1083,7 @@ class HealthSystem(Module):
         assert topen >= self.sim.date
 
         # Check that priority is in valid range
-        assert priority in (0, 1, 2)
+        assert priority >= 0
 
         # Check that topen is strictly before tclose
         assert topen < tclose
@@ -962,6 +1091,15 @@ class HealthSystem(Module):
         # If ignoring the priority in scheduling, then over-write the provided priority information with 0.
         if self.ignore_priority:
             priority = 0
+
+        if self.adopt_priority_policy:
+            # Look-up priority ranking of this treatment_ID in the policy adopted
+            priority = self.enforce_priority_policy(hsi_event=hsi_event)
+
+        # If priority of HSI_Event lower than the lowest one considered, ignore event in scheduling
+        if priority > self.lowest_priority_considered:
+            self.schedule_to_call_never_ran_on_date(hsi_event=hsi_event, tdate=tclose)  # Call this on tclose
+            return
 
         # Check if healthsystem is disabled/disable_and_reject_all and, if so, schedule a wrapped event:
         if self.disable and (not self.disable_and_reject_all):
@@ -971,7 +1109,7 @@ class HealthSystem(Module):
 
         if self.disable_and_reject_all:
             # If healthsystem is disabled the HSI will never run: schedule for the `never_ran` method on `tclose`.
-            self.sim.schedule_event(HSIEventWrapper(hsi_event=hsi_event, run_hsi=False), tclose)
+            self.schedule_to_call_never_ran_on_date(hsi_event=hsi_event, tdate=tclose)  # Call this on tclose
             return
 
         # Check that this is a legitimate health system interaction (HSI) event.
@@ -998,11 +1136,64 @@ class HealthSystem(Module):
         """Add an event to the HSI_EVENT_QUEUE."""
         # Create HSIEventQueue Item, including a counter for the number of HSI_Events, to assist with sorting in the
         # queue (NB. the sorting is done ascending and by the order of the items in the tuple).
+
         self.hsi_event_queue_counter += 1
+
+        if self.randomise_queue:
+            # Might be best to use float here, and if rand_queue is off just assign it a fixed value (?)
+            rand_queue = self.rng_for_hsi_queue.randint(0, 1000000)
+        else:
+            rand_queue = self.hsi_event_queue_counter
+
         _new_item: HSIEventQueueItem = HSIEventQueueItem(
-            priority, topen, self.hsi_event_queue_counter, tclose, hsi_event)
+            priority, topen, rand_queue, self.hsi_event_queue_counter, tclose, hsi_event)
+
         # Add to queue:
         hp.heappush(self.HSI_EVENT_QUEUE, _new_item)
+
+    # This is where the priority policy is enacted
+    def enforce_priority_policy(self, hsi_event) -> int:
+        """Check the priority of the Treatment_ID based on policy under consideration """
+
+        if (hsi_event.TREATMENT_ID == 'FirstAttendance_Emergency'):
+            return 0  # Emergency appointment have the highest priority by definition
+        else:
+
+            pr = self.priority_rank_dict
+            pdf = self.sim.population.props
+
+            if hsi_event.TREATMENT_ID in pr:
+                _priority_ranking = pr[hsi_event.TREATMENT_ID]['Priority']
+
+                if self.include_fasttrack_routes:
+                    # Check whether fast-tracking routes are available for this treatment. If person qualifies for one
+                    # don't check remaining, as they all lead to priority=1.
+
+                    # Look up relevant attributes for HSI_Event's target
+                    list_targets = [_t[0] for _t in self.list_fasttrack]
+                    target_attributes = pdf.loc[hsi_event.target, list_targets]
+
+                    # First item in Lists is age-related, therefore need to invoke different logic.
+                    if (
+                        (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]] == 1)
+                        and (target_attributes['age_exact_years'] <= 5)
+                    ):
+                        return 1
+
+                    # All other attributes are boolean, can do this in for loop
+                    for i in range(1, len(self.list_fasttrack)):
+                        if (
+                            (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]] == 1)
+                            and target_attributes[i]
+                        ):
+                            return 1
+
+                return _priority_ranking
+
+            else:  # If treatment is not ranked in the policy, issue a warning and assign priority=2 by default
+                warnings.warn(UserWarning(f"Couldn't find priority ranking for TREATMENT_ID /n"
+                                          f"{hsi_event.TREATMENT_ID}"))
+                return 2
 
     def check_hsi_event_is_valid(self, hsi_event):
         """Check the integrity of an HSI_Event."""
@@ -1016,7 +1207,8 @@ class HealthSystem(Module):
             # It must have EXPECTED_APPT_FOOTPRINT, BEDDAYS_FOOTPRINT and ACCEPTED_FACILITY_LEVELS.
 
             # Correct formatted EXPECTED_APPT_FOOTPRINT
-            assert self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT)
+            assert self.appt_footprint_is_valid(hsi_event.EXPECTED_APPT_FOOTPRINT), \
+                f"the incorrectly formatted appt_footprint is {hsi_event.EXPECTED_APPT_FOOTPRINT}"
 
             # That it has an acceptable 'ACCEPTED_FACILITY_LEVEL' attribute
             assert hsi_event.ACCEPTED_FACILITY_LEVEL in self._facility_levels, \
@@ -1137,7 +1329,7 @@ class HealthSystem(Module):
         """
         # Check that all keys known appointment types and all values non-negative
         return isinstance(appt_footprint, dict) and all(
-            k in self._appointment_types and v > 0
+            k in self._appointment_types and v >= 0
             for k, v in appt_footprint.items()
         )
 
@@ -1284,12 +1476,21 @@ class HealthSystem(Module):
                 load_factor[officer] = max(call / availability - 1, 0)
 
         # 2) Convert these load-factors into an overall 'squeeze' signal for each HSI,
-        # based on the highest load-factor of any officer required (or zero if event
-        # has an empty footprint)
-        squeeze_factor_per_hsi_event = np.array([
-            max((load_factor[officer] for officer in footprint), default=0)
-            for footprint in footprints_per_event
-        ])
+        # based on the load-factor of the officer with the largest time requirement for that
+        # event (or zero if event has an empty footprint)
+        squeeze_factor_per_hsi_event = []
+        for footprint in footprints_per_event:
+            if len(footprint) > 0:
+                # If any of the required officers are not available at the facility, set overall squeeze to inf
+                require_missing_officer = any([load_factor[officer] == float('inf') for officer in footprint])
+
+                if require_missing_officer:
+                    squeeze_factor_per_hsi_event.append(float('inf'))
+                else:
+                    squeeze_factor_per_hsi_event.append(max(load_factor[footprint.most_common()[0][0]], 0.))
+            else:
+                squeeze_factor_per_hsi_event.append(0.0)
+        squeeze_factor_per_hsi_event = np.array(squeeze_factor_per_hsi_event)
 
         assert (squeeze_factor_per_hsi_event >= 0).all()
 
@@ -1336,6 +1537,7 @@ class HealthSystem(Module):
         logger.debug(
             key="HSI_Event",
             data={
+                'Event_Name': event_details.event_name,
                 'TREATMENT_ID': event_details.treatment_id,
                 'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
                 'Person_ID': person_id,
@@ -1354,6 +1556,8 @@ class HealthSystem(Module):
                 self._hsi_event_counts_log_period[event_details_key] += 1
             self._summary_counter.record_hsi_event(
                 treatment_id=event_details.treatment_id,
+                hsi_event_name=event_details.event_name,
+                squeeze_factor=squeeze_factor,
                 appt_footprint=event_details.appt_footprint,
                 level=event_details.facility_level,
             )
@@ -1422,8 +1626,8 @@ class HealthSystem(Module):
         list_of_events = list()
 
         for ev_tuple in self.HSI_EVENT_QUEUE:
-            date = ev_tuple[1]  # this is the 'topen' value
-            event = ev_tuple[4]
+            date = ev_tuple.topen
+            event = ev_tuple.hsi_event
             if isinstance(event.target, (int, np.integer)):
                 if event.target == person_id:
                     list_of_events.append((date, event))
@@ -1530,6 +1734,8 @@ class HealthSystem(Module):
                 event = event.hsi_event
                 squeeze_factor = squeeze_factor_per_hsi_event[ev_num]                  # todo use zip here!
 
+                _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT  # store appt_footprint before running
+
                 ok_to_run = (
                     (self.mode_appt_constraints == 0)
                     or (self.mode_appt_constraints == 1)
@@ -1583,8 +1789,9 @@ class HealthSystem(Module):
                                 compute_squeeze_factor_to_district_level=self.compute_squeeze_factor_to_district_level,
                             )
                     else:
-                        # no actual footprint is returned so take the expected initial declaration as the actual
-                        actual_appt_footprint = event.EXPECTED_APPT_FOOTPRINT
+                        # no actual footprint is returned so take the expected initial declaration as the actual,
+                        # as recorded before the HSI event run
+                        actual_appt_footprint = _appt_footprint_before_running
 
                     # Write to the log
                     self.record_hsi_event(
@@ -1702,7 +1909,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         while len(self.module.HSI_EVENT_QUEUE) > 0:
 
             next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
-            # Read the tuple and assemble into a dict 'next_event'
+            # Read the tuple and remove from heapq, and assemble into a dict 'next_event'
 
             event = next_event_tuple.hsi_event
 
@@ -1714,17 +1921,18 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 isinstance(event.target, tlo.population.Population)
                 or event.target in alive_persons
             ):
-                # if individual level event and the person who is the target is no longer alive, do nothing more
+                # if individual level event and the person who is the target is no longer alive, do nothing more,
+                # i.e. remove from heapq
                 pass
 
             elif self.sim.date < next_event_tuple.topen:
                 # The event is not yet due (before topen)
                 hp.heappush(_list_of_events_not_due_today, next_event_tuple)
 
-                if next_event_tuple.priority == 2:
+                if next_event_tuple.priority == self.module.lowest_priority_considered:
                     # Check the priority
-                    # If the next event is not due and has low priority, then stop looking through the heapq
-                    # as all other events will also not be due.
+                    # If the next event is not due and has lowest allowed priority, then stop looking
+                    # through the heapq as all other events will also not be due.
                     break
 
             else:
@@ -1844,12 +2052,26 @@ class HealthSystemSummaryCounter:
         self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
         # <--Same as `self._appts` but also split by facility_level
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
+        self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
+        #                                                           treatment_id. Key is of the form:
+        #                                                           "<TREATMENT_ID>:<HSI_EVENT_NAME>"
 
-    def record_hsi_event(self, treatment_id: str, appt_footprint: Counter, level: str) -> None:
+    def record_hsi_event(self,
+                         treatment_id: str,
+                         hsi_event_name: str,
+                         squeeze_factor: float,
+                         appt_footprint: Counter,
+                         level: str
+                         ) -> None:
         """Add information about an `HSI_Event` to the running summaries."""
 
         # Count the treatment_id:
         self._treatment_ids[treatment_id] += 1
+
+        # Add the squeeze-factor to the list
+        self._squeeze_factor_by_hsi_event_name[
+            f"{treatment_id}:{hsi_event_name}"
+        ].append(squeeze_factor)
 
         # Count each type of appointment:
         for appt_type, number in appt_footprint:
@@ -1868,11 +2090,15 @@ class HealthSystemSummaryCounter:
         logger_summary.info(
             key="HSI_Event",
             description="Counts of the HSI_Events that have occurred in this calendar year by TREATMENT_ID, "
-                        "and counts of the 'Appt_Type's that have occurred in this calendar year.",
+                        "and counts of the 'Appt_Type's that have occurred in this calendar year,"
+                        "and the average squeeze_factor for HSIs that have occurred in this calendar year.",
             data={
                 "TREATMENT_ID": self._treatment_ids,
                 "Number_By_Appt_Type_Code": self._appts,
                 "Number_By_Appt_Type_Code_And_Level": self._appts_by_level,
+                'squeeze_factor': {
+                    k: sum(v) / len(v) for k, v in self._squeeze_factor_by_hsi_event_name.items()
+                }
             },
         )
 
