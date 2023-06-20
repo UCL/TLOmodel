@@ -40,8 +40,8 @@ class ImpactOfOutReachServices(BaseScenario):
         super().__init__(
             seed=2025,
             start_date=Date(2010, 1, 1),
-            end_date=Date(2012, 12, 31),
-            initial_population_size=1000,
+            end_date=Date(2033, 12, 31),
+            initial_population_size=50000,
             number_of_draws=1,
             runs_per_draw=2,
         )
