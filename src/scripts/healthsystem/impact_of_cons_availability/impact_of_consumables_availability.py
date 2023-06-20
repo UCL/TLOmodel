@@ -20,8 +20,8 @@ class ImpactOfConsumablesAvailability(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2025, 12, 31)
-        self.pop_size = 100_000  # <- recommended population size for the runs
+        self.end_date = Date(2025, 1, 1)
+        self.pop_size = 20_000  # <- recommended population size for the runs
         self.number_of_draws = 2  # <- one scenario
         self.runs_per_draw = 3  # <- repeated this many times
 
@@ -33,7 +33,7 @@ class ImpactOfConsumablesAvailability(BaseScenario):
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
                 'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem': logging.INFO,
+                'tlo.methods.healthsystem.summary': logging.INFO,
             }
         }
 
