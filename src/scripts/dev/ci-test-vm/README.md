@@ -24,7 +24,7 @@ Ansible logs in to the virtual machine using SSH. As you might make/destroy the 
 
 `export ANSIBLE_HOST_KEY_CHECKING=False`
 
-We need a couple of third-party roles for Ansible. These should be install before provisioning, by running:
+We need a couple of third-party roles for Ansible. These should be installed before provisioning by running:
 
 ```
 ansible-galaxy install diodonfrost.git_lfs
@@ -33,14 +33,14 @@ ansible-galaxy install monolithprojects.github_actions_runner
 
 ## Run
 
-To match the CI VMs on the Azure CI machines, we use the Ubuntu 20 LTS box:
+To match the self-hosted running VMs deployed on Azure, we use the Ubuntu 20 LTS box:
 
 ```
 vagrant init ubuntu/focal64
 vagrant up
 ```
 
-Finally, run Ansible provisioning on VM:
+Finally, provision the VM (uses Ansible):
 
 ```
 vagrant provision
@@ -51,9 +51,9 @@ vagrant provision
 `vagrant provision` will use the playbook defined in the Vagrantfile. There is another playbook to install GHA runner, run separately. (There might be a better way to do this.)
 
 
-The runner requires a [github personal access token](https://github.com/settings/tokens). Use "classic" token and select repo rights. 
+The runner requires a [GitHub personal access token](https://github.com/settings/tokens). Use "classic" token and select repo rights. 
 
-Set the GitHub user and repository where you want to setup the runner (i.e. your personal TLOmodel fork) in provisioning/gha-runner.yml: 
+Set the GitHub user account and repository where you want to setup the runner (i.e. your personal TLOmodel fork) in provisioning/gha-runner.yml: 
 
 ```
 github_account: tamuri
