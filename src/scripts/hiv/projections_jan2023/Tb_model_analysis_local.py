@@ -8,10 +8,9 @@ import datetime
 import pickle
 import random
 from pathlib import Path
-
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import (  # deviance_measure,
+from tlo.methods import (
     demography,
     enhanced_lifestyle,
     epi,
@@ -40,7 +39,7 @@ popsize = 1000
 
 # set up the log config
 log_config = {
-    "filename": "baseline",
+    "filename": "cxrscaleup_run",
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
@@ -84,7 +83,7 @@ sim.modules["Tb"].parameters["scenario"] =0
 #sim.modules["Tb"].parameters["second_line_test"] = "sputum"
 # sim.modules["Tb"].parameters["scenario_start_date"] = start_date
 #sim.modules["Tb"].parameters["outreach_xray_start_date"] = Date(2011, 1, 1)
-#sim.modules["Tb"].parameters["probability_access_to_xray"] = 0.10
+sim.modules["Tb"].parameters["probability_access_to_xray"] = 0.11
 #sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.001
 
 # Run the simulation and flush the logger
@@ -95,10 +94,10 @@ sim.simulate(end_date=end_date)
 output = parse_log_file(sim.log_filepath)
 
 # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
-with open(outputpath / "baseline.pickle", "wb") as f:
+with open(outputpath / "cxrscaleup_run.pickle", "wb") as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
 
 # load the results
-with open(outputpath / "baseline.pickle", "rb") as f:
+with open(outputpath / "cxrscaleup_run.pickle", "rb") as f:
     output = pickle.load(f)

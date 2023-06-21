@@ -20,7 +20,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # with open(outputpath / "default_run.pickle", "rb") as f:
 #     output = pickle.load(f)
 
-with open(outputpath / "baseline.pickle", "rb") as f:
+with open(outputpath / "cxr_scaleup_run.pickle", "rb") as f:
     output = pickle.load(f)
 
 TARGET_PERIOD = (Date(2010, 1, 1), Date(2015, 12, 31))
@@ -84,8 +84,8 @@ def make_plot(_df, annotations=None):
 print(output.keys())
 #print(output(tlo.methods.healthsystem.summary).keys())
 # output serialises availability of  CXR consumables
-# cons_available = output['tlo.methods.healthsystem.summary']['Consumables'].drop(columns=[])
-# cons_available .to_excel(outputpath / "cons_available_NoXpert.xlsx")
+cons_available = output['tlo.methods.healthsystem.summary']['Consumables'].drop(columns=[])
+cons_available .to_excel(outputpath / "cons_available_cxrscaleup.xlsx")
 #
 # # output YLLs and YLDs
 #
@@ -104,19 +104,19 @@ print(output.keys())
 # Exports TB program indicators
 print(f"projected TB incidence{output['tlo.methods.tb']['tb_incidence']}")
 TB_incidence= output['tlo.methods.tb']['tb_incidence'].drop(columns=[])
-TB_incidence.to_excel(outputpath / "new_TB_cases_baseline.xlsx")
+TB_incidence.to_excel(outputpath / "new_TB_cases_cxrscaleup.xlsx")
 
 # output DALYs
 print(f"expected dalys{output['tlo.methods.healthburden']['dalys_stacked']}")
 #sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', 'sex']).size()
 sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].drop(columns=[])
-sample_dalys.to_excel(outputpath / "dalys_baseline.xlsx")
+sample_dalys.to_excel(outputpath / "dalys_cxrscaleup.xlsx")
 
 # output serialises mortality patterns
 print(f"expected deaths {output['tlo.methods.demography']['death']}")
 sample_deaths = output['tlo.methods.demography']['death'].groupby(['date','cause', 'sex']).size()
 #sample_deaths = output['tlo.methods.demography']['death'].drop(columns=[])
-sample_deaths.to_excel(outputpath / "mortality_baseline.xlsx")
+sample_deaths.to_excel(outputpath / "mortality_cxrscaleup.xlsx")
 
 
 # # results_folder = Path("./outputs")
