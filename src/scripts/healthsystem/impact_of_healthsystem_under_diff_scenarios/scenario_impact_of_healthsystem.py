@@ -19,7 +19,9 @@ from pathlib import Path
 from typing import Dict
 
 from tlo import Date, logging
+from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
+from tlo.methods.scenario_switcher import ScenarioSwitcher
 from tlo.scenario import BaseScenario
 
 
@@ -36,7 +38,7 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'effect_of_each_treatment',
+            'filename': 'effect_of_healthsystem_under_different_modes',
             'directory': Path('./outputs'),  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
@@ -48,31 +50,13 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources)
+        return fullmodel(resourcefilepath=self.resources) + [ScenarioSwitcher(resourcefilepath=self.resources)]
 
     def draw_parameters(self, draw_number, rng):
         return list(self._scenarios.values())[draw_number]
 
     def _get_scenarios(self) -> Dict[str, Dict]:
-        """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
-        0. "No Healthcare System"
-
-        1. "Defaults":
-            Normal healthcare seeking,
-            Default consumables,
-
-        2. "Perfect Healthcare Seeking":
-            Perfect healthcare seeking,
-            Default consumables,
-
-        3. "Perfect Consumables":
-            Normal healthcare seeking,
-            100% availability of consumables,
-
-        4. All changes:
-            Perfect healthcare seeking,
-            100% availability of consumables,
-        """
+        """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
         return {
             "No Healthcare System": {
@@ -81,45 +65,35 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
                 },
             },
 
-            "Defaults": {
-                'HealthSystem': {
-                    'Service_Availability': ['*'],
-                    'cons_availability': 'default',
-                },
-                'HealthSeekingBehaviour': {
-                    'force_any_symptom_to_lead_to_healthcareseeking': False
-                },
-            },
+            "With Hard Constraints":
+                # todo -- this will be the MODE 2 "Super-Rigid Constraints" scenario
+                mix_scenarios(
+                    get_parameters_for_status_quo()
+                ),
 
-            "Perfect Healthcare Seeking": {
-                'HealthSystem': {
-                    'Service_Availability': ['*'],
-                    'cons_availability': 'default',
-                },
-                'HealthSeekingBehaviour': {
-                    'force_any_symptom_to_lead_to_healthcareseeking': True
-                },
-            },
+            "Status Quo":
+                mix_scenarios(
+                    get_parameters_for_status_quo()
+                ),
 
-            "Perfect Consumables Availability": {
-                'HealthSystem': {
-                    'Service_Availability': ['*'],
-                    'cons_availability': 'all',
-                },
-                'HealthSeekingBehaviour': {
-                    'force_any_symptom_to_lead_to_healthcareseeking': False
-                },
-            },
+            "Perfect Healthcare Seeking":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {'ScenarioSwitcher': {'max_healthsystem_function': False, 'max_healthcare_seeking': True}},
+                ),
 
-            "All Changes": {
-                'HealthSystem': {
-                    'Service_Availability': ['*'],
-                    'cons_availability': 'all',
-                },
-                'HealthSeekingBehaviour': {
-                    'force_any_symptom_to_lead_to_healthcareseeking': True
-                },
-            },
+            "+ Perfect Clinical Practice":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
+                ),
+
+            "+ Perfect Consumables Availability":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {'ScenarioSwitcher': {'max_healthsystem_function': False, 'max_healthcare_seeking': True}},
+                    {'HealthSystem': {'cons_availability': 'all'}}
+                ),
         }
 
 

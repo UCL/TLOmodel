@@ -128,62 +128,74 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0)
 
-    # num_deaths_summarized = summarize(num_deaths).loc[0].unstack()
-    # num_dalys_summarized = summarize(num_dalys).loc[0].unstack()
+    # %% Charts of total numbers of deaths / DALYS
+    num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names)
+    num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names)
 
-    # Deaths and DALYS averted relative to Default Healthcare System
+    name_of_plot = f'Deaths, {target_period()}'
+    fig, ax = do_bar_plot_with_ci(num_deaths_summarized / 1e6)
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('(Millions)')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    name_of_plot = f'DALYs, {target_period()}'
+    fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6)
+    ax.set_title(name_of_plot)
+    ax.set_ylabel('(Millions)')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    # %% Deaths and DALYS averted relative to Status Quo
     num_deaths_averted = summarize(
         -1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison(
                 num_deaths.loc[0],
-                comparison='Defaults')
+                comparison='Status Quo')
         ).T
-    ).iloc[0].unstack().drop('No Healthcare System')
+    ).iloc[0].unstack().reindex(param_names).drop(['No Healthcare System', 'With Hard Constraints', 'Status Quo'])
 
     pc_deaths_averted = 100.0 * summarize(
         -1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison(
                 num_deaths.loc[0],
-                comparison='Defaults',
+                comparison='Status Quo',
                 scaled=True)
         ).T
-    ).iloc[0].unstack().drop('No Healthcare System')
+    ).iloc[0].unstack().reindex(param_names).drop(['No Healthcare System', 'With Hard Constraints', 'Status Quo'])
 
     num_dalys_averted = summarize(
         -1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison(
                 num_dalys.loc[0],
-                comparison='Defaults')
+                comparison='Status Quo')
         ).T
-    ).iloc[0].unstack().drop('No Healthcare System')
+    ).iloc[0].unstack().reindex(param_names).drop(['No Healthcare System', 'With Hard Constraints', 'Status Quo'])
 
     pc_dalys_averted = 100.0 * summarize(
         -1.0 *
         pd.DataFrame(
             find_difference_relative_to_comparison(
                 num_dalys.loc[0],
-                comparison='Defaults',
+                comparison='Status Quo',
                 scaled=True)
         ).T
-    ).iloc[0].unstack().drop('No Healthcare System')
-
-    # Plots....
-
-    # Bar plots for deaths averted for each HealthCare Configuration Scenario
-
-    order_of_bars = ['Perfect Healthcare Seeking', 'Perfect Consumables Availability', 'All Changes']
+    ).iloc[0].unstack().reindex(param_names).drop(['No Healthcare System', 'With Hard Constraints', 'Status Quo'])
 
     # DEATHS
-    name_of_plot = f'Additional Deaths Averted vs Defaults, {target_period()}'
+    name_of_plot = f'Additional Deaths Averted vs Status Quo, {target_period()}'
     fig, ax = do_bar_plot_with_ci(
-        num_deaths_averted.clip(lower=0.0)
-        .loc[order_of_bars],
+        num_deaths_averted.clip(lower=0.0),
         annotations=[
             f"{round(row['mean'], 1)} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
-            for _, row in pc_deaths_averted.loc[order_of_bars].clip(lower=0.0).iterrows()
+            for _, row in pc_deaths_averted.clip(lower=0.0).iterrows()
         ]
     )
     ax.set_title(name_of_plot)
@@ -194,13 +206,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     # DALYS
-    name_of_plot = f'Additional DALYs Averted vs Defaults, {target_period()}'
+    name_of_plot = f'Additional DALYs Averted vs Status Quo, {target_period()}'
     fig, ax = do_bar_plot_with_ci(
-        (num_dalys_averted / 1e6).clip(lower=0.0)
-        .loc[order_of_bars],
+        (num_dalys_averted / 1e6).clip(lower=0.0),
         annotations=[
             f"{round(row['mean'], 1)} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
-            for _, row in pc_dalys_averted.loc[order_of_bars].clip(lower=0.0).iterrows()
+            for _, row in pc_dalys_averted.clip(lower=0.0).iterrows()
         ]
     )
     ax.set_title(name_of_plot)
