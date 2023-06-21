@@ -54,7 +54,7 @@ class ImpactOfCxRScaleup(BaseScenario):
         )
     def log_configuration(self):
         return {
-            'filename': 'cxr_scaleup_scenario',
+            'filename': 'cxrscaleup_scenario',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,
