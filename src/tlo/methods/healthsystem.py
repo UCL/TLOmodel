@@ -1726,6 +1726,7 @@ class HealthSystem(Module):
         # Compute Fraction of Time For Each Officer and level
         officer = [_f.rsplit('Officer_')[1] for _f in comparison.index]
         level = [self._facility_by_facility_id[int(_fac_id)].level for _fac_id in facility_id]
+        level = list(map(lambda x: x.replace('1b', '2'), level))
         summary_by_officer = comparison.groupby(by=[officer, level])[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
         summary_by_officer['Fraction_Time_Used'] = (
             summary_by_officer['Minutes_Used'] / summary_by_officer['Total_Minutes_Per_Day']
