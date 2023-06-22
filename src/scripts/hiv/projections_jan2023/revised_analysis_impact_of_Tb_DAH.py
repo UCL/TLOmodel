@@ -44,7 +44,7 @@ tb_death_count = extract_results(
     do_scaling=False,
 )
 summary_deaths = summarize(tb_death_count)
-summary_deaths.to_excel(outputspath / "summary_death_xpert.xlsx")
+summary_deaths.to_excel(outputspath / "summary_death_nocxr.xlsx")
 
 #prints dictionary keys for the TB module
 print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
@@ -63,7 +63,7 @@ tb_hiv_prop = summarize(
 
 tb_hiv_prop.index = tb_hiv_prop.index.year
 tb_hiv_prop_with_year = pd.DataFrame(tb_hiv_prop)
-tb_hiv_prop.to_excel(outputspath / "PLHIV_tb_xpert.xlsx")
+tb_hiv_prop.to_excel(outputspath / "PLHIV_tb_nocxr.xlsx")
 
 #MDR TB cases
 mdr_tb_cases = summarize(
@@ -79,7 +79,7 @@ mdr_tb_cases = summarize(
 )
 mdr_tb_cases.index = mdr_tb_cases.index.year
 mdr_tb = pd.DataFrame(mdr_tb_cases)
-mdr_tb.to_excel(outputspath / "mdr_tb_xpert.xlsx")
+mdr_tb.to_excel(outputspath / "mdr_tb_nocxr.xlsx")
 
 # TB treatment coverage
 tb_tx = summarize(
@@ -95,7 +95,7 @@ tb_tx = summarize(
     )
 tb_tx.index = tb_tx.index.year,
 tb_tx_coverage = pd.DataFrame(tb_tx)
-tb_tx_coverage.to_excel(outputspath / "tb_tx_coverage_xpert.xlsx")
+tb_tx_coverage.to_excel(outputspath / "tb_tx_coverage_cxr.xlsx")
 
    ###summarizing incidence and mortality########################
     # computing person years to used as denominators for mortality rate and incidence
@@ -143,7 +143,7 @@ activeTB_inc_rate_df = pd.DataFrame(activeTB_inc_rate)
 active_tb_cases = "tb_inc_activeTB_inc_rate_xpert.xlsx"
 with pd.ExcelWriter(active_tb_cases) as writer:
     tb_inc.to_excel(writer, sheet_name="tb_inc")
-    activeTB_inc_rate_df.to_excel(writer, sheet_name="activeTB_inc_rate_xpert")
+    activeTB_inc_rate_df.to_excel(writer, sheet_name="activeTB_inc_rate_nocxr")
 
 #######################################################################
 # number of deaths and mortality rate
@@ -204,7 +204,7 @@ tb_dalys = tb_daly_summary(results_folder)
 # Export results to Excel
 tb_dalys.index = tb_dalys.index.year,
 summary_dalys = pd.DataFrame(tb_dalys)
-summary_dalys.to_excel(outputspath / "summary_tb_dalys_xpert.xlsx")
+summary_dalys.to_excel(outputspath / "summary_tb_dalys_nocxr.xlsx")
 
 
 
