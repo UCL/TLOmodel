@@ -82,8 +82,8 @@ sim.register(
 
 # set the scenario
 sim.modules["Tb"].parameters["scenario"] = 0
-sim.modules["Tb"].parameters["scenario_start_date"] = start_date
-sim.modules["Tb"].parameters["outreach_xray_start_date"] = Date(2099, 1, 1)
+#sim.modules["Tb"].parameters["scenario_start_date"] = start_date
+#sim.modules["Tb"].parameters["outreach_xray_start_date"] = Date(2099, 1, 1)
 
 
 # Run the simulation and flush the logger
