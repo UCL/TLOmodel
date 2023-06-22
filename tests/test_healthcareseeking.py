@@ -1579,17 +1579,19 @@ def test_non_emergency_first_appt_can_be_levels_0_1a_1b_2(seed):
     assert {'1a': 1.0} == get_events_scheduled_following_hcs_poll(
         prob_non_emergency_care_seeking_by_level=[0.0, 1.0, 0.0, 0.0])
 
-    # 100% chance that non-emergency-appointment is at level ('1b')
-    assert {'1b': 1.0} == get_events_scheduled_following_hcs_poll(
+    # 100% chance that non-emergency-appointment is at level ('1b') {occurs at level labelled as '2' with merge of
+    # levels '1b & 2')
+    assert {'2': 1.0} == get_events_scheduled_following_hcs_poll(
         prob_non_emergency_care_seeking_by_level=[0.0, 0.0, 1.0, 0.0])
 
-    # A mixture of 0 / 1a / 1b / 2
-    props = np.array(list(
-        get_events_scheduled_following_hcs_poll(
-            prob_non_emergency_care_seeking_by_level=[0.25, 0.25, 0.25, 0.25]).values()
-    ))
-    assert 4 == len(props)
-    assert all(props > 0)
+    # 100% chance that non-emergency-appointment is at level ('2')
+    assert {'2': 1.0} == get_events_scheduled_following_hcs_poll(
+        prob_non_emergency_care_seeking_by_level=[0.0, 0.0, 0.0, 1.0])
+
+    # A mixture of 0 / 1a / (1b) / 2
+    props = get_events_scheduled_following_hcs_poll(prob_non_emergency_care_seeking_by_level=[0.25, 0.25, 0.25, 0.25])
+    assert ('0' in set(props.keys())) and ('1a' in set(props.keys())) and ('2' in set(props.keys()))
+    assert all(np.array(list(props.values())) > 0)
 
 
 def test_custom_function_is_equivalent_to_linear_model(seed):
