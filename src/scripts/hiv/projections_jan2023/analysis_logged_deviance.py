@@ -40,7 +40,7 @@ popsize = 1000
 
 # set up the log config
 log_config = {
-    "filename": "test_run3x",
+    "filename": "test_run3",
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
@@ -95,10 +95,10 @@ sim.simulate(end_date=end_date)
 output = parse_log_file(sim.log_filepath)
 
 # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
-with open(outputpath / "default_run3.pickle", "wb") as f:
+with open(outputpath / "default_run3x.pickle", "wb") as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
 
 # load the results
-with open(outputpath / "default_run3.pickle", "rb") as f:
+with open(outputpath / "default_run3x.pickle", "rb") as f:
     output = pickle.load(f)

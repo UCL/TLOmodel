@@ -86,7 +86,7 @@ print(output.keys())
 #print(output(tlo.methods.healthsystem.summary).keys())
 # output serialises availability of  CXR consumables
 cons_available = output['tlo.methods.healthsystem.summary']['Consumables'].drop(columns=[])
-cons_available .to_excel(outputpath / "cons_available_3.xlsx")
+cons_available .to_excel(outputpath / "cons_available_3x.xlsx")
 #
 # # output YLLs and YLDs
 #
@@ -105,19 +105,19 @@ cons_available .to_excel(outputpath / "cons_available_3.xlsx")
 # Exports TB program indicators
 print(f"projected TB incidence{output['tlo.methods.tb']['tb_incidence']}")
 TB_incidence= output['tlo.methods.tb']['tb_incidence'].drop(columns=[])
-TB_incidence.to_excel(outputpath / "new_TB_cases_3.xlsx")
+TB_incidence.to_excel(outputpath / "new_TB_cases_3x.xlsx")
 
 # output DALYs
 print(f"expected dalys{output['tlo.methods.healthburden']['dalys_stacked']}")
 #sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].groupby(['cause', 'sex']).size()
 sample_dalys= output['tlo.methods.healthburden']['dalys_stacked'].drop(columns=[])
-sample_dalys.to_excel(outputpath / "dalys_3.xlsx")
+sample_dalys.to_excel(outputpath / "dalys_3x.xlsx")
 
 # output serialises mortality patterns
 print(f"expected deaths {output['tlo.methods.demography']['death']}")
 sample_deaths = output['tlo.methods.demography']['death'].groupby(['date','cause', 'sex']).size()
 #sample_deaths = output['tlo.methods.demography']['death'].drop(columns=[])
-sample_deaths.to_excel(outputpath / "mortality_3.xlsx")
+sample_deaths.to_excel(outputpath / "mortality_3x.xlsx")
 
 
 # # results_folder = Path("./outputs")
