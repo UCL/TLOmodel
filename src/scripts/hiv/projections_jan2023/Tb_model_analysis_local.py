@@ -39,7 +39,7 @@ popsize = 1000
 
 # set up the log config
 log_config = {
-    "filename": "DAH_run2",
+    "filename": "DAH_run1",
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
@@ -52,8 +52,8 @@ log_config = {
 }
 # Register the appropriate modules
 # need to call epi before tb to get bcg vax
-#seed = random.randint(0, 50000)
-seed = 41728  # set seed for reproducibility
+seed = random.randint(0, 50000)
+#seed = 41728  # set seed for reproducibility
 sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
@@ -79,11 +79,11 @@ sim.register(
 )
 
 # set the scenario
-sim.modules["Tb"].parameters["scenario"] =2
+sim.modules["Tb"].parameters["scenario"] =0
 #sim.modules["Tb"].parameters["second_line_test"] = "sputum"
 sim.modules["Tb"].parameters["scenario_start_date"] = start_date
 #sim.modules["Tb"].parameters["outreach_xray_start_date"] = Date(2011, 1, 1)
-sim.modules["Tb"].parameters["probability_access_to_xray"] = 0.0
+#sim.modules["Tb"].parameters["probability_access_to_xray"] = 0.0
 #sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.001
 
 # Run the simulation and flush the logger

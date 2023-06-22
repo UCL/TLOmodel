@@ -9,6 +9,7 @@ import matplotlib.patches as mpatches
 from matplotlib import pyplot as plt
 import numpy as np
 import pandas as pd
+
 from tlo.analysis.utils import extract_results, summarize
 from tlo import Date
 
