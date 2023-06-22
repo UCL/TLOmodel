@@ -10,15 +10,23 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import ScalarFormatter
 
 # Get the path of the folder that stores the data - three scenarios: actual, funded, funded_plus
-workingpath = Path('./resources/healthsystem/human_resources/actual')
+workingpath = Path('./resources/healthsystem/human_resources')
+wp_actual = workingpath / 'actual'
+wp_funded_plus = workingpath / 'funded_plus'
 
 # Define the path of output histograms - three scenarios: actual, funded, funded_plus
 outputpath = Path('./outputs/healthsystem/human_resources/actual')
+op_actual = outputpath / 'actual'
+op_funded_plus = outputpath / 'funded_plus'
 
-# Read data
-data = pd.read_csv(workingpath / 'ResourceFile_Daily_Capabilities.csv')
+# Read actual data
+data = pd.read_csv(wp_actual / 'ResourceFile_Daily_Capabilities.csv')
+
+# Read funded_plus data
+data_funded_plus = pd.read_csv(wp_funded_plus / 'ResourceFile_Daily_Capabilities.csv')
 
 
+# ***for actual scenario***
 # MINUTES PER HEALTH OFFICER CATEGORY BY DISTRICT
 data_districts = data.dropna(inplace=False)
 dat = pd.DataFrame(data_districts.groupby(['District', 'Officer_Category'], as_index=False)['Total_Mins_Per_Day'].sum())
@@ -156,3 +164,29 @@ ax.legend(ncol=3, bbox_to_anchor=(0, 1),
           loc='lower left', fontsize='medium')
 
 plt.savefig(outputpath / 'health_officer_minutes_per_district_level_4.pdf', bbox_inches='tight')
+
+# ***end of actual scenario***
+
+# ***compare actual and funded_plus scenarios***
+total_actual = data.drop_duplicates().groupby(['Officer_Category']).agg(
+    {'Total_Mins_Per_Day': 'sum', 'Staff_Count': 'sum'}).reset_index()
+total_actual['Total_Mins_Per_Year'] = total_actual['Total_Mins_Per_Day'] * 365.25
+total_actual['Scenario'] = 'Actual'
+total_actual[['Abs_Change_Staff_Count', 'Rel_Change_Staff_Count', 'Abs_Change_Total_Mins', 'Rel_Change_Total_Mins']] = 0
+
+total_funded_plus = data_funded_plus.drop_duplicates().groupby(['Officer_Category']).agg(
+    {'Total_Mins_Per_Day': 'sum', 'Staff_Count': 'sum'}).reset_index()
+total_funded_plus['Total_Mins_Per_Year'] = total_funded_plus['Total_Mins_Per_Day'] * 365.25
+total_funded_plus['Scenario'] = 'Establishment'
+
+assert (total_actual.Officer_Category == total_funded_plus.Officer_Category).all()
+total_funded_plus['Abs_Change_Staff_Count'] = total_funded_plus['Staff_Count'] - total_actual['Staff_Count']
+total_funded_plus['Rel_Change_Staff_Count'] = (total_funded_plus['Staff_Count'] - total_actual['Staff_Count']
+                                               ) / total_actual['Staff_Count']
+total_funded_plus['Abs_Change_Total_Mins'] = (total_funded_plus['Total_Mins_Per_Year'] -
+                                              total_actual['Total_Mins_Per_Year'])
+total_funded_plus['Rel_Change_Total_Mins'] = (total_funded_plus['Total_Mins_Per_Year'] -
+                                              total_actual['Total_Mins_Per_Year']
+                                              ) / total_actual['Total_Mins_Per_Year']
+
+total = pd.concat([total_actual, total_funded_plus]).reset_index(drop=True)
