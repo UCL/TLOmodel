@@ -80,7 +80,7 @@ sim.register(
 
 # set the scenario
 sim.modules["Tb"].parameters["scenario"] =1
-#sim.modules["Tb"].parameters["second_line_test"] = "sputum"
+sim.modules["Tb"].parameters["second_line_test"] = "sputum"
 #sim.modules["Tb"].parameters["scenario_start_date"] = start_date
 #sim.modules["Tb"].parameters["outreach_xray_start_date"] = Date(2011, 1, 1)
 #sim.modules["Tb"].parameters["probability_access_to_xray"] = 0.10
