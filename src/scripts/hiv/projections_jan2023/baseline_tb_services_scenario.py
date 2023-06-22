@@ -18,7 +18,6 @@ Job ID:
 import warnings
 from datetime import datetime
 from tlo import Date, logging
-import random
 from tlo.methods import (
     demography,
     simplified_births,
