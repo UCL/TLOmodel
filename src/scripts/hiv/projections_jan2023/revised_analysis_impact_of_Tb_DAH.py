@@ -24,7 +24,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
 #results_folder = (outputspath / 'impact_of_Tb_DAH_baseline-2023-06-14T133033Z')
-results_folder = get_scenario_outputs("nonxpert_tb_scenario-2023-06-22T151539Z", outputspath) [-1]
+results_folder = get_scenario_outputs("noncxr_tb_scenario-2023-06-22T153114Z", outputspath) [-1]
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
 # get basic information about the results
