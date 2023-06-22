@@ -24,7 +24,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
 #results_folder = (outputspath / 'impact_of_Tb_DAH_baseline-2023-06-14T133033Z')
-results_folder = get_scenario_outputs("impact_of_Tb_DAH_outreach-2023-06-14T142413Z", outputspath)[-1]
+results_folder = get_scenario_outputs("baseline_tb_services_scenario-2023-06-22T132158Z", outputspath)[-1]
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
 # get basic information about the results
@@ -44,7 +44,7 @@ tb_death_count = extract_results(
     do_scaling=False,
 )
 summary_deaths = summarize(tb_death_count)
-summary_deaths.to_excel(outputspath / "summary_death_outreach.xlsx")
+summary_deaths.to_excel(outputspath / "summary_death_baseline.xlsx")
 
 #prints dictionary keys for the TB module
 print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
