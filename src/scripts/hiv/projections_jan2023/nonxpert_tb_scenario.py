@@ -115,6 +115,7 @@ class ImpactOfNoXpert(BaseScenario):
         return {
             'Tb': {
                 'scenario': 1,
+                'second_line_test': "sputum"
             },
         }
 if __name__ == '__main__':

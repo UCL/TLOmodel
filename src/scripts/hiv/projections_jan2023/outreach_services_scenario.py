@@ -87,7 +87,7 @@ class ImpactOfOutReachServices(BaseScenario):
     def draw_parameters(self, draw_number, rng):
               return {
             'Tb': {
-                'scenario': 4,
+                'scenario': 0,
                 'probability_access_to_xray': 0.10,
                 'probability_community_chest_xray': 0.001
             }
