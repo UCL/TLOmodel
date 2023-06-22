@@ -21,7 +21,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # with open(outputpath / "default_run.pickle", "rb") as f:
 #     output = pickle.load(f)
 
-with open(outputpath / "default_run_xpert1", "rb") as f:
+with open(outputpath / "default_run_xpert1.pickle", "rb") as f:
     output = pickle.load(f)
 
 TARGET_PERIOD = (Date(2010, 1, 1), Date(2013, 12, 31))
