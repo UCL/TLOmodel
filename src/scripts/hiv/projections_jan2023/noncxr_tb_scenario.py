@@ -13,7 +13,7 @@ or locally using:
  check the batch configuration gets generated without error:
 tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/noncxr_tb_scenario.py
 
-Job ID:
+Job ID: noncxr_tb_scenario-2023-06-23T213325Z
 
  """
 

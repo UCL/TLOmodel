@@ -12,7 +12,7 @@ or locally using:
  check the batch configuration gets generated without error:
 tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/baseline_tb_services_scenario.py
 
-Job ID:
+Job ID: baseline_tb_services_scenario-2023-06-23T213051Z
 
  """
 import warnings
