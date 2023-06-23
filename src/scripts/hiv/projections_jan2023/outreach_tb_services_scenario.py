@@ -11,7 +11,7 @@ or locally using: tlo scenario-run src/scripts/hiv/projections_jan2023/outreach_
  check the batch configuration gets generated without error:
 tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/outreach_tb__services_scenario.py
 
-Job ID:
+Job ID: outreach_tb_services_scenario-2023-06-23T213902Z
  """
 
 import warnings
