@@ -8,8 +8,8 @@ from typing import Dict
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Types, logging
-from tlo.events import PopulationScopeEventMixin, RegularEvent
+from tlo import DateOffset, Module, Parameter, Types, logging, Date
+from tlo.events import PopulationScopeEventMixin, RegularEvent, Priority
 from tlo.methods import Metadata
 from tlo.methods.causes import (
     Cause,
@@ -40,6 +40,7 @@ class HealthBurden(Module):
         self.years_lived_with_disability = None
         self.recognised_modules_names = None
         self.causes_of_disability = None
+        self._years_written_to_log = []
 
     INIT_DEPENDENCIES = {'Demography'}
 
@@ -75,6 +76,7 @@ class HealthBurden(Module):
         2) Collect the module that will use this HealthBurden module
         3) Process the declarations of causes of disability made by the disease modules
         4) Launch the DALY Logger to run every month, starting with the end of the first month of simulation
+        5) Schedule `Healthburden_WriteToLog` that will write to log annually (end of each year)
         """
 
         # 1) Prepare data storage structures
@@ -111,6 +113,10 @@ class HealthBurden(Module):
 
         # 4) Launch the DALY Logger to run every month, starting with the end of the first month of simulation
         sim.schedule_event(Get_Current_DALYS(self), sim.date + DateOffset(months=1))
+
+        # 5) Schedule `Healthburden_WriteToLog` that will write to log annually
+        last_day_of_the_year = Date(sim.date.year, 12, 31)
+        sim.schedule_event(Healthburden_WriteToLog(self), last_day_of_the_year)
 
     def process_causes_of_disability(self):
         """
@@ -227,103 +233,9 @@ class HealthBurden(Module):
         pass
 
     def on_simulation_end(self):
-        """Log records of:
-        1) The Years Lived With Disability (YLD) (by the 'causes of disability' declared by the disease modules)
-        2) The Years Life Lost (YLL) (by the 'causes of death' declared by the disease module)
-        3) The total DALYS recorded (YLD + YLL) (by the labels that are declared for 'causes of death' and 'causes of
-        disability').
-        """
-
-        # Check that the multi-index of the dataframes are as expected
-        assert self.years_life_lost.index.equals(self.multi_index_for_age_and_wealth_and_time)
-        assert self.years_life_lost_stacked_time.index.equals(self.multi_index_for_age_and_wealth_and_time)
-        assert self.years_life_lost_stacked_age_and_time.index.equals(self.multi_index_for_age_and_wealth_and_time)
-        assert self.years_lived_with_disability.index.equals(self.multi_index_for_age_and_wealth_and_time)
-
-        # 1) Log the Years Lived With Disability (YLD) (by the 'causes of disability' declared by disease modules).
-        #    (Collapsing the wealth index [level 2] so that the output is by sex/age/cause only)
-        for _, row in self.years_lived_with_disability.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
-            logger.info(
-                key='yld_by_causes_of_disability',
-                data=row.to_dict(),
-                description='Years lived with disability by the declared cause_of_disability, '
-                            'broken down by year, sex, age-group'
-            )
-
-        # 2) Log the Years of Live Lost (YLL) (by the 'causes of death' declared by disease modules).
-        #    (Collapsing the wealth index [level 2] so that the output is by sex/age/cause only)
-        for _, row in self.years_life_lost.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
-            logger.info(
-                key='yll_by_causes_of_death',
-                data=row.to_dict(),
-                description='Years of life lost by the declared cause_of_death, '
-                            'broken down by year, sex, age-group. '
-                            'No stacking: i.e., each year of life lost is ascribed to the'
-                            ' age and year that the person would have lived.'
-            )
-        for _, row in self.years_life_lost_stacked_time.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
-            logger.info(
-                key='yll_by_causes_of_death_stacked',
-                data=row.to_dict(),
-                description='Years of life lost by the declared cause_of_death, '
-                            'broken down by year, sex, age-group. '
-                            'Stacking by time: i.e., every year of life lost is ascribed to'
-                            ' the year of the death, but each is ascribed to the age that '
-                            'the person would have lived, .'
-            )
-        for _, row in self.years_life_lost_stacked_age_and_time.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
-            logger.info(
-                key='yll_by_causes_of_death_stacked_by_age_and_time',
-                data=row.to_dict(),
-                description='Years of life lost by the declared cause_of_death, '
-                            'broken down by year, sex, age-group. '
-                            'Stacking by age and time: i.e., all the year of life lost '
-                            'are ascribed to the age of the death and the year of the death.'
-            )
-
-        # 3) Log total DALYS recorded (YLD + LYL) (by the labels declared)
-        #    (Collapsing the wealth index [level 2] so that the output is by sex/age/cause only)
-        dalys, dalys_stacked_by_time, dalys_stacked_by_age_and_time = self.compute_dalys()
-        # - dump to log, line-by-line
-        for _, row in dalys.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
-            logger.info(
-                key='dalys',
-                data=row.to_dict(),
-                description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
-                            ', broken down by year, sex, age-group. '
-                            'No stacking: i.e., each year of life lost is ascribed to the'
-                            ' age and year that the person would have lived.'
-            )
-        for _, row in dalys_stacked_by_time.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
-            logger.info(
-                key='dalys_stacked',
-                data=row.to_dict(),
-                description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
-                            ', broken down by year, sex, age-group. '
-                            'Stacking by time: i.e., every year of life lost is ascribed to'
-                            ' the year of the death, but each is ascribed to the age that '
-                            'the person would have lived, .'
-            )
-        for _, row in dalys_stacked_by_age_and_time.groupby(level=[0, 1, 3]).sum().reset_index().iterrows():
-            logger.info(
-                key='dalys_stacked_by_age_and_time',
-                data=row.to_dict(),
-                description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
-                            ', broken down by year, sex, age-group. '
-                            'Stacking by age and time: i.e., all the year of life lost '
-                            'are ascribed to the age of the death and the year of the death.'
-            )
-
-        # 4) Log total DALYS (Stacked by Age and Time), broken down by wealth only
-        for _, row in dalys_stacked_by_age_and_time.groupby(level=[2, 3]).sum().reset_index().iterrows():
-            logger.info(
-                key='dalys_by_wealth_stacked_by_age_and_time',
-                data=row.to_dict(),
-                description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
-                            ', broken down by year and wealth category.'
-                            'Stacking by age and time: i.e., all the year of life lost '
-                            'are ascribed to the age of the death and the year of the death.'
-            )
+        """Write to the log anything that has not already been logged (i.e., if simulation terminating mid-way through
+        a year when the WriteToLog event has not run."""
+        self.write_to_log(year=self.sim.date.year)
 
     def compute_dalys(self):
         """Compute total DALYS (by label), by age, sex and year. Do this by summing the YLD and LYL with respect to the
@@ -479,6 +391,113 @@ class HealthBurden(Module):
 
         return period
 
+    def write_to_log(self, year: int):
+        """Write to the log the YLL, YLD and DALYS for a specific year.
+        N.B. This is called at the end of the simulation as well as at the end of each year, so we need to check that
+        the year is not being written to the log more than once."""
+
+        if year in self._years_written_to_log:
+            return  # Skip if the year has already been logged.
+
+        def age_sex_cause_results_for_this_year(df) -> pd.DataFrame:
+            """Return dict that gives the summary of the `df` for the `year`. The Dict has keys:
+            {'year', 'sex', 'age_range', <<every column [cause] in the `df`>>.
+            These results sum across the wealth index."""
+            return {
+                **{'year': year},
+                **df.loc[(slice(None), slice(None), slice(None), year)].groupby(level=[0, 1])
+                                                                       .sum()
+                                                                       .reset_index()
+            }
+
+        self.check_multi_index()
+
+        # 1) Log the Years Lived With Disability (YLD) (by the 'causes of disability' declared by disease modules).
+        # todo still need to loop over each row
+        logger.info(
+            key='yld_by_causes_of_disability',
+            data=age_sex_cause_results_for_this_year(self.years_lived_with_disability),
+            description='Years lived with disability by the declared cause_of_disability, '
+                        'broken down by year, sex, age-group'
+        )
+
+        # 2) Log the Years of Live Lost (YLL) (by the 'causes of death' declared by disease modules).
+        logger.info(
+            key='yll_by_causes_of_death',
+            data=age_sex_cause_results_for_this_year(self.years_life_lost),
+            description='Years of life lost by the declared cause_of_death, '
+                        'broken down by year, sex, age-group. '
+                        'No stacking: i.e., each year of life lost is ascribed to the'
+                        ' age and year that the person would have lived.'
+        )
+        logger.info(
+            key='yll_by_causes_of_death_stacked',
+            data=age_sex_cause_results_for_this_year(self.years_life_lost_stacked_time),
+            description='Years of life lost by the declared cause_of_death, '
+                        'broken down by year, sex, age-group. '
+                        'Stacking by time: i.e., every year of life lost is ascribed to'
+                        ' the year of the death, but each is ascribed to the age that '
+                        'the person would have lived, .'
+        )
+        logger.info(
+            key='yll_by_causes_of_death_stacked_by_age_and_time',
+            data=age_sex_cause_results_for_this_year(self.years_life_lost_stacked_age_and_time),
+            description='Years of life lost by the declared cause_of_death, '
+                        'broken down by year, sex, age-group. '
+                        'Stacking by age and time: i.e., all the year of life lost '
+                        'are ascribed to the age of the death and the year of the death.'
+        )
+
+        # 3) Log total DALYS recorded (YLD + LYL) (by the labels declared)
+        dalys, dalys_stacked_by_time, dalys_stacked_by_age_and_time = self.compute_dalys()
+        # todo - could streamline the above line to do year-by-year and could do the processing above in single step.
+
+        logger.info(
+            key='dalys',
+            data=age_sex_cause_results_for_this_year(dalys),
+            description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
+                        ', broken down by year, sex, age-group. '
+                        'No stacking: i.e., each year of life lost is ascribed to the'
+                        ' age and year that the person would have lived.'
+        )
+        logger.info(
+            key='dalys_stacked',
+            data=age_sex_cause_results_for_this_year(dalys_stacked_by_time),
+            description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
+                        ', broken down by year, sex, age-group. '
+                        'Stacking by time: i.e., every year of life lost is ascribed to'
+                        ' the year of the death, but each is ascribed to the age that '
+                        'the person would have lived, .'
+        )
+        logger.info(
+            key='dalys_stacked_by_age_and_time',
+            data=age_sex_cause_results_for_this_year(dalys_stacked_by_age_and_time),
+            description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
+                        ', broken down by year, sex, age-group. '
+                        'Stacking by age and time: i.e., all the year of life lost '
+                        'are ascribed to the age of the death and the year of the death.'
+        )
+
+        # 4) Log total DALYS (Stacked by Age and Time), broken down by wealth only
+        # todo!
+        for _, row in dalys_stacked_by_age_and_time.groupby(level=[2, 3]).sum().reset_index().iterrows():
+            logger.info(
+                key='dalys_by_wealth_stacked_by_age_and_time',
+                data=row.to_dict(),
+                description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
+                            ', broken down by year and wealth category.'
+                            'Stacking by age and time: i.e., all the year of life lost '
+                            'are ascribed to the age of the death and the year of the death.'
+            )
+
+        self._years_written_to_log += [year]
+
+    def check_multi_index(self):
+        """Check that the multi-index of the dataframes are as expected"""
+        assert self.years_life_lost.index.equals(self.multi_index_for_age_and_wealth_and_time)
+        assert self.years_life_lost_stacked_time.index.equals(self.multi_index_for_age_and_wealth_and_time)
+        assert self.years_life_lost_stacked_age_and_time.index.equals(self.multi_index_for_age_and_wealth_and_time)
+        assert self.years_lived_with_disability.index.equals(self.multi_index_for_age_and_wealth_and_time)
 
 class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
     """
@@ -589,3 +608,17 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
         # Check multi-index is in check and that the addition of DALYS has worked
         assert self.module.years_lived_with_disability.index.equals(self.module.multi_index_for_age_and_wealth_and_time)
         assert abs(self.module.years_lived_with_disability.sum().sum() - (dalys_to_add + dalys_current)) < 1e-5
+        self.module.check_multi_index()
+
+
+class Healthburden_WriteToLog(RegularEvent, PopulationScopeEventMixin):
+    """ This event runs every year, as the last event on the last day of the year, and writes to the log the YLD, YLL
+    and DALYS accrued in that year."""
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=1), priority=Priority.END_OF_DAY)
+
+    def apply(self, population):
+        self.module.write_to_log(year=self.sim.date.year)
+
+
