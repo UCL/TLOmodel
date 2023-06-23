@@ -12,12 +12,9 @@ or locally using:
 
  check the batch configuration gets generated without error:
 tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/nonxpert_tb_scenario.py
-
 Job ID:
 
-
  """
-
 import warnings
 from tlo import Date, logging
 from tlo.methods import (
@@ -43,32 +40,8 @@ class ImpactOfNoXpert(BaseScenario):
         super().__init__(
             seed=2025,
             start_date=Date(2010, 1, 1),
-            end_date=Date(2013, 12, 31),
-            initial_population_size=1200,
-            number_of_draws=1,
-            runs_per_draw=2,
-        )
-    def log_configuration(self):
-        return {
-            'filename': 'nonxpert_tb_scenario',
-            'directory': './outputs',
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.population': logging.INFO,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.tb': logging.INFO,
-                'tlo.methods.hiv': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-            }
-        }
-class ImpactOfNoXpert(BaseScenario):
-    def __init__(self):
-        super().__init__(
-            seed=2025,
-            start_date=Date(2010, 1, 1),
             end_date=Date(2012, 12, 31),
-            initial_population_size=1200,
+            initial_population_size=50000,
             number_of_draws=1,
             runs_per_draw=2,
         )

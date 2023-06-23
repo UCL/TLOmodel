@@ -41,8 +41,8 @@ class ImpactOfBaselineTbServices(BaseScenario):
         super().__init__(
             seed=2025,
             start_date=Date(2010, 1, 1),
-            end_date=Date(2012, 12, 31),
-            initial_population_size=1200,
+            end_date=Date(2033, 12, 31),
+            initial_population_size=50000,
             number_of_draws=1,
             runs_per_draw=2,
         )
@@ -91,7 +91,6 @@ class ImpactOfBaselineTbServices(BaseScenario):
                 'scenario': 0,
             },
         }
-
 if __name__ == '__main__':
     from tlo.cli import scenario_run
     scenario_run([__file__])
