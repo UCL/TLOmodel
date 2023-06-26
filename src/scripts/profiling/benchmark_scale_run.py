@@ -25,8 +25,7 @@ def main(output_html_fname: str = None) -> None:
     LOCATION_OF_THIS_FILE = os.path.dirname(os.path.abspath(__file__))
     TLO_ROOT = (Path(LOCATION_OF_THIS_FILE) / ".." / ".." / "..").resolve()
 
-    # Decide on the parameters to pass to scale_run
-    # p has not been started, so these are not part of the profiling output
+    # Parameters to pass to scale_run
     years = 0
     months = 1
     initial_population = 50000
@@ -46,8 +45,7 @@ def main(output_html_fname: str = None) -> None:
 
     # Setup the profiler, to record the stack every interval seconds
     p = Profiler(interval=1e-3)
-    # Start the profiler and perform the run
-    # p.start()
+    # Perform the run, passing in the profiler so it can be started
     sc_run(
         years,
         months,
@@ -67,7 +65,6 @@ def main(output_html_fname: str = None) -> None:
         record_hsi_event_details,
         p,
     )
-    # profiled_session = p.stop()
     profiled_session = p.last_session
 
     # Parse results into HTML
