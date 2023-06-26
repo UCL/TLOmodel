@@ -18,9 +18,6 @@ def main() -> None:
     LOCATION_OF_THIS_FILE = os.path.dirname(os.path.abspath(__file__))
     TLO_ROOT = (Path(LOCATION_OF_THIS_FILE) / ".." / ".." / "..").resolve()
 
-    # Setup the profiler, to record the stack every interval seconds
-    p = Profiler(interval=1e-3)
-
     # Decide on the parameters to pass to scale_run
     # p has not been started, so these are not part of the profiling output
     years = 0
@@ -28,7 +25,7 @@ def main() -> None:
     initial_population = 50000
     tlo_dir = TLO_ROOT
     output_dir = (TLO_ROOT / "outputs").resolve()
-    log_filename = "for_profiling"
+    log_filename = "scale_run_benchmark"
     log_level = "DEBUG"
     parse_log_file = False
     show_progress_bar = True
@@ -40,8 +37,10 @@ def main() -> None:
     save_final_population = False
     record_hsi_event_details = False
 
+    # Setup the profiler, to record the stack every interval seconds
+    p = Profiler(interval=1e-3)
     # Start the profiler and perform the run
-    p.start()
+    # p.start()
     sc_run(
         years,
         months,
@@ -59,20 +58,21 @@ def main() -> None:
         mode_appt_constraints,
         save_final_population,
         record_hsi_event_details,
+        p,
     )
-    profiled_session = p.stop()
-    # Remove __main__ call from this script, from the output stack
-    profiled_session.root_frame(trim_stem=True)
+    # profiled_session = p.stop()
+    profiled_session = p.last_session
 
     # Parse results into HTML
     # show_all: removes library calls where identifiable
     # timeline: if true, samples are left in chronological order rather than total time
     html_renderer = HTMLRenderer(show_all=False, timeline=False)
 
-    # Parse output and write to file
     output_html_file = output_dir / (
         datetime.datetime.utcnow().strftime("%Y-%m-%d_%H%M") + "_scale_run_profile.html"
     )
+
+    # Write HTML file
     print(f"Writing output to: {output_html_file}", end="...", flush=True)
     with open(output_html_file, "w") as f:
         f.write(html_renderer.render(profiled_session))

@@ -41,11 +41,15 @@ def main(
     mode_appt_constraints: Literal[0, 1, 2],
     save_final_population: bool,
     record_hsi_event_details: bool,
+    profiler=None,
 ) -> None:
     """
     A run of the full model at scale using all disease modules considered complete and all
     modules for birth / labour / newborn outcome.
     """
+
+    if profiler is not None:
+        profiler.start()
 
     # Simulation period
     start_date = Date(2010, 1, 1)
@@ -109,6 +113,9 @@ def main(
                 ],
                 json_file,
             )
+
+    if profiler is not None:
+        profiler.stop()
     return
 
 
