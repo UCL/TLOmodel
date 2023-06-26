@@ -1,6 +1,7 @@
 -r base.in
 
 # Running tests
+pyinstrument
 pytest
 virtualenv
 tox
