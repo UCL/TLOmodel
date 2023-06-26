@@ -246,34 +246,37 @@ class HealthBurden(Module):
         a year when the WriteToLog event has not run."""
         self.write_to_log(year=self.sim.date.year)
 
-    def compute_dalys(self):
-        """Compute total DALYS (by label), by age, sex and year. Do this by summing the YLD and LYL with respect to the
-         label of the corresponding cause of each, and give output by label."""
-
-        def add_duplicated_columns(_df):
-            return _df.groupby(_df.columns, axis=1).sum()
-
-        yld = add_duplicated_columns(self.years_lived_with_disability.rename(
-            columns={c: self.causes_of_disability[c].label for c in self.years_lived_with_disability.columns}
-        ))
-
-        yll = add_duplicated_columns(self.years_life_lost.rename(
-            columns={c: self.sim.modules['Demography'].causes_of_death[c].label for c in self.years_life_lost.columns}
-        ))
-
-        yll_stacked_by_time = add_duplicated_columns(self.years_life_lost_stacked_time.rename(
-            columns={c: self.sim.modules['Demography'].causes_of_death[c].label for c in self.years_life_lost.columns}
-        ))
-
-        yll_stacked_by_age_and_time = add_duplicated_columns(self.years_life_lost_stacked_age_and_time.rename(
-            columns={c: self.sim.modules['Demography'].causes_of_death[c].label for c in self.years_life_lost.columns}
-        ))
-
-        return (
-            yld.add(yll, fill_value=0),
-            yld.add(yll_stacked_by_time, fill_value=0),
-            yld.add(yll_stacked_by_age_and_time, fill_value=0)
+    def get_dalys(self, yld: pd.DataFrame, yll: pd.DataFrame) -> pd.DataFrame:
+        """Returns pd.DataFrame of DALYS that is the sum of the 'Years Lived with Disability' (`yld`) and the 'Years
+         of Life Lost' (`yll`), under their common 'labels'. (i.e. multiple causes of yld and of yll may occur on the
+         same labels, and these labels unite the causes across yll and yld.)
+         """
+        # Put YLD under common label
+        yld_with_label = yld.rename(
+            columns={
+                c: self.causes_of_disability[c].label for c in yld.columns
+                if c in self.causes_of_disability
+            }
         )
+
+        # Put YLL under common label
+        yll_with_label = yll.rename(
+            columns={
+                c: self.sim.modules['Demography'].causes_of_death[c].label for c in yll
+                if c in self.sim.modules['Demography'].causes_of_death
+            }
+        )
+
+        # Join together and add, setting the index to be any columns that are not the causes_of_dalys (e.g. year, sex,
+        # age_range, wealth)
+        tots = pd.concat(
+            [
+                yld_with_label.set_index(sorted([i for i in yld_with_label.columns if i not in self._causes_of_dalys])),
+                yll_with_label.set_index(sorted([i for i in yll_with_label.columns if i not in self._causes_of_dalys])),
+            ],
+            axis=1,
+        )
+        return tots.groupby(tots.columns, axis=1).sum().reset_index()
 
     def get_daly_weight(self, sequlae_code):
         """
@@ -439,7 +442,7 @@ class HealthBurden(Module):
             key='yld_by_causes_of_disability',
             description='Years lived with disability by the declared cause_of_disability, '
                         'broken down by year, sex, age-group',
-            df=summarise_results_for_this_year(self.years_lived_with_disability),
+            df=(yld := summarise_results_for_this_year(self.years_lived_with_disability)),
             force_cols=sorted(set(self.causes_of_disability.keys())),
         )
 
@@ -450,7 +453,7 @@ class HealthBurden(Module):
                         'broken down by year, sex, age-group. '
                         'No stacking: i.e., each year of life lost is ascribed to the'
                         ' age and year that the person would have lived.',
-            df=summarise_results_for_this_year(self.years_life_lost),
+            df=(yll := summarise_results_for_this_year(self.years_life_lost)),
             force_cols=self._causes_of_yll,
         )
         log_df_line_by_line(
@@ -460,7 +463,7 @@ class HealthBurden(Module):
                         'Stacking by time: i.e., every year of life lost is ascribed to'
                         ' the year of the death, but each is ascribed to the age that '
                         'the person would have lived, .',
-            df=summarise_results_for_this_year(self.years_life_lost_stacked_time),
+            df=(yll_stacked_by_time := summarise_results_for_this_year(self.years_life_lost_stacked_time)),
             force_cols=self._causes_of_yll,
         )
         log_df_line_by_line(
@@ -469,21 +472,19 @@ class HealthBurden(Module):
                         'broken down by year, sex, age-group. '
                         'Stacking by age and time: i.e., all the year of life lost '
                         'are ascribed to the age of the death and the year of the death.',
-            df=summarise_results_for_this_year(self.years_life_lost_stacked_age_and_time),
+            df=(yll_stacked_by_age_and_time := summarise_results_for_this_year(
+                self.years_life_lost_stacked_age_and_time)),
             force_cols=self._causes_of_yll,
         )
 
         # 3) Log total DALYS recorded (YLD + LYL) (by the labels declared)
-        dalys, dalys_stacked_by_time, dalys_stacked_by_age_and_time = self.compute_dalys()
-        # todo - could streamline the above line to do year-by-year and could do the processing above in single step.
-
         log_df_line_by_line(
             key='dalys',
             description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
                         ', broken down by year, sex, age-group. '
                         'No stacking: i.e., each year of life lost is ascribed to the'
                         ' age and year that the person would have lived.',
-            df=summarise_results_for_this_year(dalys),
+            df=self.get_dalys(yld=yld, yll=yll),
             force_cols=self._causes_of_dalys,
         )
         log_df_line_by_line(
@@ -493,7 +494,7 @@ class HealthBurden(Module):
                         'Stacking by time: i.e., every year of life lost is ascribed to'
                         ' the year of the death, but each is ascribed to the age that '
                         'the person would have lived, .',
-            df=summarise_results_for_this_year(dalys_stacked_by_time),
+            df=self.get_dalys(yld=yld, yll=yll_stacked_by_time),
             force_cols=self._causes_of_dalys,
         )
         log_df_line_by_line(
@@ -502,18 +503,26 @@ class HealthBurden(Module):
                         ', broken down by year, sex, age-group. '
                         'Stacking by age and time: i.e., all the year of life lost '
                         'are ascribed to the age of the death and the year of the death.',
-            df=summarise_results_for_this_year(dalys_stacked_by_age_and_time),
+            df=self.get_dalys(yld=yld, yll=yll_stacked_by_age_and_time),
             force_cols=self._causes_of_dalys,
         )
 
-        # 4) Log total DALYS (Stacked by Age and Time), broken down by wealth only
+        # 4) Log total DALYS (Stacked by Age and Time), broken down by wealth only (with the YLL stacked by age and
+        # time)
+        yld_by_wealth = summarise_results_for_this_year(
+            self.years_lived_with_disability, level=2
+        )
+        yll_by_wealth = summarise_results_for_this_year(
+            self.years_life_lost_stacked_age_and_time, level=2
+        )
+
         log_df_line_by_line(
             key='dalys_by_wealth_stacked_by_age_and_time',
             description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
                         ', broken down by year and wealth category.'
                         'Stacking by age and time: i.e., all the year of life lost '
                         'are ascribed to the age of the death and the year of the death.',
-            df=summarise_results_for_this_year(dalys_stacked_by_age_and_time, level=2),
+            df=self.get_dalys(yld=yld_by_wealth, yll=yll_by_wealth),
             force_cols=self._causes_of_dalys,
         )
 
