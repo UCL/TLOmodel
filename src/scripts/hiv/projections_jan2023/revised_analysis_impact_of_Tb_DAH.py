@@ -250,56 +250,41 @@ mortality_rates_summary.to_excel(outputspath / "mortality_rates_summary.xlsx",in
 print(mortality_rates_summary)
 
 
+# Summarizing TB DALYs
+    # Define function to calculate number of DALYs
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2015, 1, 1))
+def num_dalys(_df):
+    """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
+    return _df \
+        .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
+        .drop(columns=['date', 'sex', 'age_range', 'cause', 'year']) \
+        .sum()
 
+# Define function to summarize TB DALYs
+def tb_daly_summary(results_folder):
+    dalys = extract_results(
+        results_folder,
+        module='tlo.methods.healthburden',
+        key='dalys_stacked',
+        custom_generate_series=num_dalys,
+        do_scaling=False
+    )
+    dalys.columns = dalys.columns.get_level_values(0)
+    dalys.loc['TB (non-AIDS)'] = dalys.loc['TB (non-AIDS)'] + dalys.loc['non_AIDS_TB']
+    dalys.drop(['non_AIDS_TB'], inplace=True)
+    tb_daly = pd.DataFrame()
+    tb_daly['median'] = dalys.median(axis=1).round(decimals=-3).astype(int)
+    tb_daly['lower'] = dalys.quantile(q=0.025, axis=1).round(decimals=-3).astype(int)
+    tb_daly['upper'] = dalys.quantile(q=0.975, axis=1).round(decimals=-3).astype(int)
+    return tb_daly
 
+#Call the function to get the results
+tb_dalys = tb_daly_summary(results_folder)
 
-
-
-
-
-
-
-
-
-
-
-
-
-# # Summarizing TB DALYs
-#     # Define function to calculate number of DALYs
-# TARGET_PERIOD = (Date(2010, 1, 1), Date(2015, 1, 1))
-# def num_dalys(_df):
-#     """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
-#     return _df \
-#         .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
-#         .drop(columns=['date', 'sex', 'age_range', 'cause', 'year']) \
-#         .sum()
-#
-# # Define function to summarize TB DALYs
-# def tb_daly_summary(results_folder):
-#     dalys = extract_results(
-#         results_folder,
-#         module='tlo.methods.healthburden',
-#         key='dalys_stacked',
-#         custom_generate_series=num_dalys,
-#         do_scaling=False
-#     )
-#     dalys.columns = dalys.columns.get_level_values(0)
-#     dalys.loc['TB (non-AIDS)'] = dalys.loc['TB (non-AIDS)'] + dalys.loc['non_AIDS_TB']
-#     dalys.drop(['non_AIDS_TB'], inplace=True)
-#     tb_daly = pd.DataFrame()
-#     tb_daly['median'] = dalys.median(axis=1).round(decimals=-3).astype(int)
-#     tb_daly['lower'] = dalys.quantile(q=0.025, axis=1).round(decimals=-3).astype(int)
-#     tb_daly['upper'] = dalys.quantile(q=0.975, axis=1).round(decimals=-3).astype(int)
-#     return tb_daly
-
-# Call the function to get the results
-# tb_dalys = tb_daly_summary(results_folder)
-#
-# # Export results to Excel
-# tb_dalys.index = tb_dalys.index.year,
-# summary_dalys = pd.DataFrame(tb_dalys)
-# summary_dalys.to_excel(outputspath / "summary_tb_dalys_nocxr.xlsx")
+# Export results to Excel
+tb_dalys.index = tb_dalys.index.year,
+summary_dalys = pd.DataFrame(tb_dalys)
+summary_dalys.to_excel(outputspath / "summary_tb_dalys_nocxr.xlsx")
 
 if __name__ == "__main__":
 
