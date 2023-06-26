@@ -1,6 +1,7 @@
 """
 Benchmarking script for scale_run.py.
 """
+import argparse
 import datetime
 import os
 from pathlib import Path
@@ -12,8 +13,14 @@ from pyinstrument.renderers import HTMLRenderer
 from scale_run import main as sc_run
 
 
-def main() -> None:
+def main(output_html_fname: str = None) -> None:
     warnings.filterwarnings("ignore")
+
+    if output_html_fname is None:
+        output_html_fname = output_dir / (
+            datetime.datetime.utcnow().strftime("%Y-%m-%d_%H%M")
+            + "_scale_run_profile.html"
+        )
 
     LOCATION_OF_THIS_FILE = os.path.dirname(os.path.abspath(__file__))
     TLO_ROOT = (Path(LOCATION_OF_THIS_FILE) / ".." / ".." / "..").resolve()
@@ -68,13 +75,9 @@ def main() -> None:
     # timeline: if true, samples are left in chronological order rather than total time
     html_renderer = HTMLRenderer(show_all=False, timeline=False)
 
-    output_html_file = output_dir / (
-        datetime.datetime.utcnow().strftime("%Y-%m-%d_%H%M") + "_scale_run_profile.html"
-    )
-
     # Write HTML file
-    print(f"Writing output to: {output_html_file}", end="...", flush=True)
-    with open(output_html_file, "w") as f:
+    print(f"Writing output to: {output_html_fname}", end="...", flush=True)
+    with open(output_html_fname, "w") as f:
         f.write(html_renderer.render(profiled_session))
     print("done")
 
@@ -82,4 +85,15 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Benchmark scale_run.py script")
+    parser.add_argument(
+        "output-html-fname",
+        nargs="?",
+        type=str,
+        default=None,
+        help="Filename for the output HTML file containing the profiling results."
+        " Generates a default name using the call timestamp if not set.",
+    )
+
+    parser.parse_args()
+    main(parser.output_html_fname)
