@@ -30,12 +30,12 @@ from tlo.scenario import BaseScenario
 class ImpactOfConsumablesAvailabilityIntervention(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 0
+        self.seed = 99
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2025, 1, 1)
-        self.pop_size = 20_000 # large population size for final simulation
+        self.pop_size = 10_000 # large population size for final simulation
         self.number_of_draws = 11  # <- 11 scenarios
-        self.runs_per_draw = 3  # <- repeated this many times
+        self.runs_per_draw = 2  # <- repeated this many times
 
     def log_configuration(self):
         return {
