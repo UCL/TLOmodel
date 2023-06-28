@@ -1,10 +1,12 @@
 -r base.in
 
 # Running tests
-pyinstrument
 pytest
 virtualenv
 tox
+
+# Profiling
+pyinstrument
 
 # Building requirements files
 pip-tools
