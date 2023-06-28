@@ -14,17 +14,22 @@ import json
 import os
 import warnings
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional, Type, TYPE_CHECKING
 
 import pandas as pd
-import shared
+
+if TYPE_CHECKING:
+    import pyinstrument
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import parse_log_file as log_parse_fn  # avoid name conflicts
 from tlo.methods.fullmodel import fullmodel
 
+from shared import print_checksum, schedule_profile_log
+from _paths import TLO_ROOT, TLO_OUTPUT_DIR
 
-def main(
+
+def scale_run(
     years: int,
     months: int,
     initial_population: int,
@@ -41,7 +46,7 @@ def main(
     mode_appt_constraints: Literal[0, 1, 2],
     save_final_population: bool,
     record_hsi_event_details: bool,
-    profiler=None,
+    profiler: Optional[Type["pyinstrument.Profiler"]] = None,
 ) -> None:
     """
     A run of the full model at scale using all disease modules considered complete and all
@@ -92,15 +97,15 @@ def main(
 
     # Run the simulation
     sim.make_initial_population(n=initial_population)
-    shared.schedule_profile_log(sim)
+    schedule_profile_log(sim)
     sim.simulate(end_date=end_date)
-    shared.print_checksum(sim)
+    print_checksum(sim)
 
     if save_final_population:
         sim.population.props.to_pickle(output_dir / "final_population.pkl")
 
     if parse_log_file:
-        log_df = parse_log_file(sim.log_filepath)
+        log_df = log_parse_fn(sim.log_filepath)
 
     if record_hsi_event_details:
         with open(output_dir / "hsi_event_details.json", "w") as json_file:
@@ -135,32 +140,32 @@ if __name__ == "__main__":
         default=0,
     )
     parser.add_argument(
-        "--initial-population", type=int, help="Initial population size", default=50000
+        "--initial_population", type=int, help="Initial population size", default=50000
     )
     parser.add_argument(
-        "--tlo-dir", type=Path, help="Root TLOmodel directory", default="."
+        "--tlo_dir", type=Path, help="Root TLOmodel directory", default=TLO_ROOT
     )
     parser.add_argument(
-        "--output-dir",
+        "--output_dir",
         type=Path,
         help="Directory to write output to",
-        default="./outputs",
+        default=TLO_OUTPUT_DIR,
     )
     parser.add_argument(
-        "--log-filename",
+        "--log_filename",
         type=str,
         help="Filename to use for log",
         default="for_profiling",
     )
     parser.add_argument(
-        "--log-level",
+        "--log_level",
         type=str,
         help="Level to log at",
         choices=("CRITICAL", "DEBUG", "FATAL", "WARNING", "INFO"),
         default="WARNING",
     )
     parser.add_argument(
-        "--parse-log-file",
+        "--parse_log_file",
         help=(
             "Parse log file to create log dataframe at end of simulation (only useful with "
             "interactive -i runs)"
@@ -168,7 +173,7 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument(
-        "--show-progress-bar",
+        "--show_progress_bar",
         help="Show progress bar during simulation rather than log output",
         action="store_true",
     )
@@ -179,7 +184,7 @@ if __name__ == "__main__":
         default=0,
     )
     parser.add_argument(
-        "--disable-health-system",
+        "--disable_health_system",
         help=(
             "Disable health system - i.e. no processing happens by the health system but "
             "all HSI Events run"
@@ -187,12 +192,12 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument(
-        "--disable-spurious-symptoms",
+        "--disable_spurious_symptoms",
         help="Disable the generation of spurious symptoms in SymptomManager",
         action="store_true",
     )
     parser.add_argument(
-        "--capabilities-coefficient",
+        "--capabilities_coefficient",
         help=(
             "Capabilities coefficient to use in HealthSystem. If not specified the ratio of"
             " the initial population to the estimated 2010 population will be used."
@@ -201,7 +206,7 @@ if __name__ == "__main__":
         default=None,
     )
     parser.add_argument(
-        "--mode-appt-constraints",
+        "--mode_appt_constraints",
         help=(
             "Mode of constraints to use in HealthSystem (0: no constraints - all events "
             "run with no squeeze factor, 1: elastic, all events run with squeeze factor, "
@@ -212,7 +217,7 @@ if __name__ == "__main__":
         default=2,
     )
     parser.add_argument(
-        "--ignore-warnings",
+        "--ignore_warnings",
         help=(
             "Ignore any warnings (prevents warning messages being printed). Useful when "
             "combined with --show-progress-bar to avoid disruption of progress bar display"
@@ -220,17 +225,17 @@ if __name__ == "__main__":
         action="store_true",
     )
     parser.add_argument(
-        "--save-args-json",
+        "--save_args_json",
         help="Save the parsed arguments to a JSON file",
         action="store_true",
     )
     parser.add_argument(
-        "--save-final-population",
+        "--save_final_population",
         help="Save the final population dataframe to a pickle file",
         action="store_true",
     )
     parser.add_argument(
-        "--record-hsi-event-details",
+        "--record_hsi_event_details",
         help=(
             "Keep a record of set of non-target specific details of HSI events that are "
             "run and output to a JSON file 'hsi_event_details.json' in output directory."
@@ -253,21 +258,7 @@ if __name__ == "__main__":
             }
             json.dump(args_dict, f, indent=4)
 
-    main(
-        args.years,
-        args.months,
-        args.initial_population,
-        args.tlo_dir,
-        args.output_dir,
-        args.log_filename,
-        args.log_level,
-        args.parse_log_file,
-        args.show_progress_bar,
-        args.seed,
-        args.disable_health_system,
-        args.disable_spurious_symptoms,
-        args.capabilities_coefficient,
-        args.mode_appt_constraints,
-        args.save_final_population,
-        args.record_hsi_event_details,
-    )
+    inputs = vars(args)
+    inputs.pop("save_args_json")
+    inputs.pop("ignore_warnings")
+    scale_run(**inputs)
