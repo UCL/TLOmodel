@@ -48,7 +48,7 @@ coverage.xml
 .pytest_cache/
 
 # Profiling
-profiling/html/
+src/scripts/profiling/html/
 
 # Translations
 *.mo

@@ -4,5 +4,5 @@ from pathlib import Path
 PROFILING_DIR = Path(os.path.abspath(os.path.dirname(__file__)))
 PROFILING_HTML_DIR = (PROFILING_DIR / "html").resolve()
 
-TLO_ROOT = (PROFILING_DIR / "..").resolve()
+TLO_ROOT = (PROFILING_DIR / ".." / ".." / "..").resolve()
 TLO_OUTPUT_DIR = (TLO_ROOT / "outputs").resolve()
