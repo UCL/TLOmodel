@@ -28,12 +28,12 @@ results_folder = get_scenario_outputs("baseline_tb_services_scenario-2023-06-23T
 log = load_pickled_dataframes(results_folder)
 # get basic information about the results
 info = get_scenario_info(results_folder)
-
+print("the scenario info as follows")
+print(info)
 # Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
-draw = 0
 
-## extracting primary outcomes-DALYs and mortality#############
+## extracting primary outcomes-DALYs and mortality
 def get_person_years(_df):
     """ extract person-years for each draw/run
     """
@@ -87,9 +87,6 @@ combined_tb_table = pd.concat([AIDS_non_TB, AIDS_TB, TB])
 #print(combined_table)
 combined_tb_table.to_excel(outputspath / "combined_tb_table_baseline.xlsx")
 scaling_factor_key = log['tlo.methods.demography']['scaling_factor']
-
-print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography'].keys()}")
-
 print("Scaling Factor Key:", scaling_factor_key)
 #########################################################################################
 
@@ -107,9 +104,8 @@ def tb_mortality_rate(results_folder, pyears):
 
     # Select only causes AIDS_TB, AIDS_non_TB, and TB
     tb_deaths1 = results_deaths.loc[(results_deaths.cause == "AIDS_TB") | \
-    (results_deaths.cause == "AIDS_non_TB") | (results_deaths.cause == "AIDS_non_TB")
+    (results_deaths.cause == "TB") | (results_deaths.cause == "AIDS_non_TB")
         ]
-
     # Group deaths by year
     tb_deaths2 = pd.DataFrame(tb_deaths1.groupby(["year"]).sum())
     tb_deaths2.to_excel(outputspath / "raw_mortality_baseline.xlsx")
@@ -124,8 +120,6 @@ def tb_mortality_rate(results_folder, pyears):
     tb_mortality_rate["median"] = tb_deaths3.quantile(0.5, axis=1) * 100000
     tb_mortality_rate["lower"] = tb_deaths3.quantile(0.025, axis=1) * 100000
     tb_mortality_rate["upper"] = tb_deaths3.quantile(0.975, axis=1) * 100000
-
-   # Convert tb_mortality_rate dictionary into a DataFrame
     return tb_mortality_rate
 
 # Call the function with appropriate arguments
@@ -136,6 +130,12 @@ mortality_rates_summary = pd.DataFrame.from_dict(mortality_rates)
 mortality_rates_summary.to_excel(outputspath / "mortality_rates_summary.xlsx",index=False)
 print(mortality_rates_summary)
 
+# Extract the data from the mortality_rates_summary DataFrame
+years = mortality_rates_summary["year"]
+median_rates = mortality_rates_summary["median"]
+lower_rates = mortality_rates_summary["lower"]
+upper_rates = mortality_rates_summary["upper"]
+
 #print scaling factor  to population level estimates
 print(f"The scaling factor is: {log['tlo.methods.demography']['scaling_factor']}")
 
@@ -145,7 +145,7 @@ def get_tb_dalys(df_):
     dalys = pd.Series(dtype='float64', index=years)
     for year in years:
         tot_dalys = df_.drop(columns='date').groupby(['year']).sum().apply(pd.Series)
-        dalys[year] = tot_dalys.loc[(year, ['TB (non-AIDS)', 'non_AIDS_TB'])].sum()
+        dalys[year] = tot_dalys.loc[(year, ['TB (non-AIDS)','non_AIDS_TB'])].sum()
     dalys.sort_index()
     return dalys
 # extract dalys from model and scale
@@ -163,6 +163,7 @@ print("DALYs for TB are as follows:")
 print(dalys_summary)
 dalys_summary.to_excel(outputspath / "summarised_tb_dalys_baseline.xlsx")
 
+#Extracting secondary outcomes
 #prints dictionary keys for the TB module
 print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
 # extracts PLHIV with TB
@@ -198,7 +199,6 @@ mdr_tb_cases.index = mdr_tb_cases.index.year
 mdr_tb = pd.DataFrame(mdr_tb_cases)
 mdr_tb.to_excel(outputspath / "mdr_tb_baseline.xlsx")
 
-
 # TB treatment coverage
 tb_treatment = summarize(
         extract_results(
@@ -211,14 +211,10 @@ tb_treatment = summarize(
         ),
         collapse_columns=True,
     )
-#print("Before loading tb_tx")
-#print(tb_treatment)
+
 #tb_treatment.index = tb_treatment.index.year,
 tb_treatment_cov = pd.DataFrame(tb_treatment)
 tb_treatment_cov.to_excel(outputspath / "tb_treatment_coverage_baseline.xlsx")
-
-###summarizing incidence and mortality   ########################
-# computing person years to used as denominators for mortality rate and incidence
 
 #TB Incidence
 tb_inc = summarize(
@@ -243,28 +239,52 @@ tb_inc = tb_inc.reset_index(drop=True)
 #pyears = pyears.reset_index(drop=True)
 pyears = pyears.reset_index(drop=True)
 
-# computing TB incidence rate
-activeTB_inc_rate = (tb_inc["mean"] / pyears["mean"]) * 100000
-activeTB_inc_rate= pd.DataFrame(activeTB_inc_rate)
-activeTB_inc_rate.to_excel(outputspath / "tb_incidence_rate_baseline.xlsx")
-
-# Calculate the rates
-activeTB_inc_rate = (tb_inc["mean"] / pyears["mean"]) * 100000
-upper_activeTB_inc_rate = (tb_inc["upper"] / pyears["upper"]) * 100000
-lower_activeTB_inc_rate = (tb_inc["lower"] / pyears["lower"]) * 100000
-
-# Create a new dataframe with the calculated values
-summarized_incidence = pd.DataFrame({
-    "TB_inc_rate": activeTB_inc_rate,
-    "upper": upper_activeTB_inc_rate,
-    "lower": lower_activeTB_inc_rate
-})
-
+# # computing TB incidence rate
+# activeTB_inc_rate = (tb_inc["mean"] / pyears["mean"]) * 100000
+# activeTB_inc_rate= pd.DataFrame(activeTB_inc_rate)
+# activeTB_inc_rate.to_excel(outputspath / "tb_incidence_rate_baseline.xlsx")
+#
+# # Calculate the rates
+# activeTB_inc_rate = (tb_inc["mean"] / pyears["mean"]) * 100000
+# upper_activeTB_inc_rate = (tb_inc["upper"] / pyears["upper"]) * 100000
+# lower_activeTB_inc_rate = (tb_inc["lower"] / pyears["lower"]) * 100000
+#
+# # Create a new dataframe with the calculated values
+# summarized_incidence = pd.DataFrame({
+#     "TB_inc_rate": activeTB_inc_rate,
+#     "upper": upper_activeTB_inc_rate,
+#     "lower": lower_activeTB_inc_rate
+# })
 # summarized_incidence .to_excel(outputspath / "baseline_incidence_rate.xlsx")
+
+## Generates graphs #########################
+
+
+# Set the figure size
+plt.figure(figsize=(8, 2))
+# Plot the bars for median rates with error bars
+plt.bar(years, median_rates, color='blue', alpha=0.5, label='Median')
+plt.errorbar(years, median_rates, yerr=[median_rates - lower_rates, upper_rates - median_rates],
+             fmt='none', ecolor='black', capsize=3)
+# Set the axis labels and title
+plt.xlabel('Year')
+plt.ylabel('Mortality Rate')
+plt.title('Trend in TB Mortality Rate-2010-2033')
+
+# Add a legend
+plt.legend()
+# Rotate the x-axis labels for better readability
+plt.xticks(years, years, rotation=45)
+# Show the plot
+plt.show()
+#graphs_mortality = results_folder + "/mortality_rates.pdf"
+#plt.savefig(graphs_mortality)
+
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
-        "Analyse scenario results for noxpert diagnosis pathway"
+        "Analyse scenario results for baseline scenario for TB diagnosis"
     )
     parser.add_argument(
         "--scenario-outputs-folder",
@@ -284,120 +304,3 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-
-
-
-
-
-#
-#
-# #####
-# ######################################################################
-# #number of TB deaths and mortality rate
-# results_deaths = extract_results(
-#     results_folder,
-#     module="tlo.methods.demography",
-#     key="death",
-#     custom_generate_series=(
-#         lambda df: df.assign(year=df["date"].dt.year).groupby(
-#             ["year", "cause"])["person_id"].count()
-#     ),
-#     do_scaling=True,
-# )
-#
-# # Removes multi-index
-# results_deaths = results_deaths.reset_index()
-# print(results_deaths)
-#
-# tb_deaths = results_deaths.loc[results_deaths.cause.isin(["AIDS_non_TB", "AIDS_TB", "TB"])]
-# AIDS_TB = results_deaths.loc[results_deaths.cause == "AIDS_non_TB"]
-# AIDS_non_TB = results_deaths.loc[results_deaths.cause == "AIDS_TB"]
-# TB = results_deaths.loc[results_deaths.cause == "TB"]
-#
-# combined_tb_table = pd.concat([AIDS_non_TB, AIDS_TB, TB])
-# #print(combined_table)
-# combined_tb_table.to_excel(outputspath / "combined_tb_table_baseline.xlsx")
-# scaling_factor_key = log['tlo.methods.demography']['scaling_factor']
-#
-# print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography'].keys()}")
-#
-# print("Scaling Factor Key:", scaling_factor_key)
-# #########################################################################################
-#
-# # deaths due to TB (not including TB-HIV)
-# def tb_mortality_rate(results_folder, pyears):
-#     tb_deaths = extract_results(
-#         results_folder,
-#         module="tlo.methods.demography",
-#         key="death",
-#         custom_generate_series=(
-#             lambda df: df.assign(year=df["date"].dt.year).groupby(["year", "cause"])["person_id"].count()
-#         ),
-#         do_scaling=True,
-#     )
-# #
-# #     # Select only causes AIDS_TB, AIDS_non_TB, and TB
-# #     tb_deaths1 = results_deaths.loc[(results_deaths.cause == "AIDS_TB") | \
-# #     (results_deaths.cause == "AIDS_non_TB") | (results_deaths.cause == "AIDS_non_TB")
-# #         ]
-# #
-# #     # Group deaths by year
-# #     tb_deaths2 = pd.DataFrame(tb_deaths1.groupby(["year"]).sum())
-# #     tb_deaths2.to_excel(outputspath / "raw_mortality_baseline.xlsx")
-#
-#     # Divide each draw/run by the respective person-years from that run
-#     # Need to reset index as they don't match exactly (date format)
-#     tb_deaths3 = tb_deaths2.reset_index(drop=True) / pyears.reset_index(drop=True)
-#     print("deaths3 are:", tb_deaths)
-#
-#     tb_mortality_rate = {}  # empty dict
-#     tb_mortality_rate["year"] = tb_deaths2.index
-#     tb_mortality_rate["median"] = tb_deaths3.quantile(0.5, axis=1) * 100000
-#     tb_mortality_rate["lower"] = tb_deaths3.quantile(0.025, axis=1) * 100000
-#     tb_mortality_rate["upper"] = tb_deaths3.quantile(0.975, axis=1) * 100000
-#
-#    # Convert tb_mortality_rate dictionary into a DataFrame
-#     return tb_mortality_rate
-#
-# # Call the function with appropriate arguments
-# mortality_rates = tb_mortality_rate(results_folder, pyears)
-# mortality_rates_summary = pd.DataFrame.from_dict(mortality_rates)
-#
-# # Print the resulting mortality rates
-# mortality_rates_summary.to_excel(outputspath / "mortality_rates_summary.xlsx",index=False)
-# print(mortality_rates_summary)
-#
-# #print scaling factor  to population level estimates
-# print(f"The scaling factor is: {log['tlo.methods.demography']['scaling_factor']}")
-#
-# def get_tb_dalys(df_):
-#     # get dalys of TB
-#     years = df_['year'].value_counts().keys()
-#     dalys = pd.Series(dtype='float64', index=years)
-#     for year in years:
-#         tot_dalys = df_.drop(columns='date').groupby(['year']).sum().apply(pd.Series)
-#         dalys[year] = tot_dalys.loc[(year, ['TB (non-AIDS)', 'non_AIDS_TB'])].sum()
-#     dalys.sort_index()
-#     return dalys
-# # extract dalys from model and scale
-# tb_dalys_count = extract_results(
-#     results_folder,
-#     module="tlo.methods.healthburden",
-#     key="dalys",
-#     custom_generate_series=get_tb_dalys,
-#     do_scaling=True
-# )
-#
-# # get mean / upper/ lower statistics
-# dalys_summary = summarize(tb_dalys_count).sort_index()
-# print("DALYs for TB are as follows:")
-# print(dalys_summary)
-# dalys_summary.to_excel(outputspath / "summarised_tb_dalys_baseline.xlsx")
-#
-#
-#
-#
-#
-#
-#
-#
