@@ -13,9 +13,9 @@ from parameters import scale_run_parameters
 from scale_run import scale_run
 
 
-def current_time() -> str:
-    """Produces a string of the current time, in YYYY-mm-dd_HHMM format"""
-    return datetime.utcnow().strftime("%Y-%m-%d_%H%M")
+def current_time(formatstr: str = "%Y-%m-%d_%H%M") -> str:
+    """Produces a string of the current time in the specified format"""
+    return datetime.utcnow().strftime(formatstr)
 
 
 def profile_all(output_html_dir: str = None) -> None:
@@ -31,9 +31,11 @@ def profile_all(output_html_dir: str = None) -> None:
     # Setup the profiler, to record the stack every interval seconds
     p = Profiler(interval=1e-3)
 
+    print(f"[{current_time('%H:%M:%S')}:INFO] Starting profiling runs")
     # Perform all profiling runs, passing in the profiler so it can be started within each run and halted between for more accurate results
     scale_run(**scale_run_parameters, profiler=p)
 
+    print(f"[{current_time('%H:%M:%S')}:INFO] Profiling runs complete")
     # Recorded sessions are combined, so last_session should fetch the combination of all profiling runs conducted
     profiled_session = p.last_session
 
