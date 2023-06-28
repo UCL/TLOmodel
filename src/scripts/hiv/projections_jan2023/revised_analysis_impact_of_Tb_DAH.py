@@ -33,7 +33,7 @@ info = get_scenario_info(results_folder)
 params = extract_params(results_folder)
 draw = 0
 
-## extracting primary outcomes-DALYs and mortality##########################################
+## extracting primary outcomes-DALYs and mortality#############
 def get_person_years(_df):
     """ extract person-years for each draw/run
     """
