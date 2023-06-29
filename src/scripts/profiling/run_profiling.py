@@ -50,8 +50,10 @@ def run_profiling(
         output_json_file = json_dir / f"{output_name.stem}.json"
 
     # Create the profiler to record the stack
-    # An instance of a Profiler can be start()-ed and stop()-ped multiple times, combining the recorded sessions into one at the end.
-    # As such, the same profiler can be used to record the profile of multiple scripts, however this may create large datafiles so using separate profilers is preferable
+    # An instance of a Profiler can be start()-ed and stop()-ped multiple times,
+    # combining the recorded sessions into one at the end.
+    # As such, the same profiler can be used to record the profile of multiple scripts,
+    # however this may create large datafiles so using separate profilers is preferable
     p = Profiler(interval=1e-3)
 
     print(f"[{current_time('%H:%M:%S')}:INFO] Starting profiling runs")
@@ -61,7 +63,9 @@ def run_profiling(
 
     print(f"[{current_time('%H:%M:%S')}:INFO] Profiling runs complete")
 
-    # Fetch the recorded session: if multiple scripts are to be profiled, this needs to be done after each model "run", and p needs to be re-initialised before starting the next model run.
+    # Fetch the recorded session: if multiple scripts are to be profiled,
+    # this needs to be done after each model "run",
+    # and p needs to be re-initialised before starting the next model run.
     scale_run_session = p.last_session
 
     # Write outputs to files
