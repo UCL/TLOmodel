@@ -25,14 +25,11 @@ jobs:
           pip install -r requirements/dev.txt
           pip install -e .
 
-      - name: Run profiling
-        runs-on: ubuntu-latest
-        steps:
-          - name: Run profiling script
-            run: |
-              python ${{ github.workspace }}/src/scripts/profiling/run_profiling.py --html --json --output_name requested_profiling_run --html_dir ${{ github.workspace }}/tmp --json_dir ${{ github.workspace }}/tmp
+      - name: Run profiling script
+        run: |
+          python ${{ github.workspace }}/src/scripts/profiling/run_profiling.py --html --json --output_name requested_profiling_run --html_dir ${{ github.workspace }}/tmp --json_dir ${{ github.workspace }}/tmp
 
-    ## Decide what we want to do with the profiling results. Push them somewhere? Make them available for download? Publish the data somewhere? Currently just makes an artefact available for 1 day with the results
+      ## Decide what we want to do with the profiling results. Push them somewhere? Make them available for download? Publish the data somewhere? Currently just makes an artefact available for 1 day with the results
       - name: Upload profiling results
         uses: actions/upload-artifact@v3
         with:
