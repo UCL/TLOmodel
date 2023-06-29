@@ -5,5 +5,8 @@ pytest
 virtualenv
 tox
 
+# Profiling
+pyinstrument
+
 # Building requirements files
 pip-tools
