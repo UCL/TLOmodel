@@ -8,7 +8,7 @@ on:
 # TODO: self-hosted runners already have an environment setup?
 # Or make one in the tox.ini file
 jobs:
-  setup-environment:
+  run-profiling:
     name: Setup developer environment
     runs-on: ubuntu-latest
     steps:
@@ -25,13 +25,19 @@ jobs:
           pip install -r requirements/dev.txt
           pip install -e .
 
-  run-profiling:
-    needs: setup-environment
-    name: Run profiling
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run profiling script
-        run: |
-          python ${{ github.workspace }}/src/scripts/profiling/run_profiling.py --html --json --output_name requested_profiling_run
+      - name: Run profiling
+        runs-on: ubuntu-latest
+        steps:
+          - name: Run profiling script
+            run: |
+              python ${{ github.workspace }}/src/scripts/profiling/run_profiling.py --html --json --output_name requested_profiling_run --html_dir ${{ github.workspace }}/tmp --json_dir ${{ github.workspace }}/tmp
 
-    ## Decide what we want to do with the profiling results. Push them somewhere? Make them available for download? Publish the data somewhere?
+    ## Decide what we want to do with the profiling results. Push them somewhere? Make them available for download? Publish the data somewhere? Currently just makes an artefact available for 1 day with the results
+      - name: Upload profiling results
+        uses: actions/upload-artifact@v3
+        with:
+          name: profiling-data
+          path: |
+            ${{ github.workspace }}/tmp/requested_profiling_run.html
+            ${{ github.workspace }}/tmp/requested_profiling_run.json
+          retention-days: 1
