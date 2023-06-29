@@ -90,7 +90,7 @@ class ImpactOfnoCXR(BaseScenario):
             'Tb': {
                 'scenario': 2,
                 'probability_access_to_xray':  0.0
-            },
+            }
         }
 if __name__ == '__main__':
     from tlo.cli import scenario_run

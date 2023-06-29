@@ -232,7 +232,7 @@ mdr = mdr.set_index("date")
 title_str = "Proportion of active cases that are MDR"
 make_plot(
     title_str=title_str,
-    model=mdr["tbPropActiveCasesMdr"],
+     model=mdr["tbPropActiveCasesMdr"],
 )
 # data from ResourceFile_TB sheet WHO_mdrTB2017
 plt.errorbar(mdr.index[0], 0.0075, yerr=[[0.0059], [0.0105]], fmt="o")
@@ -241,7 +241,6 @@ plt.legend(["TLO", "WHO reported MDR cases"])
 #     outputpath / (title_str.replace(" ", "_") + datestamp + ".pdf"), format="pdf"
 # )
 plt.show()
-
 
 # ---------------------------------------------------------------------- #
 

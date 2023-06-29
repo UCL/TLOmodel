@@ -23,7 +23,7 @@ outputspath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
-results_folder = get_scenario_outputs("noncxr_tb_scenario-2023-06-23T213325Z", outputspath) [-1]
+results_folder = get_scenario_outputs("noncxr_tb_scenario-2023-06-29T095210Z", outputspath) [-1]
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
 # get basic information about the results
