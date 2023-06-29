@@ -1,23 +1,21 @@
 import argparse
 import json
 import os
-from typing import Literal, Optional, Type, TYPE_CHECKING
 import warnings
 from pathlib import Path
+from typing import TYPE_CHECKING, Literal, Optional, Type
 
 import pandas as pd
 
 if TYPE_CHECKING:
     from pyinstrument import Profiler
 
-from tlo import Date, Simulation, logging
-from tlo.analysis.utils import (
-    parse_log_file as parse_log_file_fn,
-)  # avoid name conflicts
-from tlo.methods.fullmodel import fullmodel
-
+from _paths import TLO_OUTPUT_DIR, TLO_ROOT
 from shared import print_checksum, schedule_profile_log
-from _paths import TLO_ROOT, TLO_OUTPUT_DIR
+
+from tlo import Date, Simulation, logging
+from tlo.analysis.utils import parse_log_file as parse_log_file_fn  # avoid name conflicts
+from tlo.methods.fullmodel import fullmodel
 
 HELP_STR = (
     "A run of the full model at scale using all disease modules considered complete and all"

@@ -1,14 +1,13 @@
 import argparse
-from datetime import datetime
 import os
-from pathlib import Path
 import warnings
+from datetime import datetime
+from pathlib import Path
 
+from _parameters import scale_run_parameters
+from _paths import PROFILING_HTML, PROFILING_JSON
 from pyinstrument import Profiler
 from pyinstrument.renderers import HTMLRenderer, JSONRenderer
-
-from _paths import PROFILING_HTML, PROFILING_JSON
-from _parameters import scale_run_parameters
 from scale_run import scale_run
 
 HELP_STR = (

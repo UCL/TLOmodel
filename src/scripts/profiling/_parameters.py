@@ -1,4 +1,4 @@
-from _paths import TLO_ROOT, TLO_OUTPUT_DIR
+from _paths import TLO_OUTPUT_DIR, TLO_ROOT
 
 scale_run_parameters = {
     "years": 0,
