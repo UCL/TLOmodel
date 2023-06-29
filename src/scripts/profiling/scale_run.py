@@ -102,7 +102,7 @@ def scale_run(
         sim.population.props.to_pickle(output_dir / "final_population.pkl")
 
     if parse_log_file:
-        log_df = parse_log_file_fn(sim.log_filepath)
+        parse_log_file_fn(sim.log_filepath)
 
     if record_hsi_event_details:
         with open(output_dir / "hsi_event_details.json", "w") as json_file:
