@@ -1,22 +1,14 @@
-"""
-A run of the full model at scale using all disease modules considered complete and all
-modules for birth / labour / newborn outcome.
-
-Simulation parameters can be set using command line arguments - run with --help option
-for more details. By default a 20 year simulation is run with an initial population size
-of 20k and with logged events at level WARNING or above recorded.
-
-For use in profiling.
-"""
-
 import argparse
 import json
 import os
-from typing import Literal
+from typing import Literal, Optional, Type, TYPE_CHECKING
 import warnings
 from pathlib import Path
 
 import pandas as pd
+
+if TYPE_CHECKING:
+    from pyinstrument import Profiler
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import (
@@ -26,6 +18,16 @@ from tlo.methods.fullmodel import fullmodel
 
 from shared import print_checksum, schedule_profile_log
 from _paths import TLO_ROOT, TLO_OUTPUT_DIR
+
+HELP_STR = (
+    "A run of the full model at scale using all disease modules considered complete and all"
+    "modules for birth / labour / newborn outcome.\n"
+    "Simulation parameters can be set using command line arguments - run with --help option"
+    "for more details.\n"
+    "By default a 20 year simulation is run with an initial population size"
+    "of 20k and with logged events at level WARNING or above recorded.\n"
+    "For use in profiling."
+)
 
 
 def scale_run(
@@ -45,8 +47,12 @@ def scale_run(
     mode_appt_constraints: Literal[0, 1, 2] = 2,
     save_final_population: bool = False,
     record_hsi_event_details: bool = False,
+    profiler: Optional[Type["Profiler"]] = None,
 ) -> None:
-    """ """
+    # Start profiler if one has been passed
+    if profiler is not None:
+        profiler.start()
+
     # Simulation period
     start_date = Date(2010, 1, 1)
     end_date = start_date + pd.DateOffset(years=years, months=months)
@@ -109,12 +115,16 @@ def scale_run(
                 ],
                 json_file,
             )
+
+    # Stop profiling session
+    if profiler is not None:
+        profiler.stop()
     return
 
 
 if __name__ == "__main__":
     # Parse arguments defining run options
-    parser = argparse.ArgumentParser(description="Run model at scale")
+    parser = argparse.ArgumentParser(description=HELP_STR)
     parser.add_argument(
         "--years",
         type=int,
