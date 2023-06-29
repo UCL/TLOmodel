@@ -1,0 +1,37 @@
+name: Run profiling
+
+on:
+  workflow_dispatch:
+
+# CURRENTLY RUNS ON UBUNTU-LATEST WITH A SHORT SIMULATION LENGTH
+# CHANGE TO SELF-HOSTED RUNNERS BEFORE MERGING
+# TODO: self-hosted runners already have an environment setup?
+# Or make one in the tox.ini file
+jobs:
+  setup-environment:
+    name: Setup developer environment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install TLO dependencies
+        run: |
+          pip install -r requirements/dev.txt
+          pip install -e .
+
+  run-profiling:
+    needs: setup-environment
+    name: Run profiling
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run profiling script
+        run: |
+          python ${{ github.workspace }}/src/scripts/profiling/run_profiling.py --html --json --output_name requested_profiling_run
+
+    ## Decide what we want to do with the profiling results. Push them somewhere? Make them available for download? Publish the data somewhere?
