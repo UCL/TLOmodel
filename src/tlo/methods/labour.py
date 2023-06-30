@@ -867,6 +867,10 @@ class Labour(Module):
         self.item_codes_lab_consumables['iron_folic_acid'] = \
             get_item_code_from_pkg('Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg')
 
+        # -------------------------------------------- RESUSCITATION ------------------------------------------
+        self.item_codes_lab_consumables['resuscitation'] = \
+            get_list_of_items(self, ['Infant resuscitator, clear plastic + mask + bag_each_CMST'])
+
     def initialise_simulation(self, sim):
         # Update self.current_parameters
         pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
@@ -2981,6 +2985,22 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
 
             elif self.module.rng.random_sample() < params['residual_prob_avd']:
                 self.module.assessment_for_assisted_vaginal_delivery(self, indication='other')
+
+        # -------------------------- Newborn resuscitation ------------------------------------------------------------
+        # We check in this HSI that if the mother has a live born baby who requires resucitation that they will receive
+        # the intervention
+        if not mni[person_id]['sought_care_for_complication']:
+            # TODO: potential issue is that this consumable is being logged now for every birth as opposed to
+            #  for each birth where resuscitation of the newborn is required
+            avail = pregnancy_helper_functions.return_cons_avail(
+                self.module, self, self.module.item_codes_lab_consumables, core='resuscitation')
+
+            # Run HCW check
+            sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.module,
+                                                                                       sf='neo_resus',
+                                                                                       hsi_event=self)
+            if sf_check and avail:
+                mni[person_id]['neo_will_receive_resus_if_needed'] = True
 
         # ========================================== SCHEDULING CEMONC CARE =========================================
         # Finally women who require additional treatment have the appropriate HSI scheduled to deliver further care
