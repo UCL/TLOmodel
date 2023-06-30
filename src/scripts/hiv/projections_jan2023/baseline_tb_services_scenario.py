@@ -9,9 +9,6 @@ or locally using:
   execute a single run:
  tlo scenario-run src/scripts/hiv/projections_jan2023/baseline_tb_services_scenario.py --draw 1 0
 
- check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/baseline_tb_services_scenario.py
-
 Job ID: baseline_tb_services_scenario-2023-06-23T213051Z
 
  """
@@ -30,20 +27,28 @@ from tlo.methods import (
     hiv,
     tb
 )
-from tlo.scenario import BaseScenario
+from tlo.scenario import BaseScenario, make_cartesian_parameter_grid
 
 # Ignore warnings to avoid cluttering output from simulation - generally you do not
 # need (and generally shouldn't) do this as warnings can contain useful information but
 # we will do so here for the purposes of this example to keep things simple.
 warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
+
 class ImpactOfBaselineTbServices(BaseScenario):
     def __init__(self):
+        self._parameter_grid = make_cartesian_parameter_grid({
+            'Tb': {
+                'scenario': [0]
+            }
+        })
+
         super().__init__(
             seed=2025,
             start_date=Date(2010, 1, 1),
-            end_date=Date(2015, 12, 31),
+            end_date=Date(2013, 12, 31),
             initial_population_size=1000,
-            number_of_draws=2,
+            #number_of_draws=1,
+            number_of_draws=len(self._parameter_grid),
             runs_per_draw=2,
         )
 
@@ -61,6 +66,7 @@ class ImpactOfBaselineTbServices(BaseScenario):
                 'tlo.methods.healthsystem.summary': logging.INFO,
             }
         }
+
     def modules(self):
         return [
             demography.Demography(resourcefilepath=self.resources),
@@ -85,12 +91,18 @@ class ImpactOfBaselineTbServices(BaseScenario):
             hiv.Hiv(resourcefilepath=self.resources, run_with_checks=False),
             tb.Tb(resourcefilepath=self.resources),
         ]
+
     def draw_parameters(self, draw_number, rng):
-        return {
-            'Tb': {
-                'scenario': 0,
-            },
-        }
+        return self._parameter_grid[draw_number]
+    # def draw_parameters(self, draw_number, rng):
+    #     if draw_number < len(self._parameter_grid):
+    #         return self._parameter_grid[draw_number]
+    #     else:
+    #         # Handle the case where the draw_number is out of range
+    #         return None
+
+
 if __name__ == '__main__':
     from tlo.cli import scenario_run
     scenario_run([__file__])
+

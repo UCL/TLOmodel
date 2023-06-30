@@ -1464,7 +1464,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {175: 0.0})
 # ######################################################
-
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
     * selects people for active infection and schedules onset of active tb
