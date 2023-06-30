@@ -3,31 +3,18 @@ name: Run profiling
 on:
   workflow_dispatch:
 
-# CURRENTLY RUNS ON UBUNTU-LATEST WITH A SHORT SIMULATION LENGTH
-# CHANGE TO SELF-HOSTED RUNNERS BEFORE MERGING
-# TODO: self-hosted runners already have an environment setup?
-# Or make one in the tox.ini file
 jobs:
   run-profiling:
     name: Setup developer environment
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.8'
-
-      - name: Install TLO dependencies
+      ## The profile environment produces outputs in the /tmp directory, currently called profiling_output.{html,json}
+      - name: Run profiling in dev environment
         run: |
-          pip install -r requirements/dev.txt
-          pip install -e .
-
-      - name: Run profiling script
-        run: |
-          python ${{ github.workspace }}/src/scripts/profiling/run_profiling.py --html --json --output_name requested_profiling_run --html_dir ${{ github.workspace }}/tmp --json_dir ${{ github.workspace }}/tmp
+          tox -vv -e profile
 
       ## Decide what we want to do with the profiling results. Push them somewhere? Make them available for download? Publish the data somewhere? Currently just makes an artefact available for 1 day with the results
       - name: Upload profiling results
@@ -35,6 +22,6 @@ jobs:
         with:
           name: profiling-data
           path: |
-            ${{ github.workspace }}/tmp/requested_profiling_run.html
-            ${{ github.workspace }}/tmp/requested_profiling_run.json
+            ${{ github.workspace }}/tmp/profiling_output.html
+            ${{ github.workspace }}/tmp/profiling_output.json
           retention-days: 1
