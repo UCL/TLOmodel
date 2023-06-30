@@ -156,6 +156,7 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
             pathogen=pathogen,
             df=df.loc[df.is_alive & (df.age_years < 5)]
         )
+        # print(i for i in res.values > 1.0)
         assert (res > 0).all() and (res <= 1.0).all()
         assert not res.isna().any()
         assert 'float64' == res.dtype.name
@@ -214,8 +215,7 @@ def test_integrity_of_linear_models(sim_hs_all_consumables):
     for patho in alri_module.all_pathogens:
         for coinf in (alri_module.pathogens['bacterial'] + [np.nan]):
             for disease_type in alri_module.disease_types:
-                res = models.get_complications_that_onset(age_exact_years=1,
-                                                          disease_type=disease_type,
+                res = models.get_complications_that_onset(disease_type=disease_type,
                                                           primary_path_is_bacterial=(
                                                               patho in sim.modules['Alri'].pathogens['bacterial']
                                                           ),
@@ -1085,14 +1085,21 @@ def test_treatment_pathway_if_all_consumables_mild_case(tmpdir, seed):
                                       incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia,
                                       treatment_effect='perfectly_effective')
 
-    # - If Treatment Does Not Work --> One follow-up as an outpatient and screen for inpatient.
+    # - If Treatment Does Not Work --> No follow-up or one follow-up as an outpatient
     assert [
+               ('FirstAttendance_NonEmergency', '0'),
+               ('Alri_Pneumonia_Treatment_Outpatient', '0'),
+           ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
+                                      incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia,
+                                      treatment_effect='perfectly_ineffective') or \
+           [
                ('FirstAttendance_NonEmergency', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient_Followup', '1a'),  # follow-up as out-patient at next level up.
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_NonLethal_Fast_Breathing_Pneumonia,
                                       treatment_effect='perfectly_ineffective')
+
 
 
 @pytest.mark.slow

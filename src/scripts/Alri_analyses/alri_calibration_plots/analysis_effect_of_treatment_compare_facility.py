@@ -754,7 +754,7 @@ if __name__ == "__main__":
     # low_oxygen = (table["oxygen_saturation"])
     fraction = risk_of_death['fraction']
     number_cases = table.groupby(by=[disease_classification2, low_oxygen]).size()
-    dx_accuracy = 'imperfect'
+    dx_accuracy = 'perfect'
 
     res = {
         "Facility level 2": {
@@ -1030,9 +1030,9 @@ if __name__ == "__main__":
     ax.legend(reversed(handles), reversed(labels), title='Case Type', loc='upper left', bbox_to_anchor=(1, 1),
               fontsize=7)
     # fig.suptitle('Deaths Under Different Interventions Combinations', fontsize=14, fontweight='semibold')
-    fig.suptitle('Scenario: Normal health worker diagnostic accuracy', fontsize=12, fontweight='semibold')
+    fig.suptitle('Scenario: Perfect health worker diagnostic accuracy', fontsize=12, fontweight='semibold')
     fig.show()
-    fig.savefig(Path('./outputs') / ('perfect dx - intervention bars hosp vs hc current policy' + datestamp + ".pdf"), format='pdf')
+    # fig.savefig(Path('./outputs') / ('perfect dx - intervention bars hosp vs hc current policy' + datestamp + ".pdf"), format='pdf')
     plt.close(fig)
 
     # # # # Calculations # # # #

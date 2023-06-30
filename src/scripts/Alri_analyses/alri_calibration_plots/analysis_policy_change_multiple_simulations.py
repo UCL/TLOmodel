@@ -40,7 +40,7 @@ MODEL_POPSIZE = 15_000
 MIN_SAMPLE_OF_NEW_CASES = 200
 NUM_REPS_FOR_EACH_CASE = 20
 
-_facility_level = '2'  # <-- assumes that the diagnosis/treatment occurs at this level
+_facility_level = '0'  # <-- assumes that the diagnosis/treatment occurs at this level
 
 # Helper function for conversion between odds and probabilities
 to_odds = lambda pr: pr / (1.0 - pr)  # noqa: E731
@@ -1240,7 +1240,7 @@ if __name__ == "__main__":
     ax.legend(reversed(handles), reversed(labels), title='Case Type', loc='upper left', bbox_to_anchor=(1, 1),
               fontsize=7)
     # fig.suptitle('Deaths Under Different Interventions Combinations', fontsize=14, fontweight='semibold')
-    fig.suptitle('Health centre care management - Perfect HW Dx Accuracy', fontsize=12, fontweight='semibold')
+    fig.suptitle('Hospital care management - Perfect HW Dx Accuracy', fontsize=12, fontweight='semibold')
     fig.show()
     # fig.savefig(Path('./outputs') / ('imperfect dx - hosp - current vs new policy' + datestamp + ".pdf"), format='pdf')
     plt.close(fig)

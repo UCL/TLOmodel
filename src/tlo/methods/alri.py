@@ -709,7 +709,27 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'probability of treatment failure by end of IV therapy for 2nd line antibiotic either cloxacillin'
                       ' or ceftriaxone to treat severe pneumonia (danger-signs)'
-                      ),  # N.B. This parameter is not used.
+                      ),
+        'rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2<90%':
+            Parameter(Types.REAL,
+                      'relative risk of treatment failure if pneumonia with SpO2<90% were given 1st line IV antibiotics'
+                      'compared to oral antibiotics'
+                      ),
+        'rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2<90%':
+            Parameter(Types.REAL,
+                      'relative risk of treatment failure if pneumonia with SpO2<90% were given 2nd line IV antibiotics'
+                      'compared to oral antibiotics'
+                      ),
+        'rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%':
+            Parameter(Types.REAL,
+                      'relative risk of treatment failure if pneumonia with SpO2>=90% were given '
+                      '1st line IV antibiotics compared to oral antibiotics'
+                      ),
+        'rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%':
+            Parameter(Types.REAL,
+                      'relative risk of treatment failure if pneumonia with SpO2>=90% were given '
+                      '2nd line IV antibiotics compared to oral antibiotics'
+                      ),
 
         # sensitivities for correct classification by health workers
         'sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0':
@@ -1535,7 +1555,6 @@ class Alri(Module):
         if facility_level in ('2', '3'):
             # young infants classifications
             if child_is_younger_than_2_months:
-                # if any(s in ['danger_signs', 'respiratory_distress', 'chest_indrawing'] for s in symptoms):
                 if ('danger_signs' in symptoms) or ('respiratory_distress' in symptoms) or (
                     'chest_indrawing' in symptoms):
                     return 'danger_signs_pneumonia'
@@ -1545,7 +1564,6 @@ class Alri(Module):
                     return 'cough_or_cold'
             # 2-59 months old classifications
             else:
-                # if any(s in ['danger_signs', 'respiratory_distress'] for s in symptoms):
                 if ('danger_signs' in symptoms) or ('respiratory_distress' in symptoms):
                     return 'danger_signs_pneumonia'
                 elif 'chest_indrawing' in symptoms:
@@ -1559,7 +1577,6 @@ class Alri(Module):
         elif facility_level in ('0', '1a', '1b'):
             # young infants classifications
             if child_is_younger_than_2_months:
-                # if any(s in ['danger_signs', 'chest_indrawing'] for s in symptoms):
                 if ('danger_signs' in symptoms) or ('chest_indrawing' in symptoms):
                     return 'danger_signs_pneumonia'
                 elif 'tachypnoea' in symptoms:
@@ -1852,7 +1869,7 @@ class Models:
 
         return dict({'rr': rr, 'adjusted_p': adjusted_p})
 
-    def get_complications_that_onset(self, disease_type, age_exact_years,
+    def get_complications_that_onset(self, disease_type,
                                      primary_path_is_bacterial, has_secondary_bacterial_inf):
         """Determine the set of complication for this person"""
         p = self.p
@@ -1865,13 +1882,6 @@ class Models:
             prob_ref=p['assumed_prev_hypoxaemia_in_normal_CXR'],
             prop_case_group=p['proportion_pneumonia_in_alri'],
             prevalence=p['prev_hypoxaemia_in_alri'])
-
-        # # get the probabilities of hypoxaemia by presence of atalectasis in other alri
-        # rr_and_base_prob_hypoxaemia_in_atalectasis = self.get_prob_of_outcome_in_baseline_group(
-        #     or_value=p['or_hypoxaemia_in_abnormal_CXR'],
-        #     prob_ref=p['assumed_prev_hypoxaemia_in_uncomplicated_other_alri'],
-        #     prop_case_group=p['prob_atelectasis_in_bronchiolitis'],
-        #     prevalence=rr_and_prob_hypoxaemia_in_other_alri['adjusted_p'])
 
         # get the probabilities of hypoxaemia by presence of PC in Pneumonia # OR = 2.236 ref Kamal Masarweh et al 2021
         rr_and_base_prob_hypoxaemia_in_non_pc = self.get_prob_of_outcome_in_baseline_group(
@@ -1898,10 +1908,6 @@ class Models:
         # Sort the probabilities to the disease types
         # For 'pneumonia' disease
         if disease_type == 'pneumonia':
-
-            # # get the probability of hypoxaemia in Pneumonia group
-            # probs['hypoxaemia'] = \
-            #     rr_and_prob_hypoxaemia_in_other_alri['adjusted_p'] * rr_and_prob_hypoxaemia_in_other_alri['rr']
 
             # get probabilities for local pulmonary complications
             if p['prob_pulmonary_complications_in_pneumonia'] > self.rng.random_sample():
@@ -1944,16 +1950,8 @@ class Models:
         # # # # # # # # #
         # For 'other_alri' disease
         elif disease_type == 'other_alri':
-            # # apply probability of complications in bronchiolitis (other alri in < 2 years)
-            # if age_exact_years < 2:
-            #     probs['pneumothorax'] = p['prob_atelectasis_in_bronchiolitis']
-            #     if probs['pneumothorax'] > self.rng.random_sample():
-            #         probs['hypoxaemia'] = rr_and_base_prob_hypoxaemia_in_atalectasis['adjusted_p'] * \
-            #                               rr_and_base_prob_hypoxaemia_in_atalectasis['rr']
-            #     else:
-            #         probs['hypoxaemia'] = rr_and_base_prob_hypoxaemia_in_atalectasis['adjusted_p']
-            # else:
-            # probability of hypoxaemia in other ALRI for over 2 years of age
+
+            # probability of hypoxaemia in other ALRI
             probs['hypoxaemia'] = rr_and_prob_hypoxaemia_in_other_alri['adjusted_p']
 
             # probability of bacteraemia in other ALRI
@@ -2055,7 +2053,7 @@ class Models:
                 'fever', 'tachypnoea']
         })
 
-        # determine which main symptoms are onset:
+        # determine which main symptoms are onset in severe PC
         general_symptoms = {s for s, p in probs.items() if p > self.rng.random_sample()}
 
         # set of dictionaries storing probability of symptoms for hypoxaemia
@@ -2209,9 +2207,6 @@ class Models:
         probs_spc.update(probs_spc_ci)  # add chest indrawing
         probs_spc.update(probs_spc_rd)  # add respiratory distress
         probs_spc.update(probs_spc_ds)  # add danger signs
-
-        # updated main symptoms are onset in severe PC:
-        general_symptoms = {s for s, p in probs.items() if p > self.rng.random_sample()}
 
         symptoms_spc = {s for s, p in probs_spc.items() if p > self.rng.random_sample()}
 
@@ -2540,34 +2535,6 @@ class Models:
             if hiv_infected_and_not_on_art:
                 risk_tf_iv_antibiotics *= p['rr_tf_1st_line_antibiotics_if_HIV/AIDS']
 
-            # # Baseline risk of treatment failure ( ref group: non-need oxygen or if oxygen is also provided)
-            # odds_tf_1st_line_antibiotics = to_odds(p['tf_1st_line_antibiotic_for_severe_pneumonia'])
-            #
-            # if age_exact_years < 1:
-            #     odds_tf_1st_line_antibiotics *= 1.66
-            #
-            # if imci_symptom_based_classification == 'danger_signs_pneumonia':
-            #     odds_tf_1st_line_antibiotics *= 1.93
-            #
-            # if SpO2_level != ">=93%":
-            #     odds_tf_1st_line_antibiotics *= 1.78
-            #
-            # if 'bacteraemia' in complications:
-            #     odds_tf_1st_line_antibiotics *= 3.06
-            #
-            # if any(c in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for c in complications):
-            #     odds_tf_1st_line_antibiotics *= 2.31 this is RR
-            #
-            # # The effect of HIV
-            # if hiv_infected_and_not_on_art:
-            #     odds_tf_1st_line_antibiotics *= 3.45
-            #
-            # # The effect of acute malnutrition
-            # if un_clinical_acute_malnutrition == 'SAM':
-            #     odds_tf_1st_line_antibiotics *= 1.94
-            #
-            # risk_tf_iv_antibiotics = to_prob(odds_tf_1st_line_antibiotics)
-
             return min(1.0, risk_tf_iv_antibiotics)
 
         def _prob_treatment_fails_when_danger_signs_pneumonia():
@@ -2605,7 +2572,6 @@ class Models:
                 fraction = (average_oral_tf / iv_tf_) if (iv_tf_ != 0) else 1
 
                 oral_tf_ = iv_tf_ * (1 / (0.55 * fraction))
-                # oral_tf_ = iv_tf_ * (1 / 0.55)
 
                 return oral_tf_
             else:
@@ -2623,10 +2589,14 @@ class Models:
                 # base TF for SpO2<90% or SpO2>=90%
                 iv_tf_ = _treatment_failure_oral_antibiotics(
                     p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) * \
-                         (0.595366 if antibiotic_provided_grp == '1st_line_IV_antibiotics' else 0.681498) if \
+                         (p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2<90%'] if
+                          antibiotic_provided_grp == '1st_line_IV_antibiotics' else
+                          p['rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2<90%']) if \
                     needs_oxygen else _treatment_failure_oral_antibiotics(
                     p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) * \
-                                      (0.67358 if antibiotic_provided_grp == '1st_line_IV_antibiotics' else 0.772374)
+                         (p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%'] if
+                          antibiotic_provided_grp == '1st_line_IV_antibiotics' else
+                          p['rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%'])
 
                 # adjust the TF base on oxygen provision
                 if any([needs_oxygen, might_need_oxygen]) and not oxygen_provided:
@@ -2664,20 +2634,16 @@ class Models:
 
             # 1st line IV antibiotic:
             elif antibiotic_provided_grp in ('1st_line_IV_antibiotics', '2nd_line_IV_antibiotics'):
-                # # base TF for SpO2<90% or SpO2>=90%
-                # iv_tf_ = _treatment_failure_oral_antibiotics(
-                #     p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']) * \
-                #          p['rr_tf_if_given_parenteral_antibiotics_for_pneumonia_with_SpO2<90%'] if needs_oxygen \
-                #     else _treatment_failure_oral_antibiotics(
-                #     p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']) * \
-                #          p['rr_tf_if_given_parenteral_antibiotics_for_pneumonia_with_SpO2>=90%']
-
                 iv_tf_ = _treatment_failure_oral_antibiotics(
                     p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']) * \
-                         (0.595366 if antibiotic_provided_grp == '1st_line_IV_antibiotics' else 0.681498) if \
+                         (p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2<90%'] if
+                          antibiotic_provided_grp == '1st_line_IV_antibiotics' else
+                          p['rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2<90%']) if \
                     needs_oxygen else _treatment_failure_oral_antibiotics(
                     p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%']) * \
-                                      (0.67358 if antibiotic_provided_grp == '1st_line_IV_antibiotics' else 0.772374)
+                         (p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%'] if
+                          antibiotic_provided_grp == '1st_line_IV_antibiotics' else
+                          p['rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%'])
 
                 # adjust the TF base on oxygen provision
                 if any([needs_oxygen, might_need_oxygen]) and not oxygen_provided:
@@ -2700,20 +2666,17 @@ class Models:
 
             # If symptom-based classification == cough/cold classification with SpO2<90% - give IV antibiotics + oxygen
             elif antibiotic_provided_grp in ('1st_line_IV_antibiotics', '2nd_line_IV_antibiotics'):
-                # iv_tf_ = _treatment_failure_oral_antibiotics(
-                #     p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) * \
-                #          p['rr_tf_if_given_parenteral_antibiotics_for_pneumonia_with_SpO2<90%'] if needs_oxygen \
-                #     else _treatment_failure_oral_antibiotics(
-                #     p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) * \
-                #          p['rr_tf_if_given_parenteral_antibiotics_for_pneumonia_with_SpO2>=90%']
-
                 # base TF for SpO2<90% or SpO2>=90%
                 iv_tf_ = _treatment_failure_oral_antibiotics(
                     p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) * \
-                         (0.595366 if antibiotic_provided_grp == '1st_line_IV_antibiotics' else 0.681498) if \
+                         (p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2<90%'] if
+                          antibiotic_provided_grp == '1st_line_IV_antibiotics' else
+                          p['rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2<90%']) if \
                     needs_oxygen else _treatment_failure_oral_antibiotics(
                     p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) * \
-                                      (0.67358 if antibiotic_provided_grp == '1st_line_IV_antibiotics' else 0.772374)
+                         (p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%'] if
+                          antibiotic_provided_grp == '1st_line_IV_antibiotics' else
+                          p['rr_tf_if_given_2nd_line_IV_antibiotics_for_pneumonia_with_SpO2>=90%'])
 
                 # adjust the TF base on oxygen provision
                 if any([needs_oxygen, might_need_oxygen]) and not oxygen_provided:
@@ -2870,22 +2833,11 @@ class AlriIncidentCase(Event, IndividualScopeEventMixin):
         # ----------------------------------- Complications  -----------------------------------
         complications = models.get_complications_that_onset(
             disease_type=disease_type,
-            age_exact_years=age_exact_years,
             primary_path_is_bacterial=(pathogen in self.module.pathogens['bacterial']),
             has_secondary_bacterial_inf=pd.notnull(bacterial_coinfection)
         )
 
         oxygen_saturation = models.get_oxygen_saturation(complication_set=complications)
-
-        # def get_symptoms_for_complications(disease_type:str, complications: set, oxygen_saturation: str) -> set:
-        #     """Return the set of symptoms consistent with the set of complications that are onset."""
-        #     symptoms_for_complications = set()
-        #     for complication in complications:
-        #         symptoms_for_complications = symptoms_for_complications.union(
-        #             models.symptoms_for_complication(disease_type=disease_type,
-        #                                              complication=complication,
-        #                                              oxygen_saturation=oxygen_saturation))
-        #     return symptoms_for_complications
 
         # ----------------------------------- Clinical Symptoms -----------------------------------
         # apply signs and symptoms for uncomplicated cases or for complicated cases
@@ -3119,7 +3071,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
             ('ConWithDCSA' if facility_level == '0' else 'Under5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level
-        # assert not self.is_followup_following_treatment_failure, 'Follow-up appointment cannot be an outpatient appt.'
 
     def _as_in_patient(self, facility_level):
         """Cast this HSI as an in-patient appointment."""
@@ -3286,10 +3237,9 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
              'cough_or_cold'
         }."""
         # person_id = self.target
-        # if self.sim.population.props.loc[person_id, ['un_clinical_acute_malnutrition'] == 'SAM']:
+        # if self.sim.population.props.loc[person_id, 'un_clinical_acute_malnutrition'] == 'SAM':
         #     return 'danger_signs_pneumonia'
         # else:
-
         return self.module.get_imci_classification_based_on_symptoms(
             child_is_younger_than_2_months=child_is_younger_than_2_months, symptoms=symptoms,
             facility_level=facility_level)
@@ -3341,17 +3291,6 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                             1.0 - p['prob_iCCM_severe_pneumonia_treated_as_fast_breathing_pneumonia']
                         ]
                     )
-            # if imci_classification_based_on_symptoms == 'danger_signs_pneumonia':
-            #     if rand() < p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0']:
-            #         return imci_classification_based_on_symptoms
-            #     else:
-            #         return rand_choice(
-            #             ['chest_indrawing_pneumonia', 'cough_or_cold'],
-            #             p=[
-            #                 p['prob_iCCM_severe_pneumonia_treated_as_fast_breathing_pneumonia'],
-            #                 1.0 - p['prob_iCCM_severe_pneumonia_treated_as_fast_breathing_pneumonia']
-            #             ]
-            #         )
 
             elif imci_classification_based_on_symptoms == 'fast_breathing_pneumonia':
                 if rand() < p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0']:
@@ -3542,7 +3481,11 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
                     # oral antibiotics failure - seek follow-up appointment
                     elif antibiotic_provided.startswith('Amoxicillin_tablet'):
-                        self._schedule_follow_up_following_treatment_failure()
+                        if not self.is_followup_following_treatment_failure:
+                            # apply a 30% will follow-up if oral treatment fails for those without a schedule recovery date
+                            if self.sim.population.props.loc[self.target, 'ri_scheduled_recovery_date'] == pd.NaT:
+                                if 0.5 > rng.random_sample():
+                                    self._schedule_follow_up_following_treatment_failure()
 
         def _do_if_fast_breathing_pneumonia():
             """What to do if classification is `fast_breathing`."""
@@ -3617,36 +3560,49 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             else:
                 _ = self._get_cons('Brochodilator_and_Steroids')
 
-    def _do_on_follow_up_following_treatment_failure(self):
+    def _do_on_follow_up_following_treatment_failure(self, person_id):
         """Things to do for a patient who is having this HSI following a failure of an earlier treatment.
         A further drug will be used but this will have no effect on the chance of the person dying."""
 
-        return
+        p = self.module.parameters
+        # Do nothing if the person is not currently infected and currently experiencing an episode
+        person = self.sim.population.props.loc[person_id]
+        if not person.ri_current_infection_status and (
+            person.ri_start_of_current_episode <= self.sim.date <= person.ri_end_of_current_episode
+        ):
+            return
 
-        # p = self.module.parameters
-        #
-        # # Ascertain the treatment according to the previous treatment failure
-        # previous_treatment = self.module.store_treatment_info['antibiotic_provided']
-        #
-        # if previous_treatment == '':  # and imci assessment is non-severe
-        #     # provide oral antibiotics and treat outpatient
-        #     antibiotic_indicated = self._get_cons('Amoxicillin_tablet_or_suspension_5days')
-        #     if antibiotic_indicated:
-        #         if p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'] > self.module.rng.random_sample():
-        #             self.module.cancel_death_and_schedule_cure(self.target)
-        #
-        #     # Attempt treatment:
-        #     self._assess_and_treat(age_exact_years=person.age_exact_years,
-        #                            symptoms=symptoms,
-        #                            oxygen_saturation=person.ri_SpO2_level,
-        #                            )
+        pulse_oximeter_available = self._get_cons('Pulse_oximetry')
+        # Assessment process if not an in-patient:
+        classification_for_treatment_decision = self._get_disease_classification_for_treatment_decision(
+            age_exact_years=person.age_exact_years,
+            symptoms=person.symptoms,
+            oxygen_saturation=person.oxygen_saturation,
+            facility_level=self.ACCEPTED_FACILITY_LEVEL,
+            use_oximeter=pulse_oximeter_available,
+        )
+        self._provide_bronchodilator_if_wheeze(
+            facility_level=self.ACCEPTED_FACILITY_LEVEL,
+            symptoms=person.symptoms,
+        )
 
-        # elif previous_treatment in self.module.antibiotics:
-        #     self._refer_to_become_inpatient()
-        #     antibiotic_indicated = self._get_cons('IV_ampicillin_and_gentamicin')
-        #     if antibiotic_indicated:
-        #         if p['tf_1st_line_antibiotic_for_severe_pneumonia'] > random_sample():
-        #             self.module.cancel_death_and_schedule_cure(self.target)
+        # get a follow-up classification
+        followup_classification = ''
+        # cough or cold, and fast-breathing pneumonia classifications will be given oral antibiotics, treat outpatient
+        if classification_for_treatment_decision in ('cough_or_cold', 'fast_breathing_pneumonia'):
+            followup_classification = 'chest_indrawing_pneumonia'
+        # chest-indrawing and danger signs pneumonia classifications will be given inpatient care
+        else:
+            followup_classification = 'danger_signs_pneumonia'
+
+        # do the effect of treatment - cure determine in the function
+        self._do_action_given_classification(
+            classification_for_treatment_decision=followup_classification,
+            age_exact_years=person.age_exact_years,
+            facility_level=self.ACCEPTED_FACILITY_LEVEL,
+            use_oximeter=pulse_oximeter_available,
+            oxygen_saturation=person.oxygen_saturation,
+        )
 
     def apply(self, person_id, squeeze_factor):
         """Assess and attempt to treat the person."""
@@ -3665,13 +3621,13 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             if not {'cough', 'difficult_breathing'}.intersection(symptoms):
                 return self.make_appt_footprint({})
 
-            # # Do nothing if the person is already on treatment
-            # if person.ri_on_treatment:
-            #     return self.make_appt_footprint({})
+            # Do nothing if the person is already on treatment
+            if person.ri_on_treatment:
+                return self.make_appt_footprint({})
 
-            # # If the HSI is at level 0 and is for a child aged less than 2 months, refer to the next level.
-            # if (self.ACCEPTED_FACILITY_LEVEL == '0') and (person.age_exact_years < 2.0 / 12.0):
-            #     self._refer_to_next_level_up()
+            # If the HSI is at level 0 and is for a child aged less than 2 months, refer to the next level.
+            if (self.ACCEPTED_FACILITY_LEVEL == '0') and (person.age_exact_years < 2.0 / 12.0):
+                self._refer_to_next_level_up()
 
             # Attempt treatment:
             self._assess_and_treat(age_exact_years=person.age_exact_years,
@@ -3680,7 +3636,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                                    )
 
         else:
-            self._do_on_follow_up_following_treatment_failure()
+            self._do_on_follow_up_following_treatment_failure(person_id)
 
     def never_ran(self):
         """If this event never ran, refer to next level up."""
@@ -3875,21 +3831,6 @@ class AlriPropertiesOfOtherModules(Module):
         'hv_art': Property(Types.CATEGORICAL, 'DUMMY version of the property for hv_art.',
                            categories=['not', 'on_VL_suppressed', 'on_not_VL_suppressed']),
 
-        # NOTE: 'nb_breastfeeding_status' and 'nb_low_birth_weight_status' already in simplified births!!
-        # 'nb_breastfeeding_status': Property(
-        #     Types.CATEGORICAL, 'DUMMY version of the property for nb_breastfeeding_status'
-        #                        'How this neonate is being breastfed',
-        #     categories=['none', 'non_exclusive', 'exclusive']),
-
-        # 'nb_low_birth_weight_status': Property(
-        #     Types.CATEGORICAL, 'DUMMY version of the property for nb_low_birth_weight_status'
-        #                        'extremely low birth weight (<1000g), '
-        #                        'very low birth weight (<1500g), '
-        #                        'low birth weight (<2500g), '
-        #                        'normal birth weight (>2500g), macrosomia (>4000g)',
-        #     categories=['extremely_low_birth_weight', 'very_low_birth_weight',
-        #                 'low_birth_weight', 'normal_birth_weight', 'macrosomia']),
-
         'va_pneumo_all_doses': Property(Types.BOOL, 'DUMMY version of the property for va_pneumo_all_doses '
                                                     'whether all doses have been received of the pneumococcal vaccine'),
         'va_hib_all_doses': Property(Types.BOOL, 'DUMMY version of the property for va_pneumo_all_doses '
@@ -3905,10 +3846,12 @@ class AlriPropertiesOfOtherModules(Module):
             Types.CATEGORICAL, 'DUMMY version of the property for un_WHZ_category'
                                'height-for-age z-score group',
             categories=['WHZ<-3', '-3<=WHZ<-2', 'WHZ>=-2']),
+
+        # NOTE: 'nb_breastfeeding_status' and 'nb_low_birth_weight_status' already in simplified births!!
     }
 
     def __init__(self, name=None, hiv_prev=0.1, art_cov=0.75, moderate_wasting=0.034, severe_wasting=0.013,
-                 va_pcv13=0, va_hib=0.875, va_measles=0.772):  # mode wating 0.034
+                 va_pcv13=0, va_hib=0.875, va_measles=0.772):
         super().__init__(name)
         self.hiv_prev = hiv_prev
         self.art_cov = art_cov
