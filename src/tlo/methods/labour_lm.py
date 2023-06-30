@@ -25,6 +25,23 @@ import pandas as pd
 from tlo.methods import pregnancy_helper_functions
 
 
+def predict_post_term_labour(self, df, rng=None, **externals):
+    """
+    Individual level linear model which predicts an individuals probability of post term labour. Risk is increased in
+    women who are obses
+    """
+    person = df.iloc[0]
+    params = self.parameters
+    result = params['risk_post_term_labour']
+
+    if person['li_bmi'] == 4:
+        result *= params['rr_potl_bmi_30_35']
+    if person['li_bmi'] == 5:
+        result *= params['rr_potl_bmi_35+']
+
+    return pd.Series(data=[result], index=df.index)
+
+
 def predict_parity(self, df, rng=None, **externals):
     """
     Population level linear model (additive) which returns a df containing the predicted parity (previous number of

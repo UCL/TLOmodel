@@ -135,6 +135,10 @@ class Labour(Module):
         # POSTTERM RATE
         'risk_post_term_labour': Parameter(
             Types.LIST, 'risk of remaining pregnant past 42 weeks'),
+        'rr_potl_bmi_30_35': Parameter(
+            Types.LIST, 'effect of maternal BMI being between 30 and 35 on risk of post term labour'),
+        'rr_potl_bmi_35+': Parameter(
+            Types.LIST, 'effect of maternal BMI being between above 35 on risk of post term labour'),
 
         # MISC...
         'list_limits_for_defining_term_status': Parameter(
@@ -910,6 +914,9 @@ class Labour(Module):
             # This equation predicts the parity of each woman at baseline (who is of reproductive age)
             'parity': LinearModel.custom(labour_lm.predict_parity, parameters=params),
 
+            # This equation predicts if a woman will go into post term labour
+            'post_term_labour': LinearModel.custom(labour_lm.predict_post_term_labour, parameters=params),
+
             # This equation is used to calculate a womans risk of obstructed labour. As we assume obstructed labour can
             # only occur following on of three preceding causes, this model is additive
             'obstruction_cpd_ip': LinearModel.custom(labour_lm.predict_obstruction_cpd_ip, module=self),
@@ -1100,7 +1107,10 @@ class Labour(Module):
 
         # At the point of conception we schedule labour to onset for all women between after 37 weeks gestation - first
         # we determine if she will go into labour post term (41+ weeks)
-        if self.rng.random_sample() < params['risk_post_term_labour']:
+
+        if self.rng.random_sample() < self.la_linear_models['post_term_labour'].predict(
+            df.loc[[individual_id]])[individual_id]:
+
             df.at[individual_id, 'la_due_date_current_pregnancy'] = \
                 (df.at[individual_id, 'date_of_last_pregnancy'] + pd.DateOffset(
                     days=(7 * 39) + self.rng.randint(0, 7 * 4)))
