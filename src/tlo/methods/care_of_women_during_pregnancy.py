@@ -233,7 +233,7 @@ class CareOfWomenDuringPregnancy(Module):
             get_list_of_items(self, ['Halothane (fluothane)_250ml_CMST'])
 
         self.item_codes_preg_consumables['ectopic_pregnancy_optional'] = \
-            get_list_of_items(self, ['Scalpel blade size 22 (individually wrapped)_100_CMST'
+            get_list_of_items(self, ['Scalpel blade size 22 (individually wrapped)_100_CMST',
                                      'Sodium chloride, injectable solution, 0,9 %, 500 ml',
                                      'Paracetamol, tablet, 500 mg',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
