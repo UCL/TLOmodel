@@ -708,7 +708,12 @@ class Labour(Module):
 
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
         self.item_codes_lab_consumables['blood_test_equipment'] = \
-            get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
+            get_list_of_items(self, ['Blood collecting tube, 5 ml',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box'])
+
+        # ------------------------------------------ FULL BLOOD COUNT -------------------------------------------------
+        self.item_codes_lab_consumables['full_blood_count'] = get_list_of_items(self, ['Complete blood count'])
 
         # -------------------------------------------- DELIVERY ------------------------------------------------------
         # assuming CDK has blade, soap, cord tie
@@ -729,7 +734,8 @@ class Labour(Module):
                                      'Metronidazole 200mg_1000_CMST'])
 
         self.item_codes_lab_consumables['caesarean_delivery_optional'] = \
-            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
+            get_list_of_items(self, ['Scalpel blade size 22 (individually wrapped)_100_CMST',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Paracetamol, tablet, 500 mg',
                                      'Declofenac injection_each_CMST',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
@@ -747,7 +753,8 @@ class Labour(Module):
                                      'Metronidazole 200mg_1000_CMST'])
 
         self.item_codes_lab_consumables['obstetric_surgery_optional'] = \
-            get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
+            get_list_of_items(self, ['Scalpel blade size 22 (individually wrapped)_100_CMST',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Paracetamol, tablet, 500 mg',
                                      'Declofenac injection_each_CMST',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
@@ -850,7 +857,7 @@ class Labour(Module):
         self.item_codes_lab_consumables['blood_transfusion'] = get_list_of_items(self, ['Blood, one unit'])
 
         # ------------------------------------------ FULL BLOOD COUNT -------------------------------------------------
-        self.item_codes_lab_consumables['full_blood_count'] = get_list_of_items(self, ['Complete blood count'])
+        self.item_codes_lab_consumables['hb_test'] = get_list_of_items(self, ['Haemoglobin test (HB)'])
 
         # ---------------------------------- IRON AND FOLIC ACID ------------------------------------------------------
         self.item_codes_lab_consumables['iron_folic_acid'] = \
@@ -2149,7 +2156,7 @@ class Labour(Module):
 
         # Check consumables
         avail = pregnancy_helper_functions.return_cons_avail(
-            self, hsi_event, self.item_codes_lab_consumables, core='blood_transfusion',
+            self, hsi_event, self.item_codes_lab_consumables, core='blood_transfusion', number=2,
             optional='iv_drug_equipment')
 
         # check HCW
@@ -2192,7 +2199,8 @@ class Labour(Module):
             if not mother.la_iron_folic_acid_postnatal:
 
                 days = int((6 - df.at[person_id, 'pn_postnatal_period_in_weeks']) * 7)
-                cons = {_i: days for _i in self.item_codes_lab_consumables['iron_folic_acid']}
+                dose = days * 3
+                cons = {_i: dose for _i in self.item_codes_lab_consumables['iron_folic_acid']}
                 avail = hsi_event.get_consumables(item_codes=cons)
 
                 # Start iron and folic acid treatment
@@ -3169,7 +3177,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         # delivered
         if mni[person_id]['referred_for_cs'] and self.timing == 'intrapartum':
 
-            # We log the log the required consumables and condition the caesarean happening on the availability of the
+            # We log the required consumables and condition the caesarean happening on the availability of the
             # first consumable in this package, the anaesthetic required for the surgery
             avail = pregnancy_helper_functions.return_cons_avail(
                 self.module, self, self.module.item_codes_lab_consumables, core='caesarean_delivery_core',

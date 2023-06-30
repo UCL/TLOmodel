@@ -1282,6 +1282,23 @@ class HSI_PostnatalSupervisor_TreatmentForObstetricFistula(HSI_Event, Individual
         if not mother.is_alive:
             return
 
+        of_repair_cons = pregnancy_helper_functions.get_list_of_items(
+            self, ['Scalpel blade size 22 (individually wrapped)_100_CMST',
+                   'Halothane (fluothane)_250ml_CMST',
+                   'Ceftriaxone 1g, PFR_each_CMST',
+                   'Metronidazole 200mg_1000_CMST''Cannula iv  (winged with injection pot) 18_each_CMST',
+                   'Paracetamol, tablet, 500 mg',
+                   'Declofenac injection_each_CMST',
+                   'Pethidine, 50 mg/ml, 2 ml ampoule',
+                   'Foley catheter',
+                   'Bag, urine, collecting, 2000 ml',
+                   "ringer's lactate (Hartmann's solution), 1000 ml_12_IDA",
+                   'Sodium chloride, injectable solution, 0,9 %, 500 ml',
+                   "Giving set iv administration + needle 15 drops/ml_each_CMST",
+                   "Chlorhexidine 1.5% solution_5_CMST"])
+
+        self.get_consumables(item_codes=of_repair_cons)
+
         pregnancy_helper_functions.store_dalys_in_mni(
             person_id, self.sim.modules['PregnancySupervisor'].mother_and_newborn_info,
             f'{df.at[person_id, "pn_obstetric_fistula"]}_fistula_resolution', self.sim.date)

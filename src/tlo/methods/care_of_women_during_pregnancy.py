@@ -218,7 +218,9 @@ class CareOfWomenDuringPregnancy(Module):
 
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
         self.item_codes_preg_consumables['blood_test_equipment'] = \
-            get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
+            get_list_of_items(self, ['Blood collecting tube, 5 ml',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box'])
 
         # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
         self.item_codes_preg_consumables['iv_drug_equipment'] = \
@@ -228,16 +230,19 @@ class CareOfWomenDuringPregnancy(Module):
 
         # -------------------------------------------- ECTOPIC PREGNANCY ---------------------------------------------
         self.item_codes_preg_consumables['ectopic_pregnancy_core'] = \
-            get_list_of_items(self, ['Halothane (fluothane)_250ml_CMST',
-                                     'Scalpel blade size 22 (individually wrapped)_100_CMST'])
+            get_list_of_items(self, ['Halothane (fluothane)_250ml_CMST'])
 
         self.item_codes_preg_consumables['ectopic_pregnancy_optional'] = \
-            get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
+            get_list_of_items(self, ['Scalpel blade size 22 (individually wrapped)_100_CMST'
+                                     'Sodium chloride, injectable solution, 0,9 %, 500 ml',
                                      'Paracetamol, tablet, 500 mg',
                                      'Pethidine, 50 mg/ml, 2 ml ampoule',
                                      'Suture pack',
                                      'Gauze, absorbent 90cm x 40m_each_CMST',
-                                     'Cannula iv  (winged with injection pot) 18_each_CMST'])
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box'
+                                     ])
 
         # ------------------------------------------- POST ABORTION CARE - GENERAL  -----------------------------------
         self.item_codes_preg_consumables['post_abortion_care_core'] = \
@@ -246,15 +251,17 @@ class CareOfWomenDuringPregnancy(Module):
         self.item_codes_preg_consumables['post_abortion_care_optional'] = \
             get_list_of_items(self, ['Complete blood count',
                                      'Blood collecting tube, 5 ml',
-                                     'Disposables gloves, powder free, 100 pieces per box',
                                      'Paracetamol, tablet, 500 mg',
-                                     'Pethidine, 50 mg/ml, 2 ml ampoule'])
+                                     'Pethidine, 50 mg/ml, 2 ml ampoule',
+                                     'Cannula iv  (winged with injection pot) 18_each_CMST',
+                                     'Giving set iv administration + needle 15 drops/ml_each_CMST',
+                                     'Disposables gloves, powder free, 100 pieces per box'
+                                     ])
 
         # ------------------------------------------- POST ABORTION CARE - SEPSIS -------------------------------------
         self.item_codes_preg_consumables['post_abortion_care_sepsis_core'] = \
             get_list_of_items(self, ['Benzylpenicillin 3g (5MU), PFR_each_CMST',
                                      'Gentamycin, injection, 40 mg/ml in 2 ml vial'])
-        #  'Metronidazole, injection, 500 mg in 100 ml vial'])
 
         self.item_codes_preg_consumables['post_abortion_care_sepsis_optional'] = \
             get_list_of_items(self, ['Sodium chloride, injectable solution, 0,9 %, 500 ml',
@@ -793,10 +800,10 @@ class CareOfWomenDuringPregnancy(Module):
 
         if not df.at[person_id, 'ac_receiving_iron_folic_acid']:
 
-            # check consumable availability
+            # check consumable availability - dose is total days of pregnancy x 2 tablets
             days = self.get_approx_days_of_pregnancy(person_id)
             avail = pregnancy_helper_functions.return_cons_avail(
-                self, hsi_event, self.item_codes_preg_consumables, core='iron_folic_acid', number=days)
+                self, hsi_event, self.item_codes_preg_consumables, core='iron_folic_acid', number=days*3)
 
             # As with previous interventions - condition on consumables and probability intervention is delivered
             if avail and (self.rng.random_sample() < params['prob_intervention_delivered_ifa']):
@@ -1092,7 +1099,7 @@ class CareOfWomenDuringPregnancy(Module):
             if self.rng.random_sample() < params['prob_intervention_delivered_gdm_test']:
 
                 avail = pregnancy_helper_functions.return_cons_avail(
-                    self, hsi_event, self.item_codes_preg_consumables, core='gdm_test', optional='iv_drug_equipment')
+                    self, hsi_event, self.item_codes_preg_consumables, core='gdm_test', optional='blood_test_equipment')
 
                 # If the test accurately detects a woman has gestational diabetes the consumables are recorded and
                 # she is referred for treatment
@@ -1279,7 +1286,8 @@ class CareOfWomenDuringPregnancy(Module):
 
         # Check for consumables
         avail = pregnancy_helper_functions.return_cons_avail(
-            self, hsi_event, self.item_codes_preg_consumables, core='blood_transfusion', optional='iv_drug_equipment')
+            self, hsi_event, self.item_codes_preg_consumables, core='blood_transfusion', number=2,
+            optional='iv_drug_equipment')
 
         sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
                                                                                    sf='blood_tran',
@@ -2650,7 +2658,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
         elif abortion_complications.has_any([person_id], 'haemorrhage', first=True):
 
             cons_for_haemorrhage = pregnancy_helper_functions.return_cons_avail(
-                self.module, self, self.module.item_codes_preg_consumables, core='blood_transfusion',
+                self.module, self, self.module.item_codes_preg_consumables, core='blood_transfusion', number=2,
                 optional='iv_drug_equipment')
 
             cons_for_shock = pregnancy_helper_functions.return_cons_avail(
