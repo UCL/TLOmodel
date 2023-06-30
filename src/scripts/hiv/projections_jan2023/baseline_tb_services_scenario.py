@@ -15,6 +15,7 @@ Job ID: baseline_tb_services_scenario-2023-06-23T213051Z
 import warnings
 from datetime import datetime
 from tlo import Date, logging
+from datetime import datetime
 from tlo.methods import (
     demography,
     simplified_births,
@@ -95,7 +96,7 @@ class ImpactOfBaselineTbServices(BaseScenario):
         return {
             'Tb': {
                 'scenario': 0,
-                'scenario_start_date':  'Date(2010,1,1)'
+                'scenario_start_date':  'start_date'
             },
         }
     # def draw_parameters(self, draw_number, rng):
