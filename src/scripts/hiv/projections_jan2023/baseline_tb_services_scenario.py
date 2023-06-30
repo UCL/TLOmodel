@@ -47,8 +47,7 @@ class ImpactOfBaselineTbServices(BaseScenario):
             start_date=Date(2010, 1, 1),
             end_date=Date(2013, 12, 31),
             initial_population_size=1000,
-            #number_of_draws=1,
-            number_of_draws=len(self._parameter_grid),
+            number_of_draws=1,
             runs_per_draw=2,
         )
 
@@ -92,14 +91,16 @@ class ImpactOfBaselineTbServices(BaseScenario):
             tb.Tb(resourcefilepath=self.resources),
         ]
 
+    def draw_parameters(self, draw_number, rng):
+        return {
+            'Tb': {
+                'scenario': 0,
+                'scenario_start_date':  'Date(2010,1,1)'
+            },
+        }
     # def draw_parameters(self, draw_number, rng):
     #     return self._parameter_grid[draw_number]
-    def draw_parameters(self, draw_number, rng):
-        if draw_number < len(self._parameter_grid):
-            return self._parameter_grid[draw_number]
-        else:
-            # Handle the case where the draw_number is out of range
-            return None
+
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
