@@ -96,12 +96,9 @@ class ImpactOfBaselineTbServices(BaseScenario):
         return {
             'Tb': {
                 'scenario': 0,
-                'scenario_start_date':  'start_date'
+                'scenario_start_date': Date.from_string(str(self.start_date))
             },
         }
-    # def draw_parameters(self, draw_number, rng):
-    #     return self._parameter_grid[draw_number]
-
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
