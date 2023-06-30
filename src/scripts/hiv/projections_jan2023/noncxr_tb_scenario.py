@@ -44,7 +44,7 @@ class ImpactOfnoCXR(BaseScenario):
             start_date=Date(2010, 1, 1),
             end_date=Date(2015, 12, 31),
             initial_population_size=1000,
-            number_of_draws=1,
+            number_of_draws=2,
             runs_per_draw=2,
         )
     def log_configuration(self):

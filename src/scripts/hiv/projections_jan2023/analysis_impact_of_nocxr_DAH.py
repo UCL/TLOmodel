@@ -23,7 +23,7 @@ outputspath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
-results_folder = get_scenario_outputs("noncxr_tb_scenario-2023-06-29T095210Z", outputspath) [-1]
+results_folder = get_scenario_outputs("noncxr_tb_scenario-2023-06-29T115439Z", outputspath) [-1]
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
 # get basic information about the results
@@ -259,7 +259,6 @@ pyears = pyears.reset_index(drop=True)
 
 ## Generates graphs #########################
 
-
 # Set the figure size
 plt.figure(figsize=(8, 2))
 # Plot the bars for median rates with error bars
@@ -277,9 +276,28 @@ plt.legend()
 plt.xticks(years, years, rotation=45)
 # Show the plot
 plt.show()
-#graphs_mortality = results_folder + "/mortality_rates.pdf"
-#plt.savefig(graphs_mortality)
+plt.savefig(outputspath / 'summary_mortality_graph.png')
 
+#plotting DALYs
+# Get the x-values and y-values
+x_values = dalys_summary.index.astype(str).tolist()
+y_values = dalys_summary.values.tolist()
+
+# Plotting the bar chart
+for i in range(len(x_values)):
+    plt.bar(x_values[i], y_values[i])
+
+# Adding labels and title
+plt.xlabel('Year')
+plt.ylabel('DALYs')
+plt.title('Summary trend for TB DALYs')
+
+# Rotating x-axis labels for better visibility (optional)
+plt.xticks(rotation=45)
+
+# Display the plot
+plt.show()
+plt.savefig(outputspath / 'summary_dalys_graph.png')
 
 if __name__ == "__main__":
 
