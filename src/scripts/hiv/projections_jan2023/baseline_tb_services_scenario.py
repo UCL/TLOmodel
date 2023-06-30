@@ -36,12 +36,6 @@ warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 
 class ImpactOfBaselineTbServices(BaseScenario):
     def __init__(self):
-        self._parameter_grid = make_cartesian_parameter_grid({
-            'Tb': {
-                'scenario': [0]
-            }
-        })
-
         super().__init__(
             seed=2025,
             start_date=Date(2010, 1, 1),
