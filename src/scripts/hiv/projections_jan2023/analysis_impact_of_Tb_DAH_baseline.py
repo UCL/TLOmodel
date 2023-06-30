@@ -33,6 +33,14 @@ print(info)
 # Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
 
+#printing parameter grid:
+number_of_draws = len(self._parameter_grid)
+
+print("Extract Parameter Grid:")
+for draw in range(number_of_draws):
+    print(f"Draw {draw+1}: {self._parameter_grid[draw]}")
+
+
 ## extracting primary outcomes-DALYs and mortality
 def get_person_years(_df):
     """ extract person-years for each draw/run

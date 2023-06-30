@@ -92,15 +92,14 @@ class ImpactOfBaselineTbServices(BaseScenario):
             tb.Tb(resourcefilepath=self.resources),
         ]
 
-    def draw_parameters(self, draw_number, rng):
-        return self._parameter_grid[draw_number]
     # def draw_parameters(self, draw_number, rng):
-    #     if draw_number < len(self._parameter_grid):
-    #         return self._parameter_grid[draw_number]
-    #     else:
-    #         # Handle the case where the draw_number is out of range
-    #         return None
-
+    #     return self._parameter_grid[draw_number]
+    def draw_parameters(self, draw_number, rng):
+        if draw_number < len(self._parameter_grid):
+            return self._parameter_grid[draw_number]
+        else:
+            # Handle the case where the draw_number is out of range
+            return None
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run
