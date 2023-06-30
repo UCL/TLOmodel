@@ -2,7 +2,6 @@
 This file run scenarios for assesing unavailability of TB-related Development Assistamce for Health (DAH)
 
 It can be submitted on Azure Batch by running:
-
    tlo batch-submit src/scripts/hiv/projections_jan2023/baseline_tb_services_scenario.py
 or locally using:
  tlo scenario-run src/scripts/hiv/projections_jan2023/baseline_tb_services_scenario.py
@@ -66,7 +65,6 @@ class ImpactOfBaselineTbServices(BaseScenario):
                 'tlo.methods.healthsystem.summary': logging.INFO,
             }
         }
-
     def modules(self):
         return [
             demography.Demography(resourcefilepath=self.resources),
@@ -91,12 +89,10 @@ class ImpactOfBaselineTbServices(BaseScenario):
             hiv.Hiv(resourcefilepath=self.resources, run_with_checks=False),
             tb.Tb(resourcefilepath=self.resources),
         ]
-
     def draw_parameters(self, draw_number, rng):
         return {
             'Tb': {
                 'scenario': 0,
-                'scenario_start_date': Date.from_string(str(self.start_date))
             },
         }
 
