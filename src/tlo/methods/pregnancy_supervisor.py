@@ -2164,10 +2164,7 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
 
                 # And then override the quality parameters in the model
                 for parameter in ['prob_intervention_delivered_urine_ds', 'prob_intervention_delivered_bp',
-                                  'prob_intervention_delivered_ifa', 'prob_intervention_delivered_llitn',
-                                  'prob_intervention_delivered_llitn', 'prob_intervention_delivered_tt',
-                                  'prob_intervention_delivered_poct', 'prob_intervention_delivered_syph_test',
-                                  'prob_intervention_delivered_iptp', 'prob_intervention_delivered_gdm_test']:
+                                  'prob_intervention_delivered_syph_test', 'prob_intervention_delivered_gdm_test']:
                     self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters[parameter] = \
                         params['anc_availability_probability']
 
