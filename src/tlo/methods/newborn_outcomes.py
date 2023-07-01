@@ -1430,8 +1430,13 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
             or df.at[person_id, 'nb_early_preterm'] or df.at[person_id, 'nb_late_preterm'] or\
            df.at[person_id, 'nb_kangaroo_mother_care']:
 
+            if self.ACCEPTED_FACILITY_LEVEL != '1a':
+                ip_fl = self.ACCEPTED_FACILITY_LEVEL
+            else:
+                ip_fl = self.module.rng.choice(['1b', '2'])
+
             event = HSI_NewbornOutcomes_NeonatalWardInpatientCare(
-                    self.module, person_id=person_id)
+                    self.module, person_id=person_id, facility_level_of_this_hsi=ip_fl)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=self.sim.date, tclose=None)
 
     def never_ran(self):
@@ -1458,13 +1463,13 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
     who are require inpatient care due to a complication of the postnatal period. Treatment is delivered in this
     event"""
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, facility_level_of_this_hsi):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, NewbornOutcomes)
 
         self.TREATMENT_ID = 'PostnatalCare_Neonatal_Inpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
 
     def apply(self, person_id, squeeze_factor):

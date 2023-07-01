@@ -3008,8 +3008,14 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         if mni[person_id]['referred_for_cs'] or \
             mni[person_id]['referred_for_surgery'] or \
            mni[person_id]['referred_for_blood']:
+
+            if self.ACCEPTED_FACILITY_LEVEL != '1a':
+                cemonc_fl = self.ACCEPTED_FACILITY_LEVEL
+            else:
+                cemonc_fl = self.module.rng.choice(['1b', '2'])
+
             surgical_management = HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(
-                self.module, person_id=person_id, timing='intrapartum')
+                self.module, person_id=person_id, timing='intrapartum', facility_level_of_this_hsi=cemonc_fl)
             self.sim.modules['HealthSystem'].schedule_hsi_event(surgical_management,
                                                                 priority=0,
                                                                 topen=self.sim.date,
@@ -3114,9 +3120,15 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         mother = df.loc[person_id]
 
         # Schedule higher level care for women requiring comprehensive treatment
+        if self.ACCEPTED_FACILITY_LEVEL != '1a':
+            cemonc_fl = self.ACCEPTED_FACILITY_LEVEL
+        else:
+            cemonc_fl = self.module.rng.choice(['1b', '2'])
+
         if mni[person_id]['referred_for_surgery'] or mni[person_id]['referred_for_blood']:
+
             surgical_management = HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(
-                self.module, person_id=person_id, timing='postpartum')
+                self.module, person_id=person_id, timing='postpartum', facility_level_of_this_hsi=cemonc_fl)
             self.sim.modules['HealthSystem'].schedule_hsi_event(surgical_management,
                                                                 priority=0,
                                                                 topen=self.sim.date,
@@ -3131,7 +3143,7 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
               self.module.pph_treatment.has_all(person_id, 'manual_removal_placenta')):
 
             postnatal_inpatient = HSI_Labour_PostnatalWardInpatientCare(
-                self.module, person_id=person_id)
+                self.module, person_id=person_id, facility_level_of_this_hsi=cemonc_fl)
             self.sim.modules['HealthSystem'].schedule_hsi_event(postnatal_inpatient,
                                                                 priority=0,
                                                                 topen=self.sim.date,
@@ -3171,7 +3183,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
     intervention is delivered i.e. we dont apply squeeze factor threshold.
     """
 
-    def __init__(self, module, person_id, timing):
+    def __init__(self, module, person_id, timing, facility_level_of_this_hsi):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Labour)
 
@@ -3182,7 +3194,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
         self.TREATMENT_ID = t_id
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.timing = timing
 
     def apply(self, person_id, squeeze_factor):
@@ -3280,7 +3292,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         # Schedule HSI that captures inpatient days
         if df.at[person_id, 'is_alive']:
             postnatal_inpatient = HSI_Labour_PostnatalWardInpatientCare(
-                self.module, person_id=person_id)
+                self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
             self.sim.modules['HealthSystem'].schedule_hsi_event(postnatal_inpatient,
                                                                 priority=0,
                                                                 topen=self.sim.date,
@@ -3314,13 +3326,13 @@ class HSI_Labour_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin
     days
     """
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, facility_level_of_this_hsi):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Labour)
 
         self.TREATMENT_ID = 'PostnatalCare_Maternal_Inpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 5})
 
     def apply(self, person_id, squeeze_factor):
