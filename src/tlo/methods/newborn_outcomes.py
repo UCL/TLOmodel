@@ -845,12 +845,11 @@ class NewbornOutcomes(Module):
         nci = self.newborn_care_info
         person_id = hsi_event.target
         cons = self.item_codes_nb_consumables
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        mother_id = df.at[person_id, 'mother_id']
+
 
         # -------------------------------------- CHLORHEXIDINE CORD CARE ----------------------------------------------
         # Next we determine if cord care with chlorhexidine is applied (consumables are counted during labour)
-        if mni[mother_id]['clean_birth_practices']:
+        if df.at[person_id, 'nb_clean_birth']:
             df.at[person_id, 'nb_received_cord_care'] = True
 
         # ---------------------------------- VITAMIN D AND EYE CARE -----------------------------------------------
