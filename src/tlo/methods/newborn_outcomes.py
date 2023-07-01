@@ -232,6 +232,8 @@ class NewbornOutcomes(Module):
             Types.LIST, 'probabilities that a postnatal check will happen before or after 48 hours alive'),
 
         # TREATMENT...
+        'prob_kmc_available': Parameter(
+            Types.LIST, 'probability that KMC can be delivered in a given hospital'),
         'treatment_effect_inj_abx_sep': Parameter(
             Types.LIST, 'effect of injectable antibiotics treatment on reducing mortality from sepsis'),
         'treatment_effect_supp_care_sep': Parameter(
@@ -923,12 +925,15 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
         person_id = hsi_event.target
+        params = self.current_parameters
 
         if (df.at[person_id, 'nb_low_birth_weight_status'] != 'normal_birth_weight') or \
            (df.at[person_id, 'nb_low_birth_weight_status'] != 'macrosomia'):
 
-            # Store treatment as a property of the newborn used to apply treatment effect
-            df.at[person_id, 'nb_kangaroo_mother_care'] = True
+            # Check KMC can be delivered
+            if self.rng.random_sample() < params['prob_kmc_available']:
+                # Store treatment as a property of the newborn used to apply treatment effect
+                df.at[person_id, 'nb_kangaroo_mother_care'] = True
 
     def hiv_screening_for_at_risk_newborns(self, child_id):
         """
