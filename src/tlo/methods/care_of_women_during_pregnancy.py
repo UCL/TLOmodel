@@ -100,15 +100,9 @@ class CareOfWomenDuringPregnancy(Module):
         'prob_intervention_delivered_bp': Parameter(
             Types.LIST, 'probability a woman will receive the intervention "blood pressure measurement" given that the '
                         'HSI has ran and the consumables are available (proxy for clinical quality)'),
-        'prob_intervention_delivered_ifa': Parameter(
-            Types.LIST, 'probability a woman will receive the intervention "iron and folic acid" given that the HSI'
-                        ' has ran and the consumables are available (proxy for clinical quality)'),
         'prob_adherent_ifa': Parameter(
             Types.LIST, 'probability a woman who is given iron and folic acid will adhere to the treatment for their'
                         ' pregnancy'),
-        'prob_intervention_delivered_poct': Parameter(
-            Types.LIST, 'probability a woman will receive the intervention "point of care Hb testing" given that the '
-                        'HSI has ran and the consumables are available (proxy for clinical quality)'),
         'prob_intervention_delivered_syph_test': Parameter(
             Types.LIST, 'probability a woman will receive the intervention "Syphilis test" given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
@@ -805,8 +799,8 @@ class CareOfWomenDuringPregnancy(Module):
             avail = pregnancy_helper_functions.return_cons_avail(
                 self, hsi_event, self.item_codes_preg_consumables, core='iron_folic_acid', number=days*3)
 
-            # As with previous interventions - condition on consumables and probability intervention is delivered
-            if avail and (self.rng.random_sample() < params['prob_intervention_delivered_ifa']):
+
+            if avail:
 
                 logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'iron_folic_acid'})
 
@@ -934,23 +928,22 @@ class CareOfWomenDuringPregnancy(Module):
         """
         person_id = hsi_event.target
         df = self.sim.population.props
-        params = self.current_parameters
 
         # If this woman has already had her Hb checked twice during pregnancy she will not receive another Hb test
         if not self.check_intervention_should_run_and_update_mni(person_id, 'hb_1', 'hb_2'):
             return
 
+        logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hb_screen'})
+
         # Run check against probability of testing being delivered
-        if self.rng.random_sample() < params['prob_intervention_delivered_poct']:
-            logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hb_screen'})
+        avail = pregnancy_helper_functions.return_cons_avail(
+            self, hsi_event, self.item_codes_preg_consumables, core='hb_test', optional='blood_test_equipment')
 
-            hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_test_equipment'])
-
-            # We run the test through the dx_manager and if a woman has anaemia and its detected she will be admitted
-            # for further care
-            if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='point_of_care_hb_test',
-                                                                       hsi_event=hsi_event):
-                df.at[person_id, 'ac_to_be_admitted'] = True
+        # We run the test through the dx_manager and if a woman has anaemia and its detected she will be admitted
+        # for further care
+        if avail and self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='point_of_care_hb_test',
+                                                                             hsi_event=hsi_event):
+            df.at[person_id, 'ac_to_be_admitted'] = True
 
     def albendazole_administration(self, hsi_event):
         """
