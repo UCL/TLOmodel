@@ -328,7 +328,7 @@ def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesa
 
     # Run the caesarean HSI
     cs_hsi = labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(
-        person_id=updated_id, module=sim.modules['Labour'], timing='intrapartum')
+        person_id=updated_id, module=sim.modules['Labour'], timing='intrapartum', facility_level_of_this_hsi='1b')
     cs_hsi.apply(person_id=updated_id, squeeze_factor=0.0)
 
     # Check key variables are updated
@@ -340,7 +340,6 @@ def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesa
     sim.date = sim.date + pd.DateOffset(days=5)
     birth_event = labour.BirthAndPostnatalOutcomesEvent(mother_id=mother_id, module=sim.modules['Labour'])
     birth_event.apply(mother_id)
-
 
 def test_application_of_risk_of_complications_in_intrapartum_and_postpartum_phases(seed):
     """This test checks that risk of complication in the intrapartum and postpartum phase are applied to women as
@@ -671,9 +670,9 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
 
     # Define the events (timing variable define when sheduling as this event can be called during or after labour)
     ip_cemonc_event = labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(
-        person_id=updated_id, module=sim.modules['Labour'], timing='intrapartum')
+        person_id=updated_id, module=sim.modules['Labour'], timing='intrapartum', facility_level_of_this_hsi='1b')
     pp_cemonc_event = labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(
-        person_id=updated_id, module=sim.modules['Labour'],  timing='postpartum')
+        person_id=updated_id, module=sim.modules['Labour'],  timing='postpartum', facility_level_of_this_hsi='1b')
 
     # Test uterine rupture surgery
     # Set variables showing woman has been referred to surgery due to uterine rupture

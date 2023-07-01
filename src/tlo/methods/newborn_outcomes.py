@@ -1431,7 +1431,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
            df.at[person_id, 'nb_kangaroo_mother_care']:
 
             if self.ACCEPTED_FACILITY_LEVEL != '1a':
-                ip_fl = self.ACCEPTED_FACILITY_LEVEL
+                ip_fl = str(self.ACCEPTED_FACILITY_LEVEL)
             else:
                 ip_fl = self.module.rng.choice(['1b', '2'])
 

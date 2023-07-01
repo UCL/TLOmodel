@@ -3010,7 +3010,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
            mni[person_id]['referred_for_blood']:
 
             if self.ACCEPTED_FACILITY_LEVEL != '1a':
-                cemonc_fl = self.ACCEPTED_FACILITY_LEVEL
+                cemonc_fl = str(self.ACCEPTED_FACILITY_LEVEL)
             else:
                 cemonc_fl = self.module.rng.choice(['1b', '2'])
 
@@ -3121,7 +3121,7 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
 
         # Schedule higher level care for women requiring comprehensive treatment
         if self.ACCEPTED_FACILITY_LEVEL != '1a':
-            cemonc_fl = self.ACCEPTED_FACILITY_LEVEL
+            cemonc_fl = str(self.ACCEPTED_FACILITY_LEVEL)
         else:
             cemonc_fl = self.module.rng.choice(['1b', '2'])
 
@@ -3292,7 +3292,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         # Schedule HSI that captures inpatient days
         if df.at[person_id, 'is_alive']:
             postnatal_inpatient = HSI_Labour_PostnatalWardInpatientCare(
-                self.module, person_id=person_id, facility_level_of_this_hsi=self.ACCEPTED_FACILITY_LEVEL)
+                self.module, person_id=person_id, facility_level_of_this_hsi=str(self.ACCEPTED_FACILITY_LEVEL))
             self.sim.modules['HealthSystem'].schedule_hsi_event(postnatal_inpatient,
                                                                 priority=0,
                                                                 topen=self.sim.date,
