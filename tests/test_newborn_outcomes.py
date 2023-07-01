@@ -392,12 +392,11 @@ def test_newborn_postnatal_check_hsi_delivers_treatment_as_expected(seed):
     sim.make_initial_population(n=100)
 
     # set risk of comps very high and force care seeking
-    params = sim.modules['NewbornOutcomes'].current_parameters
+    params = sim.modules['NewbornOutcomes'].parameters
     la_params = sim.modules['Labour'].parameters
 
     # set probabilities that effect delivery of treatment to 1
-    params['sensitivity_of_assessment_of_neonatal_sepsis_hp'] = 1.0
-    params['sensitivity_of_assessment_of_lbw_hp'] = 1.0
+    params['prob_kmc_available'] = [1.0, 1.0]
     la_params['prob_hcw_avail_iv_abx'] = 1.0
     la_params['mean_hcw_competence_hc'] = [[1.0, 1.0], [1.0, 1.0]]
     la_params['mean_hcw_competence_hp'] = [[1.0, 1.0], [1.0, 1.0]]
@@ -415,6 +414,7 @@ def test_newborn_postnatal_check_hsi_delivers_treatment_as_expected(seed):
     pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
     pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['delivery_setting'] = 'health_centre'
+    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['clean_birth_practices'] = True
 
     # do the birth
     child_id = sim.do_birth(mother_id)
