@@ -31,7 +31,7 @@ class Calibration(BaseScenario):
         super().__init__()
         self.seed = 8864
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2021, 1, 1)
+        self.end_date = Date(2023, 1, 1)
         self.pop_size = 50_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
