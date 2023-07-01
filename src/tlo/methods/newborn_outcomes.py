@@ -846,7 +846,6 @@ class NewbornOutcomes(Module):
         person_id = hsi_event.target
         cons = self.item_codes_nb_consumables
 
-
         # -------------------------------------- CHLORHEXIDINE CORD CARE ----------------------------------------------
         # Next we determine if cord care with chlorhexidine is applied (consumables are counted during labour)
         if df.at[person_id, 'nb_clean_birth']:
