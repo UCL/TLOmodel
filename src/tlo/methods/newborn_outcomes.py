@@ -314,7 +314,7 @@ class NewbornOutcomes(Module):
         'nb_kangaroo_mother_care': Property(Types.BOOL, 'whether this neonate received kangaroo mother care following '
                                                         'birth'),
         'nb_clean_birth': Property(Types.BOOL, 'whether this neonate received clean birth practices at delivery'),
-        'nb_received_cord_care': Property(Types.BOOL, 'whether this neonate received chlorhexidine cord care'),
+        # 'nb_received_cord_care': Property(Types.BOOL, 'whether this neonate received chlorhexidine cord care'),
         'nb_death_after_birth': Property(Types.BOOL, 'whether this child has died following complications after birth'),
         'nb_pnc_check': Property(Types.INT, 'Number of postnatal checks received in the postnatal period'),
     }
@@ -375,7 +375,7 @@ class NewbornOutcomes(Module):
         df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'none'
         df.loc[df.is_alive, 'nb_kangaroo_mother_care'] = False
         df.loc[df.is_alive, 'nb_clean_birth'] = False
-        df.loc[df.is_alive, 'nb_received_cord_care'] = False
+        # df.loc[df.is_alive, 'nb_received_cord_care'] = False
         df.loc[df.is_alive, 'nb_death_after_birth'] = False
         df.loc[df.is_alive, 'nb_pnc_check'] = 0
 
@@ -846,11 +846,6 @@ class NewbornOutcomes(Module):
         person_id = hsi_event.target
         cons = self.item_codes_nb_consumables
 
-        # -------------------------------------- CHLORHEXIDINE CORD CARE ----------------------------------------------
-        # Next we determine if cord care with chlorhexidine is applied (consumables are counted during labour)
-        if df.at[person_id, 'nb_clean_birth']:
-            df.at[person_id, 'nb_received_cord_care'] = True
-
         # ---------------------------------- VITAMIN D AND EYE CARE -----------------------------------------------
         # We define the consumables
         avail_eyecare = hsi_event.get_consumables(item_codes=cons['eye_care'])
@@ -1133,7 +1128,7 @@ class NewbornOutcomes(Module):
                 'nb_breastfeeding_status': 'none',
                 'nb_kangaroo_mother_care': False,
                 'nb_clean_birth': False,
-                'nb_received_cord_care': False,
+                # 'nb_received_cord_care': False,
                 'nb_death_after_birth': False,
                 'nb_pnc_check': 0
             }
@@ -1194,7 +1189,7 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_breastfeeding_status'] = 'none'
         df.at[child_id, 'nb_kangaroo_mother_care'] = False
         df.at[child_id, 'nb_clean_birth'] = False
-        df.at[child_id, 'nb_received_cord_care'] = False
+        # df.at[child_id, 'nb_received_cord_care'] = False
         df.at[child_id, 'nb_death_after_birth'] = False
         df.at[child_id, 'nb_pnc_check'] = 0
 
@@ -1232,12 +1227,13 @@ class NewbornOutcomes(Module):
                              'will_receive_pnc': 'none',
                              'third_delay': False}
 
-            if mni[mother_id]['clean_birth_practices']:
-                df.at[child_id, 'nb_clean_birth'] = True
-
             # Check these variables are not unassigned
             if nci[child_id]['delivery_setting'] == 'none':
                 logger.info(key='error', data=f'Child {child_id} does not have a delivery setting stored')
+
+            # Assume all neonates who are born to mothers who receive clean birth practices benifit
+            if mni[mother_id]['clean_birth_practices']:
+                df.at[child_id, 'nb_clean_birth'] = True
 
             # --------------------------------------- Breastfeeding -------------------------------------------------
             # Check see if this newborn will start breastfeeding
