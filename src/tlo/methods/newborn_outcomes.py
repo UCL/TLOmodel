@@ -1061,27 +1061,39 @@ class NewbornOutcomes(Module):
         m = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]
         nci = self.newborn_care_info
 
-        # Use a weighted random draw to determine when the HSI will occur
-        timing = self.rng.choice(['<48', '>48'], p=params['prob_timings_pnc_newborns'])
+        if df.at[child_id, 'nb_early_onset_neonatal_sepsis'] or \
+            (df.at[child_id, 'nb_encephalopathy'] != 'none') or \
+            df.at[child_id, 'nb_early_preterm'] or \
+           df.at[child_id, 'nb_late_preterm']:
 
-        # If this is being called for the second of a twin pair, and the first twin is attending early, the second twin
-        # will automatically attend early
-        if (timing == '<48') or (m['pnc_twin_one'] == 'early'):
-            nci[child_id]['will_receive_pnc'] = 'early'
-
-            if df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 1):
-                m['pnc_twin_one'] = 'early'
-
-            early_event = HSI_NewbornOutcomes_ReceivesPostnatalCheck(module=self, person_id=child_id)
-
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                early_event, priority=0,
-                topen=self.sim.date,
-                tclose=self.sim.date + pd.DateOffset(days=1))
+            care_seeking = params['prob_care_seeking_for_complication']
 
         else:
-            # 'Late' PNC is scheduled in the postnatal supevervisor module
-            nci[child_id]['will_receive_pnc'] = 'late'
+            care_seeking = params['prob_pnc_check_newborn']
+
+        if (self.rng.random_sample() < care_seeking) or (m['pnc_twin_one'] != 'none'):
+
+            # Use a weighted random draw to determine when the HSI will occur
+            timing = self.rng.choice(['<48', '>48'], p=params['prob_timings_pnc_newborns'])
+
+            # If this is being called for the second of a twin pair, and the first twin is attending early,
+            # the second twin will automatically attend early
+            if (timing == '<48') or (m['pnc_twin_one'] == 'early'):
+                nci[child_id]['will_receive_pnc'] = 'early'
+
+                if df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 1):
+                    m['pnc_twin_one'] = 'early'
+
+                early_event = HSI_NewbornOutcomes_ReceivesPostnatalCheck(module=self, person_id=child_id)
+
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    early_event, priority=0,
+                    topen=self.sim.date,
+                    tclose=self.sim.date + pd.DateOffset(days=1))
+
+            else:
+                # 'Late' PNC is scheduled in the postnatal supevervisor module
+                nci[child_id]['will_receive_pnc'] = 'late'
 
     def on_birth(self, mother_id, child_id):
         """The on_birth function of this module sets key properties of all newborns, including prematurity
@@ -1265,40 +1277,15 @@ class NewbornOutcomes(Module):
 
             # ===================================== HSI SCHEDULING ====================================================
             # If delivered in a health facility schedule immediate post-delivery care
+            # Check if PNC will occur
+            self.schedule_pnc(child_id)
+
             if m['delivery_setting'] != 'home_birth':
-
-                # Check if PNC will occur
-                if (self.rng.random_sample() < params['prob_pnc_check_newborn']) or (m['pnc_twin_one'] != 'none'):
-                    self.schedule_pnc(child_id)
-
                 # Apply effect of resus for those who both required and received this intervention
                 self.apply_effect_of_neonatal_resus(child_id)
 
-                if not nci[child_id]['will_receive_pnc'] == 'early':
-                    self.set_death_status(child_id)
-
-            # If delivered at home, determine if a postnatal check will be sought for this newborn- with the probability
-            # being higher if complications have occurred
-            elif m['delivery_setting'] == 'home_birth':
-
-                if df.at[child_id, 'nb_early_onset_neonatal_sepsis'] or \
-                    (df.at[child_id, 'nb_encephalopathy'] != 'none') or \
-                    df.at[child_id, 'nb_early_preterm'] or \
-                   df.at[child_id, 'nb_late_preterm']:
-
-                    care_seeking = params['prob_care_seeking_for_complication']
-
-                else:
-                    care_seeking = params['prob_pnc_check_newborn']
-
-                # If indicated we schedule either and early or late PNC visit for this individual
-                if (self.rng.random_sample() < care_seeking) or (m['pnc_twin_one'] != 'none'):
-                    self.schedule_pnc(child_id)
-
-                # If this child will not receive any early care following delivery we determine if they will die
-                # following any complications immediately after birth
-                if nci[child_id]['will_receive_pnc'] != 'early':
-                    self.set_death_status(child_id)
+            if not nci[child_id]['will_receive_pnc'] == 'early':
+                self.set_death_status(child_id)
 
         # Finally we call the following functions to conduct logging/update variables related to pregnancy
         if not df.at[mother_id, 'ps_multiple_pregnancy'] or\
