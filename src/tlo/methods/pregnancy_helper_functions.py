@@ -487,9 +487,19 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
     if causes:
         risks = dict()
 
+        def apply_effect_of_anaemia(cause):
+            lab_params = self.sim.modules['Labour'].current_parameters
+
+            if df.at[individual_id, 'pn_anaemia_following_pregnancy'] != 'none':
+                risk[cause] = risk[cause] * lab_params['rr_death_from_haem_with_anaemia']
+
         for cause in causes:
             if self == self.sim.modules['PregnancySupervisor']:
                 risk = {cause: params[f'prob_{cause}_death']}
+
+                if cause == 'antepartum_haemorrhage':
+                    apply_effect_of_anaemia('antepartum_haemorrhage')
+
                 risks.update(risk)
 
             elif self == self.sim.modules['Labour']:
@@ -503,6 +513,7 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
                         delay_one_two=mni[individual_id]['delay_one_two'],
                         delay_three=mni[individual_id]['delay_three']
                     )[individual_id]}
+                    apply_effect_of_anaemia('secondary_postpartum_haemorrhage')
 
                 else:
                     risk = {cause: self.la_linear_models[f'{cause}_death'].predict(
@@ -512,14 +523,17 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
                         chorio_in_preg=mni[individual_id]['chorio_in_preg'],
                         delay_one_two=mni[individual_id]['delay_one_two'],
                         delay_three=mni[individual_id]['delay_three'])[individual_id]}
+
+                    if cause == 'postpartum_haemorrhage' or cause == 'antepartum_haemorrhage':
+                        apply_effect_of_anaemia('postpartum_haemorrhage')
+
                 risks.update(risk)
 
             elif self == self.sim.modules['PostnatalSupervisor']:
                 risk = {cause: params[f'cfr_{cause}']}
-                if (cause == 'secondary_postpartum_haemorrhage') and \
-                   (df.at[individual_id, 'pn_anaemia_following_pregnancy'] != 'none'):
+                if cause == 'secondary_postpartum_haemorrhage':
+                    apply_effect_of_anaemia('secondary_postpartum_haemorrhage')
 
-                    risk[cause] = risk[cause] * params['rr_death_from_pph_with_anaemia']
                 risks.update(risk)
 
         # Call return the result from calculate_risk_of_death_from_causes function

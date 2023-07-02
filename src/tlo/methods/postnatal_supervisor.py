@@ -88,8 +88,6 @@ class PostnatalSupervisor(Module):
             Types.LIST, 'probability of mild, moderate or severe secondary PPH'),
         'cfr_secondary_postpartum_haemorrhage': Parameter(
             Types.LIST, 'case fatality rate for secondary pph'),
-        'rr_death_from_pph_with_anaemia': Parameter(
-            Types.LIST, 'relative risk of death from PPH in women with anaemia'),
 
         # HYPERTENSIVE DISORDERS
         'prob_htn_resolves': Parameter(

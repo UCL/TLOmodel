@@ -595,7 +595,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     # Ruptured ectopic pregnancies / Total Pregnancies
     ep_r = an_comps.loc[(slice(None), 'ectopic_ruptured'), slice(None)].droplevel(1)
-    proportion_of_ectopics_that_rupture_per_year = return_rate(ep, ep_r, 1000)
+    proportion_of_ectopics_that_rupture_per_year = return_rate(ep_r, ep, 100)
 
     target_rate_rup = {'double': False,
                        'first': {'year': 2015, 'value': 92, 'label': 'Est.', 'ci': 0}}
@@ -1061,7 +1061,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     plt.savefig(f'{graph_location}/cs_by_indication.png')
     plt.show()
 
-    # ------------------------------------------ Maternal Sepsis Rate... ----------------------------------------------
+    # ------------------------------------------ Maternal 5 Rate... ----------------------------------------------
     sepsis_df = an_comps.loc[(slice(None), 'clinical_chorioamnionitis'), slice(None)].droplevel(1) + \
                 la_comps.loc[(slice(None), 'sepsis'), slice(None)].droplevel(1) + \
                 pn_comps.loc[(slice(None), 'sepsis_postnatal'), slice(None)].droplevel(1) + \
@@ -1147,21 +1147,23 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         sim_years, rd_data, dummy_dict, 'Rate per 1000 births',
         'Rate of Neonatal Respiratory Depression per year', graph_location, 'neo_resp_depression_rate')
 
-    # ----------------------------------------- Respiratory Distress Syndrome ------------------------------------------
-    # ept = analysis_utility_functions.get_mean_and_quants_from_str_df(la_comps, 'early_preterm_labour', sim_years)[0]
-    # # todo: should be live births
-    # lpt = analysis_utility_functions.get_mean_and_quants_from_str_df(la_comps, 'late_preterm_labour', sim_years)[0]
-    # total_ptbs = [x + y for x, y in zip(ept, lpt)]
-
-    rds_data = return_rate(nb_outcomes_df.loc[(slice(None), 'respiratory_distress_syndrome'), slice(None)].droplevel(1),
+    # ----------------------------------------Preterm Respiratory Distress Syndrome -----------------------------------
+    rds_data_lb = return_rate(nb_outcomes_df.loc[(slice(None), 'respiratory_distress_syndrome'), slice(None)].droplevel(1),
                   births_results_exc_2010, 1000)
 
+    rds_data_ptb = return_rate(nb_outcomes_df.loc[(slice(None), 'respiratory_distress_syndrome'), slice(None)].droplevel(1),
+                  ptl_df, 1000)
+
     target_rds_dict = {'double': False,
-                       'first': {'year': 2019, 'value': 350, 'label': 'Muhe et al.', 'ci': 0}}
+                       'first': {'year': 2019, 'value': 0, 'label': 'Unk.', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, rds_data, target_rds_dict, 'Rate per 1000  births',
-        'Rate of Preterm Respiratory Distress Syndrome per year', graph_location, 'neo_rds_rate')
+        sim_years, rds_data_lb, target_rds_dict, 'Rate per 1000 live births',
+        'Rate of Preterm Respiratory Distress Syndrome per year (live births)', graph_location, 'neo_rds_rate_lb')
+
+    analysis_utility_functions.line_graph_with_ci_and_target_rate(
+        sim_years, rds_data_ptb, target_rds_dict, 'Rate per 1000 preterm births',
+        'Rate of Preterm Respiratory Distress Syndrome per year (preterm births)', graph_location, 'neo_rds_rate_ptb')
 
     # - TOTAL NOT BREATHING NEWBORNS-
     total_not_breathing_df = \
@@ -1175,7 +1177,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
         sim_years, nb_rate, target_nb_dict, 'Rate per 1000  births',
-        'Rate of Preterm Respiratory Distress Syndrome per year', graph_location, 'neo_total_not_breathing')
+        'Rate of Respiratory Complications in all newborns', graph_location, 'neo_total_not_breathing')
 
     # TODO: add calibration target for 'apnea' which should be approx 5.7% total births
 

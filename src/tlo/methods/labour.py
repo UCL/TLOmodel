@@ -282,7 +282,7 @@ class Labour(Module):
             Types.LIST, 'risk of pph after experiencing other pph causes'),
         'cfr_pp_pph': Parameter(
             Types.LIST, 'case fatality rate for postpartum haemorrhage'),
-        'rr_pph_death_anaemia': Parameter(
+        'rr_death_from_haem_with_anaemia': Parameter(
             Types.LIST, 'relative risk increase of death in women who are anaemic at time of PPH'),
 
         # CARE SEEKING FOR HEALTH CENTRE DELIVERY...
