@@ -360,7 +360,7 @@ class Tb(Module):
             Types.INT,
             "integer value labelling the scenario to be run: default is 0"
         ),
-        "scenario_start_date": Parameter(
+        "start_date": Parameter(
             Types.DATE,
             "date from which different scenarios are run"
         ),
@@ -956,7 +956,7 @@ class Tb(Module):
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # 2) Scenario change
-        sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
+        sim.schedule_event(ScenarioSetupEvent(self), self.parameters["start_date"])
 
         # 3) Define the DxTests and get the consumables required
         self.get_consumables_for_dx_and_tx()
@@ -2230,7 +2230,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # -------- SHINE Trial shorter paediatric regimen -------- #
         if (self.module.parameters["scenario"] == 5) \
-            & (self.sim.date >= self.module.parameters["scenario_start_date"]) \
+            & (self.sim.date >= self.module.parameters["start_date"]) \
             & (person["age_years"] <= 16) \
             & ~(person["tb_smear"]) \
             & ~person["tb_ever_treated"] \
