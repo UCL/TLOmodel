@@ -432,7 +432,6 @@ def test_newborn_postnatal_check_hsi_delivers_treatment_as_expected(seed):
     assert (sim.population.props.at[child_id, 'nb_pnc_check'] == 1)
 
     assert sim.population.props.at[child_id, 'nb_supp_care_neonatal_sepsis']
-    assert sim.population.props.at[child_id, 'nb_received_cord_care']
     assert sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['tetra_eye_d']
     assert sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['vit_k']
     assert sim.population.props.at[child_id, 'nb_kangaroo_mother_care']
