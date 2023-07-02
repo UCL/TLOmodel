@@ -14,6 +14,7 @@ Job ID: baseline_tb_services_scenario-2023-06-23T213051Z
 import warnings
 from datetime import datetime
 from tlo import Date, logging
+import random
 from datetime import datetime
 from tlo.methods import (
     demography,
@@ -37,7 +38,8 @@ warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 class ImpactOfBaselineTbServices(BaseScenario):
     def __init__(self):
         super().__init__(
-            seed=2025,
+           # seed=2025,
+            seed=random.randint(0, 50000),
             start_date=Date(2010, 1, 1),
             end_date=Date(2013, 12, 31),
             initial_population_size=1000,

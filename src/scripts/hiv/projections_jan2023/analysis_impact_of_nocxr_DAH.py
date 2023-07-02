@@ -23,7 +23,7 @@ outputspath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
-results_folder = get_scenario_outputs("noncxr_tb_scenario-2023-06-29T115439Z", outputspath) [-1]
+results_folder = get_scenario_outputs("noncxr_tb_scenario-2023-07-02T210445Z", outputspath) [-1]
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
 # get basic information about the results
@@ -257,26 +257,7 @@ pyears = pyears.reset_index(drop=True)
 # })
 # summarized_incidence .to_excel(outputspath / "baseline_incidence_rate.xlsx")
 
-## Generates graphs #########################
-
-# Set the figure size
-plt.figure(figsize=(8, 2))
-# Plot the bars for median rates with error bars
-plt.bar(years, median_rates, color='blue', alpha=0.5, label='Median')
-plt.errorbar(years, median_rates, yerr=[median_rates - lower_rates, upper_rates - median_rates],
-             fmt='none', ecolor='black', capsize=3)
-# Set the axis labels and title
-plt.xlabel('Year')
-plt.ylabel('Mortality Rate')
-plt.title('Trend in TB Mortality Rate-2010-2033')
-
-# Add a legend
-plt.legend()
-# Rotate the x-axis labels for better readability
-plt.xticks(years, years, rotation=45)
-# Show the plot
-plt.show()
-plt.savefig(outputspath / 'summary_mortality_graph.png')
+# Generates graphs #########################
 
 #plotting DALYs
 # Get the x-values and y-values
@@ -298,6 +279,25 @@ plt.xticks(rotation=45)
 # Display the plot
 plt.show()
 plt.savefig(outputspath / 'summary_dalys_graph.png')
+
+# Set the figure size
+plt.figure(figsize=(8, 2))
+# Plot the bars for median rates with error bars
+plt.bar(years, median_rates, color='blue', alpha=0.5, label='Median')
+plt.errorbar(years, median_rates, yerr=[median_rates - lower_rates, upper_rates - median_rates],
+             fmt='none', ecolor='black', capsize=3)
+# Set the axis labels and title
+plt.xlabel('Year')
+plt.ylabel('Mortality Rate')
+plt.title('Trend in TB Mortality Rate-2010-2033')
+
+# Add a legend
+plt.legend()
+# Rotate the x-axis labels for better readability
+plt.xticks(years, years, rotation=45)
+# Show the plot
+plt.show()
+plt.savefig(outputspath / 'summary_mortality_graph.png')
 
 if __name__ == "__main__":
 
