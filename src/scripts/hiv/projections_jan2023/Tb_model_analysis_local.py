@@ -37,7 +37,7 @@ popsize = 1000
 
 # set up the log config
 log_config = {
-    "filename": "baseline_summary",  #run without scenario_start_date
+    "filename": "baseline_summary2",  #run without scenario_start_date
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
@@ -77,7 +77,7 @@ sim.register(
 )
 # set the scenario
 sim.modules["Tb"].parameters["scenario"] =0
-sim.modules["Tb"].parameters["scenario_start_date"] = start_date
+#sim.modules["Tb"].parameters["scenario_start_date"] = start_date
 # sim.modules["Tb"].parameters["outreach_xray_start_date"] = Date(2011, 1, 1)
 # sim.modules["Tb"].parameters["probability_access_to_xray"] = 0.10
 # sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.001
@@ -89,11 +89,11 @@ sim.simulate(end_date=end_date)
 # parse the results
 output = parse_log_file(sim.log_filepath)
 # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
-with open(outputpath / "baseline.pickle", "wb") as f:
+with open(outputpath / "baseline2.pickle", "wb") as f:
 
  # Pickle the 'data' dictionary using the highest protocol available.
   pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
 
 # load the results
-with open(outputpath / "baseline.pickle", "rb") as f:
+with open(outputpath / "baseline2.pickle", "rb") as f:
     output = pickle.load(f)
