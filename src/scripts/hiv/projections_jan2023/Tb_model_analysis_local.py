@@ -89,11 +89,11 @@ sim.simulate(end_date=end_date)
 # parse the results
 output = parse_log_file(sim.log_filepath)
 # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
-with open(outputpath / "baselineickle", "wb") as f:
+with open(outputpath / "baseline2.pickle", "wb") as f:
 
  # Pickle the 'data' dictionary using the highest protocol available.
   pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
 
 # load the results
-with open(outputpath / "baseline.pickle", "rb") as f:
+with open(outputpath / "baseline2.pickle", "rb") as f:
     output = pickle.load(f)
