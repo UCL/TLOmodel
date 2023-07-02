@@ -35,10 +35,9 @@ from tlo.scenario import BaseScenario, make_cartesian_parameter_grid
 warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 
 class ImpactOfBaselineTbServices(BaseScenario):
-    def __init__(self, scenario_start_date):
+    def __init__(self):
         super().__init__(
             seed=2025,
-            scenario_start_date=scenario_start_date,
             start_date=Date(2010, 1, 1),
             end_date=Date(2013, 12, 31),
             initial_population_size=1000,
