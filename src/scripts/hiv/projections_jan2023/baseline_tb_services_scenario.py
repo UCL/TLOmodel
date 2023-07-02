@@ -38,8 +38,8 @@ class ImpactOfBaselineTbServices(BaseScenario):
     def __init__(self):
         super().__init__(
             seed=2025,
-            start_date=Date(2010, 1, 1),
-            end_date=Date(2013, 12, 31),
+            scenario_start_date=Date(2010, 1, 1),
+            scenario_end_date=Date(2013, 12, 31),
             initial_population_size=1000,
             number_of_draws=1,
             runs_per_draw=2,
