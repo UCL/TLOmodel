@@ -91,7 +91,7 @@ class ImpactOfBaselineTbServices(BaseScenario):
                 'scenario': 0,
             },
             'HealthSystem': {
-                'cons_availability': ['Item_Available', 'Item_NotAvailable'][draw_number],
+                'cons_availability': ['cons_availability'][draw_number],
             },
         }
 
