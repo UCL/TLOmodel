@@ -89,6 +89,9 @@ class ImpactOfNoXpert(BaseScenario):
             'Tb': {
                 'scenario': 1,
             },
+            'HealthSystem': {
+                'cons_availability': 'Items_Available'[draw_number],
+            },
         }
 if __name__ == '__main__':
     from tlo.cli import scenario_run

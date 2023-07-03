@@ -50,7 +50,7 @@ class ImpactOfBaselineTbServices(BaseScenario):
     def log_configuration(self):
         return {
             'filename': 'baseline_tb_services_scenario',
-            'directory': './outputs',
+            'directory': './outputs/nic503@york.ac.uk',
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
@@ -91,7 +91,7 @@ class ImpactOfBaselineTbServices(BaseScenario):
                 'scenario': 0,
             },
             'HealthSystem': {
-                'cons_availability': ['cons_availability'][draw_number],
+                'cons_availability': 'default'[draw_number],
             },
         }
 

@@ -89,7 +89,10 @@ class ImpactOfnoCXR(BaseScenario):
         return {
             'Tb': {
                 'scenario': 2,
-                'probability_access_to_xray':  0.0
+                'probability_access_to_xray':  0.0,
+                'HealthSystem': {
+                    'cons_availability': 'Items_Available'[draw_number],
+                },
             }
         }
 if __name__ == '__main__':
