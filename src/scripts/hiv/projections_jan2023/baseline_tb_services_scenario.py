@@ -90,6 +90,9 @@ class ImpactOfBaselineTbServices(BaseScenario):
             'Tb': {
                 'scenario': 0,
             },
+            'HealthSystem': {
+                'cons_availability': ['Item_Available', 'Item_NotAvailable'][draw_number],
+            },
         }
 
 if __name__ == '__main__':
