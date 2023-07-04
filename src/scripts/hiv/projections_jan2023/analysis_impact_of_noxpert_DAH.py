@@ -1,5 +1,5 @@
 """Analyse scenarios for impact of TB-related development assistance for health."""
-
+#tlo scenario-run src/scripts/hiv/projections_jan2023/analysis_impact_of_noxpert_DAH.py --draw 1 0
 # python src/scripts/hiv/projections_jan2023/analysis_impact_of_noxpert_DAH.py --scenario-outputs-folder outputs\nic503@york.ac.uk
 import argparse
 import datetime

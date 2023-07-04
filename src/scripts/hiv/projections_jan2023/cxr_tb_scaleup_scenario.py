@@ -47,15 +47,15 @@ class ImpactOfCxRScaleup(BaseScenario):
         super().__init__(
             seed=2025,
             start_date=Date(2010, 1, 1),
-            end_date=Date(2033, 12, 31),
-            initial_population_size=50000,
+            end_date=Date(2013, 12, 31),
+            initial_population_size=1000,
             number_of_draws=1,
             runs_per_draw=2,
         )
     def log_configuration(self):
         return {
             'filename': 'cxrscaleup_scenario',
-            'directory': './outputs',
+            'directory': './outputs/nic503@york.ac.uk',
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
@@ -95,6 +95,9 @@ class ImpactOfCxRScaleup(BaseScenario):
             'Tb': {
                 'scenario': 0,
                 'probability_access_to_xray':  0.11
+            },
+            'HealthSystem': {
+                'cons_availability': 'Item_Available'[draw_number],
             },
         }
 if __name__ == '__main__':

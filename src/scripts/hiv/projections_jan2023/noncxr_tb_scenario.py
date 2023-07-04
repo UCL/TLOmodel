@@ -50,7 +50,7 @@ class ImpactOfnoCXR(BaseScenario):
     def log_configuration(self):
         return {
             'filename': 'noncxr_tb_scenario',
-            'directory': './outputs',
+            'directory': './outputs/nic503@york.ac.uk',
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
@@ -92,7 +92,7 @@ class ImpactOfnoCXR(BaseScenario):
                 'probability_access_to_xray':  0.0
             },
             'HealthSystem': {
-                'cons_availability': 'Items_Available'[draw_number],
+                'cons_availability': 'Item_Available'[draw_number],
             },
         }
 if __name__ == '__main__':

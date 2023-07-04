@@ -90,7 +90,7 @@ class ImpactOfNoXpert(BaseScenario):
                 'scenario': 1,
             },
             'HealthSystem': {
-                'cons_availability': 'Items_Available'[draw_number],
+                'cons_availability': 'Item_Available'[draw_number],
             },
         }
 if __name__ == '__main__':
