@@ -43,14 +43,14 @@ class ImpactOfNoXpert(BaseScenario):
             start_date=Date(2010, 1, 1),
             end_date=Date(2013, 12, 31),
             initial_population_size=1000,
-            number_of_draws=2,
+            number_of_draws=1,
             runs_per_draw=2,
         )
 
     def log_configuration(self):
         return {
-            'filename': 'nonxpert_tb_scenario',
-            'directory': './outputs',
+            'filename': 'nonxpert_tb_scenariov2',
+            'directory': './outputs/nic503@york.ac.uk',
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
@@ -91,7 +91,7 @@ class ImpactOfNoXpert(BaseScenario):
                 'scenario': 1,
             },
             'HealthSystem': {
-                'cons_availability': 'Item_Available'[draw_number],
+                'cons_availability': 'Item_NotAvailable'[draw_number],
             },
         }
 if __name__ == '__main__':

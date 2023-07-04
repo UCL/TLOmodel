@@ -50,7 +50,7 @@ class ImpactOfOutReachServices(BaseScenario):
     def log_configuration(self):
         return {
             'filename': 'outreach_services_scenario',
-            'directory': './outputs',
+            'directory': './outputs/nic503@york.ac.uk',
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
