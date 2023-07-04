@@ -4,7 +4,8 @@ This file run scenarios for assesing unavailability of TB-related Development As
 It can be submitted on Azure Batch by running:
 
    tlo batch-submit src/scripts/hiv/projections_jan2023/outreach_tb_services_scenario.py
-or locally using: tlo scenario-run src/scripts/hiv/projections_jan2023/outreach_tb_services_scenario.py
+or locally using:
+ tlo scenario-run src/scripts/hiv/projections_jan2023/outreach_tb_services_scenario.py
   execute a single run:
  tlo scenario-run src/scripts/hiv/projections_jan2023/outreach_tb_services_scenario.py --draw 1 0
 
@@ -89,7 +90,7 @@ class ImpactOfOutReachServices(BaseScenario):
               return {
             'Tb': {
                 'scenario': 0,
-                'probability_access_to_xray': 0.10,
+               # 'probability_access_to_xray': 0.10,
                 'probability_community_chest_xray': 0.001
             },
           'HealthSystem': {
