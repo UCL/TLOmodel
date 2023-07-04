@@ -23,7 +23,7 @@ outputspath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
-results_folder = get_scenario_outputs("nonxpert_tb_scenario-2023-07-04T110900Z", outputspath) [-1]
+results_folder = get_scenario_outputs("nonxpert_tb_scenariov2-2023-07-04T133831Z", outputspath) [-1]
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
 # get basic information about the results
@@ -59,7 +59,7 @@ pyears = summarize (
 )
 #prints person-years time to excel
 tb_pyears = pd.DataFrame(pyears)
-tb_pyears.to_excel(outputspath / "pyears_noxpert.xlsx")
+tb_pyears.to_excel(outputspath / "pyears_noxpert2.xlsx")
 
 #######################################################################
 #number of TB deaths and mortality rate
@@ -85,7 +85,7 @@ TB = results_deaths.loc[results_deaths.cause == "TB"]
 
 combined_tb_table = pd.concat([AIDS_non_TB, AIDS_TB, TB])
 #print(combined_table)
-combined_tb_table.to_excel(outputspath / "combined_tb_table_noxpert.xlsx")
+combined_tb_table.to_excel(outputspath / "combined_tb_table_noxpert2.xlsx")
 scaling_factor_key = log['tlo.methods.demography']['scaling_factor']
 print("Scaling Factor Key:", scaling_factor_key)
 #########################################################################################
@@ -108,7 +108,7 @@ def tb_mortality_rate(results_folder, pyears):
         ]
     # Group deaths by year
     tb_deaths2 = pd.DataFrame(tb_deaths1.groupby(["year"]).sum())
-    tb_deaths2.to_excel(outputspath / "raw_mortality_noxpert.xlsx")
+    tb_deaths2.to_excel(outputspath / "raw_mortality_noxpert2.xlsx")
 
     # Divide each draw/run by the respective person-years from that run
     # Need to reset index as they don't match exactly (date format)
@@ -127,7 +127,7 @@ mortality_rates = tb_mortality_rate(results_folder, pyears)
 mortality_rates_summary = pd.DataFrame.from_dict(mortality_rates)
 
 # Print the resulting mortality rates
-mortality_rates_summary.to_excel(outputspath / "mortality_rates_noxpert.xlsx",index=False)
+mortality_rates_summary.to_excel(outputspath / "mortality_rates_noxpert2.xlsx",index=False)
 print(mortality_rates_summary)
 
 # Extract the data from the mortality_rates_summary DataFrame
@@ -161,7 +161,7 @@ tb_dalys_count = extract_results(
 dalys_summary = summarize(tb_dalys_count).sort_index()
 print("DALYs for TB are as follows:")
 print(dalys_summary)
-dalys_summary.to_excel(outputspath / "summarised_tb_dalys_noxpert.xlsx")
+dalys_summary.to_excel(outputspath / "summarised_tb_dalys_noxpert2.xlsx")
 
 #Extracting secondary outcomes
 #prints dictionary keys for the TB module
@@ -181,7 +181,7 @@ tb_hiv_prop = summarize(
 
 tb_hiv_prop.index = tb_hiv_prop.index.year
 tb_hiv_prop_with_year = pd.DataFrame(tb_hiv_prop)
-tb_hiv_prop.to_excel(outputspath / "PLHIV_tb_noxpert.xlsx")
+tb_hiv_prop.to_excel(outputspath / "PLHIV_tb_noxpert2.xlsx")
 
 #MDR TB cases
 mdr_tb_cases = summarize(
@@ -197,7 +197,7 @@ mdr_tb_cases = summarize(
 )
 mdr_tb_cases.index = mdr_tb_cases.index.year
 mdr_tb = pd.DataFrame(mdr_tb_cases)
-mdr_tb.to_excel(outputspath / "mdr_tb_noxpert.xlsx")
+mdr_tb.to_excel(outputspath / "mdr_tb_noxpert2.xlsx")
 
 # TB treatment coverage
 tb_treatment = summarize(
@@ -214,7 +214,7 @@ tb_treatment = summarize(
 
 #tb_treatment.index = tb_treatment.index.year,
 tb_treatment_cov = pd.DataFrame(tb_treatment)
-tb_treatment_cov.to_excel(outputspath / "tb_treatment_coverage_noxpert.xlsx")
+tb_treatment_cov.to_excel(outputspath / "tb_treatment_coverage_noxpert2.xlsx")
 
 #TB Incidence
 tb_inc = summarize(
@@ -230,8 +230,7 @@ tb_inc = summarize(
 )
 print(tb_inc)
 tb_incidence = pd.DataFrame(tb_inc)
-tb_incidence.to_excel(outputspath / "tb_incidence_noxpert.xlsx")
-
+tb_incidence.to_excel(outputspath / "tb_incidence_noxpert2.xlsx")
 tb_inc.index = tb_inc.index.year
 print(tb_inc.head())
 print(pyears.head())
