@@ -15,6 +15,7 @@ Job ID: outreach_tb_services_scenario-2023-06-23T213902Z
  """
 
 import warnings
+import random
 from datetime import datetime
 from tlo import Date, logging
 from tlo.methods import (
@@ -38,10 +39,10 @@ warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 class ImpactOfOutReachServices(BaseScenario):
     def __init__(self):
         super().__init__(
-            seed=2025,
+            seed=random.randint(0, 50000),
             start_date=Date(2010, 1, 1),
-            end_date=Date(2033, 12, 31),
-            initial_population_size=50000,
+            end_date=Date(2013, 12, 31),
+            initial_population_size=1000,
             number_of_draws=1,
             runs_per_draw=2,
         )
@@ -90,7 +91,10 @@ class ImpactOfOutReachServices(BaseScenario):
                 'scenario': 0,
                 'probability_access_to_xray': 0.10,
                 'probability_community_chest_xray': 0.001
-            }
+            },
+          'HealthSystem': {
+              'cons_availability': 'Item_Available'[draw_number],
+          },
         }
 
 if __name__ == '__main__':

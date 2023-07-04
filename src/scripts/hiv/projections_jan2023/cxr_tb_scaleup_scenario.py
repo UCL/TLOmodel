@@ -17,6 +17,7 @@ cxr_tb_scaleup_scenario-2023-06-23T213616Z
 
  """
 import warnings
+import random
 import datetime
 from tlo import Date, logging
 from tlo.methods import (
@@ -45,7 +46,7 @@ warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 class ImpactOfCxRScaleup(BaseScenario):
     def __init__(self):
         super().__init__(
-            seed=2025,
+            seed=random.randint(0, 50000),
             start_date=Date(2010, 1, 1),
             end_date=Date(2013, 12, 31),
             initial_population_size=1000,

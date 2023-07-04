@@ -38,7 +38,6 @@ warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 class ImpactOfBaselineTbServices(BaseScenario):
     def __init__(self):
         super().__init__(
-           # seed=2025,
             seed=random.randint(0, 50000),
             start_date=Date(2010, 1, 1),
             end_date=Date(2013, 12, 31),
