@@ -1521,20 +1521,35 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     simplified_causes = ['ectopic_pregnancy', 'abortion', 'severe_pre_eclampsia', 'sepsis', 'uterine_rupture',
                          'postpartum_haemorrhage',  'antepartum_haemorrhage']
 
-    ec_tr = {'double': True, 'first': {'year': 2010, 'value': 18.9, 'label': 'UNK.', 'ci': 0},
-                             'second': {'year': 2015, 'value': 3.51, 'label': 'UNK.', 'ci': 0}}
-    ab_tr = {'double': True, 'first': {'year': 2010, 'value': 51.3, 'label': 'UNK.', 'ci': 0},
-             'second': {'year': 2015, 'value': 29.9, 'label': 'UNK.', 'ci': 0}}
-    spe_ec_tr = {'double': True, 'first': {'year': 2010, 'value': 64.8, 'label': 'UNK.', 'ci': 0},
-                                 'second': {'year': 2015, 'value': 69.8, 'label': 'UNK.', 'ci': 0}}
-    sep_tr = {'double': True, 'first': {'year': 2010, 'value': 74.3, 'label': 'UNK.', 'ci': 0},
-             'second': {'year': 2015, 'value': 55.3, 'label': 'UNK.', 'ci': 0}}
-    ur_tr = {'double': True, 'first': {'year': 2010, 'value': 18.9, 'label': 'UNK.', 'ci': 0},
-             'second': {'year': 2015, 'value': 3.51, 'label': 'UNK.', 'ci': 0}}
-    pph_tr = {'double': True, 'first': {'year': 2010, 'value': 229.5, 'label': 'UNK.', 'ci': 0},
-             'second': {'year': 2015, 'value': 116.8, 'label': 'UNK.', 'ci': 0}}
-    aph_tr = {'double': True, 'first': {'year': 2010, 'value': 47.3, 'label': 'UNK.', 'ci': 0},
-             'second': {'year': 2015, 'value': 23.3, 'label': 'UNK.', 'ci': 0}}
+    # ec_tr = {'double': True, 'first': {'year': 2010, 'value': 18.9, 'label': 'UNK.', 'ci': 0},
+    #                          'second': {'year': 2015, 'value': 3.51, 'label': 'UNK.', 'ci': 0}}
+    # ab_tr = {'double': True, 'first': {'year': 2010, 'value': 51.3, 'label': 'UNK.', 'ci': 0},
+    #          'second': {'year': 2015, 'value': 29.9, 'label': 'UNK.', 'ci': 0}}
+    # spe_ec_tr = {'double': True, 'first': {'year': 2010, 'value': 64.8, 'label': 'UNK.', 'ci': 0},
+    #                              'second': {'year': 2015, 'value': 69.8, 'label': 'UNK.', 'ci': 0}}
+    # sep_tr = {'double': True, 'first': {'year': 2010, 'value': 74.3, 'label': 'UNK.', 'ci': 0},
+    #          'second': {'year': 2015, 'value': 55.3, 'label': 'UNK.', 'ci': 0}}
+    # ur_tr = {'double': True, 'first': {'year': 2010, 'value': 18.9, 'label': 'UNK.', 'ci': 0},
+    #          'second': {'year': 2015, 'value': 3.51, 'label': 'UNK.', 'ci': 0}}
+    # pph_tr = {'double': True, 'first': {'year': 2010, 'value': 229.5, 'label': 'UNK.', 'ci': 0},
+    #          'second': {'year': 2015, 'value': 116.8, 'label': 'UNK.', 'ci': 0}}
+    # aph_tr = {'double': True, 'first': {'year': 2010, 'value': 47.3, 'label': 'UNK.', 'ci': 0},
+    #          'second': {'year': 2015, 'value': 23.3, 'label': 'UNK.', 'ci': 0}}
+
+    ec_tr = {'double': True, 'first': {'year': 2010, 'value': 1.4, 'label': 'UNK.', 'ci': 0},
+             'second': {'year': 2015, 'value': 3, 'label': 'UNK.', 'ci': 0}}
+    ab_tr = {'double': True, 'first': {'year': 2010, 'value': 36.8, 'label': 'UNK.', 'ci': 0},
+             'second': {'year': 2015, 'value': 20.9, 'label': 'UNK.', 'ci': 0}}
+    spe_ec_tr = {'double': True, 'first': {'year': 2010, 'value': 50.6, 'label': 'UNK.', 'ci': 0},
+                 'second': {'year': 2015, 'value': 55.3, 'label': 'UNK.', 'ci': 0}}
+    sep_tr = {'double': True, 'first': {'year': 2010, 'value': 91, 'label': 'UNK.', 'ci': 0},
+              'second': {'year': 2015, 'value': 67.6, 'label': 'UNK.', 'ci': 0}}
+    ur_tr = {'double': True, 'first': {'year': 2010, 'value': 55, 'label': 'UNK.', 'ci': 0},
+             'second': {'year': 2015, 'value': 43, 'label': 'UNK.', 'ci': 0}}
+    pph_tr = {'double': True, 'first': {'year': 2010, 'value': 174.8, 'label': 'UNK.', 'ci': 0},
+              'second': {'year': 2015, 'value': 95.4, 'label': 'UNK.', 'ci': 0}}
+    aph_tr = {'double': True, 'first': {'year': 2010, 'value': 36.8, 'label': 'UNK.', 'ci': 0},
+              'second': {'year': 2015, 'value': 16.9, 'label': 'UNK.', 'ci': 0}}
 
     trs = [ec_tr, ab_tr, spe_ec_tr, sep_tr, ur_tr, pph_tr, aph_tr]
 
@@ -1649,7 +1664,9 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     labels = ['EP', 'UR', 'APH', 'Abr.', 'SPE/E.', 'PPH', 'Sep.']
     model = all_values
-    bemonc_data = [0.8, 12.6, 5.3, 6.8, 15.9, 26, 18.9]  # order = ectopic,
+    # bemonc_data = [0.8, 12.6, 5.3, 6.8, 15.9, 26, 18.9]  # order = ectopic,
+    bemonc_data = [0.1, 14, 5.3, 6.8, 18, 31, 22]  # order = ectopic,
+
     ui = [(x - y) / 2 for x, y in zip(av_u_ci, av_l_ci)]
 
     x = np.arange(len(labels))  # the label locations
