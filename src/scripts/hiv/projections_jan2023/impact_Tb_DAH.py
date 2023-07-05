@@ -3,21 +3,20 @@ This file run scenarios for assesing unavailability of TB-related Development As
 
 It can be submitted on Azure Batch by running:
 
-   tlo batch-submit src/scripts/hiv/projections_jan2023/outreach_tb_services_scenario.py
+   tlo batch-submit src/scripts/hiv/projections_jan2023/noncxr_tb_scenario.py
 or locally using:
- tlo scenario-run src/scripts/hiv/projections_jan2023/outreach_tb_services_scenario.py
+ tlo scenario-run src/scripts/hiv/projections_jan2023/noncxr_tb_scenario.py
   execute a single run:
- tlo scenario-run src/scripts/hiv/projections_jan2023/outreach_tb_services_scenario.py --draw 1 0
+ tlo scenario-run src/scripts/hiv/projections_jan2023/noncxr_tb_scenario.py --draw 1 0
 
  check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/outreach_tb__services_scenario.py
+tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/noncxr_tb_scenario.py
 
-Job ID: outreach_tb_services_scenario-2023-06-23T213902Z
+Job ID: noncxr_tb_scenario-2023-06-23T213325Z
+
  """
 
 import warnings
-import random
-from datetime import datetime
 from tlo import Date, logging
 from tlo.methods import (
     demography,
@@ -37,20 +36,19 @@ from tlo.scenario import BaseScenario
 # need (and generally shouldn't) do this as warnings can contain useful information but
 # we will do so here for the purposes of this example to keep things simple.
 warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
-class ImpactOfOutReachServices(BaseScenario):
+class ImpactOfnoCXR(BaseScenario):
     def __init__(self):
         super().__init__(
-            seed=random.randint(0, 50000),
+            seed=2025,
             start_date=Date(2010, 1, 1),
             end_date=Date(2013, 12, 31),
             initial_population_size=1000,
             number_of_draws=1,
             runs_per_draw=2,
         )
-
     def log_configuration(self):
         return {
-            'filename': 'outreach_services_scenario',
+            'filename': 'noncxr_tb_scenario',
             'directory': './outputs/nic503@york.ac.uk',
             'custom_levels': {
                 '*': logging.WARNING,
@@ -86,15 +84,40 @@ class ImpactOfOutReachServices(BaseScenario):
             hiv.Hiv(resourcefilepath=self.resources, run_with_checks=False),
             tb.Tb(resourcefilepath=self.resources),
         ]
-    def draw_parameters(self, draw_number, rng):
-              return {
-            'Tb': {
-                'scenario': draw_number}}
 
+    def _get_scenarios(self) -> Dict[str, Dict]:
+        """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
+        """
 
+        return {
+            "Baseline": {
+                'Tb': {
+                    'scenario': 0,
+                    'probability_community_chest_xray': 0.0,
+                },
+            },
 
+            "No Xpert Available": {
+                'Tb': {
+                    'scenario': 1,
+                    'probability_community_chest_xray': 0.0,
+                },
+            },
 
+            "No CXR": {
+                'Tb': {
+                    'scenario': 2,
+                    'probability_community_chest_xray': 0.0,
+                },
+            },
 
+            "Outreach": {
+                'Tb': {
+                    'scenario': 0,
+                    'probability_community_chest_xray': 0.01,
+                }
+            }
+        }
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run

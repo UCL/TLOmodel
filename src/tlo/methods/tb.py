@@ -953,7 +953,7 @@ class Tb(Module):
         sim.schedule_event(TbCommunityXray(self), self.parameters["outreach_xray_start_date"])
 
         # log at the end of the year
-        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
+        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=13))
 
         # 2) Scenario change
         sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
