@@ -39,7 +39,7 @@ class ImpactOfTbDaH(BaseScenario):
     def log_configuration(self):
         return {
             'filename': 'Tb DAH scenario',
-           # 'directory': Path('./outputs'),               # <- (specified only for local running)
+           # 'directory': Path('./outputs'),                                  # <- (specified only for local running)
             'directory': './outputs/nic503@york.ac.uk',
             'custom_levels': {
                 '*': logging.WARNING,
