@@ -135,6 +135,24 @@ def get_simulation_usage_with_confidence_interval(results_folder: Path) -> pd.Da
     return model_output
 
 
+def adjust_real_usage_on_mentalall(real_usage_df) -> pd.DataFrame:
+    """This is to adjust the average annual MentalAll usage in real usage dataframe that is output by get_real_usage.
+    The MentalAll usage was not adjusted in the preprocessing stage considering individual facilities and very low
+    reporting rates.
+    We now directly adjust its annual usage by facility level using the aggregated average annual reporting rates by
+    facility level. The latter is calculated based on DHIS2 Mental Health Report reporting rates."""
+    # the average annual reporting rates for Mental Health Report by facility level (%), 2015-2019
+    # could turn the reporting rates data into a ResourceFile if necessary
+    rr = {'0': None, '1a': 70.93, '1b': 31.25, '2': 46.78, '3': 47.50, '4': None}
+    rr_df = pd.DataFrame.from_dict(rr, orient='index').rename(columns={0: 'avg_annual_rr'})
+    # make the adjustment assuming 100% reporting rates
+    real_usage_df.loc[['1a', '1b', '2', '3'], 'MentalAll'] = (
+        real_usage_df.loc[['1a', '1b', '2', '3'], 'MentalAll'] * 100 /
+        rr_df.loc[['1a', '1b', '2', '3'], 'avg_annual_rr'])
+
+    return real_usage_df
+
+
 def get_real_usage(resourcefilepath) -> pd.DataFrame:
     """Returns the real data on the MEAN USAGE PER YEAR DURING THE TIME_PERIOD for each appointment at each level."""
 
@@ -157,6 +175,8 @@ def get_real_usage(resourcefilepath) -> pd.DataFrame:
     # get facility_level for each record
     real_usage = real_usage.merge(mfl[['Facility_ID', 'Facility_Level']], left_on='Facility_ID', right_on='Facility_ID')
 
+    # todo: adjust MentalAll usage by reporting rates
+
     # assign date to each record
     real_usage['date'] = pd.to_datetime({'year': real_usage['Year'], 'month': real_usage['Month'], 'day': 1})
 
@@ -165,7 +185,6 @@ def get_real_usage(resourcefilepath) -> pd.DataFrame:
     totals_by_year = real_usage \
         .loc[real_usage['date'].between(*TARGET_PERIOD)] \
         .groupby(['Year', 'Appt_Type', 'Facility_Level'])['Usage'].sum()
-    annual_mean = totals_by_year.groupby(level=[1, 2]).mean().unstack()
 
     # Combine the TB data [which is yearly] (after dropping period outside 2017-2019 according to data consistency
     # and pandemic) with the rest of the data.
@@ -175,27 +194,21 @@ def get_real_usage(resourcefilepath) -> pd.DataFrame:
     real_usage_TB = real_usage_TB.merge(mfl[['Facility_ID', 'Facility_Level']],
                                         left_on='Facility_ID', right_on='Facility_ID')
     totals_by_year_TB = real_usage_TB.groupby(['Year', 'Appt_Type', 'Facility_Level'])['Usage'].sum()
-    annual_mean_TB = totals_by_year_TB.groupby(level=[1, 2]).mean().unstack()
 
-    return pd.concat([annual_mean, annual_mean_TB], axis=0).T
+    # prepare annual usage with mean, 75% percentile, and 25% percentile
+    annual_usage_with_ci = pd.concat([totals_by_year.reset_index(), totals_by_year_TB.reset_index()], axis=0)
+    annual_usage_with_ci = annual_usage_with_ci.drop(columns='Year').groupby(
+        ['Appt_Type', 'Facility_Level']
+    ).describe().stack(level=[0])[['mean', '25%', '75%']].reset_index().drop(columns='level_2')
 
+    annual_mean = annual_usage_with_ci[['Appt_Type', 'Facility_Level', 'mean']].set_index(
+        ['Appt_Type', 'Facility_Level']).unstack()
+    annual_mean.columns = annual_mean.columns.get_level_values(1)
+    annual_mean = annual_mean.T
 
-def adjust_real_usage_on_mentalall(real_usage_df) -> pd.DataFrame:
-    """This is to adjust the average annual MentalAll usage in real usage dataframe that is output by get_real_usage.
-    The MentalAll usage was not adjusted in the preprocessing stage considering individual facilities and very low
-    reporting rates.
-    We now directly adjust its annual usage by facility level using the aggregated average annual reporting rates by
-    facility level. The latter is calculated based on DHIS2 Mental Health Report reporting rates."""
-    # the average annual reporting rates for Mental Health Report by facility level (%), 2015-2019
-    # could turn the reporting rates data into a ResourceFile if necessary
-    rr = {'0': None, '1a': 70.93, '1b': 31.25, '2': 46.78, '3': 47.50, '4': None}
-    rr_df = pd.DataFrame.from_dict(rr, orient='index').rename(columns={0: 'avg_annual_rr'})
-    # make the adjustment assuming 100% reporting rates
-    real_usage_df.loc[['1a', '1b', '2', '3'], 'MentalAll'] = (
-        real_usage_df.loc[['1a', '1b', '2', '3'], 'MentalAll'] * 100 /
-        rr_df.loc[['1a', '1b', '2', '3'], 'avg_annual_rr'])
+    annual_usage_with_ci = pd.melt(annual_usage_with_ci, id_vars=['Appt_Type', 'Facility_Level'], var_name='value_type')
 
-    return real_usage_df
+    return annual_mean, annual_usage_with_ci
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -224,7 +237,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     simulation_usage = get_simulation_usage(results_folder)
     simulation_usage = simulation_usage.reset_index().replace({'index': {'1b': '2'}}).groupby('index').sum()
 
-    real_usage = get_real_usage(resourcefilepath)
+    real_usage = get_real_usage(resourcefilepath)[0]
     real_usage = adjust_real_usage_on_mentalall(real_usage)
     real_usage = real_usage.reset_index().replace({'Facility_Level': {'1b': '2'}}).groupby('Facility_Level').sum()
 
