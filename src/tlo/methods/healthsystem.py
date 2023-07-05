@@ -482,11 +482,11 @@ class HealthSystem(Module):
                         " for specific treatments"),
 
         'tclose_overwrite': Parameter(
-            Types.BOOL, "Decide whether to overwrite tclose variables assigned by disease modules"),
+            Types.INT, "Decide whether to overwrite tclose variables assigned by disease modules"),
 
         'tclose_days_offset_overwrite': Parameter(
-            Types.INT, "Number of days by which all HSIs will set tclose after topen, regardless of whether this was specified by"
-                       "the disease module, if tclose_overwrite = True."),
+            Types.INT, "Offset in days from topen at which tclose will be set by the healthsystem for all hsis"
+                       "if tclose_overwrite = True."),
 
         # Mode Appt Constraints
         'mode_appt_constraints': Parameter(
@@ -517,7 +517,7 @@ class HealthSystem(Module):
         ignore_priority: bool = False,
         policy_name: Optional[str] = None,
         include_fasttrack_routes: Optional[bool] = None,
-        tclose_overwrite: Optional[bool] = None,
+        tclose_overwrite: Optional[int] = None,
         tclose_days_offset_overwrite: Optional[int] = None,
         max_squeeze_by_priority: dict = None,  # This should be moved from here
         capabilities_coefficient: Optional[float] = None,
@@ -609,12 +609,12 @@ class HealthSystem(Module):
         self.arg_policy_name = policy_name
 
         self.tclose_overwrite = None
-        self.arg_tclose_overwrite = tclose_overwrite 
+        self.arg_tclose_overwrite = tclose_overwrite
 
         self.tclose_days_offset_overwrite = None
         if tclose_days_offset_overwrite is not None:
             assert tclose_days_offset_overwrite > 0
-        self.arg_tclose_days_offset_overwrite = tclose_days_offset_overwrite 
+        self.arg_tclose_days_offset_overwrite = tclose_days_offset_overwrite
 
         self.lowest_priority_considered = lowest_priority_considered
 
@@ -846,6 +846,8 @@ class HealthSystem(Module):
         print("name of policy:", self.policy_name)
         print("lowest_priority_considered:", self.lowest_priority_considered)
         print("include fasttracking routes:", self.include_fasttrack_routes)
+        print("tclose_overwrite", self.tclose_overwrite)
+        print("tclose_days_offset_overwrite", self.tclose_days_offset_overwrite)
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -884,7 +886,6 @@ class HealthSystem(Module):
         if not (self.disable or self.disable_and_reject_all):
             self.healthsystemscheduler = HealthSystemScheduler(self)
             sim.schedule_event(self.healthsystemscheduler, sim.date)
-
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -1168,7 +1169,7 @@ class HealthSystem(Module):
             if self.arg_policy_name is None \
             else self.arg_policy_name
 
-    def get_tclose_overwrite(self) -> bool:
+    def get_tclose_overwrite(self) -> int:
         """Returns `tclose_overwrite`. (Should be equal to what is specified by the parameter, but
         overwrite with what was provided in argument if an argument was specified -- provided for backward
         compatibility/debugging.)"""
@@ -1177,9 +1178,9 @@ class HealthSystem(Module):
             else self.arg_tclose_overwrite
 
     def get_tclose_days_offset_overwrite(self) -> int:
-        """Returns `tclose_days_offset_overwritetclose_overwrite`. (Should be equal to what is specified by the parameter, but
-        overwrite with what was provided in argument if an argument was specified -- provided for backward
-        compatibility/debugging.)"""
+        """Returns `tclose_days_offset_overwritetclose_overwrite`. (Should be equal to what is specified by
+        the parameter, but overwrite with what was provided in argument if an argument was specified --
+        provided for backward compatibility/debugging.)"""
         return self.parameters['tclose_days_offset_overwrite'] \
             if self.arg_tclose_days_offset_overwrite is None \
             else self.arg_tclose_days_offset_overwrite
@@ -1205,9 +1206,18 @@ class HealthSystem(Module):
          checks for each individual HSI event of the shared type will be redundant.
         """
 
-        # If there is no specified tclose time then set this to a week after topen
-        if tclose is None:
-            tclose = topen + DateOffset(days=7)
+        # If there is no specified tclose time then set this to a week after topen.
+        # This should be a boolean, not int! Still struggling to get a boolean variable from resource file
+        if self.tclose_overwrite == 1:
+            # For now check exception here, but ideally would like to integrate this logic in the HSI itself.
+            if hsi_event.TREATMENT_ID == "DeliveryCare_Basic" or hsi_event.TREATMENT_ID == "DeliveryCare_Comprehensive":
+                if self.tclose_days_offset_overwrite < 2:
+                    tclose = topen + pd.to_timedelta(self.tclose_days_offset_overwrite, unit='D')
+            else:
+                tclose = topen + pd.to_timedelta(self.tclose_days_offset_overwrite, unit='D')
+        else:
+            if tclose is None:
+                tclose = topen + DateOffset(days=7)
 
         # Check topen is not in the past
         assert topen >= self.sim.date
@@ -2393,7 +2403,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                             # Check if any of the officers required have ran out.
                             out_of_resources = False
-                            for officer, call in original_call.items(): 
+                            for officer, call in original_call.items():
                                 # If any of the officers are not available, then out of resources
                                 if officer not in set_capabilities_still_available:
                                     out_of_resources = True
@@ -2475,7 +2485,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                                 # If any of the officers have ran out of time by performing this hsi,
                                 # remove them from list of available officers.
-                                for officer,call in updated_call.items():
+                                for officer, call in updated_call.items():
                                     if capabilities_monitor[officer] <= 0:
                                         set_capabilities_still_available.remove(officer)
 
@@ -2500,8 +2510,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # Traverse the queue again to check all appts which have expired are removed from the queue.
             # In previous iteration, we stopped querying the queue once capabilities
             # were exhausted, so here ensure if any events expired were left unchecked they are properly
-            # removed from the queue. (This should still be more efficient than querying 
-            # the queue as done in mode_appt_constraints = 0 and 1 while ensuring mid-day effects are avoided. 
+            # removed from the queue. (This should still be more efficient than querying
+            # the queue as done in mode_appt_constraints = 0 and 1 while ensuring mid-day effects are avoided.
             while len(self.module.HSI_EVENT_QUEUE) > 0:
 
                 next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
