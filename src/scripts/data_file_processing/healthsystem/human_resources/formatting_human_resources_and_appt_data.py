@@ -1854,6 +1854,7 @@ funded_daily_capability_coarse.to_csv(
 # then indeed, the staff capabilities are available to satisfy that, for a person in any district \
 # (including the regional and national facilities)
 
+
 # Define the check function
 def all_appts_can_run(capability):
     # Creat a table storing whether the appts have consistent requirements/demand and capabilities/supply
