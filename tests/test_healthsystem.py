@@ -947,7 +947,7 @@ def test_summary_logger_for_never_ran_hsi_event(seed, tmpdir):
         demography.Demography(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                   mode_appt_constraints=2,
-                                  capabilities_coefficient=0.,  # <--- Ensure all events postponed
+                                  capabilities_coefficient=0.0,  # <--- Ensure all events postponed
                                   ),
         DummyModule(),
         sort_modules=False,
@@ -960,8 +960,6 @@ def test_summary_logger_for_never_ran_hsi_event(seed, tmpdir):
 
     # Summary log:
     summary_hsi_event = log["tlo.methods.healthsystem.summary"]["Never_ran_HSI_Event"]
-    pd.set_option('display.max_columns', None)
-
     # In 2010, should have recorded one instance of Dummy1 having never ran
     assert summary_hsi_event.loc[summary_hsi_event['date'] == Date(2010, 12, 31), 'TREATMENT_ID'][0] == {'Dummy1': 1}
     # In 2011, should have recorded one instance of Dummy2 and one of Dummy3 having never ran
@@ -1745,9 +1743,9 @@ def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
     # iii) person for whom HSI will be scheduled tb-positive (hence fast-tracking eligible)
     # and check that person is fast-tracked with priority=1
     dictio['HSI_Dummy']['Priority'] = 2
-    dictio['HSI_Dummy']['FT_if_5orUnder'] = 0
-    dictio['HSI_Dummy']['FT_if_pregnant'] = 0
-    dictio['HSI_Dummy']['FT_if_Hivdiagnosed'] = 0
+    dictio['HSI_Dummy']['FT_if_5orUnder'] = -1
+    dictio['HSI_Dummy']['FT_if_pregnant'] = -1
+    dictio['HSI_Dummy']['FT_if_Hivdiagnosed'] = -1
     dictio['HSI_Dummy']['FT_if_tbdiagnosed'] = 1
     sim.population.props.at[0, 'tb_diagnosed'] = True
 
@@ -1765,7 +1763,7 @@ def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
     # Repeat, but now assinging priority below threshold through policy, to check that the event is not scheduled.
     # Person still tb positive, so ensure fast tracking is no longer available for this treatment to tb-diagnosed.
     dictio['HSI_Dummy']['Priority'] = 7
-    dictio['HSI_Dummy']['FT_if_tbdiagnosed'] = 0
+    dictio['HSI_Dummy']['FT_if_tbdiagnosed'] = -1
     _tclose = sim.date + pd.DateOffset(days=35)
 
     # Schedule an 'HSI_Dummy' event with priority different from policy one
@@ -1786,7 +1784,13 @@ def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
 
 
 def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
-    """Test that mode_appt_constraints=2 leads to correct constraints on number of HSIs that can run"""
+    """Test that mode_appt_constraints=2 leads to correct constraints on number of HSIs that can run,
+    in particular:
+    - If capabilities required to carry out an hsi at facility have been exhausted for the day, the hsi
+      cannot be ran;
+    - Hsis with higher priority are ran preferentially;
+    - Competition for resources takes place at facility level;
+    """
 
     # Create Dummy Module to host the HSI
     class DummyModule(Module):
@@ -1843,6 +1847,7 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
     person_for_district = {d: i for i, d in enumerate(sim.population.props['district_of_residence'].cat.categories)}
     keys_district = list(person_for_district.keys())
 
+    # First half of population in keys_district[0], second half in keys_district[1]
     for i in range(0, int(tot_population/2)):
         sim.population.props.at[i, 'district_of_residence'] = keys_district[0]
     for i in range(int(tot_population/2), tot_population):

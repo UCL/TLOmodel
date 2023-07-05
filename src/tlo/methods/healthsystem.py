@@ -481,6 +481,13 @@ class HealthSystem(Module):
                         " the priority, and on which categories of individuals classify for fast-tracking "
                         " for specific treatments"),
 
+        'tclose_overwrite': Parameter(
+            Types.BOOL, "Decide whether to overwrite tclose variables assigned by disease modules"),
+
+        'tclose_days_offset_overwrite': Parameter(
+            Types.INT, "Number of days by which all HSIs will set tclose after topen, regardless of whether this was specified by"
+                       "the disease module, if tclose_overwrite = True."),
+
         # Mode Appt Constraints
         'mode_appt_constraints': Parameter(
             Types.INT, 'Integer code in `{0, 1, 2}` determining mode of constraints with regards to officer numbers '
@@ -510,7 +517,9 @@ class HealthSystem(Module):
         ignore_priority: bool = False,
         policy_name: Optional[str] = None,
         include_fasttrack_routes: Optional[bool] = None,
-        max_squeeze_by_priority: dict = None,
+        tclose_overwrite: Optional[bool] = None,
+        tclose_days_offset_overwrite: Optional[int] = None,
+        max_squeeze_by_priority: dict = None,  # This should be moved from here
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = None,
         disable: bool = False,
@@ -595,10 +604,17 @@ class HealthSystem(Module):
         self.policy_name = None
         if policy_name is not None:
             assert policy_name in ['None', 'Default', 'Test', 'Random', 'Naive', 'RMNCH',
-                                   'VerticalProgrammes', 'ClinicallyVulnerable', 'EHP1_binary',
-                                   'EHP1_ordered', 'EHP3_LPP_binary', 'EHP4_LPP_ordered']
-
+                                   'VerticalProgrammes', 'ClinicallyVulnerable', 'EHP_III',
+                                   'EHP1_ordered', 'LCOA_EHP', 'EHP4_LPP_ordered']
         self.arg_policy_name = policy_name
+
+        self.tclose_overwrite = None
+        self.arg_tclose_overwrite = tclose_overwrite 
+
+        self.tclose_days_offset_overwrite = None
+        if tclose_days_offset_overwrite is not None:
+            assert tclose_days_offset_overwrite > 0
+        self.arg_tclose_days_offset_overwrite = tclose_days_offset_overwrite 
 
         self.lowest_priority_considered = lowest_priority_considered
 
@@ -660,9 +676,6 @@ class HealthSystem(Module):
 
         # Create counter for the running total of footprint of all the HSIs being run today
         self.running_total_footprint: Counter = Counter()
-
-        # Capabilities still available monitor, used in mode_appt_constraints = 2
-        self.capabilities_still_available = None
 
         self._hsi_event_count_log_period = hsi_event_count_log_period
         if hsi_event_count_log_period in {"day", "month", "year", "simulation"}:
@@ -742,9 +755,9 @@ class HealthSystem(Module):
                                                                     'ClinicallyVulnerable',
                                                                     'VerticalProgrammes',
                                                                     'RMNCH',
-                                                                    'EHP1_binary',
+                                                                    'EHP_III',
                                                                     'EHP2_ordered',
-                                                                    'EHP3_LPP_binary',
+                                                                    'LCOA_EHP',
                                                                     'EHP4_LPP_ordered'])
 
     def pre_initialise_population(self):
@@ -773,6 +786,9 @@ class HealthSystem(Module):
         self.consumables = Consumables(data=self.parameters['availability_estimates'],
                                        rng=rng_for_consumables,
                                        availability=self.get_cons_availability())
+
+        self.tclose_overwrite = self.get_tclose_overwrite()
+        self.tclose_days_offset_overwrite = self.get_tclose_days_offset_overwrite()
 
         # Determine name of policy to be considered.
         self.policy_name = self.get_policy_name()
@@ -869,14 +885,6 @@ class HealthSystem(Module):
             self.healthsystemscheduler = HealthSystemScheduler(self)
             sim.schedule_event(self.healthsystemscheduler, sim.date)
 
-        # Initialise the dataframe here, so that during simulation can just reset the available column
-        # as True at the start of the day.
-        cols = ['officer', 'available']
-        self.capabilities_still_available = pd.DataFrame(columns=cols)
-        for i, v in self.capabilities_today.items():
-            self.capabilities_still_available = self.capabilities_still_available.append(
-                                                     {'officer': i, 'available': True}, ignore_index=True)
-        assert (self.capabilities_still_available['available']).all()
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -1160,6 +1168,22 @@ class HealthSystem(Module):
             if self.arg_policy_name is None \
             else self.arg_policy_name
 
+    def get_tclose_overwrite(self) -> bool:
+        """Returns `tclose_overwrite`. (Should be equal to what is specified by the parameter, but
+        overwrite with what was provided in argument if an argument was specified -- provided for backward
+        compatibility/debugging.)"""
+        return self.parameters['tclose_overwrite'] \
+            if self.arg_tclose_overwrite is None \
+            else self.arg_tclose_overwrite
+
+    def get_tclose_days_offset_overwrite(self) -> int:
+        """Returns `tclose_days_offset_overwritetclose_overwrite`. (Should be equal to what is specified by the parameter, but
+        overwrite with what was provided in argument if an argument was specified -- provided for backward
+        compatibility/debugging.)"""
+        return self.parameters['tclose_days_offset_overwrite'] \
+            if self.arg_tclose_days_offset_overwrite is None \
+            else self.arg_tclose_days_offset_overwrite
+
     def schedule_hsi_event(
         self,
         hsi_event: 'HSI_Event',
@@ -1267,7 +1291,7 @@ class HealthSystem(Module):
 
     # This is where the priority policy is enacted
     def enforce_priority_policy(self, hsi_event) -> int:
-        """Check the priority of the Treatment_ID based on policy under consideration """
+        """Return priority for HSI_Event based on policy under consideration """
 
         pr = self.priority_rank_dict
         pdf = self.sim.population.props
@@ -1283,20 +1307,23 @@ class HealthSystem(Module):
                 list_targets = [_t[0] for _t in self.list_fasttrack]
                 target_attributes = pdf.loc[hsi_event.target, list_targets]
 
+                # Warning: here assuming that the first fast-tracking eligibility encountered
+                # will determine the priority to be used. If different fast-tracking channels have
+                # different priorities for the same treatment, this will be a problem!
                 # First item in Lists is age-related, therefore need to invoke different logic.
                 if (
-                    (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]] == 1)
+                    (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]] > -1)
                     and (target_attributes['age_exact_years'] <= 5)
                 ):
-                    return 1
+                    return pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]]
 
                 # All other attributes are boolean, can do this in for loop
                 for i in range(1, len(self.list_fasttrack)):
                     if (
-                        (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]] == 1)
+                        (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]] > - 1)
                         and target_attributes[i]
                     ):
-                        return 1
+                        return pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]]
 
             return _priority_ranking
 
@@ -2252,14 +2279,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # Create hold-over list. This will hold events that cannot occur today before they are added back to the queue.
         hold_over = list()
 
-        # Initialise capabilities_monitors based on start-of-day capabilities
-        self.module.capabilities_still_available.loc[:, "available"] = True
         # Note-to-self: for speed up, could initialise this once with capabilities_today, and here use local copy
         capabilities_monitor = Counter()
+        set_capabilities_still_available = set()
         for i, v in self.module.capabilities_today.items():
             capabilities_monitor[i] += v
-
-        assert (self.module.capabilities_still_available['available']).all()
+            if v > 0.0:
+                set_capabilities_still_available.add(i)
 
         # If not in mode 2, run as usual
         if self.module.mode_appt_constraints != 2:
@@ -2309,7 +2335,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             list_of_population_hsi_event_tuples_due_today = list()
             list_of_events_not_due_today = list()
 
-            # Traverse the queue and split events into the three lists (due-individual, due-population, not_due)
+            # Traverse the queue and run events due today until have capabilities still available
             while len(self.module.HSI_EVENT_QUEUE) > 0:
 
                 # Check if any of the officers in the country are still available for today.
@@ -2317,8 +2343,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # This will make things slower for tests/small simulations, but should be of significant help
                 # in the case of large simulations in mode_appt_constraints = 2 where number of people in the
                 # queue for today >> resources available for that day. This would be faster done by facility.
-                if (self.module.capabilities_still_available['available']).any():
-
+                if len(set_capabilities_still_available) > 0:
                     next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
                     # Read the tuple and remove from heapq, and assemble into a dict 'next_event'
 
@@ -2368,28 +2393,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                             # Check if any of the officers required have ran out.
                             out_of_resources = False
-                            for officer, call in original_call.items():
-                                # If officer exists, check if they still have time available
-                                if officer in capabilities_monitor:
-                                    if capabilities_monitor[officer] <= 0:
-                                        out_of_resources = True
-                                        # Register that have ran out of resources for this particular officer
-                                        self.module.capabilities_still_available.loc[
-                                                    self.module.capabilities_still_available['officer'] == officer,
-                                                    "available"] = False
-                                # If officer doesn't exist, then out of resources by definition
-                                else:
+                            for officer, call in original_call.items(): 
+                                # If any of the officers are not available, then out of resources
+                                if officer not in set_capabilities_still_available:
                                     out_of_resources = True
 
                             # If officers still available, run event. Note: in current logic, a little
                             # overtime is allowed to run last event of the day. This seems more realistic
                             # than medical staff leaving earlier than
                             # planned if seeing another patient would take them into overtime.
-
-                            if self.module.appt_footprint_is_valid(event.EXPECTED_APPT_FOOTPRINT) is False:
-                                warnings.warn(UserWarning(f"Would run with improper EXPECTED_APPT_FOOT for TREAT_ID /n"
-                                              f"{event.TREATMENT_ID}"))
-                                out_of_resources = True
 
                             if out_of_resources:
 
@@ -2404,28 +2416,17 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                                 if not (rtn_from_did_not_run is False):
                                     # reschedule event
+                                    # Add the event to the queue:
+                                    hp.heappush(hold_over, next_event_tuple)
 
-                                    # Correct formatted EXPECTED_APPT_FOOTPRINT
-                                    if isinstance(event.target, tlo.population.Population) is False and \
-                                       self.module.appt_footprint_is_valid(event.EXPECTED_APPT_FOOTPRINT):
-
-                                        # Add the event to the queue:
-                                        hp.heappush(hold_over, next_event_tuple)
-
-                                    else:
-                                        warnings.warn(UserWarning(f"Attempted hold over with improper /n"
-                                                      f"EXPECTED_APPT_FOOT for {event.TREATMENT_ID}"))
-
-                                if isinstance(event.target, tlo.population.Population) is False and \
-                                   self.module.appt_footprint_is_valid(event.EXPECTED_APPT_FOOTPRINT):
-                                    # Log that the event did not run
-                                    self.module.record_hsi_event(
-                                        hsi_event=event,
-                                        actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
-                                        squeeze_factor=squeeze_factor,
-                                        did_run=False,
-                                        priority=_priority
-                                    )
+                                # Log that the event did not run
+                                self.module.record_hsi_event(
+                                    hsi_event=event,
+                                    actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
+                                    squeeze_factor=squeeze_factor,
+                                    did_run=False,
+                                    priority=_priority
+                                )
 
                             # Have enough capabilities left to run event
                             else:
@@ -2472,6 +2473,12 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 # Subtract this from capabilities used so-far today
                                 capabilities_monitor.subtract(updated_call)
 
+                                # If any of the officers have ran out of time by performing this hsi,
+                                # remove them from list of available officers.
+                                for officer,call in updated_call.items():
+                                    if capabilities_monitor[officer] <= 0:
+                                        set_capabilities_still_available.remove(officer)
+
                                 # Update today's footprint based on actuall call and squeeze factor
                                 self.module.running_total_footprint -= original_call
                                 self.module.running_total_footprint += updated_call
@@ -2489,6 +2496,79 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # point in going through the queue to check what's left to do today.
                 else:
                     break
+
+            # Traverse the queue again to check all appts which have expired are removed from the queue.
+            # In previous iteration, we stopped querying the queue once capabilities
+            # were exhausted, so here ensure if any events expired were left unchecked they are properly
+            # removed from the queue. (This should still be more efficient than querying 
+            # the queue as done in mode_appt_constraints = 0 and 1 while ensuring mid-day effects are avoided. 
+            while len(self.module.HSI_EVENT_QUEUE) > 0:
+
+                next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
+                # Read the tuple and remove from heapq, and assemble into a dict 'next_event'
+
+                event = next_event_tuple.hsi_event
+
+                if self.sim.date > next_event_tuple.tclose:
+                    # The event has expired (after tclose) having never been run. Call the 'never_ran' function
+                    self.module.record_never_ran_hsi_event(
+                          hsi_event=event,
+                          priority=next_event_tuple.priority
+                         )
+
+                elif not (
+                    isinstance(event.target, tlo.population.Population)
+                    or event.target in alive_persons
+                ):
+                    # if individual level event and the person who is the target is no longer alive,
+                    # do nothing more, i.e. remove from heapq
+                    pass
+
+                elif self.sim.date < next_event_tuple.topen:
+                    # The event is not yet due (before topen)
+                    hp.heappush(list_of_events_not_due_today, next_event_tuple)
+
+                    if next_event_tuple.priority == self.module.lowest_priority_considered:
+                        # Check the priority
+                        # If the next event is not due and has lowest allowed priority, then stop looking
+                        # through the heapq as all other events will also not be due.
+                        break
+
+                else:
+                    # The event is now due to run today and the person is confirmed to be still alive
+                    # Add it to the list of events due today if at population level.
+                    # Otherwise, run event immediately.
+
+                    is_pop_level_hsi_event = isinstance(event.target, tlo.population.Population)
+                    if is_pop_level_hsi_event:
+                        list_of_population_hsi_event_tuples_due_today.append(next_event_tuple)
+                    else:
+                        # In previous iteration, have already ran all the events for today that could run
+                        # given capabilities available, so put back any remaining events due today to the
+                        # hold_over queue as it would not be possible to run them today.
+
+                        # Do not run,
+                        # Call did_not_run for the hsi_event
+                        rtn_from_did_not_run = event.did_not_run()
+
+                        # If received no response from the call to did_not_run, or a True signal, then
+                        # add to the hold-over queue.
+                        # Otherwise (disease module returns "FALSE") the event is not rescheduled and
+                        # will not run.
+
+                        if not (rtn_from_did_not_run is False):
+                            # reschedule event
+                            # Add the event to the queue:
+                            hp.heappush(hold_over, next_event_tuple)
+
+                        # Log that the event did not run
+                        self.module.record_hsi_event(
+                           hsi_event=event,
+                           actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
+                           squeeze_factor=0,
+                           did_run=False,
+                           priority=next_event_tuple.priority
+                           )
 
             # add events from the list_of_events_not_due_today back into the queue
             while len(list_of_events_not_due_today) > 0:

@@ -3,12 +3,12 @@ impact that is achieved under each (relative to there being no health system).
 
 Run on the batch system using:
 ```
-tlo batch-submit src/scripts/healthsystem/impact_of_mode/scenario_impact_of_mode.py
+tlo batch-submit src/scripts/healthsystem/impact_of_policy/scenario_impact_of_policy.py
 ```
 
 or locally using:
 ```
-tlo scenario-run src/scripts/healthsystem/impact_of_mode/scenario_impact_of_mode.py
+tlo scenario-run src/scripts/healthsystem/impact_of_policy/scenario_impact_of_policy.py
 ```
 
 """
@@ -62,7 +62,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
         """
 
         return {
-            "Unlimited Efficiency all cons":
+            "Unlimited Efficiency Idealised Performance":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -74,7 +74,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
 
-            "Random all cons":
+            "Random Idealised Performance":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -87,7 +87,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
 
-            "Naive all cons":
+            "Naive Idealised Performance":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -100,7 +100,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
 
-            "RMNCH all cons":
+            "RMNCH Idealised Performance":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -113,7 +113,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
 
-            "Clinically Vulnerable all cons":
+            "Clinically Vulnerable Idealised Performance":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -126,7 +126,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
 
-            "Vertical Programmes all cons":
+            "Vertical Programmes Idealised Performance":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -139,7 +139,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
 
-            "EHP1_binary all cons":
+            "EHP III Idealised Performance":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -147,12 +147,12 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         'cons_availability': "all",
                         'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name": "EHP1_binary"
+                        "Policy_Name": "EHP III"
                      },
                      'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
 
-            "EHP3_LPP_binary all cons":
+            "LCOA EHP Idealised Performance":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -160,12 +160,12 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         'cons_availability': "all",
                         'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name": "EHP3_LPP_binary"
+                        "Policy_Name": "LCOA EHP"
                      },
                      'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
 
-            "Unlimited Efficiency default cons":
+            "Unlimited Efficiency Status Quo cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -177,7 +177,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     }
                 ),
 
-            "Random default cons":
+            "Random Status Quo cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -190,7 +190,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     }
                 ),
 
-            "Naive default cons":
+            "Naive Status Quo cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -203,7 +203,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     }
                 ),
 
-            "Naive default cons funded plus":
+            "Naive Status Quo cons funded plus":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -216,7 +216,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     }
                 ),
 
-            "RMNCH default cons":
+            "RMNCH Status Quo cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -229,7 +229,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     }
                 ),
 
-            "Clinically Vulnerable default cons":
+            "Clinically Vulnerable Status Quo cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -241,7 +241,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                     }),
 
-            "Vertical Programmes default cons":
+            "Vertical Programmes Status Quo cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -253,7 +253,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                      },
                     }),
 
-            "EHP1_binary default cons":
+            "EHP III Status Quo cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -261,11 +261,11 @@ class ImpactOfHealthSystemMode(BaseScenario):
                          'cons_availability': "default",
                          'mode_appt_constraints': 2,
                          "use_funded_or_actual_staffing": "actual",
-                         "Policy_Name": "EHP1_binary"
+                         "Policy_Name": "EHP III"
                      },
                     }),
 
-            "EHP3_LPP_binary default cons":
+            "LCOA EHP Status Quo cons":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -273,7 +273,7 @@ class ImpactOfHealthSystemMode(BaseScenario):
                          'cons_availability': "default",
                          'mode_appt_constraints': 2,
                          "use_funded_or_actual_staffing": "actual",
-                         "Policy_Name": "EHP3_LPP_binary"
+                         "Policy_Name": "LCOA EHP"
                      },
                     }
                 )
