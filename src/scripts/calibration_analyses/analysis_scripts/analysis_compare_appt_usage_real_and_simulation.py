@@ -136,19 +136,28 @@ def get_simulation_usage_with_confidence_interval(results_folder: Path) -> pd.Da
 
 
 def adjust_real_usage_on_mentalall(real_usage_df) -> pd.DataFrame:
-    """This is to adjust the average annual MentalAll usage in real usage dataframe that is output by get_real_usage.
+    """This is to adjust the annual MentalAll usage in real usage dataframe.
     The MentalAll usage was not adjusted in the preprocessing stage considering individual facilities and very low
     reporting rates.
-    We now directly adjust its annual usage by facility level using the aggregated average annual reporting rates by
+    We now directly adjust its annual usage by facility level using the aggregated annual reporting rates by
     facility level. The latter is calculated based on DHIS2 Mental Health Report reporting rates."""
-    # the average annual reporting rates for Mental Health Report by facility level (%), 2015-2019
+    # the annual reporting rates for Mental Health Report by facility level (%), 2015-2019
     # could turn the reporting rates data into a ResourceFile if necessary
-    rr = {'0': None, '1a': 70.93, '1b': 31.25, '2': 46.78, '3': 47.50, '4': None}
-    rr_df = pd.DataFrame.from_dict(rr, orient='index').rename(columns={0: 'avg_annual_rr'})
-    # make the adjustment assuming 100% reporting rates
-    real_usage_df.loc[['1a', '1b', '2', '3'], 'MentalAll'] = (
-        real_usage_df.loc[['1a', '1b', '2', '3'], 'MentalAll'] * 100 /
-        rr_df.loc[['1a', '1b', '2', '3'], 'avg_annual_rr'])
+    rr = pd.DataFrame(index=['1a', '1b', '2', '3'], columns=list(range(2015, 2020)),
+                      data=[[44.00, 39.33, 79.00, 97.33, 95.00],
+                            [10.42, 12.50, 25.00, 40.00, 68.33],
+                            [36.67, 39.44, 37.22, 63.89, 56.67],
+                            [50.00, 45.83, 45.83, 50.00, 45.83]])
+    # make the adjustment assuming 100% reporting rates for each year
+    for l in ['1a', '1b', '2', '3']:
+        for y in range(2015, 2020):
+            real_usage_df.loc[(real_usage_df.Facility_Level == l)
+                              & (real_usage_df.Year == y)
+                              & (real_usage_df.Appt_Type == 'MentalAll'), 'Usage'] = (
+                real_usage_df.loc[(real_usage_df.Facility_Level == l)
+                                  & (real_usage_df.Year == y)
+                                  & (real_usage_df.Appt_Type == 'MentalAll'), 'Usage'] * 100 / rr.loc[l, y]
+            )
 
     return real_usage_df
 
@@ -175,7 +184,8 @@ def get_real_usage(resourcefilepath) -> pd.DataFrame:
     # get facility_level for each record
     real_usage = real_usage.merge(mfl[['Facility_ID', 'Facility_Level']], left_on='Facility_ID', right_on='Facility_ID')
 
-    # todo: adjust MentalAll usage by reporting rates
+    # adjust annual MentalAll usage using annual reporting rates
+    real_usage = adjust_real_usage_on_mentalall(real_usage)
 
     # assign date to each record
     real_usage['date'] = pd.to_datetime({'year': real_usage['Year'], 'month': real_usage['Month'], 'day': 1})
@@ -238,7 +248,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     simulation_usage = simulation_usage.reset_index().replace({'index': {'1b': '2'}}).groupby('index').sum()
 
     real_usage = get_real_usage(resourcefilepath)[0]
-    real_usage = adjust_real_usage_on_mentalall(real_usage)
     real_usage = real_usage.reset_index().replace({'Facility_Level': {'1b': '2'}}).groupby('Facility_Level').sum()
 
     # Plot Simulation vs Real usage (Across all levels) (trimmed to 0.1 and 10)
