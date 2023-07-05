@@ -1339,7 +1339,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         if title == 'Total':
             ax.set(ylim=(0, 900))
         else:
-            ax.set(ylim=(0, 400))
+            ax.set(ylim=(0, 900))
         plt.xlabel('Year')
         plt.ylabel("Deaths per 100 000 live births")
         plt.title(f'{title} Maternal Mortality Ratio per Year')
