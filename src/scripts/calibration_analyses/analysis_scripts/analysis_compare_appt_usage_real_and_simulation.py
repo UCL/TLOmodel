@@ -250,22 +250,29 @@ def get_real_usage(resourcefilepath) -> pd.DataFrame:
                                         left_on='Facility_ID', right_on='Facility_ID')
     totals_by_year_TB = real_usage_TB.groupby(['Year', 'Appt_Type', 'Facility_Level'])['Usage'].sum()
 
+    annual_usage_by_level = pd.concat([totals_by_year.reset_index(), totals_by_year_TB.reset_index()], axis=0)
+
     # prepare annual usage by level with mean, 75% percentile, and 25% percentile
-    annual_usage_with_ci = pd.concat([totals_by_year.reset_index(), totals_by_year_TB.reset_index()], axis=0)
-    annual_usage_with_ci = annual_usage_with_ci.drop(columns='Year').groupby(
+    annual_usage_by_level_with_ci = annual_usage_by_level.drop(columns='Year').groupby(
         ['Appt_Type', 'Facility_Level']
     ).describe().stack(level=[0])[['mean', '25%', '75%']].reset_index().drop(columns='level_2')
 
-    annual_mean = annual_usage_with_ci[['Appt_Type', 'Facility_Level', 'mean']].set_index(
+    average_annual_by_level = annual_usage_by_level_with_ci[['Appt_Type', 'Facility_Level', 'mean']].set_index(
         ['Appt_Type', 'Facility_Level']).unstack()
-    annual_mean.columns = annual_mean.columns.get_level_values(1)
-    annual_mean = annual_mean.T
+    average_annual_by_level.columns = average_annual_by_level.columns.get_level_values(1)
+    average_annual_by_level = average_annual_by_level.T
 
-    annual_usage_with_ci = pd.melt(annual_usage_with_ci, id_vars=['Appt_Type', 'Facility_Level'], var_name='value_type')
+    annual_usage_by_level_with_ci = pd.melt(annual_usage_by_level_with_ci,
+                                            id_vars=['Appt_Type', 'Facility_Level'], var_name='value_type')
 
-    # todo: prepare annual usage at all levels with mean, 75% percentile, and 25% percentile
+    # prepare annual usage at all levels with mean, 75% percentile, and 25% percentile
+    annual_usage_with_ci = annual_usage_by_level.groupby(
+        ['Year', 'Appt_Type'])['Usage'].sum().reset_index().drop(columns='Year').groupby(
+        'Appt_Type').describe().stack(level=[0])[['mean', '25%', '75%']].reset_index().drop(columns='level_1')
+    annual_usage_with_ci = pd.melt(annual_usage_with_ci,
+                                   id_vars='Appt_Type', var_name='value_type')
 
-    return annual_mean, annual_usage_with_ci
+    return average_annual_by_level, annual_usage_by_level_with_ci, annual_usage_with_ci
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
