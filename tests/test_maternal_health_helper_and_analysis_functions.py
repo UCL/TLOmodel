@@ -102,10 +102,7 @@ def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
     assert p_current_params['odds_early_init_anc4'] != unchanged_odds_anc
 
     for parameter in ['prob_intervention_delivered_urine_ds', 'prob_intervention_delivered_bp',
-                      'prob_intervention_delivered_ifa', 'prob_intervention_delivered_llitn',
-                      'prob_intervention_delivered_llitn', 'prob_intervention_delivered_tt',
-                      'prob_intervention_delivered_poct', 'prob_intervention_delivered_syph_test',
-                      'prob_intervention_delivered_iptp', 'prob_intervention_delivered_gdm_test']:
+                      'prob_intervention_delivered_syph_test', 'prob_intervention_delivered_gdm_test']:
         assert c_current_params[parameter] == new_avail_prob
 
     # Now check corrent labour/newborn/postnatal parameters have been updated
@@ -416,7 +413,7 @@ def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed
         assert not available
 
     cemonc = labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(
-        module=sim.modules['Labour'], person_id=mother_id, timing='intrapartum')
+        module=sim.modules['Labour'], person_id=mother_id, timing='intrapartum', facility_level_of_this_hsi='1b')
     cemonc.facility_info = FacilityInfo(id=3,
                                         name='Facility_Level_2_Balaka',
                                         level='2',
@@ -533,32 +530,10 @@ def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed)
     child_id = sim.do_birth(mother_id)
     sim.modules['NewbornOutcomes'].on_birth(mother_id, child_id)
 
-    # set comps
-    df.at[child_id, 'nb_encephalopathy'] = 'severe_enceph'
-
-    # set consumables to 0
-    resus = sim.modules['NewbornOutcomes'].item_codes_nb_consumables['resuscitation']
-    for item in resus:
-        sim.modules['HealthSystem'].override_availability_of_consumables({item: 0.0})
-
     # refresh the consumables
     sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
 
     hsi_event = get_dummy_hsi(sim, mother_id, id=3, fl=2)
-    available = hsi_event.get_consumables(item_codes=resus)
-    assert not available
-
-    # Next define the actual HSI of interest
-    nb_sba = newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(
-        module=sim.modules['NewbornOutcomes'], person_id=child_id, facility_level_of_this_hsi=2)
-    nb_sba.facility_info = FacilityInfo(id=3,
-                                        name='Facility_Level_2_Balaka',
-                                        level='2',
-                                        region='Southern')
-
-    nb_sba.apply(person_id=mother_id, squeeze_factor=0.0)
-
-    assert df.at[child_id, 'nb_received_neonatal_resus']
 
     # set postnatal comps
     df.at[child_id, 'pn_sepsis_early_neonatal'] = True

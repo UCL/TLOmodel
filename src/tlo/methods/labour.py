@@ -3417,8 +3417,8 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
             if params['alternative_pnc_quality']:
                 params['squeeze_threshold_for_delay_three_pn'] = 10_000
                 nb_params['squeeze_threshold_for_delay_three_nb_care'] = 10_000
+                nb_params['prob_kmc_available'] = params['pnc_availability_probability']
                 params['prob_intervention_delivered_anaemia_assessment_pnc'] = params['pnc_availability_probability']
-                params['prob_kmc_available'] = params['pnc_availability_probability']
 
             if params['pnc_sens_analysis_max'] or params['pnc_sens_analysis_min']:
 

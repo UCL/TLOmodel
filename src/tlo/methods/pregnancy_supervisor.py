@@ -2180,6 +2180,7 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
                     10_000
 
                 params['prob_seek_care_pregnancy_complication'] = 1.0
+                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['prob_adherent_ifa'] = 1.0
 
             if params['sens_analysis_min']:
                 params['prob_seek_care_pregnancy_complication'] = 0.0
