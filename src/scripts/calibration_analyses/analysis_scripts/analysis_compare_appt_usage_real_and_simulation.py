@@ -35,7 +35,8 @@ def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
     """Return pd.DataFrame gives the (mean) simulated annual number of appointments of each type at each level."""
 
     def get_counts_of_appts(_df):
-        """Get the mean number of appointments of each type being used each year at each level."""
+        """Get the mean number of appointments of each type being used each year at each level.
+        Need to rename appts to match standardized categories from the DHIS2 data."""
 
         def unpack_nested_dict_in_series(_raw: pd.Series):
             return pd.concat(
@@ -47,6 +48,8 @@ def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
         return _df \
             .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code_And_Level'] \
             .pipe(unpack_nested_dict_in_series) \
+            .rename(columns=appt_dict, level=1) \
+            .groupby(level=[0, 1], axis=1).sum() \
             .mean(axis=0)  # mean over each year (row)
 
     return summarize(
@@ -67,7 +70,8 @@ def get_annual_num_appts_by_level_with_confidence_interval(results_folder: Path)
     with 95% confidence interval."""
 
     def get_counts_of_appts(_df):
-        """Get the mean number of appointments of each type being used each year at each level."""
+        """Get the mean number of appointments of each type being used each year at each level.
+        Need to rename appts to match standardized categories from the DHIS2 data."""
 
         def unpack_nested_dict_in_series(_raw: pd.Series):
             return pd.concat(
@@ -79,6 +83,8 @@ def get_annual_num_appts_by_level_with_confidence_interval(results_folder: Path)
         return _df \
             .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code_And_Level'] \
             .pipe(unpack_nested_dict_in_series) \
+            .rename(columns=appt_dict, level=1) \
+            .groupby(level=[0, 1], axis=1).sum() \
             .mean(axis=0)  # mean over each year (row)
 
     return summarize(
@@ -94,23 +100,45 @@ def get_annual_num_appts_by_level_with_confidence_interval(results_folder: Path)
         ).unstack().astype(int)
 
 
-def get_simulation_usage(results_folder: Path) -> pd.DataFrame:
+def get_annual_num_appts_with_confidence_interval(results_folder: Path) -> pd.DataFrame:
+    """Return pd.DataFrame gives the (mean) simulated annual number of appointments of each type at all levels,
+    with 95% confidence interval."""
+
+    def get_counts_of_appts(_df) -> pd.Series:
+        """Get the mean number of appointments of each type being used each year at all levels.
+        Need to rename appts to match standardized categories from the DHIS2 data."""
+
+        return _df \
+            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code'] \
+            .apply(pd.Series) \
+            .rename(columns=appt_dict) \
+            .groupby(level=0, axis=1).sum() \
+            .mean(axis=0)  # mean over each year (row)
+
+    return summarize(
+        extract_results(
+                results_folder,
+                module='tlo.methods.healthsystem.summary',
+                key='HSI_Event',
+                custom_generate_series=get_counts_of_appts,
+                do_scaling=True
+            ),
+        only_mean=False,
+        collapse_columns=True,
+        ).unstack().astype(int)
+
+
+def get_simulation_usage_by_level(results_folder: Path) -> pd.DataFrame:
     """Returns the simulated MEAN USAGE PER YEAR DURING THE TIME_PERIOD, by appointment type and level.
-    With reformatting ...
-      * to match standardized categories from the DHIS2 data,
-      * to match the districts in the DHIS2 data.  (see commits in PR616)
     """
 
     # Get model outputs
     model_output = get_annual_num_appts_by_level(results_folder=results_folder)
 
-    # Rename some appts to be compared with real usage
-    model_output.columns = model_output.columns.map(lambda _name: appt_dict.get(_name, _name))
-
-    return model_output.groupby(axis=1, level=0).sum()
+    return model_output
 
 
-def get_simulation_usage_with_confidence_interval(results_folder: Path) -> pd.DataFrame:
+def get_simulation_usage_by_level_with_confidence_interval(results_folder: Path) -> pd.DataFrame:
     """Returns the simulated MEAN USAGE PER YEAR DURING THE TIME_PERIOD with 95% confidence interval,
     by appointment type and level.
     """
@@ -128,9 +156,26 @@ def get_simulation_usage_with_confidence_interval(results_folder: Path) -> pd.Da
     model_output.reset_index(drop=False, inplace=True)
     model_output.rename(columns={'index': 'facility_level'}, inplace=True)
 
-    # Rename some appts to be compared with real usage
-    model_output['appt_type'] = model_output['appt_type'].replace(appt_dict)
-    model_output = model_output.groupby(['facility_level', 'appt_type', 'value_type']).sum().reset_index()
+    return model_output
+
+
+def get_simulation_usage_with_confidence_interval(results_folder: Path) -> pd.DataFrame:
+    """Returns the simulated MEAN USAGE PER YEAR DURING THE TIME_PERIOD with 95% confidence interval,
+    by appointment type.
+    """
+
+    # Get model outputs
+    model_output = get_annual_num_appts_with_confidence_interval(results_folder=results_folder)
+
+    # Reformat
+    model_output = pd.DataFrame(model_output).T
+    model_output.columns = [' '.join(col).strip() for col in model_output.columns.values]
+    model_output = model_output.melt(var_name='name', value_name='value', ignore_index=False)
+    model_output['name'] = model_output['name'].str.split(' ')
+    model_output['value_type'] = model_output['name'].str[0]
+    model_output['appt_type'] = model_output['name'].str[1]
+    model_output.drop(columns='name', inplace=True)
+    model_output.reset_index(drop=True, inplace=True)
 
     return model_output
 
@@ -205,7 +250,7 @@ def get_real_usage(resourcefilepath) -> pd.DataFrame:
                                         left_on='Facility_ID', right_on='Facility_ID')
     totals_by_year_TB = real_usage_TB.groupby(['Year', 'Appt_Type', 'Facility_Level'])['Usage'].sum()
 
-    # prepare annual usage with mean, 75% percentile, and 25% percentile
+    # prepare annual usage by level with mean, 75% percentile, and 25% percentile
     annual_usage_with_ci = pd.concat([totals_by_year.reset_index(), totals_by_year_TB.reset_index()], axis=0)
     annual_usage_with_ci = annual_usage_with_ci.drop(columns='Year').groupby(
         ['Appt_Type', 'Facility_Level']
@@ -217,6 +262,8 @@ def get_real_usage(resourcefilepath) -> pd.DataFrame:
     annual_mean = annual_mean.T
 
     annual_usage_with_ci = pd.melt(annual_usage_with_ci, id_vars=['Appt_Type', 'Facility_Level'], var_name='value_type')
+
+    # todo: prepare annual usage at all levels with mean, 75% percentile, and 25% percentile
 
     return annual_mean, annual_usage_with_ci
 
@@ -245,7 +292,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
     # get average annual usage for Simulation and Real
-    simulation_usage = get_simulation_usage(results_folder)
+    simulation_usage = get_simulation_usage_by_level(results_folder)
     simulation_usage = simulation_usage.reset_index().replace({'index': {'1b': '2'}}).groupby('index').sum()
 
     real_usage = get_real_usage(resourcefilepath)[0]
@@ -288,10 +335,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # with 95% confidence level for Simulation
     # Get usage and ratio across all levels
     simulation_usage_with_ci = get_simulation_usage_with_confidence_interval(results_folder)
-    # todo: to sum all levels, the 95% CI of all levels is not necessarily equal to sum of the 95% CIs of each level;
-    #  should calculate the 95% CI of all levels immediately after summing usage of each level
-    simulation_usage_with_ci = simulation_usage_with_ci.groupby(
-        ['appt_type', 'value_type'])['value'].sum().reset_index()  # across all levels
     real_usage_all_levels = real_usage.sum(axis=0).reset_index().rename(
         columns={0: 'real_usage', 'Appt_Type': 'appt_type'})
     rel_diff_all_levels_with_ci = simulation_usage_with_ci.merge(real_usage_all_levels, on='appt_type', how='outer')
