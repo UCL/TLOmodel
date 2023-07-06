@@ -244,6 +244,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
+    # get average annual usage for Simulation and Real
     simulation_usage = get_simulation_usage(results_folder)
     simulation_usage = simulation_usage.reset_index().replace({'index': {'1b': '2'}}).groupby('index').sum()
 
@@ -255,7 +256,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         simulation_usage.sum(axis=0) / real_usage.sum(axis=0)
     ).clip(lower=0.1, upper=10.0)
 
-    name_of_plot = 'Model vs Real average annual usage by appt type\n[All Facility Levels]'
+    name_of_plot = 'Model vs Real usage per appt type at all facility levels' \
+                   '\n[Model average annual, Real average annual]'
     fig, ax = plt.subplots()
     ax.stem(rel_diff_all_levels.index, rel_diff_all_levels.values, bottom=1.0, label='All levels')
     for idx in rel_diff_all_levels.index:
@@ -269,7 +271,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         simulation_usage / real_usage
     ).clip(upper=10, lower=0.1).dropna(how='all', axis=0)
 
-    name_of_plot = 'Model vs Real average annual usage by appt type\n[By Facility Level]'
+    name_of_plot = 'Model vs Real usage per appt type per facility level\n[Model average annual, Real average annual]'
     fig, ax = plt.subplots()
     marker_dict = {'0': 0,
                    '1a': 4,
@@ -282,9 +284,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.axhline(1.0, color='r')
     format_and_save(fig, ax, name_of_plot)
 
-    # Plot Simulation vs Real usage (Across all levels) (trimmed to 0.1 and 10), with 95% confidence level
+    # Plot Simulation vs Real usage (Across all levels) (trimmed to 0.1 and 10),
+    # with 95% confidence level for Simulation
     # Get usage and ratio across all levels
     simulation_usage_with_ci = get_simulation_usage_with_confidence_interval(results_folder)
+    # todo: to sum all levels, the 95% CI of all levels is not necessarily equal to sum of the 95% CIs of each level;
+    #  should calculate the 95% CI of all levels immediately after summing usage of each level
     simulation_usage_with_ci = simulation_usage_with_ci.groupby(
         ['appt_type', 'value_type'])['value'].sum().reset_index()  # across all levels
     real_usage_all_levels = real_usage.sum(axis=0).reset_index().rename(
@@ -300,7 +305,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     rel_diff_all_levels_with_ci['upper_error'] = (rel_diff_all_levels_with_ci['upper'] -
                                                   rel_diff_all_levels_with_ci['mean'])
     # plot
-    name_of_plot = 'Model vs Real average annual usage by appt type\n[All Facility Levels, 95% Confidence Interval]'
+    name_of_plot = 'Model vs Real usage per appt type at all facility levels' \
+                   '\n[Model average annual with 95% CI, Real average annual]'
     fig, ax = plt.subplots()
     asymmetric_error = [rel_diff_all_levels_with_ci['lower_error'].values,
                         rel_diff_all_levels_with_ci['upper_error'].values]
@@ -315,6 +321,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     ha='left', fontsize=8)
     ax.axhline(1.0, color='r')
     format_and_save(fig, ax, name_of_plot)
+
+    # todo: Plot Simulation vs Real usage (Across all levels) (trimmed to 0.1 and 10);
+    # with mean, 25% percentile and 75% percentile for Real usage
+    # Get usage and ratio across all levels
+    # real_usage_with_ci = get_real_usage(resourcefilepath)[1]
 
 
 if __name__ == "__main__":
