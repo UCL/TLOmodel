@@ -255,7 +255,8 @@ def get_real_usage(resourcefilepath) -> pd.DataFrame:
     # prepare annual usage by level with mean, 75% percentile, and 25% percentile
     annual_usage_by_level_with_ci = annual_usage_by_level.drop(columns='Year').groupby(
         ['Appt_Type', 'Facility_Level']
-    ).describe().stack(level=[0])[['mean', '25%', '75%']].reset_index().drop(columns='level_2')
+    ).describe(percentiles=[0.025, 0.975]
+               ).stack(level=[0])[['mean', '2.5%', '97.5%']].reset_index().drop(columns='level_2')
 
     average_annual_by_level = annual_usage_by_level_with_ci[['Appt_Type', 'Facility_Level', 'mean']].set_index(
         ['Appt_Type', 'Facility_Level']).unstack()
@@ -264,13 +265,17 @@ def get_real_usage(resourcefilepath) -> pd.DataFrame:
 
     annual_usage_by_level_with_ci = pd.melt(annual_usage_by_level_with_ci,
                                             id_vars=['Appt_Type', 'Facility_Level'], var_name='value_type')
+    annual_usage_by_level_with_ci.value_type = annual_usage_by_level_with_ci.value_type.replace({'2.5%': 'lower',
+                                                                                                 '97.5%': 'upper'})
 
     # prepare annual usage at all levels with mean, 75% percentile, and 25% percentile
     annual_usage_with_ci = annual_usage_by_level.groupby(
         ['Year', 'Appt_Type'])['Usage'].sum().reset_index().drop(columns='Year').groupby(
-        'Appt_Type').describe().stack(level=[0])[['mean', '25%', '75%']].reset_index().drop(columns='level_1')
+        'Appt_Type').describe(percentiles=[0.025, 0.975]
+                              ).stack(level=[0])[['mean', '2.5%', '97.5%']].reset_index().drop(columns='level_1')
     annual_usage_with_ci = pd.melt(annual_usage_with_ci,
                                    id_vars='Appt_Type', var_name='value_type')
+    annual_usage_with_ci.value_type = annual_usage_with_ci.value_type.replace({'2.5%': 'lower', '97.5%': 'upper'})
 
     return average_annual_by_level, annual_usage_by_level_with_ci, annual_usage_with_ci
 
@@ -298,7 +303,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
-    # get average annual usage for Simulation and Real
+    # get average annual usage by level for Simulation and Real
     simulation_usage = get_simulation_usage_by_level(results_folder)
     simulation_usage = simulation_usage.reset_index().replace({'index': {'1b': '2'}}).groupby('index').sum()
 
@@ -321,6 +326,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     format_and_save(fig, ax, name_of_plot)
 
     # Plot Simulation vs Real usage (At each level) (trimmed to 0.1 and 10)
+    # todo: the usage ratios across different levels might be misleading; try plot stacked bar chart instead
     rel_diff_by_levels = (
         simulation_usage / real_usage
     ).clip(upper=10, lower=0.1).dropna(how='all', axis=0)
@@ -338,44 +344,59 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.axhline(1.0, color='r')
     format_and_save(fig, ax, name_of_plot)
 
-    # Plot Simulation vs Real usage (Across all levels) (trimmed to 0.1 and 10),
-    # with 95% confidence level for Simulation
+    def plot_model_vs_data_usage_with_ci(_rel_diff_with_ci, _name_of_plot):
+        """ Plot Simulation (with 95% CI) vs Real usage (with 95% CI) (Across all levels) (trimmed to 0.1 and 10). """
+
+        # prepare data
+        _rel_diff_with_ci = _rel_diff_with_ci.pivot(
+            index='appt_type', columns='value_type', values='ratio')
+        _rel_diff_with_ci['lower_error'] = (_rel_diff_with_ci['mean'] - _rel_diff_with_ci['lower'])
+        _rel_diff_with_ci['upper_error'] = (_rel_diff_with_ci['upper'] - _rel_diff_with_ci['mean'])
+
+        # plot
+        _fig, _ax = plt.subplots()
+        asymmetric_error = [_rel_diff_with_ci['lower_error'].values,
+                            _rel_diff_with_ci['upper_error'].values]
+        _ax.errorbar(_rel_diff_with_ci.index.values,
+                     _rel_diff_with_ci['mean'].values,
+                     asymmetric_error, fmt='.', capsize=3.0)
+        for _idx in _rel_diff_with_ci.index:
+            if not pd.isna(_rel_diff_with_ci.loc[_idx, 'mean']):
+                _ax.text(_idx,
+                         _rel_diff_with_ci.loc[_idx, 'mean'] * (1 + 0.2),
+                         round(_rel_diff_with_ci.loc[_idx, 'mean'], 1),
+                         ha='left', fontsize=8)
+        _ax.axhline(1.0, color='r')
+        format_and_save(_fig, _ax, _name_of_plot)
+
+    # Plot Simulation with 95% CI vs Model
     # Get usage and ratio across all levels
     simulation_usage_with_ci = get_simulation_usage_with_confidence_interval(results_folder)
     real_usage_all_levels = real_usage.sum(axis=0).reset_index().rename(
         columns={0: 'real_usage', 'Appt_Type': 'appt_type'})
-    rel_diff_all_levels_with_ci = simulation_usage_with_ci.merge(real_usage_all_levels, on='appt_type', how='outer')
-    rel_diff_all_levels_with_ci['ratio'] = (rel_diff_all_levels_with_ci['value'] /
-                                            rel_diff_all_levels_with_ci['real_usage']).clip(upper=10, lower=0.1)
-    rel_diff_all_levels_with_ci.drop(columns=['value', 'real_usage'], inplace=True)
-    rel_diff_all_levels_with_ci = rel_diff_all_levels_with_ci.pivot(
-        index='appt_type', columns='value_type', values='ratio')
-    rel_diff_all_levels_with_ci['lower_error'] = (rel_diff_all_levels_with_ci['mean'] -
-                                                  rel_diff_all_levels_with_ci['lower'])
-    rel_diff_all_levels_with_ci['upper_error'] = (rel_diff_all_levels_with_ci['upper'] -
-                                                  rel_diff_all_levels_with_ci['mean'])
+    rel_diff_with_ci_simulation = simulation_usage_with_ci.merge(real_usage_all_levels, on='appt_type', how='outer')
+    rel_diff_with_ci_simulation['ratio'] = (rel_diff_with_ci_simulation['value'] /
+                                            rel_diff_with_ci_simulation['real_usage']).clip(upper=10, lower=0.1)
+    rel_diff_with_ci_simulation.drop(columns=['value', 'real_usage'], inplace=True)
     # plot
-    name_of_plot = 'Model vs Real usage per appt type at all facility levels' \
-                   '\n[Model average annual with 95% CI, Real average annual]'
-    fig, ax = plt.subplots()
-    asymmetric_error = [rel_diff_all_levels_with_ci['lower_error'].values,
-                        rel_diff_all_levels_with_ci['upper_error'].values]
-    ax.errorbar(rel_diff_all_levels_with_ci.index.values,
-                rel_diff_all_levels_with_ci['mean'].values,
-                asymmetric_error, fmt='.',  capsize=3.0)
-    for idx in rel_diff_all_levels_with_ci.index:
-        if not pd.isna(rel_diff_all_levels_with_ci.loc[idx, 'mean']):
-            ax.text(idx,
-                    rel_diff_all_levels_with_ci.loc[idx, 'mean']*(1+0.2),
-                    round(rel_diff_all_levels_with_ci.loc[idx, 'mean'], 1),
-                    ha='left', fontsize=8)
-    ax.axhline(1.0, color='r')
-    format_and_save(fig, ax, name_of_plot)
+    name_of_plot_with_ci_simulation = 'Model vs Real usage per appt type at all facility levels' \
+                                      '\n[Model average annual with 95% CI, Real average annual]'
+    plot_model_vs_data_usage_with_ci(rel_diff_with_ci_simulation, name_of_plot_with_ci_simulation)
 
-    # todo: Plot Simulation vs Real usage (Across all levels) (trimmed to 0.1 and 10);
-    # with mean, 25% percentile and 75% percentile for Real usage
+    # Plot Simulation vs Model with 95% CI
     # Get usage and ratio across all levels
-    # real_usage_with_ci = get_real_usage(resourcefilepath)[1]
+    real_usage_with_ci = get_real_usage(resourcefilepath)[2].rename(columns={'Appt_Type': 'appt_type'})
+    simulation_usage_all_levels = simulation_usage.sum(axis=0).reset_index().rename(
+        columns={0: 'simulation_usage', 'index': 'appt_type'})
+    rel_diff_with_ci_real = real_usage_with_ci.merge(simulation_usage_all_levels, on='appt_type', how='outer')
+    rel_diff_with_ci_real['ratio'] = (rel_diff_with_ci_real['simulation_usage'] /
+                                      rel_diff_with_ci_real['value']).clip(upper=10, lower=0.1)
+    rel_diff_with_ci_real.drop(columns=['value', 'simulation_usage'], inplace=True)
+    rel_diff_with_ci_real.value_type = rel_diff_with_ci_real.value_type.replace({'lower': 'upper', 'upper': 'lower'})
+    # plot
+    name_of_plot_with_ci_real = 'Model vs Real usage per appt type at all facility levels' \
+                                '\n[Model average annual, Real average annual with 95% CI]'
+    plot_model_vs_data_usage_with_ci(rel_diff_with_ci_real, name_of_plot_with_ci_real)
 
 
 if __name__ == "__main__":
