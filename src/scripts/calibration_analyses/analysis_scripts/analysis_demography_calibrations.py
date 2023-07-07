@@ -544,8 +544,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         l1 = ax[i].plot(data_year, data_asfr, 'k-', label='WPP')
         l2 = ax[i].plot(model.index, model[(0, 'mean', _agegrp)], 'r-', label='Model')
-        ax[i].fill_between((model.index).to_numpy(), (model[(0, 'lower', _agegrp)]).to_numpy(), (model[(0, 'upper', _agegrp)]).to_numpy(),
-                           color='r', alpha=0.2)
+        ax[i].fill_between((model.index).to_numpy(),
+                           (model[(0, 'lower', _agegrp)]).to_numpy(),
+                           (model[(0, 'upper', _agegrp)]).to_numpy(),
+                           color='r',
+                           alpha=0.2)
         ax[i].set_ylim(0, 0.4)
         ax[i].set_title(f'Age at Conception: {_agegrp}y', fontsize=6)
         ax[i].set_xlabel('Year')
@@ -574,7 +577,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     to_plot = pd.concat([model_asfr.loc[_period], data_asfr.loc[_period]], axis=1)
     ax.plot(to_plot.index, to_plot[_period], label='WPP', color=colors['WPP'])
     ax.plot(to_plot.index, to_plot['mean'], label='Model', color=colors['Model'])
-    ax.fill_between((to_plot.index).to_numpy(), (to_plot['lower']).to_numpy(), (to_plot['upper']).to_numpy(), color=colors['Model'], alpha=0.2)
+    ax.fill_between((to_plot.index).to_numpy(),
+                    (to_plot['lower']).to_numpy(),
+                    (to_plot['upper']).to_numpy(),
+                    color=colors['Model'],
+                    alpha=0.2)
     ax.set_xlabel('Age at Conception')
     ax.set_ylabel('Live births per woman-year')
     ax.set_title(f'{_period}')
