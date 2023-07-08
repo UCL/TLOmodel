@@ -4,24 +4,30 @@ This file run scenarios for assesing unavailability of TB-related Development As
 
 It can be submitted on Azure Batch by running:
 
- tlo batch-submit src/scripts/hiv/projections_jan2023/analysis_tb_DAH.py
+ tlo batch-submit src/scripts/hiv/projections_jan2023/tb_DAH_scenarios.py
 or locally using:
 
- tlo scenario-run src/scripts/hiv/projections_jan2023/analysis_tb_DAH.py
+ tlo scenario-run src/scripts/hiv/projections_jan2023/tb_DAH_scenarios.py
   execute a single run:
 
- tlo scenario-run src/scripts/hiv/projections_jan2023/analysis_tb_DAH.py --draw 1 0
+ tlo scenario-run src/scripts/hiv/projections_jan2023/tb_DAH_scenarios.py --draw 1 0
 
  check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/analysis_tb_DAH.py
+tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/tb_DAH_scenarios.py
 
  """
+import warnings
 from pathlib import Path
 from typing import Dict
 import random
 from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
+
+# Ignore warnings to avoid cluttering output from simulation - generally you do not
+# need (and generally shouldn't) do this as warnings can contain useful information but
+# we will do so here for the purposes of this example to keep things simple.
+warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 
 
 class ImpactOfTbDaH(BaseScenario):
@@ -49,7 +55,7 @@ class ImpactOfTbDaH(BaseScenario):
                 'tlo.methods.healthsystem.summary': logging.INFO,
                 'tlo.methods.tb': logging.INFO,
                 'tlo.methods.hiv': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
+
             }
         }
 

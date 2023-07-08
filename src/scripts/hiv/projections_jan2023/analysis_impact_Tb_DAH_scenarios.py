@@ -1,6 +1,6 @@
 """Analyse scenarios for impact of TB-related development assistance for health."""
 
-# python src/scripts/hiv/projections_jan2023/analysis_impact_of_Tb_DAH_baseline.py --scenario-outputs-folder outputs\nic503@york.ac.uk
+# python src/scripts/hiv/projections_jan2023/analysis_impact_Tb_DAH_scenarios.py --scenario-outputs-folder outputs\nic503@york.ac.uk
 import argparse
 import datetime
 from tlo import Date
@@ -23,7 +23,7 @@ outputspath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
-results_folder = get_scenario_outputs("baseline_tb_services_scenario-2023-07-04T095619Z", outputspath) [-1]
+results_folder = get_scenario_outputs("Tb DAH scenario-2023-07-05T101642Z", outputspath) [-1]
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
 # get basic information about the results
@@ -32,7 +32,9 @@ print("the scenario info as follows")
 print(info)
 # Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
-
+print("the parameter info as follows")
+print(params)
+ if params[draw]==0
 ## extracting primary outcomes-DALYs and mortality
 def get_person_years(_df):
     """ extract person-years for each draw/run
