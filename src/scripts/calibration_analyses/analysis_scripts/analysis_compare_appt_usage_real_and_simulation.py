@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -326,7 +327,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     format_and_save(fig, ax, name_of_plot)
 
     # Plot Simulation vs Real usage (At each level) (trimmed to 0.1 and 10)
-    # todo: the usage ratios across different levels might be misleading; try plot stacked bar chart instead
     rel_diff_by_levels = (
         simulation_usage / real_usage
     ).clip(upper=10, lower=0.1).dropna(how='all', axis=0)
@@ -343,6 +343,56 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.plot(_results.index, _results.values, label=_level, linestyle='none', marker=marker_dict[_level])
     ax.axhline(1.0, color='r')
     format_and_save(fig, ax, name_of_plot)
+
+    # Plot Simulation vs Real usage by level by appt type and show fraction of usage at each level
+    # format data
+    real_usage_all_levels = real_usage.sum(axis=0).reset_index().rename(
+        columns={0: 'real_usage_all_levels', 'Appt_Type': 'appt_type'})
+    real_usage_reformat = pd.melt(real_usage.reset_index(), id_vars='Facility_Level',
+                                  var_name='appt_type', value_name='real_usage'
+                                  ).rename(columns={'Facility_Level': 'facility_level'})
+    simulation_usage_diff = pd.melt(simulation_usage.reset_index(), id_vars='index',
+                                    var_name='appt_type', value_name='simulation_usage'
+                                    ).rename(columns={'index': 'facility_level'})
+    simulation_usage_diff = simulation_usage_diff.merge(
+        real_usage_all_levels, on='appt_type', how='outer').merge(
+        real_usage_reformat, on=['facility_level', 'appt_type'], how='outer')
+    simulation_usage_diff['ratio'] = (simulation_usage_diff['simulation_usage'] /
+                                      simulation_usage_diff['real_usage_all_levels'])
+    simulation_usage_diff['real_usage_proportion'] = (simulation_usage_diff['real_usage'] /
+                                                      simulation_usage_diff['real_usage_all_levels'])
+    simulation_usage_plot = pd.pivot(simulation_usage_diff[['appt_type', 'facility_level', 'ratio']],
+                                     index='appt_type', columns='facility_level', values='ratio'
+                                     ).dropna(axis=1, how='all')
+    real_usage_plot = pd.pivot(simulation_usage_diff[['appt_type', 'facility_level', 'real_usage_proportion']],
+                               index='appt_type', columns='facility_level', values='real_usage_proportion'
+                               ).dropna(axis=1, how='all')
+    # plot
+    fig, ax = plt.subplots(figsize=(8, 5))
+    cmp_paired = plt.get_cmap('Paired')
+    cmp_paried_0 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(0, 10, 2)))
+    cmp_paried_1 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(1, 11, 2)))
+    simulation_usage_plot.plot(kind='bar', stacked=True, width=0.4,
+                               cmap=cmp_paried_1, hatch='',
+                               ax=ax, position=0)
+    real_usage_plot.plot(kind='bar', stacked=True, width=0.4,
+                         edgecolor='black', cmap=cmp_paried_1, hatch='',
+                         ax=ax, position=1)
+    ax.set_xlim(right=len(simulation_usage_plot) - 0.5)
+    ax.yaxis.grid(True, which='major', linestyle='--')
+    ax.set_ylabel('Usage per level / Usage all levels')
+    ax.set_xlabel('Appointment Type')
+    ax.set_title('Model vs Real usage per appointment type, with fraction per level')
+    # ax.axhline(1.0, color='black', linestyle='--')
+    # ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    legend_1 = plt.legend(simulation_usage_plot.columns, loc='upper left', bbox_to_anchor=(1.0, 0.5),
+                          title='Facility Level')
+    patch_simulation = matplotlib.patches.Patch(facecolor='beige', hatch='', label='Model vs Real')
+    patch_real = matplotlib.patches.Patch(facecolor='beige', hatch='', edgecolor="black", label='Real vs Real')
+    legend_2 = plt.legend(handles=[patch_simulation, patch_real], loc='lower left', bbox_to_anchor=(1.0, 0.6))
+    fig.add_artist(legend_1)
+    fig.tight_layout()
+    plt.show()
 
     def plot_model_vs_data_usage_with_ci(_rel_diff_with_ci, _name_of_plot):
         """ Plot Simulation (with 95% CI) vs Real usage (with 95% CI) (Across all levels) (trimmed to 0.1 and 10). """
