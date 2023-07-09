@@ -40,11 +40,11 @@ class ImpactOfTbDaH(BaseScenario):
         self.pop_size = 800
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 2
+        self.runs_per_draw = 4
 
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_sample_runs',
+            'filename': 'Tb_DAH_scenarios_test_run',
            # 'directory': Path('./outputs'),                                  # <- (specified only for local running)
             'directory': './outputs/nic503@york.ac.uk',
             'custom_levels': {
