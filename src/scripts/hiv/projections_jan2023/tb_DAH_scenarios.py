@@ -53,8 +53,8 @@ class ImpactOfTbDaH(BaseScenario):
                 'tlo.methods.demography.detail': logging.WARNING,
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.Tb': logging.INFO,
-                'tlo.methods.Hiv': logging.INFO,
+                'tlo.methods.tb': logging.INFO,
+                'tlo.methods.hiv': logging.INFO,
 
             }
         }
@@ -90,9 +90,17 @@ class ImpactOfTbDaH(BaseScenario):
                     'probability_community_chest_xray': 0.0,
                 },
             },
+            "CXR scaleup": {
+                'Tb': {
+                    'scenario': 0,
+                    'probability_access_to_xray': 0.11,
+                    'probability_community_chest_xray': 0.0,
+                }
+            },
             "Outreach": {
                 'Tb': {
                     'scenario': 0,
+                    'probability_access_to_xray': 0.10,
                     'probability_community_chest_xray': 0.01,
                 }
             }

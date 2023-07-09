@@ -24,7 +24,7 @@ outputspath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
-results_folder = get_scenario_outputs("Tb DAH scenario-2023-07-05T101642Z", outputspath)[-1]
+results_folder = get_scenario_outputs("Tb_DAH_sample_runs-2023-07-09T053225Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -202,7 +202,7 @@ def tb_mortality_rate(results_folder, pyears_summary):
     return tb_mortality_rate
 
 # Call the function with appropriate arguments
-mortality_rates = tb_mortality_rate(results_folder, pyears_summary)
+mortality_rates = tb_mortality_rate(results_folder, pyears_all)
 mortality_rates_summary = pd.DataFrame.from_dict(mortality_rates)
 
 # Print the resulting mortality rates
@@ -210,6 +210,8 @@ mortality_rates_summary = pd.DataFrame.from_dict(mortality_rates)
 # print(mortality_rates_summary)
 # Print scaling factor to population level estimates
 print(f"The scaling factor is: {log['tlo.methods.demography']['scaling_factor']}")
+
+
 
 # # Extracts PLHIV with TB
 # tb_hiv_prop = summarize(

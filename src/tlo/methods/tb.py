@@ -949,11 +949,11 @@ class Tb(Module):
         sim.schedule_event(TbSelfCureEvent(self), sim.date + DateOffset(days=0))
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
-        # schedule outreach xrays for tb screening from 2023
+        # schedule outreach xrays for tb screening from 2023 but temporarily set to 2010
         sim.schedule_event(TbCommunityXray(self), self.parameters["outreach_xray_start_date"])
 
         # log at the end of the year
-        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=13))
+        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
 
         # 2) Scenario change
         sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
