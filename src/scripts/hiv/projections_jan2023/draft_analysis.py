@@ -27,15 +27,48 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 results_folder = get_scenario_outputs("Tb DAH scenario-2023-07-05T101642Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
+print(info)
 params = extract_params(results_folder)
 print("the parameter info as follows")
 print(params)
 params.to_excel(outputspath / "parameters.xlsx")
 
 # Choosing the draw to summarize
+# number_runs = info["runs_per_draw"]
+# number_draws = info['number_of_draws']
+# draw = 0
+# def get_person_years(draw, run):
+#     log = load_pickled_dataframes(results_folder, draw, run)
+#     py_ = log["tlo.methods.demography"]["person_years"]
+#     years = pd.to_datetime(py_["date"]).dt.year
+#     py = pd.Series(dtype="int64", index=years)
+#     for year in years:
+#         tot_py = (
+#             (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series) +
+#             (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(pd.Series)
+#         ).transpose()
+#         py[year] = tot_py.sum().values[0]
+#
+#     py.index = pd.to_datetime(years, format="%Y")
+#
+#     return py
+#
+# # For draw 0, get py for all runs
+# number_runs = info["runs_per_draw"]
+# pyears_summary_per_run = pd.DataFrame(data=None, columns=range(number_runs))
+#
+# # Draw number (default = 0) is specified above
+# for run in range(number_runs):
+#     pyears_summary_per_run.iloc[:, run] = get_person_years(draw, run)
+#
+# pyears_summary = pd.DataFrame()
+# pyears_summary["mean"] = pyears_summary_per_run.mean(axis=1)
+# pyears_summary["lower"] = pyears_summary_per_run.quantile(0.025, axis=1).values
+# pyears_summary["upper"] = pyears_summary_per_run.quantile(0.975, axis=1).values
+# pyears_summary.columns = pd.MultiIndex.from_product([[draw], list(pyears_summary.columns)], names=['draw', 'stat'])
+# pyears_summary.to_excel(outputspath / "pyears_baseline.xlsx")
 number_runs = info["runs_per_draw"]
 number_draws = info['number_of_draws']
-draw = 0
 def get_person_years(draw, run):
     log = load_pickled_dataframes(results_folder, draw, run)
     py_ = log["tlo.methods.demography"]["person_years"]
@@ -52,20 +85,30 @@ def get_person_years(draw, run):
 
     return py
 
-# For draw 0, get py for all runs
-number_runs = info["runs_per_draw"]
-pyears_summary_per_run = pd.DataFrame(data=None, columns=range(number_runs))
 
-# Draw number (default = 0) is specified above
-for run in range(number_runs):
-    pyears_summary_per_run.iloc[:, run] = get_person_years(draw, run)
+# Create a DataFrame to store person years per draw and run
+pyears_all = pd.DataFrame()
 
-pyears_summary = pd.DataFrame()
-pyears_summary["mean"] = pyears_summary_per_run.mean(axis=1)
-pyears_summary["lower"] = pyears_summary_per_run.quantile(0.025, axis=1).values
-pyears_summary["upper"] = pyears_summary_per_run.quantile(0.975, axis=1).values
-pyears_summary.columns = pd.MultiIndex.from_product([[draw], list(pyears_summary.columns)], names=['draw', 'stat'])
-pyears_summary.to_excel(outputspath / "pyears_baseline.xlsx")
+# Iterate over draws and runs
+for draw in range(number_draws):
+    pyears_summary_per_run = pd.DataFrame(data=None, columns=range(number_runs))
+    for run in range(number_runs):
+        pyears_summary_per_run[run] = get_person_years(draw, run)
+
+    # Calculate mean, lower, and upper percentiles
+    pyears_summary = pd.DataFrame()
+    pyears_summary["mean"] = pyears_summary_per_run.mean(axis=1)
+    pyears_summary["lower"] = pyears_summary_per_run.quantile(0.025, axis=1).values
+    pyears_summary["upper"] = pyears_summary_per_run.quantile(0.975, axis=1).values
+
+    # Assign draw and stat columns as MultiIndex
+    pyears_summary.columns = pd.MultiIndex.from_product([[draw], list(pyears_summary.columns)], names=['draw', 'stat'])
+
+    # Append to the main DataFrame
+    pyears_all = pd.concat([pyears_all, pyears_summary], axis=1)
+
+# Print the DataFrame to Excel
+pyears_all.to_excel (outputspath / "pyears_all.xlsx")
 
 # Number of TB deaths and mortality rate
 results_deaths = extract_results(
@@ -89,7 +132,7 @@ AIDS_non_TB = results_deaths.loc[results_deaths["cause"] == "AIDS_non_TB"]
 TB = results_deaths.loc[results_deaths["cause"] == "TB"]
 
 combined_tb_table = pd.concat([AIDS_non_TB, AIDS_TB, TB])
-combined_tb_table.to_excel(outputspath / "combined_tb_table_baseline.xlsx")
+combined_tb_table.to_excel(outputspath / "combined_tb_tables.xlsx")
 scaling_factor_key = log['tlo.methods.demography']['scaling_factor']
 print("Scaling Factor Key:", scaling_factor_key)
 
@@ -118,17 +161,7 @@ dalys_summary = summarize(tb_dalys_count).sort_index()
 #dalys_summary = (tb_dalys_count).sort_index()
 print("DALYs for TB are as follows:")
 print(dalys_summary)
-# Create the bar graph
-years = dalys_summary.index  # Extract the years as x-axis labels
-daly_values = dalys_summary['mean']  # Extract the mean DALY values for y-axis
-
-# plt.bar(years, daly_values)
-# plt.xlabel("Years")
-# plt.ylabel("TB DALYs")
-# plt.title("TB DALYs by Year")
-# plt.xticks(rotation=45)
-# plt.show()
-dalys_summary.to_excel(outputspath / "summarised_tb_dalys_baseline.xlsx")
+dalys_summary.to_excel(outputspath / "summarised_tb_dalys.xlsx")
 
 # secondary outcomes
 #print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
@@ -154,12 +187,12 @@ def tb_mortality_rate(results_folder, pyears_summary):
     # Group deaths by year
     tb_deaths2 = pd.DataFrame(tb_deaths1.groupby(["year"]).sum())
     print("Tb deaths as follows", tb_deaths2)
-    tb_deaths2.to_excel(outputspath / "raw_mortality_baseline.xlsx")
+    tb_deaths2.to_excel(outputspath / "raw_mortality.xlsx")
 
-    # Divide draw0/run by the respective person-years from that run
-    # Need to reset index as they don't match exactly (date format)
-    tb_deaths3 = tb_deaths2.reset_index(drop=True) / pyears_summary.reset_index(drop=True)
+    # Divide draw/run by the respective person-years from that run
+    tb_deaths3 = tb_deaths2.reset_index(drop=True).div(pyears_all.reset_index(drop=True), axis='rows')
     print("deaths3 are:", tb_deaths3)
+    tb_deaths3.to_excel(outputspath / "mortality_rates.xlsx")
 
     tb_mortality_rate = {}  # empty dict
     tb_mortality_rate["year"] = tb_deaths2.index
@@ -173,15 +206,8 @@ mortality_rates = tb_mortality_rate(results_folder, pyears_summary)
 mortality_rates_summary = pd.DataFrame.from_dict(mortality_rates)
 
 # Print the resulting mortality rates
-mortality_rates_summary.to_excel(outputspath / "mortality_rates_baseline.xlsx",index=False)
-print(mortality_rates_summary)
-
-# Extract the data from the mortality_rates_summary DataFrame
-# years = mortality_rates_summary["year"]
-# median_rates = mortality_rates_summary["median"]
-# lower_rates = mortality_rates_summary["lower"]
-# upper_rates = mortality_rates_summary["upper"]
-
+# mortality_rates_summary.to_excel(outputspath / "mortality_rates_baseline.xlsx",index=False)
+# print(mortality_rates_summary)
 # Print scaling factor to population level estimates
 print(f"The scaling factor is: {log['tlo.methods.demography']['scaling_factor']}")
 
