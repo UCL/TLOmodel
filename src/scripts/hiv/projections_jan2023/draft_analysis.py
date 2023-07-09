@@ -118,6 +118,16 @@ dalys_summary = summarize(tb_dalys_count).sort_index()
 #dalys_summary = (tb_dalys_count).sort_index()
 print("DALYs for TB are as follows:")
 print(dalys_summary)
+# Create the bar graph
+years = dalys_summary.index  # Extract the years as x-axis labels
+daly_values = dalys_summary['mean']  # Extract the mean DALY values for y-axis
+
+# plt.bar(years, daly_values)
+# plt.xlabel("Years")
+# plt.ylabel("TB DALYs")
+# plt.title("TB DALYs by Year")
+# plt.xticks(rotation=45)
+# plt.show()
 dalys_summary.to_excel(outputspath / "summarised_tb_dalys_baseline.xlsx")
 
 # secondary outcomes
@@ -151,95 +161,97 @@ def tb_mortality_rate(results_folder, pyears_summary):
     tb_deaths3 = tb_deaths2.reset_index(drop=True) / pyears_summary.reset_index(drop=True)
     print("deaths3 are:", tb_deaths3)
 
+    tb_mortality_rate = {}  # empty dict
+    tb_mortality_rate["year"] = tb_deaths2.index
+    tb_mortality_rate["median"] = tb_deaths3.quantile(0.5, axis=1) * 100000
+    tb_mortality_rate["lower"] = tb_deaths3.quantile(0.025, axis=1) * 100000
+    tb_mortality_rate["upper"] = tb_deaths3.quantile(0.975, axis=1) * 100000
+    return tb_mortality_rate
+
 # Call the function with appropriate arguments
-#mortality_rates = tb_mortality_rate(results_folder, pyears_summary["mean"])
 mortality_rates = tb_mortality_rate(results_folder, pyears_summary)
-print("mortality_rates as follows:", mortality_rates)
-
-
 mortality_rates_summary = pd.DataFrame.from_dict(mortality_rates)
-print(mortality_rates_summary)
+
 # Print the resulting mortality rates
-mortality_rates_summary.to_excel(outputspath / "mortality_rates_baseline.xlsx", index=False)
+mortality_rates_summary.to_excel(outputspath / "mortality_rates_baseline.xlsx",index=False)
 print(mortality_rates_summary)
 
 # Extract the data from the mortality_rates_summary DataFrame
-years = mortality_rates_summary["year"]
-median_rates = mortality_rates_summary["median"]
-lower_rates = mortality_rates_summary["lower"]
-upper_rates = mortality_rates_summary["upper"]
+# years = mortality_rates_summary["year"]
+# median_rates = mortality_rates_summary["median"]
+# lower_rates = mortality_rates_summary["lower"]
+# upper_rates = mortality_rates_summary["upper"]
 
 # Print scaling factor to population level estimates
 print(f"The scaling factor is: {log['tlo.methods.demography']['scaling_factor']}")
 
-
-# Extracts PLHIV with TB
-tb_hiv_prop = summarize(
-    extract_results(
-        results_folder,
-        module="tlo.methods.tb",
-        key="tb_incidence",
-        column="prop_active_tb_in_plhiv",
-        index="date",
-        do_scaling=False,
-    ),
-    collapse_columns=True,
-)
-tb_hiv_prop.index = tb_hiv_prop.index.year
-tb_hiv_prop_with_year = pd.DataFrame(tb_hiv_prop)
-tb_hiv_prop.to_excel(outputspath / "PLHIV_tb_baseline.xlsx")
-#MDR TB cases
-mdr_tb_cases = summarize(
-    extract_results(
-        results_folder,
-        module="tlo.methods.tb",
-        key="tb_mdr",
-        column="tbPropActiveCasesMdr",
-        index="date",
-        do_scaling=False,
-    ),
-    collapse_columns=True,
-)
-mdr_tb_cases.index = mdr_tb_cases.index.year
-mdr_tb = pd.DataFrame(mdr_tb_cases)
-mdr_tb.to_excel(outputspath / "mdr_tb_baseline.xlsx")
-
-# TB treatment coverage
-tb_treatment = summarize(
-        extract_results(
-            results_folder,
-            module="tlo.methods.tb",
-            key="tb_treatment",
-            column="tbTreatmentCoverage",
-            index="date",
-            do_scaling=False,
-        ),
-        collapse_columns=True,
-    )
-
-#tb_treatment.index = tb_treatment.index.year,
-tb_treatment_cov = pd.DataFrame(tb_treatment)
-tb_treatment_cov.to_excel(outputspath / "tb_treatment_coverage_baseline.xlsx")
-
-#TB Incidence
-tb_inc = summarize(
-    extract_results(
-        results_folder,
-        module="tlo.methods.tb",
-        key="tb_incidence",
-        column="num_new_active_tb",
-        index="date",
-        do_scaling=False,
-    ),
-    collapse_columns=True,
-)
-print(tb_inc)
-tb_incidence = pd.DataFrame(tb_inc)
-tb_incidence.to_excel(outputspath / "tb_incidence_baseline.xlsx")
-
-tb_inc.index = tb_inc.index.year
-print(tb_inc.head())
-print(pyears_summary.head())
-tb_inc = tb_inc.reset_index(drop=True)
-#pyears = pyears.reset_index(drop=True)
-pyears_summary = pyears_summary.reset_index(drop=True)
+# # Extracts PLHIV with TB
+# tb_hiv_prop = summarize(
+#     extract_results(
+#         results_folder,
+#         module="tlo.methods.tb",
+#         key="tb_incidence",
+#         column="prop_active_tb_in_plhiv",
+#         index="date",
+#         do_scaling=False,
+#     ),
+#     collapse_columns=True,
+# )
+# tb_hiv_prop.index = tb_hiv_prop.index.year
+# tb_hiv_prop_with_year = pd.DataFrame(tb_hiv_prop)
+# tb_hiv_prop.to_excel(outputspath / "PLHIV_tb_baseline.xlsx")
+# #MDR TB cases
+# mdr_tb_cases = summarize(
+#     extract_results(
+#         results_folder,
+#         module="tlo.methods.tb",
+#         key="tb_mdr",
+#         column="tbPropActiveCasesMdr",
+#         index="date",
+#         do_scaling=False,
+#     ),
+#     collapse_columns=True,
+# )
+# mdr_tb_cases.index = mdr_tb_cases.index.year
+# mdr_tb = pd.DataFrame(mdr_tb_cases)
+# mdr_tb.to_excel(outputspath / "mdr_tb_baseline.xlsx")
+#
+# # TB treatment coverage
+# tb_treatment = summarize(
+#         extract_results(
+#             results_folder,
+#             module="tlo.methods.tb",
+#             key="tb_treatment",
+#             column="tbTreatmentCoverage",
+#             index="date",
+#             do_scaling=False,
+#         ),
+#         collapse_columns=True,
+#     )
+#
+# #tb_treatment.index = tb_treatment.index.year,
+# tb_treatment_cov = pd.DataFrame(tb_treatment)
+# tb_treatment_cov.to_excel(outputspath / "tb_treatment_coverage_baseline.xlsx")
+#
+# #TB Incidence
+# tb_inc = summarize(
+#     extract_results(
+#         results_folder,
+#         module="tlo.methods.tb",
+#         key="tb_incidence",
+#         column="num_new_active_tb",
+#         index="date",
+#         do_scaling=False,
+#     ),
+#     collapse_columns=True,
+# )
+# print(tb_inc)
+# tb_incidence = pd.DataFrame(tb_inc)
+# tb_incidence.to_excel(outputspath / "tb_incidence_baseline.xlsx")
+#
+# tb_inc.index = tb_inc.index.year
+# print(tb_inc.head())
+# print(pyears_summary.head())
+# tb_inc = tb_inc.reset_index(drop=True)
+# #pyears = pyears.reset_index(drop=True)
+# pyears_summary = pyears_summary.reset_index(drop=True)
