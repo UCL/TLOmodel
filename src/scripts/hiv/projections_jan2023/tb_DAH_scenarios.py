@@ -44,7 +44,7 @@ class ImpactOfTbDaH(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'Tb DAH scenario runs',
+            'filename': 'Tb_DAH_sample_runs',
            # 'directory': Path('./outputs'),                                  # <- (specified only for local running)
             'directory': './outputs/nic503@york.ac.uk',
             'custom_levels': {
@@ -53,8 +53,8 @@ class ImpactOfTbDaH(BaseScenario):
                 'tlo.methods.demography.detail': logging.WARNING,
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
-                'tlo.methods.tb': logging.INFO,
-                'tlo.methods.hiv': logging.INFO,
+                'tlo.methods.Tb': logging.INFO,
+                'tlo.methods.Hiv': logging.INFO,
 
             }
         }
