@@ -353,17 +353,21 @@ child_Tb_prevalence.index = child_Tb_prevalence.index.year
 child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence_sample.xlsx")
 
 ###### PLOTS##################################################
-# Plot the bar graph
-import matplotlib.pyplot as plt
+
+# Reshape the daly_summary DataFrame into the correct format
+reshaped_summary = dalys_summary.stack().unstack(level=0)
 
 # Select the mean, lower, and upper values
-mean_values = dalys_summary[('mean', slice(None))]
-lower_values = dalys_summary[('lower', slice(None))]
-upper_values = dalys_summary[('upper', slice(None))]
+mean_values = reshaped_summary['mean']
+lower_values = reshaped_summary['lower']
+upper_values = reshaped_summary['upper']
+
+# Reshape the error values to have the shape (5, 2, 3)
+error_values = [lower_values.values, upper_values.values]
 
 # Plot the bar graph
 fig, ax = plt.subplots(figsize=(10, 6))
-mean_values.plot.bar(ax=ax, yerr=[mean_values - lower_values, upper_values - mean_values])
+mean_values.plot.bar(ax=ax, yerr=error_values)
 
 # Set the labels and title
 ax.set_xlabel('Draw')
@@ -372,6 +376,10 @@ ax.set_title('DALYs for TB by Draw')
 
 # Show the plot
 plt.show()
+
+
+
+
 
 
 

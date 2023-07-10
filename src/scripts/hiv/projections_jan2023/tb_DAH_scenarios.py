@@ -101,7 +101,7 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 0,
                     'probability_access_to_xray': 0.10,
-                    'probability_community_chest_xray': 0.01,
+                    'probability_community_chest_xray': 0.001,
                 }
             }
         }
