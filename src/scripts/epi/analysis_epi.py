@@ -102,105 +102,96 @@ coverage_data2010_years = coverage_data2010_years.apply(lambda x: x.year)
 # ------------------------------------- PLOTS  ------------------------------------- #
 
 plt.style.use("ggplot")
+fontsize = 9
+
 
 # BCG coverage
-plt.subplot(221)  # numrows, numcols, fignum
+plt.subplot(331)  # numrows, numcols, fignum
 plt.plot(coverage_data2010_years, coverage_data2010.BCG*100)
 plt.plot(model_date, model_vax_coverage.epBcgCoverage)
-plt.title("BCG vaccine coverage", fontsize=11)
-# plt.xlabel("Year")
-plt.ylabel("Coverage")
-# plt.xticks(rotation=90)
+plt.title("BCG", fontsize=fontsize)
+plt.ylabel("Coverage", fontsize=fontsize)
 plt.gca().set_xlim(2010, 2025)
 plt.gca().set_ylim(0, 110)
-# plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
+plt.xticks(fontsize=fontsize)
+plt.yticks(fontsize=fontsize)
 
 # DTP3 coverage
-plt.subplot(222)  # numrows, numcols, fignum
+plt.subplot(332)  # numrows, numcols, fignum
 plt.plot(coverage_data2010_years, coverage_data2010.DTP3*100)
 plt.plot(model_date, model_vax_coverage.epDtp3Coverage)
-plt.title("DTP3 vaccine coverage", fontsize=11)
-# plt.xlabel("Year")
-# plt.ylabel("Coverage")
-# plt.xticks(rotation=90)
+plt.title("DTP3", fontsize=fontsize)
 plt.gca().set_xlim(2010, 2025)
 plt.gca().set_ylim(0, 110)
-plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper right")
+plt.xticks(fontsize=fontsize)
+plt.yticks(fontsize=fontsize)
 
 # OPV3 coverage
-plt.subplot(223)  # numrows, numcols, fignum
+plt.subplot(333)  # numrows, numcols, fignum
 plt.plot(coverage_data2010_years, coverage_data2010.Pol3*100)
 plt.plot(model_date, model_vax_coverage.epOpv3Coverage)
-plt.title("OPV3 vaccine coverage", fontsize=11)
-# plt.xlabel("Year")
-plt.ylabel("Coverage")
-# plt.xticks(rotation=90)
+plt.title("OPV3", fontsize=fontsize)
 plt.gca().set_xlim(2010, 2025)
 plt.gca().set_ylim(0, 110)
-# plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
+plt.xticks(fontsize=fontsize)
+plt.yticks(fontsize=fontsize)
 
 # Hib3 coverage
-plt.subplot(224)  # numrows, numcols, fignum
+plt.subplot(334)  # numrows, numcols, fignum
 plt.plot(coverage_data2010_years, coverage_data2010.Hib3*100)
 plt.plot(model_date, model_vax_coverage.epHib3Coverage)
-plt.title("Hib3 vaccine coverage", fontsize=11)
-# plt.xlabel("Year")
-# plt.ylabel("Coverage")
-# plt.xticks(rotation=90)
+plt.title("Hib3", fontsize=fontsize)
+plt.ylabel("Coverage", fontsize=fontsize)
 plt.gca().set_xlim(2010, 2025)
 plt.gca().set_ylim(0, 110)
-# plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
-plt.tight_layout()
-# plt.savefig(outputpath / ("EPI_1" + datestamp + ".pdf"), format='pdf', bbox_inches='tight')
-plt.show()
+plt.xticks(fontsize=fontsize)
+plt.yticks(fontsize=fontsize)
 
 # Hep3 coverage
-plt.subplot(221)  # numrows, numcols, fignum
+plt.subplot(335)  # numrows, numcols, fignum
 plt.plot(coverage_data2010_years, coverage_data2010.HepB3*100)
 plt.plot(model_date, model_vax_coverage.epHep3Coverage)
-plt.title("Hep3 vaccine coverage", fontsize=11)
-# plt.xlabel("Year")
-plt.ylabel("Coverage")
-# plt.xticks(rotation=90)
+plt.title("Hep3", fontsize=fontsize)
 plt.gca().set_xlim(2010, 2025)
 plt.gca().set_ylim(0, 110)
-# plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
+plt.xticks(fontsize=fontsize)
+plt.yticks(fontsize=fontsize)
 
 # Pneumo3 coverage
-plt.subplot(222)  # numrows, numcols, fignum
+plt.subplot(336)  # numrows, numcols, fignum
 plt.plot(coverage_data2010_years, coverage_data2010.PCV3*100)
 plt.plot(model_date, model_vax_coverage.epPneumo3Coverage)
-plt.title("Pneumo3 vaccine coverage", fontsize=11)
-# plt.xlabel("Year")
-# plt.ylabel("Coverage")
-# plt.xticks(rotation=90)
+plt.title("Pneumo3", fontsize=fontsize)
 plt.gca().set_xlim(2010, 2025)
 plt.gca().set_ylim(0, 110)
-plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
+plt.xticks(fontsize=fontsize)
+plt.yticks(fontsize=fontsize)
 
 # Rotavirus2 coverage
-plt.subplot(223)  # numrows, numcols, fignum
+plt.subplot(337)  # numrows, numcols, fignum
 plt.plot(coverage_data2010_years, coverage_data2010.Rota*100)
 plt.plot(model_date, model_vax_coverage.epRota2Coverage)
-plt.title("Rotavirus2 vaccine coverage", fontsize=11)
-# plt.xlabel("Year")
-plt.ylabel("Coverage")
-# plt.xticks(rotation=90)
+plt.title("Rotavirus2", fontsize=fontsize)
+plt.ylabel("Coverage", fontsize=fontsize)
 plt.gca().set_xlim(2010, 2025)
 plt.gca().set_ylim(0, 110)
-# plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
+plt.xticks(fontsize=fontsize)
+plt.yticks(fontsize=fontsize)
 
 # Measles coverage (1 dose)
-plt.subplot(224)  # numrows, numcols, fignum
+plt.subplot(338)  # numrows, numcols, fignum
 plt.plot(coverage_data2010_years, coverage_data2010.MCV1*100)
 plt.plot(model_date, model_vax_coverage.epMeaslesCoverage)
-plt.title("Measles vaccine coverage", fontsize=11)
-# plt.xlabel("Year")
-# plt.ylabel("Coverage")
-# plt.xticks(rotation=90)
+plt.title("Measles", fontsize=fontsize)
 plt.gca().set_xlim(2010, 2025)
 plt.gca().set_ylim(0, 110)
+plt.xticks(fontsize=fontsize)
+plt.yticks(fontsize=fontsize)
+
 plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
-plt.tight_layout()
+
+# set the spacing between subplots
+plt.subplots_adjust(wspace=0.4,
+                    hspace=0.6)
 
 plt.show()

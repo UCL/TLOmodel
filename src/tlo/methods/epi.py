@@ -195,28 +195,18 @@ class Epi(Module):
 
         birth doses occur within 24 hours of delivery
 
-        from 2010-2018 data on vaccine coverage are used to determine probability of receiving vaccine
-        vaccinations are scheduled to occur with a probability dependent on the year and district
-        from 2019 onwards, probability will be determined by personnel and vaccine availability
-
         2012 data is patchy, no record of Hep vaccine but it was used before 2012
         assume hepB3 coverage in 2012 same as 2011
         same with Hib
 
-        for births up to end 2018 schedule the vaccine as individual event (not HSI)
-        schedule the dates as the exact due date
-        then from 2019 use the HSI events - only need the current vaccines in use that way
+        Measles - first dose, only one dose pre-2017 and no rubella
+        Measles, rubella - first dose, 2018 onwards
 
         :param mother_id: the ID for the mother for this child
         :param child_id: the ID for the new child
         """
         df = self.sim.population.props  # shortcut to the population props dataframe
         p = self.parameters
-        year = self.sim.date.year
-
-        # look up coverage of every vaccine
-        # anything delivered after 12months needs the estimate from the following year
-        district = df.at[child_id, 'district_num_of_residence']
 
         # Initialise all the properties that this module looks after:
         df.loc[child_id, [
@@ -250,71 +240,8 @@ class Epi(Module):
         # ----------------------------------- 2010-2018 -----------------------------------
         vax_date = p["vaccine_schedule"]
 
-        # # from 2010-2018 use the reported vaccine coverage values and schedule individual events (not HSI)
-        # # no consumables will be tracked up to end-2018
-        # if year <= 2018:
-        #
-        #     # lookup the correct table of vaccine estimates for this child
-        #     vax_coverage = p["district_vaccine_coverage"]
-        #     ind_vax_coverage = vax_coverage.loc[(vax_coverage.District == district) & (vax_coverage.Year == year)]
-        #     assert not ind_vax_coverage.empty
-        #
-        #     # schedule bcg birth dose according to current coverage
-        #     # some values are >1
-        #     # each entry is (coverage prob key, event class, [days_to_1_administration, days_to_2_administration, etc])
-        #     pre_2018_vax_schedule = [
-        #         ('BCG', BcgVaccineEvent, ['bcg']),
-        #         # assign OPV first dose according to current coverage
-        #         # OPV doses 2-4 are given during the week 6, 10, 14 penta, pneumo, rota appts
-        #         # coverage estimates for 3 doses reported, use these for doses 2-4
-        #         ('OPV3', OpvEvent, ['opv1']),
-        #         ('OPV3', OpvEvent, ['opv2', 'opv3', 'opvIpv4']),
-        #
-        #         # DTP1_HepB - up to and including 2012, then replaced by pentavalent vaccine
-        #         ('DTP1', DtpHepVaccineEvent, ['dtpHibHep1']),
-        #
-        #         # DTP2_HepB - up to and including 2012
-        #         # second doses not reported - same coverage for second and third doses
-        #         ('DTP3', DtpHepVaccineEvent, ['dtpHibHep2', 'dtpHibHep3']),
-        #
-        #         ('Hib3', HibVaccineEvent, ['dtpHibHep1', 'dtpHibHep2', 'dtpHibHep3']),
-        #
-        #         # PNEUMO - all three doses reported separately
-        #         ('Pneumo1', PneumococcalVaccineEvent, ['pneumo1']),
-        #         ('Pneumo2', PneumococcalVaccineEvent, ['pneumo2']),
-        #         ('Pneumo3', PneumococcalVaccineEvent, ['pneumo3']),
-        #
-        #         # ROTA - doses 1 and 2 reported separately
-        #         ('Rotavirus1', RotavirusVaccineEvent, ['rota1']),
-        #         ('Rotavirus2', RotavirusVaccineEvent, ['rota2']),
-        #
-        #         # PENTA1
-        #         ('DTPHepHib1', DtpHibHepVaccineEvent, ['dtpHibHep1']),
-        #         # PENTA2 - second dose not reported so use 3 dose coverage
-        #         ('DTPHepHib3', DtpHibHepVaccineEvent, ['dtpHibHep2', 'dtpHibHep3']),
-        #
-        #         # Measles, rubella - first dose, 2018 onwards
-        #         ('MCV1_MR1', MeaslesRubellaVaccineEvent, ['MR1']),
-        #         ('MCV2_MR2', MeaslesRubellaVaccineEvent, ['MR2']),
-        #
-        #         # Measles - first dose, only one dose pre-2017 and no rubella
-        #         ('MCV1', MeaslesVaccineEvent, ['MR1'])
-        #     ]
-        #
-        #     for each_vax in pre_2018_vax_schedule:
-        #         coverage_key, vax_event, admin_schedule = each_vax
-        #         if self.rng.random_sample() < ind_vax_coverage[coverage_key].values:
-        #             vax_event_instance = vax_event(self, person_id=child_id)
-        #             for admin_key in admin_schedule:
-        #                 days_to_admin = vax_date[admin_key]
-        #                 self.sim.schedule_event(vax_event_instance, self.sim.date + DateOffset(days=days_to_admin))
-        #
-        # # ----------------------------------- 2019 onwards -----------------------------------
-        # else:
-
-        # after 2018
         # each entry is (hsi event class, [days to administration key 1, days to administration key 2, ...]
-        post_2018_vax_schedule = [
+        vax_schedule = [
             # schedule bcg - now dependent on health system capacity / stocks
             (HSI_BcgVaccine, ['bcg']),
             # OPV doses 2-4 are given during the week 6, 10, 14 penta, pneumo, rota appts
@@ -325,7 +252,7 @@ class Epi(Module):
             (HSI_MeaslesRubellaVaccine, ['MR1', 'MR2'])
         ]
 
-        for each_vax in post_2018_vax_schedule:
+        for each_vax in vax_schedule:
             vax_hsi_event, admin_schedule = each_vax
             for admin_key in admin_schedule:
                 vax_event_instance = vax_hsi_event(self, person_id=child_id)
