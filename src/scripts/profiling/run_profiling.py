@@ -25,8 +25,9 @@ def current_time(formatstr: str = "%Y-%m-%d_%H%M") -> str:
 def run_profiling(
     output_dir: Path = PROFILING_RESULTS,
     output_name: Path = None,
-    write_html: bool = True,
-    write_json: bool = True,
+    write_pyis: bool = True,
+    write_html: bool = False,
+    write_json: bool = False,
 ) -> None:
     # Suppress "ignore" warnings
     warnings.filterwarnings("ignore")
@@ -38,9 +39,11 @@ def run_profiling(
 
     # Assign output filenames
     if output_name is None:
+        output_pyis_file = output_dir / "output.pyisession"
         output_html_file = output_dir / "output.html"
         output_json_file = output_dir / "output.json"
     else:
+        output_pyis_file = output_dir / f"{output_name.stem}.pyisession"
         output_html_file = output_dir / f"{output_name.stem}.html"
         output_json_file = output_dir / f"{output_name.stem}.json"
 
@@ -67,15 +70,19 @@ def run_profiling(
     # Renderer initialisation options:
     # show_all: removes library calls where identifiable
     # timeline: if true, samples are left in chronological order rather than total time
+    if write_pyis:
+        print(f"Writing {output_html_file}", end="...", flush=True)
+        scale_run_session.save(output_pyis_file)
+        print("done")
     if write_html:
         html_renderer = HTMLRenderer(show_all=False, timeline=False)
-        print(f"Writing output to: {output_html_file}", end="...", flush=True)
+        print(f"Writing {output_html_file}", end="...", flush=True)
         with open(output_html_file, "w") as f:
             f.write(html_renderer.render(scale_run_session))
         print("done")
     if write_json:
         json_renderer = JSONRenderer(show_all=False, timeline=False)
-        print(f"Writing output to: {output_json_file}", end="...", flush=True)
+        print(f"Writing {output_json_file}", end="...", flush=True)
         with open(output_json_file, "w") as f:
             f.write(json_renderer.render(scale_run_session))
         print("done")
@@ -85,6 +92,12 @@ def run_profiling(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=HELP_STR)
+    parser.add_argument(
+        "--pyis",
+        action="store_true",
+        help="Write .ipysession output.",
+        dest="write_pyis",
+    )
     parser.add_argument(
         "--html", action="store_true", help="Write HTML output.", dest="write_html"
     )
