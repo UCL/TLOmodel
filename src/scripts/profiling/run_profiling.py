@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from _parameters import scale_run_parameters
-from _paths import PROFILING_HTML, PROFILING_JSON
+from _paths import PROFILING_RESULTS
 from pyinstrument import Profiler
 from pyinstrument.renderers import HTMLRenderer, JSONRenderer
 from scale_run import scale_run
@@ -23,8 +23,7 @@ def current_time(formatstr: str = "%Y-%m-%d_%H%M") -> str:
 
 
 def run_profiling(
-    html_dir: Path = PROFILING_HTML,
-    json_dir: Path = PROFILING_JSON,
+    output_dir: Path = PROFILING_RESULTS,
     output_name: Path = None,
     write_html: bool = True,
     write_json: bool = True,
@@ -32,21 +31,18 @@ def run_profiling(
     # Suppress "ignore" warnings
     warnings.filterwarnings("ignore")
 
-    # Grab the timestamp that this function started running at,
-    # this will be recorded in metadata and used in default output names
-    timestamp = current_time()
+    # Create the directory that this profiling run will live in
+    output_dir = output_dir / current_time("%Y/%m/%d/%H%M")
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
-    # Setup output directory(ies) if not present
-    for dir in [html_dir, json_dir]:
-        if not os.path.exists(dir):
-            os.mkdir(dir)
     # Assign output filenames
     if output_name is None:
-        output_html_file = html_dir / f"{timestamp}.html"
-        output_json_file = json_dir / f"{timestamp}.json"
+        output_html_file = output_dir / f"output.html"
+        output_json_file = output_dir / f"output.json"
     else:
-        output_html_file = html_dir / f"{output_name.stem}.html"
-        output_json_file = json_dir / f"{output_name.stem}.json"
+        output_html_file = output_dir / f"{output_name.stem}.html"
+        output_json_file = output_dir / f"{output_name.stem}.json"
 
     # Create the profiler to record the stack
     # An instance of a Profiler can be start()-ed and stop()-ped multiple times,
@@ -96,16 +92,10 @@ if __name__ == "__main__":
         "--json", action="store_true", help="Write JSON output.", dest="write_json"
     )
     parser.add_argument(
-        "--html_dir",
+        "--output_dir",
         type=Path,
-        help="Redirect the HTML output to this directory.",
-        default=PROFILING_HTML,
-    )
-    parser.add_argument(
-        "--json_dir",
-        type=Path,
-        help="Redirect the JSON output to this directory.",
-        default=PROFILING_JSON,
+        help="Redirect the output(s) to this directory.",
+        default=PROFILING_RESULTS,
     )
     parser.add_argument(
         "--output_name",
