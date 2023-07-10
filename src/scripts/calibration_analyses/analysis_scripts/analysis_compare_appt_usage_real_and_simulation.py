@@ -393,7 +393,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.yaxis.grid(True, which='major', linestyle='--')
     ax.set_ylabel('Usage per level / Real usage all levels')
     ax.set_xlabel('Appointment Type')
-    ax.set_title('Model vs Real usage per appointment type, with fraction per level')
+    ax.set_title('Model vs Real usage per appointment type, with fraction per level'
+                 '\n[Model average annual, Real average annual]')
     legend_1 = plt.legend(simulation_usage_plot.columns, loc='upper left', bbox_to_anchor=(1.0, 0.5),
                           title='Facility Level')
     patch_simulation = matplotlib.patches.Patch(facecolor='beige', hatch='', label='Model')
