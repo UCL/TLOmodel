@@ -147,13 +147,23 @@ combined_tb_table.to_excel(outputspath / "combined_tb_tables.xlsx")
 scaling_factor_key = log['tlo.methods.demography']['scaling_factor']
 print("Scaling Factor Key:", scaling_factor_key)
 
+# def get_tb_dalys(df_):
+#     # Get DALYs of TB
+#     years = df_['year'].value_counts().keys()
+#     dalys = pd.Series(dtype='float64', index=years)
+#     for year in years:
+#         tot_dalys = df_.drop(columns='date').groupby(['year']).sum().apply(pd.Series)
+#         dalys[year] = tot_dalys.loc[(year, ['TB (non-AIDS)', 'non_AIDS_TB'])].sum()
+#     dalys.sort_index()
+#    return dalys
+
 def get_tb_dalys(df_):
     # Get DALYs of TB
-    years = df_['year'].value_counts().keys()
-    dalys = pd.Series(dtype='float64', index=years)
-    for year in years:
-        tot_dalys = df_.drop(columns='date').groupby(['year']).sum().apply(pd.Series)
-        dalys[year] = tot_dalys.loc[(year, ['TB (non-AIDS)', 'non_AIDS_TB'])].sum()
+    draws = df_['draw'].value_counts().keys()
+    dalys = pd.Series(dtype='float64', index=draws)
+    for draw in draws:
+        tot_dalys = df_.drop(columns='date').groupby(['draw']).sum().apply(pd.Series)
+        dalys[draw] = tot_dalys.loc[(draw, ['TB (non-AIDS)', 'non_AIDS_TB'])].sum()
     dalys.sort_index()
     return dalys
 
@@ -167,10 +177,12 @@ tb_dalys_count = extract_results(
 )
 
 # Get mean/upper/lower statistics
+# dalys_summary = summarize(tb_dalys_count).sort_index()
+# dalys_summary.index = dalys_summary.index.map(scenario_mapping)
+
 dalys_summary = summarize(tb_dalys_count).sort_index()
-#dalys_summary = summarize(get_tb_dalys).loc[0].unstack()
-#dalys_summary = (tb_dalys_count).sort_index()
-#dalys_summary.index = dalys_summary.index.map(scenario_mapping)
+dalys_summary.index = dalys_summary.index.map(scenario_mapping)
+
 print("DALYs for TB are as follows:")
 print(dalys_summary)
 dalys_summary.to_excel(outputspath / "summarised_tb_dalys.xlsx")
@@ -352,35 +364,26 @@ child_Tb_prevalence.index = child_Tb_prevalence.index.year
 child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence_sample.xlsx")
 
 ###### PLOTS##################################################
+# Plot the bar graph
 import matplotlib.pyplot as plt
 
-# Create subplots
-fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(10, 12))
+# Reset the index of dalys_summary
+dalys_summary = dalys_summary.reset_index()
 
-# # Plot raw_mortality
-# axes[0].plot( tb_mortality.index,    tb_mortality["mean"], label="Mean")
-# axes[0].fill_between(   tb_mortality.index, tb_mortality["lower"], tb_mortality["upper"], alpha=0.3, label="95% CI")
-# axes[0].set_xlabel("Year")
-# axes[0].set_ylabel("Raw Mortality")
-# axes[0].legend()
+# Plot the bar graph with error bars
+fig, ax = plt.subplots(figsize=(10, 6))
+dalys_summary.plot.bar(ax=ax, x='draw', y='mean', yerr=dalys_summary[['lower', 'upper']].values.T)
+
+# Set the labels and title
+ax.set_xlabel('Scenario')
+ax.set_ylabel('DALYs')
+ax.set_title('DALYs for TB by Scenario')
+
+# Save the plot
+plt.savefig(outputspath / "tb_dalys_bar_graph.png")
+plt.show()
 
 
-# Plot DALYs
-axes[1].plot(dalys_summary.reset_index()["index"], dalys_summary["mean"], label="Mean")
-axes[1].fill_between(dalys_summary.reset_index()["index"], dalys_summary["lower"], dalys_summary["upper"], alpha=0.3, label="95% CI")
-axes[1].set_xlabel("Year")
-axes[1].set_ylabel("DALYs")
-axes[1].legend()
 
-# Plot incidence_rate
-axes[2].plot(Tb_inc_rate.reset_index()["index"], Tb_inc_rate["mean"], label="Mean")
-axes[2].fill_between(Tb_inc_rate.reset_index()["index"], Tb_inc_rate["lower"], Tb_inc_rate["upper"], alpha=0.3, label="95% CI")
-axes[2].set_xlabel("Year")
-axes[2].set_ylabel("Incidence Rate")
-axes[2].legend()
 
-# Adjust spacing between subplots
-plt.tight_layout()
 
-# Save the figure
-plt.savefig(outputspath / "subplots.png")
