@@ -391,15 +391,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                          ax=ax, position=1)
     ax.set_xlim(right=len(simulation_usage_plot) - 0.5)
     ax.yaxis.grid(True, which='major', linestyle='--')
-    ax.set_ylabel('Usage per level / Usage all levels')
+    ax.set_ylabel('Usage per level / Real usage all levels')
     ax.set_xlabel('Appointment Type')
     ax.set_title('Model vs Real usage per appointment type, with fraction per level')
-    # ax.axhline(1.0, color='black', linestyle='--')
-    # ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
     legend_1 = plt.legend(simulation_usage_plot.columns, loc='upper left', bbox_to_anchor=(1.0, 0.5),
                           title='Facility Level')
-    patch_simulation = matplotlib.patches.Patch(facecolor='beige', hatch='', label='Model vs Real')
-    patch_real = matplotlib.patches.Patch(facecolor='beige', hatch='', edgecolor="black", label='Real vs Real')
+    patch_simulation = matplotlib.patches.Patch(facecolor='beige', hatch='', label='Model')
+    patch_real = matplotlib.patches.Patch(facecolor='beige', hatch='', edgecolor="black", label='Real')
     legend_2 = plt.legend(handles=[patch_simulation, patch_real], loc='lower left', bbox_to_anchor=(1.0, 0.6))
     fig.add_artist(legend_1)
     fig.tight_layout()
@@ -430,7 +428,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _ax.axhline(1.0, color='r')
         format_and_save(_fig, _ax, _name_of_plot)
 
-    # Plot Simulation with 95% CI vs Model
+    # Plot Simulation with 95% CI vs Real
     # Get usage and ratio across all levels
     simulation_usage_with_ci = get_simulation_usage_with_confidence_interval(results_folder)
     real_usage_all_levels = real_usage.sum(axis=0).reset_index().rename(
@@ -444,7 +442,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                       '\n[Model average annual with 95% CI, Real average annual]'
     plot_model_vs_data_usage_with_ci(rel_diff_with_ci_simulation, name_of_plot_with_ci_simulation)
 
-    # Plot Simulation vs Model with 95% CI
+    # Plot Simulation vs Real with 95% CI
     # Get usage and ratio across all levels
     real_usage_with_ci = get_real_usage(resourcefilepath)[2].rename(columns={'Appt_Type': 'appt_type'})
     simulation_usage_all_levels = simulation_usage.sum(axis=0).reset_index().rename(
