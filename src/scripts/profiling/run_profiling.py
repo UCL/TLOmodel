@@ -38,8 +38,8 @@ def run_profiling(
 
     # Assign output filenames
     if output_name is None:
-        output_html_file = output_dir / f"output.html"
-        output_json_file = output_dir / f"output.json"
+        output_html_file = output_dir / "output.html"
+        output_json_file = output_dir / "output.json"
     else:
         output_html_file = output_dir / f"{output_name.stem}.html"
         output_json_file = output_dir / f"{output_name.stem}.json"
