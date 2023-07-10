@@ -31,7 +31,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2014, 12, 31)
+end_date = Date(2020, 12, 31)
 popsize = 500
 
 log_config = {
@@ -136,6 +136,8 @@ plt.gca().set_ylim(0, 110)
 plt.xticks(fontsize=fontsize)
 plt.yticks(fontsize=fontsize)
 
+plt.legend(["WHO", "Model"])
+
 # Hib3 coverage
 plt.subplot(334)  # numrows, numcols, fignum
 plt.plot(coverage_data2010_years, coverage_data2010.Hib3*100)
@@ -178,17 +180,25 @@ plt.gca().set_ylim(0, 110)
 plt.xticks(fontsize=fontsize)
 plt.yticks(fontsize=fontsize)
 
-# Measles coverage (1 dose)
+# Measles coverage (1 dose recommended up to 2018)
 plt.subplot(338)  # numrows, numcols, fignum
 plt.plot(coverage_data2010_years, coverage_data2010.MCV1*100)
 plt.plot(model_date, model_vax_coverage.epMeaslesCoverage)
-plt.title("Measles", fontsize=fontsize)
+plt.title("Measles/Rubella", fontsize=fontsize)
 plt.gca().set_xlim(2010, 2025)
 plt.gca().set_ylim(0, 110)
 plt.xticks(fontsize=fontsize)
 plt.yticks(fontsize=fontsize)
 
-plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
+# Measles coverage (2 doses recommended from 2018)
+plt.subplot(339)  # numrows, numcols, fignum
+plt.plot(coverage_data2010_years, coverage_data2010.MCV2*100)
+plt.plot(model_date, model_vax_coverage.epMeasles2Coverage)
+plt.title("Measles/Rubella 2 dose", fontsize=fontsize)
+plt.gca().set_xlim(2010, 2025)
+plt.gca().set_ylim(0, 110)
+plt.xticks(fontsize=fontsize)
+plt.yticks(fontsize=fontsize)
 
 # set the spacing between subplots
 plt.subplots_adjust(wspace=0.4,

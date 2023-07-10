@@ -588,6 +588,7 @@ class EpiLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # so check coverage in 15 month -2 year olds
         from_15_months_to_two = df.is_alive & (df.age_exact_years >= 1.25) & (df.age_years <= 2)
         measles_coverage = get_coverage(df.va_measles >= 1, from_15_months_to_two)
+        measles2_coverage = get_coverage(df.va_measles >= 2, from_15_months_to_two)
 
         # rubella vaccination coverage in <2 year old children - 1 dose
         # first dose is at 9 months, second dose is 15 months
@@ -610,6 +611,7 @@ class EpiLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "epPneumo3Coverage": pneumo3_coverage,
                 "epRota2Coverage": rota_coverage,
                 "epMeaslesCoverage": measles_coverage,
+                "epMeasles2Coverage": measles2_coverage,
                 "epRubellaCoverage": rubella_coverage,
                 "epHpvCoverage": hpv_coverage
             }
