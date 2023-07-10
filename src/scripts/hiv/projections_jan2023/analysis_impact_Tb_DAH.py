@@ -147,23 +147,13 @@ combined_tb_table.to_excel(outputspath / "combined_tb_tables.xlsx")
 scaling_factor_key = log['tlo.methods.demography']['scaling_factor']
 print("Scaling Factor Key:", scaling_factor_key)
 
-# def get_tb_dalys(df_):
-#     # Get DALYs of TB
-#     years = df_['year'].value_counts().keys()
-#     dalys = pd.Series(dtype='float64', index=years)
-#     for year in years:
-#         tot_dalys = df_.drop(columns='date').groupby(['year']).sum().apply(pd.Series)
-#         dalys[year] = tot_dalys.loc[(year, ['TB (non-AIDS)', 'non_AIDS_TB'])].sum()
-#     dalys.sort_index()
-#    return dalys
-
 def get_tb_dalys(df_):
     # Get DALYs of TB
-    draws = df_['draw'].value_counts().keys()
-    dalys = pd.Series(dtype='float64', index=draws)
-    for draw in draws:
-        tot_dalys = df_.drop(columns='date').groupby(['draw']).sum().apply(pd.Series)
-        dalys[draw] = tot_dalys.loc[(draw, ['TB (non-AIDS)', 'non_AIDS_TB'])].sum()
+    years = df_['year'].value_counts().keys()
+    dalys = pd.Series(dtype='float64', index=years)
+    for year in years:
+        tot_dalys = df_.drop(columns='date').groupby(['year']).sum().apply(pd.Series)
+        dalys[year] = tot_dalys.loc[(year, ['TB (non-AIDS)', 'non_AIDS_TB'])].sum()
     dalys.sort_index()
     return dalys
 
@@ -177,12 +167,11 @@ tb_dalys_count = extract_results(
 )
 
 # Get mean/upper/lower statistics
-# dalys_summary = summarize(tb_dalys_count).sort_index()
-# dalys_summary.index = dalys_summary.index.map(scenario_mapping)
-
 dalys_summary = summarize(tb_dalys_count).sort_index()
 dalys_summary.index = dalys_summary.index.map(scenario_mapping)
-
+#dalys_summary = summarize(get_tb_dalys).loc[0].unstack()
+#dalys_summary = (tb_dalys_count).sort_index()
+#dalys_summary.index = dalys_summary.index.map(scenario_mapping)
 print("DALYs for TB are as follows:")
 print(dalys_summary)
 dalys_summary.to_excel(outputspath / "summarised_tb_dalys.xlsx")
@@ -367,20 +356,21 @@ child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence_sample.xlsx")
 # Plot the bar graph
 import matplotlib.pyplot as plt
 
-# Reset the index of dalys_summary
-dalys_summary = dalys_summary.reset_index()
+# Select the columns for mean, lower, and upper
+mean_values = dalys_summary.loc[:, (slice(None), 'mean')]
+lower_values = dalys_summary.loc[:, (slice(None), 'lower')]
+upper_values = dalys_summary.loc[:, (slice(None), 'upper')]
 
-# Plot the bar graph with error bars
+# Plot the bar graph
 fig, ax = plt.subplots(figsize=(10, 6))
-dalys_summary.plot.bar(ax=ax, x='draw', y='mean', yerr=dalys_summary[['lower', 'upper']].values.T)
+mean_values.plot.bar(ax=ax, yerr=[mean_values.values - lower_values.values, upper_values.values - mean_values.values])
 
 # Set the labels and title
-ax.set_xlabel('Scenario')
+ax.set_xlabel('Draw')
 ax.set_ylabel('DALYs')
-ax.set_title('DALYs for TB by Scenario')
+ax.set_title('DALYs for TB by Draw')
 
-# Save the plot
-plt.savefig(outputspath / "tb_dalys_bar_graph.png")
+# Show the plot
 plt.show()
 
 
