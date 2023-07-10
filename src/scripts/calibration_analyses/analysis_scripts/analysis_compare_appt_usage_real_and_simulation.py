@@ -50,6 +50,7 @@ def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
             .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code_And_Level'] \
             .pipe(unpack_nested_dict_in_series) \
             .rename(columns=appt_dict, level=1) \
+            .rename(columns={'1b': '2'}, level=0) \
             .groupby(level=[0, 1], axis=1).sum() \
             .mean(axis=0)  # mean over each year (row)
 
@@ -85,6 +86,7 @@ def get_annual_num_appts_by_level_with_confidence_interval(results_folder: Path)
             .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code_And_Level'] \
             .pipe(unpack_nested_dict_in_series) \
             .rename(columns=appt_dict, level=1) \
+            .rename(columns={'1b': '2'}, level=0) \
             .groupby(level=[0, 1], axis=1).sum() \
             .mean(axis=0)  # mean over each year (row)
 
@@ -264,6 +266,11 @@ def get_real_usage(resourcefilepath, adjusted=True) -> pd.DataFrame:
 
     annual_usage_by_level = pd.concat([totals_by_year.reset_index(), totals_by_year_TB.reset_index()], axis=0)
 
+    # group levels 1b and 2 into 2
+    annual_usage_by_level['Facility_Level'] = annual_usage_by_level['Facility_Level'].replace({'1b': '2'})
+    annual_usage_by_level = annual_usage_by_level.groupby(
+        ['Year', 'Appt_Type', 'Facility_Level'])['Usage'].sum().reset_index()
+
     # prepare annual usage by level with mean, 75% percentile, and 25% percentile
     annual_usage_by_level_with_ci = annual_usage_by_level.drop(columns='Year').groupby(
         ['Appt_Type', 'Facility_Level']
@@ -309,7 +316,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _ax.yaxis.grid(True, which='both', linestyle='--')
         _ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
         _fig.tight_layout()
-        _fig.savefig(make_graph_file_name(_name_of_plot.replace('\n', '_').replace(' ', '_')))
+        _fig.savefig(make_graph_file_name(_name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
         _fig.show()
         plt.close(_fig)
 
@@ -317,10 +324,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # get average annual usage by level for Simulation and Real
     simulation_usage = get_simulation_usage_by_level(results_folder)
-    simulation_usage = simulation_usage.reset_index().replace({'index': {'1b': '2'}}).groupby('index').sum()
 
     real_usage = get_real_usage(resourcefilepath)[0]
-    real_usage = real_usage.reset_index().replace({'Facility_Level': {'1b': '2'}}).groupby('Facility_Level').sum()
 
     # Plot Simulation vs Real usage (Across all levels) (trimmed to 0.1 and 10)
     rel_diff_all_levels = (
@@ -403,7 +408,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     legend_2 = plt.legend(handles=[patch_simulation, patch_real], loc='lower left', bbox_to_anchor=(1.0, 0.6))
     fig.add_artist(legend_1)
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace('\n', '_').replace(' ', '_')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
     plt.show()
 
     # Plot Simulation vs Adjusted & Real usage by level by appt type and show fraction of usage at each level
@@ -436,7 +441,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                        ).dropna(axis=1, how='all')
     # plot
     name_of_plot = 'Model vs Real usage per appointment type, with fraction per level' \
-                   '\n[Model average annual, Adjusted & Unadjusted Real average annual]'
+                   '\n[Model average annual, Adjusted & Unadjusted real average annual]'
     fig, ax = plt.subplots(figsize=(8, 5))
     cmp_paired = plt.get_cmap('Paired')
     cmp_paried_0 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(0, 10, 2)))
@@ -460,7 +465,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     legend_1 = plt.legend(handles=[patch_simulation_0, patch_simulation_1], loc='lower left', bbox_to_anchor=(1.0, 0.6))
     fig.add_artist(legend_0)
     fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace('\n', '_').replace(' ', '_')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
     plt.show()
 
     def plot_model_vs_data_usage_with_ci(_rel_diff_with_ci, _name_of_plot):
@@ -515,6 +520,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # plot
     name_of_plot_with_ci_real = 'Model vs Real usage per appt type at all facility levels' \
                                 '\n[Model average annual, Real average annual with 95% CI]'
+    plot_model_vs_data_usage_with_ci(rel_diff_with_ci_real, name_of_plot_with_ci_real)
+
+    # Plot Simulation vs Unadjusted Real with 95% CI
+    # Get usage and ratio across all levels
+    real_usage_with_ci = get_real_usage(resourcefilepath, adjusted=False)[2].rename(columns={'Appt_Type': 'appt_type'})
+    simulation_usage_all_levels = simulation_usage.sum(axis=0).reset_index().rename(
+        columns={0: 'simulation_usage', 'index': 'appt_type'})
+    rel_diff_with_ci_real = real_usage_with_ci.merge(simulation_usage_all_levels, on='appt_type', how='outer')
+    rel_diff_with_ci_real['ratio'] = (rel_diff_with_ci_real['simulation_usage'] /
+                                      rel_diff_with_ci_real['value']).clip(upper=10, lower=0.1)
+    rel_diff_with_ci_real.drop(columns=['value', 'simulation_usage'], inplace=True)
+    rel_diff_with_ci_real.value_type = rel_diff_with_ci_real.value_type.replace({'lower': 'upper', 'upper': 'lower'})
+    # plot
+    name_of_plot_with_ci_real = 'Model vs Real usage per appt type at all facility levels' \
+                                '\n[Model average annual, Unadjusted Real average annual with 95% CI]'
     plot_model_vs_data_usage_with_ci(rel_diff_with_ci_real, name_of_plot_with_ci_real)
 
 
