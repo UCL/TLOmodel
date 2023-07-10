@@ -24,7 +24,7 @@ outputspath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
-results_folder = get_scenario_outputs("Tb_DAH_sample_runs-2023-07-09T053225Z", outputspath)[-1]
+results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_run-2023-07-09T114603Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -213,73 +213,73 @@ print(f"The scaling factor is: {log['tlo.methods.demography']['scaling_factor']}
 
 
 
-# # Extracts PLHIV with TB
-# tb_hiv_prop = summarize(
-#     extract_results(
-#         results_folder,
-#         module="tlo.methods.tb",
-#         key="tb_incidence",
-#         column="prop_active_tb_in_plhiv",
-#         index="date",
-#         do_scaling=False,
-#     ),
-#     collapse_columns=True,
-# )
-# tb_hiv_prop.index = tb_hiv_prop.index.year
-# tb_hiv_prop_with_year = pd.DataFrame(tb_hiv_prop)
-# tb_hiv_prop.to_excel(outputspath / "PLHIV_tb_baseline.xlsx")
-# #MDR TB cases
-# mdr_tb_cases = summarize(
-#     extract_results(
-#         results_folder,
-#         module="tlo.methods.tb",
-#         key="tb_mdr",
-#         column="tbPropActiveCasesMdr",
-#         index="date",
-#         do_scaling=False,
-#     ),
-#     collapse_columns=True,
-# )
-# mdr_tb_cases.index = mdr_tb_cases.index.year
-# mdr_tb = pd.DataFrame(mdr_tb_cases)
-# mdr_tb.to_excel(outputspath / "mdr_tb_baseline.xlsx")
-#
-# # TB treatment coverage
-# tb_treatment = summarize(
-#         extract_results(
-#             results_folder,
-#             module="tlo.methods.tb",
-#             key="tb_treatment",
-#             column="tbTreatmentCoverage",
-#             index="date",
-#             do_scaling=False,
-#         ),
-#         collapse_columns=True,
-#     )
-#
-# #tb_treatment.index = tb_treatment.index.year,
-# tb_treatment_cov = pd.DataFrame(tb_treatment)
-# tb_treatment_cov.to_excel(outputspath / "tb_treatment_coverage_baseline.xlsx")
-#
-# #TB Incidence
-# tb_inc = summarize(
-#     extract_results(
-#         results_folder,
-#         module="tlo.methods.tb",
-#         key="tb_incidence",
-#         column="num_new_active_tb",
-#         index="date",
-#         do_scaling=False,
-#     ),
-#     collapse_columns=True,
-# )
-# print(tb_inc)
-# tb_incidence = pd.DataFrame(tb_inc)
-# tb_incidence.to_excel(outputspath / "tb_incidence_baseline.xlsx")
-#
-# tb_inc.index = tb_inc.index.year
-# print(tb_inc.head())
-# print(pyears_summary.head())
-# tb_inc = tb_inc.reset_index(drop=True)
-# #pyears = pyears.reset_index(drop=True)
-# pyears_summary = pyears_summary.reset_index(drop=True)
+# Extracts PLHIV with TB
+tb_hiv_prop = summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_incidence",
+        column="prop_active_tb_in_plhiv",
+        index="date",
+        do_scaling=False,
+    ),
+    collapse_columns=True,
+)
+tb_hiv_prop.index = tb_hiv_prop.index.year
+tb_hiv_prop_with_year = pd.DataFrame(tb_hiv_prop)
+tb_hiv_prop.to_excel(outputspath / "PLHIV_tb_baseline.xlsx")
+#MDR TB cases
+mdr_tb_cases = summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_mdr",
+        column="tbPropActiveCasesMdr",
+        index="date",
+        do_scaling=False,
+    ),
+    collapse_columns=True,
+)
+mdr_tb_cases.index = mdr_tb_cases.index.year
+mdr_tb = pd.DataFrame(mdr_tb_cases)
+mdr_tb.to_excel(outputspath / "mdr_tb_baseline.xlsx")
+
+# TB treatment coverage
+tb_treatment = summarize(
+        extract_results(
+            results_folder,
+            module="tlo.methods.tb",
+            key="tb_treatment",
+            column="tbTreatmentCoverage",
+            index="date",
+            do_scaling=False,
+        ),
+        collapse_columns=True,
+    )
+
+#tb_treatment.index = tb_treatment.index.year,
+tb_treatment_cov = pd.DataFrame(tb_treatment)
+tb_treatment_cov.to_excel(outputspath / "tb_treatment_coverage_baseline.xlsx")
+
+#TB Incidence
+tb_inc = summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_incidence",
+        column="num_new_active_tb",
+        index="date",
+        do_scaling=False,
+    ),
+    collapse_columns=True,
+)
+print(tb_inc)
+tb_incidence = pd.DataFrame(tb_inc)
+tb_incidence.to_excel(outputspath / "tb_incidence_baseline.xlsx")
+
+tb_inc.index = tb_inc.index.year
+print(tb_inc.head())
+print(pyears_summary.head())
+tb_inc = tb_inc.reset_index(drop=True)
+#pyears = pyears.reset_index(drop=True)
+pyears_summary = pyears_summary.reset_index(drop=True)
