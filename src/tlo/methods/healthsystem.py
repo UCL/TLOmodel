@@ -473,8 +473,10 @@ class HealthSystem(Module):
             Types.LIST, 'List of services to be available. NB. This parameter is over-ridden if an argument is provided'
                         ' to the module initialiser.'),
 
-        'Policy_Name': Parameter(
-            Types.STRING, "Name of priority policy to be adopted"),
+        'Policy_Name_pre2023': Parameter(
+            Types.STRING, "Name of priority policy assumed to have been adopted until 2023"),
+        'Policy_Name_from2023': Parameter(
+            Types.STRING, "Name of priority policy to be adopted from 2023 onwards"),
         'PriorityRank': Parameter(
             Types.DICT, "Data on the priority ranking of each of the Treatment_IDs to be adopted by "
                         " the queueing system under different policies, where the lower the number the higher"
@@ -485,8 +487,8 @@ class HealthSystem(Module):
             Types.INT, "Decide whether to overwrite tclose variables assigned by disease modules"),
 
         'tclose_days_offset_overwrite': Parameter(
-            Types.INT, "Offset in days from topen at which tclose will be set by the healthsystem for all hsis"
-                       "if tclose_overwrite = True."),
+            Types.INT, "Offset in days from topen at which tclose will be set by the healthsystem for all HSIs"
+                       "if tclose_overwrite is set to True."),
 
         # Mode Appt Constraints
         'mode_appt_constraints': Parameter(
@@ -516,7 +518,6 @@ class HealthSystem(Module):
         lowest_priority_considered: int = 2,
         ignore_priority: bool = False,
         policy_name: Optional[str] = None,
-        include_fasttrack_routes: Optional[bool] = None,
         tclose_overwrite: Optional[int] = None,
         tclose_days_offset_overwrite: Optional[int] = None,
         max_squeeze_by_priority: dict = None,  # This should be moved from here
@@ -546,8 +547,6 @@ class HealthSystem(Module):
         :param ignore_priority: If ``True`` do not use the priority information in HSI
             event to schedule
         :param priority_name: name of priority policy that will be adopted
-        :param include_fasttrack_routes: If 'True' then include fast-tracking options for vulnerable categories;
-            otherwise ignore indicators for fast-tracking. Options are specified in the PriorityRank ResourceFile
         :param lowest_priority_considered: If priority lower (i.e. priority value greater than) this, do not schedule
             (and instead call `never_ran` at the time of `tclose`).
         :max_squeeze_by_priority: contains maximum squeeze allowed under mode_appt_constraints=2 given priority of
@@ -605,7 +604,7 @@ class HealthSystem(Module):
         if policy_name is not None:
             assert policy_name in ['None', 'Default', 'Test', 'Random', 'Naive', 'RMNCH',
                                    'VerticalProgrammes', 'ClinicallyVulnerable', 'EHP_III',
-                                   'EHP1_ordered', 'LCOA_EHP', 'EHP4_LPP_ordered']
+                                   'LCOA_EHP']
         self.arg_policy_name = policy_name
 
         self.tclose_overwrite = None
@@ -617,8 +616,6 @@ class HealthSystem(Module):
         self.arg_tclose_days_offset_overwrite = tclose_days_offset_overwrite
 
         self.lowest_priority_considered = lowest_priority_considered
-
-        self.include_fasttrack_routes = include_fasttrack_routes
 
         # Store the fast tracking channels that will be relevant for policy given the modules included
         # self.arg_list_fasttrack = list_fasttrack
@@ -756,9 +753,7 @@ class HealthSystem(Module):
                                                                     'VerticalProgrammes',
                                                                     'RMNCH',
                                                                     'EHP_III',
-                                                                    'EHP2_ordered',
-                                                                    'LCOA_EHP',
-                                                                    'EHP4_LPP_ordered'])
+                                                                    'LCOA_EHP'])
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
@@ -790,54 +785,32 @@ class HealthSystem(Module):
         self.tclose_overwrite = self.get_tclose_overwrite()
         self.tclose_days_offset_overwrite = self.get_tclose_days_offset_overwrite()
 
-        # Determine name of policy to be considered.
-        self.policy_name = self.get_policy_name()
+        # Determine name of policy to be considered **at the start of the simulation**.
+        self.policy_name = self.get_policy_name_pre2023()
 
         # If adopting policies, initialise here all other relevant variables.
         # Use of "None" as string is not ideal, however couldn't seem to recover actual
         # None from parameter file.
         if self.policy_name != "None":
+            self.load_priority_policy(self.policy_name)
 
-            # Select the chosen policy from dictionary of all possible policies
-            Policy_df = self.parameters['PriorityRank'][self.policy_name]
-
-            # Check that no duplicates are included in priority input file
-            assert not Policy_df['Treatment'].duplicated().any()
-
-            # If a policy is adopted, following variables *must* always be taken from policy.
-            # Over-write any other values here.
-            self.lowest_priority_considered = Policy_df.loc[Policy_df['Treatment'] == 'lowest_priority_considered',
-                                                            'Priority'].iloc[0]
-
-            if Policy_df.loc[Policy_df['Treatment'] == 'include_fasttrack_routes',
-                             'Priority'].iloc[0] == 1:
-                self.include_fasttrack_routes = True
-
-            # Remove them from dataframe.
-            Policy_df.drop(Policy_df.loc[Policy_df['Treatment'] == 'lowest_priority_considered'].index, inplace=True)
-            Policy_df.drop(Policy_df.loc[Policy_df['Treatment'] == 'include_fasttrack_routes'].index, inplace=True)
-
-            # Convert policy dataframe into dictionary to speed-up look-up process.
-            self.priority_rank_dict = \
-                Policy_df.set_index("Treatment", drop=True).to_dict(orient="index")
-
-            # Initialise the fast-tracking routes.
-            # The attributes that can be looked up to determine whether a person might be eligible
-            # for fast-tracking, as well as the corresponding fast-tracking channels, depend on the modules
-            # included in the simulation. Store the attributes&channels pairs allowed given the modules included
-            # to avoid having to recheck which modules are saved every time an HSI_Event is scheduled.
-            if self.include_fasttrack_routes:
-                self.list_fasttrack.append(('age_exact_years', 'FT_if_5orUnder'))
-                if 'Contraception' in self.sim.modules or 'SimplifiedBirths' in self.sim.modules:
-                    self.list_fasttrack.append(('is_pregnant', 'FT_if_pregnant'))
-                if 'Hiv' in self.sim.modules:
-                    self.list_fasttrack.append(('hv_diagnosed', 'FT_if_Hivdiagnosed'))
-                if 'Tb' in self.sim.modules:
-                    self.list_fasttrack.append(('tb_diagnosed', 'FT_if_tbdiagnosed'))
+        # Initialise the fast-tracking routes.
+        # The attributes that can be looked up to determine whether a person might be eligible
+        # for fast-tracking, as well as the corresponding fast-tracking channels, depend on the modules
+        # included in the simulation. Store the attributes&channels pairs allowed given the modules included
+        # to avoid having to recheck which modules are saved every time an HSI_Event is scheduled.
+        self.list_fasttrack.append(('age_exact_years', 'FT_if_5orUnder'))
+        if 'Contraception' in self.sim.modules or 'SimplifiedBirths' in self.sim.modules:
+            self.list_fasttrack.append(('is_pregnant', 'FT_if_pregnant'))
+        if 'Hiv' in self.sim.modules:
+            self.list_fasttrack.append(('hv_diagnosed', 'FT_if_Hivdiagnosed'))
+        if 'Tb' in self.sim.modules:
+            self.list_fasttrack.append(('tb_diagnosed', 'FT_if_tbdiagnosed'))
 
         # Initialise look-up table for max squeeze by priority to avoid invoking fnc
         self.max_squeeze_by_priority = dict([(0, self.get_max_squeeze_based_on_priority(0))])
-        for i in range(1, self.lowest_priority_considered+1):
+        # Assume very high lowest priority (10) to ensure this can be generalised to any policy
+        for i in range(1, 10):
             self.max_squeeze_by_priority[i] = self.get_max_squeeze_based_on_priority(i)
 
         print("Health System considered:")
@@ -845,7 +818,6 @@ class HealthSystem(Module):
         print("ignore_priority:", self.ignore_priority)
         print("name of policy:", self.policy_name)
         print("lowest_priority_considered:", self.lowest_priority_considered)
-        print("include fasttracking routes:", self.include_fasttrack_routes)
         print("tclose_overwrite", self.tclose_overwrite)
         print("tclose_days_offset_overwrite", self.tclose_days_offset_overwrite)
 
@@ -886,6 +858,10 @@ class HealthSystem(Module):
         if not (self.disable or self.disable_and_reject_all):
             self.healthsystemscheduler = HealthSystemScheduler(self)
             sim.schedule_event(self.healthsystemscheduler, sim.date)
+
+        # Schedule priority policy change
+        if self.parameters["Policy_Name_pre2023"] != self.parameters["Policy_Name_from2023"]:
+            sim.schedule_event(HealthSystemChangePriorityPolicy(self), Date(2023, 1, 1))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -1161,11 +1137,11 @@ class HealthSystem(Module):
             if self.arg_use_funded_or_actual_staffing is None \
             else self.arg_use_funded_or_actual_staffing
 
-    def get_policy_name(self) -> str:
+    def get_policy_name_pre2023(self) -> str:
         """Returns `policy_name`. (Should be equal to what is specified by the parameter, but
         overwrite with what was provided in argument if an argument was specified -- provided for backward
         compatibility/debugging.)"""
-        return self.parameters['Policy_Name'] \
+        return self.parameters['Policy_Name_pre2023'] \
             if self.arg_policy_name is None \
             else self.arg_policy_name
 
@@ -1184,6 +1160,27 @@ class HealthSystem(Module):
         return self.parameters['tclose_days_offset_overwrite'] \
             if self.arg_tclose_days_offset_overwrite is None \
             else self.arg_tclose_days_offset_overwrite
+
+    def load_priority_policy(self,policy): 
+
+        # Select the chosen policy from dictionary of all possible policies
+        Policy_df = self.parameters['PriorityRank'][policy]
+
+        # Check that no duplicates are included in priority input file
+        assert not Policy_df['Treatment'].duplicated().any()
+
+        # If a policy is adopted, following variables *must* always be taken from policy.
+        # Over-write any other values here.
+        self.lowest_priority_considered = Policy_df.loc[Policy_df['Treatment'] == 'lowest_priority_considered',
+                                                            'Priority'].iloc[0]
+
+        # Remove them from dataframe.
+        Policy_df.drop(Policy_df.loc[Policy_df['Treatment'] == 'lowest_priority_considered'].index, inplace=True)
+
+        # Convert policy dataframe into dictionary to speed-up look-up process.
+        self.priority_rank_dict = \
+            Policy_df.set_index("Treatment", drop=True).to_dict(orient="index")
+
 
     def schedule_hsi_event(
         self,
@@ -1233,7 +1230,7 @@ class HealthSystem(Module):
         if self.policy_name != "None":
             # Look-up priority ranking of this treatment_ID in the policy adopted
             priority = self.enforce_priority_policy(hsi_event=hsi_event)
-
+        print("Priority", priority, hsi_event.TREATMENT_ID)
         # Check that priority is in valid range
         assert priority >= 0
 
@@ -1309,38 +1306,38 @@ class HealthSystem(Module):
         if hsi_event.TREATMENT_ID in pr:
             _priority_ranking = pr[hsi_event.TREATMENT_ID]['Priority']
 
-            if self.include_fasttrack_routes:
-                # Check whether fast-tracking routes are available for this treatment. If person qualifies for one
-                # don't check remaining, as they all lead to priority=1.
+            # Check whether fast-tracking routes are available for this treatment. If person qualifies for one
+            # don't check remaining, as they all lead to priority=1.
 
-                # Look up relevant attributes for HSI_Event's target
-                list_targets = [_t[0] for _t in self.list_fasttrack]
-                target_attributes = pdf.loc[hsi_event.target, list_targets]
+            # Look up relevant attributes for HSI_Event's target
+            list_targets = [_t[0] for _t in self.list_fasttrack]
+            target_attributes = pdf.loc[hsi_event.target, list_targets]
 
-                # Warning: here assuming that the first fast-tracking eligibility encountered
-                # will determine the priority to be used. If different fast-tracking channels have
-                # different priorities for the same treatment, this will be a problem!
-                # First item in Lists is age-related, therefore need to invoke different logic.
+            # Warning: here assuming that the first fast-tracking eligibility encountered
+            # will determine the priority to be used. If different fast-tracking channels have
+            # different priorities for the same treatment, this will be a problem!
+            # First item in Lists is age-related, therefore need to invoke different logic.
+            if (
+                (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]] > -1)
+                and (target_attributes['age_exact_years'] <= 5)
+            ):
+                print("----------------------------------------------------I am fasttracking to ", pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]])
+                return pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]]
+
+            # All other attributes are looked up the same way, so can do this in for loop
+            for i in range(1, len(self.list_fasttrack)):
                 if (
-                    (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]] > -1)
-                    and (target_attributes['age_exact_years'] <= 5)
+                    (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]] > - 1)
+                    and target_attributes[i]
                 ):
-                    return pr[hsi_event.TREATMENT_ID][self.list_fasttrack[0][1]]
-
-                # All other attributes are boolean, can do this in for loop
-                for i in range(1, len(self.list_fasttrack)):
-                    if (
-                        (pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]] > - 1)
-                        and target_attributes[i]
-                    ):
-                        return pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]]
+                    return pr[hsi_event.TREATMENT_ID][self.list_fasttrack[i][1]]
 
             return _priority_ranking
 
-        else:  # If treatment is not ranked in the policy, issue a warning and assign priority=2 by default
+        else:  # If treatment is not ranked in the policy, issue a warning and assign priority=3 by default
             warnings.warn(UserWarning(f"Couldn't find priority ranking for TREATMENT_ID /n"
                                       f"{hsi_event.TREATMENT_ID}"))
-            return 2
+            return 3
 
     def check_hsi_event_is_valid(self, hsi_event):
         """Check the integrity of an HSI_Event."""
@@ -2756,3 +2753,16 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
 
         if 'beds_availability' in self._parameters:
             self.module.bed_days.availability = self._parameters['beds_availability']
+
+
+class HealthSystemChangePriorityPolicy(RegularEvent, PopulationScopeEventMixin):
+    """ This event exists to change the priority policy adopted by the 
+    HealthSystem at a given year.    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=100))
+
+    def apply(self, population):
+        self.module.policy_name = self.module.parameters["Policy_Name_from2023"]
+        if self.module.policy_name != "None":
+            self.module.load_priority_policy(self.module.policy_name)
