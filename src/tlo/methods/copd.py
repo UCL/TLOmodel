@@ -81,7 +81,7 @@ class Copd(Module):
     PROPERTIES = {
         'ch_lungfunction': Property(
             Types.CATEGORICAL, 'Lung function of the person.'
-                               'NaN for those under 15; on a 7-point scale for others, from 0 (Perfect) to 6 (End-Stage'
+                               '0 for those under 15; on a 7-point scale for others, from 0 (Perfect) to 6 (End-Stage'
                                ' COPD).', categories=ch_lungfunction_cats, ordered=True,
         ),
         'ch_will_die_this_episode': Property(
@@ -168,11 +168,11 @@ class Copd(Module):
             data=flatten_multi_index_series_into_dict_for_logging(counts)
         )
 
-        _ex_tobacco_smokers = df.loc[df.is_alive].groupby(by=['ch_lungfunction']).size()
+        _ex_tobacco_smokers = df.loc[df.is_alive].groupby(by='li_date_not_tob').size()
         logger.info(
             key='ex_smokers',
             description='Proportion of alive persons in each COPD category ever smoked tobacco',
-            data=flatten_multi_index_series_into_dict_for_logging(_ex_tobacco_smokers)
+            data=_ex_tobacco_smokers
         )
 
     def give_inhaler(self, person_id: int, hsi_event: HSI_Event):
@@ -210,9 +210,7 @@ class CopdModels:
         # The chance (in a 3-month period) of progressing to the next (greater) category of ch_lungfunction
         self.__Prob_Progress_LungFunction__ = LinearModel.multiplicative(
             Predictor(
-                'ch_lungfunction',
-                conditions_are_exhaustive=True,
-                conditions_are_mutually_exclusive=True
+                'ch_lungfunction'
             ).when(0, self.params['prob_progress_to_next_cat'] *
                    (self.params['rel_risk_progress_per_higher_cat'] ** 0))
             .when(1, self.params['prob_progress_to_next_cat'] *
@@ -226,22 +224,16 @@ class CopdModels:
             .when(5, self.params['prob_progress_to_next_cat'] *
                   (self.params['rel_risk_progress_per_higher_cat'] ** 5)),
             Predictor(
-                'li_tob',
-                conditions_are_exhaustive=True,
-                conditions_are_mutually_exclusive=True
+                'li_tob'
             ).when(True, self.params['rel_risk_tob']),
             Predictor(
-                'li_wood_burn_stove',
-                conditions_are_exhaustive=True,
-                conditions_are_mutually_exclusive=True
+                'li_wood_burn_stove'
             ).when(True, self.params['rel_risk_wood_burn_stove'])
         )
         # The probability (in a 3-month period) of having a Moderate Exacerbation
         self.__Prob_ModerateExacerbation__ = LinearModel.multiplicative(
             Predictor(
-                'ch_lungfunction',
-                conditions_are_exhaustive=True,
-                conditions_are_mutually_exclusive=True
+                'ch_lungfunction'
             ).when(0, self.params['prob_mod_exacerb'][0])
             .when(1, self.params['prob_mod_exacerb'][1])
             .when(2, self.params['prob_mod_exacerb'][2])
@@ -254,9 +246,7 @@ class CopdModels:
         # The probability (in a 3-month period) of having a Severe Exacerbation
         self.__Prob_SevereExacerbation__ = LinearModel.multiplicative(
             Predictor(
-                'ch_lungfunction',
-                conditions_are_exhaustive=True,
-                conditions_are_mutually_exclusive=True
+                'ch_lungfunction'
             ).when(0, self.params['prob_sev_exacerb'][0])
             .when(1, self.params['prob_sev_exacerb'][1])
             .when(2, self.params['prob_sev_exacerb'][2])
@@ -437,7 +427,9 @@ class CopdDeath(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props
-        person = df.loc[person_id, ['is_alive', 'ch_will_die_this_episode']]
+        person = df.loc[
+            person_id, ['is_alive', 'sex', 'age_years', 'age_range', 'ch_will_die_this_episode',
+                        'ch_lungfunction', 'li_tob']]
         # Check if they should still die and, if so, cause the death
         if person.is_alive and person.ch_will_die_this_episode:
             self.sim.modules['Demography'].do_death(
@@ -445,14 +437,13 @@ class CopdDeath(Event, IndividualScopeEventMixin):
                 cause='COPD',
                 originating_module=self.module,
             )
-            # log deaths by lung function
-            log_deaths_by_ch_lungfunction = {
-                'person_id': person_id,
-                'ch_lungfunction': df.loc[person_id, 'ch_lungfunction']
+
+            copd_deaths_lung_func = {
+                'lung_function': person['ch_lungfunction'],
             }
             logger.info(
-                key="deaths_by_lung_function",
-                data=log_deaths_by_ch_lungfunction
+                key="copd_deaths_lung_func",
+                data=copd_deaths_lung_func
             )
 
 

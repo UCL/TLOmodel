@@ -7,10 +7,11 @@ from pathlib import Path
 
 import pandas as pd
 from matplotlib import pyplot as plt
+from matplotlib.font_manager import FontProperties
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import (
-    compare_number_of_deaths,
+    make_age_grp_lookup,
     parse_log_file,
     unflatten_flattened_multi_index_in_logging,
 )
@@ -48,9 +49,14 @@ class CopdAnalyses:
         self.__copd_prev = self.construct_dfs()['copd_prevalence']
 
         # initialise lung function categories
-        self.__lung_func_cats = ['lung function category 0', 'lung function category 1', 'lung function category 2',
-                                 'lung function category 3', 'lung function category 4', 'lung function category 5',
-                                 'lung function category 6']
+        self.__lung_func_cats = ['category 0', 'category 1', 'category 2',
+                                 'category 3', 'category 4', 'category 5',
+                                 'category 6']
+        # a dictionary to describe individual's tobacco status
+        self.__smokers_desc = {
+            'True': "Smokers",
+            'False': 'Non-smokers'
+        }
 
         # gender descriptions dictionary
         self.__gender_desc = {'M': 'Males',
@@ -67,20 +73,32 @@ class CopdAnalyses:
 
     def plot_lung_function(self):
         """ plot for all people per each lung function """
-        re_ordered_copd_prev = self.__copd_prev.reorder_levels([3, 0, 1, 2], axis=1)
-        plot_df = pd.DataFrame()
-        for _lung_func, _ in enumerate(self.__lung_func_cats):
-            plot_df[_lung_func] = re_ordered_copd_prev[f'{_lung_func}'].sum(axis=1)
-        # get totals per year
-        plot_df = plot_df.groupby(plot_df.index.year).sum()
-        # turn totals into proportions
-        plot_df = plot_df.apply(lambda row: row / row.sum(), axis=1)
-        # do plotting
-        ax = plot_df.plot(kind='bar', stacked=True)
-        ax.set_title("Proportion of people in each Lung Function Category")
-        ax.legend(self.__lung_func_cats, loc='lower right')
-        ax.set_xlabel("Year")
-        ax.set_ylabel("Proportion of each lung function category")
+        re_ordered_copd_prev = self.__copd_prev.reorder_levels([2, 3, 0, 1], axis=1)
+        _col_counter: int = 0  # a counter for plotting. setting rows
+        fig, ax = plt.subplots(ncols=2, sharex=True)  # plot setup
+        for _tob in ['True', 'False']:
+            plot_df = pd.DataFrame()
+            for _lung_func, _ in enumerate(self.__lung_func_cats):
+                plot_df[_lung_func] = re_ordered_copd_prev[_tob][f'{_lung_func}'].sum(axis=1)
+            # get totals per year
+            plot_df = plot_df.groupby(plot_df.index.year).sum()
+            # turn totals into proportions
+            plot_df = plot_df.apply(lambda row: row / row.sum(), axis=1)
+            # do plotting
+            plot_df.plot(kind='bar', stacked=True, ax=ax[_col_counter],
+                         title=f"Proportion of {self.__smokers_desc[_tob].lower()} in each Lung Function Category",
+                         xlabel="Year",
+                         ylabel="Proportions")
+
+            _col_counter += 1  # increment column counter
+        for ax in ax:
+            ax.get_legend().remove()
+
+        fontP = FontProperties()
+        fontP.set_size('small')
+        # add one legend on `plt
+        plt.legend(self.__lung_func_cats, title="lung function categories", bbox_to_anchor=(0.7, 0.74),
+                   loc='upper left', prop=fontP)
         plt.show()
 
     def plot_lung_function_by_gender(self):
@@ -116,30 +134,41 @@ class CopdAnalyses:
         mask = (re_ordered_df.index > pd.to_datetime('2022-01-01')) & (
             re_ordered_df.index <= pd.to_datetime('2023-01-01'))
         re_ordered_df = re_ordered_df.loc[mask]
-        for _lung_func, _ in enumerate(self.__lung_func_cats):
-            males = re_ordered_df[f'{_lung_func}']['M']['True'].sum(axis=0) + \
-                    re_ordered_df[f'{_lung_func}']['M']['False'].sum(axis=0)
+        _rows_counter: int = 0  # a counter for plotting. setting rows
+        fig, ax = plt.subplots(ncols=2, sharex=True, sharey=True)  # plot setup
+        for _tob in ['True', 'False']:
+            for _lung_func, _ in enumerate(self.__lung_func_cats):
+                plot_df[f'{_lung_func}'] = re_ordered_df[f'{_lung_func}']['M'][_tob].sum(axis=0) + \
+                                           re_ordered_df[f'{_lung_func}']['F'][_tob].sum(axis=0)
 
-            females = re_ordered_df[f'{_lung_func}']['F']['True'].sum(axis=0) + \
-                re_ordered_df[f'{_lung_func}']['F']['False'].sum(axis=0)
+            plot_df = plot_df.apply(lambda row: row / row.sum(), axis=1)
+            plot_df.plot(kind='bar', ax=ax[_rows_counter], stacked=True,
+                         title=f"{self.__smokers_desc[_tob]} lung function categories per each age group in 2022",
+                         ylabel="Proportions",
+                         xlabel="age group",
 
-            plot_df[f'{_lung_func}'] = males + females
+                         )
+            _rows_counter += 1  # increase row number
+            # ax[_rows_counter].legend(self.__lung_func_cats, loc="lower right")
+        # remove all the subplot legends
+        for ax in ax:
+            ax.get_legend().remove()
 
-        fig, ax = plt.subplots()
-        plot_df = plot_df.apply(lambda row: row / row.sum(), axis=1)
-        ax = plot_df.plot(kind='bar', ax=ax, stacked=True)
-        ax.legend(self.__lung_func_cats, loc="upper right")
-        ax.set_title("Proportion of each lung function category per each age group in 2022")
-        ax.set_xlabel("age group")
-        ax.set_ylabel("Proportion of each lung function category")
+        fontP = FontProperties()
+        fontP.set_size('small')
+
+        # add one legend on `plt
+        plt.legend(self.__lung_func_cats, title="Lung function categories", bbox_to_anchor=(0.7, 0.74),
+                   loc='upper left', prop=fontP)
         plt.show()
 
     def plot_copd_deaths_by_lungfunction(self):
         """ a function to plot COPD deaths by lung function/obstruction """
         # get COPD deaths by lung function from copd logs
-        deaths_lung_func = self.__logs_dict['deaths_by_lung_function']
+        deaths_lung_func = self.__logs_dict['copd_deaths_lung_func']
+
         # group by date and lung function
-        deaths_grouped = deaths_lung_func.groupby(['date', 'ch_lungfunction']).size()
+        deaths_grouped = deaths_lung_func.groupby(['date', 'lung_function']).size()
         unstack_df = deaths_grouped.unstack()
         plot_lung_func_deaths = unstack_df.groupby(unstack_df.index.year).sum()
         plot_lung_func_deaths = plot_lung_func_deaths.apply(lambda row: row / row.sum(), axis=1)
@@ -156,34 +185,33 @@ class CopdAnalyses:
         plt.show()
 
     def plot_copd_deaths_by_gender(self):
-        """ compare modal and GBD deaths by gender """
-        death_compare = compare_number_of_deaths(self.__logfile_path, resourcefilepath)
+        """ plot copd deaths by gender """
+        gen_df = parse_log_file(self.__logfile_path)['tlo.methods.demography']['death']
+
+        __deaths = gen_df.loc[gen_df['cause'].str.startswith('COPD')].groupby(by=['date', 'sex']).size().unstack()
+        __deaths = __deaths.groupby(by=__deaths.index.year).sum()
+
         fig, axs = plt.subplots(nrows=1, ncols=2, sharey=True, sharex=True)
-        for _col, sex in enumerate(('M', 'F')):
-            plot_df = death_compare.loc[(['2010-2014', '2015-2019'], sex, slice(None), 'COPD')].groupby('period').sum()
-            ax = plot_df['model'].plot.bar(color='#ADD8E6', label='Model', ax=axs[_col], rot=0)
-            ax.errorbar(x=plot_df['model'].index, y=plot_df.GBD_mean,
-                        yerr=[plot_df.GBD_lower, plot_df.GBD_upper],
-                        fmt='o', color='#23395d', label="GBD")
-            ax.set_title(f'{self.__gender_desc[sex]} annual COPD deaths, 2010-2019')
+        for _col, _sex in enumerate(('M', 'F')):
+            ax = __deaths[_sex].plot.bar(color='#ADD8E6', label='Model', ax=axs[_col], rot=0)
+            ax.set_title(f'{self.__gender_desc[_sex]} COPD deaths')
             ax.set_xlabel("Time period")
             ax.set_ylabel("Number of deaths")
             ax.legend(loc=2)
-        plt.tight_layout()
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=30, ha='right')
 
         plt.tight_layout()
         plt.show()
 
     def plot_copd_deaths_by_age_group(self):
-        """ compare modal and GBD deaths by age group """
-        death_compare = compare_number_of_deaths(self.__logfile_path, resourcefilepath)
-        plot_df = death_compare.loc[(['2010-2014', '2015-2019'], slice(None), slice(None), 'COPD')].groupby(
-            'age_grp').sum()
-        ax = plot_df['model'].plot.bar(color='#ADD8E6', label='Model', rot=0)
-        ax.errorbar(x=plot_df['model'].index, y=plot_df.GBD_mean,
-                    yerr=[plot_df.GBD_lower, plot_df.GBD_upper],
-                    fmt='o', color='#23395d', label="GBD")
-        ax.set_title('Mean annual COPD deaths by age group, 2010-2019')
+        """Plot copd deaths by age group """
+        agr_df = parse_log_file(self.__logfile_path)['tlo.methods.demography']['death']
+        agegrps, agegrplookup = make_age_grp_lookup()
+        agr_df['age_range'] = agr_df['age'].map(agegrplookup)
+
+        __deaths_agrp = agr_df.loc[agr_df['cause'].str.startswith('COPD')].groupby(by=['age_range']).size()
+        ax = __deaths_agrp.plot.bar(color='#ADD8E6', label='Model', rot=0)
+        ax.set_title('COPD deaths by age group')
         ax.set_xlabel("Age group")
         ax.set_ylabel("Number of deaths")
         ax.legend(loc=1)
@@ -232,6 +260,7 @@ def get_simulation(popsize):
 # run simulation and store logfile path
 sim = get_simulation(50_000)
 path_to_logfile = sim.log_filepath
+
 # initialise Copd analyses class
 copd_analyses = CopdAnalyses(logfile_path=path_to_logfile)
 
