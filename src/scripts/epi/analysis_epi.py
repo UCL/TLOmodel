@@ -53,12 +53,14 @@ sim.register(
     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
     healthsystem.HealthSystem(
         resourcefilepath=resourcefilepath,
-        service_availability=service_availability,
-        mode_appt_constraints=0,
-        ignore_cons_constraints=True,
-        ignore_priority=True,
-        capabilities_coefficient=1.0,
-        disable=True,
+        service_availability=["*"],  # all treatment allowed
+        mode_appt_constraints=1,  # mode of constraints to do with officer numbers and time
+        cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
+        ignore_priority=False,  # do not use the priority information in HSI event to schedule
+        capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
+        use_funded_or_actual_staffing="funded_plus",  # actual: use numbers/distribution of staff available currently
+        disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
+        disable_and_reject_all=False,  # disable healthsystem and no HSI runs
     ),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -149,7 +151,7 @@ plt.gca().set_xlim(2010, 2025)
 plt.gca().set_ylim(0, 110)
 # plt.legend(["WHO", "Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
 plt.tight_layout()
-plt.savefig(outputpath / ("EPI_1" + datestamp + ".pdf"), format='pdf', bbox_inches='tight')
+# plt.savefig(outputpath / ("EPI_1" + datestamp + ".pdf"), format='pdf', bbox_inches='tight')
 plt.show()
 
 # Hep3 coverage
