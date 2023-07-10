@@ -208,16 +208,25 @@ def adjust_real_usage_on_mentalall(real_usage_df) -> pd.DataFrame:
     return real_usage_df
 
 
-def get_real_usage(resourcefilepath) -> pd.DataFrame:
-    """Returns the real data on the MEAN USAGE PER YEAR DURING THE TIME_PERIOD for each appointment at each level."""
+def get_real_usage(resourcefilepath, adjusted=True) -> pd.DataFrame:
+    """
+    Returns the adjusted (default) or unadjusted real data on the (MEAN) USAGE PER YEAR DURING THE TIME_PERIOD
+    for each appointment at each level and all levels.
+    """
 
     # add facility level and district columns to both real and simulation usage
     mfl = pd.read_csv(
         resourcefilepath / 'healthsystem' / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
 
     # Get real usage data
-    real_usage = pd.read_csv(
-        resourcefilepath / 'healthsystem' / 'real_appt_usage_data' / 'real_monthly_usage_of_appt_type.csv')
+    if adjusted:
+        real_usage = pd.read_csv(
+            resourcefilepath / 'healthsystem' / 'real_appt_usage_data' /
+            'real_monthly_usage_of_appt_type.csv')
+    else:
+        real_usage = pd.read_csv(
+            resourcefilepath / 'healthsystem' / 'real_appt_usage_data' /
+            'unadjusted_real_monthly_usage_of_appt_type.csv')
 
     # add Csection usage to Delivery, as Delivery has excluded Csection in real data file (to avoid overlap)
     # whereas Delivery in tlo output has included Csection
@@ -231,7 +240,8 @@ def get_real_usage(resourcefilepath) -> pd.DataFrame:
     real_usage = real_usage.merge(mfl[['Facility_ID', 'Facility_Level']], left_on='Facility_ID', right_on='Facility_ID')
 
     # adjust annual MentalAll usage using annual reporting rates
-    real_usage = adjust_real_usage_on_mentalall(real_usage)
+    if adjusted:
+        real_usage = adjust_real_usage_on_mentalall(real_usage)
 
     # assign date to each record
     real_usage['date'] = pd.to_datetime({'year': real_usage['Year'], 'month': real_usage['Month'], 'day': 1})
@@ -244,6 +254,7 @@ def get_real_usage(resourcefilepath) -> pd.DataFrame:
 
     # Combine the TB data [which is yearly] (after dropping period outside 2017-2019 according to data consistency
     # and pandemic) with the rest of the data.
+    # Note that TB data is not adjusted considering comparability with NTP reports.
     real_usage_TB = pd.read_csv(
         resourcefilepath / 'healthsystem' / 'real_appt_usage_data' / 'real_yearly_usage_of_TBNotifiedAll.csv')
     real_usage_TB = real_usage_TB.loc[real_usage_TB['Year'].isin([2017, 2018, 2019])]
