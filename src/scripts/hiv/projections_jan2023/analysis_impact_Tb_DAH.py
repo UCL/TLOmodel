@@ -69,6 +69,17 @@ params.to_excel(outputspath / "parameters.xlsx")
 # pyears_summary.to_excel(outputspath / "pyears_baseline.xlsx")
 number_runs = info["runs_per_draw"]
 number_draws = info['number_of_draws']
+scenario_mapping = {
+    0: "Baseline",
+    1: "NoXpert",
+    2: "NoCXR",
+    3: "Scale-up",
+    4: "Outreach"
+}
+params = params.rename(index=scenario_mapping)
+
+# Print the updated parameter info
+print(params)
 def get_person_years(draw, run):
     log = load_pickled_dataframes(results_folder, draw, run)
     py_ = log["tlo.methods.demography"]["person_years"]
@@ -159,6 +170,7 @@ tb_dalys_count = extract_results(
 dalys_summary = summarize(tb_dalys_count).sort_index()
 #dalys_summary = summarize(get_tb_dalys).loc[0].unstack()
 #dalys_summary = (tb_dalys_count).sort_index()
+#dalys_summary.index = dalys_summary.index.map(scenario_mapping)
 print("DALYs for TB are as follows:")
 print(dalys_summary)
 dalys_summary.to_excel(outputspath / "summarised_tb_dalys.xlsx")
@@ -186,23 +198,23 @@ def tb_mortality_rate(results_folder, pyears_summary):
 
     # Group deaths by year
     #tb_deaths2 = pd.DataFrame(tb_deaths1.groupby(["year"]).sum()).reset_index()
-    tb_deaths2 = pd.DataFrame(tb_deaths1.groupby(["year"], as_index=False).sum())
+    tb_mortality = pd.DataFrame(tb_deaths1.groupby(["year"], as_index=False).sum())
 
 
-    print("Tb deaths as follows", tb_deaths2)
-    #tb_deaths2.index=tb_deaths2.index.year
-    tb_deaths2.to_excel(outputspath / "raw_mortality.xlsx")
+    print("Tb deaths as follows", tb_mortality)
+    #tb_mortality.index= tb_mortality.index.year
+    tb_mortality.to_excel(outputspath / "raw_mortality.xlsx")
 
     # Divide draw/run by the respective person-years from that run
-    tb_deaths3 = tb_deaths2.reset_index(drop=True).div(pyears_all.reset_index(drop=True), axis='rows')
-    print("deaths3 are:", tb_deaths3)
-    tb_deaths3.to_excel(outputspath / "mortality_rates.xlsx")
+    tb_mortality1 = tb_mortality.reset_index(drop=True).div(pyears_all.reset_index(drop=True), axis='rows')
+    print("deaths3 are:", tb_mortality1)
+    tb_mortality1.to_excel(outputspath / "mortality_rates.xlsx")
 
     tb_mortality_rate = {}  # empty dict
-    tb_mortality_rate["year"] = tb_deaths2.index
-    tb_mortality_rate["median"] = tb_deaths3.quantile(0.5, axis=1) * 100000
-    tb_mortality_rate["lower"] = tb_deaths3.quantile(0.025, axis=1) * 100000
-    tb_mortality_rate["upper"] = tb_deaths3.quantile(0.975, axis=1) * 100000
+    tb_mortality_rate["year"] = tb_mortality.index
+    tb_mortality_rate["median"] =tb_mortality1.quantile(0.5, axis=1) * 100000
+    tb_mortality_rate["lower"] = tb_mortality1.quantile(0.025, axis=1) * 100000
+    tb_mortality_rate["upper"] =tb_mortality1.quantile(0.975, axis=1) * 100000
     return tb_mortality_rate
 
 # Call the function with appropriate arguments
@@ -238,7 +250,7 @@ mdr_tb_cases = summarize(
         results_folder,
         module="tlo.methods.tb",
         key="tb_mdr",
-        column="tbPropActiveCasesMdr",
+        column="tbNewActiveMdrCases",
         index="date",
         do_scaling=False,
     ),
@@ -246,7 +258,7 @@ mdr_tb_cases = summarize(
 )
 mdr_tb_cases.index = mdr_tb_cases.index.year
 mdr_tb = pd.DataFrame(mdr_tb_cases)
-mdr_tb.to_excel(outputspath / "mdr_tb.xlsx")
+mdr_tb.to_excel(outputspath / "new_active_mdr_tb_cases.xlsx")
 
 # TB treatment coverage
 tb_treatment = summarize(
@@ -339,3 +351,36 @@ child_Tb_prevalence= summarize(
 child_Tb_prevalence.index = child_Tb_prevalence.index.year
 child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence_sample.xlsx")
 
+###### PLOTS##################################################
+import matplotlib.pyplot as plt
+
+# Create subplots
+fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(10, 12))
+
+# # Plot raw_mortality
+# axes[0].plot( tb_mortality.index,    tb_mortality["mean"], label="Mean")
+# axes[0].fill_between(   tb_mortality.index, tb_mortality["lower"], tb_mortality["upper"], alpha=0.3, label="95% CI")
+# axes[0].set_xlabel("Year")
+# axes[0].set_ylabel("Raw Mortality")
+# axes[0].legend()
+
+
+# Plot DALYs
+axes[1].plot(dalys_summary.reset_index()["index"], dalys_summary["mean"], label="Mean")
+axes[1].fill_between(dalys_summary.reset_index()["index"], dalys_summary["lower"], dalys_summary["upper"], alpha=0.3, label="95% CI")
+axes[1].set_xlabel("Year")
+axes[1].set_ylabel("DALYs")
+axes[1].legend()
+
+# Plot incidence_rate
+axes[2].plot(Tb_inc_rate.reset_index()["index"], Tb_inc_rate["mean"], label="Mean")
+axes[2].fill_between(Tb_inc_rate.reset_index()["index"], Tb_inc_rate["lower"], Tb_inc_rate["upper"], alpha=0.3, label="95% CI")
+axes[2].set_xlabel("Year")
+axes[2].set_ylabel("Incidence Rate")
+axes[2].legend()
+
+# Adjust spacing between subplots
+plt.tight_layout()
+
+# Save the figure
+plt.savefig(outputspath / "subplots.png")
