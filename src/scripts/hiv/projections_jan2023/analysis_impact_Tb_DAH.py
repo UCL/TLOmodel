@@ -357,9 +357,9 @@ child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence_sample.xlsx")
 import matplotlib.pyplot as plt
 
 # Select the mean, lower, and upper values
-mean_values = dalys_summary[('mean', '')]
-lower_values = dalys_summary[('lower', '')]
-upper_values = dalys_summary[('upper', '')]
+mean_values = dalys_summary[('mean', slice(None))]
+lower_values = dalys_summary[('lower', slice(None))]
+upper_values = dalys_summary[('upper', slice(None))]
 
 # Plot the bar graph
 fig, ax = plt.subplots(figsize=(10, 6))
@@ -372,5 +372,8 @@ ax.set_title('DALYs for TB by Draw')
 
 # Show the plot
 plt.show()
+
+
+
 
 
