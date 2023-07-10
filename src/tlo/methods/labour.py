@@ -1293,6 +1293,10 @@ class Labour(Module):
                 pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'obstructed_labour_onset',
                                                               self.sim.date)
 
+                logger.info(key='maternal_complication', data={'person': individual_id,
+                                                                  'type': f'{complication}',
+                                                                  'timing': 'intrapartum'})
+
                 if complication == 'obstruction_cpd':
                     mni[individual_id]['cpd'] = True
 
