@@ -11,17 +11,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      ## The profile environment produces outputs in the /tmp directory, currently called profiling_output.{html,json}
+      ## The profile environment produces outputs in the /results directory
       - name: Run profiling in dev environment
         run: |
           tox -vv -e profile
 
-      ## Decide what we want to do with the profiling results. Push them somewhere? Make them available for download? Publish the data somewhere? Currently just makes an artefact available for 1 day with the results
-      - name: Upload profiling results
-        uses: actions/upload-artifact@v3
+      ## The gh-pages deploy action can be used to target a non-main branch
+      - name: Push results to profiling repository
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          name: profiling-data
-          path: |
-            ${{ github.workspace }}/tmp/profiling_output.html
-            ${{ github.workspace }}/tmp/profiling_output.json
-          retention-days: 1
+          token: ${{ secrets.PROFILING_ACCESS_TOKEN }}
+          folder: results
+          repository-name: UCL/TLOmodel-profiling
+          branch: results
+          target-folder: .
+          force: false
