@@ -1,6 +1,6 @@
 """Analyse scenarios for impact of TB-related development assistance for health."""
 
-# python src/scripts/hiv/projections_jan2023/draft_analysis.py --scenario-outputs-folder outputs\nic503@york.ac.uk
+# python src/scripts/hiv/projections_jan2023/analysis_impact_Tb_DAH.py --scenario-outputs-folder outputs\nic503@york.ac.uk
 import argparse
 import datetime
 from tlo import Date
@@ -164,7 +164,7 @@ print(dalys_summary)
 dalys_summary.to_excel(outputspath / "summarised_tb_dalys.xlsx")
 
 # secondary outcomes
-#print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
+print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
 
 #TB mortality rate
 def tb_mortality_rate(results_folder, pyears_summary):
@@ -185,8 +185,12 @@ def tb_mortality_rate(results_folder, pyears_summary):
     print("TB-related deaths as follows:",tb_deaths)
 
     # Group deaths by year
-    tb_deaths2 = pd.DataFrame(tb_deaths1.groupby(["year"]).sum())
+    #tb_deaths2 = pd.DataFrame(tb_deaths1.groupby(["year"]).sum()).reset_index()
+    tb_deaths2 = pd.DataFrame(tb_deaths1.groupby(["year"], as_index=False).sum())
+
+
     print("Tb deaths as follows", tb_deaths2)
+    #tb_deaths2.index=tb_deaths2.index.year
     tb_deaths2.to_excel(outputspath / "raw_mortality.xlsx")
 
     # Divide draw/run by the respective person-years from that run
@@ -242,7 +246,7 @@ mdr_tb_cases = summarize(
 )
 mdr_tb_cases.index = mdr_tb_cases.index.year
 mdr_tb = pd.DataFrame(mdr_tb_cases)
-mdr_tb.to_excel(outputspath / "mdr_tb_baseline.xlsx")
+mdr_tb.to_excel(outputspath / "mdr_tb.xlsx")
 
 # TB treatment coverage
 tb_treatment = summarize(
@@ -275,11 +279,63 @@ tb_inc = summarize(
 )
 print(tb_inc)
 tb_incidence = pd.DataFrame(tb_inc)
-tb_incidence.to_excel(outputspath / "tb_incidence_baseline.xlsx")
-
 tb_inc.index = tb_inc.index.year
-print(tb_inc.head())
-print(pyears_summary.head())
-tb_inc = tb_inc.reset_index(drop=True)
+tb_incidence.to_excel(outputspath / "active_tb.xlsx")
+#Tb incidence rate
+#Tb_inc_rate = (tb_incidence.divide(pyears_all.values, axis=0)) * 100000
+Tb_inc_rate = tb_incidence.reset_index(drop=True).div(pyears_all.reset_index(drop=True), axis='rows')
+Tb_inc_rate.to_excel(outputspath / "Tb_incidence_rate.xlsx")
+
 #pyears = pyears.reset_index(drop=True)
 pyears_summary = pyears_summary.reset_index(drop=True)
+
+print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
+mdr = log["tlo.methods.tb"]["tb_mdr"]
+mdr = mdr.set_index("date")
+mdr.to_excel(outputspath / "mdr_sample.xlsx")
+
+#Active Tb prevalence
+Tb_prevalence= summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_prevalence",
+        column="tbPrevActive",
+        index="date",
+        do_scaling=False,
+    ),
+    collapse_columns=True,
+)
+Tb_prevalence.index = Tb_prevalence.index.year
+Tb_prevalence.to_excel(outputspath / "Tb_prevalence_sample.xlsx")
+
+#Active Tb prevalence in adults
+adult_Tb_prevalence= summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_prevalence",
+        column="tbPrevActiveAdult",
+        index="date",
+        do_scaling=False,
+    ),
+    collapse_columns=True,
+)
+adult_Tb_prevalence.index = adult_Tb_prevalence.index.year
+adult_Tb_prevalence.to_excel(outputspath / "adult_Tb_prevalence_sample.xlsx")
+
+#Active Tb prevalence in children
+child_Tb_prevalence= summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_prevalence",
+        column="tbPrevActiveChild",
+        index="date",
+        do_scaling=False,
+    ),
+    collapse_columns=True,
+)
+child_Tb_prevalence.index = child_Tb_prevalence.index.year
+child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence_sample.xlsx")
+
