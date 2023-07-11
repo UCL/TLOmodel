@@ -1990,7 +1990,6 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
 
         smear_status = df.at[person_id, "tb_smear"]
-
         # select sensitivity/specificity of test based on smear status
         if smear_status:
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(

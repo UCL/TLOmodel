@@ -83,7 +83,7 @@ class ImpactOfTbDaH(BaseScenario):
                     'probability_community_chest_xray': 0.0,
                 },
             },
-            "No CXR": {
+            "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
                     'probability_access_to_xray': 0.0,
