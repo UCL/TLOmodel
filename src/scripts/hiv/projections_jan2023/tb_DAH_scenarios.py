@@ -37,7 +37,7 @@ class ImpactOfTbDaH(BaseScenario):
         self.seed = random.randint(0, 50000),
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2012, 12, 31)
-        self.pop_size = 800
+        self.pop_size = 500
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 4
@@ -45,8 +45,7 @@ class ImpactOfTbDaH(BaseScenario):
     def log_configuration(self):
         return {
             'filename': 'Tb_DAH_scenarios_test_run',
-           # 'directory': Path('./outputs'),                                  # <- (specified only for local running)
-            'directory': './outputs/nic503@york.ac.uk',
+           # 'directory': Path('./outputs')
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
@@ -87,6 +86,7 @@ class ImpactOfTbDaH(BaseScenario):
             "No CXR": {
                 'Tb': {
                     'scenario': 2,
+                    'probability_access_to_xray': 0.0,
                     'probability_community_chest_xray': 0.0,
                 },
             },
@@ -100,7 +100,7 @@ class ImpactOfTbDaH(BaseScenario):
             "Outreach": {
                 'Tb': {
                     'scenario': 0,
-                    'probability_access_to_xray': 0.10,
+                   # 'probability_access_to_xray': 0.10,
                     'probability_community_chest_xray': 0.001,
                 }
             }

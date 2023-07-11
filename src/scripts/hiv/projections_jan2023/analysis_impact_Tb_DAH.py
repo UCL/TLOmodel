@@ -24,7 +24,7 @@ outputspath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
-results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_run-2023-07-09T114603Z", outputspath)[-1]
+results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_run-2023-07-10T200654Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -161,14 +161,15 @@ def get_tb_dalys(df_):
 tb_dalys_count = extract_results(
     results_folder,
     module="tlo.methods.healthburden",
-    key="dalys",
+    key="dalys_stacked",
     custom_generate_series=get_tb_dalys,
     do_scaling=True
 )
 
 # Get mean/upper/lower statistics
 dalys_summary = summarize(tb_dalys_count).sort_index()
-dalys_summary.index = dalys_summary.index.map(scenario_mapping)
+
+##dalys_summary['Year'] = dalys_summary.index.year.map(scenario_mapping)
 #dalys_summary = summarize(get_tb_dalys).loc[0].unstack()
 #dalys_summary = (tb_dalys_count).sort_index()
 #dalys_summary.index = dalys_summary.index.map(scenario_mapping)
@@ -352,30 +353,58 @@ child_Tb_prevalence= summarize(
 child_Tb_prevalence.index = child_Tb_prevalence.index.year
 child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence_sample.xlsx")
 
+# tbTreatmentDelayAdults= summarize(
+#     extract_results(
+#         results_folder,
+#         module="tlo.methods.tb",
+#         key="hsi_event_counts",
+#         column="tbTreatmentDelayAdults",
+#         index="date",
+#         do_scaling=False,
+#     ),
+#     collapse_columns=True,
+# )
+# tbTreatmentDelayAdults.index = tbTreatmentDelayAdults.index.year
+# tbTreatmentDelayAdults.to_excel(outputspath / "tbTreatmentDelayAdults.xlsx")
+
+HSE = log["tlo.methods.healthsystem.summary"]["hsi_event_details"]
+HSE = HSE.set_index("date")
+print("Health system events as follows",HSE)
+HSE.to_excel(outputspath / "HSE.xlsx")
+
+print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
+print(f"Keys of log['tlo.methods.healthburden']: {log['tlo.methods.healthburden'].keys()}")
+print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography'].keys()}")
+
+
+tb_treatment_delays = log["tlo.methods.tb"]["tb_treatment_delays"]
+tb_treatment_delays= tb_treatment_delays.set_index("date")
+tb_treatment_delays.to_excel(outputspath / "tb_treatment_delays_sample.xlsx")
+
 ###### PLOTS##################################################
 
-# Reshape the daly_summary DataFrame into the correct format
-reshaped_summary = dalys_summary.stack().unstack(level=0)
-
-# Select the mean, lower, and upper values
-mean_values = reshaped_summary['mean']
-lower_values = reshaped_summary['lower']
-upper_values = reshaped_summary['upper']
-
-# Reshape the error values to have the shape (5, 2, 3)
-error_values = [lower_values.values, upper_values.values]
-
-# Plot the bar graph
-fig, ax = plt.subplots(figsize=(10, 6))
-mean_values.plot.bar(ax=ax, yerr=error_values)
-
-# Set the labels and title
-ax.set_xlabel('Draw')
-ax.set_ylabel('DALYs')
-ax.set_title('DALYs for TB by Draw')
-
-# Show the plot
-plt.show()
+# # Reshape the daly_summary DataFrame into the correct format
+# reshaped_summary = dalys_summary.stack().unstack(level=0)
+#
+# # Select the mean, lower, and upper values
+# mean_values = reshaped_summary['mean']
+# lower_values = reshaped_summary['lower']
+# upper_values = reshaped_summary['upper']
+#
+# # Reshape the error values to have the shape (5, 2, 3)
+# error_values = [lower_values.values, upper_values.values]
+#
+# # Plot the bar graph
+# fig, ax = plt.subplots(figsize=(10, 6))
+# mean_values.plot.bar(ax=ax, yerr=error_values)
+#
+# # Set the labels and title
+# ax.set_xlabel('Draw')
+# ax.set_ylabel('DALYs')
+# ax.set_title('DALYs for TB by Draw')
+#
+# # Show the plot
+# plt.show()
 
 
 
