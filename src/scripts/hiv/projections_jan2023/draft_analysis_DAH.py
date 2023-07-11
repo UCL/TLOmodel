@@ -322,64 +322,79 @@ child_Tb_prevalence= summarize(
 child_Tb_prevalence.index = child_Tb_prevalence.index.year
 child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence_sample.xlsx")
 
-_scenarios = dalys_summary.index  # the different scenarios
-print("scenarios as follows:",_scenarios )
+#properties of deceased
+properties_of_deceased_persons = log["tlo.methods.demography.detail"]["properties_of_deceased_persons"]
+properties_of_deceased_persons= properties_of_deceased_persons.set_index("date")
+properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_persons.xlsx")
 
-HSE = log["tlo.methods.healthsystem.summary"]["hsi_event_details"]
-HSE = HSE.set_index("date")
-print("Health system events as follows",HSE)
-HSE.to_excel(outputspath / "HSE.xlsx")
+wealth_quintile = extract_results(
+    results_folder,
+    module="tlo.methods.demography.detail",
+    key="tb_properties_of_deceased_persons",
+    column="lil_wealth",
+    index="date",
+    do_scaling=False,
+    #collapse_columns=True
+).pipe(set_param_names_as_column_index_level_0)
 
-print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
-print(f"Keys of log['tlo.methods.healthburden']: {log['tlo.methods.healthburden'].keys()}")
-print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography'].keys()}")
+wealth_quintile.index = wealth_quintile.index.year
+wealth_quintile.to_excel(outputspath / "wealth_quintiles.xlsx")
 
-
-tb_treatment_delays = log["tlo.methods.tb"]["tb_treatment_delays"]
-tb_treatment_delays= tb_treatment_delays.set_index("date")
-tb_treatment_delays.to_excel(outputspath / "tb_treatment_delays_sample.xlsx")
+# HSE = log["tlo.methods.healthsystem.summary"]["hsi_event_details"]
+# HSE = HSE.set_index("date")
+# print("Health system events as follows",HSE)
+# HSE.to_excel(outputspath / "HSE.xlsx")
+#
+# print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
+# print(f"Keys of log['tlo.methods.healthburden']: {log['tlo.methods.healthburden'].keys()}")
+# print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography.detail'].keys()}")
+#
+# #aiming to extract wealth quintiles for the dead
+# properties_of_deceased_persons = log["tlo.methods.demography.detail"]["properties_of_deceased_persons"]
+# properties_of_deceased_persons= properties_of_deceased_persons.set_index("date")
+# properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_persons.xlsx")
 
 ###### PLOTS##################################################
 years = dalys_summary.index
 
-# Baseline
-mean_values_baseline = dalys_summary.loc[:, 'mean'].values
-lower_values_baseline = dalys_summary.loc[:, 'lower'].values
-upper_values_baseline = dalys_summary.loc[:, 'upper'].values
-
-# No Xpert Available
-mean_values_no_xpert = dalys_summary.loc[:, 'mean'].values
-lower_values_no_xpert = dalys_summary.loc[:, 'lower'].values
-upper_values_no_xpert = dalys_summary.loc[:, 'upper'].values
-
-# No CXR Available
-mean_values_no_cxr = dalys_summary.loc[:, 'mean'].values
-lower_values_no_cxr = dalys_summary.loc[:, 'lower'].values
-upper_values_no_cxr = dalys_summary.loc[:, 'upper'].values
-
-# CXR scaleup
-mean_values_cxr_scaleup = dalys_summary.loc[:, 'mean'].values
-lower_values_cxr_scaleup = dalys_summary.loc[:, 'lower'].values
-upper_values_cxr_scaleup = dalys_summary.loc[:, 'upper'].values
-
-# Outreach
-mean_values_outreach = dalys_summary.loc[:, 'mean'].values
-lower_values_outreach = dalys_summary.loc[:, 'lower'].values
-upper_values_outreach = dalys_summary.loc[:, 'upper'].values
-
-# Create the bar graph
-plt.figure(figsize=(10, 6))
-plt.bar(years, mean_values_baseline, yerr=[lower_values_baseline, upper_values_baseline], capsize=4, label='Baseline')
-plt.bar(years, mean_values_no_xpert, yerr=[lower_values_no_xpert, upper_values_no_xpert], capsize=4, label='No Xpert Available')
-plt.bar(years, mean_values_no_cxr, yerr=[lower_values_no_cxr, upper_values_no_cxr], capsize=4, label='No CXR Available')
-plt.bar(years, mean_values_cxr_scaleup, yerr=[lower_values_cxr_scaleup, upper_values_cxr_scaleup], capsize=4, label='CXR scaleup')
-plt.bar(years, mean_values_outreach, yerr=[lower_values_outreach, upper_values_outreach], capsize=4, label='Outreach')
-
-plt.xlabel('Year')
-plt.ylabel('DALYs')
-plt.title('DALYs for TB by Scenario')
-plt.legend()
-plt.show()
+# # Baseline
+# mean_values_baseline = dalys_summary.loc[:, 'mean'].values
+# lower_values_baseline = dalys_summary.loc[:, 'lower'].values
+# upper_values_baseline = dalys_summary.loc[:, 'upper'].values
+#
+# # No Xpert Available
+# mean_values_no_xpert = dalys_summary.loc[:, 'mean'].values
+# lower_values_no_xpert = dalys_summary.loc[:, 'lower'].values
+# upper_values_no_xpert = dalys_summary.loc[:, 'upper'].values
+#
+# # No CXR Available
+# mean_values_no_cxr = dalys_summary.loc[:, 'mean'].values
+# lower_values_no_cxr = dalys_summary.loc[:, 'lower'].values
+# upper_values_no_cxr = dalys_summary.loc[:, 'upper'].values
+#
+# # CXR scaleup
+# mean_values_cxr_scaleup = dalys_summary.loc[:, 'mean'].values
+# lower_values_cxr_scaleup = dalys_summary.loc[:, 'lower'].values
+# upper_values_cxr_scaleup = dalys_summary.loc[:, 'upper'].values
+#
+# # Outreach
+# mean_values_outreach = dalys_summary.loc[:, 'mean'].values
+# lower_values_outreach = dalys_summary.loc[:, 'lower'].values
+# upper_values_outreach = dalys_summary.loc[:, 'upper'].values
+#
+# # Create the bar graph
+# plt.figure(figsize=(10, 6))
+# plt.bar(years, mean_values_baseline, yerr=[lower_values_baseline, upper_values_baseline], capsize=4, label='Baseline')
+# plt.bar(years, mean_values_no_xpert, yerr=[lower_values_no_xpert, upper_values_no_xpert], capsize=4, label='No Xpert Available')
+# plt.bar(years, mean_values_no_cxr, yerr=[lower_values_no_cxr, upper_values_no_cxr], capsize=4, label='No CXR Available')
+# plt.bar(years, mean_values_cxr_scaleup, yerr=[lower_values_cxr_scaleup, upper_values_cxr_scaleup], capsize=4, label='CXR scaleup')
+# plt.bar(years, mean_values_outreach, yerr=[lower_values_outreach, upper_values_outreach], capsize=4, label='Outreach')
+#
+# plt.xlabel('Year')
+# plt.ylabel('DALYs')
+# plt.title('DALYs for TB by Scenario')
+# plt.legend()
+# plt.show()
 
 
 
