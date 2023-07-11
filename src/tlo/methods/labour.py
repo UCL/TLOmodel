@@ -1287,7 +1287,7 @@ class Labour(Module):
                                              f'{self.sim.date}')
 
             # For 'complications' stored in a biset property - they are set here
-            if complication in ('obstruction_cpd', 'obstruction_malpres_malpos', 'obstruction_other'):
+            if complication in ('obstruction_cpd', 'obstruction_malpos_malpres', 'obstruction_other'):
 
                 df.at[individual_id, 'la_obstructed_labour'] = True
                 pregnancy_helper_functions.store_dalys_in_mni(individual_id, mni, 'obstructed_labour_onset',
