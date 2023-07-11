@@ -354,6 +354,9 @@ class MeaslesVaccineEvent(Event, IndividualScopeEventMixin):
         self.module.increment_dose(person_id, "measles")
 
 
+# todo if pre-2016, one dose of measles only
+# todo if 2016 allow 2 doses measles
+# todo if 2018
 class MeaslesRubellaVaccineEvent(Event, IndividualScopeEventMixin):
     """ give measles/rubella vaccine """
     def apply(self, person_id):
