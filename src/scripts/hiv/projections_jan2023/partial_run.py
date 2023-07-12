@@ -48,7 +48,7 @@ class ImpactOfTbDaH(BaseScenario):
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2012, 12, 31)
-        self.pop_size = 1000
+        self.pop_size = 800
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 2
@@ -105,13 +105,35 @@ class ImpactOfTbDaH(BaseScenario):
                     'probability_community_chest_xray': 0.0,
                 },
             },
+            "No Xpert Available": {
+                'Tb': {
+                    'scenario': 1,
+                    'probability_community_chest_xray': 0.0,
+                },
+            },
+            "No CXR Available": {
+                'Tb': {
+                    'scenario': 2,
+                    'probability_access_to_xray': 0.0,
+                    'probability_community_chest_xray': 0.0,
+                },
+            },
+            "CXR scaleup": {
+                'Tb': {
+                    'scenario': 0,
+                    'probability_access_to_xray': 0.11,
+                    'probability_community_chest_xray': 0.0,
+                }
+            },
             "Outreach": {
                 'Tb': {
                     'scenario': 0,
-                    'probability_community_chest_xray': 0.01,
+                    'probability_community_chest_xray': 0.005,
                 }
             }
         }
+
+
 if __name__ == '__main__':
     from tlo.cli import scenario_run
 
