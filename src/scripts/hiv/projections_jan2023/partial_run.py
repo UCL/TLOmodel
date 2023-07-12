@@ -7,7 +7,7 @@ It can be submitted on Azure Batch by running:
  tlo batch-submit src/scripts/hiv/projections_jan2023/tb_DAH_scenarios.py
 or locally using:
 
- tlo scenario-run src/scripts/hiv/projections_jan2023/tb_DAH_scenarios.py
+ tlo scenario-run src/scripts/hiv/projections_jan2023/partial_run.py
   execute a single run:
 
  tlo scenario-run src/scripts/hiv/projections_jan2023/tb_DAH_scenarios.py --draw 1 0
@@ -133,8 +133,6 @@ class ImpactOfTbDaH(BaseScenario):
                 }
             }
         }
-
-
 if __name__ == '__main__':
     from tlo.cli import scenario_run
 

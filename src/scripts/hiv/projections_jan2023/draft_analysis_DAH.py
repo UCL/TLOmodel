@@ -1,6 +1,6 @@
 """Analyse scenarios for impact of TB-related development assistance for health."""
 
-# python src/scripts/hiv/projections_jan2023/analysis_impact_Tb_DAH.py --scenario-outputs-folder outputs\nic503@york.ac.uk
+# python src/scripts/hiv/projections_jan2023/analysis_impact_Tb_DAH.py --scenario-outputs-folder outputs
 import argparse
 import datetime
 from pathlib import Path
@@ -19,11 +19,11 @@ from tlo.analysis.utils import (
 )
 
 resourcefilepath = Path("./resources")
-outputspath = Path("./outputs/nic503@york.ac.uk")
+outputspath = Path("./outputs")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
-results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_run01-2023-07-11T193223Z", outputspath)[-1]
+results_folder = get_scenario_outputs("outreach_services_scenario-2023-07-12T153817Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -373,7 +373,7 @@ CXR_scaleup_upper = dalys_summary.loc[:, ('CXR scaleup', 'upper')].sum()
 outreach_lower = dalys_summary.loc[:, ('Outreach', 'lower')].sum()
 outreach_upper = dalys_summary.loc[:, ('Outreach', 'upper')].sum()
 
-# Plotting the bar graph with error bars
+# Plotting bar graph
 x = np.arange(5)
 width = 0.35
 
