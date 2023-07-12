@@ -55,7 +55,7 @@ class ImpactOfTbDaH(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'outreach_services_scenario',
+            'filename': 'partial_scenario',
             'directory': './outputs/',
             'custom_levels': {
                 '*': logging.WARNING,
