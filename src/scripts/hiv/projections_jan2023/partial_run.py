@@ -105,26 +105,6 @@ class ImpactOfTbDaH(BaseScenario):
                     'probability_community_chest_xray': 0.0,
                 },
             },
-            # "No Xpert Available": {
-            #     'Tb': {
-            #         'scenario': 1,
-            #         'probability_community_chest_xray': 0.0,
-            #     },
-            # },
-            # "No CXR Available": {
-            #     'Tb': {
-            #         'scenario': 2,
-            #         'probability_access_to_xray': 0.0,
-            #         'probability_community_chest_xray': 0.0,
-            #     },
-            # },
-            # "CXR scaleup": {
-            #     'Tb': {
-            #         'scenario': 0,
-            #         'probability_access_to_xray': 0.11,
-            #         'probability_community_chest_xray': 0.0,
-            #     }
-            # },
             "Outreach": {
                 'Tb': {
                     'scenario': 0,
