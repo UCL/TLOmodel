@@ -411,131 +411,57 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
     plt.show()
 
-    # Plot Simulation vs Adjusted & Real usage by level by appt type and show fraction of usage at each level
+    # Plot Simulation with 95% CI vs Adjusted & Real usage by appt type, across all levels
     # format data
-    def format_real_usage(adjusted=True):
-        _real_usage = get_real_usage(resourcefilepath, adjusted)[0]
-        _real_usage_all_levels = _real_usage.sum(axis=0).reset_index().rename(
-            columns={0: 'real_usage_all_levels' if adjusted else 'unadjusted_real_usage_all_levels',
-                     'Appt_Type': 'appt_type'})
-        return _real_usage_all_levels
+    def format_rel_diff(adjusted=True):
+        def format_real_usage():
+            _real_usage = get_real_usage(resourcefilepath, adjusted)[0]
+            _real_usage_all_levels = _real_usage.sum(axis=0).reset_index().rename(
+                columns={0: 'real_usage_all_levels', 'Appt_Type': 'appt_type'})
+            return _real_usage_all_levels
 
-    real_usage_all_levels = format_real_usage(adjusted=True)
-    unadjusted_real_usage_all_levels = format_real_usage(adjusted=False)
+        simulation_usage_all_levels_with_ci = get_simulation_usage_with_confidence_interval(results_folder)
+        _rel_diff = simulation_usage_all_levels_with_ci.merge(format_real_usage(), on='appt_type', how='outer')
 
-    simulation_usage_diff = pd.melt(simulation_usage.reset_index(), id_vars='index',
-                                    var_name='appt_type', value_name='simulation_usage'
-                                    ).rename(columns={'index': 'facility_level'})
-    simulation_usage_diff = simulation_usage_diff.merge(
-        real_usage_all_levels, on='appt_type', how='outer').merge(
-        unadjusted_real_usage_all_levels, on='appt_type', how='outer')
-    simulation_usage_diff['ratio_to_adjusted_real'] = (simulation_usage_diff['simulation_usage'] /
-                                                       simulation_usage_diff['real_usage_all_levels'])
-    simulation_usage_diff['ratio_to_unadjusted_real'] = (simulation_usage_diff['simulation_usage'] /
-                                                         simulation_usage_diff['unadjusted_real_usage_all_levels'])
-    simulation_usage_plot_0 = pd.pivot(simulation_usage_diff[['appt_type', 'facility_level', 'ratio_to_adjusted_real']],
-                                       index='appt_type', columns='facility_level', values='ratio_to_adjusted_real'
-                                       ).dropna(axis=1, how='all')
-    simulation_usage_plot_1 = pd.pivot(simulation_usage_diff[['appt_type', 'facility_level', 'ratio_to_unadjusted_real']],
-                                       index='appt_type', columns='facility_level', values='ratio_to_unadjusted_real'
-                                       ).dropna(axis=1, how='all')
+        _rel_diff['ratio'] = (_rel_diff['value'] / _rel_diff['real_usage_all_levels'])
+
+        _rel_diff = _rel_diff[['appt_type', 'value_type', 'ratio']].pivot(
+            index='appt_type', columns='value_type', values='ratio').dropna(axis=1, how='all')
+
+        _rel_diff['lower_error'] = (_rel_diff['mean'] - _rel_diff['lower'])
+        _rel_diff['upper_error'] = (_rel_diff['upper'] - _rel_diff['mean'])
+        _asymmetric_error = [_rel_diff['lower_error'].values, _rel_diff['upper_error'].values]
+
+        _rel_diff = pd.DataFrame(_rel_diff['mean'])
+
+        return _rel_diff, _asymmetric_error
+
+    rel_diff_real, err_real = format_rel_diff(adjusted=True)
+    rel_diff_unadjusted_real, err_unadjusted_real = format_rel_diff(adjusted=False)
+    assert (rel_diff_unadjusted_real.index == rel_diff_real.index).all()
+
     # plot
-    name_of_plot = 'Model vs Real usage per appointment type, with fraction per level' \
-                   '\n[Model average annual, Adjusted & Unadjusted real average annual]'
+    name_of_plot = 'Model vs Real usage per appointment type at all levels' \
+                   '\n[Model average annual 95% CI, Adjusted and Unadjusted real average annual]'
     fig, ax = plt.subplots(figsize=(8, 5))
-    cmp_paired = plt.get_cmap('Paired')
-    cmp_paried_0 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(0, 10, 2)))
-    cmp_paried_1 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(1, 11, 2)))
-    simulation_usage_plot_0.plot(kind='bar', stacked=True, width=0.4,
-                                 cmap=cmp_paried_1, hatch='',
-                                 ax=ax, position=0)
-    simulation_usage_plot_1.plot(kind='bar', stacked=True, width=0.4,
-                                 edgecolor='black', cmap=cmp_paried_1, hatch='///',
-                                 ax=ax, position=1)
-    ax.set_xlim(right=len(simulation_usage_plot) - 0.5)
+    rel_diff_real.plot(kind='bar', yerr=err_real, width=0.4,
+                       ax=ax, position=0,
+                       legend=False, color='green')
+    rel_diff_unadjusted_real.plot(kind='bar', yerr=err_unadjusted_real, width=0.4,
+                                  ax=ax, position=1,
+                                  legend=False, color='red')
+    ax.set_xlim(right=len(rel_diff_real) - 0.5)
     ax.yaxis.grid(True, which='major', linestyle='--')
-    ax.set_ylabel('Simulation usage per level / Real usage all levels')
+    ax.set_ylabel('Model / Real')
     ax.set_xlabel('Appointment Type')
     ax.set_title(name_of_plot)
-    legend_0 = plt.legend(simulation_usage_plot_0.columns, loc='upper left', bbox_to_anchor=(1.0, 0.5),
-                          title='Facility Level')
-    patch_simulation_0 = matplotlib.patches.Patch(facecolor='beige', hatch='', label='Adjusted real')
-    patch_simulation_1 = matplotlib.patches.Patch(facecolor='beige', hatch='///', edgecolor="black",
-                                                  label='Unadjusted real')
-    legend_1 = plt.legend(handles=[patch_simulation_0, patch_simulation_1], loc='lower left', bbox_to_anchor=(1.0, 0.6))
-    fig.add_artist(legend_0)
+    patch_real = matplotlib.patches.Patch(facecolor='green', label='Adjusted real')
+    patch_unadjusted_real = matplotlib.patches.Patch(facecolor='red', label='Unadjusted real')
+    legend = plt.legend(handles=[patch_unadjusted_real, patch_real], loc='center left', bbox_to_anchor=(1.0, 0.5))
+    fig.add_artist(legend)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
     plt.show()
-
-    def plot_model_vs_data_usage_with_ci(_rel_diff_with_ci, _name_of_plot):
-        """ Plot Simulation (with 95% CI) vs Real usage (with 95% CI) (Across all levels) (trimmed to 0.1 and 10). """
-
-        # prepare data
-        _rel_diff_with_ci = _rel_diff_with_ci.pivot(
-            index='appt_type', columns='value_type', values='ratio')
-        _rel_diff_with_ci['lower_error'] = (_rel_diff_with_ci['mean'] - _rel_diff_with_ci['lower'])
-        _rel_diff_with_ci['upper_error'] = (_rel_diff_with_ci['upper'] - _rel_diff_with_ci['mean'])
-
-        # plot
-        _fig, _ax = plt.subplots()
-        asymmetric_error = [_rel_diff_with_ci['lower_error'].values,
-                            _rel_diff_with_ci['upper_error'].values]
-        _ax.errorbar(_rel_diff_with_ci.index.values,
-                     _rel_diff_with_ci['mean'].values,
-                     asymmetric_error, fmt='.', capsize=3.0)
-        for _idx in _rel_diff_with_ci.index:
-            if not pd.isna(_rel_diff_with_ci.loc[_idx, 'mean']):
-                _ax.text(_idx,
-                         _rel_diff_with_ci.loc[_idx, 'mean'] * (1 + 0.2),
-                         round(_rel_diff_with_ci.loc[_idx, 'mean'], 1),
-                         ha='left', fontsize=8)
-        _ax.axhline(1.0, color='r')
-        format_and_save(_fig, _ax, _name_of_plot)
-
-    # Plot Simulation with 95% CI vs Real
-    # Get usage and ratio across all levels
-    simulation_usage_with_ci = get_simulation_usage_with_confidence_interval(results_folder)
-    real_usage_all_levels = real_usage.sum(axis=0).reset_index().rename(
-        columns={0: 'real_usage', 'Appt_Type': 'appt_type'})
-    rel_diff_with_ci_simulation = simulation_usage_with_ci.merge(real_usage_all_levels, on='appt_type', how='outer')
-    rel_diff_with_ci_simulation['ratio'] = (rel_diff_with_ci_simulation['value'] /
-                                            rel_diff_with_ci_simulation['real_usage']).clip(upper=10, lower=0.1)
-    rel_diff_with_ci_simulation.drop(columns=['value', 'real_usage'], inplace=True)
-    # plot
-    name_of_plot_with_ci_simulation = 'Model vs Real usage per appt type at all facility levels' \
-                                      '\n[Model average annual with 95% CI, Real average annual]'
-    plot_model_vs_data_usage_with_ci(rel_diff_with_ci_simulation, name_of_plot_with_ci_simulation)
-
-    # Plot Simulation vs Real with 95% CI
-    # Get usage and ratio across all levels
-    real_usage_with_ci = get_real_usage(resourcefilepath)[2].rename(columns={'Appt_Type': 'appt_type'})
-    simulation_usage_all_levels = simulation_usage.sum(axis=0).reset_index().rename(
-        columns={0: 'simulation_usage', 'index': 'appt_type'})
-    rel_diff_with_ci_real = real_usage_with_ci.merge(simulation_usage_all_levels, on='appt_type', how='outer')
-    rel_diff_with_ci_real['ratio'] = (rel_diff_with_ci_real['simulation_usage'] /
-                                      rel_diff_with_ci_real['value']).clip(upper=10, lower=0.1)
-    rel_diff_with_ci_real.drop(columns=['value', 'simulation_usage'], inplace=True)
-    rel_diff_with_ci_real.value_type = rel_diff_with_ci_real.value_type.replace({'lower': 'upper', 'upper': 'lower'})
-    # plot
-    name_of_plot_with_ci_real = 'Model vs Real usage per appt type at all facility levels' \
-                                '\n[Model average annual, Real average annual with 95% CI]'
-    plot_model_vs_data_usage_with_ci(rel_diff_with_ci_real, name_of_plot_with_ci_real)
-
-    # Plot Simulation vs Unadjusted Real with 95% CI
-    # Get usage and ratio across all levels
-    real_usage_with_ci = get_real_usage(resourcefilepath, adjusted=False)[2].rename(columns={'Appt_Type': 'appt_type'})
-    simulation_usage_all_levels = simulation_usage.sum(axis=0).reset_index().rename(
-        columns={0: 'simulation_usage', 'index': 'appt_type'})
-    rel_diff_with_ci_real = real_usage_with_ci.merge(simulation_usage_all_levels, on='appt_type', how='outer')
-    rel_diff_with_ci_real['ratio'] = (rel_diff_with_ci_real['simulation_usage'] /
-                                      rel_diff_with_ci_real['value']).clip(upper=10, lower=0.1)
-    rel_diff_with_ci_real.drop(columns=['value', 'simulation_usage'], inplace=True)
-    rel_diff_with_ci_real.value_type = rel_diff_with_ci_real.value_type.replace({'lower': 'upper', 'upper': 'lower'})
-    # plot
-    name_of_plot_with_ci_real = 'Model vs Real usage per appt type at all facility levels' \
-                                '\n[Model average annual, Unadjusted Real average annual with 95% CI]'
-    plot_model_vs_data_usage_with_ci(rel_diff_with_ci_real, name_of_plot_with_ci_real)
 
 
 if __name__ == "__main__":
