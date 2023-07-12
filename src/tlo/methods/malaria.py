@@ -896,7 +896,9 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, Malaria)
 
         self.TREATMENT_ID = 'Malaria_Treatment'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
+            ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def apply(self, person_id, squeeze_factor):
@@ -935,12 +937,6 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
                 }
                 logger.info(key='rdt_log', data=person_details_for_test)
 
-        # change footprint type if young child
-        if person['age_years'] < 5:
-            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                {'Under5OPD': 1}
-            )
-            return ACTUAL_APPT_FOOTPRINT
 
     def get_drugs(self, age_of_person):
         """
@@ -1035,7 +1031,6 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
     def did_not_run(self):
         logger.debug(key='message',
                      data='HSI_Malaria_Treatment_Complicated: did not run')
-        pass
 
 
 class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
