@@ -303,6 +303,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     """Compare appointment usage from model output with real appointment usage.
     The real appointment usage is collected from DHIS2 system and HIV Dept."""
 
+    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
+
+    # Plot Simulation vs Real usage (Across all levels) (trimmed to 0.1 and 10)
+    # format plot
     def format_and_save(_fig, _ax, _name_of_plot):
         _ax.set_title(_name_of_plot)
         _ax.set_yscale('log')
@@ -320,18 +324,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _fig.show()
         plt.close(_fig)
 
-    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
-
     # get average annual usage by level for Simulation and Real
     simulation_usage = get_simulation_usage_by_level(results_folder)
 
     real_usage = get_real_usage(resourcefilepath)[0]
 
-    # Plot Simulation vs Real usage (Across all levels) (trimmed to 0.1 and 10)
+    # find appts that are not included in both simulation and real usage dataframe
+    appts_real_only = set(real_usage.columns.values) - set(simulation_usage.columns.values)
+    appts_simulation_only = set(simulation_usage.columns.values) - set(real_usage.columns.values)
+
+    # format data
     rel_diff_all_levels = (
         simulation_usage.sum(axis=0) / real_usage.sum(axis=0)
     ).clip(lower=0.1, upper=10.0)
 
+    # plot
     name_of_plot = 'Model vs Real usage per appt type at all facility levels' \
                    '\n[Model average annual, Real average annual]'
     fig, ax = plt.subplots()
@@ -341,75 +348,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax.text(idx, rel_diff_all_levels[idx]*(1+0.2), round(rel_diff_all_levels[idx], 1),
                     ha='left', fontsize=8)
     format_and_save(fig, ax, name_of_plot)
-
-    # Plot Simulation vs Real usage (At each level) (trimmed to 0.1 and 10)
-    rel_diff_by_levels = (
-        simulation_usage / real_usage
-    ).clip(upper=10, lower=0.1).dropna(how='all', axis=0)
-
-    name_of_plot = 'Model vs Real usage per appt type per facility level\n[Model average annual, Real average annual]'
-    fig, ax = plt.subplots()
-    marker_dict = {'0': 0,
-                   '1a': 4,
-                   '1b': 5,
-                   '2': 6,
-                   '3': 7,
-                   '4': 1}  # Note that level 0/3/4 has very limited data
-    for _level, _results in rel_diff_by_levels.iterrows():
-        ax.plot(_results.index, _results.values, label=_level, linestyle='none', marker=marker_dict[_level])
-    ax.axhline(1.0, color='r')
-    format_and_save(fig, ax, name_of_plot)
-
-    # Plot Simulation vs Real usage by level by appt type and show fraction of usage at each level
-    # format data
-    real_usage_all_levels = real_usage.sum(axis=0).reset_index().rename(
-        columns={0: 'real_usage_all_levels', 'Appt_Type': 'appt_type'})
-    real_usage_reformat = pd.melt(real_usage.reset_index(), id_vars='Facility_Level',
-                                  var_name='appt_type', value_name='real_usage'
-                                  ).rename(columns={'Facility_Level': 'facility_level'})
-    simulation_usage_diff = pd.melt(simulation_usage.reset_index(), id_vars='index',
-                                    var_name='appt_type', value_name='simulation_usage'
-                                    ).rename(columns={'index': 'facility_level'})
-    simulation_usage_diff = simulation_usage_diff.merge(
-        real_usage_all_levels, on='appt_type', how='outer').merge(
-        real_usage_reformat, on=['facility_level', 'appt_type'], how='outer')
-    simulation_usage_diff['ratio'] = (simulation_usage_diff['simulation_usage'] /
-                                      simulation_usage_diff['real_usage_all_levels'])
-    simulation_usage_diff['real_usage_proportion'] = (simulation_usage_diff['real_usage'] /
-                                                      simulation_usage_diff['real_usage_all_levels'])
-    simulation_usage_plot = pd.pivot(simulation_usage_diff[['appt_type', 'facility_level', 'ratio']],
-                                     index='appt_type', columns='facility_level', values='ratio'
-                                     ).dropna(axis=1, how='all')
-    real_usage_plot = pd.pivot(simulation_usage_diff[['appt_type', 'facility_level', 'real_usage_proportion']],
-                               index='appt_type', columns='facility_level', values='real_usage_proportion'
-                               ).dropna(axis=1, how='all')
-    # plot
-    name_of_plot = 'Model vs Real usage per appointment type, with fraction per level' \
-                   '\n[Model average annual, Real average annual]'
-    fig, ax = plt.subplots(figsize=(8, 5))
-    cmp_paired = plt.get_cmap('Paired')
-    cmp_paried_0 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(0, 10, 2)))
-    cmp_paried_1 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(1, 11, 2)))
-    simulation_usage_plot.plot(kind='bar', stacked=True, width=0.4,
-                               cmap=cmp_paried_1, hatch='',
-                               ax=ax, position=0)
-    real_usage_plot.plot(kind='bar', stacked=True, width=0.4,
-                         edgecolor='black', cmap=cmp_paried_1, hatch='',
-                         ax=ax, position=1)
-    ax.set_xlim(right=len(simulation_usage_plot) - 0.5)
-    ax.yaxis.grid(True, which='major', linestyle='--')
-    ax.set_ylabel('Usage per level / Real usage all levels')
-    ax.set_xlabel('Appointment Type')
-    ax.set_title(name_of_plot)
-    legend_1 = plt.legend(simulation_usage_plot.columns, loc='upper left', bbox_to_anchor=(1.0, 0.5),
-                          title='Facility Level')
-    patch_simulation = matplotlib.patches.Patch(facecolor='beige', hatch='', label='Model')
-    patch_real = matplotlib.patches.Patch(facecolor='beige', hatch='', edgecolor="black", label='Real')
-    legend_2 = plt.legend(handles=[patch_simulation, patch_real], loc='lower left', bbox_to_anchor=(1.0, 0.6))
-    fig.add_artist(legend_1)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
-    plt.show()
 
     # Plot Simulation with 95% CI vs Adjusted & Real usage by appt type, across all levels
     # format data
@@ -461,6 +399,92 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.add_artist(legend)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
+    plt.show()
+
+    # todo: need correct the plot format
+    # Plot Simulation vs Real usage by appt type and show fraction of usage at each level
+    # Model, Adjusted real and Unadjusted real average annual usage all normalised to 1
+    # format data
+    def format_simulation_usage_fraction():
+        _usage = get_simulation_usage_by_level(results_folder)
+        _usage_all_levels = _usage.sum(axis=0).reset_index().rename(
+            columns={0: '_usage_all_levels', 'index': 'appt_type'})
+
+        _usage = pd.melt(_usage.reset_index(), id_vars='index',
+                         var_name='appt_type', value_name='_usage'
+                         ).rename(columns={'index': 'facility_level'})
+
+        _usage_fraction = _usage.merge(_usage_all_levels, on='appt_type', how='outer')
+        _usage_fraction['ratio'] = (_usage_fraction['_usage'] /
+                                    _usage_fraction['_usage_all_levels'])
+
+        _usage_fraction = pd.pivot(_usage_fraction, index='appt_type', columns='facility_level', values='ratio')
+
+        # add nan rows of appts_real_only
+        nan_df = pd.DataFrame(index=appts_real_only, columns=_usage_fraction.columns)
+        _usage_fraction = pd.concat([_usage_fraction, nan_df]).sort_index()
+
+        return _usage_fraction
+
+    def format_real_usage_fraction(adjusted=True):
+        _usage = get_real_usage(resourcefilepath, adjusted)[0]
+        _usage_all_levels = _usage.sum(axis=0).reset_index().rename(
+            columns={0: '_usage_all_levels', 'Appt_Type': 'appt_type'})
+
+        _usage = pd.melt(_usage.reset_index(), id_vars='Facility_Level',
+                         var_name='appt_type', value_name='_usage'
+                         ).rename(columns={'Facility_Level': 'facility_level'})
+
+        _usage_fraction = _usage.merge(_usage_all_levels, on='appt_type', how='outer')
+        _usage_fraction['ratio'] = (_usage_fraction['_usage'] /
+                                    _usage_fraction['_usage_all_levels'])
+
+        _usage_fraction = pd.pivot(_usage_fraction, index='appt_type', columns='facility_level', values='ratio')
+
+        # add nan rows of appts_simulation_only
+        nan_df = pd.DataFrame(index=appts_simulation_only, columns=_usage_fraction.columns)
+        _usage_fraction = pd.concat([_usage_fraction, nan_df]).sort_index()
+
+        return _usage_fraction
+
+    simulation_usage_plot = format_simulation_usage_fraction()
+    real_usage_plot = format_real_usage_fraction(adjusted=True)
+    unadjusted_real_usage_plot = format_real_usage_fraction(adjusted=False)
+    assert simulation_usage_plot.index.equals(real_usage_plot.index)
+    assert simulation_usage_plot.index.equals(unadjusted_real_usage_plot.index)
+
+    # plot
+    name_of_plot = 'Model vs Real usage per appointment type, with fraction per level' \
+                   '\n[Model average annual, Adjusted and Unadjusted real average annual]'
+    fig, ax = plt.subplots(figsize=(16, 5))
+    cmp_paired = plt.get_cmap('Paired')
+    cmp_paried_0 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(0, 10, 2)))
+    cmp_paried_1 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(1, 11, 2)))
+    simulation_usage_plot.plot(kind='bar', stacked=True, width=0.4,
+                               edgecolor='black', cmap=cmp_paried_0, hatch='',
+                               ax=ax, position=0)
+    real_usage_plot.plot(kind='bar', stacked=True, width=0.4,
+                         edgecolor='black', cmap=cmp_paried_0, hatch='.',
+                         ax=ax, position=1)
+    unadjusted_real_usage_plot.plot(kind='bar', stacked=True, width=0.4,
+                                    edgecolor='black', cmap=cmp_paried_0, hatch='//',
+                                    ax=ax, position=2)
+    ax.set_xlim(right=len(simulation_usage_plot) - 0.5)
+    ax.set_ylabel('Usage per level / Usage all levels')
+    ax.set_xlabel('Appointment Type')
+    ax.set_title(name_of_plot)
+    legend_1 = plt.legend(simulation_usage_plot.columns, loc='upper left', bbox_to_anchor=(1.0, 0.5),
+                          title='Facility Level')
+    patch_simulation = matplotlib.patches.Patch(facecolor='grey', hatch='', edgecolor="black", label='Model')
+    patch_real = matplotlib.patches.Patch(facecolor='grey', hatch='...', edgecolor="black", label='Adjusted Real')
+    patch_unadjusted_real = matplotlib.patches.Patch(facecolor='grey', hatch='///', edgecolor="black",
+                                                     label='Unadjusted Real')
+
+    legend_2 = plt.legend(handles=[patch_simulation, patch_real, patch_unadjusted_real],
+                          loc='lower left', bbox_to_anchor=(1.0, 0.6))
+    fig.add_artist(legend_1)
+    fig.tight_layout()
+    # fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
     plt.show()
 
 
