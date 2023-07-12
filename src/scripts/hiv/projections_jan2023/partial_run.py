@@ -1,3 +1,22 @@
+
+"""
+This file run scenarios for assesing unavailability of TB-related Development Assistamce for Health (DAH)
+
+It can be submitted on Azure Batch by running:
+
+ tlo batch-submit src/scripts/hiv/projections_jan2023/tb_DAH_scenarios.py
+or locally using:
+
+ tlo scenario-run src/scripts/hiv/projections_jan2023/tb_DAH_scenarios.py
+  execute a single run:
+
+ tlo scenario-run src/scripts/hiv/projections_jan2023/tb_DAH_scenarios.py --draw 1 0
+
+ check the batch configuration gets generated without error:
+tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/tb_DAH_scenarios.py
+
+ """
+
 import warnings
 from pathlib import Path
 from typing import Dict
@@ -28,11 +47,11 @@ class ImpactOfTbDaH(BaseScenario):
         super().__init__()
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2013, 12, 31)
+        self.end_date = Date(2012, 12, 31)
         self.pop_size = 1000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 4
+        self.runs_per_draw = 2
 
     def log_configuration(self):
         return {
@@ -87,30 +106,30 @@ class ImpactOfTbDaH(BaseScenario):
                     'probability_community_chest_xray': 0.0,
                 },
             },
-            "No Xpert Available": {
-                'Tb': {
-                    'scenario': 1,
-                    'probability_community_chest_xray': 0.0,
-                },
-            },
-            "No CXR Available": {
-                'Tb': {
-                    'scenario': 2,
-                    'probability_access_to_xray': 0.0,
-                    'probability_community_chest_xray': 0.0,
-                },
-            },
-            "CXR scaleup": {
-                'Tb': {
-                    'scenario': 0,
-                    'probability_access_to_xray': 0.11,
-                    'probability_community_chest_xray': 0.0,
-                }
-            },
+            # "No Xpert Available": {
+            #     'Tb': {
+            #         'scenario': 1,
+            #         'probability_community_chest_xray': 0.0,
+            #     },
+            # },
+            # "No CXR Available": {
+            #     'Tb': {
+            #         'scenario': 2,
+            #         'probability_access_to_xray': 0.0,
+            #         'probability_community_chest_xray': 0.0,
+            #     },
+            # },
+            # "CXR scaleup": {
+            #     'Tb': {
+            #         'scenario': 0,
+            #         'probability_access_to_xray': 0.11,
+            #         'probability_community_chest_xray': 0.0,
+            #     }
+            # },
             "Outreach": {
                 'Tb': {
                     'scenario': 0,
-                    'probability_community_chest_xray': 0.005,
+                    'probability_community_chest_xray': 0.01,
                 }
             }
         }
