@@ -1,6 +1,6 @@
 """Analyse scenarios for impact of TB-related development assistance for health."""
 
-# python src/scripts/hiv/projections_jan2023/draft_analysis_DAH.py --scenario-outputs-folder outputs
+# python src/scripts/hiv/projections_jan2023/draft_analysis_DAH.py --scenario-outputs-folder outputs\nic503@york.ac.uk
 import argparse
 import datetime
 from pathlib import Path

@@ -23,7 +23,7 @@ outputspath = Path("./outputs")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
-results_folder = get_scenario_outputs("partial_scenario_run-2023-07-12T173104Z", outputspath)[-1]
+results_folder = get_scenario_outputs("partial_scenario_run-2023-07-12T175612Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -350,48 +350,48 @@ properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_pe
 
 ###### PLOTS##################################################
 
-# Calculate the sum of DALYs across years for each scenario
-# baseline_total = dalys_summary.loc[:, ('Baseline', 'mean')].sum()
-# No_Xpert_total = dalys_summary.loc[:, ('No Xpert Available', 'mean')].sum()
-# No_CXR_total = dalys_summary.loc[:, ('No CXR Available', 'mean')].sum()
-# CXR_scaleup_total = dalys_summary.loc[:, ('CXR scaleup', 'mean')].sum()
-# outreach_total = dalys_summary.loc[:, ('Outreach', 'mean')].sum()
-#
-# # Calculate the corresponding lower and upper bounds
-# baseline_lower = dalys_summary.loc[:, ('Baseline', 'lower')].sum()
-# baseline_upper = dalys_summary.loc[:, ('Baseline', 'upper')].sum()
-#
-# No_Xpert_lower = dalys_summary.loc[:, ('No Xpert Available', 'lower')].sum()
-# No_Xpert_upper = dalys_summary.loc[:, ('No Xpert Available', 'upper')].sum()
-#
-# No_CXR_lower = dalys_summary.loc[:, ('No CXR Available', 'lower')].sum()
-# No_CXR_upper = dalys_summary.loc[:, ('No CXR Available', 'upper')].sum()
-#
-# CXR_scaleup_lower = dalys_summary.loc[:, ('CXR scaleup', 'lower')].sum()
-# CXR_scaleup_upper = dalys_summary.loc[:, ('CXR scaleup', 'upper')].sum()
-#
-# outreach_lower = dalys_summary.loc[:, ('Outreach', 'lower')].sum()
-# outreach_upper = dalys_summary.loc[:, ('Outreach', 'upper')].sum()
-#
-# # Plotting bar graph
-# x = np.arange(5)
-# width = 0.35
-#
-# fig, ax = plt.subplots(figsize=(8, 6))
-# bar1 = ax.bar(x[0], baseline_total, width, label='Baseline', yerr=[[baseline_total - baseline_lower], [baseline_upper - baseline_total]])
-# bar2 = ax.bar(x[1], No_Xpert_total, width, label='No Xpert Available', yerr=[[No_Xpert_total - No_Xpert_lower], [No_Xpert_upper - No_Xpert_total]])
-# bar3 = ax.bar(x[2], No_CXR_total, width, label='No CXR Available', yerr=[[No_CXR_total - No_CXR_lower], [No_CXR_upper - No_CXR_total]])
-# bar4 = ax.bar(x[3], CXR_scaleup_total, width, label='CXR Scale-up', yerr=[[CXR_scaleup_total - CXR_scaleup_lower], [CXR_scaleup_upper - CXR_scaleup_total]])
-# bar5 = ax.bar(x[4], outreach_total, width, label='Outreach', yerr=[[outreach_total - outreach_lower], [outreach_upper - outreach_total]])
-#
-# # Adding labels and title
-# ax.set_xlabel('Scenario')
-# ax.set_ylabel('Total DALYs')
-# ax.set_title('Cumulative TB DALYs 2010-2013')
-# ax.set_xticks(x)
-# ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scale-up', 'Outreach'])
-# ax.legend()
-#
-# # Displaying graph
-# plt.show()
+#Calculate the sum of DALYs across years for each scenario
+baseline_total = dalys_summary.loc[:, ('Baseline', 'mean')].sum()
+No_Xpert_total = dalys_summary.loc[:, ('No Xpert Available', 'mean')].sum()
+No_CXR_total = dalys_summary.loc[:, ('No CXR Available', 'mean')].sum()
+CXR_scaleup_total = dalys_summary.loc[:, ('CXR scaleup', 'mean')].sum()
+outreach_total = dalys_summary.loc[:, ('Outreach', 'mean')].sum()
+
+# Calculate the corresponding lower and upper bounds
+baseline_lower = dalys_summary.loc[:, ('Baseline', 'lower')].sum()
+baseline_upper = dalys_summary.loc[:, ('Baseline', 'upper')].sum()
+
+No_Xpert_lower = dalys_summary.loc[:, ('No Xpert Available', 'lower')].sum()
+No_Xpert_upper = dalys_summary.loc[:, ('No Xpert Available', 'upper')].sum()
+
+No_CXR_lower = dalys_summary.loc[:, ('No CXR Available', 'lower')].sum()
+No_CXR_upper = dalys_summary.loc[:, ('No CXR Available', 'upper')].sum()
+
+CXR_scaleup_lower = dalys_summary.loc[:, ('CXR scaleup', 'lower')].sum()
+CXR_scaleup_upper = dalys_summary.loc[:, ('CXR scaleup', 'upper')].sum()
+
+outreach_lower = dalys_summary.loc[:, ('Outreach', 'lower')].sum()
+outreach_upper = dalys_summary.loc[:, ('Outreach', 'upper')].sum()
+
+# Plotting bar graph
+x = np.arange(5)
+width = 0.35
+
+fig, ax = plt.subplots(figsize=(8, 6))
+bar1 = ax.bar(x[0], baseline_total, width, label='Baseline', yerr=[[baseline_total - baseline_lower], [baseline_upper - baseline_total]])
+bar2 = ax.bar(x[1], No_Xpert_total, width, label='No Xpert Available', yerr=[[No_Xpert_total - No_Xpert_lower], [No_Xpert_upper - No_Xpert_total]])
+bar3 = ax.bar(x[2], No_CXR_total, width, label='No CXR Available', yerr=[[No_CXR_total - No_CXR_lower], [No_CXR_upper - No_CXR_total]])
+bar4 = ax.bar(x[3], CXR_scaleup_total, width, label='CXR Scale-up', yerr=[[CXR_scaleup_total - CXR_scaleup_lower], [CXR_scaleup_upper - CXR_scaleup_total]])
+bar5 = ax.bar(x[4], outreach_total, width, label='Outreach', yerr=[[outreach_total - outreach_lower], [outreach_upper - outreach_total]])
+
+# Adding labels and title
+ax.set_xlabel('Scenario')
+ax.set_ylabel('Total DALYs')
+ax.set_title('Cumulative TB DALYs 2010-2013')
+ax.set_xticks(x)
+ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scale-up', 'Outreach'])
+ax.legend()
+
+# Displaying graph
+plt.show()
 #
