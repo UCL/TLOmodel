@@ -67,7 +67,6 @@ class ImpactOfTbDaH(BaseScenario):
                 'tlo.methods.healthsystem.summary': logging.INFO,
             }
         }
-
     def modules(self):
         return [
             demography.Demography(resourcefilepath=self.resources),

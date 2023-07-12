@@ -1,6 +1,6 @@
 """Analyse scenarios for impact of TB-related development assistance for health."""
 
-# python src/scripts/hiv/projections_jan2023/analysis_impact_Tb_DAH.py --scenario-outputs-folder outputs
+# python src/scripts/hiv/projections_jan2023/draft_analysis_DAH.py --scenario-outputs-folder outputs
 import argparse
 import datetime
 from pathlib import Path
@@ -23,7 +23,7 @@ outputspath = Path("./outputs")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
-results_folder = get_scenario_outputs("outreach_services_scenario-2023-07-12T153817Z", outputspath)[-1]
+results_folder = get_scenario_outputs("partial_scenario-2023-07-12T170437Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
