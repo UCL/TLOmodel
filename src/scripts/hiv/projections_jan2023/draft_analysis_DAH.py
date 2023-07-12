@@ -34,11 +34,6 @@ params.to_excel(outputspath / "parameters.xlsx")
 number_runs = info["runs_per_draw"]
 number_draws = info['number_of_draws']
 
-# params = params.rename(index=scenario_mapping)
-
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2012, 12, 31))
-
-
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
     from scripts.hiv.projections_jan2023.tb_DAH_scenarios import ImpactOfTbDaH
@@ -170,7 +165,6 @@ def tb_mortality_rate(results_folder, pyears_all):
     tb_deaths1 = summarize(tb_deaths[tb_deaths.index.get_level_values('cause').isin(["AIDS_TB", "TB", "AIDS_non_TB"])]).sort_index()
     tb_deaths1["year"] = tb_deaths1.index.get_level_values("year")  # Extract the 'year' values from the index
     tb_deaths1.reset_index(drop=True, inplace=True)
-
 
     # Group deaths by year
     tb_mortality = pd.DataFrame(tb_deaths1.groupby(["year"], as_index=False).sum())
@@ -327,18 +321,18 @@ properties_of_deceased_persons = log["tlo.methods.demography.detail"]["propertie
 properties_of_deceased_persons= properties_of_deceased_persons.set_index("date")
 properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_persons.xlsx")
 
-wealth_quintile = extract_results(
-    results_folder,
-    module="tlo.methods.demography.detail",
-    key="tb_properties_of_deceased_persons",
-    column="lil_wealth",
-    index="date",
-    do_scaling=False,
-    #collapse_columns=True
-).pipe(set_param_names_as_column_index_level_0)
+# wealth_quintile = extract_results(
+#     results_folder,
+#     module="tlo.methods.demography.detail",
+#     key="tb_properties_of_deceased_persons",
+#     column="lil_wealth",
+#     index="date",
+#     do_scaling=False,
+#     #collapse_columns=True
+# ).pipe(set_param_names_as_column_index_level_0)
 
-wealth_quintile.index = wealth_quintile.index.year
-wealth_quintile.to_excel(outputspath / "wealth_quintiles.xlsx")
+# wealth_quintile.index = wealth_quintile.index.year
+# wealth_quintile.to_excel(outputspath / "wealth_quintiles.xlsx")
 
 # HSE = log["tlo.methods.healthsystem.summary"]["hsi_event_details"]
 # HSE = HSE.set_index("date")
@@ -355,52 +349,49 @@ wealth_quintile.to_excel(outputspath / "wealth_quintiles.xlsx")
 # properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_persons.xlsx")
 
 ###### PLOTS##################################################
-years = dalys_summary.index
 
-# # Baseline
-# mean_values_baseline = dalys_summary.loc[:, 'mean'].values
-# lower_values_baseline = dalys_summary.loc[:, 'lower'].values
-# upper_values_baseline = dalys_summary.loc[:, 'upper'].values
-#
-# # No Xpert Available
-# mean_values_no_xpert = dalys_summary.loc[:, 'mean'].values
-# lower_values_no_xpert = dalys_summary.loc[:, 'lower'].values
-# upper_values_no_xpert = dalys_summary.loc[:, 'upper'].values
-#
-# # No CXR Available
-# mean_values_no_cxr = dalys_summary.loc[:, 'mean'].values
-# lower_values_no_cxr = dalys_summary.loc[:, 'lower'].values
-# upper_values_no_cxr = dalys_summary.loc[:, 'upper'].values
-#
-# # CXR scaleup
-# mean_values_cxr_scaleup = dalys_summary.loc[:, 'mean'].values
-# lower_values_cxr_scaleup = dalys_summary.loc[:, 'lower'].values
-# upper_values_cxr_scaleup = dalys_summary.loc[:, 'upper'].values
-#
-# # Outreach
-# mean_values_outreach = dalys_summary.loc[:, 'mean'].values
-# lower_values_outreach = dalys_summary.loc[:, 'lower'].values
-# upper_values_outreach = dalys_summary.loc[:, 'upper'].values
-#
-# # Create the bar graph
-# plt.figure(figsize=(10, 6))
-# plt.bar(years, mean_values_baseline, yerr=[lower_values_baseline, upper_values_baseline], capsize=4, label='Baseline')
-# plt.bar(years, mean_values_no_xpert, yerr=[lower_values_no_xpert, upper_values_no_xpert], capsize=4, label='No Xpert Available')
-# plt.bar(years, mean_values_no_cxr, yerr=[lower_values_no_cxr, upper_values_no_cxr], capsize=4, label='No CXR Available')
-# plt.bar(years, mean_values_cxr_scaleup, yerr=[lower_values_cxr_scaleup, upper_values_cxr_scaleup], capsize=4, label='CXR scaleup')
-# plt.bar(years, mean_values_outreach, yerr=[lower_values_outreach, upper_values_outreach], capsize=4, label='Outreach')
-#
-# plt.xlabel('Year')
-# plt.ylabel('DALYs')
-# plt.title('DALYs for TB by Scenario')
-# plt.legend()
-# plt.show()
+# Calculate the sum of DALYs across years for each scenario
+baseline_total = dalys_summary.loc[:, ('Baseline', 'mean')].sum()
+No_Xpert_total = dalys_summary.loc[:, ('No Xpert Available', 'mean')].sum()
+No_CXR_total = dalys_summary.loc[:, ('No CXR Available', 'mean')].sum()
+CXR_scaleup_total = dalys_summary.loc[:, ('CXR scaleup', 'mean')].sum()
+outreach_total = dalys_summary.loc[:, ('Outreach', 'mean')].sum()
 
+# Calculate the corresponding lower and upper bounds
+baseline_lower = dalys_summary.loc[:, ('Baseline', 'lower')].sum()
+baseline_upper = dalys_summary.loc[:, ('Baseline', 'upper')].sum()
 
+No_Xpert_lower = dalys_summary.loc[:, ('No Xpert Available', 'lower')].sum()
+No_Xpert_upper = dalys_summary.loc[:, ('No Xpert Available', 'upper')].sum()
 
+No_CXR_lower = dalys_summary.loc[:, ('No CXR Available', 'lower')].sum()
+No_CXR_upper = dalys_summary.loc[:, ('No CXR Available', 'upper')].sum()
 
+CXR_scaleup_lower = dalys_summary.loc[:, ('CXR scaleup', 'lower')].sum()
+CXR_scaleup_upper = dalys_summary.loc[:, ('CXR scaleup', 'upper')].sum()
 
+outreach_lower = dalys_summary.loc[:, ('Outreach', 'lower')].sum()
+outreach_upper = dalys_summary.loc[:, ('Outreach', 'upper')].sum()
 
+# Plotting the bar graph with error bars
+x = np.arange(5)
+width = 0.35
 
+fig, ax = plt.subplots(figsize=(8, 6))
+bar1 = ax.bar(x[0], baseline_total, width, label='Baseline', yerr=[[baseline_total - baseline_lower], [baseline_upper - baseline_total]])
+bar2 = ax.bar(x[1], No_Xpert_total, width, label='No Xpert Available', yerr=[[No_Xpert_total - No_Xpert_lower], [No_Xpert_upper - No_Xpert_total]])
+bar3 = ax.bar(x[2], No_CXR_total, width, label='No CXR Available', yerr=[[No_CXR_total - No_CXR_lower], [No_CXR_upper - No_CXR_total]])
+bar4 = ax.bar(x[3], CXR_scaleup_total, width, label='CXR Scale-up', yerr=[[CXR_scaleup_total - CXR_scaleup_lower], [CXR_scaleup_upper - CXR_scaleup_total]])
+bar5 = ax.bar(x[4], outreach_total, width, label='Outreach', yerr=[[outreach_total - outreach_lower], [outreach_upper - outreach_total]])
 
+# Adding labels and title
+ax.set_xlabel('Scenario')
+ax.set_ylabel('Total DALYs')
+ax.set_title('Cumulative TB DALYs 2010-2013')
+ax.set_xticks(x)
+ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scale-up', 'Outreach'])
+ax.legend()
+
+# Displaying graph
+plt.show()
 
