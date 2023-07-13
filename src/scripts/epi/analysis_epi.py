@@ -219,7 +219,7 @@ t2 = t1.set_axis(["level0", "level1a", "level1b", "level2", "level3", "level4"],
 
 epi = pd.DataFrame(columns=["level0", "level1a", "level1b", "level2", "level3", "level4"])
 
-for i in range(len(t2.columns)):
+for i in range(len(t2.index)):
     out = [d.get('EPI') for d in t2.iloc[i]]
     epi.loc[i] = out
 
@@ -228,21 +228,18 @@ print(epi)
 total_epi_by_facility_level = epi.sum()
 total_epi = total_epi_by_facility_level.sum()
 
-colours = ['#B7C3F3', '#DD7596', '#8EB897', '#FFF68F', '#FFC300', '#42A5F5']
+colours = ['#B7C3F3', '#DD7596', '#8EB897', '#FFF68F']
 
 plt.rcParams["axes.titlesize"] = 9
 
-ax = plt.subplot(111)  # numrows, numcols, fignum
 # calculate proportion of childhood vaccines delivered by facility level
 level0 = total_epi_by_facility_level['level0'] / total_epi
 level1a = total_epi_by_facility_level['level1a'] / total_epi
 level1b = total_epi_by_facility_level['level1b'] / total_epi
 level2 = total_epi_by_facility_level['level2'] / total_epi
-level3 = total_epi_by_facility_level['level3'] / total_epi
-level4 = total_epi_by_facility_level['level4'] / total_epi
 
-plt.pie([level0, level1a, level1b, level2, level3, level4], labels=['level 0', 'level 1a', 'level 1b', 'level 2',
-                                                    'level 3', 'level 4'],
+ax = plt.subplot(111)  # numrows, numcols, fignum
+plt.pie([level0, level1a, level1b, level2], labels=['level 0', 'level 1a', 'level 1b', 'level 2'],
         wedgeprops={'linewidth': 3, 'edgecolor': 'white'},
         autopct='%.1f%%',
         colors=colours)

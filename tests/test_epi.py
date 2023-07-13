@@ -3,6 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
+import pandas as pd
 from pandas import DateOffset
 
 from tlo import Date, Module, Simulation, logging
@@ -86,7 +87,6 @@ def test_no_health_system(tmpdir, seed):
 @pytest.mark.slow
 @pytest.mark.group2
 def test_epi_scheduling_hsi_events(tmpdir, seed):
-
     log_config = {
         'filename': 'test_log',
         'directory': tmpdir,
@@ -190,3 +190,69 @@ def test_all_doses_properties(seed):
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
     check_dtypes(sim)
+
+
+# check distribution of facility levels for vaccines
+def test_facility_level_distribution(tmpdir, seed):
+    log_config = {
+        'filename': 'test_log',
+        'directory': tmpdir,
+        'custom_levels': {"*": logging.FATAL,
+                          "tlo.methods.epi": logging.INFO,
+                          "tlo.methods.healthsystem.summary": logging.INFO}
+    }
+
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath,
+            service_availability=["*"],  # all treatment allowed
+            mode_appt_constraints=1,  # mode of constraints to do with officer numbers and time
+            cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
+            ignore_priority=False,  # do not use the priority information in HSI event to schedule
+            capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
+            use_funded_or_actual_staffing="funded_plus",
+        ),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    )
+
+    # change distribution of vaccine delivery
+    # make all vaccines occur at level 3
+    sim.modules['Epi'].parameters['prob_facility_level_for_vaccine'] = [0, 0, 0, 1.0]
+
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=Date(2014, 1, 1))
+    check_dtypes(sim)
+
+    # check we can read the results
+    output = parse_log_file(sim.log_filepath)
+
+    facilities = output["tlo.methods.healthsystem.summary"]["HSI_Event"]
+
+    tmp = facilities.Number_By_Appt_Type_Code_And_Level
+
+    t1 = pd.DataFrame(tmp.values.tolist())
+    t2 = t1.set_axis(["level0", "level1a", "level1b", "level2", "level3", "level4"], axis=1)
+
+    epi_levels = pd.DataFrame(columns=["level0", "level1a", "level1b", "level2", "level3", "level4"])
+
+    for i in range(len(t2.index)):
+        out = [d.get('EPI') for d in t2.iloc[i]]
+        epi_levels.loc[i] = out
+
+    assert epi_levels.level0.sum() == 0
+    assert epi_levels.level1a.sum() == 0
+    assert epi_levels.level1b.sum() == 0
+
+    # assert all epi appts that have occurred are at level 2
+    assert epi_levels.level2.sum() == epi_levels.sum().sum()
+
+    assert epi_levels.level3.sum() == 0
+    assert epi_levels.level4.sum() == 0
