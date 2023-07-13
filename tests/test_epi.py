@@ -1,9 +1,8 @@
 import os
-from datetime import datetime
 from pathlib import Path
 
-import pytest
 import pandas as pd
+import pytest
 from pandas import DateOffset
 
 from tlo import Date, Module, Simulation, logging
