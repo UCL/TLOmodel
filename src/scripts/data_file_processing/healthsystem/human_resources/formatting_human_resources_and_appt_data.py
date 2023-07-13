@@ -722,16 +722,31 @@ fund_staffing_table = wb_extract.copy()
 # *********************************************************************************************************************
 
 # *** Only for funded_plus ********************************************************************************************
-# In the funded staff table, it does not make sense that Likoma has no DCSA staff,
-# whereas all other district has at least 250 DCSA staff
-# As CHAI indicates Likoma's data is mostly bounded into Nhkata Bay,
-# we draw some DCSA from Nhkata Bay to Likoma using population as the weight
+# We find that the total DCSA count in establishment/funded scenario is less than that in actual scenario,
+# which is abnormal. Therefore, we use actual DCSA count data for funded_plus scenario, to avoid possible
+# negative impact caused of reduced DCSA when switch from actual to funded_plus scenario in tlo simulation.
+# First, extract the section about "Current TOTAl Staff'
+# hcw_curr_extract = wb_import.loc[3:39, 1:21]
+# hcw_curr_extract = hcw_curr_extract.drop([4, 5])
+# hcw_curr_extract.columns = hcw_curr_extract.iloc[0]
+# hcw_curr_extract = hcw_curr_extract.drop([3])
+# hcw_curr_extract = hcw_curr_extract.reset_index(drop=True)
+# hcw_curr_extract.fillna(0, inplace=True)
+# hcw_curr_extract.loc[:, 'District_Or_Hospital'] = labels
+# hcw_curr_extract.loc[:, 'Is_DistrictLevel'] = is_distlevel
+# curr_staffing_table = hcw_curr_extract.copy()
+# Then, replace the DCSA E01 data for funded_plus
+# assert (curr_staffing_table.District_Or_Hospital == fund_staffing_table.District_Or_Hospital).all()
+# fund_staffing_table['E01'] = curr_staffing_table['E01'].copy()
+# Further, it does not make sense that Likoma has no DCSA staff. As CHAI indicates Likoma's data is mostly bounded into
+# Nhkata Bay, we draw some DCSA from Nhkata Bay to Likoma using population as the weight
 # idx_likoma = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Likoma'].index
+# assert fund_staffing_table.loc[idx_likoma, 'E01'].values == 0
 # idx_nkhatabay = fund_staffing_table[fund_staffing_table['District_Or_Hospital'] == 'Nkhata Bay'].index
 # fund_staffing_table.loc[idx_likoma, 'E01'] = fund_staffing_table.loc[idx_nkhatabay, 'E01'].values[0] * (
-#     pop_by_district.loc['Likoma', 'Count'] / pop_by_district.loc['Nkhata Bay', 'Count'])
+#      pop_by_district.loc['Likoma', 'Count'] / pop_by_district.loc['Nkhata Bay', 'Count'])
 # fund_staffing_table.loc[idx_nkhatabay, 'E01'] = (
-#     fund_staffing_table.loc[idx_nkhatabay, 'E01'].values[0] - fund_staffing_table.loc[idx_likoma, 'E01'].values[0])
+#      fund_staffing_table.loc[idx_nkhatabay, 'E01'].values[0] - fund_staffing_table.loc[idx_likoma, 'E01'].values[0])
 # *********************************************************************************************************************
 
 # Sort out which are district allocations and which are central hospitals and above
@@ -1832,14 +1847,13 @@ funded_daily_capability_coarse.to_csv(
 # *** Only for funded_plus ********************************************************************************************
 # funded_daily_capability_coarse.to_csv(
 #     outputlocation / 'human_resources' / 'funded_plus' / 'ResourceFile_Daily_Capabilities.csv', index=False)
-
-
 # *********************************************************************************************************************
 
 # ---------------------------------------------------------------------------------------------------------------------
 # final check that for an appointment required at a particular level (in Appt_Time_Table), \
 # then indeed, the staff capabilities are available to satisfy that, for a person in any district \
 # (including the regional and national facilities)
+
 
 # Define the check function
 def all_appts_can_run(capability):

@@ -86,6 +86,14 @@ def get_real_usage(resourcefilepath) -> pd.DataFrame:
     real_usage = pd.read_csv(
         resourcefilepath / 'healthsystem' / 'real_appt_usage_data' / 'real_monthly_usage_of_appt_type.csv')
 
+    # add Csection usage to Delivery, as Delivery has excluded Csection in real data file (to avoid overlap)
+    # whereas Delivery in tlo output has included Csection
+    real_delivery = real_usage.loc[(real_usage.Appt_Type == 'Delivery') | (real_usage.Appt_Type == 'Csection')
+                                   ].groupby(['Year', 'Month', 'Facility_ID']).agg({'Usage': 'sum'}).reset_index()
+    real_delivery['Appt_Type'] = 'Delivery'
+    real_usage = pd.concat([real_usage.drop(real_usage[real_usage.Appt_Type == 'Delivery'].index),
+                            real_delivery])
+
     # get facility_level for each record
     real_usage = real_usage.merge(mfl[['Facility_ID', 'Facility_Level']], left_on='Facility_ID', right_on='Facility_ID')
 
@@ -154,9 +162,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
     simulation_usage = get_simulation_usage(results_folder)
+    simulation_usage = simulation_usage.reset_index().replace({'index': {'1b': '2'}}).groupby('index').sum()
 
     real_usage = get_real_usage(resourcefilepath)
     real_usage = adjust_real_usage_on_mentalall(real_usage)
+    real_usage = real_usage.reset_index().replace({'Facility_Level': {'1b': '2'}}).groupby('Facility_Level').sum()
 
     # Plot Simulation vs Real usage (Across all levels) (trimmed to 0.1 and 10)
     rel_diff_all_levels = (
