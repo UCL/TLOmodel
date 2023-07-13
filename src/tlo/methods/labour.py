@@ -2066,8 +2066,12 @@ class Labour(Module):
                 pregnancy_helper_functions.log_met_need(self, 'uterotonics', hsi_event)
 
                 # We apply a probability that this treatment will stop a womans bleeding in the first instance
-                # meaning she will not require further treatment
-                if params['prob_haemostatis_uterotonics'] > self.rng.random_sample():
+                # meaning she will not require further treatment (adjusted for delays)
+                prob_haemostatis_uterotonics = 1 - (pregnancy_helper_functions.get_treatment_effect(
+                    mni[person_id]['delay_one_two'], mni[person_id]['delay_three'], 'prob_haemostatis_uterotonics',
+                    params))
+
+                if prob_haemostatis_uterotonics > self.rng.random_sample():
 
                     # Bleeding has stopped, this woman will not be at risk of death
                     df.at[person_id, 'la_postpartum_haem'] = False
@@ -2108,11 +2112,15 @@ class Labour(Module):
                                                                                        hsi_event=hsi_event)
 
             # Similar to uterotonics we apply a probability that this intervention will successfully stop
-            # bleeding to ensure some women go on to require further care
+            # bleeding to ensure some women go on to require further care (adjusted for delay)
             if sf_check:
                 pregnancy_helper_functions.log_met_need(self, 'man_r_placenta', hsi_event)
 
-                if params['prob_successful_manual_removal_placenta'] > self.rng.random_sample():
+                prob_successful_manual_removal_placenta = 1 - (pregnancy_helper_functions.get_treatment_effect(
+                    mni[person_id]['delay_one_two'], mni[person_id]['delay_three'],
+                    'prob_successful_manual_removal_placenta', params))
+
+                if prob_successful_manual_removal_placenta > self.rng.random_sample():
 
                     df.at[person_id, 'la_postpartum_haem'] = False
                     mni[person_id]['retained_placenta'] = False
