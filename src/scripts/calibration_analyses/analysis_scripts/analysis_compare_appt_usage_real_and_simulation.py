@@ -562,7 +562,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = 'Model vs Real usage per appointment type at all facility levels' \
                    '\n[Model average annual 95% CI, Real average annual with bounds]'
     fig, ax = plt.subplots()
-    rel_diff.plot(kind='bar', yerr=err_unadjusted_real,
+    rel_diff.plot(kind='bar', yerr=asymmetric_error,
                   ax=ax, color='skyblue', label='All levels')
     ax.axhline(1.0, color='r', linestyle='--')
     ax.set_xlim(right=len(rel_diff_real) - 0.3)
