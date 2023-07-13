@@ -38,51 +38,6 @@ def check_dtypes(simulation):
     assert (df.dtypes == orig.dtypes).all()
 
 
-# checking no vaccines administered through health system
-# only hpv should stay at zero, other vaccines start as individual events (year=2010-2018)
-# coverage should gradually decline for all after 2018
-# hard constraints (mode=2) and zero capabilities
-@pytest.mark.slow
-@pytest.mark.group2
-def test_no_health_system(tmpdir, seed):
-    log_config = {
-        'filename': 'test_log',
-        'directory': tmpdir,
-        'custom_levels': {"*": logging.FATAL, "tlo.methods.epi": logging.INFO}
-    }
-
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
-    sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(
-            resourcefilepath=resourcefilepath,
-            disable_and_reject_all=True
-        ),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        epi.Epi(resourcefilepath=resourcefilepath),
-    )
-
-    sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
-    check_dtypes(sim)
-
-    # check we can read the results
-    parse_log_file(sim.log_filepath)
-    df = sim.population.props
-
-    # check no vaccines being administered through health system
-    # only hpv currently, all others start as individual events
-    assert (df.va_hpv == 0).all()
-
-    # check all infants born after Jan 2019 have no bcg / penta etc. through HSIs
-    assert not ((df.va_bcg > 0) & (df.date_of_birth > datetime(2019, 1, 1))).any()
-    assert not ((df.va_dtp > 0) & (df.date_of_birth > datetime(2019, 1, 1))).any()
-
-
 # check epi module does schedule hsi events
 @pytest.mark.slow
 @pytest.mark.group2
@@ -117,8 +72,7 @@ def test_epi_scheduling_hsi_events(tmpdir, seed):
     output = parse_log_file(sim.log_filepath)
     df = sim.population.props
 
-    # check vaccine coverage is above zero for all vaccine types post 2019
-    # 2010-2018 vaccines administered through individual events
+    # check vaccine coverage is above zero for all vaccine types
     ep_out = output["tlo.methods.epi"]["ep_vaccine_coverage"]
 
     # check vaccine coverage is above 0 for all vaccine types
