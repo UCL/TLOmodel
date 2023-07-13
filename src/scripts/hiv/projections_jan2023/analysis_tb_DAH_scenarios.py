@@ -1,3 +1,6 @@
+"""Analyse scenarios for impact of TB-related development assistance for health."""
+
+# python src/scripts/hiv/projections_jan2023/analysis_tb_DAH_scenarios.py --scenario-outputs-folder outputs\nic503@york.ac.uk
 import argparse
 import datetime
 from pathlib import Path
@@ -20,7 +23,7 @@ outputspath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
-results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_run02-2023-07-12T202222Z", outputspath)[-1]
+results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_run01-2023-07-11T193223Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -88,7 +91,7 @@ for draw in range(number_draws):
     pyears_all = pd.concat([pyears_all, pyears_summary], axis=1)
 pyears_all = pyears_all.pipe(set_param_names_as_column_index_level_0)
 # Print the DataFrame to Excel
-pyears_all.to_excel(outputspath / "pyears_all.xlsx")
+pyears_all.to_excel (outputspath / "pyears_all.xlsx")
 
 # Number of TB deaths and mortality rate
 results_deaths = extract_results(
@@ -145,8 +148,8 @@ dalys_summary.to_excel(outputspath / "summarised_tb_dalys.xlsx")
 # secondary outcomes
 print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
 
-
-def tb_mortality0(results_folderl):
+#raw mortality
+def tb_mortality0(results_folder):
     tb_deaths = extract_results(
         results_folder,
         module="tlo.methods.demography",
@@ -166,20 +169,11 @@ def tb_mortality0(results_folderl):
     # Group deaths by year
     tb_mortality = pd.DataFrame(tb_deaths1.groupby(["year"], as_index=False).sum())
     tb_mortality.set_index("year", inplace=True)
-    print("Tb deaths as follows:", tb_mortality)
     return tb_mortality
 
-# Call the function with appropriate arguments
-tb_mortality_summary = tb_mortality0(results_folder)
-
-
-
-# Print the mortality DataFrame to Excel
-mortality_rates.to_excel(outputspath / "raw_mortality.xlsx")
-
-
-
-
+#printing file to excel
+tb_mortality = tb_mortality0(results_folder)
+tb_mortality.to_excel(outputspath / "raw_mortality.xlsx")
 
 #TB mortality rate
 def tb_mortality_rate(results_folder, pyears_all):
@@ -202,13 +196,21 @@ def tb_mortality_rate(results_folder, pyears_all):
     # Group deaths by year
     tb_mortality = pd.DataFrame(tb_deaths1.groupby(["year"], as_index=False).sum())
     tb_mortality.set_index("year", inplace=True)
-    print("Tb deaths as follows", tb_mortality)
-    #tb_mortality.index= tb_mortality.index.year
-    #tb_mortality.to_excel(outputspath / "raw_mortality.xlsx")
-    return tb_mortality
 
+    # Divide draw/run by the respective person-years from that run
+    tb_mortality1 = tb_mortality.reset_index(drop=True).div(pyears_all.reset_index(drop=True), axis='rows')
+    print("Tb mortality pattern as follows:", tb_mortality1)
+    tb_mortality1.to_excel(outputspath / "mortality_rates.xlsx")
 
+    tb_mortality_rate = {}  # empty dict
+    tb_mortality_rate["median"] =tb_mortality1.quantile(0.5, axis=1) * 100000
+    tb_mortality_rate["lower"] = tb_mortality1.quantile(0.025, axis=1) * 100000
+    tb_mortality_rate["upper"] =tb_mortality1.quantile(0.975, axis=1) * 100000
+    return tb_mortality_rate
 
+# Call the function with appropriate arguments
+mortality_rates = tb_mortality_rate(results_folder, pyears_all)
+mortality_rates_summary = pd.DataFrame.from_dict(mortality_rates)
 
 # Print scaling factor to population level estimates
 print(f"The scaling factor is: {log['tlo.methods.demography']['scaling_factor']}")
@@ -370,6 +372,9 @@ properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_pe
 # properties_of_deceased_persons= properties_of_deceased_persons.set_index("date")
 # properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_persons.xlsx")
 
+
+
+
 ###### PLOTS##################################################
 
 # Calculate the sum of DALYs across years for each scenario
@@ -454,8 +459,8 @@ bar5 = ax.bar(x[4], outreach_total, width, label='Outreach', yerr=[[outreach_tot
 
 # Adding labels and title
 ax.set_xlabel('Scenario')
-ax.set_ylabel('Total TB Deaths')
-ax.set_title('Cumulative TB Deaths 2010-2013')
+ax.set_ylabel('TB Mortality')
+ax.set_title('Cumulative TB Mortality 2010-2013')
 ax.set_xticks(x)
 ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scale-up', 'Outreach'])
 ax.legend()
