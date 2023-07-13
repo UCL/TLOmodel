@@ -20,8 +20,7 @@ from tlo.methods.cardio_metabolic_disorders import (
     CardioMetabolicDisordersDeathEvent,
     CardioMetabolicDisordersEvent,
     CardioMetabolicDisordersWeightLossEvent,
-    HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms,
-    HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms,
+    HSI_CardioMetabolicDisorders_Investigations,
     HSI_CardioMetabolicDisorders_Refill_Medication,
     HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment,
     HSI_CardioMetabolicDisorders_StartWeightLossAndMedication,
@@ -558,7 +557,7 @@ def test_symptoms(seed):
 
 
 def test_hsi_investigation_not_following_symptoms(seed):
-    """Create a person and check if the functions in HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms
+    """Create a person and check if the functions in `HSI_CardioMetabolicDisorders_Investigations`
     create the correct HSI"""
 
     # Make a list of all conditions and events to run this test for
@@ -585,8 +584,8 @@ def test_hsi_investigation_not_following_symptoms(seed):
         df.at[person_id, 'li_bmi'] = 4
 
         # Run the InvestigationNotFollowingSymptoms event
-        t = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(module=sim.modules[
-            'CardioMetabolicDisorders'], person_id=person_id, condition=f'{condition}')
+        t = HSI_CardioMetabolicDisorders_Investigations(module=sim.modules[
+            'CardioMetabolicDisorders'], person_id=person_id, conditions_to_investigate=[f'{condition}', ])
         t.apply(person_id=person_id, squeeze_factor=0.0)
 
         # Check that there is StartWeightLossAndMedication event scheduled
@@ -604,8 +603,8 @@ def test_hsi_investigation_not_following_symptoms(seed):
 
 
 def test_hsi_investigation_following_symptoms(seed):
-    """Create a person and check if the functions in HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms
-    create the correct HSI"""
+    """Create a person and check if the functions in `HSI_CardioMetabolicDisorders_Investigations`
+    creates the correct HSI"""
 
     # Make a list of all conditions and events to run this test for
     condition_list = ['diabetes', 'chronic_lower_back_pain', 'chronic_kidney_disease', 'chronic_ischemic_hd']
@@ -637,8 +636,8 @@ def test_hsi_investigation_following_symptoms(seed):
         )
 
         # Run the InvestigationNotFollowingSymptoms event
-        t = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(module=sim.modules[
-            'CardioMetabolicDisorders'], person_id=person_id, condition=f'{condition}')
+        t = HSI_CardioMetabolicDisorders_Investigations(module=sim.modules[
+            'CardioMetabolicDisorders'], person_id=person_id, conditions_to_investigate=[f'{condition}'])
         t.apply(person_id=person_id, squeeze_factor=0.0)
 
         # Check that there is StartWeightLossAndMedication event scheduled
@@ -756,7 +755,7 @@ def test_hsi_emergency_events(seed):
 
         # Run the SeeksEmergencyCareAndGetsTreatment event
         t = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(module=sim.modules[
-            'CardioMetabolicDisorders'], person_id=person_id, ev=f'{event}')
+            'CardioMetabolicDisorders'], person_id=person_id, events_to_investigate=[f'{event}'])
         t.apply(person_id=person_id, squeeze_factor=0.0)
 
         # Check that the individual is now diagnosed, on medication, there is a StartMedication event scheduled, and
@@ -848,7 +847,7 @@ def test_no_availability_of_consumables_for_events(seed):
 
         # Run the SeeksEmergencyCareAndGetsTreatment event on this person
         t = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(module=sim.modules[
-            'CardioMetabolicDisorders'], person_id=person_id, ev=f'{event}')
+            'CardioMetabolicDisorders'], person_id=person_id, events_to_investigate=[f'{event}'])
         t.apply(person_id=person_id, squeeze_factor=0.0)
 
         # Check that the individual is not on medication due to lack of consumables, and that there is a scheduled date
