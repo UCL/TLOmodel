@@ -937,7 +937,6 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
                 }
                 logger.info(key='rdt_log', data=person_details_for_test)
 
-
     def get_drugs(self, age_of_person):
         """
         :param age_of_person:
