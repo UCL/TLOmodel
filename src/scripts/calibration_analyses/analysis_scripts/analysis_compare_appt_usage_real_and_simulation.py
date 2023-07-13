@@ -272,7 +272,7 @@ def get_real_usage(resourcefilepath, adjusted=True) -> pd.DataFrame:
     annual_usage_by_level = annual_usage_by_level.groupby(
         ['Year', 'Appt_Type', 'Facility_Level'])['Usage'].sum().reset_index()
 
-    # prepare annual usage by level with mean, 75% percentile, and 25% percentile
+    # prepare annual usage by level with mean, 97.5% percentile, and 2.5% percentile
     annual_usage_by_level_with_ci = annual_usage_by_level.drop(columns='Year').groupby(
         ['Appt_Type', 'Facility_Level']
     ).describe(percentiles=[0.025, 0.975]
@@ -288,7 +288,7 @@ def get_real_usage(resourcefilepath, adjusted=True) -> pd.DataFrame:
     annual_usage_by_level_with_ci.value_type = annual_usage_by_level_with_ci.value_type.replace({'2.5%': 'lower',
                                                                                                  '97.5%': 'upper'})
 
-    # prepare annual usage at all levels with mean, 75% percentile, and 25% percentile
+    # prepare annual usage at all levels with mean, 97.5% percentile, and 2.5% percentile
     annual_usage_with_ci = annual_usage_by_level.groupby(
         ['Year', 'Appt_Type'])['Usage'].sum().reset_index().drop(columns='Year').groupby(
         'Appt_Type').describe(percentiles=[0.025, 0.975]
