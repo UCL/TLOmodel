@@ -628,6 +628,10 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
+        # If the person does not remain on anti-epileptics, do nothing:
+        if not df.at[person_id, 'ep_antiep']:
+            return hs.get_blank_appt_footprint()
+
         # Schedule a reoccurrence of this follow-up in 3 months if ep_seiz_stat == '3',
         # else, schedule this reoccurrence of it in 1 year (i.e., if ep_seiz_stat == '2')
         hs.schedule_hsi_event(
