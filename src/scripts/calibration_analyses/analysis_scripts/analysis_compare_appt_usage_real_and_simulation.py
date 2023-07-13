@@ -428,6 +428,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         nan_df = pd.DataFrame(index=appts_real_only, columns=_usage_fraction.columns)
         _usage_fraction = pd.concat([_usage_fraction, nan_df]).sort_index()
 
+        # make row of appts_simulation_only nan
+        _usage_fraction.loc[_usage_fraction.index.isin(appts_simulation_only), :] = np.NaN
+
         return _usage_fraction
 
     def format_real_usage_fraction(adjusted=True):
@@ -449,6 +452,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         nan_df = pd.DataFrame(index=appts_simulation_only, columns=_usage_fraction.columns)
         _usage_fraction = pd.concat([_usage_fraction, nan_df]).sort_index()
 
+        # make row of appts_real_only nan
+        _usage_fraction.loc[_usage_fraction.index.isin(appts_real_only), :] = np.NaN
+
         return _usage_fraction
 
     simulation_usage_plot = format_simulation_usage_fraction()
@@ -460,35 +466,35 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # plot
     name_of_plot = 'Model vs Real usage per appointment type, with fraction per level' \
                    '\n[Model average annual, Adjusted and Unadjusted real average annual]'
-    fig, ax = plt.subplots(figsize=(16, 5))
+    fig, ax = plt.subplots(figsize=(12, 5))
     cmp_paired = plt.get_cmap('Paired')
     cmp_paried_0 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(0, 10, 2)))
     cmp_paried_1 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(1, 11, 2)))
-    simulation_usage_plot.plot(kind='bar', stacked=True, width=0.4,
-                               edgecolor='black', cmap=cmp_paried_0, hatch='',
-                               ax=ax)
-    real_usage_plot.plot(kind='bar', stacked=True, width=0.4,
-                         edgecolor='black', cmap=cmp_paried_0, hatch='.',
-                         ax=ax)
-    unadjusted_real_usage_plot.plot(kind='bar', stacked=True, width=0.4,
-                                    edgecolor='black', cmap=cmp_paried_0, hatch='//',
-                                    ax=ax)
-    ax.set_xlim(right=len(simulation_usage_plot) - 0.5)
+    simulation_usage_plot.plot(kind='bar', stacked=True, width=0.3,
+                               edgecolor='dimgrey', cmap=cmp_paried_0, hatch='',
+                               ax=ax, position=0)
+    real_usage_plot.plot(kind='bar', stacked=True, width=0.25,
+                         edgecolor='dimgrey', cmap=cmp_paried_0, hatch='.',
+                         ax=ax, position=1)
+    unadjusted_real_usage_plot.plot(kind='bar', stacked=True, width=0.25,
+                                    edgecolor='dimgrey', cmap=cmp_paried_0, hatch='//',
+                                    ax=ax, position=2)
+    ax.set_xlim(right=len(simulation_usage_plot) - 0.45)
     ax.set_ylabel('Usage per level / Usage all levels')
     ax.set_xlabel('Appointment Type')
     ax.set_title(name_of_plot)
     legend_1 = plt.legend(simulation_usage_plot.columns, loc='upper left', bbox_to_anchor=(1.0, 0.5),
                           title='Facility Level')
-    patch_simulation = matplotlib.patches.Patch(facecolor='grey', hatch='', edgecolor="black", label='Model')
-    patch_real = matplotlib.patches.Patch(facecolor='grey', hatch='...', edgecolor="black", label='Adjusted Real')
-    patch_unadjusted_real = matplotlib.patches.Patch(facecolor='grey', hatch='///', edgecolor="black",
+    patch_simulation = matplotlib.patches.Patch(facecolor='lightgrey', hatch='', edgecolor="dimgrey", label='Model')
+    patch_real = matplotlib.patches.Patch(facecolor='lightgrey', hatch='...', edgecolor="dimgrey", label='Adjusted Real')
+    patch_unadjusted_real = matplotlib.patches.Patch(facecolor='lightgrey', hatch='///', edgecolor="dimgrey",
                                                      label='Unadjusted Real')
 
-    legend_2 = plt.legend(handles=[patch_simulation, patch_real, patch_unadjusted_real],
+    legend_2 = plt.legend(handles=[patch_unadjusted_real, patch_real, patch_simulation],
                           loc='lower left', bbox_to_anchor=(1.0, 0.6))
     fig.add_artist(legend_1)
     fig.tight_layout()
-    # fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
+    fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
     plt.show()
 
 
