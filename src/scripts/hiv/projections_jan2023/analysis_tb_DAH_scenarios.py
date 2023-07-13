@@ -467,3 +467,37 @@ ax.legend()
 
 # Displaying graph
 plt.show()
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="generate plot for each scenario",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "--output-path",
+        help="Directory to write outputs to. If not specified, outputs will be written to the results directory.",
+        type=Path,
+        default=None,
+        required=False,
+    )
+    parser.add_argument(
+        "--resources-path",
+        help="Directory containing resource files",
+        type=Path,
+        default=Path('resources'),
+        required=False,
+    )
+    parser.add_argument(
+        "--results-path",
+        type=Path,
+        help="Directory containing results from running src/scripts/hiv/projections_jan2023/tb_DAH_scenario.py",
+        default= None,
+        required=False
+    )
+    args = parser.parse_args()
+
+    # apply(
+    #     results_folder=args.results_path,
+    #     output_folder=args.output_path,
+    #     resourcefilepath=args.resources_path
+    # )
