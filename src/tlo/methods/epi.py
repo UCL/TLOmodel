@@ -169,7 +169,7 @@ class Epi(Module):
         # available since 1980
         # second dose only started in 2015
         # by Jan 2010, anyone <=30 years has 77.2% prob of having vaccine
-        df.loc[df.is_alive & (random_draw < df_vaccine_baseline["MCV1"]), "va_measles"] = 3
+        df.loc[df.is_alive & (random_draw < df_vaccine_baseline["MCV1"]), "va_measles"] = 1
 
         # update the 'all_doses' properties for initial population
         for vaccine, max_dose in self.all_doses.items():
@@ -178,6 +178,7 @@ class Epi(Module):
     def initialise_simulation(self, sim):
         # add an event to log to screen
         sim.schedule_event(EpiLoggingEvent(self), sim.date + DateOffset(years=1))
+
         # HPV vaccine given from 2018 onwards
         sim.schedule_event(HpvScheduleEvent(self), Date(2018, 1, 1))
 
@@ -199,7 +200,7 @@ class Epi(Module):
         assume hepB3 coverage in 2012 same as 2011
         same with Hib
 
-        Measles - first dose, only one dose pre-2017 and no rubella
+        Measles - first dose, only one dose pre-2016 and no rubella
         Measles, rubella - first dose, 2018 onwards
 
         :param mother_id: the ID for the mother for this child
@@ -287,7 +288,8 @@ class Epi(Module):
 
         self.cons_item_codes['bcg'] = get_item_code_from_item_name("Syringe, autodisposable, BCG, 0.1 ml, with needle")
         self.cons_item_codes['opv'] = get_item_code_from_item_name("Polio vaccine")
-        self.cons_item_codes['pentavalent_vaccine'] = get_item_code_from_item_name("Pentavalent vaccine (DPT, Hep B, Hib)")
+        self.cons_item_codes['pentavalent_vaccine'] = get_item_code_from_item_name(
+            "Pentavalent vaccine (DPT, Hep B, Hib)")
         self.cons_item_codes["rota"] = get_item_code_from_item_name("Rotavirus vaccine")
         self.cons_item_codes["pneumo"] = get_item_code_from_item_name("Pneumococcal vaccine")
         self.cons_item_codes["measles_and_rubella"] = get_item_code_from_item_name("Measles vaccine")
@@ -297,6 +299,7 @@ class Epi(Module):
             get_item_code_from_item_name("Syringe, Autodisable SoloShot IX "),
             get_item_code_from_item_name("Safety box for used syringes/needles, 5 liter")]
 
+
 # ---------------------------------------------------------------------------------
 # Individually Scheduled Vaccine Events
 # ---------------------------------------------------------------------------------
@@ -305,18 +308,21 @@ class Epi(Module):
 # BCG
 class BcgVaccineEvent(Event, IndividualScopeEventMixin):
     """ give BCG vaccine at birth """
+
     def apply(self, person_id):
         self.module.increment_dose(person_id, "bcg")
 
 
 class OpvEvent(Event, IndividualScopeEventMixin):
     """ give oral poliovirus vaccine (OPV) """
+
     def apply(self, person_id):
         self.module.increment_dose(person_id, "opv")
 
 
 class DtpHepVaccineEvent(Event, IndividualScopeEventMixin):
     """ give DTP_Hep vaccine """
+
     def apply(self, person_id):
         self.module.increment_dose(person_id, "dtp")
         self.module.increment_dose(person_id, "hep")
@@ -324,6 +330,7 @@ class DtpHepVaccineEvent(Event, IndividualScopeEventMixin):
 
 class DtpHibHepVaccineEvent(Event, IndividualScopeEventMixin):
     """ give DTP_Hib_Hep vaccine """
+
     def apply(self, person_id):
         self.module.increment_dose(person_id, "dtp")
         self.module.increment_dose(person_id, "hep")
@@ -332,36 +339,40 @@ class DtpHibHepVaccineEvent(Event, IndividualScopeEventMixin):
 
 class RotavirusVaccineEvent(Event, IndividualScopeEventMixin):
     """ give Rotavirus vaccine """
+
     def apply(self, person_id):
         self.module.increment_dose(person_id, "rota")
 
 
 class PneumococcalVaccineEvent(Event, IndividualScopeEventMixin):
     """ give Pneumococcal vaccine (PCV) """
+
     def apply(self, person_id):
         self.module.increment_dose(person_id, "pneumo")
 
 
 class HibVaccineEvent(Event, IndividualScopeEventMixin):
     """ give Haemophilus influenza B vaccine """
+
     def apply(self, person_id):
         self.module.increment_dose(person_id, "hib")
 
 
-class MeaslesVaccineEvent(Event, IndividualScopeEventMixin):
-    """ give measles vaccine """
-    def apply(self, person_id):
-        self.module.increment_dose(person_id, "measles")
-
-
-# todo if pre-2016, one dose of measles only
-# todo if 2016 allow 2 doses measles
-# todo if 2018
 class MeaslesRubellaVaccineEvent(Event, IndividualScopeEventMixin):
     """ give measles/rubella vaccine """
+
     def apply(self, person_id):
-        self.module.increment_dose(person_id, "measles")
-        self.module.increment_dose(person_id, "rubella")
+
+        df = self.sim.population
+
+        # give vaccine if first dose or if second dose and after 2016
+        if (df.at[person_id, "va_measles"] == 0) or (
+            (df.at[person_id, "va_measles"] == 1) and (self.sim.date.year >= 2016)):
+            self.module.increment_dose(person_id, "measles")
+
+            # rubella contained in vaccine from 2018
+            if self.sim.date.year >= 2018:
+                self.module.increment_dose(person_id, "rubella")
 
 
 class HpvScheduleEvent(RegularEvent, PopulationScopeEventMixin):
@@ -372,6 +383,7 @@ class HpvScheduleEvent(RegularEvent, PopulationScopeEventMixin):
     WHO recommends 2 doses
     schedule doses 1 month apart
     """
+
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=12))
 
@@ -428,6 +440,7 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
     """This is a base class for all vaccination HSI_Events. Handles initialisation and requesting consumables needed
     for the vaccination. For custom behaviour, you can override __init__ in subclasses and implemented your own
     constructors (or inherit directly from HSI_Event)"""
+
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Epi)
@@ -450,6 +463,7 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
 
 class HSI_BcgVaccine(HsiBaseVaccine):
     """gives bcg vaccine 24 hours after birth or as soon as possible afterwards"""
+
     def treatment_id(self):
         return "Epi_Childhood_Bcg"
 
@@ -463,23 +477,25 @@ class HSI_BcgVaccine(HsiBaseVaccine):
 
 class HSI_opv(HsiBaseVaccine):
     """gives poliovirus vaccine 24 hours after birth, plus weeks 6, 10, 14 or as soon as possible afterwards"""
+
     def treatment_id(self):
         return "Epi_Childhood_Opv"
 
     def apply(self, person_id, squeeze_factor):
         if self.get_consumables(item_codes=self.module.cons_item_codes["opv"],
-                                    optional_item_codes=self.module.cons_item_codes["syringes"]):
+                                optional_item_codes=self.module.cons_item_codes["syringes"]):
             self.module.increment_dose(person_id, "opv")
 
 
 class HSI_DtpHibHepVaccine(HsiBaseVaccine):
     """ gives DTP-Hib_HepB vaccine """
+
     def treatment_id(self):
         return "Epi_Childhood_DtpHibHep"
 
     def apply(self, person_id, squeeze_factor):
         if self.get_consumables(item_codes=self.module.cons_item_codes['pentavalent_vaccine'],
-                                    optional_item_codes=self.module.cons_item_codes["syringes"]):
+                                optional_item_codes=self.module.cons_item_codes["syringes"]):
             self.module.increment_dose(person_id, "dtp")
             self.module.increment_dose(person_id, "hib")
             self.module.increment_dose(person_id, "hep")
@@ -487,6 +503,7 @@ class HSI_DtpHibHepVaccine(HsiBaseVaccine):
 
 class HSI_RotaVaccine(HsiBaseVaccine):
     """ gives Rotavirus vaccine 6 and 10 weeks after birth """
+
     def treatment_id(self):
         return "Epi_Childhood_Rota"
 
@@ -504,29 +521,32 @@ class HSI_RotaVaccine(HsiBaseVaccine):
 
 class HSI_PneumoVaccine(HsiBaseVaccine):
     """ gives Pneumococcal vaccine 6, 10 and 14 weeks after birth """
+
     def treatment_id(self):
         return "Epi_Childhood_Pneumo"
 
     def apply(self, person_id, squeeze_factor):
         if self.get_consumables(item_codes=self.module.cons_item_codes["pneumo"],
-                                    optional_item_codes=self.module.cons_item_codes["syringes"]):
+                                optional_item_codes=self.module.cons_item_codes["syringes"]):
             self.module.increment_dose(person_id, "pneumo")
 
 
 class HSI_MeaslesRubellaVaccine(HsiBaseVaccine):
     """ administers measles+rubella vaccine """
+
     def treatment_id(self):
         return "Epi_Childhood_MeaslesRubella"
 
     def apply(self, person_id, squeeze_factor):
         if self.get_consumables(item_codes=self.module.cons_item_codes["measles_and_rubella"],
-                                    optional_item_codes=self.module.cons_item_codes["syringes"]):
+                                optional_item_codes=self.module.cons_item_codes["syringes"]):
             self.module.increment_dose(person_id, "measles")
             self.module.increment_dose(person_id, "rubella")
 
 
 class HSI_HpvVaccine(HsiBaseVaccine):
     """ gives HPV vaccine to 9 year old girls; recommended 2 doses (WHO) """
+
     def treatment_id(self):
         return "Epi_Adolescent_Hpv"
 
@@ -542,12 +562,13 @@ class HSI_TdVaccine(HsiBaseVaccine):
     """ gives tetanus/diphtheria vaccine to pregnant women as part of routine antenatal care
     recommended 2+ doses (WHO)
     """
+
     def treatment_id(self):
         return "Epi_Pregnancy_Td"
 
     def apply(self, person_id, squeeze_factor):
         if self.get_consumables(item_codes=self.module.cons_item_codes["td"],
-                                    optional_item_codes=self.module.cons_item_codes["syringes"]):
+                                optional_item_codes=self.module.cons_item_codes["syringes"]):
             self.module.increment_dose(person_id, "td")
 
 
