@@ -383,13 +383,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = 'Model vs Real usage per appointment type at all levels' \
                    '\n[Model average annual 95% CI, Adjusted and Unadjusted real average annual]'
     fig, ax = plt.subplots(figsize=(8, 5))
-    rel_diff_real.plot(kind='bar', yerr=err_real, width=0.4,
-                       ax=ax, position=0,
-                       legend=False, color='green')
     rel_diff_unadjusted_real.plot(kind='bar', yerr=err_unadjusted_real, width=0.4,
-                                  ax=ax, position=1,
+                                  ax=ax, position=0,
                                   legend=False, color='red')
-    ax.set_xlim(right=len(rel_diff_real) - 0.5)
+    rel_diff_real.plot(kind='bar', yerr=err_real, width=0.4,
+                       ax=ax, position=1,
+                       legend=False, color='green')
+    ax.set_xlim(right=len(rel_diff_real) - 0.3)
     ax.set_ylim(0, 6)
     ax.set_yticks(np.arange(0, 6.5, 0.5).tolist())
     ax.yaxis.grid(True, which='major', linestyle='--')
@@ -399,7 +399,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot)
     patch_real = matplotlib.patches.Patch(facecolor='green', label='Adjusted real')
     patch_unadjusted_real = matplotlib.patches.Patch(facecolor='red', label='Unadjusted real')
-    legend = plt.legend(handles=[patch_unadjusted_real, patch_real], loc='center left', bbox_to_anchor=(1.0, 0.5))
+    legend = plt.legend(handles=[patch_real, patch_unadjusted_real], loc='center left', bbox_to_anchor=(1.0, 0.5))
     fig.add_artist(legend)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
@@ -466,13 +466,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     cmp_paried_1 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(1, 11, 2)))
     simulation_usage_plot.plot(kind='bar', stacked=True, width=0.4,
                                edgecolor='black', cmap=cmp_paried_0, hatch='',
-                               ax=ax, position=0)
+                               ax=ax)
     real_usage_plot.plot(kind='bar', stacked=True, width=0.4,
                          edgecolor='black', cmap=cmp_paried_0, hatch='.',
-                         ax=ax, position=1)
+                         ax=ax)
     unadjusted_real_usage_plot.plot(kind='bar', stacked=True, width=0.4,
                                     edgecolor='black', cmap=cmp_paried_0, hatch='//',
-                                    ax=ax, position=2)
+                                    ax=ax)
     ax.set_xlim(right=len(simulation_usage_plot) - 0.5)
     ax.set_ylabel('Usage per level / Usage all levels')
     ax.set_xlabel('Appointment Type')
