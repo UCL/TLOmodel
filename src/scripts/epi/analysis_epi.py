@@ -31,12 +31,14 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 12, 31)
-popsize = 500
+end_date = Date(2022, 12, 31)
+popsize = 2500
 
 log_config = {
     'filename': 'Epi_LogFile',
-    'custom_levels': {"*": logging.WARNING, "tlo.methods.epi": logging.INFO}
+    'custom_levels': {"*": logging.WARNING,
+                      "tlo.methods.epi": logging.INFO,
+                      "tlo.methods.healthsystem.summary": logging.INFO}
 }
 
 # Establish the simulation object

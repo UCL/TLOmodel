@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+import numpy as np
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -25,7 +26,11 @@ class Epi(Module):
     PARAMETERS = {
         "baseline_coverage": Parameter(Types.DATA_FRAME, "baseline vaccination coverage (all vaccines)"),
         "vaccine_schedule": Parameter(Types.SERIES, "vaccination schedule applicable from 2018 onwards"),
-        "district_vaccine_coverage": Parameter(Types.DATA_FRAME, "coverage of each vaccine type by year and district")
+        "district_vaccine_coverage": Parameter(Types.DATA_FRAME, "coverage of each vaccine type by year and district"),
+        "prob_facility_level_for_vaccine": Parameter(Types.LIST,
+                                                     "The probability of going to each facility-level (0 / 1a / 1b / 2)"
+                                                     " for child having vaccines given through childhood immunisation "
+                                                     "schedule. The probabilities must sum to 1.0 ")
     }
 
     PROPERTIES = {
@@ -70,6 +75,8 @@ class Epi(Module):
         workbook = pd.read_excel(
             Path(self.resourcefilepath) / 'ResourceFile_EPI_WHO_estimates.xlsx', sheet_name=None
         )
+
+        self.load_parameters_from_dataframe(workbook["parameters"])
 
         p["baseline_coverage"] = workbook["WHO_estimates"]
         p["vaccine_schedule"] = workbook["vaccine_schedule"].set_index('vaccine')['date_administration_days']
@@ -191,6 +198,10 @@ class Epi(Module):
         # Look up item codes for consumables
         self.get_item_codes()
 
+        # Check that the values enetered for 'prob_facility_level_for_vaccine' sum to 1.0
+        probs = self.parameters['prob_facility_level_for_vaccine']
+        assert all(np.isfinite(probs)) and np.isclose(sum(probs), 1.0)
+
     def on_birth(self, mother_id, child_id):
         """Initialise our properties for a newborn individual
 
@@ -253,10 +264,19 @@ class Epi(Module):
             (HSI_MeaslesRubellaVaccine, ['MR1', 'MR2'])
         ]
 
+        # choose facility level where child will receive all their childhood vaccinations
+        # Determine the level at which care is sought
+        facility_levels = ('0', '1a', '1b', '2')
+        facility_level_for_vaccines = self.rng.choice(
+            facility_levels,
+            p=self.parameters['prob_facility_level_for_vaccine'],
+            size=1)[0]
+
         for each_vax in vax_schedule:
             vax_hsi_event, admin_schedule = each_vax
             for admin_key in admin_schedule:
-                vax_event_instance = vax_hsi_event(self, person_id=child_id)
+                vax_event_instance = vax_hsi_event(self, person_id=child_id,
+                                                   facility_level_of_this_hsi=facility_level_for_vaccines)
                 scheduled_date = vax_date[admin_key]
                 # Request the health system to have this vaccination appointment
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -301,79 +321,8 @@ class Epi(Module):
 
 
 # ---------------------------------------------------------------------------------
-# Individually Scheduled Vaccine Events
+# Schedule vaccines outside EPI
 # ---------------------------------------------------------------------------------
-
-
-# BCG
-class BcgVaccineEvent(Event, IndividualScopeEventMixin):
-    """ give BCG vaccine at birth """
-
-    def apply(self, person_id):
-        self.module.increment_dose(person_id, "bcg")
-
-
-class OpvEvent(Event, IndividualScopeEventMixin):
-    """ give oral poliovirus vaccine (OPV) """
-
-    def apply(self, person_id):
-        self.module.increment_dose(person_id, "opv")
-
-
-class DtpHepVaccineEvent(Event, IndividualScopeEventMixin):
-    """ give DTP_Hep vaccine """
-
-    def apply(self, person_id):
-        self.module.increment_dose(person_id, "dtp")
-        self.module.increment_dose(person_id, "hep")
-
-
-class DtpHibHepVaccineEvent(Event, IndividualScopeEventMixin):
-    """ give DTP_Hib_Hep vaccine """
-
-    def apply(self, person_id):
-        self.module.increment_dose(person_id, "dtp")
-        self.module.increment_dose(person_id, "hep")
-        self.module.increment_dose(person_id, "hib")
-
-
-class RotavirusVaccineEvent(Event, IndividualScopeEventMixin):
-    """ give Rotavirus vaccine """
-
-    def apply(self, person_id):
-        self.module.increment_dose(person_id, "rota")
-
-
-class PneumococcalVaccineEvent(Event, IndividualScopeEventMixin):
-    """ give Pneumococcal vaccine (PCV) """
-
-    def apply(self, person_id):
-        self.module.increment_dose(person_id, "pneumo")
-
-
-class HibVaccineEvent(Event, IndividualScopeEventMixin):
-    """ give Haemophilus influenza B vaccine """
-
-    def apply(self, person_id):
-        self.module.increment_dose(person_id, "hib")
-
-
-class MeaslesRubellaVaccineEvent(Event, IndividualScopeEventMixin):
-    """ give measles/rubella vaccine """
-
-    def apply(self, person_id):
-
-        df = self.sim.population
-
-        # give vaccine if first dose or if second dose and after 2016
-        if (df.at[person_id, "va_measles"] == 0) or (
-            (df.at[person_id, "va_measles"] == 1) and (self.sim.date.year >= 2016)):
-            self.module.increment_dose(person_id, "measles")
-
-            # rubella contained in vaccine from 2018
-            if self.sim.date.year >= 2018:
-                self.module.increment_dose(person_id, "rubella")
-
 
 class HpvScheduleEvent(RegularEvent, PopulationScopeEventMixin):
     """ HPV vaccine event - each year sample from 9 year old girls and schedule vaccine
@@ -409,8 +358,15 @@ class HpvScheduleEvent(RegularEvent, PopulationScopeEventMixin):
             # then select that value from the scheduled_vax_date
             vax_date = scheduled_vax_dates[index]
 
+            facility_levels = ('0', '1a', '1b', '2')
+            facility_level_for_vaccines = self.module.rng.choice(
+                facility_levels,
+                p=self.parameters['prob_facility_level_for_vaccine'],
+                size=1)[0]
+
             # first dose
-            event = HSI_HpvVaccine(self.module, person_id=person_id)
+            event = HSI_HpvVaccine(self.module, person_id=person_id,
+                                   facility_level_of_this_hsi=facility_level_for_vaccines)
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 event,
@@ -431,23 +387,20 @@ class HpvScheduleEvent(RegularEvent, PopulationScopeEventMixin):
 # ---------------------------------------------------------------------------------
 # Health System Interaction Events
 # ---------------------------------------------------------------------------------
-# TODO: note syringe disposal units will accommodate ~100 syringes
-# request a box with each vaccine but don't need to condition HSI on availability
-# likely always safety boxes available
-# could request 1/100 of a box with each vaccine
+
 
 class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
     """This is a base class for all vaccination HSI_Events. Handles initialisation and requesting consumables needed
     for the vaccination. For custom behaviour, you can override __init__ in subclasses and implemented your own
     constructors (or inherit directly from HSI_Event)"""
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, facility_level_of_this_hsi):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Epi)
 
         self.TREATMENT_ID = self.treatment_id()
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"EPI": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
 
     def treatment_id(self):
         """subclasses should implement this method to return the TREATMENT_ID"""
@@ -538,10 +491,19 @@ class HSI_MeaslesRubellaVaccine(HsiBaseVaccine):
         return "Epi_Childhood_MeaslesRubella"
 
     def apply(self, person_id, squeeze_factor):
-        if self.get_consumables(item_codes=self.module.cons_item_codes["measles_and_rubella"],
-                                optional_item_codes=self.module.cons_item_codes["syringes"]):
-            self.module.increment_dose(person_id, "measles")
-            self.module.increment_dose(person_id, "rubella")
+        df = self.sim.population.props
+
+        # give vaccine if first dose or if second dose and after 2016
+        if (df.at[person_id, "va_measles"] == 0) or (
+                (df.at[person_id, "va_measles"] == 1) and (self.sim.date.year >= 2016)):
+
+            if self.get_consumables(item_codes=self.module.cons_item_codes["measles_and_rubella"],
+                                    optional_item_codes=self.module.cons_item_codes["syringes"]):
+                self.module.increment_dose(person_id, "measles")
+
+                # rubella contained in vaccine from 2018
+                if self.sim.date.year >= 2018:
+                    self.module.increment_dose(person_id, "rubella")
 
 
 class HSI_HpvVaccine(HsiBaseVaccine):
