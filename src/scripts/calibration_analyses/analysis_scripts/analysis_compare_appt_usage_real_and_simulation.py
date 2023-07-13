@@ -380,8 +380,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     assert (rel_diff_unadjusted_real.index == rel_diff_real.index).all()
 
     # plot
-    name_of_plot = 'Model vs Real usage per appointment type at all levels' \
-                   '\n[Model average annual 95% CI, Adjusted and Unadjusted real average annual]'
+    name_of_plot = 'Model vs Real usage per appointment type at all facility levels' \
+                   '\n[Model average annual 95% CI, Real average annual]'
     fig, ax = plt.subplots(figsize=(8, 5))
     rel_diff_unadjusted_real.plot(kind='bar', yerr=err_unadjusted_real, width=0.4,
                                   ax=ax, position=0,
@@ -405,7 +405,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
     plt.show()
 
-    # todo: need correct the plot format
     # Plot Simulation vs Real usage by appt type and show fraction of usage at each level
     # Model, Adjusted real and Unadjusted real average annual usage all normalised to 1
     # format data
@@ -464,8 +463,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     assert simulation_usage_plot.index.equals(unadjusted_real_usage_plot.index)
 
     # plot
-    name_of_plot = 'Model vs Real usage per appointment type, with fraction per level' \
-                   '\n[Model average annual, Adjusted and Unadjusted real average annual]'
+    name_of_plot = 'Model vs Real usage per appointment type on fraction per level' \
+                   '\n[Model average annual, Real average annual]'
     fig, ax = plt.subplots(figsize=(12, 5))
     cmp_paired = plt.get_cmap('Paired')
     cmp_paried_0 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(0, 10, 2)))
@@ -493,6 +492,87 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     legend_2 = plt.legend(handles=[patch_unadjusted_real, patch_real, patch_simulation],
                           loc='lower left', bbox_to_anchor=(1.0, 0.6))
     fig.add_artist(legend_1)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
+    plt.show()
+
+    # Plot Simulation vs Real usage by appt type, across all levels
+    # Simulation average annual 95% CI (due to different runs): upper: 97.2% percentile, lower: 2.5% percentile, mean
+    # Real average annual: upper: adjusted, lower: unadjusted, mean: (adjusted + unadjusted) / 2
+    # Rel diff: mean: mean_S/mean_R, upper: upper_S/lower_R, lower: lower_S/upper_R
+    def format_rel_diff_combine():
+        # format real usage data
+        def format_real_usage(adjusted=True):
+            _real_usage = get_real_usage(resourcefilepath, adjusted)[0]
+            _real_usage_all_levels = _real_usage.sum(axis=0).reset_index().rename(
+                columns={0: 'usage', 'Appt_Type': 'appt_type'}).set_index('appt_type')
+            return _real_usage_all_levels
+
+        real_usage_all_levels = format_real_usage(adjusted=True)
+        unadjusted_real_usage_all_levels = format_real_usage(adjusted=False)
+        assert real_usage_all_levels.index.equals(unadjusted_real_usage_all_levels.index)
+        real_usage_all_levels_with_bounds = real_usage_all_levels.merge(unadjusted_real_usage_all_levels,
+                                                                        left_index=True, right_index=True)
+        assert (real_usage_all_levels_with_bounds['usage_x'] >= real_usage_all_levels_with_bounds['usage_y']).all()
+        real_usage_all_levels_with_bounds.rename(columns={'usage_x': 'upper', 'usage_y': 'lower'}, inplace=True)
+        real_usage_all_levels_with_bounds['mean'] = (real_usage_all_levels_with_bounds['upper'] +
+                                                     real_usage_all_levels_with_bounds['lower']) / 2
+        # format simulation usage data
+        simulation_usage_all_levels_with_ci = get_simulation_usage_with_confidence_interval(results_folder)
+        simulation_usage_all_levels_with_ci = pd.pivot(
+            simulation_usage_all_levels_with_ci, index='appt_type', columns='value_type', values='value')
+
+        # format relative difference
+        _rel_diff = simulation_usage_all_levels_with_ci.merge(real_usage_all_levels_with_bounds,
+                                                              on='appt_type', how='outer').sort_index()
+        _rel_diff['mean'] = _rel_diff['mean_x'] / _rel_diff['mean_y']
+        _rel_diff['lower'] = _rel_diff['lower_x'] / _rel_diff['upper_y']
+        _rel_diff['upper'] = _rel_diff['upper_x'] / _rel_diff['lower_y']
+
+        _rel_diff['lower_error'] = (_rel_diff['mean'] - _rel_diff['lower'])
+        _rel_diff['upper_error'] = (_rel_diff['upper'] - _rel_diff['mean'])
+        _asymmetric_error = [_rel_diff['lower_error'].values, _rel_diff['upper_error'].values]
+
+        _rel_diff = pd.DataFrame(_rel_diff['mean'])
+
+        return _rel_diff, _asymmetric_error
+
+    rel_diff, asymmetric_error = format_rel_diff_combine()
+
+    # plot
+    name_of_plot = 'Model vs Real usage per appt type at all facility levels' \
+                   '\n[Model average annual with 95% CI, Real average annual with bounds]'
+    fig, ax = plt.subplots()
+    ax.errorbar(rel_diff.index.values,
+                rel_diff['mean'].values,
+                asymmetric_error, fmt='.', capsize=3.0, label='All levels')
+    ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5))
+    for idx in rel_diff.index:
+        if not pd.isna(rel_diff.loc[idx, 'mean']):
+            ax.text(idx,
+                    rel_diff.loc[idx, 'mean'] * (1 + 0.2),
+                    round(rel_diff.loc[idx, 'mean'], 1),
+                    ha='left', fontsize=8)
+    ax.axhline(1.0, color='r')
+    format_and_save(fig, ax, name_of_plot)
+
+    # alternative bar chart
+    # plot
+    name_of_plot = 'Model vs Real usage per appointment type at all facility levels' \
+                   '\n[Model average annual 95% CI, Real average annual with bounds]'
+    fig, ax = plt.subplots()
+    rel_diff.plot(kind='bar', yerr=err_unadjusted_real,
+                  ax=ax, color='skyblue', label='All levels')
+    ax.axhline(1.0, color='r', linestyle='--')
+    ax.set_xlim(right=len(rel_diff_real) - 0.3)
+    ax.set_ylim(0, 6)
+    ax.set_yticks(np.arange(0, 6.5, 0.5).tolist())
+    ax.yaxis.grid(True, which='major', linestyle='--')
+    ax.yaxis.grid(True, which='both', linestyle='--')
+    ax.set_ylabel('Model / Real')
+    ax.set_xlabel('Appointment Type')
+    ax.set_title(name_of_plot)
+    ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), labels=['Benchmark', 'All levels'])
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
     plt.show()
