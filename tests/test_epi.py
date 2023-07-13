@@ -21,7 +21,7 @@ from tlo.methods import (
 )
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2025, 1, 1)
+end_date = Date(2021, 1, 1)
 popsize = 500
 
 try:
@@ -84,8 +84,8 @@ def test_epi_scheduling_hsi_events(tmpdir, seed):
     assert (ep_out.epPneumo3Coverage > 0).any()
     assert (ep_out.epRota2Coverage > 0).any()
     assert (ep_out.epMeaslesCoverage > 0).any()
-    assert (ep_out.epRubellaCoverage > 0).any()
-    assert (ep_out.epHpvCoverage > 0).any()
+    assert (ep_out.epRubellaCoverage > 0).any()  # begins in 2018
+    assert (ep_out.epHpvCoverage > 0).any()  # begins in 2019
 
     # check only 3 doses max of dtp/pneumo
     assert (df.va_dtp <= 3).all()
