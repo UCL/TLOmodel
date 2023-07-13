@@ -198,14 +198,14 @@ def adjust_real_usage_on_mentalall(real_usage_df) -> pd.DataFrame:
                             [36.67, 39.44, 37.22, 63.89, 56.67],
                             [50.00, 45.83, 45.83, 50.00, 45.83]])
     # make the adjustment assuming 100% reporting rates for each year
-    for l in ['1a', '1b', '2', '3']:
+    for level in ['1a', '1b', '2', '3']:
         for y in range(2015, 2020):
-            real_usage_df.loc[(real_usage_df.Facility_Level == l)
+            real_usage_df.loc[(real_usage_df.Facility_Level == level)
                               & (real_usage_df.Year == y)
                               & (real_usage_df.Appt_Type == 'MentalAll'), 'Usage'] = (
-                real_usage_df.loc[(real_usage_df.Facility_Level == l)
+                real_usage_df.loc[(real_usage_df.Facility_Level == level)
                                   & (real_usage_df.Year == y)
-                                  & (real_usage_df.Appt_Type == 'MentalAll'), 'Usage'] * 100 / rr.loc[l, y]
+                                  & (real_usage_df.Appt_Type == 'MentalAll'), 'Usage'] * 100 / rr.loc[level, y]
             )
 
     return real_usage_df
@@ -468,7 +468,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = plt.subplots(figsize=(12, 5))
     cmp_paired = plt.get_cmap('Paired')
     cmp_paried_0 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(0, 10, 2)))
-    cmp_paried_1 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(1, 11, 2)))
+    # cmp_paried_1 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(1, 11, 2)))
     simulation_usage_plot.plot(kind='bar', stacked=True, width=0.3,
                                edgecolor='dimgrey', cmap=cmp_paried_0, hatch='',
                                ax=ax, position=0)
@@ -485,12 +485,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     legend_1 = plt.legend(simulation_usage_plot.columns, loc='upper left', bbox_to_anchor=(1.0, 0.5),
                           title='Facility Level')
     patch_simulation = matplotlib.patches.Patch(facecolor='lightgrey', hatch='', edgecolor="dimgrey", label='Model')
-    patch_real = matplotlib.patches.Patch(facecolor='lightgrey', hatch='...', edgecolor="dimgrey", label='Adjusted Real')
+    patch_real = matplotlib.patches.Patch(facecolor='lightgrey', hatch='...', edgecolor="dimgrey",
+                                          label='Adjusted Real')
     patch_unadjusted_real = matplotlib.patches.Patch(facecolor='lightgrey', hatch='///', edgecolor="dimgrey",
                                                      label='Unadjusted Real')
 
-    legend_2 = plt.legend(handles=[patch_unadjusted_real, patch_real, patch_simulation],
-                          loc='lower left', bbox_to_anchor=(1.0, 0.6))
+    plt.legend(handles=[patch_unadjusted_real, patch_real, patch_simulation],
+               loc='lower left', bbox_to_anchor=(1.0, 0.6))
     fig.add_artist(legend_1)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
