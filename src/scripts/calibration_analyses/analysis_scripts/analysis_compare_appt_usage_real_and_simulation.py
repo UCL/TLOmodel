@@ -2,6 +2,7 @@ from pathlib import Path
 
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 from tlo import Date
@@ -389,7 +390,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                   ax=ax, position=1,
                                   legend=False, color='red')
     ax.set_xlim(right=len(rel_diff_real) - 0.5)
+    ax.set_ylim(0, 6)
+    ax.set_yticks(np.arange(0, 6.5, 0.5).tolist())
     ax.yaxis.grid(True, which='major', linestyle='--')
+    ax.yaxis.grid(True, which='both', linestyle='--')
     ax.set_ylabel('Model / Real')
     ax.set_xlabel('Appointment Type')
     ax.set_title(name_of_plot)
