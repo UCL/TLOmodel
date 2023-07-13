@@ -875,7 +875,8 @@ class CareOfWomenDuringPregnancy(Module):
         if 'Epi' in self.sim.modules:
 
             # Define the HSI in which the vaccine is delivered
-            vaccine_hsi = HSI_TdVaccine(self.sim.modules['Epi'], person_id=person_id)
+            vaccine_hsi = HSI_TdVaccine(self.sim.modules['Epi'], person_id=person_id,
+                                        suppress_footprint=True)
 
             # Identify individuals district of residence in order to determine district level coverage of TT
             ind_district = df.at[person_id, 'district_num_of_residence']

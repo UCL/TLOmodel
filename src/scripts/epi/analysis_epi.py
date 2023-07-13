@@ -31,8 +31,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2022, 12, 31)
-popsize = 2500
+end_date = Date(2016, 12, 31)
+popsize = 1000
 
 log_config = {
     'filename': 'Epi_LogFile',
@@ -206,4 +206,45 @@ plt.yticks(fontsize=fontsize)
 plt.subplots_adjust(wspace=0.4,
                     hspace=0.6)
 
+plt.show()
+
+
+# # ---------------------- plot vaccine delivery across facility levels -------------------
+facilities = output["tlo.methods.healthsystem.summary"]["HSI_Event"]
+
+tmp = facilities.Number_By_Appt_Type_Code_And_Level
+
+t1 = pd.DataFrame(tmp.values.tolist())
+t2 = t1.set_axis(["level0", "level1a", "level1b", "level2", "level3", "level4"], axis=1)
+
+epi = pd.DataFrame(columns=["level0", "level1a", "level1b", "level2", "level3", "level4"])
+
+for i in range(len(t2.columns)):
+    out = [d.get('EPI') for d in t2.iloc[i]]
+    epi.loc[i] = out
+
+print(epi)
+
+total_epi_by_facility_level = epi.sum()
+total_epi = total_epi_by_facility_level.sum()
+
+colours = ['#B7C3F3', '#DD7596', '#8EB897', '#FFF68F', '#FFC300', '#42A5F5']
+
+plt.rcParams["axes.titlesize"] = 9
+
+ax = plt.subplot(111)  # numrows, numcols, fignum
+# calculate proportion of childhood vaccines delivered by facility level
+level0 = total_epi_by_facility_level['level0'] / total_epi
+level1a = total_epi_by_facility_level['level1a'] / total_epi
+level1b = total_epi_by_facility_level['level1b'] / total_epi
+level2 = total_epi_by_facility_level['level2'] / total_epi
+level3 = total_epi_by_facility_level['level3'] / total_epi
+level4 = total_epi_by_facility_level['level4'] / total_epi
+
+plt.pie([level0, level1a, level1b, level2, level3, level4], labels=['level 0', 'level 1a', 'level 1b', 'level 2',
+                                                    'level 3', 'level 4'],
+        wedgeprops={'linewidth': 3, 'edgecolor': 'white'},
+        autopct='%.1f%%',
+        colors=colours)
+plt.title("Facility level giving childhood vaccines")
 plt.show()

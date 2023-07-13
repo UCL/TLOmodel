@@ -361,7 +361,7 @@ class HpvScheduleEvent(RegularEvent, PopulationScopeEventMixin):
             facility_levels = ('0', '1a', '1b', '2')
             facility_level_for_vaccines = self.module.rng.choice(
                 facility_levels,
-                p=self.parameters['prob_facility_level_for_vaccine'],
+                p=self.module.parameters['prob_facility_level_for_vaccine'],
                 size=1)[0]
 
             # first dose
@@ -392,11 +392,18 @@ class HpvScheduleEvent(RegularEvent, PopulationScopeEventMixin):
 class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
     """This is a base class for all vaccination HSI_Events. Handles initialisation and requesting consumables needed
     for the vaccination. For custom behaviour, you can override __init__ in subclasses and implemented your own
-    constructors (or inherit directly from HSI_Event)"""
+    constructors (or inherit directly from HSI_Event)
+    unless specified, default facility level is 1a
+    unless specified, footprint returned in 1 EPI appt
+    if vaccine occurs as part of a treatment package within another appointment, use suppress_footprint=True
+    """
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
+    def __init__(self, module, person_id, facility_level_of_this_hsi="1a", suppress_footprint=False):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Epi)
+
+        assert isinstance(suppress_footprint, bool)
+        self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = self.treatment_id()
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"EPI": 1})
@@ -529,9 +536,16 @@ class HSI_TdVaccine(HsiBaseVaccine):
         return "Epi_Pregnancy_Td"
 
     def apply(self, person_id, squeeze_factor):
+
         if self.get_consumables(item_codes=self.module.cons_item_codes["td"],
                                 optional_item_codes=self.module.cons_item_codes["syringes"]):
             self.module.increment_dose(person_id, "td")
+
+        # Return the footprint. If it should be suppressed, return a blank footprint.
+        if self.suppress_footprint:
+            return self.make_appt_footprint({})
+        else:
+            return self.make_appt_footprint({"EPI": 1})
 
 
 # ---------------------------------------------------------------------------------
