@@ -476,17 +476,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = 'Model vs Real usage per appointment type on fraction per level' \
                    '\n[Model average annual, Adjusted and Unadjusted real average annual]'
     fig, ax = plt.subplots(figsize=(12, 5))
-    cmp_paired = plt.get_cmap('Paired')
-    cmp_paried_0 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(0, 10, 2)))
-    # cmp_paried_1 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(1, 11, 2)))
     simulation_usage_plot.plot(kind='bar', stacked=True, width=0.3,
-                               edgecolor='dimgrey', cmap=cmp_paried_0, hatch='',
+                               edgecolor='dimgrey', hatch='',
                                ax=ax, position=0)
     real_usage_plot.plot(kind='bar', stacked=True, width=0.25,
-                         edgecolor='dimgrey', cmap=cmp_paried_0, hatch='.',
+                         edgecolor='dimgrey', hatch='.',
                          ax=ax, position=1)
     unadjusted_real_usage_plot.plot(kind='bar', stacked=True, width=0.25,
-                                    edgecolor='dimgrey', cmap=cmp_paried_0, hatch='//',
+                                    edgecolor='dimgrey', hatch='//',
                                     ax=ax, position=2)
     ax.set_xlim(right=len(simulation_usage_plot) - 0.45)
     ax.set_ylabel('Usage per level / Usage all levels')
