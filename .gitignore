@@ -49,6 +49,7 @@ coverage.xml
 
 # Profiling results files
 src/scripts/profiling/results/
+results/
 
 # Translations
 *.mo
