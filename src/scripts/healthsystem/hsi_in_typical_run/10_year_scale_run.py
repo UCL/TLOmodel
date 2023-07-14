@@ -32,8 +32,8 @@ class LongRun(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'long_run',  # <- (specified only for local running)
-            'directory': './outputs',  # <- (specified only for local running)
+            'filename': 'scale_run_for_hcw_analysis',
+            'directory': Path('./outputs'),  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
