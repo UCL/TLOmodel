@@ -405,7 +405,7 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
         self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = self.treatment_id()
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"EPI": 1})
+self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({} if self.suppress_footprint else {"EPI": 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
 
     def treatment_id(self):
