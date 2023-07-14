@@ -870,7 +870,6 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         person_id = hsi_event.target
-        df = self.sim.population.props
 
         if 'Epi' in self.sim.modules:
 
