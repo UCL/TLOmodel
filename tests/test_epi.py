@@ -199,6 +199,7 @@ def test_facility_level_distribution(tmpdir, seed):
     for i in range(len(t2.index)):
         out = [d.get('EPI') for d in t2.iloc[i]]
         epi_levels.loc[i] = out
+    epi_levels = epi_levels.fillna(0.0)
 
     assert epi_levels.level0.sum() == 0
     assert epi_levels.level1a.sum() == 0
