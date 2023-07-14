@@ -306,7 +306,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
-    # Plot Simulation vs Real usage (Across all levels) (trimmed to 0.1 and 10)
+    # Plot Simulation vs Real usage (Across all levels and At each level) (trimmed to 0.1 and 10)
     # format plot
     def format_and_save(_fig, _ax, _name_of_plot):
         _ax.set_title(_name_of_plot)
@@ -339,7 +339,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         simulation_usage.sum(axis=0) / real_usage.sum(axis=0)
     ).clip(lower=0.1, upper=10.0)
 
-    # plot
+    # plot for all levels
     name_of_plot = 'Model vs Real usage per appt type at all facility levels' \
                    '\n[Model average annual, Real average annual]'
     fig, ax = plt.subplots()
@@ -348,6 +348,24 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         if not pd.isna(rel_diff_all_levels[idx]):
             ax.text(idx, rel_diff_all_levels[idx]*(1+0.2), round(rel_diff_all_levels[idx], 1),
                     ha='left', fontsize=8)
+    format_and_save(fig, ax, name_of_plot)
+
+    # plot for each level
+    rel_diff_by_levels = (
+        simulation_usage / real_usage
+    ).clip(upper=10, lower=0.1).dropna(how='all', axis=0)
+
+    name_of_plot = 'Model vs Real usage per appt type per facility level\n[Model average annual, Real average annual]'
+    fig, ax = plt.subplots()
+    marker_dict = {'0': 0,
+                   '1a': 4,
+                   '1b': 5,
+                   '2': 6,
+                   '3': 7,
+                   '4': 1}  # Note that level 0/3/4 has very limited data
+    for _level, _results in rel_diff_by_levels.iterrows():
+        ax.plot(_results.index, _results.values, label=_level, linestyle='none', marker=marker_dict[_level])
+    ax.axhline(1.0, color='r')
     format_and_save(fig, ax, name_of_plot)
 
     # Plot Simulation with 95% CI vs Adjusted & Real usage by appt type, across all levels
