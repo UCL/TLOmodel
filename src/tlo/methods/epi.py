@@ -26,7 +26,6 @@ class Epi(Module):
     PARAMETERS = {
         "baseline_coverage": Parameter(Types.DATA_FRAME, "baseline vaccination coverage (all vaccines)"),
         "vaccine_schedule": Parameter(Types.SERIES, "vaccination schedule applicable from 2018 onwards"),
-        "district_vaccine_coverage": Parameter(Types.DATA_FRAME, "coverage of each vaccine type by year and district"),
         "prob_facility_level_for_vaccine": Parameter(Types.LIST,
                                                      "The probability of going to each facility-level (0 / 1a / 1b / 2)"
                                                      " for child having vaccines given through childhood immunisation "
@@ -80,10 +79,6 @@ class Epi(Module):
 
         p["baseline_coverage"] = workbook["WHO_estimates"]
         p["vaccine_schedule"] = workbook["vaccine_schedule"].set_index('vaccine')['date_administration_days']
-
-        p["district_vaccine_coverage"] = pd.read_csv(
-            Path(self.resourcefilepath) / "ResourceFile_EPI_vaccine_coverage.csv"
-        )
 
         # Declare definitions of how many doses is labelled as "all doses"
         self.all_doses.update({
@@ -188,12 +183,6 @@ class Epi(Module):
 
         # HPV vaccine given from 2018 onwards
         sim.schedule_event(HpvScheduleEvent(self), Date(2018, 1, 1))
-
-        # Update parameter "district_vaccine_coverage" to use district_num rather than the name of the district;
-        self.parameters["district_vaccine_coverage"]["District"] = \
-            self.parameters["district_vaccine_coverage"]["District"].map(
-                {v: k for k, v in self.sim.modules['Demography'].parameters['district_num_to_district_name'].items()}
-            )
 
         # Look up item codes for consumables
         self.get_item_codes()
