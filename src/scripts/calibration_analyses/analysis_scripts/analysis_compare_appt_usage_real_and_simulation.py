@@ -505,6 +505,36 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
     plt.show()
 
+    # appendix - plot Simulation with 95% CI vs Adjusted & Unadjusted real, across all levels
+    rel_diff_unadjusted_real, err_unadjusted_real = format_rel_diff(adjusted=False)
+    assert (rel_diff_unadjusted_real.index == rel_diff_real.index).all()
+
+    name_of_plot = 'Model vs Real usage per appointment type at all facility levels' \
+                   '\n[Model average annual 95% CI, Adjusted & Unadjusted real average annual]'
+    fig, ax = plt.subplots(figsize=(8, 5))
+    rel_diff_unadjusted_real.plot(kind='bar', yerr=err_unadjusted_real, width=0.4,
+                                  ax=ax, position=0,
+                                  legend=False, color='salmon')
+    rel_diff_real.plot(kind='bar', yerr=err_real, width=0.4,
+                       ax=ax, position=1,
+                       legend=False, color='yellowgreen')
+    ax.axhline(1.0, color='r', linestyle='-')
+    ax.set_xlim(right=len(rel_diff_real) - 0.3)
+    ax.set_ylim(0, 6)
+    ax.set_yticks(np.arange(0, 6.5, 0.5).tolist())
+    ax.yaxis.grid(True, which='major', linestyle='--')
+    ax.yaxis.grid(True, which='both', linestyle='--')
+    ax.set_ylabel('Model / Real')
+    ax.set_xlabel('Appointment Type')
+    ax.set_title(name_of_plot)
+    patch_real = matplotlib.patches.Patch(facecolor='yellowgreen', label='Adjusted real')
+    patch_unadjusted_real = matplotlib.patches.Patch(facecolor='salmon', label='Unadjusted real')
+    legend = plt.legend(handles=[patch_real, patch_unadjusted_real], loc='center left', bbox_to_anchor=(1.0, 0.5))
+    fig.add_artist(legend)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
+    plt.show()
+
 
 if __name__ == "__main__":
     outputspath = Path('./outputs/bshe@ic.ac.uk')
