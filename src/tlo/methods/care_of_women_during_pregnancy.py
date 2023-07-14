@@ -2571,6 +2571,11 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
                                                                      'other', first=True):
             return
 
+        # If more than 2 days have passed, keep expected footprint but assume no effect
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        if (self.sim.date - mni[person_id]['abortion_onset']).days > 2:
+            return
+
         # Determine if there will be a delay due to high squeeze
         pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id,
                                                                   hsi_type='an')

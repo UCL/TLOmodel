@@ -2857,6 +2857,10 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         if not df.at[person_id, 'is_alive']:
             return
 
+        # If more than 2 days have passed, keep expected footprint but assume no effect
+        if (self.sim.date - df.at[person_id, 'la_due_date_current_pregnancy']).days > 2:
+            return
+
         # First we capture women who have presented to this event during labour at home. Currently we just set these
         # women to be delivering at a health centre (this will need to be randomised to match any available data)
         if mni[person_id]['delivery_setting'] == 'home_birth' and mni[person_id]['sought_care_for_complication']:
@@ -3154,6 +3158,10 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.module.current_parameters
+
+        # If more than 2 days have passed, keep expected footprint but assume no effect
+        if (self.sim.date - df.at[person_id, 'la_due_date_current_pregnancy']).days > 2:
+            return
 
         # If the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk
         # of death if complications occur)
