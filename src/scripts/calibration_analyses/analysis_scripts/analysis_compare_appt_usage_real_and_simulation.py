@@ -222,6 +222,8 @@ def get_real_usage(resourcefilepath, adjusted=True) -> pd.DataFrame:
         resourcefilepath / 'healthsystem' / 'organisation' / 'ResourceFile_Master_Facilities_List.csv')
 
     # Get real usage data
+    # For the details of adjustment of real usage data, refer to Paper
+    # "The Changes in Health Service Utilisation in Malawi during the COVID-19 Pandemic"
     if adjusted:
         real_usage = pd.read_csv(
             resourcefilepath / 'healthsystem' / 'real_appt_usage_data' /
@@ -472,7 +474,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # plot
     name_of_plot = 'Model vs Real usage per appointment type on fraction per level' \
-                   '\n[Model average annual, Real average annual]'
+                   '\n[Model average annual, Adjusted and Unadjusted real average annual]'
     fig, ax = plt.subplots(figsize=(12, 5))
     cmp_paired = plt.get_cmap('Paired')
     cmp_paried_0 = matplotlib.colors.ListedColormap(tuple(cmp_paired.colors[i] for i in range(0, 10, 2)))
