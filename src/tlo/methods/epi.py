@@ -360,8 +360,8 @@ class HpvScheduleEvent(RegularEvent, PopulationScopeEventMixin):
             facility_levels = ('0', '1a', '1b', '2')
             facility_level_for_vaccines = self.module.rng.choice(
                 facility_levels,
-                p=self.module.parameters['prob_facility_level_for_vaccine'],
-                size=1)[0]
+                p=self.module.parameters['prob_facility_level_for_vaccine']
+            )
 
             # first dose
             event = HSI_HpvVaccine(self.module, person_id=person_id,
