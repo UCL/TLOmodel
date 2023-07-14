@@ -269,8 +269,8 @@ class Epi(Module):
         facility_levels = ('0', '1a', '1b', '2')
         facility_level_for_vaccines = self.rng.choice(
             facility_levels,
-            p=self.parameters['prob_facility_level_for_vaccine'],
-            size=1)[0]
+            p=self.parameters['prob_facility_level_for_vaccine']
+        )
 
         for each_vax in vax_schedule:
             vax_hsi_event, admin_schedule = each_vax
