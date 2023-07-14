@@ -559,7 +559,7 @@ class HealthSystem(Module):
         mode_appt_constraints: Optional[int] = None,
         cons_availability: Optional[str] = None,
         beds_availability: Optional[str] = None,
-        randomise_queue: bool = False,
+        randomise_queue: bool = True,
         ignore_priority: bool = False,
         adopt_priority_policy: bool = False,
         include_fasttrack_routes: bool = False,
