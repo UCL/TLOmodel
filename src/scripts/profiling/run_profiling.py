@@ -52,7 +52,7 @@ def run_profiling(
     # combining the recorded sessions into one at the end.
     # As such, the same profiler can be used to record the profile of multiple scripts,
     # however this may create large datafiles so using separate profilers is preferable
-    p = Profiler(interval=1e-3)
+    p = Profiler(interval=1e-1)
 
     print(f"[{current_time('%H:%M:%S')}:INFO] Starting profiling runs")
 
