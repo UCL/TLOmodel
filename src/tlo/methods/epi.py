@@ -405,7 +405,7 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
         self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = self.treatment_id()
-self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({} if self.suppress_footprint else {"EPI": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({} if self.suppress_footprint else {"EPI": 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
 
     def treatment_id(self):
@@ -539,12 +539,6 @@ class HSI_TdVaccine(HsiBaseVaccine):
         if self.get_consumables(item_codes=self.module.cons_item_codes["td"],
                                 optional_item_codes=self.module.cons_item_codes["syringes"]):
             self.module.increment_dose(person_id, "td")
-
-        # Return the footprint. If it should be suppressed, return a blank footprint.
-        if self.suppress_footprint:
-            return self.make_appt_footprint({})
-        else:
-            return self.make_appt_footprint({"EPI": 1})
 
 
 # ---------------------------------------------------------------------------------
