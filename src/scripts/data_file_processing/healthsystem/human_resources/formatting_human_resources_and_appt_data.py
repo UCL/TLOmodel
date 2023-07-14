@@ -1710,12 +1710,11 @@ funded_daily_capability = funded_daily_minutes.merge(funded_staff_floats, how='l
 # Reset facility level column to exclude 'Facility_Level_'
 funded_daily_capability['Facility_Level'] = \
     funded_daily_capability['Facility_Level'].str.split(pat='_', expand=True).iloc[:, 2]
-# Drop zero-minute rows (also zero staff count)
+# Check that zero-minute rows are also zero staff count rows, making sure that any zero capability is
+# due to no staff (but not due to zero patient facing time while having some staff)
 assert not funded_daily_capability['Total_Mins_Per_Day'].isnull().values.any()
 assert funded_daily_capability[funded_daily_capability['Total_Mins_Per_Day'] == 0].index.equals(
     funded_daily_capability[funded_daily_capability['Staff_Count'] == 0].index)
-# funded_daily_capability.drop(
-#     index=funded_daily_capability[funded_daily_capability['Total_Mins_Per_Day'] == 0].index, inplace=True)
 # Reset index
 funded_daily_capability.reset_index(drop=True, inplace=True)
 
@@ -1790,12 +1789,11 @@ curr_daily_capability = curr_daily_minutes.merge(curr_staff_floats, how='left')
 # Reset facility level column to exclude 'Facility_Level_'
 curr_daily_capability['Facility_Level'] = \
     curr_daily_capability['Facility_Level'].str.split(pat='_', expand=True).iloc[:, 2]
-# Drop row with zero minutes (also zero staff counts)
+# Check that zero-minute rows are also zero staff count rows, making sure that any zero capability is
+# due to no staff (but not due to zero patient facing time while having some staff)
 assert not curr_daily_capability['Total_Mins_Per_Day'].isnull().values.any()
 assert curr_daily_capability[curr_daily_capability['Total_Mins_Per_Day'] == 0].index.equals(
     curr_daily_capability[curr_daily_capability['Staff_Count'] == 0].index)
-# curr_daily_capability.drop(
-#     index=curr_daily_capability[curr_daily_capability['Total_Mins_Per_Day'] == 0].index, inplace=True)
 # Reset index
 curr_daily_capability.reset_index(drop=True, inplace=True)
 

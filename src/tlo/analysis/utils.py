@@ -305,8 +305,7 @@ def extract_results(results_folder: Path,
     return _concat
 
 
-def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False,
-              focus: str = None) -> pd.DataFrame:
+def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False) -> pd.DataFrame:
     """Utility function to compute summary statistics
 
     Finds mean value and 95% interval across the runs for each draw.
@@ -321,7 +320,6 @@ def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: 
             names=['draw', 'stat']),
         index=results.index
     )
-    print("Access column levels", summary.columns.levels[0])
 
     summary.loc[:, (slice(None), "mean")] = results.groupby(axis=1, by='draw').mean().values
     summary.loc[:, (slice(None), "lower")] = results.groupby(axis=1, by='draw').quantile(0.025).values
@@ -334,7 +332,6 @@ def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: 
         return om
 
     elif collapse_columns and (len(summary.columns.levels[0]) == 1):
-        print("I am here")
         # With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
         summary_droppedlevel = summary.droplevel('draw', axis=1)
         if only_mean:
@@ -343,8 +340,6 @@ def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: 
             return summary_droppedlevel
 
     else:
-        summary = summary[focus]
-        print("I am here B")
         return summary
 
 
