@@ -70,7 +70,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
                         'cons_availability': "all",
                         'mode_appt_constraints': 1,
                         'use_funded_or_actual_staffing': "actual",
-                        
                      },
                      'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
                 ),
