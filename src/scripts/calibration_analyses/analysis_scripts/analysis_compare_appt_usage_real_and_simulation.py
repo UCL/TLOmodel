@@ -341,7 +341,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # plot for all levels
     name_of_plot = 'Model vs Real usage per appt type at all facility levels' \
-                   '\n[Model average annual, Real average annual]'
+                   '\n[Model average annual, Adjusted real average annual]'
     fig, ax = plt.subplots()
     ax.stem(rel_diff_all_levels.index, rel_diff_all_levels.values, bottom=1.0, label='All levels')
     for idx in rel_diff_all_levels.index:
@@ -355,7 +355,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         simulation_usage / real_usage
     ).clip(upper=10, lower=0.1).dropna(how='all', axis=0)
 
-    name_of_plot = 'Model vs Real usage per appt type per facility level\n[Model average annual, Real average annual]'
+    name_of_plot = 'Model vs Real usage per appt type per facility level' \
+                   '\n[Model average annual, Adjusted real average annual]'
     fig, ax = plt.subplots()
     marker_dict = {'0': 0,
                    '1a': 4,
@@ -368,7 +369,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.axhline(1.0, color='r')
     format_and_save(fig, ax, name_of_plot)
 
-    # Plot Simulation with 95% CI vs Adjusted & Real usage by appt type, across all levels
+    # Plot Simulation with 95% CI vs Adjusted Real usage by appt type, across all levels (trimmed to 0.1 and 10)
     # format data
     def format_rel_diff(adjusted=True):
         def format_real_usage():
@@ -394,34 +395,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return _rel_diff, _asymmetric_error
 
     rel_diff_real, err_real = format_rel_diff(adjusted=True)
-    rel_diff_unadjusted_real, err_unadjusted_real = format_rel_diff(adjusted=False)
-    assert (rel_diff_unadjusted_real.index == rel_diff_real.index).all()
 
     # plot
     name_of_plot = 'Model vs Real usage per appointment type at all facility levels' \
-                   '\n[Model average annual 95% CI, Real average annual]'
-    fig, ax = plt.subplots(figsize=(8, 5))
-    rel_diff_unadjusted_real.plot(kind='bar', yerr=err_unadjusted_real, width=0.4,
-                                  ax=ax, position=0,
-                                  legend=False, color='red')
-    rel_diff_real.plot(kind='bar', yerr=err_real, width=0.4,
-                       ax=ax, position=1,
-                       legend=False, color='green')
-    ax.set_xlim(right=len(rel_diff_real) - 0.3)
-    ax.set_ylim(0, 6)
-    ax.set_yticks(np.arange(0, 6.5, 0.5).tolist())
-    ax.yaxis.grid(True, which='major', linestyle='--')
-    ax.yaxis.grid(True, which='both', linestyle='--')
-    ax.set_ylabel('Model / Real')
-    ax.set_xlabel('Appointment Type')
-    ax.set_title(name_of_plot)
-    patch_real = matplotlib.patches.Patch(facecolor='green', label='Adjusted real')
-    patch_unadjusted_real = matplotlib.patches.Patch(facecolor='red', label='Unadjusted real')
-    legend = plt.legend(handles=[patch_real, patch_unadjusted_real], loc='center left', bbox_to_anchor=(1.0, 0.5))
-    fig.add_artist(legend)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
-    plt.show()
+                   '\n[Model average annual 95% CI, Adjusted real average annual]'
+    fig, ax = plt.subplots()
+    ax.errorbar(rel_diff_real.index.values,
+                rel_diff_real['mean'].values,
+                err_real, fmt='.', capsize=3.0, label='All levels')
+    ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5))
+    for idx in rel_diff_real.index:
+        if not pd.isna(rel_diff_real.loc[idx, 'mean']):
+            ax.text(idx,
+                    rel_diff_real.loc[idx, 'mean'] * (1 + 0.2),
+                    round(rel_diff_real.loc[idx, 'mean'], 1),
+                    ha='left', fontsize=8)
+    ax.axhline(1.0, color='r')
+    format_and_save(fig, ax, name_of_plot)
 
     # Plot Simulation vs Real usage by appt type and show fraction of usage at each level
     # Model, Adjusted real and Unadjusted real average annual usage all normalised to 1
