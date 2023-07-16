@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -362,6 +363,35 @@ class Epilepsy(Module):
         df = self.sim.population.props
         df.loc[indices, 'ep_antiep'] = probability < self.rng.random_sample(size=len(indices))
 
+    def get_best_available_medicine(self, hsi_event) -> Union[None, str]:
+        """Returns the best available medicine (as string), or None if none are available"""
+        # Check what drugs are available. (`to_log` is set to false in order to not actually request the consumables
+        # from the health system before we know what is available)
+        possible_treatments = {
+            'phenobarbitone': hsi_event.get_consumables(
+                self.item_codes['phenobarbitone'],
+                to_log=False
+            ),
+            'carbamazepine': hsi_event.get_consumables(
+                self.item_codes['carbamazepine'],
+                to_log=False
+            ),
+            'phenytoin': hsi_event.get_consumables(
+                self.item_codes['phenytoin'],
+                to_log=False
+            ),
+        }
+        # Now we know which treatments are available, we will determine the most preferable treatment by finding the
+        # index in available_treatments of the first True value:
+        best_option_index = next((i for i, j in enumerate(possible_treatments.values()) if j), None)
+
+        if best_option_index is not None:
+            # At least one of the treatment is available: Return the name of the most preferable medicine
+            return list(possible_treatments.keys())[best_option_index]
+        else:
+            # None of the treatment is available: return None
+            return None
+
 
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
     """The regular event that actually changes individuals' epilepsy status
@@ -564,31 +594,12 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-        # Check what drugs are available, to_log is set to false in order to not actually request the consumables from
-        # the health system before we know what is available
-        available_treatments = {
-            'phenobarbitone': self.get_consumables(
-                self.module.item_codes['phenobarbitone'],
-                to_log=False
-            ),
-            'carbamazepine': self.get_consumables(
-                self.module.item_codes['carbamazepine'],
-                to_log=False
-            ),
-            'phenytoin': self.get_consumables(
-                self.module.item_codes['phenytoin'],
-                to_log=False
-            ),
-        }
-        # Now we know which treatments are available, we will request the best treatment from the health system.
-        # Determine the most preferable treatment by finding the index in available_treatments of the first True value:
-        best_option_index = next((i for i, j in enumerate(available_treatments.values()) if j), None)
-        # If at least one of the medicines is available, request the medicine from the health system
-        if best_option_index is not None:
-            # Get the name of the most preferable medicine currently available
-            best_available_medicine = list(available_treatments.keys())[best_option_index]
-            # Request the medicine from the health system, with to_log set to True to actually consume the medicine
-            # from the health system
+
+        # Check what drugs are available
+        best_available_medicine = self.module.get_best_available_medicine(self)
+
+        if best_available_medicine is not None:
+            # Request the medicine from the health system
             self.get_consumables(self.module.item_codes[best_available_medicine])
             # Update this person's properties to show that they are currently on medication
             df.at[person_id, 'ep_antiep'] = True
@@ -617,9 +628,14 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
+        self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING = 2
+        self._DEFAULT_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self._REPEATED_APPT_FOOTPRINT = self.make_appt_footprint({'PharmDispensing': 1})
+
         self.TREATMENT_ID = "Epilepsy_Treatment_Followup"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self._DEFAULT_APPT_FOOTPRINT
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self._counter_of_failed_attempts_due_to_unavailable_medicines = 0
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -628,11 +644,45 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Schedule a reoccurrence of this follow-up in 3 months if ep_seiz_stat == '3',
-        # else, schedule this reoccurrence of it in 1 year (i.e., if ep_seiz_stat == '2')
-        hs.schedule_hsi_event(
-            hsi_event=self,
-            topen=self.sim.date + DateOffset(months=3 if df.at[person_id, 'ep_seiz_stat'] == '3' else 12),
-            tclose=None,
-            priority=0
-        )
+        # If the person does not remain on anti-epileptics, do nothing:
+        if not df.at[person_id, 'ep_antiep']:
+            return hs.get_blank_appt_footprint()
+
+        # Request the medicine
+        best_available_medicine = self.module.get_best_available_medicine(self)
+        if best_available_medicine is not None:
+            # The medicine is available, so request it
+            self.get_consumables(self.module.item_codes[best_available_medicine])
+
+            # Reset counter of "failed attempts" and put the appointment for the next occurrence to the usual
+            self._counter_of_failed_attempts_due_to_unavailable_medicines = 0
+            self.EXPECTED_APPT_FOOTPRINT = self._DEFAULT_APPT_FOOTPRINT
+
+            # Schedule a reoccurrence of this follow-up in 3 months if ep_seiz_stat == '3',
+            # else, schedule this reoccurrence of it in 1 year (i.e., if ep_seiz_stat == '2')
+            hs.schedule_hsi_event(
+                hsi_event=self,
+                topen=self.sim.date + DateOffset(months=3 if df.at[person_id, 'ep_seiz_stat'] == '3' else 12),
+                tclose=None,
+                priority=0
+            )
+        elif (
+            self._counter_of_failed_attempts_due_to_unavailable_medicines
+            < self._MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING
+        ):
+            # Nothing is available currently: schedule a recurrence of this appointment in one month, with a modified
+            # footprint. (This will repeat a certain number of time before the person defaults to being off
+            # anti-epileptics: see next clause.)
+            self._counter_of_failed_attempts_due_to_unavailable_medicines += 1
+            self.EXPECTED_APPT_FOOTPRINT = self._REPEATED_APPT_FOOTPRINT
+
+            hs.schedule_hsi_event(
+                hsi_event=self,
+                topen=self.sim.date + DateOffset(months=1),
+                tclose=None,
+                priority=0
+            )
+        else:
+            # No medicine is available and the maximum number of repeats has been reached: The person will default
+            # to being off the anti-epileptics and no further follow-ups are scheduled.
+            df.at[person_id, 'ep_antiep'] = False
