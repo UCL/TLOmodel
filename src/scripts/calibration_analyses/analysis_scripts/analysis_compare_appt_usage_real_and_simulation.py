@@ -342,8 +342,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ).clip(lower=0.1, upper=10.0)
 
     # plot for all levels
-    name_of_plot = 'Model vs Real usage per appt type at all facility levels' \
-                   '\n[Model average annual, Adjusted real average annual]'
+    name_of_plot = 'Model vs Data usage per appt type at all facility levels' \
+                   '\n[Model average annual, Adjusted Data average annual]'
     fig, ax = plt.subplots()
     ax.stem(rel_diff_all_levels.index, rel_diff_all_levels.values, bottom=1.0, label='All levels')
     for idx in rel_diff_all_levels.index:
@@ -357,8 +357,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         simulation_usage / real_usage
     ).clip(upper=10, lower=0.1).dropna(how='all', axis=0)
 
-    name_of_plot = 'Model vs Real usage per appt type per facility level' \
-                   '\n[Model average annual, Adjusted real average annual]'
+    name_of_plot = 'Model vs Data usage per appt type per facility level' \
+                   '\n[Model average annual, Adjusted Data average annual]'
     fig, ax = plt.subplots()
     marker_dict = {'0': 0,
                    '1a': 4,
@@ -399,8 +399,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     rel_diff_real, err_real = format_rel_diff(adjusted=True)
 
     # plot
-    name_of_plot = 'Model vs Real usage per appointment type at all facility levels' \
-                   '\n[Model average annual 95% CI, Adjusted real average annual]'
+    name_of_plot = 'Model vs Data usage per appointment type at all facility levels' \
+                   '\n[Model average annual 95% CI, Adjusted Data average annual]'
     fig, ax = plt.subplots()
     ax.errorbar(rel_diff_real.index.values,
                 rel_diff_real['mean'].values,
@@ -473,8 +473,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     assert simulation_usage_plot.index.equals(unadjusted_real_usage_plot.index)
 
     # plot
-    name_of_plot = 'Model vs Real usage per appointment type on fraction per level' \
-                   '\n[Model average annual, Adjusted and Unadjusted real average annual]'
+    name_of_plot = 'Model vs Data usage per appointment type on fraction per level' \
+                   '\n[Model average annual, Adjusted & Unadjusted Data average annual]'
     fig, ax = plt.subplots(figsize=(12, 5))
     simulation_usage_plot.plot(kind='bar', stacked=True, width=0.3,
                                edgecolor='dimgrey', hatch='',
@@ -493,9 +493,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                           title='Facility Level')
     patch_simulation = matplotlib.patches.Patch(facecolor='lightgrey', hatch='', edgecolor="dimgrey", label='Model')
     patch_real = matplotlib.patches.Patch(facecolor='lightgrey', hatch='...', edgecolor="dimgrey",
-                                          label='Adjusted Real')
+                                          label='Adjusted Data')
     patch_unadjusted_real = matplotlib.patches.Patch(facecolor='lightgrey', hatch='///', edgecolor="dimgrey",
-                                                     label='Unadjusted Real')
+                                                     label='Unadjusted Data')
 
     plt.legend(handles=[patch_unadjusted_real, patch_real, patch_simulation],
                loc='lower left', bbox_to_anchor=(1.0, 0.6))
@@ -508,8 +508,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     rel_diff_unadjusted_real, err_unadjusted_real = format_rel_diff(adjusted=False)
     assert (rel_diff_unadjusted_real.index == rel_diff_real.index).all()
 
-    name_of_plot = 'Model vs Real usage per appointment type at all facility levels' \
-                   '\n[Model average annual 95% CI, Adjusted & Unadjusted real average annual]'
+    name_of_plot = 'Model vs Data usage per appointment type at all facility levels' \
+                   '\n[Model average annual 95% CI, Adjusted & Unadjusted Data average annual]'
     fig, ax = plt.subplots(figsize=(8, 5))
     rel_diff_unadjusted_real.plot(kind='bar', yerr=err_unadjusted_real, width=0.4,
                                   ax=ax, position=0,
@@ -523,11 +523,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_yticks(np.arange(0, 6.5, 0.5).tolist())
     ax.yaxis.grid(True, which='major', linestyle='--')
     ax.yaxis.grid(True, which='both', linestyle='--')
-    ax.set_ylabel('Model / Real')
+    ax.set_ylabel('Model / Data')
     ax.set_xlabel('Appointment Type')
     ax.set_title(name_of_plot)
-    patch_real = matplotlib.patches.Patch(facecolor='yellowgreen', label='Adjusted real')
-    patch_unadjusted_real = matplotlib.patches.Patch(facecolor='salmon', label='Unadjusted real')
+    patch_real = matplotlib.patches.Patch(facecolor='yellowgreen', label='Adjusted Data')
+    patch_unadjusted_real = matplotlib.patches.Patch(facecolor='salmon', label='Unadjusted Data')
     legend = plt.legend(handles=[patch_real, patch_unadjusted_real], loc='center left', bbox_to_anchor=(1.0, 0.5))
     fig.add_artist(legend)
     fig.tight_layout()
