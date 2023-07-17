@@ -162,11 +162,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
     simulation_usage = get_simulation_usage(results_folder)
-    simulation_usage = simulation_usage.reset_index().replace({'index': {'1b': '2'}}).groupby('index').sum()
 
     real_usage = get_real_usage(resourcefilepath)
     real_usage = adjust_real_usage_on_mentalall(real_usage)
-    real_usage = real_usage.reset_index().replace({'Facility_Level': {'1b': '2'}}).groupby('Facility_Level').sum()
 
     # Plot Simulation vs Real usage (Across all levels) (trimmed to 0.1 and 10)
     rel_diff_all_levels = (
