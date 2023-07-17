@@ -505,26 +505,35 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.show()
 
     # appendix - plot Simulation with 95% CI vs Adjusted & Unadjusted real, across all levels
+    def format_data_for_bar_plot(_usage):
+        """reduce the model/data ratio by 1.0, for the bar plot that starts from y=1.0 instead of y=0.0."""
+        _usage['mean'] = _usage['mean'] - 1.0
+        return _usage
+
     rel_diff_unadjusted_real, err_unadjusted_real = format_rel_diff(adjusted=False)
+    rel_diff_unadjusted_real = format_data_for_bar_plot(rel_diff_unadjusted_real)
+    rel_diff_real = format_data_for_bar_plot(rel_diff_real)
     assert (rel_diff_unadjusted_real.index == rel_diff_real.index).all()
 
     name_of_plot = 'Model vs Data usage per appointment type at all facility levels' \
                    '\n[Model average annual 95% CI, Adjusted & Unadjusted Data average annual]'
     fig, ax = plt.subplots(figsize=(8, 5))
     rel_diff_unadjusted_real.plot(kind='bar', yerr=err_unadjusted_real, width=0.4,
-                                  ax=ax, position=0,
+                                  ax=ax, position=0, bottom=1.0,
                                   legend=False, color='salmon')
     rel_diff_real.plot(kind='bar', yerr=err_real, width=0.4,
-                       ax=ax, position=1,
+                       ax=ax, position=1, bottom=1.0,
                        legend=False, color='yellowgreen')
-    ax.axhline(1.0, color='r', linestyle='-')
+    ax.axhline(1.0, color='r')
     ax.set_xlim(right=len(rel_diff_real) - 0.3)
-    ax.set_ylim(0, 6)
-    ax.set_yticks(np.arange(0, 6.5, 0.5).tolist())
-    ax.yaxis.grid(True, which='major', linestyle='--')
-    ax.yaxis.grid(True, which='both', linestyle='--')
+    ax.set_yscale('log')
+    ax.set_ylim(1 / 20, 20)
+    ax.set_yticks([1 / 10, 1.0, 10])
+    ax.set_yticklabels(("<= 1/10", "1.0", ">= 10"))
     ax.set_ylabel('Model / Data')
     ax.set_xlabel('Appointment Type')
+    ax.xaxis.grid(True, which='major', linestyle='--')
+    ax.yaxis.grid(True, which='both', linestyle='--')
     ax.set_title(name_of_plot)
     patch_real = matplotlib.patches.Patch(facecolor='yellowgreen', label='Adjusted Data')
     patch_unadjusted_real = matplotlib.patches.Patch(facecolor='salmon', label='Unadjusted Data')
