@@ -1869,7 +1869,6 @@ funded_daily_capability_coarse.to_csv(
 # (i.e., each pair of facility level and district)
 
 
-
 # Define the check function
 def all_appts_can_run(capability):
     # Creat a table storing whether the appts have consistent requirements/demand and capabilities/supply

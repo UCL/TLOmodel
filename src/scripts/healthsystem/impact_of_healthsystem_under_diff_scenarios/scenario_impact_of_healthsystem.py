@@ -68,7 +68,7 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
             "With Hard Constraints":
                 # todo -- this will be the MODE 2 "Super-Rigid Constraints" scenario
                 mix_scenarios(
-                    get_parameters_for_status_quo()
+                    get_parameters_for_status_quo(),
                     {
                      'HealthSystem': {
                         'mode_appt_constraints': 2,
