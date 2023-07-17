@@ -289,7 +289,7 @@ lmis = lmis.reset_index()
 
 # 5.1 --- Load and clean data ---
 # Import matched list of consumanbles
-consumables_df = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False)
+consumables_df = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False, encoding = "ISO-8859-1")
 cond = consumables_df['matching_status'] == 'Remove'
 consumables_df = consumables_df[~cond]  # Remove items which were removed due to updates or the existence of duplicates
 
