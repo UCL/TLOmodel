@@ -131,9 +131,9 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
             res_df = pd.DataFrame([(intervention,
                                     k,
-                                    mean_outcome_value_int,
-                                    skew_mean_outcome_list_int,
-                                    mean_outcome_diff,
+                                    [round(x, 2) for x in mean_outcome_value_int],
+                                    round(skew_mean_outcome_list_int, 2),
+                                    [round(x, 2) for x in mean_outcome_diff],
                                     skew_diff_list,
                                     median_outcome_diff
                                     )],
