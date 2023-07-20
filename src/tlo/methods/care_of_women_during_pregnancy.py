@@ -639,6 +639,7 @@ class CareOfWomenDuringPregnancy(Module):
         :param individual_id: individual_id
         """
         df = self.sim.population.props
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         # check correct women have been sent
         if not df.at[individual_id, 'ac_to_be_admitted']:
@@ -648,15 +649,14 @@ class CareOfWomenDuringPregnancy(Module):
 
         logger.info(key='anc_interventions', data={'mother': individual_id, 'intervention': 'admission'})
 
+        mni[individual_id]['date_anc_admission'] = self.sim.date
+
         inpatient = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
             self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id)
 
         self.sim.modules['HealthSystem'].schedule_hsi_event(inpatient, priority=0,
                                                             topen=self.sim.date,
                                                             tclose=self.sim.date + DateOffset(days=1))
-
-        # Reset the variable to prevent future scheduling errors
-        df.at[individual_id, 'ac_to_be_admitted'] = False
 
     def call_if_maternal_emergency_assessment_cant_run(self, hsi_event):
         """
@@ -2176,11 +2176,26 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         mother = df.loc[person_id]
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        if not mother.is_alive:
+        if not mother.is_alive or not mother.is_pregnant or mother.la_currently_in_labour or mother.hs_is_inpatient:
             return
 
-        if not (mother.is_pregnant and not mother.la_currently_in_labour and not mother.hs_is_inpatient):
-            return
+        # If more than 2 days have passed, keep expected footprint but assume no effect
+        if df.at[person_id, 'ac_to_be_admitted']:
+            if (self.sim.date - mni[person_id]['date_anc_admission']).days > 2:
+                df.at[person_id, 'ac_to_be_admitted'] = False
+                self.sim.modules['PregnancySupervisor'].apply_death_risk(person_id)
+                return
+
+        elif not pd.isnull(mni[person_id]['date_preg_emergency']):
+            if (self.sim.date - mni[person_id]['date_preg_emergency']).days > 2:
+                mni[person_id]['date_preg_emergency'] = pd.NaT
+                self.sim.modules['PregnancySupervisor'].apply_death_risk(person_id)
+                return
+
+        # Reset mni/admission info
+        mni[person_id]['date_preg_emergency'] = pd.NaT
+        mni[person_id]['date_anc_admission'] = pd.NaT
+        df.at[person_id, 'ac_to_be_admitted'] = False
 
         # check if she will experience delayed care
         pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id, hsi_type='an')

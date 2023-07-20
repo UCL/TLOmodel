@@ -627,6 +627,8 @@ def update_mni_dictionary(self, individual_id):
                               'vesicovaginal_fistula_resolution': pd.NaT,
                               'rectovaginal_fistula_onset': pd.NaT,
                               'rectovaginal_fistula_resolution': pd.NaT,
+                              'date_anc_admission': pd.NaT,
+                              'date_preg_emergency': pd.NaT,
                               'test_run': False,  # used by labour module when running some model tests
                               'pred_syph_infect': pd.NaT,  # date syphilis is predicted to onset
                               'new_onset_spe': False,
