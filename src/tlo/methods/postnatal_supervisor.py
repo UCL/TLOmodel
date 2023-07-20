@@ -797,6 +797,7 @@ class PostnatalSupervisor(Module):
 
         # We schedule the HSI according
         for person in care_seeking.loc[care_seeking].index:
+            nci[person]['pnc_date'] = self.sim.date
 
             from tlo.methods.newborn_outcomes import HSI_NewbornOutcomes_ReceivesPostnatalCheck
             postnatal_check = HSI_NewbornOutcomes_ReceivesPostnatalCheck(
@@ -1243,9 +1244,11 @@ class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
 
         # Neonates with sepsis are more likely to receive PNC that those without
         if df.at[individual_id, 'pn_sepsis_early_neonatal']:
+
             if ((nci[individual_id]['will_receive_pnc'] == 'late') or (self.module.rng.random_sample() <
                                                                        params['prob_care_seeking_postnatal_'
                                                                               'emergency_neonate'])):
+                nci[individual_id]['pnc_date'] = self.sim.date
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(pnc_one_neonatal,
                                                                     priority=0,

@@ -1060,6 +1060,7 @@ class NewbornOutcomes(Module):
         # will automatically attend early
         if (timing == '<48') or (m['pnc_twin_one'] == 'early'):
             nci[child_id]['will_receive_pnc'] = 'early'
+            nci[child_id]['pnc_date'] = self.sim.date
 
             if df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 1):
                 m['pnc_twin_one'] = 'early'
@@ -1212,7 +1213,8 @@ class NewbornOutcomes(Module):
                              'sepsis_postnatal': False,
                              'passed_through_week_one': False,
                              'will_receive_pnc': 'none',
-                             'third_delay': False}
+                             'third_delay': False,
+                             'pnc_date': pd.NaT}
 
             if mni[mother_id]['clean_birth_practices']:
                 df.at[child_id, 'nb_clean_birth'] = True
@@ -1403,6 +1405,11 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
             if not df.at[person_id, 'nb_pnc_check'] == 0:
                 logger.info(key='error', data=f'Child {person_id} arrived at late PNC twice')
 
+        if (self.sim.date - nci[person_id]['date_pnc_check']).days > 2:
+            nci[person_id]['date_pnc_check'] = pd.NaT
+            self.module.set_death_status(person_id)
+            return
+
         # Log the PNC check
         logger.info(key='postnatal_check', data={'person_id': person_id,
                                                  'delivery_setting': nci[person_id]['delivery_setting'],
@@ -1410,6 +1417,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
                                                  'timing': nci[person_id]['will_receive_pnc']})
 
         df.at[person_id, 'nb_pnc_check'] += 1
+        nci[person_id]['date_pnc_check'] = pd.NaT
 
         if squeeze_factor > params['squeeze_threshold_for_delay_three_nb_care']:
             nci[person_id]['third_delay'] = True
