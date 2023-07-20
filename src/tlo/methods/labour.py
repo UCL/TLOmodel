@@ -2798,6 +2798,7 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
 
                 if timing == '<48' or has_comps:
                     mni[mother_id]['will_receive_pnc'] = 'early'
+                    mni[mother_id]['pnc_date'] = self.sim.date
 
                     early_event = HSI_Labour_ReceivesPostnatalCheck(
                         module=self.module, person_id=mother_id)
@@ -3055,6 +3056,11 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         # Run checks
         self.module.postpartum_characteristics_checker(person_id)
 
+        if (self.sim.date - mni[person_id]['pnc_date']).days > 2:
+            mni[person_id]['pnc_date'] = pd.NaT
+            self.module.apply_risk_of_early_postpartum_death(person_id)
+            return
+
         # log the PNC visit
         logger.info(key='postnatal_check', data={'person_id': person_id,
                                                  'delivery_setting': mni[person_id]['delivery_setting'],
@@ -3113,6 +3119,7 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
 
         # ====================================== APPLY RISK OF DEATH===================================================
         if not mni[person_id]['referred_for_surgery'] and not mni[person_id]['referred_for_blood']:
+            mni[person_id]['pnc_date'] = pd.NaT
             self.module.apply_risk_of_early_postpartum_death(person_id)
 
         return self.EXPECTED_APPT_FOOTPRINT
@@ -3160,8 +3167,15 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         params = self.module.current_parameters
 
         # If more than 2 days have passed, keep expected footprint but assume no effect
-        if (self.sim.date - df.at[person_id, 'la_due_date_current_pregnancy']).days > 2:
+        if (self.timing == 'intrapartum') and \
+           (self.sim.date - df.at[person_id, 'la_due_date_current_pregnancy']).days > 2:
             return
+
+        if self.timing == 'postpartum':
+            if (self.sim.date - mni[person_id]['pnc_date']).days > 2:
+                mni[person_id]['pnc_date'] = pd.NaT
+                self.module.apply_risk_of_early_postpartum_death(person_id)
+                return
 
         # If the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk
         # of death if complications occur)
@@ -3240,6 +3254,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         # Women who have passed through the postpartum SBA HSI have not yet had their risk of death calculated because
         # they required interventions delivered via this event. We now determine if these women will survive
         if self.timing == 'postpartum':
+            mni[person_id]['pnc_date'] = pd.NaT
             self.module.apply_risk_of_early_postpartum_death(person_id)
 
         # Schedule HSI that captures inpatient days

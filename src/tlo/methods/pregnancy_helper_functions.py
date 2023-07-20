@@ -670,6 +670,7 @@ def update_mni_dictionary(self, individual_id):
                             'death_in_labour': False,  # True (T) or False (F)
                             'single_twin_still_birth': False,  # True (T) or False (F)
                             'will_receive_pnc': 'none',
+                            'pnc_date': pd.NaT,
                             'passed_through_week_one': False}
 
         mni[individual_id].update(labour_variables)

@@ -698,6 +698,7 @@ class PostnatalSupervisor(Module):
         # Schedule the HSI event
         for person in care_seekers.loc[care_seekers].index:
             from tlo.methods.labour import HSI_Labour_ReceivesPostnatalCheck
+            mni[person]['pnc_date'] = self.sim.date
 
             # check if care seeking is delayed
             if self.rng.random_sample() < self.sim.modules['Labour'].current_parameters['prob_delay_one_two_fd']:
@@ -1186,6 +1187,8 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
             if (mni[individual_id]['will_receive_pnc'] == 'late') or (self.module.rng.random_sample() <
                                                                       params['prob_care_seeking_postnatal_emergency']):
 
+                mni[individual_id]['pnc_date'] = self.sim.date
+
                 # If care will be sought, check if they experience delay seeking care
                 pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id)
 
@@ -1200,6 +1203,9 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
             # Women without complications in week one are scheduled to attend PNC in the future
             if mni[individual_id]['will_receive_pnc'] == 'late':
                 appt_date = self.sim.date + pd.DateOffset(self.module.rng.randint(0, 35))
+                # TODO: IF THEY HAVE ANOTHER PNC VISIT BEFORE THIS THE DATE WILL BE OVER WRITTEN AND THEN THE EVENT
+                #  WONT RUN?
+                mni[individual_id]['pnc_date'] = appt_date
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     pnc_one_maternal, priority=0, topen=appt_date, tclose=appt_date + pd.DateOffset(days=2))
 
