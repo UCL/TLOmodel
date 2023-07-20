@@ -1098,10 +1098,31 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                     'child'].count()),
             do_scaling=True
         )
-        cov_mat_birth_df = (pnc_results_maternal / births_df) * 100
-        cov_mat_surv_df = (pnc_results_maternal / all_surviving_mothers) * 100
-        cov_neo_birth_df = (pnc_results_newborn / births_df) * 100
-        cov_neo_surv_df = (pnc_results_newborn / all_surviving_newborns) * 100
+
+        def update_dfs_to_replace_missing_rows(df):
+            t = []
+            for year in sim_years:
+                if year not in df.index:
+                    index = [year]
+                    new_row = pd.DataFrame(columns=df.columns, index=index)
+                    f_df = new_row.fillna(0.0)
+                    t.append(f_df)
+
+            if t:
+                final_df = pd.concat(t)
+                updated_df = df.append(final_df)
+                return updated_df
+
+            else:
+                return df
+
+        pnc_mat = update_dfs_to_replace_missing_rows(pnc_results_maternal)
+        pnc_neo = update_dfs_to_replace_missing_rows(pnc_results_newborn)
+
+        cov_mat_birth_df = (pnc_mat / births_df) * 100
+        cov_mat_surv_df = (pnc_mat / all_surviving_mothers) * 100
+        cov_neo_birth_df = (pnc_neo / births_df) * 100
+        cov_neo_surv_df = (pnc_neo / all_surviving_newborns) * 100
 
         results.update({'pnc_mat_cov_birth_df': cov_mat_birth_df})
         results.update({'pnc_mat_cov_birth_rate': return_95_CI_across_runs(cov_mat_birth_df, sim_years)})
