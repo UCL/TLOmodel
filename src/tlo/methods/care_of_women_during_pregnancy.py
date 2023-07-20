@@ -2672,9 +2672,19 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         if not mother.is_alive or (mother.ps_ectopic_pregnancy == 'none'):
             return
+
+        if df.at[person_id, 'ps_ectopic_pregnancy'] == 'not_ruptured':
+            if (self.sim.date - mni[person_id]['ectopic_onset']).days > 2:
+                self.module.ectopic_pregnancy_treatment_doesnt_run(self)
+                return
+
+        if df.at[person_id, 'ps_ectopic_pregnancy'] == 'ruptured':
+            if (self.sim.date - mni[person_id]['ectopic_rupture_onset']).days > 2:
+                return
 
         # We define the required consumables and check their availability
         avail = pregnancy_helper_functions.return_cons_avail(
