@@ -51,7 +51,6 @@ def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
             .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code_And_Level'] \
             .pipe(unpack_nested_dict_in_series) \
             .rename(columns=appt_dict, level=1) \
-            .rename(columns={'1b': '2'}, level=0) \
             .groupby(level=[0, 1], axis=1).sum() \
             .mean(axis=0)  # mean over each year (row)
 
@@ -87,7 +86,6 @@ def get_annual_num_appts_by_level_with_confidence_interval(results_folder: Path)
             .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code_And_Level'] \
             .pipe(unpack_nested_dict_in_series) \
             .rename(columns=appt_dict, level=1) \
-            .rename(columns={'1b': '2'}, level=0) \
             .groupby(level=[0, 1], axis=1).sum() \
             .mean(axis=0)  # mean over each year (row)
 
@@ -270,7 +268,7 @@ def get_real_usage(resourcefilepath, adjusted=True) -> pd.DataFrame:
     annual_usage_by_level = pd.concat([totals_by_year.reset_index(), totals_by_year_TB.reset_index()], axis=0)
 
     # group levels 1b and 2 into 2
-    annual_usage_by_level['Facility_Level'] = annual_usage_by_level['Facility_Level'].replace({'1b': '2'})
+    # annual_usage_by_level['Facility_Level'] = annual_usage_by_level['Facility_Level'].replace({'1b': '2'})
     annual_usage_by_level = annual_usage_by_level.groupby(
         ['Year', 'Appt_Type', 'Facility_Level'])['Usage'].sum().reset_index()
 
