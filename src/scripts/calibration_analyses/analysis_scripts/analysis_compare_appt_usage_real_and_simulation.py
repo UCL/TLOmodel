@@ -390,7 +390,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _rel_diff['upper_error'] = (_rel_diff['upper'] - _rel_diff['mean'])
         _asymmetric_error = [_rel_diff['lower_error'].values, _rel_diff['upper_error'].values]
 
-        _rel_diff = pd.DataFrame(_rel_diff['mean'].clip(lower=0.1, upper=10.0))
+        _rel_diff = pd.DataFrame(_rel_diff['mean'])
 
         return _rel_diff, _asymmetric_error
 
