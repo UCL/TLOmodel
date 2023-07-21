@@ -672,7 +672,7 @@ class HealthSystem(Module):
         self.list_fasttrack = []  # provided so that there is a default even before simulation is run
 
         # Store the argument provided for service_availability
-        self.arg_service_availabily = service_availability
+        self.arg_service_availability = service_availability
         self.service_availability = ['*']  # provided so that there is a default even before simulation is run
 
         # Check that the capabilities coefficient is correct
@@ -1162,10 +1162,10 @@ class HealthSystem(Module):
         """Returns service availability. (Should be equal to what is specified by the parameter, but overwrite with what
         was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
 
-        if self.arg_service_availabily is None:
+        if self.arg_service_availability is None:
             service_availability = self.parameters['Service_Availability']
         else:
-            service_availability = self.arg_service_availabily
+            service_availability = self.arg_service_availability
 
         assert isinstance(service_availability, list)
 
