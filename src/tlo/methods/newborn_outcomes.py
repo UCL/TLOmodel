@@ -1406,6 +1406,9 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
             if not df.at[person_id, 'nb_pnc_check'] == 0:
                 logger.info(key='error', data=f'Child {person_id} arrived at late PNC twice')
 
+        if pd.isnull(nci[person_id]['pnc_date']):
+            logger.info(key='error', data='Individual at neonatal PNC HSI without topen')
+
         if (self.sim.date - nci[person_id]['pnc_date']).days > 2:
             nci[person_id]['date_pnc_check'] = pd.NaT
             self.module.set_death_status(person_id)

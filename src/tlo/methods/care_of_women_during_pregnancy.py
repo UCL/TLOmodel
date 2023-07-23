@@ -2198,10 +2198,14 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         if not mother.is_alive or not mother.is_pregnant or mother.la_currently_in_labour or mother.hs_is_inpatient:
             return
 
+        if pd.isnull(mni[person_id]['date_preg_emergency']) and pd.isnull(mni[person_id]['date_anc_admission']):
+            logger.info(key='error', data='Individual at AN inpatient HSI without topen')
+
         # If more than 2 days have passed, keep expected footprint but assume no effect
         if df.at[person_id, 'ac_to_be_admitted']:
             if (self.sim.date - mni[person_id]['date_anc_admission']).days > 2:
                 df.at[person_id, 'ac_to_be_admitted'] = False
+                mni[person_id]['date_anc_admission'] = pd.NaT
                 self.sim.modules['PregnancySupervisor'].apply_death_risk(person_id)
                 return
 
