@@ -439,6 +439,7 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     # TODO: test that other blood tests are occuring (hep b and syphilis- currently not linked to anything)
     # todo: test with probabilities low/0? same with dx test?
 
+
 def test_anc_contacts_that_should_not_run_wont_run(seed):
     """This test checks the inbuilt functions within ANC1 and ANC subsequent that should block, and in some cases
      reschedule, ANC visits for women when the HSI runs and is no longer appropriate for them """
