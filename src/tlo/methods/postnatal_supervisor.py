@@ -1269,7 +1269,9 @@ class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
         elif not df.at[individual_id, 'pn_sepsis_early_neonatal'] and (nci[individual_id]['will_'
                                                                                           'receive_pnc'] == 'late'):
             days_till_day_7 = 7 - df.at[individual_id, 'age_days']
+            nci[individual_id]['pnc_date'] = self.sim.date
 
+            # Todo: same issue with 'late' maternal pnc
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 pnc_one_neonatal,
                 priority=0,
