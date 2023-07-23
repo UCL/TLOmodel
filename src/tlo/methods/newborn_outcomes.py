@@ -1364,6 +1364,7 @@ class NewbornOutcomes(Module):
         logger.debug(key='message', data=f'HSI_NewbornOutcomes_ReceivesPostnatalCheck did not run for '
                                          f'{person_id}')
         if person_id in nci:
+            nci[person_id]['date_pnc_check'] = pd.NaT
             self.set_death_status(person_id)
 
 

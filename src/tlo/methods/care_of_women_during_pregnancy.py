@@ -1388,6 +1388,25 @@ class CareOfWomenDuringPregnancy(Module):
             self.sim.schedule_event(EctopicPregnancyRuptureEvent(
                 self.sim.modules['PregnancySupervisor'], individual_id), self.sim.date + DateOffset(days=7))
 
+    def inpatient_care_doesnt_run(self, hsi_event):
+        """
+        This function is called within HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare if the event cannot
+        run/the intervention cannot be delivered.
+        :param hsi_event: HSI event in which the function has been called
+        """
+        individual_id = hsi_event.target
+        df = self.sim.population.props
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare: did not run')
+
+        if df.at[individual_id, 'ac_to_be_admitted']:
+            df.at[individual_id, 'ac_to_be_admitted'] = False
+
+        if individual_id in mni:
+            mni[individual_id]['date_preg_emergency'] = pd.NaT
+            mni[individual_id]['date_anc_admission'] = pd.NaT
+
     def calculate_beddays(self, individual_id):
         """
         This function is called by HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare to calculate the number of
@@ -2416,13 +2435,15 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             mni[person_id]['delay_one_two'] = False
             mni[person_id]['delay_three'] = False
 
+    def never_ran(self):
+        self.module.inpatient_care_doesnt_run(self)
+
     def did_not_run(self):
-        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare: did not run')
+        self.module.inpatient_care_doesnt_run(self)
         return False
 
     def not_available(self):
-        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare: cannot not run'
-                                         ' with this configuration')
+        self.module.inpatient_care_doesnt_run(self)
 
 
 class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(HSI_Event, IndividualScopeEventMixin):

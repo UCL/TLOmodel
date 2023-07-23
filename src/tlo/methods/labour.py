@@ -2278,7 +2278,12 @@ class Labour(Module):
         :param hsi_event: HSI event in which the function has been called:
         """
         person_id = hsi_event.target
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
         logger.debug(key='message', data=f'HSI_Labour_ReceivesPostnatalCheck will not run for {person_id}')
+        if person_id in mni:
+            mni[person_id]['pnc_date'] = pd.NaT
+
         self.apply_risk_of_early_postpartum_death(person_id)
 
     def run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self, hsi_event):
@@ -2290,12 +2295,17 @@ class Labour(Module):
         :param hsi_event: HSI event in which the function has been called:
         """
         person_id = hsi_event.target
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
         logger.debug(key='message', data=f'HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare will not run for'
                                          f' {person_id}')
 
         # For women referred to this event after the postnatal SBA HSI we apply risk of death (as if should have been
         # applied in this event if it ran)
         if hsi_event.timing == 'postpartum':
+            if person_id in mni:
+                mni[person_id]['pnc_date'] = pd.NaT
+
             self.apply_risk_of_early_postpartum_death(person_id)
 
 
