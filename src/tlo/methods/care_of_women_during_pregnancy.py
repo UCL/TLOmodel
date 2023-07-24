@@ -658,26 +658,6 @@ class CareOfWomenDuringPregnancy(Module):
                                                             topen=self.sim.date,
                                                             tclose=self.sim.date + DateOffset(days=1))
 
-    def call_if_maternal_emergency_assessment_cant_run(self, hsi_event):
-        """
-        This function is called if HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment is unable to run to ensure
-         women still experience risk of death associated with the complication they had sought treatment for (as risk of
-        death is applied following treatment within the HSI)
-        :param hsi_event: HSI event in which the function has been called:
-        """
-        df = self.sim.population.props
-        individual_id = hsi_event.target
-        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-        if df.at[individual_id, 'is_pregnant'] and not df.at[individual_id, 'la_currently_in_labour']:
-            logger.debug(key='message', data=f'HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment: did not'
-                                             f' run for person {individual_id}')
-
-            self.sim.modules['PregnancySupervisor'].apply_risk_of_death_from_monthly_complications(individual_id)
-            if df.at[individual_id, 'is_alive']:
-                mni[individual_id]['delay_one_two'] = False
-                mni[individual_id]['delay_three'] = False
-
     # ================================= INTERVENTIONS DELIVERED DURING ANC ============================================
     # The following functions contain the interventions that are delivered as part of routine ANC contacts. Functions
     # are called from within the ANC HSIs. Which interventions are called depends on the mothers gestation and the
@@ -1398,14 +1378,20 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare: did not run')
+        if df.at[individual_id, 'is_pregnant'] and not df.at[individual_id, 'la_currently_in_labour']:
+            logger.debug(key='message', data=f'HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment: did not'
+                                             f' run for person {individual_id}')
 
-        if df.at[individual_id, 'ac_to_be_admitted']:
-            df.at[individual_id, 'ac_to_be_admitted'] = False
+            self.sim.modules['PregnancySupervisor'].apply_risk_of_death_from_monthly_complications(individual_id)
 
-        if individual_id in mni:
-            mni[individual_id]['date_preg_emergency'] = pd.NaT
-            mni[individual_id]['date_anc_admission'] = pd.NaT
+            if df.at[individual_id, 'is_alive']:
+                mni[individual_id]['delay_one_two'] = False
+                mni[individual_id]['delay_three'] = False
+                mni[individual_id]['date_preg_emergency'] = pd.NaT
+                mni[individual_id]['date_anc_admission'] = pd.NaT
+
+                if df.at[individual_id, 'ac_to_be_admitted']:
+                    df.at[individual_id, 'ac_to_be_admitted'] = False
 
     def calculate_beddays(self, individual_id):
         """
@@ -2204,15 +2190,12 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         # If more than 2 days have passed, keep expected footprint but assume no effect
         if df.at[person_id, 'ac_to_be_admitted']:
             if (self.sim.date - mni[person_id]['date_anc_admission']).days > 2:
-                df.at[person_id, 'ac_to_be_admitted'] = False
-                mni[person_id]['date_anc_admission'] = pd.NaT
-                self.sim.modules['PregnancySupervisor'].apply_death_risk(person_id)
+                self.module.inpatient_care_doesnt_run(person_id)
                 return
 
         elif not pd.isnull(mni[person_id]['date_preg_emergency']):
             if (self.sim.date - mni[person_id]['date_preg_emergency']).days > 2:
-                mni[person_id]['date_preg_emergency'] = pd.NaT
-                self.sim.modules['PregnancySupervisor'].apply_death_risk(person_id)
+                self.module.inpatient_care_doesnt_run(person_id)
                 return
 
         # Reset mni/admission info
@@ -2470,6 +2453,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(HSI_
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
         if not mother.is_alive or not mother.is_pregnant:
             return
@@ -2482,6 +2466,8 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(HSI_
 
             # If she is determined to still be anaemic she is admitted for additional treatment via the inpatient event
             if fbc_result in ('mild', 'moderate', 'severe'):
+                df.at[person_id, 'ac_to_be_admitted'] = True
+                mni[person_id]['date_anc_admission'] = self.sim.date
 
                 admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
                     self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
