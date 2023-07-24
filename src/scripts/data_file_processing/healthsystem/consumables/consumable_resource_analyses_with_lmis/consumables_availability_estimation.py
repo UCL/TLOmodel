@@ -207,6 +207,16 @@ inconsistent_item_names_mapping = {'Zidovudine/Lamivudine (AZT/3TC), 300+150mg' 
 'Morphine slow rel, 30mg' : 'Morphine sulphate 10mg (slow release)',
 }
 
+items_introduced_in_september = {'Tenofovir Disoproxil Fumarate/Lamivudine/Dolutegravir (TDF/3TC /DTG), 300+300+50mg' : '' ,
+'Abacavir/Lamivudine (ABC/3TC), 600+300mg' : '' ,
+'DBS Bundles, 70 microlitre, Pack of 50 Tests' : '' ,
+'Dolutegravir (DTG), 50mg' : '' ,
+'Lopinavir/Ritonavir(LPV/r ), 40+10mg' : '' ,
+'OraQuick HIV Self Test, Pouch' : '' ,
+ }
+
+# TODO check whether there is any issue with the above items_introduced_in_september which only show up from September onwards
+
 def rename_items_to_address_inconsitentencies(_df, item_dict):
     """Return a dataframe with rows for the same item with inconsistent names collapsed into one"""
     # Recode item names appearing from Jan to Aug to the new names adopted from September onwards
