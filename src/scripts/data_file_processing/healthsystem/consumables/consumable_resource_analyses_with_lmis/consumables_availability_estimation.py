@@ -181,6 +181,55 @@ for m in range(1, 13):
     cond2 = lmis_df_wide_flat['received', months_dict[m]].notna()
     lmis_df_wide_flat.loc[cond1 & ~cond2, [('received', months_dict[m])]] = 0
 
+# Before interpolation, make corrections for items whose name changed mid-year
+inconsistent_item_names_mapping = {'Zidovudine/Lamivudine (AZT/3TC), 300+150mg' : '''Zidovudine (AZT) + Lamivudine (3TC), 300mg+150mg, 60''s (4A, 8A)''' , # NO
+'Zidovudine/Lamivudine (AZT/3TC), 60+30mg' : '''Zidovudine (AZT) + Lamivudine (3TC), 60mg+30mg, 60''s (4P)''' , # NO
+'Zidovudine/Lamivudine/Nevirapine (AZT/3TC/NVP), 300+150+200mg' : '''Zidovudine (AZT) + Lamivudine (3TC) + Nvevirapine (NVP), 300mg + 150mg + 200mg, 60''s (2A)''' ,# NO
+'Zidovudine/Lamivudine/Nevirapine (AZT/3TC/NVP), 60+30+50mg' : '''Zidovudine(AZT) + Lamivudine (3TC) + Nevirapine(NVP), 60mg + 30mg + 50mg, 60''s (2P)''' ,# NO
+'Unigold HIV test kits, Kit of 20 Tests' : '''Unigold HIV Test Kits''' ,
+'Tenofovir Disoproxil Fumarate/Lamivudine(TDF/3TC ), 300+300mg' : '''Tenofovir (TDF) + Lamivudine (3TC), 300mg+300mg, 30''s (7A, 6A)''' ,# NO
+'Tenofovir Disoproxil Fumarate/Lamivudine/Efavirenz(TDF/3TC /EFV), 300+300+600mg' : '''Tenofovir (TDF) + Lamivudine (3TC) + Efavirenz (EFV), 300+300+600, 30''s (5A)''' ,# NO
+'Nevirapine (NVP), 50mg' : '''Nevirapine 50mg, 60''s''' ,# NO
+'Nevirapine (NVP), 200mg' : '''Nevirapine (NVP), 200mg, 60''s (6A)''' ,# NO
+'Lopinavir/Ritonavir (LPV/r ), 200+50mg' : '''Lopinavir + Ritonavir (LPV/r), 200mg + 50mg, 120''s (7A)''' ,# NO
+'Lopinavir/Ritonavir(LPV/r ), 100+25mg' : '''Lopinavir (LPV/r), 100mg + 25mg, 60''s (9P)''' ,# NO
+'Gentamicin, 80mg/2ml' : '''Gentamicin 40mg/ml, 2ml''',
+'Nevirapine (NVP syrup with syringe), 10mg/ml' : '''Nevirapine (NVP) Syrup, 10mg/ml''',
+'Efavirenz (EFV), 600mg' : '''Efavirenz (EFV), 600mg, 30''s (3A)''' , # NO
+'Efavirenz (EFV), 200mg' : '''Efavirenz (EFV), 200mg, 90''s (3P)''' , # NO
+'Determine HIV test Kits, Kit of 100 Tests' : '''Determine HIV Test Kits''' ,
+'Cotrimoxazole, 960 mg' : '''Cotrimoxazole 960mg Tabs''' ,
+'Abacavir/Lamivudine (ABC/3TC), 60+30mg' : '''Abacavir (ABC) + Lamivudine(3TC), 60mg+30mg, 60''S (9P)''' , # NO
+'Atazanavir /Ritonavir (ATV/r), 300+100mg' : '''Atazanavir +  Ritonavir, 300mg + 100mg, 30''S (7A)''' , # NO
+'Isoniazid tablets, 100mg': '''Isoniazid 100mg''',
+'Isoniazid tablets, 300mg': '''Isoniazid 300mg''',
+}
+
+def rename_items_to_address_inconsitentencies(_df, item_dict):
+    """Return a dataframe with rows for the same item with inconsistent names collapsed into one"""
+    # Recode item names appearing from Jan to Aug to the new names adopted from September onwards
+    old_unique_item_count =_df.item.nunique()
+    for item in item_dict:
+        print(len(_df[_df.item == item_dict[item]]), ''' instances of "''', item_dict[item], '''"'''
+                                                                         ''' changed to "''', item, '''"''')
+        row_newname = _df.item == item
+        row_oldname = _df.item == item_dict[item]
+        _df.loc[row_oldname, 'item'] = item
+
+    # Make a list of column names to be collapsed
+    columns_to_sum = [col for col in _df.columns if
+                      col[0].startswith(('amc', 'closing_bal', 'dispensed', 'received', 'stkout_days'))]
+
+    _collapsed_df = _df.groupby(['program', 'item', 'district', 'fac_type_tlo', 'fac_name']).agg(
+        {col: 'sum' for col in columns_to_sum}).reset_index()
+
+    # Test that the all items in the dictionary have been found in the dataframe
+    new_unique_item_count =_collapsed_df.item.nunique()
+    assert len(item_dict) == old_unique_item_count - new_unique_item_count
+    return _collapsed_df
+
+rename_items_to_address_inconsitentencies(lmis_df_wide_flat, inconsistent_item_names_mapping)
+
 # --- 3.1 RULE: 1.If i) stockout is missing, ii) closing_bal, amc and received are not missing , and iii) amc !=0 and,
 #          then stkout_days[m] = (amc[m] - closing_bal[m-1] - received)/amc * number of days in the month ---
 # (Note that the number of entries for closing balance, dispensed and received is always the same)
