@@ -201,8 +201,10 @@ inconsistent_item_names_mapping = {'Zidovudine/Lamivudine (AZT/3TC), 300+150mg' 
 'Cotrimoxazole, 960 mg' : '''Cotrimoxazole 960mg Tabs''' ,
 'Abacavir/Lamivudine (ABC/3TC), 60+30mg' : '''Abacavir (ABC) + Lamivudine(3TC), 60mg+30mg, 60''S (9P)''' , # NO
 'Atazanavir /Ritonavir (ATV/r), 300+100mg' : '''Atazanavir +  Ritonavir, 300mg + 100mg, 30''S (7A)''' , # NO
+'SD Bioline, Syphilis test kits, Kit of 30 Tests' : 'Determine Syphillis Test Kits',
 'Isoniazid tablets, 100mg': '''Isoniazid 100mg''',
 'Isoniazid tablets, 300mg': '''Isoniazid 300mg''',
+'Morphine slow rel, 30mg' : 'Morphine sulphate 10mg (slow release)',
 }
 
 def rename_items_to_address_inconsitentencies(_df, item_dict):
