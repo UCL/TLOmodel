@@ -815,7 +815,7 @@ class CardioMetabolicDisorders(Module):
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
         conditions_to_investigate = []   # The list of conditions that will be investigated in follow-up HSI
-        has_any_symptoms = False  # Marker for whether the person has any symptoms of interest
+        has_any_cmd_symptom = False  # Marker for whether the person has any symptoms of interest
 
         for condition in self.conditions:
             is_already_diagnosed = person[f'nc_{condition}_ever_diagnosed']
@@ -833,14 +833,14 @@ class CardioMetabolicDisorders(Module):
                 conditions_to_investigate.append(condition)
 
             if (not is_already_diagnosed) and has_symptom:
-                has_any_symptoms = True
+                has_any_cmd_symptom = True
 
         self.sim.modules['HealthSystem'].schedule_hsi_event(
             HSI_CardioMetabolicDisorders_Investigations(
                 module=self,
                 person_id=person_id,
                 conditions_to_investigate=conditions_to_investigate,
-                has_symptoms=has_any_symptoms,
+                has_any_cmd_symptom=has_any_cmd_symptom,
             ),
             priority=0,
             topen=self.sim.date,
@@ -1428,17 +1428,17 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
     NB. If a treatment is needed, this does lead to multiple HSI to be scheduled for the person (relevant to each
     condition).
     :param conditions_to_investigate: list of the condition to investigate.
-    :param has_symptoms: bool to indicate whether the person has any symptoms that prompted the investigation
+    :param has_any_cmd_symptom: bool to indicate whether the person has any symptoms that prompted the investigation
     """
 
-    def __init__(self, module, person_id, conditions_to_investigate: List, has_symptoms: bool = False):
+    def __init__(self, module, person_id, conditions_to_investigate: List, has_any_cmd_symptom: bool = False):
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.conditions_to_investigate = conditions_to_investigate
-        self.has_symptoms = has_symptoms
+        self.has_any_cmd_symptom = has_any_cmd_symptom
 
     def do_for_each_condition(self, _c) -> bool:
         """What to do for each condition that will be investigated. Returns `bool` signalling whether a follow-up HSI
@@ -1500,7 +1500,7 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
 
         # If the person did have any symptoms, run a test for hypertension (according to some probability):
         if (
-            self.has_symptoms
+            self.has_any_cmd_symptom
             and (self.module.rng.rand() < self.module.parameters['hypertension_hsi']['pr_assessed_other_symptoms'])
         ):
             # Run a test to diagnose whether the person has condition:
