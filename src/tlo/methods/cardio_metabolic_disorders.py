@@ -867,7 +867,7 @@ class CardioMetabolicDisorders(Module):
                     ((self.sim.date - self.sim.population.props.at[person_id, f'nc_{ev}_date_last_event']).days <= 3):
                 ev_to_investigate.append(ev)
 
-        if len(ev_to_investigate):
+        if ev_to_investigate:
             health_system.schedule_hsi_event(
                 HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
                     module=self,
