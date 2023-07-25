@@ -140,6 +140,7 @@ def test_run_core_modules_high_volumes_of_pregnancy(seed, tmpdir):
     assert 'error' not in output['tlo.methods.postnatal_supervisor']
     assert 'error' not in output['tlo.methods.newborn_outcomes']
 
+
 @pytest.mark.slow
 def test_run_core_modules_high_volumes_of_pregnancy_hsis_cant_run(seed, tmpdir):
     """Runs the simulation with the core modules and all women of reproductive age being pregnant at the start of the
