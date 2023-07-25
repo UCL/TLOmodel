@@ -560,7 +560,7 @@ def test_hsi_investigation_not_following_symptoms(seed):
     """Create a person and check if the functions in `HSI_CardioMetabolicDisorders_Investigations`
     create the correct HSI"""
 
-    # Make a list of all conditions and events to run this test for
+    # Make a list of all conditions to run this test for
     condition_list = ['diabetes', 'hypertension', 'chronic_lower_back_pain', 'chronic_kidney_disease',
                       'chronic_ischemic_hd']
     for condition in condition_list:
@@ -585,7 +585,7 @@ def test_hsi_investigation_not_following_symptoms(seed):
 
         # Run the InvestigationNotFollowingSymptoms event
         t = HSI_CardioMetabolicDisorders_Investigations(module=sim.modules[
-            'CardioMetabolicDisorders'], person_id=person_id, conditions_to_investigate=[f'{condition}', ])
+            'CardioMetabolicDisorders'], person_id=person_id, conditions_to_investigate=[f'{condition}'])
         t.apply(person_id=person_id, squeeze_factor=0.0)
 
         # Check that there is StartWeightLossAndMedication event scheduled
@@ -606,7 +606,8 @@ def test_hsi_investigation_following_symptoms(seed):
     """Create a person and check if the functions in `HSI_CardioMetabolicDisorders_Investigations`
     creates the correct HSI"""
 
-    # Make a list of all conditions and events to run this test for
+    # Make a list of all conditions to run this test for (N.B. excluding hypertension and there is no symptom for
+    # hypertension).
     condition_list = ['diabetes', 'chronic_lower_back_pain', 'chronic_kidney_disease', 'chronic_ischemic_hd']
     for condition in condition_list:
         # Create the sim with an enabled healthcare system
@@ -635,7 +636,7 @@ def test_hsi_investigation_following_symptoms(seed):
             add_or_remove='+'
         )
 
-        # Run the InvestigationNotFollowingSymptoms event
+        # Run the `HSI_CardioMetabolicDisorders_Investigations` event
         t = HSI_CardioMetabolicDisorders_Investigations(module=sim.modules[
             'CardioMetabolicDisorders'], person_id=person_id, conditions_to_investigate=[f'{condition}'])
         t.apply(person_id=person_id, squeeze_factor=0.0)
