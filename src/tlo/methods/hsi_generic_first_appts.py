@@ -267,8 +267,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                                                                  hsi_event=hsi_event)
 
         if 'CardioMetabolicDisorders' in sim.modules:
-            # Take a blood pressure measurement for proportion of individuals who have not been diagnosed and
-            # are either over 50 or younger than 50 but are selected to get tested.
             sim.modules['CardioMetabolicDisorders'].determine_if_will_be_investigated(person_id=person_id)
 
         if 'Copd' in sim.modules:
