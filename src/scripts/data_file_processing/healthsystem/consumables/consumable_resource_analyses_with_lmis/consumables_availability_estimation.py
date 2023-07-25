@@ -205,6 +205,7 @@ inconsistent_item_names_mapping = {'Zidovudine/Lamivudine (AZT/3TC), 300+150mg' 
 'Isoniazid tablets, 100mg': '''Isoniazid 100mg''',
 'Isoniazid tablets, 300mg': '''Isoniazid 300mg''',
 'Morphine slow rel, 30mg' : 'Morphine sulphate 10mg (slow release)',
+'Male condoms, Each': 'Male condoms',
 }
 
 items_introduced_in_september = {'Tenofovir Disoproxil Fumarate/Lamivudine/Dolutegravir (TDF/3TC /DTG), 300+300+50mg' : '' ,
