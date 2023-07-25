@@ -819,7 +819,7 @@ class CardioMetabolicDisorders(Module):
 
         for condition in self.conditions:
             is_already_diagnosed = person[f'nc_{condition}_ever_diagnosed']
-            has_symptom = (f'{condition}_symptoms' in symptoms)
+            has_symptom = f'{condition}_symptoms' in symptoms
             next_test_due = is_next_test_due(
                 current_date=self.sim.date, date_of_last_test=df.at[person_id, f'nc_{condition}_date_last_test']
             )
