@@ -835,17 +835,19 @@ class CardioMetabolicDisorders(Module):
             if (not is_already_diagnosed) and has_symptom:
                 has_any_cmd_symptom = True
 
-        self.sim.modules['HealthSystem'].schedule_hsi_event(
-            HSI_CardioMetabolicDisorders_Investigations(
-                module=self,
-                person_id=person_id,
-                conditions_to_investigate=conditions_to_investigate,
-                has_any_cmd_symptom=has_any_cmd_symptom,
-            ),
-            priority=0,
-            topen=self.sim.date,
-            tclose=None
-          )
+        # Schedule follow-up HSI *if* there are any conditions to investigate
+        if conditions_to_investigate:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_CardioMetabolicDisorders_Investigations(
+                    module=self,
+                    person_id=person_id,
+                    conditions_to_investigate=conditions_to_investigate,
+                    has_any_cmd_symptom=has_any_cmd_symptom,
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+              )
 
     def determine_if_will_be_investigated_events(self, person_id):
         """
