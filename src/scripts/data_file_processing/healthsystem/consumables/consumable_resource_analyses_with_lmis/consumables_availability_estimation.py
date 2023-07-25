@@ -182,25 +182,25 @@ for m in range(1, 13):
     lmis_df_wide_flat.loc[cond1 & ~cond2, [('received', months_dict[m])]] = 0
 
 # Before interpolation, make corrections for items whose name changed mid-year
-inconsistent_item_names_mapping = {'Zidovudine/Lamivudine (AZT/3TC), 300+150mg' : '''Zidovudine (AZT) + Lamivudine (3TC), 300mg+150mg, 60''s (4A, 8A)''' , # NO
-'Zidovudine/Lamivudine (AZT/3TC), 60+30mg' : '''Zidovudine (AZT) + Lamivudine (3TC), 60mg+30mg, 60''s (4P)''' , # NO
-'Zidovudine/Lamivudine/Nevirapine (AZT/3TC/NVP), 300+150+200mg' : '''Zidovudine (AZT) + Lamivudine (3TC) + Nvevirapine (NVP), 300mg + 150mg + 200mg, 60''s (2A)''' ,# NO
-'Zidovudine/Lamivudine/Nevirapine (AZT/3TC/NVP), 60+30+50mg' : '''Zidovudine(AZT) + Lamivudine (3TC) + Nevirapine(NVP), 60mg + 30mg + 50mg, 60''s (2P)''' ,# NO
+inconsistent_item_names_mapping = {'Zidovudine/Lamivudine (AZT/3TC), 300+150mg' : '''Zidovudine (AZT) + Lamivudine (3TC), 300mg+150mg, 60''s (4A, 8A)''' ,
+'Zidovudine/Lamivudine (AZT/3TC), 60+30mg' : '''Zidovudine (AZT) + Lamivudine (3TC), 60mg+30mg, 60''s (4P)''' ,
+'Zidovudine/Lamivudine/Nevirapine (AZT/3TC/NVP), 300+150+200mg' : '''Zidovudine (AZT) + Lamivudine (3TC) + Nvevirapine (NVP), 300mg + 150mg + 200mg, 60''s (2A)''' ,
+'Zidovudine/Lamivudine/Nevirapine (AZT/3TC/NVP), 60+30+50mg' : '''Zidovudine(AZT) + Lamivudine (3TC) + Nevirapine(NVP), 60mg + 30mg + 50mg, 60''s (2P)''' ,
 'Unigold HIV test kits, Kit of 20 Tests' : '''Unigold HIV Test Kits''' ,
-'Tenofovir Disoproxil Fumarate/Lamivudine(TDF/3TC ), 300+300mg' : '''Tenofovir (TDF) + Lamivudine (3TC), 300mg+300mg, 30''s (7A, 6A)''' ,# NO
-'Tenofovir Disoproxil Fumarate/Lamivudine/Efavirenz(TDF/3TC /EFV), 300+300+600mg' : '''Tenofovir (TDF) + Lamivudine (3TC) + Efavirenz (EFV), 300+300+600, 30''s (5A)''' ,# NO
-'Nevirapine (NVP), 50mg' : '''Nevirapine 50mg, 60''s''' ,# NO
-'Nevirapine (NVP), 200mg' : '''Nevirapine (NVP), 200mg, 60''s (6A)''' ,# NO
-'Lopinavir/Ritonavir (LPV/r ), 200+50mg' : '''Lopinavir + Ritonavir (LPV/r), 200mg + 50mg, 120''s (7A)''' ,# NO
-'Lopinavir/Ritonavir(LPV/r ), 100+25mg' : '''Lopinavir (LPV/r), 100mg + 25mg, 60''s (9P)''' ,# NO
+'Tenofovir Disoproxil Fumarate/Lamivudine(TDF/3TC ), 300+300mg' : '''Tenofovir (TDF) + Lamivudine (3TC), 300mg+300mg, 30''s (7A, 6A)''' ,
+'Tenofovir Disoproxil Fumarate/Lamivudine/Efavirenz(TDF/3TC /EFV), 300+300+600mg' : '''Tenofovir (TDF) + Lamivudine (3TC) + Efavirenz (EFV), 300+300+600, 30''s (5A)''' ,
+'Nevirapine (NVP), 50mg' : '''Nevirapine 50mg, 60''s''' ,
+'Nevirapine (NVP), 200mg' : '''Nevirapine (NVP), 200mg, 60''s (6A)''' ,
+'Lopinavir/Ritonavir (LPV/r ), 200+50mg' : '''Lopinavir + Ritonavir (LPV/r), 200mg + 50mg, 120''s (7A)''' ,
+'Lopinavir/Ritonavir(LPV/r ), 100+25mg' : '''Lopinavir (LPV/r), 100mg + 25mg, 60''s (9P)''' ,
 'Gentamicin, 80mg/2ml' : '''Gentamicin 40mg/ml, 2ml''',
 'Nevirapine (NVP syrup with syringe), 10mg/ml' : '''Nevirapine (NVP) Syrup, 10mg/ml''',
-'Efavirenz (EFV), 600mg' : '''Efavirenz (EFV), 600mg, 30''s (3A)''' , # NO
-'Efavirenz (EFV), 200mg' : '''Efavirenz (EFV), 200mg, 90''s (3P)''' , # NO
+'Efavirenz (EFV), 600mg' : '''Efavirenz (EFV), 600mg, 30''s (3A)''' ,
+'Efavirenz (EFV), 200mg' : '''Efavirenz (EFV), 200mg, 90''s (3P)''' ,
 'Determine HIV test Kits, Kit of 100 Tests' : '''Determine HIV Test Kits''' ,
 'Cotrimoxazole, 960 mg' : '''Cotrimoxazole 960mg Tabs''' ,
-'Abacavir/Lamivudine (ABC/3TC), 60+30mg' : '''Abacavir (ABC) + Lamivudine(3TC), 60mg+30mg, 60''S (9P)''' , # NO
-'Atazanavir /Ritonavir (ATV/r), 300+100mg' : '''Atazanavir +  Ritonavir, 300mg + 100mg, 30''S (7A)''' , # NO
+'Abacavir/Lamivudine (ABC/3TC), 60+30mg' : '''Abacavir (ABC) + Lamivudine(3TC), 60mg+30mg, 60''S (9P)''' ,
+'Atazanavir /Ritonavir (ATV/r), 300+100mg' : '''Atazanavir +  Ritonavir, 300mg + 100mg, 30''S (7A)''' ,
 'SD Bioline, Syphilis test kits, Kit of 30 Tests' : 'Determine Syphillis Test Kits',
 'Isoniazid tablets, 100mg': '''Isoniazid 100mg''',
 'Isoniazid tablets, 300mg': '''Isoniazid 300mg''',
@@ -535,7 +535,7 @@ change_colnames(unmatched_consumables_df, NameChangeList)
 # Append common consumables stockout dataframe with the main dataframe
 cond = unmatched_consumables_df['available_prop'].notna()
 unmatched_consumables_df.loc[~cond, 'data_source'] = 'Not available'
-stkout_df = stkout_df.append(unmatched_consumables_df)
+stkout_df = pd.concat([stkout_df, unmatched_consumables_df], axis= 0, ignore_index = True)
 
 # --- 6.3 Append stockout rate for facility level 0 from HHFA --- #
 cond = hhfa_df['item_code'].notna()
@@ -552,7 +552,7 @@ hhfa_fac0 = hhfa_fac0.drop_duplicates()
 
 cond = stkout_df['fac_type_tlo'] == 'Facility_level_0'
 stkout_df = stkout_df[~cond]
-stkout_df = stkout_df.append(hhfa_fac0)
+stkout_df = pd.concat([stkout_df, hhfa_fac0], axis= 0, ignore_index = True)
 
 # --- 6.4 Generate new category variable for analysis --- #
 stkout_df['category'] = stkout_df['module_name'].str.lower()
@@ -644,27 +644,27 @@ copy_source_to_destination = {
 for source, destination in copy_source_to_destination.items():
     new_rows = sf.loc[sf.district_std == source].copy()
     new_rows.district_std = destination
-    sf = sf.append(new_rows)
+    sf = pd.concat([sf, new_rows], axis= 0, ignore_index = True)
 
 # 2) Fill in Likoma (for which no data) with the means
 means = sf.loc[sf.fac_type_tlo.isin(['1a', '1b', '2'])].groupby(by=['fac_type_tlo', 'month', 'item_code'])[
     'available_prop'].mean().reset_index()
 new_rows = means.copy()
 new_rows['district_std'] = 'Likoma'
-sf = sf.append(new_rows)
+sf = pd.concat([sf, new_rows], axis= 0, ignore_index = True)
 
 assert sorted(set(districts)) == sorted(set(pd.unique(sf.district_std)))
 
 # 3) copy the results for 'Mwanza/1b' to be equal to 'Mwanza/1a'.
 mwanza_1a = sf.loc[(sf.district_std == 'Mwanza') & (sf.fac_type_tlo == '1a')]
 mwanza_1b = sf.loc[(sf.district_std == 'Mwanza') & (sf.fac_type_tlo == '1a')].copy().assign(fac_type_tlo='1b')
-sf = sf.append(mwanza_1b)
+sf = pd.concat([sf, mwanza_1b], axis= 0, ignore_index = True)
 
 # 4) Copy all the results to create a level 0 with an availability equal to half that in the respective 1a
 all_1a = sf.loc[sf.fac_type_tlo == '1a']
 all_0 = sf.loc[sf.fac_type_tlo == '1a'].copy().assign(fac_type_tlo='0')
 all_0.available_prop *= 0.5
-sf = sf.append(all_0)
+sf = pd.concat([sf, all_0], axis= 0, ignore_index = True)
 
 # Now, merge-in facility_id
 sf_merge = sf.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
