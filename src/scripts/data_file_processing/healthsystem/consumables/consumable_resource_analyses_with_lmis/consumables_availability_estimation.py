@@ -217,7 +217,7 @@ items_introduced_in_september = {'Tenofovir Disoproxil Fumarate/Lamivudine/Dolut
 
 # TODO check whether there is any issue with the above items_introduced_in_september which only show up from September onwards
 
-def rename_items_to_address_inconsitentencies(_df, item_dict):
+def rename_items_to_address_inconsistentencies(_df, item_dict):
     """Return a dataframe with rows for the same item with inconsistent names collapsed into one"""
     # Recode item names appearing from Jan to Aug to the new names adopted from September onwards
     old_unique_item_count =_df.item.nunique()
@@ -228,19 +228,33 @@ def rename_items_to_address_inconsitentencies(_df, item_dict):
         row_oldname = _df.item == item_dict[item]
         _df.loc[row_oldname, 'item'] = item
 
-    # Make a list of column names to be collapsed
+    # Make a list of column names to be collapsed using different methods
     columns_to_sum = [col for col in _df.columns if
                       col[0].startswith(('amc', 'closing_bal', 'dispensed', 'received', 'stkout_days'))]
+    columns_to_preserve = [col for col in _df.columns if
+                      col[0].startswith(('data_source'))]
 
+    # Define aggregation function to be applied to collapse data by item
+    def custom_agg(x):
+        if x.name in columns_to_sum:
+            return x.sum(skipna=True) if np.any(x.notnull() & (x >= 0)) else np.nan # this ensures that the NaNs are retained
+        #, i.e. not changed to 0, when the corresponding data for both item name variations are NaN, and when there is a 0 or positive value
+        # for one or both item name variation, the sum is taken.
+        elif x.name in columns_to_preserve:
+            return x.str.cat(
+                sep='') # for the data_source column, this function concatenates the string values
+
+    # Collapse dataframe
     _collapsed_df = _df.groupby(['program', 'item', 'district', 'fac_type_tlo', 'fac_name']).agg(
-        {col: 'sum' for col in columns_to_sum}).reset_index()
+        {col: custom_agg for col in columns_to_preserve + columns_to_sum}
+    ).reset_index()
 
-    # Test that the all items in the dictionary have been found in the dataframe
+    # Test that all items in the dictionary have been found in the dataframe
     new_unique_item_count =_collapsed_df.item.nunique()
     assert len(item_dict) == old_unique_item_count - new_unique_item_count
     return _collapsed_df
 
-rename_items_to_address_inconsitentencies(lmis_df_wide_flat, inconsistent_item_names_mapping)
+lmis_df_wide_flat = rename_items_to_address_inconsistentencies(lmis_df_wide_flat, inconsistent_item_names_mapping)
 
 # --- 3.1 RULE: 1.If i) stockout is missing, ii) closing_bal, amc and received are not missing , and iii) amc !=0 and,
 #          then stkout_days[m] = (amc[m] - closing_bal[m-1] - received)/amc * number of days in the month ---
