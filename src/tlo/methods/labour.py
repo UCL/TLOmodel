@@ -3063,7 +3063,7 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
             if not df.at[person_id, 'la_pn_checks_maternal'] == 0:
                 logger.info(key='error', data=f'Mother {person_id} attended late PNC twice')
 
-        if pd.isnull(mni[person_id]['pnc_date']):
+        if pd.isnull(mni[person_id]['pnc_date']) and (df.at[person_id, 'la_pn_checks_maternal'] == 0):
             logger.info(key='error', data='Individual at PNC HSI without topen')
 
         # Run checks
@@ -3185,8 +3185,8 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
             return
 
         if self.timing == 'postpartum':
-            if pd.isnull(mni[person_id]['pnc_date']):
-                logger.info(key='error', data='Individual at PNC HSI without topen')
+            if pd.isnull(mni[person_id]['pnc_date']) and (df.at[person_id, 'la_pn_checks_maternal'] == 0):
+                logger.info(key='error', data='Individual at PNC HSI (comp) without topen')
 
             if (self.sim.date - mni[person_id]['pnc_date']).days > 2:
                 mni[person_id]['pnc_date'] = pd.NaT
