@@ -802,9 +802,9 @@ class CardioMetabolicDisorders(Module):
     def determine_if_will_be_investigated(self, person_id):
         """
         This is called by the HSI generic first appts module whenever a person attends an appointment and determines
-        if the person will be tested for a condition.
-        A maximum of one instance of `HSI_CardioMetabolicDisorders_Investigations` is created
-        for the person, during which multiple conditions can be investigated.
+        if the person will be tested for one or more conditions.
+        A maximum of one instance of `HSI_CardioMetabolicDisorders_Investigations` is created for the person, during
+        which multiple conditions can be investigated.
         """
 
         def is_next_test_due(current_date, date_of_last_test):
@@ -817,6 +817,7 @@ class CardioMetabolicDisorders(Module):
         conditions_to_investigate = []   # The list of conditions that will be investigated in follow-up HSI
         has_any_cmd_symptom = False  # Marker for whether the person has any symptoms of interest
 
+        # Determine if there are any conditions that should be investigated:
         for condition in self.conditions:
             is_already_diagnosed = person[f'nc_{condition}_ever_diagnosed']
             has_symptom = f'{condition}_symptoms' in symptoms
@@ -835,7 +836,7 @@ class CardioMetabolicDisorders(Module):
             if (not is_already_diagnosed) and has_symptom:
                 has_any_cmd_symptom = True
 
-        # Schedule follow-up HSI *if* there are any conditions to investigate
+        # Schedule follow-up HSI *if* there are any conditions to investigate:
         if conditions_to_investigate:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_CardioMetabolicDisorders_Investigations(
