@@ -1504,6 +1504,7 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
         # If the person did have any symptoms, run a test for hypertension (according to some probability):
         if (
             self.has_any_cmd_symptom
+            and ('hypertension' not in self.conditions_to_investigate)
             and (self.module.rng.rand() < self.module.parameters['hypertension_hsi']['pr_assessed_other_symptoms'])
         ):
             # Run a test to diagnose whether the person has condition:
