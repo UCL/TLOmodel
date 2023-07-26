@@ -198,6 +198,17 @@ def get_expected_appt_time(resourcefilepath) -> pd.DataFrame:
     """This is to return the expected time requirements per appointment type per coarse cadre per facility level."""
     expected_appt_time = pd.read_csv(
         resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table.csv')
+    appt_type = pd.read_csv(
+        resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Types_Table.csv')
+    expected_appt_time = expected_appt_time.merge(
+        appt_type[['Appt_Type_Code', 'Appt_Cat']], on='Appt_Type_Code', how='left')
+    # rename Appt_Cat
+    appt_cat = {'GENERAL_INPATIENT_AND_OUTPATIENT_CARE': 'IPOP',
+                'Nutrition': 'NUTRITION',
+                'Misc': 'MISC',
+                'Mental_Health': 'MENTAL'}
+    expected_appt_time['Appt_Cat'] = expected_appt_time['Appt_Cat'].replace(appt_cat)
+    expected_appt_time.rename(columns={'Appt_Cat': 'Appt_Category'}, inplace=True)
 
     return expected_appt_time
 
@@ -259,15 +270,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #  /facility level (focus on level 1a, 1b and 2)/disease (represented by short treatment id),
     #  and comparing 4 scenarios, i.e., Actual/Establishment(funded_plus) HCW * Default/Maximal health care seeking
 
-    # hcw usage per cadre per facility level (1a, 1b, 2), against actual capability
+    # hcw usage per cadre per facility level (1a, 1b, 2) per appointment type
     hcw_usage = appt_time.drop(index=appt_time[~appt_time.Appt_Type_Code.isin(appts_sim)].index).reset_index(drop=True)
     for idx in hcw_usage.index:
         hcw_usage.loc[idx, 'Total_Mins_Used_Per_Year'] = (hcw_usage.loc[idx, 'Time_Taken_Mins'] *
                                                           simulation_usage.loc[hcw_usage.loc[idx, 'Facility_Level'],
                                                                                hcw_usage.loc[idx, 'Appt_Type_Code']])
-    hcw_usage = hcw_usage.groupby(['Facility_Level', 'Officer_Category']
+    hcw_usage.drop(columns='Time_Taken_Mins', inplace=True)
+    hcw_usage = hcw_usage.groupby(['Facility_Level', 'Officer_Category', 'Appt_Category']
                                   )['Total_Mins_Used_Per_Year'].sum().reset_index()
-    hcw_usage = hcw_usage.merge(hcw_capability, on=['Facility_Level', 'Officer_Category'], how='left')
 
 
 if __name__ == "__main__":
