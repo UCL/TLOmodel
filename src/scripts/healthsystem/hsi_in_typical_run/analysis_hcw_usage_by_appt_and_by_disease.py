@@ -50,7 +50,6 @@ def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
         return _df \
             .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code_And_Level'] \
             .pipe(unpack_nested_dict_in_series) \
-            .rename(columns=appt_dict, level=1) \
             .groupby(level=[0, 1], axis=1).sum() \
             .mean(axis=0)  # mean over each year (row)
 
@@ -67,117 +66,12 @@ def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
         ).unstack().astype(int)
 
 
-def get_annual_num_appts_by_level_with_confidence_interval(results_folder: Path) -> pd.DataFrame:
-    """Return pd.DataFrame gives the (mean) simulated annual number of appointments of each type at each level,
-    with 95% confidence interval."""
-
-    def get_counts_of_appts(_df):
-        """Get the mean number of appointments of each type being used each year at each level.
-        Need to rename appts to match standardized categories from the DHIS2 data."""
-
-        def unpack_nested_dict_in_series(_raw: pd.Series):
-            return pd.concat(
-                {
-                  idx: pd.DataFrame.from_dict(mydict) for idx, mydict in _raw.iteritems()
-                 }
-             ).unstack().fillna(0.0).astype(int)
-
-        return _df \
-            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code_And_Level'] \
-            .pipe(unpack_nested_dict_in_series) \
-            .rename(columns=appt_dict, level=1) \
-            .groupby(level=[0, 1], axis=1).sum() \
-            .mean(axis=0)  # mean over each year (row)
-
-    return summarize(
-        extract_results(
-                results_folder,
-                module='tlo.methods.healthsystem.summary',
-                key='HSI_Event',
-                custom_generate_series=get_counts_of_appts,
-                do_scaling=True
-            ),
-        only_mean=False,
-        collapse_columns=True,
-        ).unstack().astype(int)
-
-
-def get_annual_num_appts_with_confidence_interval(results_folder: Path) -> pd.DataFrame:
-    """Return pd.DataFrame gives the (mean) simulated annual number of appointments of each type at all levels,
-    with 95% confidence interval."""
-
-    def get_counts_of_appts(_df) -> pd.Series:
-        """Get the mean number of appointments of each type being used each year at all levels.
-        Need to rename appts to match standardized categories from the DHIS2 data."""
-
-        return _df \
-            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code'] \
-            .apply(pd.Series) \
-            .rename(columns=appt_dict) \
-            .groupby(level=0, axis=1).sum() \
-            .mean(axis=0)  # mean over each year (row)
-
-    return summarize(
-        extract_results(
-                results_folder,
-                module='tlo.methods.healthsystem.summary',
-                key='HSI_Event',
-                custom_generate_series=get_counts_of_appts,
-                do_scaling=True
-            ),
-        only_mean=False,
-        collapse_columns=True,
-        ).unstack().astype(int)
-
-
 def get_simulation_usage_by_level(results_folder: Path) -> pd.DataFrame:
     """Returns the simulated MEAN USAGE PER YEAR DURING THE TIME_PERIOD, by appointment type and level.
     """
 
     # Get model outputs
     model_output = get_annual_num_appts_by_level(results_folder=results_folder)
-
-    return model_output
-
-
-def get_simulation_usage_by_level_with_confidence_interval(results_folder: Path) -> pd.DataFrame:
-    """Returns the simulated MEAN USAGE PER YEAR DURING THE TIME_PERIOD with 95% confidence interval,
-    by appointment type and level.
-    """
-
-    # Get model outputs
-    model_output = get_annual_num_appts_by_level_with_confidence_interval(results_folder=results_folder)
-
-    # Reformat
-    model_output.columns = [' '.join(col).strip() for col in model_output.columns.values]
-    model_output = model_output.melt(var_name='name', value_name='value', ignore_index=False)
-    model_output['name'] = model_output['name'].str.split(' ')
-    model_output['value_type'] = model_output['name'].str[0]
-    model_output['appt_type'] = model_output['name'].str[1]
-    model_output.drop(columns='name', inplace=True)
-    model_output.reset_index(drop=False, inplace=True)
-    model_output.rename(columns={'index': 'facility_level'}, inplace=True)
-
-    return model_output
-
-
-def get_simulation_usage_with_confidence_interval(results_folder: Path) -> pd.DataFrame:
-    """Returns the simulated MEAN USAGE PER YEAR DURING THE TIME_PERIOD with 95% confidence interval,
-    by appointment type.
-    """
-
-    # Get model outputs
-    model_output = get_annual_num_appts_with_confidence_interval(results_folder=results_folder)
-
-    # Reformat
-    model_output = pd.DataFrame(model_output).T
-    model_output.columns = [' '.join(col).strip() for col in model_output.columns.values]
-    model_output = model_output.melt(var_name='name', value_name='value', ignore_index=False)
-    model_output['name'] = model_output['name'].str.split(' ')
-    model_output['value_type'] = model_output['name'].str[0]
-    model_output['appt_type'] = model_output['name'].str[1]
-    model_output.drop(columns='name', inplace=True)
-    model_output.reset_index(drop=True, inplace=True)
 
     return model_output
 
@@ -300,14 +194,26 @@ def get_real_usage(resourcefilepath, adjusted=True) -> pd.DataFrame:
     return average_annual_by_level, annual_usage_by_level_with_ci, annual_usage_with_ci
 
 
-# todo: plot hcw time usage against capability per cadre/facility level/disease (represented by short treatment id),
-#  and comparing 4 scenarios, i.e., Actual/Establishment(funded_plus) HCW * Default/Maximal health care seeking
 def get_expected_appt_time(resourcefilepath) -> pd.DataFrame:
-    """ This is to return the expected time requirements per appointment type per coarse cadre per facility level."""
+    """This is to return the expected time requirements per appointment type per coarse cadre per facility level."""
     expected_appt_time = pd.read_csv(
-        resourcefilepath / 'healthsystem' / 'organisation' / 'ResourceFile_Appt_Time_Table.csv')
+        resourcefilepath / 'healthsystem' / 'human_resources' / 'definitions' / 'ResourceFile_Appt_Time_Table.csv')
 
     return expected_appt_time
+
+
+def get_hcw_capability(resourcefilepath, hcwscenario='actual') -> pd.DataFrame:
+    """This is to return the annual hcw capabilities per cadre per facility level.
+       Argument hcwscenario can be actual, funded_plus."""
+    hcw_capability = pd.read_csv(
+        resourcefilepath / 'healthsystem' / 'human_resources' / hcwscenario / 'ResourceFile_Daily_Capabilities.csv'
+    )
+    hcw_capability = hcw_capability.groupby(['Facility_Level', 'Officer_Category']
+                                            )['Total_Mins_Per_Day'].sum().reset_index()
+    hcw_capability['Total_Mins_Per_Year'] = hcw_capability['Total_Mins_Per_Day'] * 365.25
+    hcw_capability.drop(columns='Total_Mins_Per_Day', inplace=True)
+
+    return hcw_capability
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -316,7 +222,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
-    # Plot Simulation vs Real usage (Across all levels and At each level) (trimmed to 0.1 and 10)
     # format plot
     def format_and_save(_fig, _ax, _name_of_plot):
         _ax.set_title(_name_of_plot)
@@ -340,216 +245,29 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     real_usage = get_real_usage(resourcefilepath)[0]
 
-    # find appts that are not included in both simulation and real usage dataframe
-    appts_real_only = set(real_usage.columns.values) - set(simulation_usage.columns.values)
-    appts_simulation_only = set(simulation_usage.columns.values) - set(real_usage.columns.values)
+    # get expected appt time and hcw capability
+    appt_time = get_expected_appt_time(resourcefilepath)
 
-    # format data
-    rel_diff_all_levels = (
-        simulation_usage.sum(axis=0) / real_usage.sum(axis=0)
-    ).clip(lower=0.1, upper=10.0)
+    hcw_capability = get_hcw_capability(resourcefilepath, hcwscenario='actual')
 
-    # plot for all levels
-    name_of_plot = 'Model vs Data usage per appt type at all facility levels' \
-                   '\n[Model average annual, Adjusted Data average annual]'
-    fig, ax = plt.subplots()
-    ax.stem(rel_diff_all_levels.index, rel_diff_all_levels.values, bottom=1.0, label='All levels')
-    for idx in rel_diff_all_levels.index:
-        if not pd.isna(rel_diff_all_levels[idx]):
-            ax.text(idx, rel_diff_all_levels[idx]*(1+0.2), round(rel_diff_all_levels[idx], 1),
-                    ha='left', fontsize=8)
-    format_and_save(fig, ax, name_of_plot)
+    # check that appts in simulation_usage are in appt_time
+    appts_def = set(appt_time.Appt_Type_Code)
+    appts_sim = set(simulation_usage.columns.values)
+    assert appts_sim.issubset(appts_def)
 
-    # plot for each level
-    rel_diff_by_levels = (
-        simulation_usage / real_usage
-    ).clip(upper=10, lower=0.1).dropna(how='all', axis=0)
+    # todo: plot hcw time usage against capability per cadre
+    #  /facility level (focus on level 1a, 1b and 2)/disease (represented by short treatment id),
+    #  and comparing 4 scenarios, i.e., Actual/Establishment(funded_plus) HCW * Default/Maximal health care seeking
 
-    name_of_plot = 'Model vs Data usage per appt type per facility level' \
-                   '\n[Model average annual, Adjusted Data average annual]'
-    fig, ax = plt.subplots()
-    marker_dict = {'0': 0,
-                   '1a': 4,
-                   '1b': 5,
-                   '2': 6,
-                   '3': 7,
-                   '4': 1}  # Note that level 0/3/4 has very limited data
-    for _level, _results in rel_diff_by_levels.iterrows():
-        ax.plot(_results.index, _results.values, label=_level, linestyle='none', marker=marker_dict[_level])
-    ax.axhline(1.0, color='r')
-    format_and_save(fig, ax, name_of_plot)
-
-    # Plot Simulation with 95% CI vs Adjusted Real usage by appt type, across all levels (trimmed to 0.1 and 10)
-    # format data
-    def format_rel_diff(adjusted=True):
-        def format_real_usage():
-            _real_usage = get_real_usage(resourcefilepath, adjusted)[0]
-            _real_usage_all_levels = _real_usage.sum(axis=0).reset_index().rename(
-                columns={0: 'real_usage_all_levels', 'Appt_Type': 'appt_type'})
-            return _real_usage_all_levels
-
-        simulation_usage_all_levels_with_ci = get_simulation_usage_with_confidence_interval(results_folder)
-        _rel_diff = simulation_usage_all_levels_with_ci.merge(format_real_usage(), on='appt_type', how='outer')
-
-        _rel_diff['ratio'] = (_rel_diff['value'] / _rel_diff['real_usage_all_levels'])
-
-        _rel_diff = _rel_diff[['appt_type', 'value_type', 'ratio']].pivot(
-            index='appt_type', columns='value_type', values='ratio').dropna(axis=1, how='all')
-
-        _rel_diff['lower_error'] = (_rel_diff['mean'] - _rel_diff['lower'])
-        _rel_diff['upper_error'] = (_rel_diff['upper'] - _rel_diff['mean'])
-        _asymmetric_error = [_rel_diff['lower_error'].values, _rel_diff['upper_error'].values]
-
-        _rel_diff = pd.DataFrame(_rel_diff['mean'])
-
-        return _rel_diff, _asymmetric_error
-
-    rel_diff_real, err_real = format_rel_diff(adjusted=True)
-
-    # plot
-    name_of_plot = 'Model vs Data usage per appointment type at all facility levels' \
-                   '\n[Model average annual 95% CI, Adjusted Data average annual]'
-    fig, ax = plt.subplots()
-    ax.errorbar(rel_diff_real.index.values,
-                rel_diff_real['mean'].values,
-                err_real, fmt='.', capsize=3.0, label='All levels')
-    ax.legend(loc='center left', bbox_to_anchor=(1.0, 0.5))
-    for idx in rel_diff_real.index:
-        if not pd.isna(rel_diff_real.loc[idx, 'mean']):
-            ax.text(idx,
-                    rel_diff_real.loc[idx, 'mean'] * (1 + 0.2),
-                    round(rel_diff_real.loc[idx, 'mean'], 1),
-                    ha='left', fontsize=8)
-    ax.axhline(1.0, color='r')
-    format_and_save(fig, ax, name_of_plot)
-
-    # Plot Simulation vs Real usage by appt type and show fraction of usage at each level
-    # Model, Adjusted real and Unadjusted real average annual usage all normalised to 1
-    # format data
-    def format_simulation_usage_fraction():
-        _usage = get_simulation_usage_by_level(results_folder)
-        _usage_all_levels = _usage.sum(axis=0).reset_index().rename(
-            columns={0: '_usage_all_levels', 'index': 'appt_type'})
-
-        _usage = pd.melt(_usage.reset_index(), id_vars='index',
-                         var_name='appt_type', value_name='_usage'
-                         ).rename(columns={'index': 'facility_level'})
-
-        _usage_fraction = _usage.merge(_usage_all_levels, on='appt_type', how='outer')
-        _usage_fraction['ratio'] = (_usage_fraction['_usage'] /
-                                    _usage_fraction['_usage_all_levels'])
-
-        _usage_fraction = pd.pivot(_usage_fraction, index='appt_type', columns='facility_level', values='ratio')
-
-        # add nan rows of appts_real_only
-        nan_df = pd.DataFrame(index=appts_real_only, columns=_usage_fraction.columns)
-        _usage_fraction = pd.concat([_usage_fraction, nan_df]).sort_index()
-
-        # make row of appts_simulation_only nan
-        _usage_fraction.loc[_usage_fraction.index.isin(appts_simulation_only), :] = np.NaN
-
-        return _usage_fraction
-
-    def format_real_usage_fraction(adjusted=True):
-        _usage = get_real_usage(resourcefilepath, adjusted)[0]
-        _usage_all_levels = _usage.sum(axis=0).reset_index().rename(
-            columns={0: '_usage_all_levels', 'Appt_Type': 'appt_type'})
-
-        _usage = pd.melt(_usage.reset_index(), id_vars='Facility_Level',
-                         var_name='appt_type', value_name='_usage'
-                         ).rename(columns={'Facility_Level': 'facility_level'})
-
-        _usage_fraction = _usage.merge(_usage_all_levels, on='appt_type', how='outer')
-        _usage_fraction['ratio'] = (_usage_fraction['_usage'] /
-                                    _usage_fraction['_usage_all_levels'])
-
-        _usage_fraction = pd.pivot(_usage_fraction, index='appt_type', columns='facility_level', values='ratio')
-
-        # add nan rows of appts_simulation_only
-        nan_df = pd.DataFrame(index=appts_simulation_only, columns=_usage_fraction.columns)
-        _usage_fraction = pd.concat([_usage_fraction, nan_df]).sort_index()
-
-        # make row of appts_real_only nan
-        _usage_fraction.loc[_usage_fraction.index.isin(appts_real_only), :] = np.NaN
-
-        return _usage_fraction
-
-    simulation_usage_plot = format_simulation_usage_fraction()
-    real_usage_plot = format_real_usage_fraction(adjusted=True)
-    unadjusted_real_usage_plot = format_real_usage_fraction(adjusted=False)
-    assert simulation_usage_plot.index.equals(real_usage_plot.index)
-    assert simulation_usage_plot.index.equals(unadjusted_real_usage_plot.index)
-
-    # plot
-    name_of_plot = 'Model vs Data usage per appointment type on fraction per level' \
-                   '\n[Model average annual, Adjusted & Unadjusted Data average annual]'
-    fig, ax = plt.subplots(figsize=(12, 5))
-    simulation_usage_plot.plot(kind='bar', stacked=True, width=0.3,
-                               edgecolor='dimgrey', hatch='',
-                               ax=ax, position=0)
-    real_usage_plot.plot(kind='bar', stacked=True, width=0.25,
-                         edgecolor='dimgrey', hatch='.',
-                         ax=ax, position=1)
-    unadjusted_real_usage_plot.plot(kind='bar', stacked=True, width=0.25,
-                                    edgecolor='dimgrey', hatch='//',
-                                    ax=ax, position=2)
-    ax.set_xlim(right=len(simulation_usage_plot) - 0.45)
-    ax.set_ylabel('Usage per level / Usage all levels')
-    ax.set_xlabel('Appointment Type')
-    ax.set_title(name_of_plot)
-    legend_1 = plt.legend(simulation_usage_plot.columns, loc='upper left', bbox_to_anchor=(1.0, 0.5),
-                          title='Facility Level')
-    patch_simulation = matplotlib.patches.Patch(facecolor='lightgrey', hatch='', edgecolor="dimgrey", label='Model')
-    patch_real = matplotlib.patches.Patch(facecolor='lightgrey', hatch='...', edgecolor="dimgrey",
-                                          label='Adjusted Data')
-    patch_unadjusted_real = matplotlib.patches.Patch(facecolor='lightgrey', hatch='///', edgecolor="dimgrey",
-                                                     label='Unadjusted Data')
-
-    plt.legend(handles=[patch_unadjusted_real, patch_real, patch_simulation],
-               loc='lower left', bbox_to_anchor=(1.0, 0.6))
-    fig.add_artist(legend_1)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
-    plt.show()
-
-    # appendix - plot Simulation with 95% CI vs Adjusted & Unadjusted real, across all levels
-    def format_data_for_bar_plot(_usage):
-        """reduce the model/data ratio by 1.0, for the bar plot that starts from y=1.0 instead of y=0.0."""
-        _usage['mean'] = _usage['mean'] - 1.0
-        return _usage
-
-    rel_diff_unadjusted_real, err_unadjusted_real = format_rel_diff(adjusted=False)
-    rel_diff_unadjusted_real = format_data_for_bar_plot(rel_diff_unadjusted_real)
-    rel_diff_real = format_data_for_bar_plot(rel_diff_real)
-    assert (rel_diff_unadjusted_real.index == rel_diff_real.index).all()
-
-    name_of_plot = 'Model vs Data usage per appointment type at all facility levels' \
-                   '\n[Model average annual 95% CI, Adjusted & Unadjusted Data average annual]'
-    fig, ax = plt.subplots(figsize=(8, 5))
-    rel_diff_unadjusted_real.plot(kind='bar', yerr=err_unadjusted_real, width=0.4,
-                                  ax=ax, position=0, bottom=1.0,
-                                  legend=False, color='salmon')
-    rel_diff_real.plot(kind='bar', yerr=err_real, width=0.4,
-                       ax=ax, position=1, bottom=1.0,
-                       legend=False, color='yellowgreen')
-    ax.axhline(1.0, color='r')
-    ax.set_xlim(right=len(rel_diff_real) - 0.3)
-    ax.set_yscale('log')
-    ax.set_ylim(1 / 20, 20)
-    ax.set_yticks([1 / 10, 1.0, 10])
-    ax.set_yticklabels(("<= 1/10", "1.0", ">= 10"))
-    ax.set_ylabel('Model / Data')
-    ax.set_xlabel('Appointment Type')
-    ax.xaxis.grid(True, which='major', linestyle='--')
-    ax.yaxis.grid(True, which='both', linestyle='--')
-    ax.set_title(name_of_plot)
-    patch_real = matplotlib.patches.Patch(facecolor='yellowgreen', label='Adjusted Data')
-    patch_unadjusted_real = matplotlib.patches.Patch(facecolor='salmon', label='Unadjusted Data')
-    legend = plt.legend(handles=[patch_real, patch_unadjusted_real], loc='center left', bbox_to_anchor=(1.0, 0.5))
-    fig.add_artist(legend)
-    fig.tight_layout()
-    fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
-    plt.show()
+    # hcw usage per cadre per facility level (1a, 1b, 2), against actual capability
+    hcw_usage = appt_time.drop(index=appt_time[~appt_time.Appt_Type_Code.isin(appts_sim)].index).reset_index(drop=True)
+    for idx in hcw_usage.index:
+        hcw_usage.loc[idx, 'Total_Mins_Used_Per_Year'] = (hcw_usage.loc[idx, 'Time_Taken_Mins'] *
+                                                          simulation_usage.loc[hcw_usage.loc[idx, 'Facility_Level'],
+                                                                               hcw_usage.loc[idx, 'Appt_Type_Code']])
+    hcw_usage = hcw_usage.groupby(['Facility_Level', 'Officer_Category']
+                                  )['Total_Mins_Used_Per_Year'].sum().reset_index()
+    hcw_usage = hcw_usage.merge(hcw_capability, on=['Facility_Level', 'Officer_Category'], how='left')
 
 
 if __name__ == "__main__":
@@ -557,8 +275,8 @@ if __name__ == "__main__":
     rfp = Path('./resources')
 
     # Find results folder (most recent run generated using that scenario_filename)
-    scenario_filename = 'long_run_all_diseases.py'
-    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+    scenario_filename = '10_year_scale_run.py'
+    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-4]
 
     # Test dataset:
     # results_folder = Path('/Users/tbh03/GitHub/TLOmodel/outputs/tbh03@ic.ac.uk/long_run_all_diseases-small')
