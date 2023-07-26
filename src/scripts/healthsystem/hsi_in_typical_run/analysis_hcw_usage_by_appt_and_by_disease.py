@@ -1,4 +1,5 @@
 from pathlib import Path
+from collections import Counter
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -6,7 +7,13 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date
-from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize
+from tlo.analysis.utils import (
+    bin_hsi_event_details,
+    compute_mean_across_runs,
+    extract_results,
+    get_coarse_appt_type,
+    get_scenario_outputs,
+    summarize)
 
 PREFIX_ON_FILENAME = '6'
 
@@ -64,6 +71,34 @@ def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
         only_mean=True,
         collapse_columns=True,
         ).unstack().astype(int)
+
+
+# todo: add level info
+def get_annual_num_hsi_by_appt_and_level(results_folder: Path) -> pd.DataFrame:
+    """Return pd.DataFrame gives the (mean) simulated annual count of hsi
+    per treatment id per each appt type per level."""
+    counts_by_treatment_id_and_coarse_appt_type = compute_mean_across_runs(
+        bin_hsi_event_details(
+            results_folder,
+            lambda event_details, count: sum(
+                [
+                    Counter({
+                        (
+                            event_details["treatment_id"].split("_")[0],
+                            get_coarse_appt_type(appt_type)
+                        ):
+                            count * appt_number
+                    })
+                    for appt_type, appt_number in event_details["appt_footprint"]
+                ],
+                Counter()
+            ),
+            *TARGET_PERIOD,
+            True
+        )
+    )[0]
+
+    return counts_by_treatment_id_and_coarse_appt_type
 
 
 def get_simulation_usage_by_level(results_folder: Path) -> pd.DataFrame:
@@ -279,6 +314,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     hcw_usage.drop(columns='Time_Taken_Mins', inplace=True)
     hcw_usage = hcw_usage.groupby(['Facility_Level', 'Officer_Category', 'Appt_Category']
                                   )['Total_Mins_Used_Per_Year'].sum().reset_index()
+
+    # hcw usage per cadre per facility level per hsi
+    hsi_count = get_annual_num_hsi_by_appt_and_level(results_folder)
 
 
 if __name__ == "__main__":
