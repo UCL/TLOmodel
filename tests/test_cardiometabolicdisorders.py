@@ -925,6 +925,10 @@ def test_hsi_following_presentation_at_generic_non_emergency_hsi(seed):
         symptom_string=cmd.symptoms,
     )
 
+    # Make the probability of testing for persons without the symptom 1.0.
+    for condition in cmd.conditions:
+        cmd.parameters[f'{condition}_hsi']['pr_assessed_other_symptoms'] = 1.0
+
     # Run a generic non-emergency HSI for person id 0
     hsi_generic = HSI_GenericNonEmergencyFirstAppt(module=sim.modules['HealthSeekingBehaviour'], person_id=0)
     hsi_generic.run(squeeze_factor=0.0)
