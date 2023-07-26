@@ -73,19 +73,19 @@ def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
         ).unstack().astype(int)
 
 
-# todo: add level info
 def get_annual_num_hsi_by_appt_and_level(results_folder: Path) -> pd.DataFrame:
     """Return pd.DataFrame gives the (mean) simulated annual count of hsi
     per treatment id per each appt type per level."""
-    counts_by_treatment_id_and_coarse_appt_type = compute_mean_across_runs(
+    hsi_count = compute_mean_across_runs(
         bin_hsi_event_details(
             results_folder,
             lambda event_details, count: sum(
                 [
                     Counter({
                         (
-                            event_details["treatment_id"].split("_")[0],
-                            get_coarse_appt_type(appt_type)
+                            event_details['treatment_id'],
+                            appt_type,
+                            event_details['facility_level'],
                         ):
                             count * appt_number
                     })
@@ -98,7 +98,12 @@ def get_annual_num_hsi_by_appt_and_level(results_folder: Path) -> pd.DataFrame:
         )
     )[0]
 
-    return counts_by_treatment_id_and_coarse_appt_type
+    hsi_count = pd.DataFrame.from_dict(hsi_count, orient='index').reset_index().rename(columns={0: 'count'})
+    hsi_count[['treatment_id', 'appt', 'facility_level']] = pd.DataFrame(hsi_count['index'].tolist(),
+                                                                         index=hsi_count.index)
+    hsi_count = hsi_count.groupby(['treatment_id', 'appt', 'facility_level'])['count'].sum().reset_index()
+
+    return hsi_count
 
 
 def get_simulation_usage_by_level(results_folder: Path) -> pd.DataFrame:
