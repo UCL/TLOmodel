@@ -205,7 +205,7 @@ inconsistent_item_names_mapping = {'Zidovudine/Lamivudine (AZT/3TC), 300+150mg' 
 'Isoniazid tablets, 100mg': '''Isoniazid 100mg''',
 'Isoniazid tablets, 300mg': '''Isoniazid 300mg''',
 'Morphine slow rel, 30mg' : 'Morphine sulphate 10mg (slow release)',
-'Male condoms, Each': 'Male condoms',
+'Male condoms, Each': 'Male Condoms',
 }
 
 items_introduced_in_september = {'Tenofovir Disoproxil Fumarate/Lamivudine/Dolutegravir (TDF/3TC /DTG), 300+300+50mg' : '' ,
@@ -747,15 +747,17 @@ for fac in fac_ids:
         else:
             # If there is no record of this item at this facility, check to see if it's available at other facilities
             # of the same level
+            facilities = list(get_other_facilities_of_same_level(fac))
             recorded_at_other_facilities_of_same_level = pd.notnull(
-                full_set.loc[(get_other_facilities_of_same_level(fac), slice(None), item)]
+                full_set.loc[(facilities, slice(None), item)]
             ).any()
 
             if recorded_at_other_facilities_of_same_level:
                 # If it recorded at other facilities of same level, find the average availability of the item at other
                 # facilities of the same level.
+                facilities = list(get_other_facilities_of_same_level(fac))
                 _monthly_records = interpolate_missing_with_mean(
-                    full_set.loc[(get_other_facilities_of_same_level(fac), slice(None), item)].groupby(level=1).mean()
+                    full_set.loc[(facilities, slice(None), item)].groupby(level=1).mean()
                 )
 
             else:
