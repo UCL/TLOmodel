@@ -249,6 +249,49 @@ def batch_run(path_to_json, work_directory, draw, sample):
 
 @cli.command()
 @click.argument("job_id", type=str)
+@click.pass_context
+def batch_terminate(ctx, job_id):
+    # we check that directory has been created for this job in the user's folder
+    # (set up when the job is submitted)
+    config = load_config(ctx.obj["config_file"])
+    username = config["DEFAULT"]["USERNAME"]
+    directory = f"{username}/{job_id}"
+    share_client = ShareClient.from_connection_string(config['STORAGE']['CONNECTION_STRING'],
+                                                      config['STORAGE']['FILESHARE'])
+
+    try:
+        directories = share_client.list_directories_and_files(directory)
+        assert len(list(directories)) > 0
+    except ResourceNotFoundError:
+        print("ERROR: directory ", directory, "not found.")
+        return
+
+    batch_client = get_batch_client(
+        config["BATCH"]["NAME"],
+        config["BATCH"]["KEY"],
+        config["BATCH"]["URL"]
+    )
+
+    # check the job is running
+    try:
+        job = batch_client.job.get(job_id=job_id)
+    except BatchErrorException:
+        print("ERROR: job ", job_id, "not found.")
+        return
+
+    if job.state == "completed":
+        print("ERROR: Job already finished.")
+        return
+
+    # job is running & not finished - terminate the job
+    batch_client.job.terminate(job_id=job_id)
+    print(f"Job {job_id} terminated.")
+    print("To download output run:")
+    print(f"\ttlo batch-download {job_id}")
+
+
+@cli.command()
+@click.argument("job_id", type=str)
 @click.option("show_tasks", "--tasks", is_flag=True, default=False, help="Display task information")
 @click.option("--raw", default=False, help="Display raw output (only when retrieving using --id)",
               is_flag=True, hidden=True)
