@@ -300,16 +300,6 @@ def get_real_usage(resourcefilepath, adjusted=True) -> pd.DataFrame:
     return average_annual_by_level, annual_usage_by_level_with_ci, annual_usage_with_ci
 
 
-# todo: plot hcw time usage against capability per cadre/facility level/disease (represented by short treatment id),
-#  and comparing 4 scenarios, i.e., Actual/Establishment(funded_plus) HCW * Default/Maximal health care seeking
-def get_expected_appt_time(resourcefilepath) -> pd.DataFrame:
-    """ This is to return the expected time requirements per appointment type per coarse cadre per facility level."""
-    expected_appt_time = pd.read_csv(
-        resourcefilepath / 'healthsystem' / 'organisation' / 'ResourceFile_Appt_Time_Table.csv')
-
-    return expected_appt_time
-
-
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Compare appointment usage from model output with real appointment usage.
     The real appointment usage is collected from DHIS2 system and HIV Dept."""
