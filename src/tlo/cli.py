@@ -212,7 +212,7 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
     git fetch origin {commit.hexsha}
     git checkout {commit.hexsha}
     pip install -r requirements/base.txt
-    tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
+    PYTHONOPTIMIZE=1 tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
     cp {task_dir}/std*.txt {working_dir}/{{draw_number}}/{{run_number}}/.
     gzip {working_dir}/{{draw_number}}/{{run_number}}/*.{gzip_pattern_match}
     cp -r {working_dir}/* {azure_directory}/.
