@@ -380,12 +380,9 @@ def batch_list(ctx, status, n, find, username):
     share_client = ShareClient.from_connection_string(config['STORAGE']['CONNECTION_STRING'],
                                                       config['STORAGE']['FILESHARE'])
 
-    user_directory = f"{username}/"
+    # get list of all directories in user_directory
+    directories = list(share_client.list_directories_and_files(f"{username}/"))
 
-    # get list of all directories in user_directory, and get timestamps
-    directories = list(share_client.list_directories_and_files(user_directory))
-
-    # if no directories then print message and exit
     if len(directories) == 0:
         print("No jobs found.")
         return
@@ -393,20 +390,20 @@ def batch_list(ctx, status, n, find, username):
     # convert directories to set
     directories = set([directory["name"] for directory in directories])
 
-    # the directory names are job ids - get information about the first 10 jobs
-    # get information about jobs in single call
-    # filter the list of jobs by those ids in the directories
+    # get all jobs in batch system
     jobs_list = list(batch_client.job.list(
         job_list_options=batch_models.JobListOptions(
             expand='stats'
         )
     ))
 
-    # create a pandas dataframe of the jobs, using the job.as_dict() record
-    jobs: pd.DataFrame = pd.DataFrame([job.as_dict() for job in jobs_list if job.id in directories])
+    # create a dataframe of the jobs, using the job.as_dict() record
+    # filter the list of jobs by those ids in the directories
+    jobs_list = [job.as_dict() for job in jobs_list if job.id in directories]
+    jobs: pd.DataFrame = pd.DataFrame(jobs_list)
     jobs = jobs[["id", "creation_time", "state"]]
 
-    # get dataframe subset where id contains the find string
+    # get subset where id contains the find string
     if find is not None:
         jobs = jobs[jobs["id"].str.contains(find)]
 
@@ -414,7 +411,6 @@ def batch_list(ctx, status, n, find, username):
     if status is not None:
         jobs = jobs[jobs["state"] == status]
 
-    # if no rows in jobs dataframe then print message and exit
     if len(jobs) == 0:
         print("No jobs found.")
         return
