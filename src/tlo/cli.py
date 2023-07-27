@@ -7,14 +7,15 @@ import os
 import tempfile
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List
 
 import click
 import dateutil.parser
+import pandas as pd
 from azure import batch
 from azure.batch import batch_auth
 from azure.batch import models as batch_models
-from azure.batch.models import BatchErrorException
+from azure.batch.models import BatchErrorException, CloudJobPaged, CloudJob
 from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
@@ -359,45 +360,74 @@ def batch_job(ctx, job_id, raw, show_tasks):
 @click.option("--completed", "status", flag_value="completed", default=False, help="Only display completed jobs")
 @click.option("--active", "status", flag_value="active", default=False, help="Only display active jobs")
 @click.option("-n", default=5, type=int, help="Maximum number of jobs to list (default is 5)")
+@click.option("--username", type=str, hidden=True)
 @click.pass_context
-def batch_list(ctx, status, n, find):
+def batch_list(ctx, status, n, find, username):
     """List and find running and completed jobs."""
-    print(">Querying batch system\r", end="")
+    print("Querying Batch...")
     config = load_config(ctx.obj["config_file"])
+
+    if username is None:
+        username = config["DEFAULT"]["USERNAME"]
+
     batch_client = get_batch_client(
         config["BATCH"]["NAME"],
         config["BATCH"]["KEY"],
         config["BATCH"]["URL"]
     )
 
-    # get list of all batch jobs
-    jobs = batch_client.job.list(
+    # create client to connect to file share
+    share_client = ShareClient.from_connection_string(config['STORAGE']['CONNECTION_STRING'],
+                                                        config['STORAGE']['FILESHARE'])
+
+    user_directory = f"{username}/"
+
+    # get list of all directories in user_directory, and get timestamps
+    directories = list(share_client.list_directories_and_files(user_directory, include=["timestamps"]))
+
+    # if no directories then print message and exit
+    if len(directories) == 0:
+        print("No jobs found.")
+        return
+
+    # sort directories by creation time, descending
+    directories.sort(key=lambda x: x["creation_time"], reverse=True)
+    # convert to dictionary
+    directories = {d['name']: d['creation_time'] for d in directories}
+
+    # the directory names are job ids - get information about the first 10 jobs
+    # get information about jobs in single call
+    # filter the list of jobs by those ids in the directories
+    jobs_list = list(batch_client.job.list(
         job_list_options=batch_models.JobListOptions(
             expand='stats'
         )
-    )
-    count = 0
-    for job in jobs:
-        jad = job.as_dict()
-        print_job = False
-        if (status is None or
-                ("completed" in status and jad["state"] == "completed") or
-                ("active" in status and jad["state"] == "active")):
-            if find is not None:
-                if find in jad["id"]:
-                    print_job = True
-            else:
-                print_job = True
+    ))
 
-        if print_job:
-            print_basic_job_details(jad)
-            if "stats" in jad:
-                print(f"{'Succeeded tasks'.ljust(JOB_LABEL_PADDING)}: {jad['stats']['num_succeeded_tasks']}")
-                print(f"{'Failed tasks'.ljust(JOB_LABEL_PADDING)}: {jad['stats']['num_failed_tasks']}")
-            print()
-            count += 1
-            if count == n:
-                break
+    # create a pandas dataframe of the jobs, using the job.as_dict() record
+    jobs: pd.DataFrame = pd.DataFrame([job.as_dict() for job in jobs_list if job.id in directories])
+
+    # get dataframe subset where id contains the find string
+    if find is not None:
+        jobs = jobs[jobs["id"].str.contains(find)]
+
+    # sort by creation time
+    jobs = jobs.sort_values("creation_time", ascending=False)
+
+    # filter by status
+    if status is not None:
+        jobs = jobs[jobs["state"] == status]
+
+    # if no rows in jobs dataframe then print message and exit
+    if len(jobs) == 0:
+        print("No jobs found.")
+        return
+
+    # get the first n rows
+    jobs = jobs.head(n)
+
+    # print the dataframe
+    print(jobs[["id", "creation_time", "state"]].to_string(index=False))
 
 
 def print_basic_job_details(job: dict):
