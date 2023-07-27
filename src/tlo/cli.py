@@ -7,7 +7,7 @@ import os
 import tempfile
 from collections import defaultdict
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict
 
 import click
 import dateutil.parser
@@ -15,7 +15,7 @@ import pandas as pd
 from azure import batch
 from azure.batch import batch_auth
 from azure.batch import models as batch_models
-from azure.batch.models import BatchErrorException, CloudJobPaged, CloudJob
+from azure.batch.models import BatchErrorException
 from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
@@ -378,7 +378,7 @@ def batch_list(ctx, status, n, find, username):
 
     # create client to connect to file share
     share_client = ShareClient.from_connection_string(config['STORAGE']['CONNECTION_STRING'],
-                                                        config['STORAGE']['FILESHARE'])
+                                                      config['STORAGE']['FILESHARE'])
 
     user_directory = f"{username}/"
 
@@ -519,7 +519,7 @@ def load_config(config_file):
 
 
 def load_server_config(kv_uri, tenant_id) -> Dict[str, Dict]:
-    """Retrieve the server configuration for running Batch using the user"s Azure credentials
+    """Retrieve the server configuration for running Batch using the user's Azure credentials
 
     Allows user to login using credentials from Azure CLI or interactive browser.
 
