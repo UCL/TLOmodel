@@ -410,9 +410,6 @@ def batch_list(ctx, status, n, find, username):
     if find is not None:
         jobs = jobs[jobs["id"].str.contains(find)]
 
-    # sort by creation time
-    jobs = jobs.sort_values("creation_time", ascending=False)
-
     # filter by status
     if status is not None:
         jobs = jobs[jobs["state"] == status]
@@ -421,6 +418,9 @@ def batch_list(ctx, status, n, find, username):
     if len(jobs) == 0:
         print("No jobs found.")
         return
+
+    # sort by creation time
+    jobs = jobs.sort_values("creation_time", ascending=False)
 
     # get the first n rows
     jobs = jobs.head(n)
