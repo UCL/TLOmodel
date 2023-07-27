@@ -383,17 +383,15 @@ def batch_list(ctx, status, n, find, username):
     user_directory = f"{username}/"
 
     # get list of all directories in user_directory, and get timestamps
-    directories = list(share_client.list_directories_and_files(user_directory, include=["timestamps"]))
+    directories = list(share_client.list_directories_and_files(user_directory))
 
     # if no directories then print message and exit
     if len(directories) == 0:
         print("No jobs found.")
         return
 
-    # sort directories by creation time, descending
-    directories.sort(key=lambda x: x["creation_time"], reverse=True)
-    # convert to dictionary
-    directories = {d['name']: d['creation_time'] for d in directories}
+    # convert directories to set
+    directories = set([directory["name"] for directory in directories])
 
     # the directory names are job ids - get information about the first 10 jobs
     # get information about jobs in single call
@@ -406,6 +404,7 @@ def batch_list(ctx, status, n, find, username):
 
     # create a pandas dataframe of the jobs, using the job.as_dict() record
     jobs: pd.DataFrame = pd.DataFrame([job.as_dict() for job in jobs_list if job.id in directories])
+    jobs = jobs[["id", "creation_time", "state"]]
 
     # get dataframe subset where id contains the find string
     if find is not None:
@@ -427,7 +426,7 @@ def batch_list(ctx, status, n, find, username):
     jobs = jobs.head(n)
 
     # print the dataframe
-    print(jobs[["id", "creation_time", "state"]].to_string(index=False))
+    print(jobs.to_string(index=False))
 
 
 def print_basic_job_details(job: dict):
