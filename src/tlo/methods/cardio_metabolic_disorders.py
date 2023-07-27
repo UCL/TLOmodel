@@ -1501,7 +1501,8 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
                                                 self.sim.date + pd.DateOffset(months=12),
                                                 self.module.rng))
 
-        # If the person did have any symptoms, run a test for hypertension (according to some probability):
+        # If the person did have any symptoms, and the main condition to investigate was not `hypertension`,
+        # also run a test for hypertension (according to some probability),
         if (
             self.has_any_cmd_symptom
             and ('hypertension' not in self.conditions_to_investigate)

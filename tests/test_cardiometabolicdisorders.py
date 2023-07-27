@@ -917,6 +917,7 @@ def test_hsi_following_presentation_at_generic_non_emergency_hsi(seed):
     df.loc[df.is_alive, df.columns[df.columns.str.startswith('sy_')]] = 0
 
     # Onset person 0 with the conditions and the symptoms for all conditions
+    # (N.B. The person will have hypertension but there is no symptom for hypertension.)
     df.loc[0, [f'nc_{condition}' for condition in cmd.conditions]] = True
     sim.modules['SymptomManager'].change_symptom(
         person_id=0,
@@ -961,7 +962,7 @@ def test_hsi_following_presentation_at_generic_non_emergency_hsi(seed):
 
     # Check that a persons without symptoms does not have investigation HSI scheduled for them
 
-    # Make the probability of testing for persons without the symptom 0.
+    # Make the probability of testing for persons without the symptom to be 0.
     for condition in cmd.conditions:
         cmd.parameters[f'{condition}_hsi']['pr_assessed_other_symptoms'] = 0.0
 
