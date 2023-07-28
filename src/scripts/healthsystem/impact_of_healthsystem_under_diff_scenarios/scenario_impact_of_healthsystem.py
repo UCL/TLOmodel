@@ -66,7 +66,6 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
             },
 
             "With Hard Constraints":
-                # todo -- this will be the MODE 2 "Super-Rigid Constraints" scenario
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
@@ -75,7 +74,8 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
                         "Policy_Name_from2023": "Naive",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 1,
-                     },
+                        }
+                    },
                 ),
 
             "Status Quo":

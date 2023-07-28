@@ -1,9 +1,3 @@
-"""
-# Remaining to do:
-# - streamline input arguments
-# - let the level of the appointment be in the log
-# - let the logger give times of each hcw
-# """
 import datetime
 import heapq as hp
 import itertools
@@ -2054,12 +2048,12 @@ class HealthSystem(Module):
                 if ok_to_run:
 
                     # Compute the bed days that are allocated to this HSI and provide this information to the HSI
-                    # todo - only do this if some bed-days declared
-                    event._received_info_about_bed_days = \
-                        self.bed_days.issue_bed_days_according_to_availability(
-                            facility_id=self.bed_days.get_facility_id_for_beds(persons_id=event.target),
-                            footprint=event.BEDDAYS_FOOTPRINT
-                        )
+                    if sum(event.BEDDAYS_FOOTPRINT.values()):
+                        event._received_info_about_bed_days = \
+                            self.bed_days.issue_bed_days_according_to_availability(
+                                facility_id=self.bed_days.get_facility_id_for_beds(persons_id=event.target),
+                                footprint=event.BEDDAYS_FOOTPRINT
+                            )
 
                     # Check that a facility has been assigned to this HSI
                     assert event.facility_info is not None, \
@@ -2438,13 +2432,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             # Notes-to-self: Shouldn't this be done after checking the footprint?
                             # Compute the bed days that are allocated to this HSI and provide this
                             # information to the HSI
-                            # todo - only do this if some bed-days declared
-                            event._received_info_about_bed_days = \
-                                self.module.bed_days.issue_bed_days_according_to_availability(
-                                    facility_id=self.module.bed_days.get_facility_id_for_beds(
-                                                                       persons_id=event.target),
-                                    footprint=event.BEDDAYS_FOOTPRINT
-                                )
+                            if sum(event.BEDDAYS_FOOTPRINT.values()):
+                                event._received_info_about_bed_days = \
+                                    self.module.bed_days.issue_bed_days_according_to_availability(
+                                        facility_id=self.module.bed_days.get_facility_id_for_beds(
+                                                                           persons_id=event.target),
+                                        footprint=event.BEDDAYS_FOOTPRINT
+                                    )
 
                             # Check that a facility has been assigned to this HSI
                             assert event.facility_info is not None, \
