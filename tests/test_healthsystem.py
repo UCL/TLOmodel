@@ -327,7 +327,7 @@ def test_run_in_mode_1_with_capacity(tmpdir, seed):
 
 @pytest.mark.slow
 def test_run_in_mode_1_with_no_capacity(tmpdir, seed):
-    # Events should run but with high squeeze factors
+    # Events should run but (for those with non-blank footprints) with high squeeze factors
     # (Mode 1 -> elastic constraints)
 
     # Establish the simulation object
@@ -371,9 +371,11 @@ def test_run_in_mode_1_with_no_capacity(tmpdir, seed):
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
     hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
-
-    # assert hsi_events['did_run'].all()
-    assert (hsi_events.loc[hsi_events['Person_ID'] >= 0, 'Squeeze_Factor'] == 100.0).all()
+    assert hsi_events['did_run'].all()
+    assert (
+        hsi_events.loc[(hsi_events['Person_ID'] >= 0) & (hsi_events['Number_By_Appt_Type_Code'] != {}),
+                       'Squeeze_Factor'] == 100.0
+    ).all()  # All the events that had a non-blank footprint experienced high squeezing.
     assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'Squeeze_Factor'] == 0.0).all()
 
     # Check that some Mockitis cures occurred (though health system)
@@ -435,8 +437,8 @@ def test_run_in_mode_2_with_capacity(tmpdir, seed):
 @pytest.mark.slow
 @pytest.mark.group2
 def test_run_in_mode_2_with_no_capacity(tmpdir, seed):
-    # No individual level events should run and the log should contain events with a flag showing that all individual
-    # events did not run. Population level events should have run.
+    # No individual level events (with non-blank footprint) should run and the log should contain events with a flag
+    # showing that all individual events did not run. Population level events should have run.
     # (Mode 2 -> hard constraints)
 
     # Establish the simulation object
@@ -479,7 +481,10 @@ def test_run_in_mode_2_with_no_capacity(tmpdir, seed):
 
     # Do the checks
     hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
-    assert not (hsi_events.loc[hsi_events['Person_ID'] >= 0, 'did_run'].astype(bool)).any()  # not any Individual level
+    assert not (
+        hsi_events.loc[(hsi_events['Person_ID'] >= 0) & (hsi_events['Number_By_Appt_Type_Code'] != {}),
+                       'did_run'].astype(bool)
+    ).any()  # not any Individual level with non-blank footprints
     assert (output['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_Overall'] == 0.0).all()
     assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'did_run']).astype(bool).all()  # all Population level events
     assert pd.isnull(sim.population.props['mi_date_cure']).all()  # No cures of mockitis occurring

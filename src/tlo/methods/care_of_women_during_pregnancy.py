@@ -870,33 +870,15 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         person_id = hsi_event.target
-        df = self.sim.population.props
 
         if 'Epi' in self.sim.modules:
 
             # Define the HSI in which the vaccine is delivered
-            vaccine_hsi = HSI_TdVaccine(self.sim.modules['Epi'], person_id=person_id)
+            vaccine_hsi = HSI_TdVaccine(self.sim.modules['Epi'], person_id=person_id,
+                                        suppress_footprint=True)
 
-            # Identify individuals district of residence in order to determine district level coverage of TT
-            ind_district = df.at[person_id, 'district_num_of_residence']
-            vaccine_coverage_df = self.sim.modules['Epi'].parameters['district_vaccine_coverage']
-
-            # If the year is 2010-2018 we condition the HSI being scheduled on the district level coverage
-            if self.sim.date.year <= 2018:
-                coverage_year = self.sim.date.year
-
-                tt2_coverage = vaccine_coverage_df.loc[(vaccine_coverage_df['District'] == ind_district) &
-                                                       (vaccine_coverage_df['Year'] == coverage_year)]['TT2+']
-
-                if self.rng.random_sample() < tt2_coverage.values:
-
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(vaccine_hsi, priority=0,
-                                                                        topen=self.sim.date)
-            else:
-                # After 2018 all women are scheduled the HSI and consumable availability will determine intervention
-                # delivery
-                self.sim.modules['HealthSystem'].schedule_hsi_event(vaccine_hsi, priority=0,
-                                                                    topen=self.sim.date)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(vaccine_hsi, priority=0,
+                                                                topen=self.sim.date)
 
     def calcium_supplementation(self, hsi_event):
         """This function contains the intervention calcium supplementation delivered during ANC.
