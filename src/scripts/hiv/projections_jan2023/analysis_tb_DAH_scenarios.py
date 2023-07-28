@@ -372,9 +372,6 @@ properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_pe
 # properties_of_deceased_persons= properties_of_deceased_persons.set_index("date")
 # properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_persons.xlsx")
 
-
-
-
 ###### PLOTS##################################################
 
 # Calculate the sum of DALYs across years for each scenario
