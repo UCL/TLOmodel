@@ -93,9 +93,11 @@ def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFr
         assert df_original.loc[df_original.Facility_Level == _level].equals(
             df_updated.loc[df_updated.Facility_Level == _level])
 
-    assert df_updated.loc[df_updated.Facility_Level == LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2,
-                          'Total_Mins_Per_Day'].sum() \
-           == df_updated.loc[df_updated.Facility_Level.isin(['1b', '2']), 'Total_Mins_Per_Day'].sum()
+    assert np.isclose(
+        df_updated.loc[df_updated.Facility_Level == LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2,
+                       'Total_Mins_Per_Day'].sum(),
+        df_updated.loc[df_updated.Facility_Level.isin(['1b', '2']), 'Total_Mins_Per_Day'].sum()
+    )
 
     return df_updated
 
