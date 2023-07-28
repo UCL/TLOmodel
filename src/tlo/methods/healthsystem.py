@@ -2001,7 +2001,6 @@ class HealthSystem(Module):
                                                    List[HSIEventQueueItem]) -> List:
         """Run a list of individual level events. Returns: list of events that did not run (maybe an empty a list)."""
         _to_be_held_over = list()
-
         assert self.mode_appt_constraints == 0 or self.mode_appt_constraints == 1
 
         if _list_of_individual_hsi_event_tuples:
