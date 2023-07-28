@@ -542,7 +542,7 @@ class HealthSystem(Module):
                         " for specific treatments"),
 
         'tclose_overwrite': Parameter(
-            Types.BOOL, "Decide whether to overwrite tclose variables assigned by disease modules"),
+            Types.INT, "Decide whether to overwrite tclose variables assigned by disease modules"),
 
         'tclose_days_offset_overwrite': Parameter(
             Types.INT, "Offset in days from topen at which tclose will be set by the healthsystem for all HSIs"
@@ -833,7 +833,7 @@ class HealthSystem(Module):
             availability=self.get_cons_availability()
         )
 
-        self.tclose_overwrite = bool(self.parameters['tclose_overwrite'])  # coerce to bool (0 is falsey, 1 is truthy)
+        self.tclose_overwrite = self.parameters['tclose_overwrite']
         self.tclose_days_offset_overwrite = self.parameters['tclose_days_offset_overwrite']
 
         # Determine name of policy to be considered **at the start of the simulation**.
@@ -1287,7 +1287,7 @@ class HealthSystem(Module):
         """
         # If there is no specified tclose time then set this to a week after topen.
         # This should be a boolean, not int! Still struggling to get a boolean variable from resource file
-        if self.tclose_overwrite:
+        if self.tclose_overwrite == 1:
             tclose = topen + pd.to_timedelta(self.tclose_days_offset_overwrite, unit='D')
         else:
             if tclose is None:
