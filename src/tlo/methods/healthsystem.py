@@ -2066,7 +2066,7 @@ class HealthSystem(Module):
                 if ok_to_run:
 
                     # Compute the bed days that are allocated to this HSI and provide this information to the HSI
-                    if sum(event.BEDDAYS_FOOTPRINT.values()) > 0:
+                    if sum(event.BEDDAYS_FOOTPRINT.values()):
                         event._received_info_about_bed_days = \
                             self.bed_days.issue_bed_days_according_to_availability(
                                 facility_id=self.bed_days.get_facility_id_for_beds(persons_id=event.target),
