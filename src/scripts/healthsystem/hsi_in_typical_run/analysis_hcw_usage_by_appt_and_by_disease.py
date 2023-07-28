@@ -73,6 +73,7 @@ def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
         ).unstack().astype(int)
 
 
+# todo: fix the issue that this func may over count the hsi
 def get_annual_num_hsi_by_appt_and_level(results_folder: Path) -> pd.DataFrame:
     """Return pd.DataFrame gives the (mean) simulated annual count of hsi
     per treatment id per each appt type per level."""
@@ -98,10 +99,10 @@ def get_annual_num_hsi_by_appt_and_level(results_folder: Path) -> pd.DataFrame:
         )
     )[0]
 
-    hsi_count = pd.DataFrame.from_dict(hsi_count, orient='index').reset_index().rename(columns={0: 'count'})
-    hsi_count[['treatment_id', 'appt', 'facility_level']] = pd.DataFrame(hsi_count['index'].tolist(),
-                                                                         index=hsi_count.index)
-    hsi_count = hsi_count.groupby(['treatment_id', 'appt', 'facility_level'])['count'].sum().reset_index()
+    hsi_count = pd.DataFrame.from_dict(hsi_count, orient='index').reset_index().rename(columns={0: 'Count'})
+    hsi_count[['Treatment_ID', 'Appt_Type_Code', 'Facility_Level']] = pd.DataFrame(hsi_count['index'].tolist(),
+                                                                                   index=hsi_count.index)
+    hsi_count = hsi_count.groupby(['Treatment_ID', 'Appt_Type_Code', 'Facility_Level'])['Count'].sum().reset_index()
 
     return hsi_count
 
@@ -310,18 +311,32 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     #  /facility level (focus on level 1a, 1b and 2)/disease (represented by short treatment id),
     #  and comparing 4 scenarios, i.e., Actual/Establishment(funded_plus) HCW * Default/Maximal health care seeking
 
-    # hcw usage per cadre per facility level (1a, 1b, 2) per appointment type
+    # hcw usage per cadre per appointment type
     hcw_usage = appt_time.drop(index=appt_time[~appt_time.Appt_Type_Code.isin(appts_sim)].index).reset_index(drop=True)
     for idx in hcw_usage.index:
         hcw_usage.loc[idx, 'Total_Mins_Used_Per_Year'] = (hcw_usage.loc[idx, 'Time_Taken_Mins'] *
                                                           simulation_usage.loc[hcw_usage.loc[idx, 'Facility_Level'],
                                                                                hcw_usage.loc[idx, 'Appt_Type_Code']])
-    hcw_usage.drop(columns='Time_Taken_Mins', inplace=True)
-    hcw_usage = hcw_usage.groupby(['Facility_Level', 'Officer_Category', 'Appt_Category']
+    hcw_usage = hcw_usage.groupby(['Officer_Category', 'Appt_Category']
                                   )['Total_Mins_Used_Per_Year'].sum().reset_index()
 
-    # hcw usage per cadre per facility level per hsi
+    # hcw usage per cadre per appt per hsi
     hsi_count = get_annual_num_hsi_by_appt_and_level(results_folder)
+    hsi_count_alt = hsi_count.groupby(['Appt_Type_Code', 'Facility_Level'])['Count'].sum().reset_index().pivot(
+        index='Facility_Level', columns='Appt_Type_Code', values='Count').fillna(0.0)
+    # todo: fix this assert error
+    assert (hsi_count_alt == simulation_usage.drop(index='4')).all().all()
+
+    hcw_usage_hsi = appt_time.drop(index=appt_time[~appt_time.Appt_Type_Code.isin(appts_sim)].index
+                                   ).reset_index(drop=True)
+    hcw_usage_hsi = hsi_count.merge(hcw_usage_hsi, on=['Facility_Level', 'Appt_Type_Code'], how='left')
+    hcw_usage_hsi['Total_Mins_Used_Per_Year'] = hcw_usage_hsi['Count'] * hcw_usage_hsi['Time_Taken_Mins']
+    hcw_usage_hsi = hcw_usage_hsi.groupby(['Treatment_ID', 'Appt_Category', 'Officer_Category']
+                                          )['Total_Mins_Used_Per_Year'].sum().reset_index()
+    hcw_usage_alt = hcw_usage_hsi.groupby(['Officer_Category', 'Appt_Category']
+                                          )['Total_Mins_Used_Per_Year'].sum().reset_index()
+    # todo: check
+    assert (hcw_usage_alt == hcw_usage).all().all()
 
 
 if __name__ == "__main__":
