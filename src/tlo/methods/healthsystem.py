@@ -2050,7 +2050,7 @@ class HealthSystem(Module):
 
             for _hsi_event_tuple, squeeze_factor in zip(_list_of_individual_hsi_event_tuples,
                                                         squeeze_factor_per_hsi_event):
-                _priority = event.priority
+                _priority = _hsi_event_tuple.priority
                 event = _hsi_event_tuple.hsi_event
 
                 # store appt_footprint before running
@@ -2133,7 +2133,7 @@ class HealthSystem(Module):
 
                     if not (rtn_from_did_not_run is False):
                         # reschedule event
-                        hp.heappush(_to_be_held_over, _list_of_individual_hsi_event_tuples[ev_num])
+                        hp.heappush(_to_be_held_over, _hsi_event_tuple)
 
                     # Log that the event did not run
                     self.record_hsi_event(
