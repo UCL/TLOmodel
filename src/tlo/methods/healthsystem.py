@@ -2031,10 +2031,10 @@ class HealthSystem(Module):
                     compute_squeeze_factor_to_district_level=self.compute_squeeze_factor_to_district_level,
                 )
 
-            for _hsi_event_tuple, squeeze_factor in zip(_list_of_individual_hsi_event_tuples,
-                                                        squeeze_factor_per_hsi_event):
+            for ev_num, event in enumerate(_list_of_individual_hsi_event_tuples):
                 _priority = event.priority
-                event = _hsi_event_tuple.hsi_event
+                event = event.hsi_event
+                squeeze_factor = squeeze_factor_per_hsi_event[ev_num]                  # todo use zip here!
 
                 # store appt_footprint before running
                 _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
