@@ -1749,7 +1749,7 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
                                            mode_appt_constraints=2,
                                            ignore_priority=False,
                                            randomise_queue=True,
-                                           policy_name="None",
+                                           policy_name="",
                                            use_funded_or_actual_staffing='funded_plus'),
                  DummyModule()
                  )
