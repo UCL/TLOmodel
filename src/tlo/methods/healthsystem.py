@@ -1,9 +1,3 @@
-"""
-# Remaining to do:
-# - streamline input arguments
-# - let the level of the appointment be in the log
-# - let the logger give times of each hcw
-# """
 import datetime
 import heapq as hp
 import itertools
