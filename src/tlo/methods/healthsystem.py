@@ -526,10 +526,13 @@ class HealthSystem(Module):
             Types.LIST, 'List of services to be available. NB. This parameter is over-ridden if an argument is provided'
                         ' to the module initialiser.'),
 
-        'Policy_Name_pre2023': Parameter(
-            Types.STRING, "Name of priority policy assumed to have been adopted until 2023"),
-        'Policy_Name_from2023': Parameter(
-            Types.STRING, "Name of priority policy to be adopted from 2023 onwards"),
+        'Policy_Name_preSwitch': Parameter(
+            Types.STRING, "Name of priority policy assumed to have been adopted until policy switch"),
+        'Policy_Name_postSwitch': Parameter(
+            Types.STRING, "Name of priority policy to be adopted from policy switch year onwards"),
+        'year_policy_switch': Parameter(
+            Types.INT, "Year in which priority policy switch in enforced"),
+
         'PriorityRank': Parameter(
             Types.DICT, "Data on the priority ranking of each of the Treatment_IDs to be adopted by "
                         " the queueing system under different policies, where the lower the number the higher"
@@ -550,7 +553,9 @@ class HealthSystem(Module):
                        ', all HSI events run with squeeze factor, 2: hard constraints, only HSI events with no squeeze '
                        'factor run. N.B. This parameter is over-ridden if an argument is provided'
                        ' to the module initialiser.',
-        )
+        ),
+        'mode_appt_constraints_postSwitch': Parameter(
+            Types.INT, 'If considering a mode switch alongside priority policy switch, specify in this parameter')
     }
 
     PROPERTIES = {
@@ -570,8 +575,6 @@ class HealthSystem(Module):
         randomise_queue: bool = True,
         ignore_priority: bool = False,
         policy_name: Optional[str] = None,
-        tclose_overwrite: Optional[int] = None,
-        tclose_days_offset_overwrite: Optional[int] = None,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = None,
         disable: bool = False,
@@ -652,18 +655,13 @@ class HealthSystem(Module):
         # Check that the name of policy being evaluated is included
         self.policy_name = None
         if policy_name is not None:
-            assert policy_name in ['None', 'Default', 'Test', 'Random', 'Naive', 'RMNCH',
+            assert policy_name in ['', 'Default', 'Test', 'Random', 'Naive', 'RMNCH',
                                    'VerticalProgrammes', 'ClinicallyVulnerable', 'EHP_III',
                                    'LCOA_EHP']
         self.arg_policy_name = policy_name
 
         self.tclose_overwrite = None
-        self.arg_tclose_overwrite = tclose_overwrite
-
         self.tclose_days_offset_overwrite = None
-        if tclose_days_offset_overwrite is not None:
-            assert tclose_days_offset_overwrite > 0
-        self.arg_tclose_days_offset_overwrite = tclose_days_offset_overwrite
 
         # Store the fast tracking channels that will be relevant for policy given the modules included
         # self.arg_list_fasttrack = list_fasttrack
@@ -833,16 +831,16 @@ class HealthSystem(Module):
             availability=self.get_cons_availability()
         )
 
-        self.tclose_overwrite = self.get_tclose_overwrite()
-        self.tclose_days_offset_overwrite = self.get_tclose_days_offset_overwrite()
+        self.tclose_overwrite = self.parameters['tclose_overwrite']
+        self.tclose_days_offset_overwrite = self.parameters['tclose_days_offset_overwrite']
 
         # Determine name of policy to be considered **at the start of the simulation**.
-        self.policy_name = self.get_policy_name_pre2023()
+        self.policy_name = self.get_policy_name_preSwitch()
 
         # If adopting policies, initialise here all other relevant variables.
-        # Use of "None" as string is not ideal, however couldn't seem to recover actual
+        # Use of black instead of None is not ideal, however couldn't seem to recover actual
         # None from parameter file.
-        if self.policy_name != "None":
+        if self.policy_name != "":
             self.load_priority_policy(self.policy_name)
 
         # Initialise the fast-tracking routes.
@@ -905,8 +903,9 @@ class HealthSystem(Module):
             sim.schedule_event(self.healthsystemscheduler, sim.date)
 
         # Schedule priority policy change
-        if self.parameters["Policy_Name_pre2023"] != self.parameters["Policy_Name_from2023"]:
-            sim.schedule_event(HealthSystemChangePriorityPolicy(self), Date(2023, 1, 1))
+        if self.parameters["Policy_Name_preSwitch"] != self.parameters["Policy_Name_postSwitch"]:
+            sim.schedule_event(HealthSystemChangePriorityPolicy(self),
+                               Date(self.parameters["year_policy_switch"], 1, 1))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -1239,29 +1238,13 @@ class HealthSystem(Module):
             if self.arg_use_funded_or_actual_staffing is None \
             else self.arg_use_funded_or_actual_staffing
 
-    def get_policy_name_pre2023(self) -> str:
+    def get_policy_name_preSwitch(self) -> str:
         """Returns `policy_name`. (Should be equal to what is specified by the parameter, but
         overwrite with what was provided in argument if an argument was specified -- provided for backward
         compatibility/debugging.)"""
-        return self.parameters['Policy_Name_pre2023'] \
+        return self.parameters['Policy_Name_preSwitch'] \
             if self.arg_policy_name is None \
             else self.arg_policy_name
-
-    def get_tclose_overwrite(self) -> int:
-        """Returns `tclose_overwrite`. (Should be equal to what is specified by the parameter, but
-        overwrite with what was provided in argument if an argument was specified -- provided for backward
-        compatibility/debugging.)"""
-        return self.parameters['tclose_overwrite'] \
-            if self.arg_tclose_overwrite is None \
-            else self.arg_tclose_overwrite
-
-    def get_tclose_days_offset_overwrite(self) -> int:
-        """Returns `tclose_days_offset_overwritetclose_overwrite`. (Should be equal to what is specified by
-        the parameter, but overwrite with what was provided in argument if an argument was specified --
-        provided for backward compatibility/debugging.)"""
-        return self.parameters['tclose_days_offset_overwrite'] \
-            if self.arg_tclose_days_offset_overwrite is None \
-            else self.arg_tclose_days_offset_overwrite
 
     def load_priority_policy(self, policy):
 
@@ -1318,8 +1301,8 @@ class HealthSystem(Module):
         if self.ignore_priority:
             priority = 0
 
-        # Use of "None" as string not ideal, see note in initialise_population
-        if self.policy_name != "None":
+        # Use of "" not ideal, see note in initialise_population
+        if self.policy_name != "":
             # Look-up priority ranking of this treatment_ID in the policy adopted
             priority = self.enforce_priority_policy(hsi_event=hsi_event)
 
@@ -2820,6 +2803,10 @@ class HealthSystemChangePriorityPolicy(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=100))
 
     def apply(self, population):
-        self.module.policy_name = self.module.parameters["Policy_Name_from2023"]
-        if self.module.policy_name != "None":
+        self.module.policy_name = self.module.parameters["Policy_Name_postSwitch"]
+        self.module.mode_appt_constraints = self.module.parameters["mode_appt_constraints_postSwitch"]
+        if self.module.policy_name != "":
             self.module.load_priority_policy(self.module.policy_name)
+        print("Switched policy at sim date ", self.module.sim.date)
+        print(f"{self.module.mode_appt_constraints=}")
+        print(f"{self.module.policy_name=}")

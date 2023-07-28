@@ -68,7 +68,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "all",
-                        'mode_appt_constraints': 1,
                         'use_funded_or_actual_staffing': "actual",
                      },
                      'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
@@ -80,9 +79,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "all",
-                        'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name_from2023": "Naive",
+                        'year_policy_switch': 2011,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "Policy_Name_postSwitch": "Naive",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 1,
                      },
@@ -95,9 +95,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "all",
-                        'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name_from2023": "RMNCH",
+                        'year_policy_switch': 2011,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "Policy_Name_postSwitch": "RMNCH",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 1,
                      },
@@ -110,9 +111,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "all",
-                        'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name_from2023": "ClinicallyVulnerable",
+                        'year_policy_switch': 2011,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "Policy_Name_postSwitch": "ClinicallyVulnerable",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 1,
                      },
@@ -125,9 +127,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "all",
-                        'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name_from2023": "VerticalProgrammes",
+                        'year_policy_switch': 2011,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "Policy_Name_postSwitch": "VerticalProgrammes",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 1,
                      },
@@ -140,9 +143,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "all",
-                        'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name_from2023": "EHP_III",
+                        'year_policy_switch': 2011,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "Policy_Name_postSwitch": "EHP_III",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 1,
                      },
@@ -155,9 +159,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "all",
-                        'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name_from2023": "LCOA_EHP",
+                        'year_policy_switch': 2011,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "Policy_Name_postSwitch": "LCOA_EHP",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 1,
                      },
@@ -170,9 +175,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "all",
-                        'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name_from2023": "Naive",
+                        'year_policy_switch': 2011,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "Policy_Name_postSwitch": "Naive",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 7,
                      },
@@ -185,9 +191,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "all",
-                        'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name_from2023": "RMNCH",
+                        'year_policy_switch': 2011,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "Policy_Name_postSwitch": "RMNCH",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 7,
                      },
@@ -200,9 +207,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "all",
-                        'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name_from2023": "ClinicallyVulnerable",
+                        'year_policy_switch': 2011,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "Policy_Name_postSwitch": "ClinicallyVulnerable",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 7,
                      },
@@ -215,9 +223,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "all",
-                        'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name_from2023": "VerticalProgrammes",
+                        'year_policy_switch': 2011,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "Policy_Name_postSwitch": "VerticalProgrammes",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 7,
                      },
@@ -230,9 +239,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "all",
-                        'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name_from2023": "EHP_III",
+                        'year_policy_switch': 2011,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "Policy_Name_postSwitch": "EHP_III",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 7,
                      },
@@ -245,9 +255,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "all",
-                        'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name_from2023": "LCOA_EHP",
+                        'year_policy_switch': 2011,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "Policy_Name_postSwitch": "LCOA_EHP",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 7,
                      },
@@ -260,7 +271,6 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "default",
-                        'mode_appt_constraints': 1,
                         "use_funded_or_actual_staffing": "actual",
                      },
                     }
@@ -272,9 +282,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "default",
-                        'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name_from2023": "Naive",
+                        'year_policy_switch': 2011,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "Policy_Name_postSwitch": "Naive",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 1,
                      },
@@ -287,9 +298,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "default",
-                        'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name_from2023": "RMNCH",
+                        'year_policy_switch': 2011,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "Policy_Name_postSwitch": "RMNCH",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 1,
                       },
@@ -302,9 +314,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "default",
-                        'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name_from2023": "ClinicallyVulnerable",
+                        'year_policy_switch': 2011,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "Policy_Name_postSwitch": "ClinicallyVulnerable",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 1,
                      },
@@ -316,9 +329,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "default",
-                        'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name_from2023": "VerticalProgrammes",
+                        'year_policy_switch': 2011,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "Policy_Name_postSwitch": "VerticalProgrammes",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 1,
                      },
@@ -330,9 +344,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "default",
-                        'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name_from2023": "EHP_III",
+                        'year_policy_switch': 2011,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "Policy_Name_postSwitch": "EHP_III",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 1,
                      },
@@ -344,9 +359,10 @@ class ImpactOfHealthSystemMode(BaseScenario):
                     {
                      'HealthSystem': {
                         'cons_availability': "default",
-                        'mode_appt_constraints': 2,
                         "use_funded_or_actual_staffing": "actual",
-                        "Policy_Name_from2023": "LCOA_EHP",
+                        'year_policy_switch': 2011,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "Policy_Name_postSwitch": "LCOA_EHP",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 1,
                      },
