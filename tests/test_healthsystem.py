@@ -2041,9 +2041,9 @@ def test_which_hsi_can_run(seed):
         _levels_at_which_appts_dont_run.index[_levels_at_which_appts_dont_run.isin(['1b', '2'])]
     )
     appts_not_run = _levels_at_which_appts_dont_run.reset_index().dropna()
-    appts_not_run['level'] = appts_not_run ['level'].replace({'21b': '2'})  # ... label such appointments for level '2'
+    appts_not_run['level'] = appts_not_run['level'].replace({'21b': '2'})  # ... label such appointments for level '2'
     # ... reproduce that block labelled for level '1b'
-    appts_not_run_level2 = appts_not_run.loc[appts_not_run.level=='2'].copy()
+    appts_not_run_level2 = appts_not_run.loc[appts_not_run.level == '2'].copy()
     appts_not_run_level2['level'] = '1b'
     appts_not_run = pd.concat([appts_not_run, appts_not_run_level2])
     # ... re-order columns to suit.
