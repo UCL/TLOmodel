@@ -326,7 +326,7 @@ def test_run_in_mode_1_with_capacity(tmpdir, seed):
 
 
 @pytest.mark.slow
-def test_run_in_mode_1_with_no_capacity(tmpdir, seed):
+def test_run_in_mode_1_with_almost_no_capacity(tmpdir, seed):
     # Events should run but (for those with non-blank footprints) with high squeeze factors
     # (Mode 1 -> elastic constraints)
 
@@ -352,7 +352,14 @@ def test_run_in_mode_1_with_no_capacity(tmpdir, seed):
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            service_availability=service_availability,
-                                           capabilities_coefficient=0.0,
+                                           capabilities_coefficient=0.0000001,  # This will mean that capabilities are
+                                                                                # very close to 0 everywhere.
+                                                                                # (If the value was 0, then it would
+                                                                                # be interpreted as the officers NEVER
+                                                                                # being available at a facility,
+                                                                                # which would mean the HSIs should not
+                                                                                # run (as opposed to running with
+                                                                                # a very high squeeze factor)).
                                            mode_appt_constraints=1),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
@@ -374,12 +381,12 @@ def test_run_in_mode_1_with_no_capacity(tmpdir, seed):
     assert hsi_events['did_run'].all()
     assert (
         hsi_events.loc[(hsi_events['Person_ID'] >= 0) & (hsi_events['Number_By_Appt_Type_Code'] != {}),
-                       'Squeeze_Factor'] == 100.0
+                       'Squeeze_Factor'] >= 100.0
     ).all()  # All the events that had a non-blank footprint experienced high squeezing.
     assert (hsi_events.loc[hsi_events['Person_ID'] < 0, 'Squeeze_Factor'] == 0.0).all()
 
     # Check that some Mockitis cures occurred (though health system)
-    # assert any(sim.population.props['mi_status'] == 'P')
+    assert any(sim.population.props['mi_status'] == 'P')
 
 
 @pytest.mark.slow
