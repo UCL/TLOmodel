@@ -74,7 +74,8 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
                         "Policy_Name_from2023": "Naive",
                         'tclose_overwrite': 1,
                         'tclose_days_offset_overwrite': 1,
-                     },
+                        }
+                    },
                 ),
 
             "Status Quo":
