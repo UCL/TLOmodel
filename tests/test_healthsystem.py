@@ -2018,10 +2018,10 @@ def test_which_hsi_can_run(seed):
     # now refer to the detailed appts/hsi that don't run as the required HCW is not there and do a detailed check
     # read necessary files
     mfl = pd.read_csv(
-        Path('./') / 'resources/healthsystem/organisation/ResourceFile_Master_Facilities_List.csv'
+        resourcefilepath / 'healthsystem/organisation/ResourceFile_Master_Facilities_List.csv'
     )
     appts_not_run = pd.read_csv(
-        Path('./') / 'resources/healthsystem/human_resources/definitions/ResourceFile_Appts_With_No_Required_HCW.csv'
+        resourcefilepath / 'healthsystem/human_resources/definitions/ResourceFile_Appts_With_No_Required_HCW.csv'
     )  # this file includes both actual and funded scenarios
     # reformat to map with results file for convenience
     appts_not_run = appts_not_run.drop(columns='Officer_Category').drop_duplicates().rename(
