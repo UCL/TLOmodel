@@ -129,7 +129,7 @@ def get_annual_hcw_time_used_with_confidence_interval(results_folder: Path, reso
             ),
         only_mean=False,
         collapse_columns=True,
-        ).unstack().astype(int)
+        ).unstack()
 
     # reformat
     hcw_usage = hcw_usage.to_frame().reset_index() \
