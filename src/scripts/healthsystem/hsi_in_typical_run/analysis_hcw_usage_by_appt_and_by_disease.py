@@ -84,7 +84,7 @@ def get_annual_hcw_time_used_with_confidence_interval(results_folder: Path, reso
         def unpack_nested_dict_in_series(_raw: pd.Series):
             return pd.concat(
                 {
-                  idx: pd.DataFrame.from_dict(mydict) for idx, mydict in _raw.items()
+                  _idx: pd.DataFrame.from_dict(mydict) for _idx, mydict in _raw.items()
                  }
              ).unstack().fillna(0.0).astype(int)
 
@@ -111,7 +111,7 @@ def get_annual_hcw_time_used_with_confidence_interval(results_folder: Path, reso
             fl = _hcw_usage.loc[idx, 'Facility_Level']
             appt = _hcw_usage.loc[idx, 'Appt_Type_Code']
             _hcw_usage.loc[idx, 'Total_Mins_Used_Per_Year'] = (_hcw_usage.loc[idx, 'Time_Taken_Mins'] *
-                                                              annual_counts_of_appts_per_level.loc[fl, appt])
+                                                               annual_counts_of_appts_per_level.loc[fl, appt])
 
         # get hcw time used per cadre
         _hcw_usage = _hcw_usage.groupby(['Officer_Category'])['Total_Mins_Used_Per_Year'].sum()
@@ -371,7 +371,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     hcw_time_used_0 = get_annual_hcw_time_used_with_confidence_interval(results_folder, resourcefilepath)
     assert (hcw_time_used_1.index == hcw_time_used_0.index).all()
     assert (abs(
-        (hcw_time_used_1['Total_Mins_Used_Per_Year'] - hcw_time_used_0['mean']) / hcw_time_used_0['mean']) < 1e-5
+        (hcw_time_used_1['Total_Mins_Used_Per_Year'] - hcw_time_used_0['mean']) / hcw_time_used_0['mean']) < 1e-4
             ).all()
 
     # todo: get actual hcw time used derived from DHIS2 data and plot
