@@ -1116,12 +1116,19 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         # Record use of consumables and default the person to "not_using" if the consumable is not available.
         # If initiating use of a modern contraceptive method except condoms (after not using any or using non-modern
         # contraceptive or using condoms), "co_initiation" items are used along with the method consumables.
-        cons_to_check = self.module.cons_codes[self.new_contraceptive].copy()
-        if current_method in\
-            (self.module.all_contraception_states - self.module.contraceptives_initiated_with_additional_items) \
-           and self.new_contraceptive in self.module.contraceptives_initiated_with_additional_items:
-            cons_to_check.update(self.module.cons_codes["co_initiation"])
-        cons_available = self.get_consumables(cons_to_check)
+        if (
+            (current_method not in self.module.contraceptives_initiated_with_additional_items)
+            and (self.new_contraceptive in self.module.contraceptives_initiated_with_additional_items)
+        ):
+            cons_available = self.get_consumables(
+                item_codes=self.module.cons_codes[self.new_contraceptive],
+                optional_item_codes=self.module.cons_codes["co_initiation"]
+            )
+        else:
+            cons_available = self.get_consumables(
+                item_codes=self.module.cons_codes[self.new_contraceptive]
+            )
+
         _new_contraceptive = self.new_contraceptive if cons_available else "not_using"
 
         if current_method != _new_contraceptive:
