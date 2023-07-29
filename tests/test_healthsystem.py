@@ -635,7 +635,7 @@ def test_all_appt_types_can_run(seed):
             self.this_hsi_event_ran = False
 
         def apply(self, person_id, squeeze_factor):
-            if (squeeze_factor != 99) and (squeeze_factor != np.inf):  # todo - this changed!
+            if squeeze_factor != np.inf:
                 # Check that this appointment is being run and run not with a squeeze_factor that signifies that a cadre
                 # is not at all available.
                 self.this_hsi_event_ran = True
