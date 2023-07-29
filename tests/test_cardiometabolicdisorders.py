@@ -20,14 +20,17 @@ from tlo.methods.cardio_metabolic_disorders import (
     CardioMetabolicDisordersDeathEvent,
     CardioMetabolicDisordersEvent,
     CardioMetabolicDisordersWeightLossEvent,
-    HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms,
-    HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms,
+    HSI_CardioMetabolicDisorders_Investigations,
     HSI_CardioMetabolicDisorders_Refill_Medication,
     HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment,
     HSI_CardioMetabolicDisorders_StartWeightLossAndMedication,
 )
 from tlo.methods.demography import AgeUpdateEvent, age_at_date
 from tlo.methods.healthsystem import HealthSystemScheduler
+from tlo.methods.hsi_generic_first_appts import (
+    HSI_GenericEmergencyFirstAppt,
+    HSI_GenericNonEmergencyFirstAppt,
+)
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -558,10 +561,10 @@ def test_symptoms(seed):
 
 
 def test_hsi_investigation_not_following_symptoms(seed):
-    """Create a person and check if the functions in HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms
+    """Create a person and check if the functions in `HSI_CardioMetabolicDisorders_Investigations`
     create the correct HSI"""
 
-    # Make a list of all conditions and events to run this test for
+    # Make a list of all conditions to run this test for
     condition_list = ['diabetes', 'hypertension', 'chronic_lower_back_pain', 'chronic_kidney_disease',
                       'chronic_ischemic_hd']
     for condition in condition_list:
@@ -585,8 +588,8 @@ def test_hsi_investigation_not_following_symptoms(seed):
         df.at[person_id, 'li_bmi'] = 4
 
         # Run the InvestigationNotFollowingSymptoms event
-        t = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(module=sim.modules[
-            'CardioMetabolicDisorders'], person_id=person_id, condition=f'{condition}')
+        t = HSI_CardioMetabolicDisorders_Investigations(module=sim.modules[
+            'CardioMetabolicDisorders'], person_id=person_id, conditions_to_investigate=[f'{condition}'])
         t.apply(person_id=person_id, squeeze_factor=0.0)
 
         # Check that there is StartWeightLossAndMedication event scheduled
@@ -604,10 +607,11 @@ def test_hsi_investigation_not_following_symptoms(seed):
 
 
 def test_hsi_investigation_following_symptoms(seed):
-    """Create a person and check if the functions in HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms
-    create the correct HSI"""
+    """Create a person and check if the functions in `HSI_CardioMetabolicDisorders_Investigations`
+    creates the correct HSI"""
 
-    # Make a list of all conditions and events to run this test for
+    # Make a list of all conditions to run this test for (N.B. excluding hypertension and there is no symptom for
+    # hypertension).
     condition_list = ['diabetes', 'chronic_lower_back_pain', 'chronic_kidney_disease', 'chronic_ischemic_hd']
     for condition in condition_list:
         # Create the sim with an enabled healthcare system
@@ -636,9 +640,9 @@ def test_hsi_investigation_following_symptoms(seed):
             add_or_remove='+'
         )
 
-        # Run the InvestigationNotFollowingSymptoms event
-        t = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(module=sim.modules[
-            'CardioMetabolicDisorders'], person_id=person_id, condition=f'{condition}')
+        # Run the `HSI_CardioMetabolicDisorders_Investigations` event
+        t = HSI_CardioMetabolicDisorders_Investigations(module=sim.modules[
+            'CardioMetabolicDisorders'], person_id=person_id, conditions_to_investigate=[f'{condition}'])
         t.apply(person_id=person_id, squeeze_factor=0.0)
 
         # Check that there is StartWeightLossAndMedication event scheduled
@@ -756,7 +760,7 @@ def test_hsi_emergency_events(seed):
 
         # Run the SeeksEmergencyCareAndGetsTreatment event
         t = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(module=sim.modules[
-            'CardioMetabolicDisorders'], person_id=person_id, ev=f'{event}')
+            'CardioMetabolicDisorders'], person_id=person_id, events_to_investigate=[f'{event}'])
         t.apply(person_id=person_id, squeeze_factor=0.0)
 
         # Check that the individual is now diagnosed, on medication, there is a StartMedication event scheduled, and
@@ -848,7 +852,7 @@ def test_no_availability_of_consumables_for_events(seed):
 
         # Run the SeeksEmergencyCareAndGetsTreatment event on this person
         t = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(module=sim.modules[
-            'CardioMetabolicDisorders'], person_id=person_id, ev=f'{event}')
+            'CardioMetabolicDisorders'], person_id=person_id, events_to_investigate=[f'{event}'])
         t.apply(person_id=person_id, squeeze_factor=0.0)
 
         # Check that the individual is not on medication due to lack of consumables, and that there is a scheduled date
@@ -894,3 +898,125 @@ def test_logging_works_for_person_older_than_100(seed):
 
         # Call the tracker
         cdm.trackers['prevalent_event'].add(event, {df.at[person_id, 'age_range']: 1})
+
+
+def test_hsi_following_presentation_at_generic_non_emergency_hsi(seed):
+    """Check that:
+     * a person that has symptoms of multiple CMD conditions is (following the non-emergency generic HSI) scheduled for
+      ONE follow-up appointment, which leads to multiple streams of treatment for each condition;
+     * person that has no symptom of CMD condition is not scheduled for any follow-up appointments.
+     """
+    sim = make_simulation_health_system_functional(seed=seed)
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date)
+
+    cmd = sim.modules['CardioMetabolicDisorders']
+
+    # Remove symptoms from everyone
+    df = sim.population.props
+    df.loc[df.is_alive, df.columns[df.columns.str.startswith('sy_')]] = 0
+
+    # Onset person 0 with the conditions and the symptoms for all conditions
+    # (N.B. The person will have hypertension but there is no symptom for hypertension.)
+    df.loc[0, [f'nc_{condition}' for condition in cmd.conditions]] = True
+    sim.modules['SymptomManager'].change_symptom(
+        person_id=0,
+        disease_module=cmd,
+        add_or_remove="+",
+        symptom_string=cmd.symptoms,
+    )
+
+    # Make the probability of testing for persons without the symptom 1.0.
+    for condition in cmd.conditions:
+        cmd.parameters[f'{condition}_hsi']['pr_assessed_other_symptoms'] = 1.0
+
+    # Run a generic non-emergency HSI for person id 0
+    hsi_generic = HSI_GenericNonEmergencyFirstAppt(module=sim.modules['HealthSeekingBehaviour'], person_id=0)
+    hsi_generic.run(squeeze_factor=0.0)
+
+    # Examine HSI scheduled for that person
+    evs_after_hsi_generic = sim.modules['HealthSystem'].find_events_for_person(0)
+    sim.modules['HealthSystem'].reset_queue()
+
+    # There should be only ONE instance of `HSI_CardioMetabolicDisorders_Investigations` for that person that will
+    # look at multiple conditions
+    assert 1 == len(evs_after_hsi_generic)
+    assert isinstance(evs_after_hsi_generic[0][1], HSI_CardioMetabolicDisorders_Investigations)
+
+    hsi_investigations = evs_after_hsi_generic[0][1]
+    assert set(hsi_investigations.conditions_to_investigate) == set(cmd.conditions)
+
+    # Run the single instance of `HSI_CardioMetabolicDisorders_Investigations`
+    hsi_investigations.run(squeeze_factor=0.0)
+
+    # Check that multiple HSI scheduled for that person
+    evs_after_hsi_investigations = [x[1] for x in sim.modules['HealthSystem'].find_events_for_person(0)]
+
+    conditions_being_treated = []
+    for ev in evs_after_hsi_investigations:
+        assert isinstance(ev, HSI_CardioMetabolicDisorders_StartWeightLossAndMedication)
+        conditions_being_treated.append(ev.condition)
+
+    assert len(conditions_being_treated) == len(set(conditions_being_treated))  # Check no duplicates
+    assert set(conditions_being_treated) == set(cmd.conditions)
+
+    # Check that a persons without symptoms does not have investigation HSI scheduled for them
+
+    # Make the probability of testing for persons without the symptom to be 0.
+    for condition in cmd.conditions:
+        cmd.parameters[f'{condition}_hsi']['pr_assessed_other_symptoms'] = 0.0
+
+    hsi_generic = HSI_GenericNonEmergencyFirstAppt(module=sim.modules['HealthSeekingBehaviour'], person_id=1)
+    hsi_generic.run(squeeze_factor=0.0)
+    assert [] == sim.modules['HealthSystem'].find_events_for_person(1)
+
+
+def test_hsi_following_presentation_at_generic_emergency_hsi(seed):
+    """Check that:
+     * a person that has symptoms of multiple CMD events is (following the emergency generic HSI) scheduled for ONE
+     treatemnt appointment, which leads to multiple treatment for each event;
+     * person that has no symptom of CMD events is not scheduled for any follow-up appointments.
+     """
+    sim = make_simulation_health_system_functional(seed=seed)
+    sim.make_initial_population(n=100)
+    sim.simulate(end_date=sim.start_date)
+
+    cmd = sim.modules['CardioMetabolicDisorders']
+
+    # Remove symptoms from everyone
+    df = sim.population.props
+    df.loc[df.is_alive, df.columns[df.columns.str.startswith('sy_')]] = 0
+
+    # Onset person 0 with symptom for damage following the event
+    df.loc[0, [f'nc_{ev}' for ev in cmd.events]] = True
+    df.loc[0, [f'nc_{ev}_date_last_event' for ev in cmd.events]] = sim.date
+    sim.modules['SymptomManager'].change_symptom(
+        person_id=0,
+        disease_module=cmd,
+        add_or_remove="+",
+        symptom_string=[f"{ev}_damage" for ev in cmd.events],
+    )
+
+    # Run a generic non-emergency HSI for person id 0
+    hsi_generic = HSI_GenericEmergencyFirstAppt(module=sim.modules['HealthSeekingBehaviour'], person_id=0)
+    hsi_generic.run(squeeze_factor=0.0)
+
+    # Examine HSI scheduled for that person
+    evs_after_hsi_generic = sim.modules['HealthSystem'].find_events_for_person(0)
+    sim.modules['HealthSystem'].reset_queue()
+
+    # There should be only ONE instance of `HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment` for that
+    # person that will look at multiple conditions
+    assert 1 == len(evs_after_hsi_generic)
+    assert isinstance(evs_after_hsi_generic[0][1], HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment)
+
+    hsi_seeks_care_and_treatment = evs_after_hsi_generic[0][1]
+    assert set(hsi_seeks_care_and_treatment.events_to_investigate) == set(cmd.events)
+
+    # Run the single instance of `HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment`
+    hsi_seeks_care_and_treatment.run(squeeze_factor=0.0)
+
+    # Check that a persons without symptoms does not have investigation HSI scheduled for them
+    hsi_generic = HSI_GenericEmergencyFirstAppt(module=sim.modules['HealthSeekingBehaviour'], person_id=1)
+    hsi_generic.run(squeeze_factor=0.0)
+    assert [] == sim.modules['HealthSystem'].find_events_for_person(1)

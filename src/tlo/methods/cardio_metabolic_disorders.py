@@ -14,6 +14,7 @@ And:
 import math
 from itertools import combinations
 from pathlib import Path
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -801,71 +802,82 @@ class CardioMetabolicDisorders(Module):
     def determine_if_will_be_investigated(self, person_id):
         """
         This is called by the HSI generic first appts module whenever a person attends an appointment and determines
-        if the person will be tested for a condition.
+        if the person will be tested for one or more conditions.
+        A maximum of one instance of `HSI_CardioMetabolicDisorders_Investigations` is created for the person, during
+        which multiple conditions can be investigated.
         """
 
         def is_next_test_due(current_date, date_of_last_test):
             return pd.isnull(date_of_last_test) or (current_date - date_of_last_test).days > DAYS_IN_YEAR / 2
 
         df = self.sim.population.props
+        person = df.loc[person_id, df.columns[df.columns.str.startswith('nc_')]]
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
+        conditions_to_investigate = []   # The list of conditions that will be investigated in follow-up HSI
+        has_any_cmd_symptom = False  # Marker for whether the person has any symptoms of interest
+
+        # Determine if there are any conditions that should be investigated:
         for condition in self.conditions:
-            # If the person hasn't been diagnosed and they don't have symptoms of the condition:
-            if (not df.at[person_id, f'nc_{condition}_ever_diagnosed']) and (f'{condition}_symptoms' not in symptoms):
-                # If the person hasn't ever been tested for the condition or not tested within last 6 months,
-                # then test them with a given probability in the params for each condition
-                if is_next_test_due(
-                    current_date=self.sim.date, date_of_last_test=df.at[
-                        person_id, f'nc_{condition}_date_last_test']
-                ):
-                    if self.rng.random_sample() < self.parameters[f'{condition}_hsi'].get('pr_assessed_other_symptoms'):
-                        # Schedule HSI event
-                        hsi_event = HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(
-                            module=self,
-                            person_id=person_id,
-                            condition=f'{condition}'
-                        )
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(
-                            hsi_event,
-                            priority=0,
-                            topen=self.sim.date,
-                            tclose=None
-                        )
-            # Else if the person hasn't been diagnosed and they do have symptoms of the condition:
-            elif (not df.at[person_id, f'nc_{condition}_ever_diagnosed']) and (f'{condition}_symptoms' in symptoms):
-                # Initiate HSI event
-                hsi_event = HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(
+            is_already_diagnosed = person[f'nc_{condition}_ever_diagnosed']
+            has_symptom = f'{condition}_symptoms' in symptoms
+            next_test_due = is_next_test_due(
+                current_date=self.sim.date, date_of_last_test=df.at[person_id, f'nc_{condition}_date_last_test']
+            )
+            p_assess_if_no_symptom = self.parameters[f'{condition}_hsi'].get('pr_assessed_other_symptoms')
+
+            if (not is_already_diagnosed) and (
+                has_symptom or (next_test_due and (self.rng.random_sample() < p_assess_if_no_symptom))
+            ):
+                # If the person is not already diagnosed and either has the symptom or is due a routine check...
+                # ... add this condition to be investigated in the appointment.
+                conditions_to_investigate.append(condition)
+
+            if (not is_already_diagnosed) and has_symptom:
+                has_any_cmd_symptom = True
+
+        # Schedule follow-up HSI *if* there are any conditions to investigate:
+        if conditions_to_investigate:
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                HSI_CardioMetabolicDisorders_Investigations(
                     module=self,
                     person_id=person_id,
-                    condition=f'{condition}'
-                )
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    hsi_event,
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+                    conditions_to_investigate=conditions_to_investigate,
+                    has_any_cmd_symptom=has_any_cmd_symptom,
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+              )
 
     def determine_if_will_be_investigated_events(self, person_id):
         """
         This is called by the HSI generic first appts module whenever a person attends an emergency appointment and
         determines if they will receive emergency care based on the duration of time since symptoms have appeared.
+        A maximum of one instance of `HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment` is created
+        for the person, during which multiple events can be investigated.
         """
 
         health_system = self.sim.modules["HealthSystem"]
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
+        ev_to_investigate = []
         for ev in self.events:
             # If the person has symptoms of damage from within the last 3 days, schedule them for emergency care
             if f'{ev}_damage' in symptoms and \
                     ((self.sim.date - self.sim.population.props.at[person_id, f'nc_{ev}_date_last_event']).days <= 3):
-                event = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
+                ev_to_investigate.append(ev)
+
+        if ev_to_investigate:
+            health_system.schedule_hsi_event(
+                HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
                     module=self,
                     person_id=person_id,
-                    ev=ev,
-                )
-                health_system.schedule_hsi_event(event, priority=1, topen=self.sim.date)
+                    events_to_investigate=ev_to_investigate,
+                ),
+                priority=1,
+                topen=self.sim.date
+            )
 
 
 class Tracker:
@@ -1412,121 +1424,90 @@ class HSI_CardioMetabolicDisorders_CommunityTestingForHypertension(HSI_Event, In
             )
 
 
-class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
+class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with any symptoms.
-    This event results in a blood pressure measurement being taken that may result in diagnosis and the scheduling of
-    treatment for a condition.
-    :param condition: the condition being investigated
+    This event is scheduled following presentation for care and a determination having been made about which
+    conditions should be investigated for this person (either due to presentation with symptoms or a routine check).
+    NB. If a treatment is needed, this does lead to multiple HSI to be scheduled for the person (relevant to each
+    condition).
+    :param conditions_to_investigate: list of the condition to investigate.
+    :param has_any_cmd_symptom: bool to indicate whether the person has any symptoms that prompted the investigation
     """
 
-    def __init__(self, module, person_id, condition):
+    def __init__(self, module, person_id, conditions_to_investigate: List, has_any_cmd_symptom: bool = False):
         super().__init__(module, person_id=person_id)
 
         self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.conditions_to_investigate = conditions_to_investigate
+        self.has_any_cmd_symptom = has_any_cmd_symptom
 
-        self.condition = condition
-
-    def apply(self, person_id, squeeze_factor):
+    def do_for_each_condition(self, _c) -> bool:
+        """What to do for each condition that will be investigated. Returns `bool` signalling whether a follow-up HSI
+        has been scheduled."""
+        hs = self.sim.modules['HealthSystem']
         df = self.sim.population.props
-        person = df.loc[person_id]
-        hs = self.sim.modules["HealthSystem"]
-        m = self.module
+        person_id = self.target
 
-        # Ignore this event if the person is no longer alive:
-        if not person.is_alive:
-            return hs.get_blank_appt_footprint()
+        # Do nothing if the condition is already diagnosed
+        if df.at[person_id, f'nc_{_c}_ever_diagnosed']:
+            return
 
         # Run a test to diagnose whether the person has condition:
         dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run=f'assess_{self.condition}',
+            dx_tests_to_run=f'assess_{_c}',
             hsi_event=self
         )
-        df.at[person_id, f'nc_{self.condition}_date_last_test'] = self.sim.date
+        df.at[person_id, f'nc_{_c}_date_last_test'] = self.sim.date
         if dx_result:
             # Record date of diagnosis:
-            df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
-            df.at[person_id, f'nc_{self.condition}_ever_diagnosed'] = True
+            df.at[person_id, f'nc_{_c}_date_diagnosis'] = self.sim.date
+            df.at[person_id, f'nc_{_c}_ever_diagnosed'] = True
             # Schedule HSI_CardioMetabolicDisorders_StartWeightLossAndMedication event
             hs.schedule_hsi_event(
                 hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
                     module=self.module,
                     person_id=person_id,
-                    condition=f'{self.condition}'
+                    condition=f'{_c}'
                 ),
                 priority=0,
                 topen=self.sim.date,
                 tclose=None
             )
-        # If person has at least 2 risk factors, start weight loss treatment
-        elif person['nc_risk_score'] >= 2:
-            if not person['nc_ever_weight_loss_treatment']:
-                df.at[person_id, 'nc_ever_weight_loss_treatment'] = True
-                # Schedule a post-weight loss event for 6-12 months for individual to potentially lose weight:
-                self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(self.module, person_id),
-                                        random_date(self.sim.date + pd.DateOffset(months=6),
-                                                    self.sim.date + pd.DateOffset(months=12),
-                                                    m.rng))
-
-
-class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, IndividualScopeEventMixin):
-    """
-    This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom
-    for each condition.
-    This event begins the investigation that may result in diagnosis and the scheduling of treatment.
-    It is for people with the condition-relevant symptom (e.g. diabetes_symptoms).
-    :param condition: the condition being investigated
-    """
-
-    def __init__(self, module, person_id, condition):
-        super().__init__(module, person_id=person_id)
-
-        self.TREATMENT_ID = "CardioMetabolicDisorders_Investigation"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
-
-        self.condition = condition
+        return dx_result
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
-        hs = self.sim.modules["HealthSystem"]
+        hs = self.sim.modules['HealthSystem']
+
         # Ignore this event if the person is no longer alive:
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
-        # If the person is already diagnosed, then take no action:
-        if df.at[person_id, f'nc_{self.condition}_ever_diagnosed']:
-            return hs.get_blank_appt_footprint()
-        # Check that this event has been called for someone with the symptom for the condition
-        if f'{self.condition}_symptoms' not in self.sim.modules['SymptomManager'].has_what(person_id):
-            return hs.get_blank_appt_footprint()
 
-        # Run a test to diagnose whether the person has condition:
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run=f'assess_{self.condition}',
-            hsi_event=self
-        )
-        df.at[person_id, f'nc_{self.condition}_date_last_test'] = self.sim.date
-        if dx_result:
-            # Record date of diagnosis:
-            df.at[person_id, f'nc_{self.condition}_date_diagnosis'] = self.sim.date
-            df.at[person_id, f'nc_{self.condition}_ever_diagnosed'] = True
+        # Do test and trigger treatment (if necessary) for each condition:
+        hsi_scheduled = [self.do_for_each_condition(_c) for _c in self.conditions_to_investigate]
 
-            # Start weight loss treatment (except for CKD) and medication for all conditions
-            hs.schedule_hsi_event(
-                hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
-                    module=self.module,
-                    person_id=person_id,
-                    condition=self.condition
-                ),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None
-            )
+        # If no follow-up treatment scheduled but the person has at least 2 risk factors, start weight loss treatment
+        if (
+            (not any(hsi_scheduled))
+            and (df.at[person_id, 'nc_risk_score'] >= 2)
+            and (not df.at[person_id, 'nc_ever_weight_loss_treatment'])
+        ):
+            df.at[person_id, 'nc_ever_weight_loss_treatment'] = True
+            # Schedule a post-weight loss event for 6-12 months for individual to potentially lose weight:
+            self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(self.module, person_id),
+                                    random_date(self.sim.date + pd.DateOffset(months=6),
+                                                self.sim.date + pd.DateOffset(months=12),
+                                                self.module.rng))
 
-        # Also run a test for hypertension according to some probability:
-        if self.module.rng.rand() < self.module.parameters['hypertension_hsi']['pr_assessed_other_symptoms']:
+        # If the person did have any symptoms, and the main condition to investigate was not `hypertension`,
+        # also run a test for hypertension (according to some probability),
+        if (
+            self.has_any_cmd_symptom
+            and ('hypertension' not in self.conditions_to_investigate)
+            and (self.module.rng.rand() < self.module.parameters['hypertension_hsi']['pr_assessed_other_symptoms'])
+        ):
             # Run a test to diagnose whether the person has condition:
             dx_result = hs.dx_manager.run_dx_test(
                 dx_tests_to_run='assess_hypertension',
@@ -1549,9 +1530,6 @@ class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms(HSI_Event, Ind
                     topen=self.sim.date,
                     tclose=None
                 )
-
-    def did_not_run(self):
-        pass
 
 
 class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, IndividualScopeEventMixin):
@@ -1693,22 +1671,73 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
 class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event.
-    It is the event when a person with the severe symptoms of chronic syndrome presents for emergency care
-    and is immediately provided with treatment.
-    :param ev: the event for which emergency care / treatment is sought
+    It is the event when a person is investigated for certain condition following and emergency presentation. Treatment
+    may be scheduled from this event, and this may take the form of multiple streams of HSI event if more than one
+    condition is to be treated.
+    :param events_to_investigate: list of the events for which emergency care is sought
     """
 
-    def __init__(self, module, person_id, ev):
+    def __init__(self, module, person_id, events_to_investigate: List):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, CardioMetabolicDisorders)
 
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1, 'Over5OPD': 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
+        self.events_to_investigate = events_to_investigate
 
-        self.event = ev
+    def do_for_each_event_to_be_investigated(self, _ev):
+        """Do what is required to be done for each event that is being investigated."""
+        person_id = self.target
+        df = self.sim.population.props
+
+        # Run a test to diagnose whether the person has condition:
+        dx_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+            dx_tests_to_run=f'assess_{_ev}',
+            hsi_event=self
+        )
+        if dx_result:
+            # Record date of diagnosis
+            df.at[person_id, f'nc_{_ev}_date_diagnosis'] = self.sim.date
+            df.at[person_id, f'nc_{_ev}_ever_diagnosed'] = True
+            if self.module.parameters['prob_care_provided_given_seek_emergency_care'] > self.module.rng.random_sample():
+                # If care is provided....
+                if self.get_consumables(
+                    item_codes=self.module.parameters[f'{_ev}_hsi'].get(
+                        'emergency_medication_item_code').astype(int)
+                ):
+                    logger.debug(key='debug', data='Treatment will be provided.')
+                    df.at[person_id, f'nc_{_ev}_on_medication'] = True
+                    df.at[person_id, f'nc_{_ev}_medication_prevents_death'] = \
+                        self.module.rng.rand() < self.module.parameters[f'{_ev}_hsi'].pr_treatment_works
+                    if df.at[person_id, f'nc_{_ev}_medication_prevents_death']:
+                        # Cancel the scheduled death data
+                        df.at[person_id, f'nc_{_ev}_scheduled_date_death'] = pd.NaT
+                        # Remove all symptoms of event instantly
+                        self.sim.modules['SymptomManager'].change_symptom(
+                            person_id=person_id,
+                            symptom_string=f'{_ev}_damage',
+                            add_or_remove='-',
+                            disease_module=self.module)
+                        # Start the person on regular medication
+                        self.sim.modules['HealthSystem'].schedule_hsi_event(
+                            hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
+                                module=self.module,
+                                person_id=person_id,
+                                condition=_ev
+                            ),
+                            priority=0,
+                            topen=self.sim.date,
+                            tclose=None
+                        )
+                else:
+                    # Consumables not available
+                    logger.debug(key='debug', data='Treatment will not be provided due to no available consumables')
 
     def apply(self, person_id, squeeze_factor):
+        hs = self.sim.modules["HealthSystem"]
+        df = self.sim.population.props
+
         logger.debug(
             key='debug',
             data=('This is HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: '
@@ -1720,50 +1749,8 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                   f'The squeeze-factor is {squeeze_factor}.'),
         )
 
-        df = self.sim.population.props
-        hs = self.sim.modules["HealthSystem"]
-        # Run a test to diagnose whether the person has condition:
-        dx_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run=f'assess_{self.event}',
-            hsi_event=self
-        )
-        if dx_result:
-            # Record date of diagnosis
-            df.at[person_id, f'nc_{self.event}_date_diagnosis'] = self.sim.date
-            df.at[person_id, f'nc_{self.event}_ever_diagnosed'] = True
-            if self.module.parameters['prob_care_provided_given_seek_emergency_care'] > self.module.rng.random_sample():
-                # If care is provided....
-                if self.get_consumables(
-                    item_codes=self.module.parameters[f'{self.event}_hsi'].get(
-                        'emergency_medication_item_code').astype(int)
-                ):
-                    logger.debug(key='debug', data='Treatment will be provided.')
-                    df.at[person_id, f'nc_{self.event}_on_medication'] = True
-                    df.at[person_id, f'nc_{self.event}_medication_prevents_death'] = \
-                        self.module.rng.rand() < self.module.parameters[f'{self.event}_hsi'].pr_treatment_works
-                    if df.at[person_id, f'nc_{self.event}_medication_prevents_death']:
-                        # Cancel the scheduled death data
-                        df.at[person_id, f'nc_{self.event}_scheduled_date_death'] = pd.NaT
-                        # Remove all symptoms of event instantly
-                        self.sim.modules['SymptomManager'].change_symptom(
-                            person_id=person_id,
-                            symptom_string=f'{self.event}_damage',
-                            add_or_remove='-',
-                            disease_module=self.module)
-                        # Start the person on regular medication
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(
-                            hsi_event=HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(
-                                module=self.module,
-                                person_id=person_id,
-                                condition=self.event
-                            ),
-                            priority=0,
-                            topen=self.sim.date,
-                            tclose=None
-                        )
-                else:
-                    # Consumables not available
-                    logger.debug(key='debug', data='Treatment will not be provided due to no available consumables')
+        for _ev in self.events_to_investigate:
+            self.do_for_each_event_to_be_investigated(_ev)
 
         # Also run a test for hypertension according to some probability, since both events are related to hypertension:
         if self.module.rng.rand() < self.module.parameters['hypertension_hsi']['pr_assessed_other_symptoms']:
