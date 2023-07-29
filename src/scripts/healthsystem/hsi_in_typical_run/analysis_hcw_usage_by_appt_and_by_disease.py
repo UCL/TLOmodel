@@ -73,6 +73,72 @@ def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
         ).unstack().astype(int)
 
 
+def get_annual_hcw_time_used_with_confidence_interval(results_folder: Path, resourcefilepath: Path) -> pd.DataFrame:
+    """Return pd.DataFrame gives the (mean) simulated annual hcw time used per cadre across all levels,
+    with 95% confidence interval."""
+
+    def get_annual_hcw_time_used(_df) -> pd.Series:
+        """Get the annual hcw time used per cadre across all levels"""
+
+        # get annual counts of appt per level
+        def unpack_nested_dict_in_series(_raw: pd.Series):
+            return pd.concat(
+                {
+                  idx: pd.DataFrame.from_dict(mydict) for idx, mydict in _raw.items()
+                 }
+             ).unstack().fillna(0.0).astype(int)
+
+        annual_counts_of_appts_per_level = _df \
+            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code_And_Level'] \
+            .pipe(unpack_nested_dict_in_series) \
+            .groupby(level=[0, 1], axis=1).sum() \
+            .mean(axis=0) \
+            .to_frame().reset_index() \
+            .rename(columns={'level_0': 'Facility_Level', 'level_1': 'Appt_Type_Code', 0: 'Count'}) \
+            .pivot(index='Facility_Level', columns='Appt_Type_Code', values='Count')
+
+        # get appt time definitions
+        appt_time = get_expected_appt_time(resourcefilepath)
+
+        appts_def = set(appt_time.Appt_Type_Code)
+        appts_sim = set(annual_counts_of_appts_per_level.columns.values)
+        assert appts_sim.issubset(appts_def)
+
+        # get hcw time used per cadre per level
+        _hcw_usage = appt_time.drop(index=appt_time[~appt_time.Appt_Type_Code.isin(appts_sim)].index).reset_index(
+            drop=True)
+        for idx in _hcw_usage.index:
+            fl = _hcw_usage.loc[idx, 'Facility_Level']
+            appt = _hcw_usage.loc[idx, 'Appt_Type_Code']
+            _hcw_usage.loc[idx, 'Total_Mins_Used_Per_Year'] = (_hcw_usage.loc[idx, 'Time_Taken_Mins'] *
+                                                              annual_counts_of_appts_per_level.loc[fl, appt])
+
+        # get hcw time used per cadre
+        _hcw_usage = _hcw_usage.groupby(['Officer_Category'])['Total_Mins_Used_Per_Year'].sum()
+
+        return _hcw_usage
+
+    # get hcw time used per cadre with CI
+    hcw_usage = summarize(
+        extract_results(
+                results_folder,
+                module='tlo.methods.healthsystem.summary',
+                key='HSI_Event',
+                custom_generate_series=get_annual_hcw_time_used,
+                do_scaling=True
+            ),
+        only_mean=False,
+        collapse_columns=True,
+        ).unstack().astype(int)
+
+    # reformat
+    hcw_usage = hcw_usage.to_frame().reset_index() \
+        .rename(columns={'stat': 'Value_Type', 0: 'Value'}) \
+        .pivot(index='Officer_Category', columns='Value_Type', values='Value')
+
+    return hcw_usage
+
+
 # todo: fix the issue that this func may over count the hsi
 def get_annual_num_hsi_by_appt_and_level(results_folder: Path) -> pd.DataFrame:
     """Return pd.DataFrame gives the (mean) simulated annual count of hsi
@@ -274,33 +340,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
-    # format plot
-    def format_and_save(_fig, _ax, _name_of_plot):
-        _ax.set_title(_name_of_plot)
-        _ax.set_yscale('log')
-        _ax.set_ylim(1 / 20, 20)
-        _ax.set_yticks([1 / 10, 1.0, 10])
-        _ax.set_yticklabels(("<= 1/10", "1.0", ">= 10"))
-        _ax.set_ylabel('Model / Data')
-        _ax.set_xlabel('Appointment Type')
-        _ax.tick_params(axis='x', labelrotation=90)
-        _ax.xaxis.grid(True, which='major', linestyle='--')
-        _ax.yaxis.grid(True, which='both', linestyle='--')
-        _ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        _fig.tight_layout()
-        _fig.savefig(make_graph_file_name(_name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
-        _fig.show()
-        plt.close(_fig)
-
     # get average annual usage by level for Simulation and Real
     simulation_usage = get_simulation_usage_by_level(results_folder)
 
     real_usage = get_real_usage(resourcefilepath)[0]
 
-    # get expected appt time and hcw capability
+    # get expected appt time
     appt_time = get_expected_appt_time(resourcefilepath)
-
-    hcw_capability = get_hcw_capability(resourcefilepath, hcwscenario='actual')
 
     # check that appts in simulation_usage are in appt_time
     appts_def = set(appt_time.Appt_Type_Code)
@@ -319,6 +365,74 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                                                                                hcw_usage.loc[idx, 'Appt_Type_Code']])
     hcw_usage = hcw_usage.groupby(['Officer_Category', 'Appt_Category']
                                   )['Total_Mins_Used_Per_Year'].sum().reset_index()
+
+    # check that hcw time simulated derived from different methods are equal (or with negligible difference)
+    hcw_time_used_1 = hcw_usage.groupby(['Officer_Category'])['Total_Mins_Used_Per_Year'].sum().to_frame()
+    hcw_time_used_0 = get_annual_hcw_time_used_with_confidence_interval(results_folder, resourcefilepath)
+    assert (hcw_time_used_1.index == hcw_time_used_0.index).all()
+    assert (abs(
+        (hcw_time_used_1['Total_Mins_Used_Per_Year'] - hcw_time_used_0['mean']) / hcw_time_used_0['mean']) < 1e-5
+            ).all()
+
+    # todo: get actual hcw time used derived from DHIS2 data and plot
+
+    # format data and plot bar chart
+    def format_hcw_usage(hcwscenario='actual'):
+        """format data for bar plot"""
+        # get hcw capability in actual or establishment (funded_plus) scenarios
+        hcw_capability = get_hcw_capability(resourcefilepath, hcwscenario=hcwscenario) \
+            .groupby('Officer_Category')['Total_Mins_Per_Year'].sum().to_frame() \
+            .rename(columns={'Total_Mins_Per_Year': 'capability'})
+
+        # calculate hcw time usage ratio against capability with CI
+        hcw_usage_ratio = hcw_time_used_0.join(hcw_capability)
+        hcw_usage_ratio.loc['All'] = hcw_usage_ratio.sum()
+        hcw_usage_ratio['mean'] = hcw_usage_ratio['mean'] / hcw_usage_ratio['capability']
+        hcw_usage_ratio['lower'] = hcw_usage_ratio['lower'] / hcw_usage_ratio['capability']
+        hcw_usage_ratio['upper'] = hcw_usage_ratio['upper'] / hcw_usage_ratio['capability']
+
+        hcw_usage_ratio['lower_error'] = (hcw_usage_ratio['mean'] - hcw_usage_ratio['lower'])
+        hcw_usage_ratio['upper_error'] = (hcw_usage_ratio['upper'] - hcw_usage_ratio['mean'])
+
+        asymmetric_error = [hcw_usage_ratio['lower_error'].values, hcw_usage_ratio['upper_error'].values]
+        hcw_usage_ratio = pd.DataFrame(hcw_usage_ratio['mean']) \
+            .clip(lower=0.1, upper=10.0)
+
+        # reduce the mean ratio by 1.0, for the bar plot that starts from y=1.0 instead of y=0.0
+        hcw_usage_ratio['mean'] = hcw_usage_ratio['mean'] - 1.0
+
+        return hcw_usage_ratio, asymmetric_error
+
+    hcw_usage_ratio_actual, error_actual = format_hcw_usage(hcwscenario='actual')
+    hcw_usage_ratio_establishment, error_establishment = format_hcw_usage(hcwscenario='funded_plus')
+
+    name_of_plot = 'Simulated annual working time vs Capability per cadre'
+    fig, ax = plt.subplots(figsize=(8, 5))
+    hcw_usage_ratio_establishment.plot(kind='bar', yerr=error_establishment, width=0.4,
+                                       ax=ax, position=0, bottom=1.0,
+                                       legend=False, color='c')
+    hcw_usage_ratio_actual.plot(kind='bar', yerr=error_actual, width=0.4,
+                                ax=ax, position=1, bottom=1.0,
+                                legend=False, color='y')
+    ax.axhline(1.0, color='r')
+    ax.set_xlim(right=len(hcw_usage_ratio_establishment) - 0.3)
+    ax.set_yscale('log')
+    ax.set_ylim(1 / 20, 20)
+    ax.set_yticks([1 / 10, 1.0, 10])
+    ax.set_yticklabels(("<= 1/10", "1.0", ">= 10"))
+    ax.set_ylabel('Working time / Capability')
+    ax.set_xlabel('Cadre Category')
+    plt.xticks(rotation=60, ha='right')
+    ax.xaxis.grid(True, which='major', linestyle='--')
+    ax.yaxis.grid(True, which='both', linestyle='--')
+    ax.set_title(name_of_plot)
+    patch_establishment = matplotlib.patches.Patch(facecolor='c', label='Establishment capability')
+    patch_actual = matplotlib.patches.Patch(facecolor='y', label='Actual capability')
+    legend = plt.legend(handles=[patch_actual, patch_establishment], loc='center left', bbox_to_anchor=(1.0, 0.5))
+    fig.add_artist(legend)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
+    plt.show()
 
     # hcw usage per cadre per appt per hsi
     hsi_count = get_annual_num_hsi_by_appt_and_level(results_folder)
