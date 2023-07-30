@@ -11,7 +11,6 @@ from tlo.methods import Metadata, labour_lm, pregnancy_helper_functions
 from tlo.methods.causes import Cause
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneMaternalEvent
 from tlo.util import BitsetHandler
 
@@ -847,6 +846,10 @@ class Labour(Module):
         # ---------------------------------- IRON AND FOLIC ACID ------------------------------------------------------
         self.item_codes_lab_consumables['iron_folic_acid'] = \
             get_item_code_from_pkg('Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg')
+
+        # -------------------------------------------- RESUSCITATION ------------------------------------------
+        self.item_codes_lab_consumables['resuscitation'] = \
+            get_list_of_items(self, ['Infant resuscitator, clear plastic + mask + bag_each_CMST'])
 
     def initialise_simulation(self, sim):
         # Update self.current_parameters
@@ -2214,12 +2217,11 @@ class Labour(Module):
         is called within HSI_Labour_ReceivesPostnatalCheck.
         :param hsi_event: HSI event in which the function has been called
         """
-        df = self.sim.population.props
         person_id = hsi_event.target
 
         if 'Depression' in self.sim.modules.keys():
-            if not df.at[person_id, 'de_ever_diagnosed_depression']:
-                self.sim.modules['Depression'].do_when_suspected_depression(person_id, hsi_event)
+            self.sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
+                                                                      hsi_event=hsi_event)
 
     def interventions_delivered_pre_discharge(self, hsi_event):
         """
@@ -2232,14 +2234,10 @@ class Labour(Module):
         person_id = int(hsi_event.target)
         params = self.current_parameters
 
-        # HIV testing occurs within the HIV module for women who havent already been diagnosed
-        if 'Hiv' in self.sim.modules.keys():
-            if not df.at[person_id, 'hv_diagnosed']:
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
-                    topen=self.sim.date,
-                    tclose=None,
-                    priority=0)
+        # HIV testing occurs within the HIV module for women who haven't already been diagnosed.
+        # The probability of getting the HIV test is determined by the Hiv module.
+        if 'Hiv' in self.sim.modules:
+            self.sim.modules['Hiv'].decide_whether_hiv_test_for_mother(person_id, referred_from="labour")
 
         # ------------------------------- Postnatal iron and folic acid ---------------------------------------------
         cons = {_i: params['number_ifa_tablets_required_postnatally'] for _i in
@@ -2494,7 +2492,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                     self.module, person_id=individual_id, facility_level_of_this_hsi='1a')
                 self.sim.modules['HealthSystem'].schedule_hsi_event(health_centre_delivery, priority=0,
                                                                     topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=1))
+                                                                    tclose=self.sim.date + DateOffset(days=2))
 
             elif mni[individual_id]['delivery_setting'] == 'hospital':
                 facility_level = self.module.rng.choice(['1a', '1b'])
@@ -2502,7 +2500,7 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                     self.module, person_id=individual_id, facility_level_of_this_hsi=facility_level)
                 self.sim.modules['HealthSystem'].schedule_hsi_event(hospital_delivery, priority=0,
                                                                     topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=1))
+                                                                    tclose=self.sim.date + DateOffset(days=2))
 
             # Determine if the labouring woman will be delayed in attending for facility delivery
             pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id)
@@ -2585,11 +2583,9 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                     mni[individual_id]['delay_one_two'] = True
 
                     # We assume women present to the health system through the generic a&e appointment
-                    from tlo.methods.hsi_generic_first_appts import (
-                        HSI_GenericEmergencyFirstApptAtFacilityLevel1,
-                    )
+                    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
 
-                    event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(
+                    event = HSI_GenericEmergencyFirstAppt(
                         module=self.module,
                         person_id=individual_id)
 
@@ -2810,7 +2806,7 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
                         early_event,
                         priority=0,
                         topen=self.sim.date,
-                        tclose=self.sim.date + DateOffset(days=1))
+                        tclose=self.sim.date + DateOffset(days=2))
 
                 else:
                     # For women who do not have prompt PNC, we determine if they will die from complications occurring
@@ -2960,6 +2956,22 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             elif self.module.rng.random_sample() < params['residual_prob_avd']:
                 self.module.assessment_for_assisted_vaginal_delivery(self, indication='other')
 
+        # -------------------------- Newborn resuscitation ------------------------------------------------------------
+        # We check in this HSI that if the mother has a live born baby who requires resucitation that they will receive
+        # the intervention
+        if not mni[person_id]['sought_care_for_complication']:
+            # TODO: potential issue is that this consumable is being logged now for every birth as opposed to
+            #  for each birth where resuscitation of the newborn is required
+            avail = pregnancy_helper_functions.return_cons_avail(
+                self.module, self, self.module.item_codes_lab_consumables, core='resuscitation')
+
+            # Run HCW check
+            sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.module,
+                                                                                       sf='neo_resus',
+                                                                                       hsi_event=self)
+            if sf_check and avail:
+                mni[person_id]['neo_will_receive_resus_if_needed'] = True
+
         # ========================================== SCHEDULING CEMONC CARE =========================================
         # Finally women who require additional treatment have the appropriate HSI scheduled to deliver further care
 
@@ -2971,7 +2983,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             self.sim.modules['HealthSystem'].schedule_hsi_event(surgical_management,
                                                                 priority=0,
                                                                 topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=1))
+                                                                tclose=self.sim.date + DateOffset(days=2))
 
         # If a this woman has experienced a complication the appointment footprint is changed from normal to
         # complicated

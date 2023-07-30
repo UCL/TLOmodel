@@ -1,7 +1,9 @@
 """
-This Module runs the counting of DALYS
+This Module runs the counting of Life-years Lost, Life-years Lived with Disability,
+and Disability-Adjusted Life-years (DALYS).
 """
 from pathlib import Path
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -13,7 +15,9 @@ from tlo.methods.causes import (
     Cause,
     collect_causes_from_disease_modules,
     create_mappers_from_causes_to_label,
+    get_gbd_causes_not_represented_in_disease_modules,
 )
+from tlo.methods.demography import age_at_date
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -101,8 +105,9 @@ class HealthBurden(Module):
                                                                                'HealthBurden module must have a ' \
                                                                                'callable function "report_daly_values"'
 
-        # 3) Process the declarations of causes of disability made by the disease modules
+        # 3) Process the declarations of causes of disability and DALYS made by the disease modules
         self.process_causes_of_disability()
+        self.process_causes_of_dalys()
 
         # 4) Launch the DALY Logger to run every month, starting with the end of the first month of simulation
         sim.schedule_event(Get_Current_DALYS(self), sim.date + DateOffset(months=1))
@@ -124,17 +129,97 @@ class HealthBurden(Module):
         # 2) Define the "Other" tlo_cause of disability
         self.causes_of_disability['Other'] = Cause(
             label='Other',
-            gbd_causes=self.get_gbd_causes_of_disability_not_represented_in_disease_modules(self.causes_of_disability)
+            gbd_causes=get_gbd_causes_not_represented_in_disease_modules(
+                causes=self.causes_of_disability,
+                gbd_causes=set(self.parameters['gbd_causes_of_disability'])
+            )
         )
 
         # 3) Output to the log mappers for causes of disability
-        mapper_from_tlo_causes, mapper_from_gbd_causes = self.create_mappers_from_causes_of_death_to_label()
+        mapper_from_tlo_causes, mapper_from_gbd_causes = create_mappers_from_causes_to_label(
+            causes=self.causes_of_disability,
+            all_gbd_causes=set(self.parameters['gbd_causes_of_disability'])
+        )
+
         logger.info(
-            key='mapper_from_tlo_cause_to_common_label',
+            key='disability_mapper_from_tlo_cause_to_common_label',
             data=mapper_from_tlo_causes
         )
         logger.info(
-            key='mapper_from_gbd_cause_to_common_label',
+            key='disability_mapper_from_gbd_cause_to_common_label',
+            data=mapper_from_gbd_causes
+        )
+
+    def process_causes_of_dalys(self):
+        """
+        1) Collect causes of DALYS (i.e., death _and_ disability) that are reported by each disease module
+        2) Define the "Other" tlo_cause of DALYS (corresponding to those gbd_causes that are not represented by
+        the disease modules in this sim.)
+        3) Output to the log mappers for causes of disability to the label
+        """
+        ...
+        # 1) Collect causes of death and disability that are reported by each disease module,
+        #    merging the gbd_causes declared for deaths or disabilities under the same label,
+
+        def merge_dicts_of_causes(d1: Dict, d2: Dict) -> Dict:
+            """Combine two dictionaries of the form {tlo_cause_name: Cause}, merging the values of `Cause.gbd_causes`
+             where the values of `Cause.label` are common, attaching to the first key in d1 that uses that label."""
+            labels_seen = dict()  # Look-up of the form {label: tlo_cause_name} for the tlo_cause_name associated
+            #                       (first) with a label.
+            merged_causes = dict()  # Dict that will build-up as {tlo_cause_name: Cause} and be returned
+            for d in (d1, d2):
+                for _tlo_cause_name, _cause in d.items():
+                    if _cause.label not in labels_seen:
+                        # If label is not already included, add this cause to the merged dict
+                        merged_causes[_tlo_cause_name] = _cause
+                        labels_seen[_cause.label] = _tlo_cause_name
+                    else:
+                        # If label is already included, merge the gbd_causes into the cause defined.
+                        tlo_cause_name_to_merge_into = labels_seen[_cause.label]
+                        merged_causes[tlo_cause_name_to_merge_into].gbd_causes = \
+                            merged_causes[tlo_cause_name_to_merge_into].gbd_causes.union(_cause.gbd_causes)
+            return merged_causes
+
+        causes_of_death_and_disability = merge_dicts_of_causes(
+            collect_causes_from_disease_modules(
+                all_modules=self.sim.modules.values(),
+                collect='CAUSES_OF_DEATH',
+                acceptable_causes=self.sim.modules['Demography'].gbd_causes_of_death),
+            collect_causes_from_disease_modules(
+                all_modules=self.sim.modules.values(),
+                collect='CAUSES_OF_DISABILITY',
+                acceptable_causes=set(self.parameters['gbd_causes_of_disability']))
+        )
+
+        # N.B. In the GBD definitions, MANY things which disable but don't kill; but NO things that kill but which
+        # don't also disable (because things that kill cause DALYS that way.)
+        assert set(self.parameters['gbd_causes_of_disability']).issuperset(
+            self.sim.modules['Demography'].gbd_causes_of_death)
+
+        # 2) Define the "Other" cause
+        all_gbd_causes_of_death_and_disability = set(self.parameters['gbd_causes_of_disability']).union(
+            self.sim.modules['Demography'].gbd_causes_of_death
+        )
+        causes_of_death_and_disability['Other'] = Cause(
+            label='Other',
+            gbd_causes=get_gbd_causes_not_represented_in_disease_modules(
+                causes=causes_of_death_and_disability,
+                gbd_causes=all_gbd_causes_of_death_and_disability
+            )
+        )
+
+        # 3) Output to the log mappers for causes of DALYs
+        mapper_from_tlo_causes, mapper_from_gbd_causes = create_mappers_from_causes_to_label(
+            causes=causes_of_death_and_disability,
+            all_gbd_causes=all_gbd_causes_of_death_and_disability
+        )
+
+        logger.info(
+            key='daly_mapper_from_tlo_cause_to_common_label',
+            data=mapper_from_tlo_causes
+        )
+        logger.info(
+            key='daly_mapper_from_gbd_cause_to_common_label',
             data=mapper_from_gbd_causes
         )
 
@@ -229,8 +314,16 @@ class HealthBurden(Module):
                             'are ascribed to the age of the death and the year of the death.'
             )
 
-        # 4) Log total DALYS (Stacked by Age and Time), broken down by wealth
-        # todo ...
+        # 4) Log total DALYS (Stacked by Age and Time), broken down by wealth only
+        for _, row in dalys_stacked_by_age_and_time.groupby(level=[2, 3]).sum().reset_index().iterrows():
+            logger.info(
+                key='dalys_by_wealth_stacked_by_age_and_time',
+                data=row.to_dict(),
+                description='DALYS, by the labels are that are declared for each cause_of_death and cause_of_disability'
+                            ', broken down by year and wealth category.'
+                            'Stacking by age and time: i.e., all the year of life lost '
+                            'are ascribed to the age of the death and the year of the death.'
+            )
 
     def compute_dalys(self):
         """Compute total DALYS (by label), by age, sex and year. Do this by summing the YLD and LYL with respect to the
@@ -325,7 +418,7 @@ class HealthBurden(Module):
                 end_date=(
                     date_of_birth + pd.DateOffset(years=self.parameters['Age_Limit_For_YLL']) - pd.DateOffset(days=1)),
                 date_of_birth=date_of_birth
-            ).sum(level=1)\
+            ).groupby(level=1).sum()\
              .assign(year=date_of_death.year)\
              .set_index(['year'], append=True)['person_years']\
              .pipe(_format_for_multi_index)
@@ -334,7 +427,7 @@ class HealthBurden(Module):
         # ascribed to the age of death and to the year of death. This is computed by collapsing the age-dimension of
         # `yll_stacked_by_time` onto the age(-range) of death.
         age_range_to_stack_to = age_range
-        yll_stacked_by_age_and_time = pd.DataFrame(yll_stacked_by_time.sum(level=[0, 2, 3]))\
+        yll_stacked_by_age_and_time = pd.DataFrame(yll_stacked_by_time.groupby(level=[0, 2, 3]).sum())\
                                         .assign(age_range=age_range_to_stack_to)\
                                         .set_index(['age_range'], append=True)['person_years']\
                                         .reorder_levels(['sex', 'age_range', 'li_wealth', 'year'])
@@ -374,7 +467,7 @@ class HealthBurden(Module):
 
         # Get the age (in whole years) that this person will be on each day.
         # N.B. This is a slight approximation as it doesn't make allowance for leap-years.
-        df['age_in_years'] = ((df['days'] - date_of_birth) / np.timedelta64(1, 'Y')).astype(int)
+        df['age_in_years'] = age_at_date(df['days'], date_of_birth).astype(int)
 
         age_range_lookup = self.sim.modules['Demography'].AGE_RANGE_LOOKUP  # get the age_range_lookup from demography
         df['age_range'] = df['age_in_years'].map(age_range_lookup)
@@ -385,25 +478,6 @@ class HealthBurden(Module):
         period = period.drop(columns=['days'], axis=1)
 
         return period
-
-    def get_gbd_causes_of_disability_not_represented_in_disease_modules(self, causes_of_disability):
-        """
-        Find the causes of disability in the GBD datasets that are not represented within the causes of death defined
-        in the modules registered in this simulation.
-        :return: set of gbd_causes of disability that are not represented in disease modules
-        """
-        all_gbd_causes_in_sim = set()
-        for c in causes_of_disability.values():
-            all_gbd_causes_in_sim.update(c.gbd_causes)
-
-        return set(self.parameters['gbd_causes_of_disability']) - all_gbd_causes_in_sim
-
-    def create_mappers_from_causes_of_death_to_label(self):
-        """Use a helper function to create mappers for causes of disability to label."""
-        return create_mappers_from_causes_to_label(
-            causes=self.causes_of_disability,
-            all_gbd_causes=set(self.parameters['gbd_causes_of_disability'])
-        )
 
 
 class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
@@ -426,7 +500,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
         # Get the population dataframe
         df = self.sim.population.props
-        idx_alive = set(df.loc[df.is_alive].index)
+        idx_alive = df.loc[df.is_alive].index
 
         # 1) Ask each disease module to log the DALYS for the previous month
         dalys_from_each_disease_module = list()
@@ -454,7 +528,7 @@ class Get_Current_DALYS(RegularEvent, PopulationScopeEventMixin):
 
                 # Perform checks on what has been returned
                 assert set(dalys_from_disease_module.columns) == set(declared_causes_of_disability_module)
-                assert set(dalys_from_disease_module.index) == idx_alive
+                assert set(dalys_from_disease_module.index) == set(idx_alive)
                 assert not pd.isnull(dalys_from_disease_module).any().any()
                 assert ((dalys_from_disease_module >= 0) & (dalys_from_disease_module <= 1)).all().all()
                 assert (dalys_from_disease_module.sum(axis=1) <= 1).all()

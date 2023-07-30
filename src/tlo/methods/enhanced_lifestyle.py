@@ -2,14 +2,13 @@
 Lifestyle module
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
-import datetime
 from pathlib import Path
 from typing import Dict, List
 
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -357,9 +356,9 @@ class Lifestyle(Module):
         p['init_p_urban'] = p['init_p_urban'].set_index('district').to_dict()
 
         # Manually set dates for campaign starts for now todo - fix this
-        p['start_date_campaign_exercise_increase'] = datetime.date(2010, 7, 1)
-        p['start_date_campaign_quit_smoking'] = datetime.date(2010, 7, 1)
-        p['start_date_campaign_alcohol_reduction'] = datetime.date(2010, 7, 1)
+        p['start_date_campaign_exercise_increase'] = Date(2010, 7, 1)
+        p['start_date_campaign_quit_smoking'] = Date(2010, 7, 1)
+        p['start_date_campaign_alcohol_reduction'] = Date(2010, 7, 1)
 
     def pre_initialise_population(self):
         """Initialise the linear model class"""
@@ -1765,8 +1764,8 @@ class LifestyleModels:
             newly_not_high_salt_idx = high_salt_idx[random_draw < eff_rate_not_high_salt]
             trans_high_salt.loc[newly_not_high_salt_idx] = False
 
-            # setting `li_exposed_to_campaign_salt_reduction` directly here, perhaps I can do better?
-            all_idx_campaign_salt_reduction = df.index[df.is_alive & (externals['other'] == datetime.date(2010, 7, 1))]
+            # setting `li_exposed_to_campaign_salt_reduction` directly here
+            all_idx_campaign_salt_reduction = df.index[df.is_alive & (externals['other'] == Date(2010, 7, 1))]
             df.loc[all_idx_campaign_salt_reduction, 'li_exposed_to_campaign_salt_reduction'] = True
 
             # return high salt transitions series
@@ -1816,8 +1815,7 @@ class LifestyleModels:
 
             # make exposed to campaing sugar reduction reflect index of individuals who have transition
             # from high sugar to not high sugar. setting `li_exposed_to_campaign_sugar_reduction` directly here,
-            # perhaps we can do better?
-            all_idx_campaign_sugar_reduction = df.index[df.is_alive & (externals['other'] == datetime.date(2010, 7, 1))]
+            all_idx_campaign_sugar_reduction = df.index[df.is_alive & (externals['other'] == Date(2010, 7, 1))]
             df.loc[all_idx_campaign_sugar_reduction, 'li_exposed_to_campaign_sugar_reduction'] = True
 
             # return series containing high sugar transitions
@@ -1884,8 +1882,8 @@ class LifestyleModels:
             trans_bmi.loc[newly_decrease_bmi_cat_idx] -= 1
 
             # make exposed to campaing weigh reduction reflect individuals who have decreased their bmi category.
-            # setting `li_exposed_to_campaign_weight_reduction` directly here, perhaps we can do better?
-            all_idx_campaign_weight_reduction = df.index[df.is_alive & (externals['other'] == datetime.date(2010, 7, 1)
+            # setting `li_exposed_to_campaign_weight_reduction` directly here,
+            all_idx_campaign_weight_reduction = df.index[df.is_alive & (externals['other'] == Date(2010, 7, 1)
                                                                         )]
             df.loc[all_idx_campaign_weight_reduction, 'li_exposed_to_campaign_weight_reduction'] = True
 

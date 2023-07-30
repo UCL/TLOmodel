@@ -130,13 +130,7 @@ class Measles(Module):
                     odds_ratio_health_seeking_in_adults=2.5)  # non-emergencies
         )
 
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(
-                name='encephalitis',
-                emergency_in_adults=True,
-                emergency_in_children=True
-            )
-        )
+        self.sim.modules['SymptomManager'].register_symptom(Symptom.emergency('encephalitis'))
 
     def pre_initialise_population(self):
         self.process_parameters()
@@ -381,9 +375,14 @@ class MeaslesDeathEvent(Event, IndividualScopeEventMixin):
         if df.at[person_id, "me_has_measles"]:
 
             if df.at[person_id, "me_on_treatment"]:
-                reduction_in_death_risk = 0.4
 
-                if self.module.rng.random_sample() < reduction_in_death_risk:
+                reduction_in_death_risk = 0.6
+
+                # Certain death (100%) is reduced by specified amount
+                p_death_with_treatment = 1. - reduction_in_death_risk
+
+                # If below that probability, death goes ahead
+                if self.module.rng.random_sample() < p_death_with_treatment:
                     logger.debug(key="MeaslesDeathEvent",
                                  data=f"MeaslesDeathEvent: scheduling death for treated {person_id} on {self.sim.date}")
 
@@ -416,7 +415,8 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, Measles)
 
         self.TREATMENT_ID = "Measles_Treatment"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
+            ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def apply(self, person_id, squeeze_factor):

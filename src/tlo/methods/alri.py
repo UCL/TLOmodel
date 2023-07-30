@@ -29,7 +29,7 @@ from typing import Dict, List, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -734,6 +734,11 @@ class Alri(Module):
                       'availability; "Yes" forces them to be available; "No" forces them to not be available',
                       categories=['Yes', 'No', 'Default']
                       ),
+
+        'prob_for_followup_if_treatment_failure':
+            Parameter(Types.REAL,
+                      'The probability for scheduling a follow-up appointment following treatment failure'
+                      ),
     }
 
     PROPERTIES = {
@@ -842,8 +847,8 @@ class Alri(Module):
             if symptom_name not in self.sim.modules['SymptomManager'].generic_symptoms:
                 if symptom_name == 'danger_signs':
                     self.sim.modules['SymptomManager'].register_symptom(
-                        Symptom(name=symptom_name,
-                                emergency_in_children=True))
+                        Symptom.emergency(name=symptom_name, which='children')
+                    )
                 elif symptom_name == 'chest_indrawing':
                     self.sim.modules['SymptomManager'].register_symptom(
                         Symptom(name=symptom_name,
@@ -941,7 +946,7 @@ class Alri(Module):
         df.loc[child_id, ['ri_primary_pathogen',
                           'ri_secondary_bacterial_pathogen',
                           'ri_disease_type']] = np.nan
-        df.at[child_id, [f"ri_complication_{complication}" for complication in self.complications]] = False
+        df.loc[child_id, [f"ri_complication_{complication}" for complication in self.complications]] = False
         df.at[child_id, 'ri_SpO2_level'] = ">=93%"
 
         # ---- Internal values ----
@@ -970,9 +975,12 @@ class Alri(Module):
 
         # report the DALYs occurred
         total_daly_values = pd.Series(data=0.0, index=df.index[df.is_alive])
-        total_daly_values.loc[has_danger_signs] = self.daly_wts['daly_severe_ALRI']
         total_daly_values.loc[
-            has_fast_breathing_or_chest_indrawing_but_not_danger_signs] = self.daly_wts['daly_non_severe_ALRI']
+            sorted(has_danger_signs)
+        ] = self.daly_wts['daly_severe_ALRI']
+        total_daly_values.loc[
+            sorted(has_fast_breathing_or_chest_indrawing_but_not_danger_signs)
+        ] = self.daly_wts['daly_non_severe_ALRI']
 
         # Split out by pathogen that causes the Alri
         dummies_for_pathogen = pd.get_dummies(df.loc[total_daly_values.index, 'ri_primary_pathogen'], dtype='float')
@@ -1940,7 +1948,7 @@ class AlriPollingEvent(RegularEvent, PopulationScopeEventMixin):
     def fraction_of_year_between_polling_event(self):
         """Return the fraction of a year that elapses between polling event. This is used to adjust the risk of
         infection"""
-        return (self.sim.date + self.frequency - self.sim.date) / np.timedelta64(1, 'Y')
+        return (self.sim.date + self.frequency - self.sim.date) / pd.Timedelta(days=DAYS_IN_YEAR)
 
     def get_probs_of_acquiring_pathogen(self, interval_as_fraction_of_a_year: float):
         """Return the probability of each person in the dataframe acquiring each pathogen, during the time interval
@@ -2618,6 +2626,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         entails referrals upwards and/or admission at in-patient, and when at the appropriate level, trying to provide
         the ideal treatment."""
 
+        p = self.module.parameters
+
         def _provide_consumable_and_refer(cons: str) -> None:
             """Provide a consumable (ignoring availability) and refer patient to next level up."""
             if cons is not None:
@@ -2656,7 +2666,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     oxygen_provided=oxygen_provided
                 )
                 if treatment_outcome == 'failure':
-                    self._schedule_follow_up_following_treatment_failure()
+                    if self.module.rng.rand() < p['prob_for_followup_if_treatment_failure']:
+                        self._schedule_follow_up_following_treatment_failure()
 
         def _do_if_fast_breathing_pneumonia():
             """What to do if classification is `fast_breathing`."""
