@@ -912,8 +912,6 @@ def test_summary_logger_for_never_ran_hsi_event(seed, tmpdir):
                 priority=0
             )
 
-            # In 2011: to-do.....
-
     # Create two different dummy HSI events:
     class HSI_Dummy1(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):
@@ -1388,7 +1386,8 @@ def test_manipulation_of_service_availability(seed, tmpdir):
 
 def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
     """An HSI_Event which is scheduled for the current day should run on the current day. This should be the case
-    whether the HSI_Event is scheduled from initialise_simulation, a normal event, or an HSI_Event. Test this in """
+    whether the HSI_Event is scheduled from initialise_simulation, a normal event, or an HSI_Event. Test this in 
+    mode 1 and 2."""
 
     class DummyHSI_To_Run_On_Same_Day(HSI_Event, IndividualScopeEventMixin):
         """HSI event that will demonstrate it has been run."""
@@ -1457,7 +1456,7 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
             # Schedule an event that will schedule an HSI to run on the same day
             sim.schedule_event(Event_To_Run_On_First_Day_Of_Simulation(self, person_id=0), sim.date)
 
-    for mode in range(1, 3):
+    for mode in (0, 1, 2):
 
         log_config = {
             "filename": "log",
@@ -1466,28 +1465,17 @@ def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
         }
         sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
 
-        if mode == 1:
-            sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                         healthsystem.HealthSystem(
-                             resourcefilepath=resourcefilepath,
-                             disable=False,
-                             cons_availability='all',
-                         ),
-                         DummyModule(),
-                         check_all_dependencies=False,
-                         )
-        elif mode == 2:
-            sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                         healthsystem.HealthSystem(
-                             resourcefilepath=resourcefilepath,
-                             mode_appt_constraints=2,
-                             capabilities_coefficient=10000.0,
-                             disable=False,
-                             cons_availability='all',
-                         ),
-                         DummyModule(),
-                         check_all_dependencies=False,
-                         )
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(
+                         resourcefilepath=resourcefilepath,
+                         mode_appt_constraints=mode,
+                         capabilities_coefficient=10000.0,
+                         disable=False,
+                         cons_availability='all',
+                     ),
+                     DummyModule(),
+                     check_all_dependencies=False,
+                     )
 
         sim.make_initial_population(n=100)
         sim.simulate(end_date=sim.start_date + pd.DateOffset(days=5))
@@ -1632,7 +1620,9 @@ def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
                      disable=False,
                      randomise_queue=True,
                      ignore_priority=False,
-                     policy_name="Test",
+                     priority_policy="Test",  # Test policy enforcing lowest_priority_policy
+                                          # assumed in this test. This allows us to check policies
+                                          # are loaded correctly. 
                      cons_availability='all',
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
@@ -1761,7 +1751,7 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
                                            mode_appt_constraints=2,
                                            ignore_priority=False,
                                            randomise_queue=True,
-                                           policy_name="",
+                                           priority_policy="",
                                            use_funded_or_actual_staffing='funded_plus'),
                  DummyModule()
                  )

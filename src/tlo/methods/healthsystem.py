@@ -574,7 +574,7 @@ class HealthSystem(Module):
         beds_availability: Optional[str] = None,
         randomise_queue: bool = True,
         ignore_priority: bool = False,
-        policy_name: Optional[str] = None,
+        priority_policy: Optional[str] = None,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = None,
         disable: bool = False,
@@ -600,7 +600,7 @@ class HealthSystem(Module):
             and priority
         :param ignore_priority: If ``True`` do not use the priority information in HSI
             event to schedule
-        :param priority_name: name of priority policy that will be adopted
+        :param priority_policy: name of priority policy that will be adopted
         :param capabilities_coefficient: Multiplier for the capabilities of health
             officers, if ``None`` set to ratio of initial population to estimated 2010
             population.
@@ -630,7 +630,7 @@ class HealthSystem(Module):
         assert not (disable and disable_and_reject_all), (
             'Cannot have both disable and disable_and_reject_all selected'
         )
-        assert not (ignore_priority and policy_name is not None), (
+        assert not (ignore_priority and priority_policy is not None), (
             'Cannot adopt a priority policy if the priority will be then ignored'
         )
 
@@ -653,12 +653,12 @@ class HealthSystem(Module):
         self.lowest_priority_considered = 3
 
         # Check that the name of policy being evaluated is included
-        self.policy_name = None
-        if policy_name is not None:
-            assert policy_name in ['', 'Default', 'Test', 'Random', 'Naive', 'RMNCH',
+        self.priority_policy = None
+        if priority_policy is not None:
+            assert priority_policy in ['', 'Default', 'Test', 'Random', 'Naive', 'RMNCH',
                                    'VerticalProgrammes', 'ClinicallyVulnerable', 'EHP_III',
                                    'LCOA_EHP']
-        self.arg_policy_name = policy_name
+        self.arg_priority_policy = priority_policy
 
         self.tclose_overwrite = None
         self.tclose_days_offset_overwrite = None
@@ -791,15 +791,16 @@ class HealthSystem(Module):
         # priority policies. Load all policies at this stage, and decide later which one to adopt.
         self.parameters['PriorityRank'] = pd.read_excel(path_to_resourcefiles_for_healthsystem / 'priority_policies' /
                                                         'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx',
-                                                        sheet_name=['Default',
-                                                                    'Test',
-                                                                    'Random',
-                                                                    'Naive',
-                                                                    'ClinicallyVulnerable',
-                                                                    'VerticalProgrammes',
-                                                                    'RMNCH',
-                                                                    'EHP_III',
-                                                                    'LCOA_EHP'])
+                                                        sheet_name=None)
+                                                        #sheet_name=['Default',
+                                                        #            'Test',
+                                                        #            'Random',
+                                                        #            'Naive',
+                                                        #            'ClinicallyVulnerable',
+                                                        #            'VerticalProgrammes',
+                                                        #            'RMNCH',
+                                                        #            'EHP_III',
+                                                        #            'LCOA_EHP'])
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
@@ -835,13 +836,13 @@ class HealthSystem(Module):
         self.tclose_days_offset_overwrite = self.parameters['tclose_days_offset_overwrite']
 
         # Determine name of policy to be considered **at the start of the simulation**.
-        self.policy_name = self.get_policy_name_preSwitch()
+        self.priority_policy = self.get_priority_policy_preSwitch()
 
         # If adopting policies, initialise here all other relevant variables.
         # Use of black instead of None is not ideal, however couldn't seem to recover actual
         # None from parameter file.
-        if self.policy_name != "":
-            self.load_priority_policy(self.policy_name)
+        if self.priority_policy != "":
+            self.load_priority_policy(self.priority_policy)
 
         # Initialise the fast-tracking routes.
         # The attributes that can be looked up to determine whether a person might be eligible
@@ -859,7 +860,7 @@ class HealthSystem(Module):
         print("Health System considered:")
         print(f"{self.ignore_priority=}")
         print(f"{self.mode_appt_constraints=}")
-        print(f"{self.policy_name=}")
+        print(f"{self.priority_policy=}")
         print(f"{self.lowest_priority_considered=}")
         print(f"{self.tclose_overwrite=}")
         print(f"{self.tclose_days_offset_overwrite=}")
@@ -1238,13 +1239,13 @@ class HealthSystem(Module):
             if self.arg_use_funded_or_actual_staffing is None \
             else self.arg_use_funded_or_actual_staffing
 
-    def get_policy_name_preSwitch(self) -> str:
-        """Returns `policy_name`. (Should be equal to what is specified by the parameter, but
+    def get_priority_policy_preSwitch(self) -> str:
+        """Returns `priority_policy`. (Should be equal to what is specified by the parameter, but
         overwrite with what was provided in argument if an argument was specified -- provided for backward
         compatibility/debugging.)"""
         return self.parameters['Policy_Name_preSwitch'] \
-            if self.arg_policy_name is None \
-            else self.arg_policy_name
+            if self.arg_priority_policy is None \
+            else self.arg_priority_policy
 
     def load_priority_policy(self, policy):
 
@@ -1254,7 +1255,7 @@ class HealthSystem(Module):
         # Check that no duplicates are included in priority input file
         assert not Policy_df['Treatment'].duplicated().any()
 
-        # If a policy is adopted, following variables *must* always be taken from policy.
+        # If a policy is adopted, following variable *must* always be taken from policy.
         # Over-write any other values here.
         self.lowest_priority_considered = Policy_df.loc[Policy_df['Treatment'] == 'lowest_priority_considered',
                                                         'Priority'].iloc[0]
@@ -1302,7 +1303,7 @@ class HealthSystem(Module):
             priority = 0
 
         # Use of "" not ideal, see note in initialise_population
-        if self.policy_name != "":
+        if self.priority_policy != "":
             # Look-up priority ranking of this treatment_ID in the policy adopted
             priority = self.enforce_priority_policy(hsi_event=hsi_event)
 
@@ -1375,7 +1376,7 @@ class HealthSystem(Module):
             _priority_ranking = pr[hsi_event.TREATMENT_ID]['Priority']
 
             # Check whether fast-tracking routes are available for this treatment. If person qualifies for one
-            # don't check remaining, as they all lead to priority=1.
+            # don't check remaining.
 
             # Look up relevant attributes for HSI_Event's target
             list_targets = [_t[0] for _t in self.list_fasttrack]
@@ -1677,7 +1678,7 @@ class HealthSystem(Module):
             else:
                 availability = get_total_minutes_of_this_officer_in_all_district(officer)
 
-            # If officer is not contemplated by health system, log warning and proceed as if availability = 0
+            # If officer does not exist in the relevant facility, log warning and proceed as if availability = 0
             if availability is None:
                 logger.warning(
                     key="message",
@@ -1789,7 +1790,7 @@ class HealthSystem(Module):
         """
         # Invoke never ran function here
         hsi_event.never_ran()
-
+        
         try:
             # Fully-defined HSI Event
             self.write_to_never_ran_hsi_log(
@@ -1799,13 +1800,13 @@ class HealthSystem(Module):
                  priority=priority,
                  )
         except Exception:
-            # Fully-defined HSI Event
             self.write_to_never_ran_hsi_log(
                  event_details=hsi_event.as_namedtuple(),
-                 person_id=-1,
-                 facility_id=-1,
+                 person_id=-1,#hsi_event.target,
+                 facility_id=-1, #hsi_event.facility_info.id,
                  priority=priority,
                  )
+
 
     def write_to_never_ran_hsi_log(
         self,
@@ -1995,7 +1996,7 @@ class HealthSystem(Module):
                                                    List[HSIEventQueueItem]) -> List:
         """Run a list of individual level events. Returns: list of events that did not run (maybe an empty a list)."""
         _to_be_held_over = list()
-        assert self.mode_appt_constraints == 0 or self.mode_appt_constraints == 1
+        assert self.mode_appt_constraints in (0, 1)
 
         if _list_of_individual_hsi_event_tuples:
             # Examine total call on health officers time from the HSI events in the list:
@@ -2008,15 +2009,12 @@ class HealthSystem(Module):
             ]
 
             # Compute total appointment footprint across all events
-            # Note-to-self: This is *updating*, not just computing, so appointments today
-            #  that had ran in previous iterations are also included
             for footprint in footprints_of_all_individual_level_hsi_event:
                 # Counter.update method when called with dict-like argument adds counts
                 # from argument to Counter object called from
                 self.running_total_footprint.update(footprint)
 
             # Estimate Squeeze-Factors for today
-            # Note-to-self: today = this iteration of today's events
             if self.mode_appt_constraints == 0:
                 # For Mode 0 (no Constraints), the squeeze factors are all zero.
                 squeeze_factor_per_hsi_event = np.zeros(
@@ -2308,13 +2306,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
     def process_events_mode_2(self, hold_over: List[HSIEventQueueItem]) -> None:
 
-        # Note-to-self: for speed up, could initialise this once with capabilities_today, and here use local copy
-        capabilities_monitor = Counter()
-        set_capabilities_still_available = set()
-        for i, v in self.module.capabilities_today.items():
-            capabilities_monitor[i] += v
-            if v > 0.0:
-                set_capabilities_still_available.add(i)
+        capabilities_monitor = Counter(self.module.capabilities_today.to_dict())
+        set_capabilities_still_available = {k for k, v in capabilities_monitor.items() if v > 0.0}
 
         # Here use different approach for appt_mode_constraints = 2: rather than collecting events
         # due today all at once, run event immediately at time of querying. This ensure that no
@@ -2396,7 +2389,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             # If any of the officers are not available, then out of resources
                             if officer not in set_capabilities_still_available:
                                 out_of_resources = True
-
                         # If officers still available, run event. Note: in current logic, a little
                         # overtime is allowed to run last event of the day. This seems more realistic
                         # than medical staff leaving earlier than
@@ -2613,8 +2605,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
         # Create hold-over list. This will hold events that cannot occur today before they are added back to the queue.
         hold_over = list()
-        # If not in mode 2, run as usual
-        if self.module.mode_appt_constraints != 2:
+
+        if self.module.mode_appt_constraints in (0, 1):
             # Run all events due today, repeating the check for due events until none are due
             # (this allows for HSI that are added to the queue in the course of other HSI
             # for this today to be run this day).
@@ -2632,8 +2624,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         self.module.log_current_capabilities_and_usage()
 
         # Trigger jobs to be done at the end of the day (after all HSI run)
-        # Note: Could print capabilities_monitor to get overview of what was used that day. Could
-        # maybe compute a running monthly average, and print once a month?
         self.module.on_end_of_day()
 
         # Do activities that are required at end of month (if last day of the month)
@@ -2802,10 +2792,10 @@ class HealthSystemChangePriorityPolicy(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=100))
 
     def apply(self, population):
-        self.module.policy_name = self.module.parameters["Policy_Name_postSwitch"]
+        self.module.priority_policy = self.module.parameters["Policy_Name_postSwitch"]
         self.module.mode_appt_constraints = self.module.parameters["mode_appt_constraints_postSwitch"]
-        if self.module.policy_name != "":
-            self.module.load_priority_policy(self.module.policy_name)
+        if self.module.priority_policy != "":
+            self.module.load_priority_policy(self.module.priority_policy)
         print("Switched policy at sim date ", self.module.sim.date)
         print(f"{self.module.mode_appt_constraints=}")
-        print(f"{self.module.policy_name=}")
+        print(f"{self.module.priority_policy=}")
