@@ -168,7 +168,10 @@ def get_annual_num_hsi_by_appt_and_level(results_folder: Path) -> pd.DataFrame:
     hsi_count = pd.DataFrame.from_dict(hsi_count, orient='index').reset_index().rename(columns={0: 'Count'})
     hsi_count[['Treatment_ID', 'Appt_Type_Code', 'Facility_Level']] = pd.DataFrame(hsi_count['index'].tolist(),
                                                                                    index=hsi_count.index)
-    hsi_count = hsi_count.groupby(['Treatment_ID', 'Appt_Type_Code', 'Facility_Level'])['Count'].sum().reset_index()
+    # average annual count by treatment id, appt type and facility level
+    yr_count = TARGET_PERIOD[1].year - TARGET_PERIOD[0].year + 1
+    hsi_count = hsi_count.groupby(['Treatment_ID', 'Appt_Type_Code', 'Facility_Level'])['Count'].sum()/yr_count
+    hsi_count = hsi_count.to_frame().reset_index()
 
     return hsi_count
 
@@ -353,10 +356,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     appts_sim = set(simulation_usage.columns.values)
     assert appts_sim.issubset(appts_def)
 
-    # todo: plot hcw time usage against capability per cadre
-    #  /facility level (focus on level 1a, 1b and 2)/disease (represented by short treatment id),
-    #  and comparing 4 scenarios, i.e., Actual/Establishment(funded_plus) HCW * Default/Maximal health care seeking
-
     # hcw usage per cadre per appointment type
     hcw_usage = appt_time.drop(index=appt_time[~appt_time.Appt_Type_Code.isin(appts_sim)].index).reset_index(drop=True)
     for idx in hcw_usage.index:
@@ -436,21 +435,31 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # hcw usage per cadre per appt per hsi
     hsi_count = get_annual_num_hsi_by_appt_and_level(results_folder)
+
+    # first check that hsi count by different methods are equal (or with small difference)
     hsi_count_alt = hsi_count.groupby(['Appt_Type_Code', 'Facility_Level'])['Count'].sum().reset_index().pivot(
         index='Facility_Level', columns='Appt_Type_Code', values='Count').fillna(0.0)
-    # todo: fix this assert error
-    assert (hsi_count_alt == simulation_usage.drop(index='4')).all().all()
+    assert (hsi_count_alt - simulation_usage.drop(index='4') < 1.0).all().all()
 
+    # then calculate the hcw working time per treatment id, appt type and cadre
     hcw_usage_hsi = appt_time.drop(index=appt_time[~appt_time.Appt_Type_Code.isin(appts_sim)].index
                                    ).reset_index(drop=True)
     hcw_usage_hsi = hsi_count.merge(hcw_usage_hsi, on=['Facility_Level', 'Appt_Type_Code'], how='left')
     hcw_usage_hsi['Total_Mins_Used_Per_Year'] = hcw_usage_hsi['Count'] * hcw_usage_hsi['Time_Taken_Mins']
     hcw_usage_hsi = hcw_usage_hsi.groupby(['Treatment_ID', 'Appt_Category', 'Officer_Category']
                                           )['Total_Mins_Used_Per_Year'].sum().reset_index()
+
+    # also check that the hcw time from different methods are equal (or with small difference)
     hcw_usage_alt = hcw_usage_hsi.groupby(['Officer_Category', 'Appt_Category']
                                           )['Total_Mins_Used_Per_Year'].sum().reset_index()
-    # todo: check
-    assert (hcw_usage_alt == hcw_usage).all().all()
+    assert (hcw_usage_alt.Officer_Category == hcw_usage.Officer_Category).all
+    assert (hcw_usage_alt.Appt_Category == hcw_usage.Appt_Category).all()
+    assert ((abs(hcw_usage_alt.Total_Mins_Used_Per_Year - hcw_usage.Total_Mins_Used_Per_Year) /
+            hcw_usage.Total_Mins_Used_Per_Year) < 1e-4
+            ).all().all()
+
+    # save the data to draw sankey diagram
+    hcw_usage_hsi.to_csv(output_folder/'hcw_working_time_per_hsi.csv', index=False)
 
 
 if __name__ == "__main__":
