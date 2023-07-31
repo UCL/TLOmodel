@@ -14,7 +14,10 @@ from pandas.testing import assert_series_equal
 
 import tlo
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
+from tlo.analysis.utils import (
+    flatten_multi_index_series_into_dict_for_logging,
+    # get_filtered_treatment_ids,
+)
 from tlo.events import Event, PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.bed_days import BedDays
@@ -602,7 +605,7 @@ class HealthSystem(Module):
             and priority
         :param ignore_priority: If ``True`` do not use the priority information in HSI
             event to schedule
-        :param priority_policy: name of priority policy that will be adopted
+        :param priority_policy: Name of priority policy that will be adopted if any
         :param capabilities_coefficient: Multiplier for the capabilities of health
             officers, if ``None`` set to ratio of initial population to estimated 2010
             population.
@@ -652,14 +655,14 @@ class HealthSystem(Module):
         self.ignore_priority = ignore_priority
 
         # This default value will be overwritten if assumed policy is not None
-        self.lowest_priority_considered = 3
+        self.lowest_priority_considered = 2
 
         # Check that the name of policy being evaluated is included
         self.priority_policy = None
         if priority_policy is not None:
             assert priority_policy in ['', 'Default', 'Test', 'Random', 'Naive', 'RMNCH',
-                                   'VerticalProgrammes', 'ClinicallyVulnerable', 'EHP_III',
-                                   'LCOA_EHP']
+                                       'VerticalProgrammes', 'ClinicallyVulnerable', 'EHP_III',
+                                       'LCOA_EHP']
         self.arg_priority_policy = priority_policy
 
         self.tclose_overwrite = None
@@ -794,15 +797,6 @@ class HealthSystem(Module):
         self.parameters['PriorityRank'] = pd.read_excel(path_to_resourcefiles_for_healthsystem / 'priority_policies' /
                                                         'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx',
                                                         sheet_name=None)
-                                                        #sheet_name=['Default',
-                                                        #            'Test',
-                                                        #            'Random',
-                                                        #            'Naive',
-                                                        #            'ClinicallyVulnerable',
-                                                        #            'VerticalProgrammes',
-                                                        #            'RMNCH',
-                                                        #            'EHP_III',
-                                                        #            'LCOA_EHP'])
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
@@ -837,27 +831,8 @@ class HealthSystem(Module):
         self.tclose_overwrite = self.parameters['tclose_overwrite']
         self.tclose_days_offset_overwrite = self.parameters['tclose_days_offset_overwrite']
 
-        # Determine name of policy to be considered **at the start of the simulation**.
-        self.priority_policy = self.get_priority_policy_preSwitch()
-
-        # If adopting policies, initialise here all other relevant variables.
-        # Use of black instead of None is not ideal, however couldn't seem to recover actual
-        # None from parameter file.
-        if self.priority_policy != "":
-            self.load_priority_policy(self.priority_policy)
-
-        # Initialise the fast-tracking routes.
-        # The attributes that can be looked up to determine whether a person might be eligible
-        # for fast-tracking, as well as the corresponding fast-tracking channels, depend on the modules
-        # included in the simulation. Store the attributes&channels pairs allowed given the modules included
-        # to avoid having to recheck which modules are saved every time an HSI_Event is scheduled.
-        self.list_fasttrack.append(('age_exact_years', 'FT_if_5orUnder'))
-        if 'Contraception' in self.sim.modules or 'SimplifiedBirths' in self.sim.modules:
-            self.list_fasttrack.append(('is_pregnant', 'FT_if_pregnant'))
-        if 'Hiv' in self.sim.modules:
-            self.list_fasttrack.append(('hv_diagnosed', 'FT_if_Hivdiagnosed'))
-        if 'Tb' in self.sim.modules:
-            self.list_fasttrack.append(('tb_diagnosed', 'FT_if_tbdiagnosed'))
+        # Set up framework for considering a priority policy
+        self.setup_priority_policy()
 
         print("Health System considered:")
         print(f"{self.ignore_priority=}")
@@ -939,6 +914,30 @@ class HealthSystem(Module):
                     }
                 }
             )
+
+    def setup_priority_policy(self):
+
+        # Determine name of policy to be considered **at the start of the simulation**.
+        self.priority_policy = self.get_priority_policy_preSwitch()
+
+        # If adopting a policy, initialise here all other relevant variables.
+        # Use of blank instead of None is not ideal, however couldn't seem to recover actual
+        # None from parameter file.
+        if self.priority_policy != "":
+            self.load_priority_policy(self.priority_policy)
+
+        # Initialise the fast-tracking routes.
+        # The attributes that can be looked up to determine whether a person might be eligible
+        # for fast-tracking, as well as the corresponding fast-tracking channels, depend on the modules
+        # included in the simulation. Store the attributes&channels pairs allowed given the modules included
+        # to avoid having to recheck which modules are saved every time an HSI_Event is scheduled.
+        self.list_fasttrack.append(('age_exact_years', 'FT_if_5orUnder'))
+        if 'Contraception' in self.sim.modules or 'SimplifiedBirths' in self.sim.modules:
+            self.list_fasttrack.append(('is_pregnant', 'FT_if_pregnant'))
+        if 'Hiv' in self.sim.modules:
+            self.list_fasttrack.append(('hv_diagnosed', 'FT_if_Hivdiagnosed'))
+        if 'Tb' in self.sim.modules:
+            self.list_fasttrack.append(('tb_diagnosed', 'FT_if_tbdiagnosed'))
 
     def process_human_resources_files(self, use_funded_or_actual_staffing: str):
         """Create the data-structures needed from the information read into the parameters."""
@@ -1256,6 +1255,8 @@ class HealthSystem(Module):
 
         # Check that no duplicates are included in priority input file
         assert not Policy_df['Treatment'].duplicated().any()
+
+        # assert Policy_df['Treatment'] == get_filtered_treatment_ids()
 
         # If a policy is adopted, following variable *must* always be taken from policy.
         # Over-write any other values here.
@@ -1792,7 +1793,7 @@ class HealthSystem(Module):
         """
         # Invoke never ran function here
         hsi_event.never_ran()
-        
+
         try:
             # Fully-defined HSI Event
             self.write_to_never_ran_hsi_log(
@@ -1804,11 +1805,10 @@ class HealthSystem(Module):
         except Exception:
             self.write_to_never_ran_hsi_log(
                  event_details=hsi_event.as_namedtuple(),
-                 person_id=-1,#hsi_event.target,
-                 facility_id=-1, #hsi_event.facility_info.id,
+                 person_id=-1,
+                 facility_id=-1,
                  priority=priority,
                  )
-
 
     def write_to_never_ran_hsi_log(
         self,

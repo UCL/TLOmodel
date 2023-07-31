@@ -378,7 +378,7 @@ def test_run_in_mode_1_with_almost_no_capacity(tmpdir, seed):
     # Do the checks
     assert len(output['tlo.methods.healthsystem']['HSI_Event']) > 0
     hsi_events = output['tlo.methods.healthsystem']['HSI_Event']
-    #assert hsi_events['did_run'].all()
+    # assert hsi_events['did_run'].all()
     assert (
         hsi_events.loc[(hsi_events['Person_ID'] >= 0) & (hsi_events['Number_By_Appt_Type_Code'] != {}),
                        'Squeeze_Factor'] >= 100.0
@@ -1386,7 +1386,7 @@ def test_manipulation_of_service_availability(seed, tmpdir):
 
 def test_hsi_run_on_same_day_if_scheduled_for_same_day(seed, tmpdir):
     """An HSI_Event which is scheduled for the current day should run on the current day. This should be the case
-    whether the HSI_Event is scheduled from initialise_simulation, a normal event, or an HSI_Event. Test this in 
+    whether the HSI_Event is scheduled from initialise_simulation, a normal event, or an HSI_Event. Test this in
     mode 1 and 2."""
 
     class DummyHSI_To_Run_On_Same_Day(HSI_Event, IndividualScopeEventMixin):
@@ -1621,8 +1621,8 @@ def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
                      randomise_queue=True,
                      ignore_priority=False,
                      priority_policy="Test",  # Test policy enforcing lowest_priority_policy
-                                          # assumed in this test. This allows us to check policies
-                                          # are loaded correctly. 
+                                              # assumed in this test. This allows us to check policies
+                                              # are loaded correctly.
                      cons_availability='all',
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
