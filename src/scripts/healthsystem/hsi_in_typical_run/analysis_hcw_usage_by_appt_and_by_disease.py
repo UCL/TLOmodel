@@ -207,6 +207,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         # reduce the mean ratio by 1.0, for the bar plot that starts from y=1.0 instead of y=0.0
         hcw_usage_ratio['mean'] = hcw_usage_ratio['mean'] - 1.0
 
+        # rename cadre Nursing_and_Midwifery
+        hcw_usage_ratio.rename(index={'Nursing_and_Midwifery': 'Nursing and Midwifery'}, inplace=True)
+
         return hcw_usage_ratio, asymmetric_error
 
     hcw_usage_ratio_actual, error_actual = format_hcw_usage(hcwscenario='actual')
