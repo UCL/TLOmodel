@@ -260,6 +260,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     hcw_usage_hsi = hcw_usage_hsi.groupby(['Treatment_ID', 'Appt_Category', 'Officer_Category']
                                           )['Total_Mins_Used_Per_Year'].sum().reset_index()
 
+    # rename Nursing_and_Midwifery
+    hcw_usage_hsi.Officer_Category = hcw_usage_hsi.Officer_Category.replace(
+        {'Nursing_and_Midwifery': 'Nursing and Midwifery'})
+
     # save the data to draw sankey diagram
     hcw_usage_hsi.to_csv(output_folder/'hcw_working_time_per_hsi.csv', index=False)
 
