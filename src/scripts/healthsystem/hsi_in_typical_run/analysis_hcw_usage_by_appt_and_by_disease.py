@@ -73,6 +73,52 @@ def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
         ).unstack().astype(int)
 
 
+def get_annual_num_hsi_by_appt_and_level(results_folder: Path) -> pd.DataFrame:
+    """Return pd.DataFrame gives the (mean) simulated annual count of hsi
+    per treatment id per each appt type per level."""
+    hsi_count = compute_mean_across_runs(
+        bin_hsi_event_details(
+            results_folder,
+            lambda event_details, count: sum(
+                [
+                    Counter({
+                        (
+                            event_details['treatment_id'],
+                            appt_type,
+                            event_details['facility_level'],
+                        ):
+                            count * appt_number
+                    })
+                    for appt_type, appt_number in event_details["appt_footprint"]
+                ],
+                Counter()
+            ),
+            *TARGET_PERIOD,
+            True
+        )
+    )[0]
+
+    hsi_count = pd.DataFrame.from_dict(hsi_count, orient='index').reset_index().rename(columns={0: 'Count'})
+    hsi_count[['Treatment_ID', 'Appt_Type_Code', 'Facility_Level']] = pd.DataFrame(hsi_count['index'].tolist(),
+                                                                                   index=hsi_count.index)
+    # average annual count by treatment id, appt type and facility level
+    yr_count = TARGET_PERIOD[1].year - TARGET_PERIOD[0].year + 1
+    hsi_count = hsi_count.groupby(['Treatment_ID', 'Appt_Type_Code', 'Facility_Level'])['Count'].sum()/yr_count
+    hsi_count = hsi_count.to_frame().reset_index()
+
+    return hsi_count
+
+
+def get_simulation_usage_by_level(results_folder: Path) -> pd.DataFrame:
+    """Returns the simulated MEAN USAGE PER YEAR DURING THE TIME_PERIOD, by appointment type and level.
+    """
+
+    # Get model outputs
+    model_output = get_annual_num_appts_by_level(results_folder=results_folder)
+
+    return model_output
+
+
 def get_annual_hcw_time_used_with_confidence_interval(results_folder: Path, resourcefilepath: Path) -> pd.DataFrame:
     """Return pd.DataFrame gives the (mean) simulated annual hcw time used per cadre across all levels,
     with 95% confidence interval."""
@@ -137,53 +183,6 @@ def get_annual_hcw_time_used_with_confidence_interval(results_folder: Path, reso
         .pivot(index='Officer_Category', columns='Value_Type', values='Value')
 
     return hcw_usage
-
-
-# todo: fix the issue that this func may over count the hsi
-def get_annual_num_hsi_by_appt_and_level(results_folder: Path) -> pd.DataFrame:
-    """Return pd.DataFrame gives the (mean) simulated annual count of hsi
-    per treatment id per each appt type per level."""
-    hsi_count = compute_mean_across_runs(
-        bin_hsi_event_details(
-            results_folder,
-            lambda event_details, count: sum(
-                [
-                    Counter({
-                        (
-                            event_details['treatment_id'],
-                            appt_type,
-                            event_details['facility_level'],
-                        ):
-                            count * appt_number
-                    })
-                    for appt_type, appt_number in event_details["appt_footprint"]
-                ],
-                Counter()
-            ),
-            *TARGET_PERIOD,
-            True
-        )
-    )[0]
-
-    hsi_count = pd.DataFrame.from_dict(hsi_count, orient='index').reset_index().rename(columns={0: 'Count'})
-    hsi_count[['Treatment_ID', 'Appt_Type_Code', 'Facility_Level']] = pd.DataFrame(hsi_count['index'].tolist(),
-                                                                                   index=hsi_count.index)
-    # average annual count by treatment id, appt type and facility level
-    yr_count = TARGET_PERIOD[1].year - TARGET_PERIOD[0].year + 1
-    hsi_count = hsi_count.groupby(['Treatment_ID', 'Appt_Type_Code', 'Facility_Level'])['Count'].sum()/yr_count
-    hsi_count = hsi_count.to_frame().reset_index()
-
-    return hsi_count
-
-
-def get_simulation_usage_by_level(results_folder: Path) -> pd.DataFrame:
-    """Returns the simulated MEAN USAGE PER YEAR DURING THE TIME_PERIOD, by appointment type and level.
-    """
-
-    # Get model outputs
-    model_output = get_annual_num_appts_by_level(results_folder=results_folder)
-
-    return model_output
 
 
 def adjust_real_usage_on_mentalall(real_usage_df) -> pd.DataFrame:
@@ -343,39 +342,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
 
-    # get average annual usage by level for Simulation and Real
-    simulation_usage = get_simulation_usage_by_level(results_folder)
-
-    real_usage = get_real_usage(resourcefilepath)[0]
-
-    # get expected appt time
-    appt_time = get_expected_appt_time(resourcefilepath)
-
-    # check that appts in simulation_usage are in appt_time
-    appts_def = set(appt_time.Appt_Type_Code)
-    appts_sim = set(simulation_usage.columns.values)
-    assert appts_sim.issubset(appts_def)
-
-    # hcw usage per cadre per appointment type
-    hcw_usage = appt_time.drop(index=appt_time[~appt_time.Appt_Type_Code.isin(appts_sim)].index).reset_index(drop=True)
-    for idx in hcw_usage.index:
-        hcw_usage.loc[idx, 'Total_Mins_Used_Per_Year'] = (hcw_usage.loc[idx, 'Time_Taken_Mins'] *
-                                                          simulation_usage.loc[hcw_usage.loc[idx, 'Facility_Level'],
-                                                                               hcw_usage.loc[idx, 'Appt_Type_Code']])
-    hcw_usage = hcw_usage.groupby(['Officer_Category', 'Appt_Category']
-                                  )['Total_Mins_Used_Per_Year'].sum().reset_index()
-
-    # check that hcw time simulated derived from different methods are equal (or with negligible difference)
-    hcw_time_used_1 = hcw_usage.groupby(['Officer_Category'])['Total_Mins_Used_Per_Year'].sum().to_frame()
-    hcw_time_used_0 = get_annual_hcw_time_used_with_confidence_interval(results_folder, resourcefilepath)
-    assert (hcw_time_used_1.index == hcw_time_used_0.index).all()
-    assert (abs(
-        (hcw_time_used_1['Total_Mins_Used_Per_Year'] - hcw_time_used_0['mean']) / hcw_time_used_0['mean']) < 1e-4
-            ).all()
-
-    # todo: get actual hcw time used derived from DHIS2 data and plot
-
-    # format data and plot bar chart
+    # format data and plot bar chart for hcw working time per cadre
     def format_hcw_usage(hcwscenario='actual'):
         """format data for bar plot"""
         # get hcw capability in actual or establishment (funded_plus) scenarios
@@ -384,7 +351,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .rename(columns={'Total_Mins_Per_Year': 'capability'})
 
         # calculate hcw time usage ratio against capability with CI
-        hcw_usage_ratio = hcw_time_used_0.join(hcw_capability)
+        hcw_usage = get_annual_hcw_time_used_with_confidence_interval(results_folder, resourcefilepath)
+        hcw_usage_ratio = hcw_usage.join(hcw_capability)
         hcw_usage_ratio.loc['All'] = hcw_usage_ratio.sum()
         hcw_usage_ratio['mean'] = hcw_usage_ratio['mean'] / hcw_usage_ratio['capability']
         hcw_usage_ratio['lower'] = hcw_usage_ratio['lower'] / hcw_usage_ratio['capability']
@@ -433,6 +401,38 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
     plt.show()
 
+    # todo: get actual hcw time used derived from DHIS2 data and plot
+
+    # get average annual usage by level for Simulation and Real
+    simulation_usage = get_simulation_usage_by_level(results_folder)
+
+    real_usage = get_real_usage(resourcefilepath)[0]
+
+    # get expected appt time
+    appt_time = get_expected_appt_time(resourcefilepath)
+
+    # check that appts in simulation_usage are in appt_time
+    appts_def = set(appt_time.Appt_Type_Code)
+    appts_sim = set(simulation_usage.columns.values)
+    assert appts_sim.issubset(appts_def)
+
+    # hcw usage per cadre per appointment type
+    hcw_usage = appt_time.drop(index=appt_time[~appt_time.Appt_Type_Code.isin(appts_sim)].index).reset_index(drop=True)
+    for idx in hcw_usage.index:
+        hcw_usage.loc[idx, 'Total_Mins_Used_Per_Year'] = (hcw_usage.loc[idx, 'Time_Taken_Mins'] *
+                                                          simulation_usage.loc[hcw_usage.loc[idx, 'Facility_Level'],
+                                                                               hcw_usage.loc[idx, 'Appt_Type_Code']])
+    hcw_usage = hcw_usage.groupby(['Officer_Category', 'Appt_Category']
+                                  )['Total_Mins_Used_Per_Year'].sum().reset_index()
+
+    # check that hcw time simulated derived from different methods are equal (or with negligible difference)
+    hcw_time_used_1 = hcw_usage.groupby(['Officer_Category'])['Total_Mins_Used_Per_Year'].sum().to_frame()
+    hcw_time_used_0 = get_annual_hcw_time_used_with_confidence_interval(results_folder, resourcefilepath)
+    assert (hcw_time_used_1.index == hcw_time_used_0.index).all()
+    assert (abs(
+        (hcw_time_used_1['Total_Mins_Used_Per_Year'] - hcw_time_used_0['mean']) / hcw_time_used_0['mean']) < 1e-4
+            ).all()
+
     # hcw usage per cadre per appt per hsi
     hsi_count = get_annual_num_hsi_by_appt_and_level(results_folder)
 
@@ -468,7 +468,7 @@ if __name__ == "__main__":
 
     # Find results folder (most recent run generated using that scenario_filename)
     scenario_filename = '10_year_scale_run.py'
-    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-4]
+    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
 
     # Test dataset:
     # results_folder = Path('/Users/tbh03/GitHub/TLOmodel/outputs/tbh03@ic.ac.uk/long_run_all_diseases-small')
