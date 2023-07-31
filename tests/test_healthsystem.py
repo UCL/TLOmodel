@@ -635,7 +635,7 @@ def test_all_appt_types_can_run(seed):
             self.this_hsi_event_ran = False
 
         def apply(self, person_id, squeeze_factor):
-            if (squeeze_factor != 99) and (squeeze_factor != np.inf):  # todo - this changed!
+            if squeeze_factor != np.inf:
                 # Check that this appointment is being run and run not with a squeeze_factor that signifies that a cadre
                 # is not at all available.
                 self.this_hsi_event_ran = True
@@ -2008,10 +2008,11 @@ def test_which_hsi_can_run(seed):
     # now refer to the detailed appts/hsi that don't run as the required HCW is not there and do a detailed check
     # read necessary files
     mfl = pd.read_csv(
-        Path('./') / 'resources/healthsystem/organisation/ResourceFile_Master_Facilities_List.csv'
+        resourcefilepath / 'healthsystem/organisation/ResourceFile_Master_Facilities_List.csv'
     )
     appts_not_run = pd.read_csv(
-        Path('./') / 'resources/healthsystem/human_resources/definitions/ResourceFile_Appts_With_No_Required_HCW.csv'
+        resourcefilepath /
+        'healthsystem/human_resources/definitions/ResourceFile_Appts_That_Require_HCW_Who_Are_Not_Present.csv'
     )  # this file includes both actual and funded scenarios
     # reformat to map with results file for convenience
     appts_not_run = appts_not_run.drop(columns='Officer_Category').drop_duplicates().rename(
@@ -2019,6 +2020,26 @@ def test_which_hsi_can_run(seed):
                  'Appt_Type_Code': 'appt_type', 'Fail_District_Or_CenHos': 'district'}
     )  # drop_duplicates is due to possible rows with same column info except Officer_Category
     appts_not_run = appts_not_run[['use_funded_or_actual_staffing', 'level', 'appt_type', 'district']]  # re-order cols
+
+    # With the merging of levels '1b' and '2' (and labelling them '2'), the only entries in this list of HSI that are
+    # expected not to be able to run at levels '1b' and '2', are those that cannot happen at EITHER level '1b' OR '2'.
+    # (If they can happen at either, then this test will make it look like they are happening at both!)
+    # The file on the HSI expected not to run should show such appointments as not happening at either '1b' or '2'.
+    # .... work out which appointment cannot happen at either '1b' or '2'
+    _levels_at_which_appts_dont_run = appts_not_run.groupby(
+        by=['use_funded_or_actual_staffing', 'appt_type', 'district'])['level'].sum()
+    _levels_at_which_appts_dont_run = _levels_at_which_appts_dont_run.drop(
+        _levels_at_which_appts_dont_run.index[_levels_at_which_appts_dont_run.isin(['1b', '2'])]
+    )
+    appts_not_run = _levels_at_which_appts_dont_run.reset_index().dropna()
+    appts_not_run['level'] = appts_not_run['level'].replace({'21b': '2'})  # ... label such appointments for level '2'
+    # ... reproduce that block labelled for level '1b'
+    appts_not_run_level2 = appts_not_run.loc[appts_not_run.level == '2'].copy()
+    appts_not_run_level2['level'] = '1b'
+    appts_not_run = pd.concat([appts_not_run, appts_not_run_level2])
+    # ... re-order columns to suit.
+    appts_not_run = appts_not_run[['use_funded_or_actual_staffing', 'level', 'appt_type', 'district']]
+
     # reformat the 'district' info at levels 3 and 4 in results to map with appts_not_run file for convenience
     districts_per_region = mfl[['District', 'Region']].drop_duplicates().dropna(axis='index', how='any').set_index(
         'District', drop=True)

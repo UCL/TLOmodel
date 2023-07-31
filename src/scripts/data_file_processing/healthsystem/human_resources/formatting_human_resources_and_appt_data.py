@@ -1978,7 +1978,8 @@ appts_with_no_required_hcw.dropna(axis='index', how='any', inplace=True)
 # save results for actual and funded HR scenarios;
 # excl. funded_plus scenario, where there is no failing district or CenHos
 appts_with_no_required_hcw.to_csv(
-    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appts_With_No_Required_HCW.csv', index=False)
+    outputlocation / 'human_resources' / 'definitions' / 'ResourceFile_Appts_That_Require_HCW_Who_Are_Not_Present.csv',
+    index=False)
 
 # Save results for funded
 # Need to # following lines below when generate funded_plus capability
