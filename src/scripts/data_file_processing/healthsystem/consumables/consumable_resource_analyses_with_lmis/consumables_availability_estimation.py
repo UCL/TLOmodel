@@ -389,6 +389,16 @@ NameChangeList = [('consumable_name_lmis', 'item'), ]
 change_colnames(consumables_df, NameChangeList)
 change_colnames(matched_consumables, NameChangeList)
 
+# Update matched consumable name where the name in the OpenLMIS data was updated in September
+def replace_old_item_names_in_lmis_data(_df, item_dict):
+    """Return a dataframe with old LMIS consumable names replaced with the new name"""
+    for item in item_dict:
+        cond_oldname = _df.item == item_dict[item]
+        _df.loc[cond_oldname, 'item'] = item
+    return _df
+
+matched_consumables = replace_old_item_names_in_lmis_data(matched_consumables, inconsistent_item_names_mapping)
+
 # 5.2 --- Merge data with LMIS data ---
 lmis_matched_df = pd.merge(lmis, matched_consumables, how='inner', on=['item'])
 lmis_matched_df = lmis_matched_df.sort_values('data_source')
