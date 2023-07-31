@@ -1666,8 +1666,9 @@ class RTI(Module):
             # check that this person's injuries that were decided to be treated with a minor surgery and the injuries
             # actually treated by minor surgeries coincide
             if count == 0:
-                assert len(set(df.at[person_id, 'rt_injuries_for_minor_surgery']) & set(surgically_treated_codes)) > 0,\
-                    'This person has asked for a minor surgery but does not need it'
+                assert len(
+                    set(df.at[person_id, 'rt_injuries_for_minor_surgery']) & set(surgically_treated_codes)
+                ) > 0, 'This person has asked for a minor surgery but does not need it'
             # Isolate the relevant injury information
             person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
             # Check whether the person requesting minor surgeries has an injury that requires minor surgery
