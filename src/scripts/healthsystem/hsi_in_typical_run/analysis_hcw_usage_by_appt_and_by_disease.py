@@ -40,39 +40,6 @@ appt_dict = {'Under5OPD': 'OPD',
              }
 
 
-def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
-    """Return pd.DataFrame gives the (mean) simulated annual number of appointments of each type at each level."""
-
-    def get_counts_of_appts(_df):
-        """Get the mean number of appointments of each type being used each year at each level.
-        Need to rename appts to match standardized categories from the DHIS2 data."""
-
-        def unpack_nested_dict_in_series(_raw: pd.Series):
-            return pd.concat(
-                {
-                  idx: pd.DataFrame.from_dict(mydict) for idx, mydict in _raw.items()
-                 }
-             ).unstack().fillna(0.0).astype(int)
-
-        return _df \
-            .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code_And_Level'] \
-            .pipe(unpack_nested_dict_in_series) \
-            .groupby(level=[0, 1], axis=1).sum() \
-            .mean(axis=0)  # mean over each year (row)
-
-    return summarize(
-        extract_results(
-                results_folder,
-                module='tlo.methods.healthsystem.summary',
-                key='HSI_Event',
-                custom_generate_series=get_counts_of_appts,
-                do_scaling=True
-            ),
-        only_mean=True,
-        collapse_columns=True,
-        ).unstack().astype(int)
-
-
 def get_annual_num_hsi_by_appt_and_level(results_folder: Path) -> pd.DataFrame:
     """Return pd.DataFrame gives the (mean) simulated annual count of hsi
     per treatment id per each appt type per level."""
@@ -107,16 +74,6 @@ def get_annual_num_hsi_by_appt_and_level(results_folder: Path) -> pd.DataFrame:
     hsi_count = hsi_count.to_frame().reset_index()
 
     return hsi_count
-
-
-def get_simulation_usage_by_level(results_folder: Path) -> pd.DataFrame:
-    """Returns the simulated MEAN USAGE PER YEAR DURING THE TIME_PERIOD, by appointment type and level.
-    """
-
-    # Get model outputs
-    model_output = get_annual_num_appts_by_level(results_folder=results_folder)
-
-    return model_output
 
 
 def get_annual_hcw_time_used_with_confidence_interval(results_folder: Path, resourcefilepath: Path) -> pd.DataFrame:
@@ -403,43 +360,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # todo: get actual hcw time used derived from DHIS2 data and plot
 
-    # get average annual usage by level for Simulation and Real
-    simulation_usage = get_simulation_usage_by_level(results_folder)
-
-    real_usage = get_real_usage(resourcefilepath)[0]
-
-    # get expected appt time
-    appt_time = get_expected_appt_time(resourcefilepath)
-
-    # check that appts in simulation_usage are in appt_time
-    appts_def = set(appt_time.Appt_Type_Code)
-    appts_sim = set(simulation_usage.columns.values)
-    assert appts_sim.issubset(appts_def)
-
-    # hcw usage per cadre per appointment type
-    hcw_usage = appt_time.drop(index=appt_time[~appt_time.Appt_Type_Code.isin(appts_sim)].index).reset_index(drop=True)
-    for idx in hcw_usage.index:
-        hcw_usage.loc[idx, 'Total_Mins_Used_Per_Year'] = (hcw_usage.loc[idx, 'Time_Taken_Mins'] *
-                                                          simulation_usage.loc[hcw_usage.loc[idx, 'Facility_Level'],
-                                                                               hcw_usage.loc[idx, 'Appt_Type_Code']])
-    hcw_usage = hcw_usage.groupby(['Officer_Category', 'Appt_Category']
-                                  )['Total_Mins_Used_Per_Year'].sum().reset_index()
-
-    # check that hcw time simulated derived from different methods are equal (or with negligible difference)
-    hcw_time_used_1 = hcw_usage.groupby(['Officer_Category'])['Total_Mins_Used_Per_Year'].sum().to_frame()
-    hcw_time_used_0 = get_annual_hcw_time_used_with_confidence_interval(results_folder, resourcefilepath)
-    assert (hcw_time_used_1.index == hcw_time_used_0.index).all()
-    assert (abs(
-        (hcw_time_used_1['Total_Mins_Used_Per_Year'] - hcw_time_used_0['mean']) / hcw_time_used_0['mean']) < 1e-4
-            ).all()
-
     # hcw usage per cadre per appt per hsi
     hsi_count = get_annual_num_hsi_by_appt_and_level(results_folder)
 
-    # first check that hsi count by different methods are equal (or with small difference)
-    hsi_count_alt = hsi_count.groupby(['Appt_Type_Code', 'Facility_Level'])['Count'].sum().reset_index().pivot(
-        index='Facility_Level', columns='Appt_Type_Code', values='Count').fillna(0.0)
-    assert (hsi_count_alt - simulation_usage.drop(index='4') < 1.0).all().all()
+    # first compare appts defined and appts in simulation/model
+    appt_time = get_expected_appt_time(resourcefilepath)
+    appts_def = set(appt_time.Appt_Type_Code)
+    appts_sim = set(hsi_count.Appt_Type_Code)
+    assert appts_sim.issubset(appts_def)
 
     # then calculate the hcw working time per treatment id, appt type and cadre
     hcw_usage_hsi = appt_time.drop(index=appt_time[~appt_time.Appt_Type_Code.isin(appts_sim)].index
@@ -448,15 +376,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     hcw_usage_hsi['Total_Mins_Used_Per_Year'] = hcw_usage_hsi['Count'] * hcw_usage_hsi['Time_Taken_Mins']
     hcw_usage_hsi = hcw_usage_hsi.groupby(['Treatment_ID', 'Appt_Category', 'Officer_Category']
                                           )['Total_Mins_Used_Per_Year'].sum().reset_index()
-
-    # also check that the hcw time from different methods are equal (or with small difference)
-    hcw_usage_alt = hcw_usage_hsi.groupby(['Officer_Category', 'Appt_Category']
-                                          )['Total_Mins_Used_Per_Year'].sum().reset_index()
-    assert (hcw_usage_alt.Officer_Category == hcw_usage.Officer_Category).all
-    assert (hcw_usage_alt.Appt_Category == hcw_usage.Appt_Category).all()
-    assert ((abs(hcw_usage_alt.Total_Mins_Used_Per_Year - hcw_usage.Total_Mins_Used_Per_Year) /
-            hcw_usage.Total_Mins_Used_Per_Year) < 1e-4
-            ).all().all()
 
     # save the data to draw sankey diagram
     hcw_usage_hsi.to_csv(output_folder/'hcw_working_time_per_hsi.csv', index=False)
