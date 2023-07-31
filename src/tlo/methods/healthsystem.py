@@ -669,7 +669,6 @@ class HealthSystem(Module):
         self.tclose_days_offset_overwrite = None
 
         # Store the fast tracking channels that will be relevant for policy given the modules included
-        # self.arg_list_fasttrack = list_fasttrack
         self.list_fasttrack = []  # provided so that there is a default even before simulation is run
 
         # Store the argument provided for service_availability
@@ -2316,7 +2315,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # artificial "midday effects" are introduced when evaluating priority policies.
 
         # To avoid repeated dataframe accesses in subsequent loop, assemble set of alive
-        # person IDs as  one-off operation, exploiting the improved efficiency of
+        # person IDs as one-off operation, exploiting the improved efficiency of
         # boolean-indexing of a Series compared to row-by-row access. From benchmarks
         # converting Series to list before converting to set is ~2x more performant than
         # direct conversion to set, while checking membership of set is ~10x quicker
@@ -2338,6 +2337,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # in the case of large simulations in mode_appt_constraints = 2 where number of people in the
             # queue for today >> resources available for that day. This would be faster done by facility.
             if len(set_capabilities_still_available) > 0:
+
                 next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
                 # Read the tuple and remove from heapq, and assemble into a dict 'next_event'
 
@@ -2489,11 +2489,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             else:
                 break
 
-        # Traverse the queue again to check all appts which have expired are removed from the queue.
+        # Traverse the queue again to check all appts which have expired are removed from the queue, 
+        # and call did_not_run() for all those that were postponed.
         # In previous iteration, we stopped querying the queue once capabilities
         # were exhausted, so here ensure if any events expired were left unchecked they are properly
-        # removed from the queue. (This should still be more efficient than querying
-        # the queue as done in mode_appt_constraints = 0 and 1 while ensuring mid-day effects are avoided.)
+        # removed from the queue, and did_not_run() is invoked for all postponed events.
+        # (This should still be more efficient than querying the queue as done in mode_appt_constraints
+        #  = 0 and 1 while ensuring mid-day effects are avoided.)
         while len(self.module.HSI_EVENT_QUEUE) > 0:
 
             next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
