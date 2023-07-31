@@ -1119,7 +1119,7 @@ def test_treatment_pathway_if_all_consumables_severe_case(seed, tmpdir):
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       treatment_effect='perfectly_ineffective',
-                                      ),\
+                                      ), \
         "Problem when child is younger than 2months old and treatment does not work"
 
     # If the child is younger than 2 months
