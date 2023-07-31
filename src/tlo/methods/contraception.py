@@ -1116,6 +1116,10 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         # Record the date that Family Planning Appointment happened for this person
         self.sim.population.props.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
 
+        # Determine essential and optional items
+        # TODO: we don't distinguish essential X optional for contraception methods yet, will need to update once we do
+        items_essential = self.module.cons_codes[self.new_contraceptive]
+        items_optional = {}
         # Record use of consumables and default the person to "not_using" if the consumable is not available.
         # If initiating use of a modern contraceptive method except condoms (after not using any or using non-modern
         # contraceptive or using condoms), "co_initiation" items are used along with the method consumables.
@@ -1123,16 +1127,44 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
             (current_method not in self.module.contraceptives_initiated_with_additional_items)
             and (self.new_contraceptive in self.module.contraceptives_initiated_with_additional_items)
         ):
+            items_optional = self.module.cons_codes["co_initiation"]
             cons_available = self.get_consumables(
-                item_codes=self.module.cons_codes[self.new_contraceptive],
-                optional_item_codes=self.module.cons_codes["co_initiation"]
+                item_codes=items_essential,
+                optional_item_codes=items_optional,
+                return_individual_results=True
             )
         else:
             cons_available = self.get_consumables(
-                item_codes=self.module.cons_codes[self.new_contraceptive]
+                item_codes=items_essential,
+                return_individual_results=True
             )
 
-        _new_contraceptive = self.new_contraceptive if cons_available else "not_using"
+        items_all = {**items_essential, **items_optional}
+
+        # Determine whether the contraception is administrated (ie all essential items are available),
+        # if so do log the availability of all items, if not set the contraception to "not_using":
+        co_administrated = all(v for k, v in cons_available.items() if k in items_essential)
+        # TODO: does it need to be formatted as _itme_codes within get_consumables in healthsystem?
+
+        if co_administrated:
+            # if not running contraception module at debug level, it's pointless to save the (not) available items
+            if self.TREATMENT_ID.startswith('Contraception') & logger.isEnabledFor(logging.DEBUG):
+                items_available = {k: v for k, v in items_all.items() if cons_available[k]}
+                items_not_available = {k: v for k, v in items_all.items() if not cons_available[k]}
+                logger.debug(key='Contraception_consumables',
+                             data={
+                                 'TREATMENT_ID': (self.TREATMENT_ID if self.TREATMENT_ID is not None else ""),
+                                 'Item_Available': str(items_available),
+                                 'Item_NotAvailable': str(items_not_available),
+                             },
+                             # NB. Casting the data to strings because logger complains with dict of varying sizes/keys
+                             description="Record of each contraception consumable item if the contraceptive is "
+                                         "administrated."
+                             )
+
+            _new_contraceptive = self.new_contraceptive
+        else:
+            _new_contraceptive = "not_using"
 
         if current_method != _new_contraceptive:
             # Do the change:
@@ -1144,7 +1176,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
             # (N.B. If the current method is the same as the new method, there is no logging.)
 
         # If the intended change was not possible due to non-available consumable, reschedule the appointment
-        if not cons_available and (
+        if not co_administrated and (
             self._number_of_times_run < self.module.parameters['max_number_of_runs_of_hsi_if_consumable_not_available']
         ):
             self.reschedule()
