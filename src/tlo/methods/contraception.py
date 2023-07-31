@@ -313,7 +313,10 @@ class Contraception(Module):
             self.processed_params = self.process_params()
             self.interventions_on = True
 
-        assert self.sim.population.props.at[person_id, 'co_contraception'] == "not_using"
+        assert self.sim.population.props.at[person_id, 'co_contraception'] \
+               not in self.contraceptives_initiated_with_additional_items
+        # TODO: Shouldn't it be even == "not_using"?
+        #  It is not always the case when used along with Joe's rmnch modules, why?
         self.sim.population.props.at[person_id, 'is_pregnant'] = False
         person_age = self.sim.population.props.at[person_id, 'age_years']
         self.select_contraceptive_following_birth(person_id, person_age)
