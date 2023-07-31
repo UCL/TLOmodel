@@ -358,8 +358,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
     plt.show()
 
-    # todo: get actual hcw time used derived from DHIS2 data and plot
-
     # hcw usage per cadre per appt per hsi
     hsi_count = get_annual_num_hsi_by_appt_and_level(results_folder)
 
@@ -379,6 +377,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # save the data to draw sankey diagram
     hcw_usage_hsi.to_csv(output_folder/'hcw_working_time_per_hsi.csv', index=False)
+
+    # todo: get actual hcw time used derived from DHIS2 data and plot
+    # It is tricky that dhis2 datasets have different appt types, thus
+    # to make the intended comparison of hcw time usage between simulation and data,
+    # we need first to select the common appts/remap some appts and then make the comparison.
+    # A simpler way is to not draw this plot,
+    # but add discussion and appendix to explain the difference between simulation and data usage per appts.
+
+    # dhis_usage = get_real_usage(resourcefilepath)[0]
+
+    # first compare appts defined and appts in DHIS2 and HIV Dept datasets
+    # appts_dhis = set(dhis_usage.columns.values)
 
 
 if __name__ == "__main__":
