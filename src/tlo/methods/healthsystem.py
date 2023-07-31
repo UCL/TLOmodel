@@ -2489,7 +2489,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             else:
                 break
 
-        # Traverse the queue again to check all appts which have expired are removed from the queue, 
+        # Traverse the queue again to check all appts which have expired are removed from the queue,
         # and call did_not_run() for all those that were postponed.
         # In previous iteration, we stopped querying the queue once capabilities
         # were exhausted, so here ensure if any events expired were left unchecked they are properly
