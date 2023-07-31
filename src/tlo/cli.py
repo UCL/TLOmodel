@@ -252,6 +252,9 @@ def batch_run(path_to_json, work_directory, draw, sample):
 @click.argument("job_id", type=str)
 @click.pass_context
 def batch_terminate(ctx, job_id):
+    """Terminate running job having the specified JOB_ID.
+    Note, you can only terminate your own jobs (user configured in tlo.conf)"""
+
     # we check that directory has been created for this job in the user's folder
     # (set up when the job is submitted)
     config = load_config(ctx.obj["config_file"])
