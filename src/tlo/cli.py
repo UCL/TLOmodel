@@ -85,9 +85,10 @@ def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None):
 
 @cli.command()
 @click.argument("scenario_file", type=click.Path(exists=True))
+@click.option("--asserts-off", type=bool, default=False, is_flag=True)
 @click.option("--keep-pool-alive", type=bool, default=False, is_flag=True, hidden=True)
 @click.pass_context
-def batch_submit(ctx, scenario_file, keep_pool_alive):
+def batch_submit(ctx, scenario_file, asserts_off, keep_pool_alive):
     """Submit a scenario to the batch system.
 
     SCENARIO_FILE is path to file containing scenario class.
@@ -202,6 +203,10 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
         azure_file_share_configuration=azure_file_share_configuration,
     )
 
+    py_env = ""
+    if asserts_off:
+        py_env = "PYTHONOPTIMIZE=1"
+
     azure_directory = "${{AZ_BATCH_NODE_MOUNTS_DIR}}/" + \
         f"{file_share_mount_point}/{azure_directory}"
     azure_run_json = f"{azure_directory}/{os.path.basename(run_json)}"
@@ -212,7 +217,7 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
     git fetch origin {commit.hexsha}
     git checkout {commit.hexsha}
     pip install -r requirements/base.txt
-    PYTHONOPTIMIZE=1 tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
+    {py_env} tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
     cp {task_dir}/std*.txt {working_dir}/{{draw_number}}/{{run_number}}/.
     gzip {working_dir}/{{draw_number}}/{{run_number}}/*.{gzip_pattern_match}
     cp -r {working_dir}/* {azure_directory}/.
