@@ -85,7 +85,7 @@ def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None):
 
 @cli.command()
 @click.argument("scenario_file", type=click.Path(exists=True))
-@click.option("--asserts-on", type=bool, default=False, is_flag=True)
+@click.option("--asserts-on", type=bool, default=False, is_flag=True, help="Enable assertions in simulation run.")
 @click.option("--keep-pool-alive", type=bool, default=False, is_flag=True, hidden=True)
 @click.pass_context
 def batch_submit(ctx, scenario_file, asserts_on, keep_pool_alive):
