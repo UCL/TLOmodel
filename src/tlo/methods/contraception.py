@@ -267,11 +267,11 @@ class Contraception(Module):
         # Schedule births to occur during the first 9 months of the simulation
         self.schedule_births_for_first_9_months()
 
-        if self.use_interventions:
+        if self.parameters['use_interventions']:
             # Log possible initiation date of interventions
             logger.info(key='contraception_intervention',
                         data={
-                            'date_co_interv_implemented': self.interventions_start_date,
+                            'date_co_interv_implemented': self.parameters['interventions_start_date'],
                             'pop_intervention_cost_2016_in2015MWK': self.parameters['pop_intervention_cost'],
                             'ppfp_intervention_cost_2016_in2015MWK': self.parameters['ppfp_intervention_cost'],
                         },
@@ -304,7 +304,8 @@ class Contraception(Module):
         birth."""
 
         # Check whether it is appropriate and time to implement interventions
-        if self.use_interventions and self.sim.date == self.interventions_start_date and not self.interventions_on:
+        if self.parameters['use_interventions'] and self.sim.date == self.parameters['interventions_start_date'] \
+                and not self.interventions_on:
             # Update module parameters to enable interventions
             self.processed_params = self.process_params()
             self.interventions_on = True
@@ -320,7 +321,7 @@ class Contraception(Module):
     def process_params(self):
         """Process parameters that have been read-in."""
 
-        if self.sim.date < self.interventions_start_date:
+        if self.sim.date < self.parameters['interventions_start_date']:
             processed_params = dict()
         else:
             processed_params = self.processed_params
@@ -353,7 +354,7 @@ class Contraception(Module):
             p_init_by_method = self.parameters['Initiation_ByMethod'].loc[0].drop('not_using')
 
             # Pop intervention multiplier:
-            if self.use_interventions & (self.sim.date >= self.interventions_start_date):
+            if self.parameters['use_interventions'] & (self.sim.date >= self.parameters['interventions_start_date']):
                 p_init_by_method = p_init_by_method.mul(self.parameters['Interventions_Pop'].loc[0])
 
             # Effect of age
@@ -486,7 +487,7 @@ class Contraception(Module):
             probs = self.parameters['Initiation_AfterBirth'].loc[0]
 
             # PPFP intervention multiplier:
-            if self.use_interventions & (self.sim.date >= self.interventions_start_date):
+            if self.parameters['use_interventions'] & (self.sim.date >= self.parameters['interventions_start_date']):
                 probs = self.parameters['Initiation_AfterBirth'].loc[0].drop('not_using')
                 probs = probs.mul(self.parameters['Interventions_PPFP'].loc[0])
                 assert probs.sum() < 1
@@ -584,7 +585,7 @@ class Contraception(Module):
             return p_pregnancy_with_contraception_per_month.mul(scaling_factor_on_monthly_risk_of_pregnancy(), axis=0)
 
         # parameters to be processed only in the beginning
-        if self.sim.date < self.interventions_start_date:
+        if self.sim.date < self.parameters['interventions_start_date']:
             processed_params['initial_method_use'] = initial_method_use()
             processed_params['p_switch_from_per_month'], \
                 processed_params['p_switching_to_below30'], processed_params['p_switching_to_30plus'] =\
@@ -774,7 +775,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         Determine who will become pregnant and update contraceptive method."""
 
         # Check whether it is appropriate and time to implement interventions
-        if self.module.use_interventions and self.sim.date == self.module.interventions_start_date \
+        if self.module.parameters['use_interventions'] and self.sim.date == self.module.interventions_start_date \
                 and not self.module.interventions_on:
             # Update module parameters to enable interventions
             self.module.processed_params = self.module.process_params()
