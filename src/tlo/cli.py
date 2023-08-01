@@ -366,7 +366,9 @@ def batch_job(ctx, job_id, raw, show_tasks):
 @click.option("--username", type=str, hidden=True)
 @click.pass_context
 def batch_list(ctx, status, n, find, username):
-    """List and find running and completed jobs."""
+    """List and find running and completed jobs.
+    By default, the 5 most recent jobs are displayed for the current user.
+    """
     print("Querying Batch...")
     config = load_config(ctx.obj["config_file"])
 
