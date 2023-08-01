@@ -423,6 +423,14 @@ def batch_list(ctx, status, n, find, username):
     # sort by creation time
     jobs = jobs.sort_values("creation_time", ascending=False)
 
+    # split datetime into date and time
+    jobs["creation_time"] = pd.to_datetime(jobs.creation_time)
+    jobs["creation_date"] = jobs.creation_time.dt.date
+    jobs["creation_time"] = jobs.creation_time.dt.floor("S").dt.time
+
+    # reorder columns
+    jobs = jobs[["id", "creation_date", "creation_time", "state"]]
+
     # get the first n rows
     jobs = jobs.head(n)
 
