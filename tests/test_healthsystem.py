@@ -130,8 +130,7 @@ def test_all_treatment_IDs_defined_in_priority_policies(seed, tmpdir):
     for s in x:
         clean_set_of_filtered_treatment_ids.add(s.replace("_*", ""))
 
-    for policy_name in ("Naive", "EHP_III", "LCOA_EHP", "RMNCH", "VerticalProgrammes",
-                        "ClinicallyVulnerable", "Default"):
+    for policy_name in sim.modules['HealthSystem'].parameters['PriorityRank'].keys():
         sim.modules['HealthSystem'].load_priority_policy(policy_name)
         policy = set(sim.modules['HealthSystem'].priority_rank_dict)
         assert policy == clean_set_of_filtered_treatment_ids
