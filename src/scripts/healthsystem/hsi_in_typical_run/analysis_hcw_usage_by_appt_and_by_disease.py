@@ -3,7 +3,6 @@ from collections import Counter
 
 import matplotlib
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 
 from tlo import Date
@@ -11,7 +10,6 @@ from tlo.analysis.utils import (
     bin_hsi_event_details,
     compute_mean_across_runs,
     extract_results,
-    get_coarse_appt_type,
     get_scenario_outputs,
     summarize)
 
@@ -274,7 +272,7 @@ if __name__ == "__main__":
 
     # Find results folder (most recent run generated using that scenario_filename)
     scenario_filename = '10_year_scale_run.py'
-    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-4]
 
     # Test dataset:
     # results_folder = Path('/Users/tbh03/GitHub/TLOmodel/outputs/tbh03@ic.ac.uk/long_run_all_diseases-small')
