@@ -102,7 +102,13 @@ class Contraception(Module):
 
         'ppfp_intervention_cost': Parameter(
             Types.INT, "Cost of PPFP (post-partum family planning) intervention for whole population of Malawi in 2016 "
-                       "(2015 MWK - Malawi Kwacha)")
+                       "(2015 MWK - Malawi Kwacha)"),
+        'use_interventions': Parameter(
+            Types.BOOL, "if True: FP interventions (pop & ppfp) are simulated from the date 'interventions_start_date',"
+                        " if False: FP interventions (pop & ppfp) are not simulated."),
+        'interventions_start_date': Parameter(
+            Types.DATE, "The date since which the FP interventions (pop & ppfp) are implemented, if at all (ie, if "
+                        "use_interventions==True")
     }
 
     all_contraception_states = {
@@ -136,18 +142,13 @@ class Contraception(Module):
                                             )
     }
 
-    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True, use_interventions=False,
-                 interventions_start_date=Date(2023, 1, 1), run_update_contraceptive=True):
+    def __init__(self, name=None, resourcefilepath=None, use_healthsystem=True, run_update_contraceptive=True):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
 
         self.use_healthsystem = use_healthsystem  # if True: initiation and switches to contraception require an HSI;
         # if False: initiation and switching do not occur through an HSI
 
-        self.use_interventions = use_interventions  # if True: interventions are on from the date
-        # 'interventions_start_date', if False interventions are off
-        self.interventions_start_date = interventions_start_date  # a date when interventions are assumed to be
-        # implemented
         self.interventions_on = False  # if False/True: interventions off/on at the time; starts as False, changes to
         # True on 'interventions_start_date' if 'use_interventions' True
 
