@@ -1,5 +1,5 @@
 """Script for plotting basic outputs from the Copd module:
- * 1) Prevalence of each category of lungfunction by age/sex [stacked bar chart by age/sex] at in 2010, 2020, 2030
+ * 1) Prevalence of each category of lungfunction by age/sex [stacked bar chart by age/sex]
  * 2) Number of deaths compared to the GBD dataset
 """
 import datetime
@@ -11,7 +11,7 @@ from matplotlib.font_manager import FontProperties
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import (
-    make_age_grp_lookup,
+    compare_number_of_deaths,
     parse_log_file,
     unflatten_flattened_multi_index_in_logging,
 )
@@ -30,13 +30,14 @@ from tlo.methods import (
 class CopdAnalyses:
     """ Copd Analyses class responsible for plotting all COPD module outputs. Here we are plotting;
         1. stacked bars for individuals in each of the lung function categories;
-        2. stacked bars for individuals in each of the lung function categories grouped by sex
-        3. stacked bars for individuals in each of the lung function categories grouped by age group
+        2. stacked bars for individuals in each of the lung function categories by sex
+        3. stacked bars for individuals in each of the lung function categories by age group
         4. deaths(Modal against GBD) grouped by sex
-        5. deaths(Modal against GBD) grouped by age group """
+        5. deaths(Modal against GBD) grouped by age group
+        6. deaths(Modal) grouped by lung function """
 
     def __init__(self, logfile_path):
-        """ called each time the CopdAnalyses class is initialised
+        """ called each time the Copd analyses class is initialised
 
         :param logfile_path: path to a folder which contains the logfile to be analysed """
 
@@ -52,6 +53,7 @@ class CopdAnalyses:
         self.__lung_func_cats = ['category 0', 'category 1', 'category 2',
                                  'category 3', 'category 4', 'category 5',
                                  'category 6']
+
         # a dictionary to describe individual's tobacco status
         self.__smokers_desc = {
             'True': "Smokers",
@@ -82,7 +84,7 @@ class CopdAnalyses:
                 plot_df[_lung_func] = re_ordered_copd_prev[_tob][f'{_lung_func}'].sum(axis=1)
             # get totals per year
             plot_df = plot_df.groupby(plot_df.index.year).sum()
-            # turn totals into proportions
+            # convert totals into proportions
             plot_df = plot_df.apply(lambda row: row / row.sum(), axis=1)
             # do plotting
             plot_df.plot(kind='bar', stacked=True, ax=ax[_col_counter],
@@ -99,6 +101,11 @@ class CopdAnalyses:
         # add one legend on `plt
         plt.legend(self.__lung_func_cats, title="lung function categories", bbox_to_anchor=(0.7, 0.74),
                    loc='upper left', prop=fontP)
+        plt.tight_layout()
+        plt.savefig(
+            outputpath / ('lung_function_categories' + datestamp + ".pdf"), format="pdf"
+        )
+        plt.savefig(Path('.outputs'))
         plt.show()
 
     def plot_lung_function_by_gender(self):
@@ -114,7 +121,7 @@ class CopdAnalyses:
             _df_dict[_gender] = plot_df
             # get totals per year
             _df_dict[_gender] = _df_dict[_gender].groupby(_df_dict[_gender].index.year).sum()
-            # turn totals into proportions
+            # convert totals into proportions
             _df_dict[_gender] = _df_dict[_gender].apply(lambda row: row / row.sum(), axis=1)
             # do plotting
             ax = _df_dict[_gender].plot(kind='bar', stacked=True, ax=axes[_rows_counter],
@@ -124,6 +131,11 @@ class CopdAnalyses:
             ax.set_xlabel("Year")
             ax.set_ylabel("Proportion of each lung function category")
             _rows_counter += 1
+        plt.tight_layout()
+        plt.savefig(
+            outputpath / ('lung_function_categories_by_gender' + datestamp + ".pdf"), format="pdf"
+        )
+        plt.savefig(Path('.outputs'))
         plt.show()
 
     def plot_lung_function_categories_by_age_group(self):
@@ -149,7 +161,7 @@ class CopdAnalyses:
 
                          )
             _rows_counter += 1  # increase row number
-            # ax[_rows_counter].legend(self.__lung_func_cats, loc="lower right")
+            ax[_rows_counter].legend(self.__lung_func_cats, loc="lower right")
         # remove all the subplot legends
         for ax in ax:
             ax.get_legend().remove()
@@ -160,6 +172,10 @@ class CopdAnalyses:
         # add one legend on `plt
         plt.legend(self.__lung_func_cats, title="Lung function categories", bbox_to_anchor=(0.7, 0.74),
                    loc='upper left', prop=fontP)
+        plt.savefig(
+            outputpath / ('lung_function_categories_by_age_group' + datestamp + ".pdf"), format="pdf"
+        )
+        plt.savefig(Path('.outputs'))
         plt.show()
 
     def plot_copd_deaths_by_lungfunction(self):
@@ -184,40 +200,46 @@ class CopdAnalyses:
         plt.savefig(Path('.outputs'))
         plt.show()
 
-    def plot_copd_deaths_by_gender(self):
-        """ plot copd deaths by gender """
-        gen_df = parse_log_file(self.__logfile_path)['tlo.methods.demography']['death']
-
-        __deaths = gen_df.loc[gen_df['cause'].str.startswith('COPD')].groupby(by=['date', 'sex']).size().unstack()
-        __deaths = __deaths.groupby(by=__deaths.index.year).sum()
-
+    def plot_modal_gbd_deaths_by_gender(self):
+        """ compare modal and GBD deaths by gender """
+        death_compare = compare_number_of_deaths(self.__logfile_path, resourcefilepath)
         fig, axs = plt.subplots(nrows=1, ncols=2, sharey=True, sharex=True)
-        for _col, _sex in enumerate(('M', 'F')):
-            ax = __deaths[_sex].plot.bar(color='#ADD8E6', label='Model', ax=axs[_col], rot=0)
-            ax.set_title(f'{self.__gender_desc[_sex]} COPD deaths')
+        for _col, sex in enumerate(('M', 'F')):
+            plot_df = death_compare.loc[(['2010-2014', '2015-2019'], sex, slice(None), 'COPD')].groupby('period').sum()
+            ax = plot_df['model'].plot.bar(color='#ADD8E6', label='Model', ax=axs[_col], rot=0)
+            ax.errorbar(x=plot_df['model'].index, y=plot_df.GBD_mean,
+                        yerr=[plot_df.GBD_lower, plot_df.GBD_upper],
+                        fmt='o', color='#23395d', label="GBD")
+            ax.set_title(f'{self.__gender_desc[sex]} mean annual deaths, 2010-2019')
+            ax.set_title(f'{self.__gender_desc[sex]} annual COPD deaths, 2010-2019')
             ax.set_xlabel("Time period")
             ax.set_ylabel("Number of deaths")
             ax.legend(loc=2)
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=30, ha='right')
-
         plt.tight_layout()
+        plt.savefig(
+            outputpath / ('modal_gbd_deaths_by_gender' + datestamp + ".pdf"), format="pdf"
+        )
+        plt.savefig(Path('.outputs'))
         plt.show()
 
-    def plot_copd_deaths_by_age_group(self):
-        """Plot copd deaths by age group """
-        agr_df = parse_log_file(self.__logfile_path)['tlo.methods.demography']['death']
-        agegrps, agegrplookup = make_age_grp_lookup()
-        agr_df['age_range'] = agr_df['age'].map(agegrplookup)
-
-        __deaths_agrp = agr_df.loc[agr_df['cause'].str.startswith('COPD')].groupby(by=['age_range']).size()
-        ax = __deaths_agrp.plot.bar(color='#ADD8E6', label='Model', rot=0)
-        ax.set_title('COPD deaths by age group')
+    def plot_modal_gbd_deaths_by_age_group(self):
+        """ compare modal and GBD deaths by age group """
+        death_compare = compare_number_of_deaths(self.__logfile_path, resourcefilepath)
+        plot_df = death_compare.loc[(['2010-2014', '2015-2019'], slice(None), slice(None), 'COPD')].groupby(
+            'age_grp').sum()
+        ax = plot_df['model'].plot.bar(color='#ADD8E6', label='Model', rot=0)
+        ax.errorbar(x=plot_df['model'].index, y=plot_df.GBD_mean,
+                    yerr=[plot_df.GBD_lower, plot_df.GBD_upper],
+                    fmt='o', color='#23395d', label="GBD")
+        ax.set_title('Mean annual deaths by age group, 2010-2019')
         ax.set_xlabel("Age group")
         ax.set_ylabel("Number of deaths")
         ax.legend(loc=1)
         plt.tight_layout()
-
-        plt.tight_layout()
+        plt.savefig(
+            outputpath / ('modal_gbd_deaths_by_age_groups' + datestamp + ".pdf"), format="pdf"
+        )
+        plt.savefig(Path('.outputs'))
         plt.show()
 
 
@@ -273,11 +295,11 @@ copd_analyses.plot_lung_function_by_gender()
 # plot lung function categories by age group
 copd_analyses.plot_lung_function_categories_by_age_group()
 
-# plot modal deaths against GBD deaths by gender
-copd_analyses.plot_copd_deaths_by_gender()
-
-# plot modal deaths against GBD deaths by gender
-copd_analyses.plot_copd_deaths_by_age_group()
-
-# plot modal Copd deaths by age group
+# plot modal Copd deaths by lung function
 copd_analyses.plot_copd_deaths_by_lungfunction()
+
+# plot modal deaths against GBD deaths by gender
+copd_analyses.plot_modal_gbd_deaths_by_gender()
+
+# plot modal deaths against GBD deaths by age groups
+copd_analyses.plot_modal_gbd_deaths_by_age_group()
