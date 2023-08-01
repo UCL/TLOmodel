@@ -206,8 +206,7 @@ class Contraception(Module):
 
         pop_2010 = self.parameters['pop_2010'].copy()
         female1549_in_2010 = \
-            pop_2010.loc[(pop_2010.Sex == 'F') & (pop_2010.Age >= 15) & (pop_2010.Age < 50),
-                         ['Age', 'Count']].groupby('Age').sum()
+            pop_2010.loc[(pop_2010.Sex == 'F') & pop_2010.Age.between(15, 49), ['Age', 'Count']].groupby('Age').sum()
         self.parameters['n_female1549_in_2010'] = female1549_in_2010.sum()
         self.parameters['n_female3049_in_2010'] = female1549_in_2010.loc[female1549_in_2010.index >= 30].sum()
 
