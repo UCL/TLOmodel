@@ -9,7 +9,7 @@ import pytest
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.hsi_events import get_details_of_defined_hsi_events
-from tlo.analysis.utils import parse_log_file
+from tlo.analysis.utils import get_filtered_treatment_ids, parse_log_file
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import (
     Metadata,
@@ -112,6 +112,29 @@ def test_run_with_healthsystem_no_disease_modules_defined(seed):
     sim.simulate(end_date=end_date)
 
     check_dtypes(sim)
+
+
+def test_all_treatment_IDs_defined_in_priority_policies(seed, tmpdir):
+    """Check that all treatment_IDs included in the fullmodel have been assigned a priority
+    in each of the priority policies that could be considered."""
+    log_config = {
+        "filename": "log",
+        "directory": tmpdir,
+    }
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+    sim.register(*fullmodel(resourcefilepath=resourcefilepath))
+    sim.make_initial_population(n=100)
+
+    x = set(get_filtered_treatment_ids())
+    clean_set_of_filtered_treatment_ids = set()
+    for s in x:
+        clean_set_of_filtered_treatment_ids.add(s.replace("_*", ""))
+
+    for policy_name in ("Naive", "EHP_III", "LCOA_EHP", "RMNCH", "VerticalProgrammes",
+                        "ClinicallyVulnerable", "Default"):
+        sim.modules['HealthSystem'].load_priority_policy(policy_name)
+        policy = set(sim.modules['HealthSystem'].priority_rank_dict)
+        assert policy == clean_set_of_filtered_treatment_ids
 
 
 @pytest.mark.slow
