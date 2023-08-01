@@ -14,9 +14,8 @@ from pandas.testing import assert_series_equal
 
 import tlo
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
-from tlo.analysis.utils import (
+from tlo.analysis.utils import (  # get_filtered_treatment_ids,
     flatten_multi_index_series_into_dict_for_logging,
-    # get_filtered_treatment_ids,
 )
 from tlo.events import Event, PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.methods import Metadata
@@ -531,7 +530,7 @@ class HealthSystem(Module):
             Types.LIST, 'List of services to be available. NB. This parameter is over-ridden if an argument is provided'
                         ' to the module initialiser.'),
 
-        'Policy_Name_preSwitch': Parameter(
+        'Policy_Name': Parameter(
             Types.STRING, "Name of priority policy assumed to have been adopted until policy switch"),
         'Policy_Name_postSwitch': Parameter(
             Types.STRING, "Name of priority policy to be adopted from policy switch year onwards"),
@@ -880,7 +879,7 @@ class HealthSystem(Module):
             sim.schedule_event(self.healthsystemscheduler, sim.date)
 
         # Schedule priority policy change
-        if self.parameters["Policy_Name_preSwitch"] != self.parameters["Policy_Name_postSwitch"]:
+        if self.parameters["Policy_Name"] != self.parameters["Policy_Name_postSwitch"]:
             sim.schedule_event(HealthSystemChangePriorityPolicy(self),
                                Date(self.parameters["year_policy_switch"], 1, 1))
 
@@ -917,7 +916,7 @@ class HealthSystem(Module):
     def setup_priority_policy(self):
 
         # Determine name of policy to be considered **at the start of the simulation**.
-        self.priority_policy = self.get_priority_policy_preSwitch()
+        self.priority_policy = self.get_priority_policy_initial()
 
         # If adopting a policy, initialise here all other relevant variables.
         # Use of blank instead of None is not ideal, however couldn't seem to recover actual
@@ -1239,11 +1238,11 @@ class HealthSystem(Module):
             if self.arg_use_funded_or_actual_staffing is None \
             else self.arg_use_funded_or_actual_staffing
 
-    def get_priority_policy_preSwitch(self) -> str:
+    def get_priority_policy_initial(self) -> str:
         """Returns `priority_policy`. (Should be equal to what is specified by the parameter, but
         overwrite with what was provided in argument if an argument was specified -- provided for backward
         compatibility/debugging.)"""
-        return self.parameters['Policy_Name_preSwitch'] \
+        return self.parameters['Policy_Name'] \
             if self.arg_priority_policy is None \
             else self.arg_priority_policy
 
@@ -2616,7 +2615,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             # for this today to be run this day).
             self.process_events_mode_0_and_1(hold_over)
 
-        else:
+        elif self.module.mode_appt_constraints == 2:
             self.process_events_mode_2(hold_over)
 
         # -- End-of-day activities --
