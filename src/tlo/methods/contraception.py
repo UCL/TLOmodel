@@ -1148,7 +1148,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         if co_administrated:
             # if not running contraception module at debug level, it's pointless to save the (not) available items
-            if self.TREATMENT_ID.startswith('Contraception') & logger.isEnabledFor(logging.DEBUG):
+            if logger.isEnabledFor(logging.DEBUG) & self.TREATMENT_ID.startswith('Contraception'):
                 items_available = {k: v for k, v in items_all.items() if cons_available[k]}
                 items_not_available = {k: v for k, v in items_all.items() if not cons_available[k]}
                 logger.debug(key='Contraception_consumables',
