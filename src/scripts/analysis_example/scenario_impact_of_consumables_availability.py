@@ -15,7 +15,6 @@ from tlo import Date, logging
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
-
 # Ignore warnings to avoid cluttering output from simulation - generally you do not
 # need (and generally shouldn't) do this as warnings can contain useful information but
 # we will do so here for the purposes of this example to keep things simple.
