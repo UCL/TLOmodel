@@ -161,7 +161,7 @@ class CopdAnalyses:
 
                          )
             _rows_counter += 1  # increase row number
-            ax[_rows_counter].legend(self.__lung_func_cats, loc="lower right")
+            # ax[_rows_counter].legend(self.__lung_func_cats, loc="lower right")
         # remove all the subplot legends
         for ax in ax:
             ax.get_legend().remove()
