@@ -63,6 +63,7 @@ import abc
 import datetime
 import json
 import pickle
+import time
 from itertools import product
 from pathlib import Path, PurePosixPath
 from typing import Optional
@@ -349,6 +350,8 @@ class SampleRunner:
 
         sim.make_initial_population(n=self.scenario.pop_size)
         sim.simulate(end_date=self.scenario.end_date)
+        # sleep for 5 minutes for each increment of draw_number
+        time.sleep(draw_number * 10 * 60)
 
         if sim.log_filepath is not None:
             outputs = parse_log_file(sim.log_filepath)
