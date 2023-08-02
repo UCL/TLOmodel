@@ -1,5 +1,3 @@
-import time
-
 from tlo import Date, logging
 from tlo.methods import (
     demography,
@@ -40,10 +38,6 @@ class Playing22(BaseScenario):
         ]
 
     def draw_parameters(self, draw_number, rng):
-
-        # sleep for 5 minutes for each increment of draw_number
-        time.sleep(draw_number * 10 * 60)
-
         return {
             'Lifestyle': {
                 'init_p_urban': rng.randint(10, 20) / 100.0,
