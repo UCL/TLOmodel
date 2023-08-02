@@ -715,7 +715,8 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
         vm_size=vm_size,
         target_dedicated_nodes=pool_node_count,
         mount_configuration=mount_configuration,
-        task_slots_per_node=1
+        task_slots_per_node=1,
+        auto_scale_formula="$TargetDedicatedNodes=$PendingTasks",
     )
 
     auto_pool_specification = batch_models.AutoPoolSpecification(
