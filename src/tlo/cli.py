@@ -717,13 +717,22 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
         node_agent_sku_id="batch.node.ubuntu 20.04",
     )
 
+    auto_scale_formula = f"""
+    startingNumberOfVMs = {pool_node_count};
+    maxNumberofVMs = {pool_node_count};
+    pendingTaskSamplePercent = $PendingTasks.GetSamplePercent(120 * TimeInterval_Second);
+    pendingTaskSamples = pendingTaskSamplePercent < 70 ? startingNumberOfVMs : avg($PendingTasks.GetSample(120 * TimeInterval_Second));
+    $TargetDedicatedNodes=min(maxNumberofVMs, pendingTaskSamples);
+    $NodeDeallocationOption = taskcompletion;
+    """
+
     pool = batch_models.PoolSpecification(
         virtual_machine_configuration=virtual_machine_configuration,
         vm_size=vm_size,
-        target_dedicated_nodes=pool_node_count,
         mount_configuration=mount_configuration,
         task_slots_per_node=1,
-        auto_scale_formula="$TargetDedicatedNodes=$PendingTasks",
+        enable_auto_scale=True,
+        auto_scale_formula=auto_scale_formula,
     )
 
     auto_pool_specification = batch_models.AutoPoolSpecification(
