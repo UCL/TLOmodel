@@ -403,49 +403,52 @@ matched_consumables = replace_old_item_names_in_lmis_data(matched_consumables, i
 lmis_matched_df = pd.merge(lmis, matched_consumables, how='inner', on=['item'])
 lmis_matched_df = lmis_matched_df.sort_values('data_source')
 
+def collapse_stockout_data(_df, groupby_list, var):
+    """Return a dataframe with rows for the same TLO model item code collapsed into 1"""
+    # Define column lists based on the aggregation function to be applied
+    columns_to_multiply = [var]
+    columns_to_sum = ['closing_bal', 'amc', 'dispensed', 'received']
+    columns_to_preserve = ['data_source', 'consumable_reporting_freq', 'consumables_reported_in_mth']
+
+    # Define aggregation function to be applied to collapse data by item
+    def custom_agg_stkout(x):
+        if x.name in columns_to_multiply:
+            return x.prod(skipna=True) if np.any(
+                x.notnull() & (x >= 0)) else np.nan  # this ensures that the NaNs are retained
+        elif x.name in columns_to_sum:
+            return x.sum(skipna=True) if np.any(
+                x.notnull() & (x >= 0)) else np.nan  # this ensures that the NaNs are retained
+        # , i.e. not changed to 1, when the corresponding data for both item name variations are NaN, and when there is a 0 or positive value
+        # for one or both item name variation, the sum is taken.
+        elif x.name in columns_to_preserve:
+            return x.iloc[0]  # this function extracts the first value
+
+    # Collapse dataframe
+    _collapsed_df = _df.groupby(groupby_list).agg(
+        {col: custom_agg_stkout for col in columns_to_multiply + columns_to_sum + columns_to_preserve}
+    ).reset_index()
+
+    return _collapsed_df
+
 # 2.i. For substitable drugs (within drug category), collapse by taking the product of stkout_prop (OR condition)
 # This represents Pr(all substitutes with the item code are stocked out)
-stkout_df = lmis_matched_df.groupby(
-    ['module_name', 'district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'consumable_name_tlo', 'match_level1',
-     'match_level2'],
-    as_index=False).agg({'stkout_prop': 'prod',
-                         'closing_bal': 'sum',
-                         'amc': 'sum',
-                         'dispensed': 'sum',
-                         'received': 'sum',
-                         'data_source': 'first',
-                         'consumable_reporting_freq': 'first',
-                         'consumables_reported_in_mth': 'first'})
+groupby_list1 = ['module_name', 'district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'consumable_name_tlo', 'match_level1',
+     'match_level2']
+stkout_df = collapse_stockout_data(lmis_matched_df, groupby_list1, 'stkout_prop')
 
 # 2.ii. For complementary drugs, collapse by taking the product of (1-stkout_prob)
 # This represents Pr(All drugs within item code (in different match_group's) are available)
 stkout_df['available_prop'] = 1 - stkout_df['stkout_prop']
-stkout_df = stkout_df.groupby(
-    ['module_name', 'district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'consumable_name_tlo',
-     'match_level2'],
-    as_index=False).agg({'available_prop': 'prod',
-                         'closing_bal': 'sum',  # could be min
-                         'amc': 'sum',  # could be max
-                         'dispensed': 'sum',  # could be max
-                         'received': 'sum',  # could be min
-                         'data_source': 'first',
-                         'consumable_reporting_freq': 'first',
-                         'consumables_reported_in_mth': 'first'})
+groupby_list2 = ['module_name', 'district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'consumable_name_tlo',
+     'match_level2']
+stkout_df = collapse_stockout_data(stkout_df, groupby_list2, 'available_prop')
 
 # 2.iii. For substitutable drugs (within consumable_name_tlo), collapse by taking the product of stkout_prop (OR
 # condition).
 # This represents Pr(all substitutes with the item code are stocked out)
 stkout_df['stkout_prop'] = 1 - stkout_df['available_prop']
-stkout_df = stkout_df.groupby(
-    ['module_name', 'district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'consumable_name_tlo'],
-    as_index=False).agg({'stkout_prop': 'prod',
-                         'closing_bal': 'sum',
-                         'amc': 'sum',
-                         'dispensed': 'sum',
-                         'received': 'sum',
-                         'data_source': 'first',
-                         'consumable_reporting_freq': 'first',
-                         'consumables_reported_in_mth': 'first'})
+groupby_list3 = ['module_name', 'district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'consumable_name_tlo']
+stkout_df = collapse_stockout_data(stkout_df, groupby_list3, 'stkout_prop')
 
 # Update impossible stockout values (This happens due to some stockout days figures being higher than the number of
 #  days in the month)
