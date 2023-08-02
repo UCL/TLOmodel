@@ -201,8 +201,7 @@ class Contraception(Module):
             pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
         # Import 2010 pop and count numbs of women 15-49 & 30-49
-        self.parameters['pop_2010'] = \
-            pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Population_2010.csv')
+        self.parameters['pop_2010'] = self.sim.modules["Demography"].parameters["pop_2010"]
 
         pop_2010 = self.parameters['pop_2010'].copy()
         female1549_in_2010 = \
