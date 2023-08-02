@@ -775,7 +775,8 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         Determine who will become pregnant and update contraceptive method."""
 
         # Check whether it is appropriate and time to implement interventions
-        if self.module.parameters['use_interventions'] and self.sim.date == self.module.interventions_start_date \
+        if self.module.parameters['use_interventions'] \
+                and self.sim.date == self.module.parameters['interventions_start_date'] \
                 and not self.module.interventions_on:
             # Update module parameters to enable interventions
             self.module.processed_params = self.module.process_params()
