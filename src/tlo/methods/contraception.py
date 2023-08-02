@@ -82,8 +82,6 @@ class Contraception(Module):
             Types.DATA_FRAME, 'Data table from official source (WPP) for age-specific fertility rates and calendar '
                               'period.'),
 
-        'pop_2010': Parameter(Types.DATA_FRAME, 'Population in 2010.'),
-
         'scaling_factor_on_monthly_risk_of_pregnancy': Parameter(
             Types.LIST, "Scaling factor (by age-group: 15-19, 20-24, ..., 45-49) on the monthly risk of pregnancy and "
                         "contraceptive failure rate. This value is found through calibration so that, at the beginning "
@@ -201,13 +199,12 @@ class Contraception(Module):
             pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
 
         # Import 2010 pop and count numbs of women 15-49 & 30-49
-        self.parameters['pop_2010'] = self.sim.modules["Demography"].parameters["pop_2010"]
+        pop_2010 = self.sim.modules["Demography"].parameters["pop_2010"].copy()
 
-        pop_2010 = self.parameters['pop_2010'].copy()
         female1549_in_2010 = \
             pop_2010.loc[(pop_2010.Sex == 'F') & pop_2010.Age.between(15, 49), ['Age', 'Count']].groupby('Age').sum()
-        self.parameters['n_female1549_in_2010'] = female1549_in_2010.sum()
-        self.parameters['n_female3049_in_2010'] = female1549_in_2010.loc[female1549_in_2010.index >= 30].sum()
+        self.n_female1549_in_2010 = female1549_in_2010.sum()
+        self.n_female3049_in_2010 = female1549_in_2010.loc[female1549_in_2010.index >= 30].sum()
 
     def pre_initialise_population(self):
         """Process parameters before initialising population and simulation"""
@@ -411,7 +408,7 @@ class Contraception(Module):
             # Increase prob of 'female_sterilization' in older women accordingly
             new_fs_probs_30plus = switching_matrix.loc['female_sterilization', :] /\
                 float(
-                    self.parameters['n_female3049_in_2010'] / self.parameters['n_female1549_in_2010']
+                    self.n_female3049_in_2010 / self.n_female1549_in_2010
                 )
             switching_matrix_except_fs = switching_matrix.loc[switching_matrix.index != 'female_sterilization']
             switching_matrix_30plus = switching_matrix_except_fs.apply(lambda col: col / col.sum())
@@ -510,7 +507,7 @@ class Contraception(Module):
             probs_30plus = probs.copy()
             probs_30plus['female_sterilization'] =\
                 probs.loc['female_sterilization'] /\
-                (self.parameters['n_female3049_in_2010'] / self.parameters['n_female1549_in_2010'])
+                (self.n_female3049_in_2010 / self.n_female1549_in_2010)
             p_start_after_birth_30plus = probs_30plus / probs_30plus.sum()
 
             assert set(p_start_after_birth_30plus.index) == self.all_contraception_states
