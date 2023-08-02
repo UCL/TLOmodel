@@ -1,5 +1,5 @@
-from pathlib import Path
 from collections import Counter
+from pathlib import Path
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -11,7 +11,8 @@ from tlo.analysis.utils import (
     compute_mean_across_runs,
     extract_results,
     get_scenario_outputs,
-    summarize)
+    summarize,
+)
 
 PREFIX_ON_FILENAME = '6'
 
