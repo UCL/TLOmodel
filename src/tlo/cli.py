@@ -117,7 +117,7 @@ def batch_submit(ctx, scenario_file, asserts_on, keep_pool_alive):
 
     # ID of the Batch job.
     timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
-    job_id = Path(scenario_file).stem + "-" + timestamp
+    job_id = scenario.get_log_config()["filename"] + "-" + timestamp
 
     # Path in Azure storage where to store the files for this job
     azure_directory = f"{config['DEFAULT']['USERNAME']}/{job_id}"
