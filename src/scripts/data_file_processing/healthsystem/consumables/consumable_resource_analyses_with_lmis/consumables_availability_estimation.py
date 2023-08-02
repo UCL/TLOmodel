@@ -805,51 +805,57 @@ full_set_interpolated.reset_index().to_csv(
 )
 
 # %%
-# 8. CALIBRATION TO HHFA DATA, 2018/19 ##
+# 7. COMPARISON WITH HHFA DATA, 2018/19 ##
 #########################################################################################
-# --- 8.1 Prepare calibration dataframe --- ##
-# i. Prepare calibration data from HHFA
-hhfa_calibration_df = hhfa_df[['item_code', 'consumable_name_tlo', 'item_hhfa', 'available_prop_hhfa_Facility_level_0',
+# --- 7.1 Prepare comparison dataframe --- ##
+# Note that this only plot consumables for which data is available in the HHFA
+# i. Prepare data from HHFA
+hhfa_comparison_df = hhfa_df[['item_code', 'consumable_name_tlo', 'item_hhfa', 'available_prop_hhfa_Facility_level_0',
                                'available_prop_hhfa_Facility_level_1a', 'available_prop_hhfa_Facility_level_1b',
                                'available_prop_hhfa_Facility_level_2', 'available_prop_hhfa_Facility_level_3']]
-hhfa_calibration_df = pd.wide_to_long(hhfa_calibration_df.dropna(), stubnames='available_prop_hhfa',
+hhfa_comparison_df = pd.wide_to_long(hhfa_comparison_df.dropna(), stubnames='available_prop_hhfa',
                                       i=['consumable_name_tlo', 'item_code', 'item_hhfa'], j='fac_type_tlo',
                                       sep='_', suffix=r'\w+')
-hhfa_calibration_df = hhfa_calibration_df.reset_index()
+hhfa_comparison_df = hhfa_comparison_df.reset_index()
+hhfa_comparison_df['fac_type_tlo'] = hhfa_comparison_df['fac_type_tlo'].str.replace("Facility_level_", "")
+hhfa_comparison_df = hhfa_comparison_df.rename({'fac_type_tlo': 'Facility_Level'}, axis = 1)
 
-# ii. Collapse district level data in stkout_df and exclude data extracted from HHFA
-cond1 = stkout_df['data_source'] == 'hhfa_2018-19'
-lmis_calibration_df = stkout_df[~cond1].groupby(['module_name', 'fac_type_tlo', 'item_code']).mean().reset_index()
+# ii. Collapse final model availability data by facility level
+final_availability_df = full_set_interpolated.reset_index()
+mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
+final_availability_df = pd.merge(final_availability_df, mfl[['District', 'Facility_Level','Facility_ID']], how = "left", on = ['Facility_ID'],
+                     indicator = False)
+final_availability_df = final_availability_df.groupby(['Facility_Level', 'item_code']).agg({'available_prop': "mean"}).reset_index()
 
 # iii. Merge HHFA with stkout_df
-calibration_df = pd.merge(lmis_calibration_df, hhfa_calibration_df, how='inner', on=['item_code', 'fac_type_tlo'])
-calibration_df['difference'] = (calibration_df['available_prop_hhfa'] - calibration_df['available_prop'])
+hhfa_comparison_df['item_code'] = hhfa_comparison_df['item_code'].astype(int)
+final_availability_df['item_code'] = final_availability_df['item_code'].astype(int)
+comparison_df = pd.merge(final_availability_df, hhfa_comparison_df, how='inner', on=['item_code', 'Facility_Level'])
+comparison_df['difference'] = (comparison_df['available_prop_hhfa'] - comparison_df['available_prop'])
 
-# --- 8.2 Compare OpenLMIS estimates with HHFA estimates (CALIBRATION) --- ##
+# --- 7.2 Compare OpenLMIS estimates with HHFA estimates (CALIBRATION) --- ##
 # Summary results by level of care
-calibration_df.groupby(['fac_type_tlo'])[['available_prop', 'available_prop_hhfa', 'difference']].mean()
+comparison_df.groupby(['Facility_Level'])[['available_prop', 'available_prop_hhfa', 'difference']].mean()
 
 # Plots
 size = 10
-calibration_df['item_code'] = calibration_df['item_code'].astype(str)
-calibration_df['labels'] = calibration_df['consumable_name_tlo'].str[:10]
-
+comparison_df['consumable_labels'] = comparison_df['consumable_name_tlo'].str[:10]
 
 # Define function to draw calibration plots at different levels of disaggregation
-def calibration_plot(level_of_disaggregation, group_by_var, colour):
-    calibration_df_agg = calibration_df.groupby([group_by_var],
+def comparison_plot(level_of_disaggregation, group_by_var, colour):
+    comparison_df_agg = comparison_df.groupby([group_by_var],
                                                 as_index=False).agg({'available_prop': 'mean',
                                                                      'available_prop_hhfa': 'mean',
-                                                                     'fac_type_tlo': 'first',
-                                                                     'consumable_name_tlo': 'first'})
-    calibration_df_agg['labels'] = calibration_df_agg[level_of_disaggregation]
+                                                                     'Facility_Level': 'first',
+                                                                     'consumable_labels': 'first'})
+    comparison_df_agg['labels'] = comparison_df_agg[level_of_disaggregation]
 
-    ax = calibration_df_agg.plot.scatter('available_prop', 'available_prop_hhfa', c=colour)
+    ax = comparison_df_agg.plot.scatter('available_prop', 'available_prop_hhfa', c=colour)
     ax.axline([0, 0], [1, 1])
-    for i, label in enumerate(calibration_df_agg['labels']):
+    for i, label in enumerate(comparison_df_agg['labels']):
         plt.annotate(label,
-                     (calibration_df_agg['available_prop'][i] + 0.005,
-                      calibration_df_agg['available_prop_hhfa'][i] + 0.005),
+                     (comparison_df_agg['available_prop'][i] + 0.005,
+                      comparison_df_agg['available_prop_hhfa'][i] + 0.005),
                      fontsize=6, rotation=38)
     if level_of_disaggregation != 'aggregate':
         plt.title('Disaggregated by ' + level_of_disaggregation, fontsize=size, weight="bold")
@@ -857,40 +863,44 @@ def calibration_plot(level_of_disaggregation, group_by_var, colour):
         plt.title('Aggregate', fontsize=size, weight="bold")
     plt.xlabel('Pr(drug available) as per TLO model')
     plt.ylabel('Pr(drug available) as per HHFA')
-    save_name = 'calibration_plots/calibration_to_hhfa_' + level_of_disaggregation + '.png'
-    plt.savefig(path_to_files_in_the_tlo_dropbox / save_name)
+    save_name = 'comparison_plots/calibration_to_hhfa_' + level_of_disaggregation + '.png'
+    plt.savefig(outputfilepath / save_name)
 
+# 7.2.1 Aggregate plot
+# First create folder in which to store the plots
+import os
+if not os.path.exists(outputfilepath / 'comparison_plots'):
+   os.makedirs(outputfilepath / 'comparison_plots')
+    print("folder to store Model-HHFA comparison plots created")
 
-# 8.2.1 Aggregate plot
-calibration_df['aggregate'] = 'aggregate'
+comparison_df['aggregate'] = 'aggregate'
 level_of_disaggregation = 'aggregate'
 colour = 'red'
 group_by_var = 'aggregate'
-calibration_plot(level_of_disaggregation, group_by_var, colour)
+comparison_plot(level_of_disaggregation, group_by_var, colour)
 
-# 8.2.2 Plot by facility level
-level_of_disaggregation = 'fac_type_tlo'
-group_by_var = 'fac_type_tlo'
+# 7.2.2 Plot by facility level
+level_of_disaggregation = 'Facility_Level'
+group_by_var = 'Facility_Level'
 colour = 'orange'
-calibration_plot(level_of_disaggregation, group_by_var, colour)
+comparison_plot(level_of_disaggregation, group_by_var, colour)
 
-# 8.2.3 Plot by item
-level_of_disaggregation = 'consumable_name_tlo'
+# 7.2.3 Plot by item
+level_of_disaggregation = 'consumable_labels'
 group_by_var = 'consumable_name_tlo'
 colour = 'yellow'
-calibration_plot(level_of_disaggregation, group_by_var, colour)
+comparison_plot(level_of_disaggregation, group_by_var, colour)
 
-
-# 8.2.4 Plot by item and facility level
-def calibration_plot_by_level(fac_type):
-    cond_fac_type = calibration_df['fac_type_tlo'] == fac_type
-    calibration_df_by_level = calibration_df[cond_fac_type].reset_index()
-    plt.scatter(calibration_df_by_level['available_prop'],
-                calibration_df_by_level['available_prop_hhfa'])
+# 7.2.4 Plot by item and facility level
+def comparison_plot_by_level(fac_type):
+    cond_fac_type = comparison_df['Facility_Level'] == fac_type
+    comparison_df_by_level = comparison_df[cond_fac_type].reset_index()
+    plt.scatter(comparison_df_by_level['available_prop'],
+                comparison_df_by_level['available_prop_hhfa'])
     plt.axline([0, 0], [1, 1])
-    for i, label in enumerate(calibration_df_by_level['labels']):
-        plt.annotate(label, (calibration_df_by_level['available_prop'][i] + 0.005,
-                             calibration_df_by_level['available_prop_hhfa'][i] + 0.005),
+    for i, label in enumerate(comparison_df_by_level['consumable_labels']):
+        plt.annotate(label, (comparison_df_by_level['available_prop'][i] + 0.005,
+                             comparison_df_by_level['available_prop_hhfa'][i] + 0.005),
                      fontsize=6, rotation=27)
     plt.title(fac_type, fontsize=size, weight="bold")
     plt.xlabel('Pr(drug available) as per TLO model')
@@ -899,11 +909,11 @@ def calibration_plot_by_level(fac_type):
 
 fig = plt.figure(figsize=(22, 22))
 plt.subplot(421)
-calibration_plot_by_level(calibration_df['fac_type_tlo'].unique()[0])
+comparison_plot_by_level(comparison_df['Facility_Level'].unique()[1])
 plt.subplot(422)
-calibration_plot_by_level(calibration_df['fac_type_tlo'].unique()[1])
+comparison_plot_by_level(comparison_df['Facility_Level'].unique()[2])
 plt.subplot(423)
-calibration_plot_by_level(calibration_df['fac_type_tlo'].unique()[2])
+comparison_plot_by_level(comparison_df['Facility_Level'].unique()[3])
 plt.subplot(424)
-calibration_plot_by_level(calibration_df['fac_type_tlo'].unique()[3])
-plt.savefig(path_to_files_in_the_tlo_dropbox / 'calibration_plots/calibration_to_hhfa_fac_type_and_consumable.png')
+comparison_plot_by_level(comparison_df['Facility_Level'].unique()[4])
+plt.savefig(outputfilepath / 'comparison_plots/calibration_to_hhfa_fac_type_and_consumable.png')
