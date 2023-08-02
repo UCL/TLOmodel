@@ -21,7 +21,7 @@ class Playing22(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'my-scenario',
+            # 'filename': 'my-scenario',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.INFO,
