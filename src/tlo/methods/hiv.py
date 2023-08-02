@@ -1623,7 +1623,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     hsi_event=HSI_Hiv_TestAndRefer(person_id=person_id, module=self.module, referred_from='HIV_poll'),
                     priority=1,
                     topen=date_test,
-                    tclose=self.sim.date + pd.DateOffset(
+                    tclose=date_test + pd.DateOffset(
                         months=self.frequency.months
                     ),  # (to occur before next polling)
                 )

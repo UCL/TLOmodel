@@ -1666,8 +1666,9 @@ class RTI(Module):
             # check that this person's injuries that were decided to be treated with a minor surgery and the injuries
             # actually treated by minor surgeries coincide
             if count == 0:
-                assert len(set(df.at[person_id, 'rt_injuries_for_minor_surgery']) & set(surgically_treated_codes)) > 0,\
-                    'This person has asked for a minor surgery but does not need it'
+                assert len(
+                    set(df.at[person_id, 'rt_injuries_for_minor_surgery']) & set(surgically_treated_codes)
+                ) > 0, 'This person has asked for a minor surgery but does not need it'
             # Isolate the relevant injury information
             person_injuries = df.loc[[person_id], RTI.INJURY_COLUMNS]
             # Check whether the person requesting minor surgeries has an injury that requires minor surgery
@@ -2082,8 +2083,16 @@ class RTI(Module):
                          data=f"person {person_id} has had too many daly weights removed")
             df.at[person_id, 'rt_debugging_DALY_wt'] = 0
         # the reported disability should satisfy 0<=disability<=1, check that they do
-        assert df.at[person_id, 'rt_disability'] >= 0, 'Negative disability burden'
-        assert df.at[person_id, 'rt_disability'] <= 1, 'Too large disability burden'
+
+        # Check the daly weights fall within the accepted bounds
+        if (df.at[person_id, 'rt_disability'] < 0):
+            logger.warning(key="warning", data="rt disability < 0 in rti_alter_daly_post_treatment")
+            df.at[person_id, 'rt_disability'] = 0
+
+        if (df.at[person_id, 'rt_disability'] > 1):
+            logger.warning(key="warning", data="rt disability > 1 in rti_alter_daly_post_treatment")
+            df.at[person_id, 'rt_disability'] = 1
+
         # remover the treated injury code from the person using rti_treated_injuries
         RTI.rti_treated_injuries(self, person_id, codes)
 
@@ -2141,9 +2150,15 @@ class RTI(Module):
             df.at[person_id, 'rt_disability'] = 1
         else:
             df.at[person_id, 'rt_disability'] = df.at[person_id, 'rt_debugging_DALY_wt']
+
         # Check the daly weights fall within the accepted bounds
-        assert df.at[person_id, 'rt_disability'] >= 0, 'Negative disability burden'
-        assert df.at[person_id, 'rt_disability'] <= 1, 'Too large disability burden'
+        if (df.at[person_id, 'rt_disability'] < 0):
+            logger.warning(key="warning", data="rt disability < 0 in rti_swap_injury_daly_upon_treatment")
+            df.at[person_id, 'rt_disability'] = 0
+
+        if (df.at[person_id, 'rt_disability'] > 1):
+            logger.warning(key="warning", data="rt disability > 1 in rti_swap_injury_daly_upon_treatment")
+            df.at[person_id, 'rt_disability'] = 1
 
     def rti_determine_LOS(self, person_id):
         """

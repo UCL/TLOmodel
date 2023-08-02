@@ -26,13 +26,6 @@ from tlo.methods.epilepsy import HSI_Epilepsy_Start_Anti_Epileptic
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.labour import HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour
-from tlo.methods.malaria import (
-    HSI_Malaria_complicated_treatment_adult,
-    HSI_Malaria_complicated_treatment_child,
-    HSI_Malaria_non_complicated_treatment_adult,
-    HSI_Malaria_non_complicated_treatment_age0_5,
-    HSI_Malaria_non_complicated_treatment_age5_15,
-)
 from tlo.methods.measles import HSI_Measles_Treatment
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
 from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
@@ -60,15 +53,12 @@ class HSI_GenericNonEmergencyFirstAppt(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = 'FirstAttendance_NonEmergency'
 
-        if facility_level == '0':
-            appt_type = 'ConWithDCSA'
-        elif self.sim.population.props.at[person_id, 'age_years'] < 5:
-            appt_type = 'Under5OPD'
-        else:
-            appt_type = 'Over5OPD'
-
         self.ACCEPTED_FACILITY_LEVEL = facility_level
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({appt_type: 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})  # <-- No footprint, as this HSI (mostly just)
+        #                                                                  determines which further HSI will be needed
+        #                                                                  for this person. In some cases, small bits
+        #                                                                  of care are provided (e.g. a diagnosis, or
+        #                                                                  the provision of inhaler.).
 
     def apply(self, person_id, squeeze_factor):
         """Run the actions required during the HSI."""
@@ -91,8 +81,11 @@ class HSI_GenericEmergencyFirstAppt(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = 'FirstAttendance_Emergency'
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
-            ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})  # <-- No footprint, as this HSI (mostly just)
+        #                                                                  determines which further HSI will be needed
+        #                                                                  for this person. In some cases, small bits
+        #                                                                  of care are provided (e.g. a diagnosis, or
+        #                                                                  the provision of inhaler.).
 
     def apply(self, person_id, squeeze_factor):
 
@@ -170,6 +163,11 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
     if 'Schisto' in sim.modules:
         sim.modules['Schisto'].do_on_presentation_with_symptoms(person_id=person_id, symptoms=symptoms)
 
+    if "Malaria" in sim.modules:
+        malaria_associated_symptoms = {'fever', 'headache', 'stomachache', 'diarrhoea', 'vomiting'}
+        if bool(set(symptoms) & malaria_associated_symptoms):
+            sim.modules['Malaria'].do_for_suspected_malaria_case(person_id=person_id, hsi_event=hsi_event)
+
     if age <= 5:
         # ----------------------------------- CHILD < 5 -----------------------------------
         if 'Diarrhoea' in sim.modules:
@@ -181,58 +179,9 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
             if ('cough' in symptoms) or ('difficult_breathing' in symptoms):
                 sim.modules['Alri'].on_presentation(person_id=person_id, hsi_event=hsi_event)
 
-        if "Malaria" in sim.modules:
-            if 'fever' in symptoms:
-                malaria_test_result = sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
-                    person_id=person_id, hsi_event=hsi_event)
-
-                # Treat / refer based on diagnosis
-                if malaria_test_result == "severe_malaria":
-                    schedule_hsi(
-                        HSI_Malaria_complicated_treatment_child(
-                            person_id=person_id,
-                            module=sim.modules["Malaria"]),
-                        priority=1,
-                        topen=sim.date,
-                        tclose=None)
-
-                elif malaria_test_result == "clinical_malaria":
-                    schedule_hsi(
-                        HSI_Malaria_non_complicated_treatment_age0_5(
-                            person_id=person_id,
-                            module=sim.modules["Malaria"]),
-                        priority=1,
-                        topen=sim.date,
-                        tclose=None)
-
         # Routine assessments
         if 'Stunting' in sim.modules:
             sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
-
-    elif age < 15:
-        # ----------------------------------- CHILD 5-14 -----------------------------------
-        if 'fever' in symptoms and "Malaria" in sim.modules:
-            malaria_test_result = sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
-                person_id=person_id, hsi_event=hsi_event)
-
-            # Treat / refer based on diagnosis
-            if malaria_test_result == "severe_malaria":
-                schedule_hsi(
-                    HSI_Malaria_complicated_treatment_child(
-                        person_id=person_id,
-                        module=sim.modules["Malaria"]),
-                    priority=1,
-                    topen=sim.date,
-                    tclose=None)
-
-            elif malaria_test_result == "clinical_malaria":
-                schedule_hsi(
-                    HSI_Malaria_non_complicated_treatment_age5_15(
-                        person_id=person_id,
-                        module=sim.modules["Malaria"]),
-                    priority=1,
-                    topen=sim.date,
-                    tclose=None)
 
     else:
         # ----------------------------------- ADULT -----------------------------------
@@ -315,35 +264,9 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
         if 'Depression' in sim.modules:
             sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
-                                                                 hsi_event=hsi_event,
-                                                                 squeeze_factor=squeeze_factor)
-
-        if "Malaria" in sim.modules:
-            if 'fever' in symptoms:
-                malaria_test_result = sim.modules['Malaria'].check_if_fever_is_caused_by_malaria(
-                    person_id=person_id, hsi_event=hsi_event)
-
-                if malaria_test_result == "severe_malaria":
-                    schedule_hsi(
-                        HSI_Malaria_complicated_treatment_adult(
-                            person_id=person_id,
-                            module=sim.modules["Malaria"]),
-                        priority=1,
-                        topen=sim.date,
-                        tclose=None)
-
-                elif malaria_test_result == "clinical_malaria":
-                    schedule_hsi(
-                        HSI_Malaria_non_complicated_treatment_adult(
-                            person_id=person_id,
-                            module=sim.modules["Malaria"]),
-                        priority=1,
-                        topen=sim.date,
-                        tclose=None)
+                                                                 hsi_event=hsi_event)
 
         if 'CardioMetabolicDisorders' in sim.modules:
-            # Take a blood pressure measurement for proportion of individuals who have not been diagnosed and
-            # are either over 50 or younger than 50 but are selected to get tested.
             sim.modules['CardioMetabolicDisorders'].determine_if_will_be_investigated(person_id=person_id)
 
         if 'Copd' in sim.modules:
@@ -396,45 +319,12 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
 
     if "Depression" in sim.modules:
         sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
-                                                             hsi_event=hsi_event,
-                                                             squeeze_factor=squeeze_factor)
+                                                             hsi_event=hsi_event)
 
     if "Malaria" in sim.modules:
-        # Quick diagnosis algorithm - just perfectly recognises the symptoms of severe malaria
-        sev_set = {"acidosis",
-                   "coma_convulsions",
-                   "renal_failure",
-                   "shock",
-                   "jaundice",
-                   "anaemia"}
-
-        # if person's symptoms are on severe malaria list then consider treatment for malaria
-        any_symptoms_indicative_of_severe_malaria = len(sev_set.intersection(symptoms)) > 0
-
-        if any_symptoms_indicative_of_severe_malaria:
-            # Check if malaria parasitaemia:
-            malaria_test_result = sim.modules["Malaria"].check_if_fever_is_caused_by_malaria(
-                person_id=person_id, hsi_event=hsi_event)
-
-            # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
-            if malaria_test_result in ("severe_malaria", "clinical_malaria"):
-                # Launch the HSI for treatment for Malaria - choosing the right one for adults/children
-                if df.at[person_id, 'age_years'] < 5.0:
-                    schedule_hsi(
-                        hsi_event=HSI_Malaria_complicated_treatment_child(
-                            sim.modules["Malaria"], person_id=person_id
-                        ),
-                        priority=0,
-                        topen=sim.date,
-                    )
-                else:
-                    schedule_hsi(
-                        hsi_event=HSI_Malaria_complicated_treatment_adult(
-                            sim.modules["Malaria"], person_id=person_id
-                        ),
-                        priority=0,
-                        topen=sim.date,
-                    )
+        if 'severe_malaria' in symptoms:
+            sim.modules['Malaria'].do_on_emergency_presentation_with_severe_malaria(person_id=person_id,
+                                                                                    hsi_event=hsi_event)
 
     # ------ CARDIO-METABOLIC DISORDERS ------
     if 'CardioMetabolicDisorders' in sim.modules:
@@ -447,21 +337,6 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                          priority=0,
                          topen=sim.date,
                          tclose=None)
-
-    # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
-    if 'craving_sandwiches' in symptoms:
-        event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
-            module=sim.modules['ChronicSyndrome'],
-            person_id=person_id
-        )
-        schedule_hsi(event, priority=1, topen=sim.date)
-
-    if 'extreme_pain_in_the_nose' in symptoms:
-        event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(
-            module=sim.modules['Mockitis'],
-            person_id=person_id
-        )
-        schedule_hsi(event, priority=1, topen=sim.date)
 
     if 'severe_trauma' in symptoms:
         if 'RTI' in sim.modules:
@@ -482,3 +357,18 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     if 'Copd' in sim.modules:
         if ('breathless_moderate' in symptoms) or ('breathless_severe' in symptoms):
             sim.modules['Copd'].do_when_present_with_breathless(person_id=person_id, hsi_event=hsi_event)
+
+    # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
+    if 'craving_sandwiches' in symptoms:
+        event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
+            module=sim.modules['ChronicSyndrome'],
+            person_id=person_id
+        )
+        schedule_hsi(event, priority=1, topen=sim.date)
+
+    if 'extreme_pain_in_the_nose' in symptoms:
+        event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(
+            module=sim.modules['Mockitis'],
+            person_id=person_id
+        )
+        schedule_hsi(event, priority=1, topen=sim.date)

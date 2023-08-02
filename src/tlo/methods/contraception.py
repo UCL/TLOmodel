@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -959,6 +960,10 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
             return self.make_appt_footprint({'FamPlan': 1})
         elif self.new_contraceptive in ['other_modern', 'pill']:
             return self.make_appt_footprint({'PharmDispensing': 1})
+        else:
+            return self.make_appt_footprint({})
+            warnings.warn(UserWarning("Assumed empty footprint for Contraception Routine appt because couldn't find"
+                                      "actual case."))
 
     def apply(self, person_id, squeeze_factor):
         """If the relevant consumable is available, do change in contraception and log it"""

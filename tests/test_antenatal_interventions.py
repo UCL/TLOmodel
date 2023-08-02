@@ -211,9 +211,6 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     params['sensitivity_blood_test_glucose'] = 1.0
     params['specificity_blood_test_glucose'] = 1.0
 
-    # set coverage of tetatnus for her district to 1
-    sim.modules['Epi'].parameters['district_vaccine_coverage']['TT2+'] = 1.0
-
     # Register the anc HSIs
     first_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
         module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
