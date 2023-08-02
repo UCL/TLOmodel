@@ -192,18 +192,17 @@ class BaseScenario(abc.ABC):
         return None
 
     def get_log_config(self, override_output_directory=None):
-        """Returns the log configuration for the scenario, with some post_processing.
-        """
+        """Returns the log configuration for the scenario, with some post_processing."""
         log_config = self.log_configuration()
 
-        # If "filename" is not given, or is none, use the scenario path name
+        # If scenario doesn't have log filename specified, we used the scenario script name
         if "filename" not in log_config or log_config["filename"] is None:
             log_config["filename"] = Path(self.scenario_path).stem
 
         if override_output_directory is not None:
             log_config["directory"] = override_output_directory
 
-        # If "directory" is given suppress stdout
+        # If directory is specified, we always write log files - so don't print to stdout
         if "directory" in log_config and log_config["directory"] is not None:
             log_config["suppress_stdout"] = True
 
@@ -364,7 +363,7 @@ class SampleRunner:
         log_config = self.scenario.get_log_config()
 
         root_dir = draw_dir = None
-        if log_config["filename"] and log_config["directory"]:  # i.e. save output?
+        if log_config["directory"]:  # i.e. write output files
             timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
             root_dir = Path(log_config["directory"]) / (Path(log_config["filename"]).stem + "-" + timestamp)
 
