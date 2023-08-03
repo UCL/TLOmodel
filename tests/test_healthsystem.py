@@ -1642,8 +1642,8 @@ def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
                      randomise_queue=True,
                      ignore_priority=False,
                      policy_name="Test",  # Test policy enforcing lowest_priority_policy
-                                              # assumed in this test. This allows us to check policies
-                                              # are loaded correctly.
+                                          # assumed in this test. This allows us to check policies
+                                          # are loaded correctly.
                      cons_availability='all',
                  ),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
