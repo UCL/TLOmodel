@@ -114,7 +114,7 @@ def test_run_with_healthsystem_no_disease_modules_defined(seed):
     check_dtypes(sim)
 
 
-def test_all_treatment_IDs_defined_in_priority_policies(seed, tmpdir):
+def test_all_treatment_ids_defined_in_priority_policies(seed, tmpdir):
     """Check that all treatment_IDs included in the fullmodel have been assigned a priority
     in each of the priority policies that could be considered."""
     log_config = {
