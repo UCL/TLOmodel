@@ -411,9 +411,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     for idx in rel_diff_real.index:
         if not pd.isna(rel_diff_real.loc[idx, 'mean']):
             ax.text(idx,
-                    rel_diff_real.loc[idx, 'mean'] * (1 + 0.2),
+                    rel_diff_real.loc[idx, 'mean'] * (1 + 0.3),
                     round(rel_diff_real.loc[idx, 'mean'], 1),
-                    ha='left', fontsize=8)
+                    ha='center', fontsize=8)
     ax.axhline(1.0, color='r')
     format_and_save(fig, ax, name_of_plot)
 
