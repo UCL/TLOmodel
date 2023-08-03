@@ -559,7 +559,8 @@ class HealthSystem(Module):
                        ' to the module initialiser.',
         ),
         'mode_appt_constraints_postSwitch': Parameter(
-            Types.INT, 'If considering a mode switch alongside priority policy switch, specify in this parameter')
+            Types.INT, 'If considering a mode switch alongside priority policy switch, specify in this parameter. '
+                       'The switch occcurs in the year given in `year_policy_switch`.')
     }
 
     PROPERTIES = {
