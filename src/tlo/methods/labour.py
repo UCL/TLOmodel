@@ -3016,8 +3016,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         self.module.run_if_receives_skilled_birth_attendance_cant_run(self)
 
     def did_not_run(self):
-        self.module.run_if_receives_skilled_birth_attendance_cant_run(self)
-        return False
+        pass
 
     def not_available(self):
         self.module.run_if_receives_skilled_birth_attendance_cant_run(self)
@@ -3145,8 +3144,7 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         self.module.run_if_receives_postnatal_check_cant_run(self)
 
     def did_not_run(self):
-        self.module.run_if_receives_postnatal_check_cant_run(self)
-        return False
+        pass
 
     def not_available(self):
         self.module.run_if_receives_postnatal_check_cant_run(self)
@@ -3300,8 +3298,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
 
     def did_not_run(self):
-        self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
-        return False
+        pass
 
     def not_available(self):
         self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
@@ -3329,7 +3326,6 @@ class HSI_Labour_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_Labour_PostnatalWardInpatientCare: did not run')
-        return False
 
     def not_available(self):
         logger.debug(key='message', data='HSI_Labour_PostnatalWardInpatientCare: cannot not run with '

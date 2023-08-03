@@ -2426,8 +2426,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         self.module.inpatient_care_doesnt_run(self)
 
     def did_not_run(self):
-        self.module.inpatient_care_doesnt_run(self)
-        return False
+        pass
 
     def not_available(self):
         self.module.inpatient_care_doesnt_run(self)
@@ -2723,8 +2722,7 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
         self.module.ectopic_pregnancy_treatment_doesnt_run(self)
 
     def did_not_run(self):
-        self.module.ectopic_pregnancy_treatment_doesnt_run(self)
-        return False
+        pass
 
     def not_available(self):
         self.module.ectopic_pregnancy_treatment_doesnt_run(self)
