@@ -401,7 +401,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     rel_diff_real, err_real = format_rel_diff(adjusted=True)
 
     # plot
-    name_of_plot = 'Model vs Data usage per appointment type at all facility levels' \
+    name_of_plot = 'Model vs Data on health service volume per appointment type' \
                    '\n[Model average annual 95% CI, Data average annual]'
     fig, ax = plt.subplots()
     ax.errorbar(rel_diff_real.index.values,
