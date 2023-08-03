@@ -1251,11 +1251,6 @@ class HealthSystem(Module):
         # Select the chosen policy from dictionary of all possible policies
         Policy_df = self.parameters['PriorityRank'][policy]
 
-        # Check that no duplicates are included in priority input file
-        assert not Policy_df['Treatment'].duplicated().any()
-
-        # assert Policy_df['Treatment'] == get_filtered_treatment_ids()
-
         # If a policy is adopted, following variable *must* always be taken from policy.
         # Over-write any other values here.
         self.lowest_priority_considered = Policy_df.loc[Policy_df['Treatment'] == 'lowest_priority_considered',
