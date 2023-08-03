@@ -112,4 +112,6 @@ docs/reference/tlo*.rst
 # TLO configuration
 tlo.conf
 
-
+# ignore all files in outputs directory, except README
+outputs/*
+!outputs/README
