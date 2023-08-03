@@ -179,6 +179,10 @@ def get_simulation_usage_with_confidence_interval(results_folder: Path) -> pd.Da
     model_output.drop(columns='name', inplace=True)
     model_output.reset_index(drop=True, inplace=True)
 
+    # drop dummy PharmDispensing for HCW paper
+    model_output = model_output.drop(index=model_output[model_output.appt_type == 'PharmDispensing'].index
+                                     ).reset_index(drop=True)
+
     return model_output
 
 
@@ -390,7 +394,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _rel_diff['upper_error'] = (_rel_diff['upper'] - _rel_diff['mean'])
         _asymmetric_error = [_rel_diff['lower_error'].values, _rel_diff['upper_error'].values]
 
-        _rel_diff = pd.DataFrame(_rel_diff['mean'])
+        _rel_diff = pd.DataFrame(_rel_diff['mean']).clip(lower=0.1, upper=10.0)
 
         return _rel_diff, _asymmetric_error
 
@@ -398,7 +402,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # plot
     name_of_plot = 'Model vs Data usage per appointment type at all facility levels' \
-                   '\n[Model average annual 95% CI, Adjusted Data average annual]'
+                   '\n[Model average annual 95% CI, Data average annual]'
     fig, ax = plt.subplots()
     ax.errorbar(rel_diff_real.index.values,
                 rel_diff_real['mean'].values,
@@ -547,8 +551,8 @@ if __name__ == "__main__":
     rfp = Path('./resources')
 
     # Find results folder (most recent run generated using that scenario_filename)
-    scenario_filename = 'long_run_all_diseases.py'
-    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
+    scenario_filename = '10_year_scale_run.py'
+    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-4]
 
     # Test dataset:
     # results_folder = Path('/Users/tbh03/GitHub/TLOmodel/outputs/tbh03@ic.ac.uk/long_run_all_diseases-small')
