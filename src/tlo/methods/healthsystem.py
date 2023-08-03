@@ -1285,9 +1285,8 @@ class HealthSystem(Module):
         # This should be a boolean, not int! Still struggling to get a boolean variable from resource file
         if self.tclose_overwrite == 1:
             tclose = topen + pd.to_timedelta(self.tclose_days_offset_overwrite, unit='D')
-        else:
-            if tclose is None:
-                tclose = topen + DateOffset(days=7)
+        elif tclose is None:
+            tclose = topen + DateOffset(days=7)
 
         # Check topen is not in the past
         assert topen >= self.sim.date
