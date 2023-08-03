@@ -1641,7 +1641,7 @@ def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
                      disable=False,
                      randomise_queue=True,
                      ignore_priority=False,
-                     priority_policy="Test",  # Test policy enforcing lowest_priority_policy
+                     policy_name="Test",  # Test policy enforcing lowest_priority_policy
                                               # assumed in this test. This allows us to check policies
                                               # are loaded correctly.
                      cons_availability='all',
@@ -1772,7 +1772,7 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
                                            mode_appt_constraints=2,
                                            ignore_priority=False,
                                            randomise_queue=True,
-                                           priority_policy="",
+                                           policy_name="",
                                            use_funded_or_actual_staffing='funded_plus'),
                  DummyModule()
                  )

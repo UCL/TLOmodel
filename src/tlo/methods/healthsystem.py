@@ -579,7 +579,7 @@ class HealthSystem(Module):
         beds_availability: Optional[str] = None,
         randomise_queue: bool = True,
         ignore_priority: bool = False,
-        priority_policy: Optional[str] = None,
+        policy_name: Optional[str] = None,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = None,
         disable: bool = False,
@@ -605,7 +605,7 @@ class HealthSystem(Module):
             and priority
         :param ignore_priority: If ``True`` do not use the priority information in HSI
             event to schedule
-        :param priority_policy: Name of priority policy that will be adopted if any
+        :param policy_name: Name of priority policy that will be adopted if any
         :param capabilities_coefficient: Multiplier for the capabilities of health
             officers, if ``None`` set to ratio of initial population to estimated 2010
             population.
@@ -635,7 +635,7 @@ class HealthSystem(Module):
         assert not (disable and disable_and_reject_all), (
             'Cannot have both disable and disable_and_reject_all selected'
         )
-        assert not (ignore_priority and priority_policy is not None), (
+        assert not (ignore_priority and policy_name is not None), (
             'Cannot adopt a priority policy if the priority will be then ignored'
         )
 
@@ -659,11 +659,11 @@ class HealthSystem(Module):
 
         # Check that the name of policy being evaluated is included
         self.priority_policy = None
-        if priority_policy is not None:
-            assert priority_policy in ['', 'Default', 'Test', 'Random', 'Naive', 'RMNCH',
+        if policy_name is not None:
+            assert policy_name in ['', 'Default', 'Test', 'Random', 'Naive', 'RMNCH',
                                        'VerticalProgrammes', 'ClinicallyVulnerable', 'EHP_III',
                                        'LCOA_EHP']
-        self.arg_priority_policy = priority_policy
+        self.arg_policy_name = policy_name
 
         self.tclose_overwrite = None
         self.tclose_days_offset_overwrite = None
@@ -1244,8 +1244,8 @@ class HealthSystem(Module):
         overwrite with what was provided in argument if an argument was specified -- provided for backward
         compatibility/debugging.)"""
         return self.parameters['Policy_Name'] \
-            if self.arg_priority_policy is None \
-            else self.arg_priority_policy
+            if self.arg_policy_name is None \
+            else self.arg_policy_name
 
     def load_priority_policy(self, policy):
 
