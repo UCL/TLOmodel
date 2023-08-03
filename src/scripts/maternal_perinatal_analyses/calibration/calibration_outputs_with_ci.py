@@ -133,13 +133,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     def get_stillbirth_graphs(rate_data, calib_data, group):
         fig, ax = plt.subplots()
-        ax.plot(sim_years, rate_data[0], label="Model", color='deepskyblue')
-        ax.fill_between(sim_years, rate_data[1], rate_data[2], label='95% CI', color='b', alpha=.1)
-        # plt.errorbar(2010, 20, yerr=(23 - 17) / 2, label='UN (2010)', fmt='o', color='green', ecolor='mediumseagreen',
-        #              elinewidth=3, capsize=0)
-        # plt.errorbar(2019, 16.3, yerr=(18.1 - 14.7) / 2, label='UN (2019)', fmt='o', color='green',
-        #              ecolor='mediumseagreen',
-        #              elinewidth=3, capsize=0)
+        ax.plot(sim_years, rate_data[0], label="Model (95% CI)", color='deepskyblue')
+        ax.fill_between(sim_years, rate_data[1], rate_data[2], color='b', alpha=.1)
         ax.plot([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021], calib_data[0],
                 label="UN IGCME 2020 (Uncertainty interval)", color='green')
         ax.fill_between([2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021], calib_data[2],
@@ -150,8 +145,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
             ax.set(ylim=(0, 15))
 
         plt.xlabel('Year')
-        plt.ylabel("Stillbirths per 1000 total births")
-        plt.title(f'{group} stillbirth rate per year')
+        plt.ylabel("Stillbirths per 1000 Total Births")
+        plt.title(f'{group} Stillbirth Rate per Year')
         plt.legend()
         plt.savefig(f'{graph_location}/{group}_sbr.png')
         plt.show()
@@ -186,6 +181,26 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     # todo IP stillbirths need to be added to total births and shouldnt count as a pregnancy loss
 
     # ========================================== INTERVENTION COVERAGE... =============================================
+    def cov_bar_chart(mdata, cdata, title, save_name):
+        model_ci = [(x - y) / 2 for x, y in zip(mdata[2], mdata[1])]
+        # cdata_ci = [(x - y) / 2 for x, y in zip(cdata[2], cdata[1])]
+
+        N = len(mdata[0])
+        ind = np.arange(N)
+        width = 0.28
+        plt.bar(ind, mdata[0], width, label='Model (95% CI)', yerr=model_ci, color='cornflowerblue')
+        plt.bar(ind + width, cdata, width, label='DHS (upper & lower bounds)', color='forestgreen')
+        plt.ylabel('Proportion of Total Births')
+        plt.xlabel('Year')
+        plt.ylim(0, 100)
+        plt.title(title)
+        plt.xticks(ind + width / 2, ['2010', '2015'])
+        plt.legend(bbox_to_anchor=(1.4, 1.1))
+        plt.savefig(f'{graph_location}/{save_name}.png', bbox_inches="tight")
+        plt.show()
+
+
+
     # 1.) Antenatal Care... # TODO: THIS COULD CERTAINLY BE SIMPLIFIED
     # Mean proportion of women (across draws) who have given birth that have attended ANC1, ANC4+ and ANC8+ per year...
     anc_coverage = extract_results(
@@ -221,6 +236,13 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     anc1_coverage = analysis_utility_functions.return_95_CI_across_runs(cov_1_df, sim_years)
     anc4_coverage = analysis_utility_functions.return_95_CI_across_runs(cov_4_df, sim_years)
 
+    anc1_for_bc = [[anc1_coverage[0][0], anc1_coverage[0][5]],
+                   [anc1_coverage[1][0], anc1_coverage[1][5]],
+                   [anc1_coverage[2][0], anc1_coverage[2][5]]]
+    anc4_for_bc = [[anc4_coverage[0][0], anc4_coverage[0][5]],
+                   [anc4_coverage[1][0], anc4_coverage[1][5]],
+                   [anc4_coverage[2][0], anc4_coverage[2][5]]]
+
     target_anc1_dict = {'double': True,
                         'first': {'year': 2010, 'value': 94, 'label': 'DHS (2010)', 'ci': 0},
                         'second': {'year': 2015, 'value': 95, 'label': 'DHS (2015)', 'ci': 0}}
@@ -238,6 +260,14 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         'Proportion of women who gave birth that attended four or more ANC contacts per year', graph_location,
         'anc_prop_anc4')
 
+    for model_data, calib_data, title, save_name in zip([anc1_for_bc, anc4_for_bc],
+                                             [[94, 95], [45.5, 51]],
+                                             ['Proportion of women who gave birth and received ANC1+',
+                                              'Proportion of women who gave birth and received ANC4+'],
+                                             ['anc1+_cov_bar', 'anc4+_cov_bar'],
+                                             ):
+        cov_bar_chart(model_data, calib_data, title, save_name)
+
     # TOTAL ANC COUNTS PER WOMAN
     r = extract_results(
         results_folder,
@@ -249,7 +279,10 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     )
     results = r.fillna(0)
     # get yearly outputs
-    anc_count_df = pd.DataFrame(columns=sim_years, index=[0, 1, 2, 3, 4, 5, 6, 7, 8])
+    columns = ['DHS 2010', 2010, 2011, 2012, 2013, 2014, 'DHS 2015', 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022]
+    anc_count_df = pd.DataFrame(columns=columns, index=[0, 1, 2, 3, 4, 5, 6, 7, 8])
+    anc_count_df['DHS 2010'] = pd.Series([0, 2.8, 25.3, 25.3, 46.6, 0, 0, 0, 0], index=anc_count_df.index)
+    anc_count_df['DHS 2015'] = pd.Series([0, 2, 23.1, 23.1, 51.7, 0, 0, 0, 0], index=anc_count_df.index)
 
     for year in sim_years:
         for row in anc_count_df.index:
@@ -268,7 +301,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
             for index in anc_count_df.index:
                 anc_count_df.at[index, year] = (anc_count_df.at[index, year]/total_per_year) * 100
 
-    labels = sim_years
+    labels = ['DHS 2010', '2010', '2011', '2012', '2013', '2014', 'DHS 2015', '2015', '2016', '2017', '2018', '2019',
+              '2020', '2021', '2022']
     width = 0.35       # the width of the bars: can also be len(x) sequence
     fig, ax = plt.subplots()
     ax.bar(labels, anc_count_df.loc[8], width, label=8, bottom=anc_count_df.loc[1] + anc_count_df.loc[2] +
@@ -284,8 +318,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     ax.bar(labels, anc_count_df.loc[3], width, label=3, bottom=anc_count_df.loc[1] + anc_count_df.loc[2])
     ax.bar(labels, anc_count_df.loc[2], width, label=2, bottom=anc_count_df.loc[1])
     ax.bar(labels, anc_count_df.loc[1], width, label=1,)
-    ax.set_ylabel('% of total women attending one or more ANC contact')
-    ax.set_title('Number of ANC contacts attended by women attending at least one contact per year')
+    ax.set_ylabel('Proportion of women attending one or more ANC contact')
+    ax.set_title('Number of ANC Contacts Attended by Women Attending at Least One Contact per Year')
     ax.legend(bbox_to_anchor=(1.2, 1.1))
     plt.savefig(f'{graph_location}/anc_total_visits.png', bbox_inches="tight")
     plt.show()
@@ -456,6 +490,12 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     plt.savefig(f'{graph_location}/sba_delivery_location.png', bbox_inches="tight")
     plt.show()
 
+    fd_for_bc = [[fd_data[0][0], fd_data[0][5]],
+                   [fd_data[1][0], fd_data[1][5]],
+                   [fd_data[2][0], fd_data[2][5]]]
+
+    cov_bar_chart(fd_for_bc, [73, 91], 'Proportion of Total Births Occurring in a Health Facility', 'fd_cov_bar')
+
     # 3.) Postnatal Care
     # --- PNC ---
     all_surviving_mothers = extract_results(
@@ -519,6 +559,13 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
         sim_years, neo_birth_pnc_data, target_npnc_dict, '% of total births',
         'Proportion of total births after which the neonate received any PNC per year', graph_location, 'pnc_neo')
+
+    m_pnc_for_bc = [[mat_birth_pnc_data[0][1], mat_birth_pnc_data[0][5]],
+                 [mat_birth_pnc_data[1][1], mat_birth_pnc_data[1][5]],
+                 [mat_birth_pnc_data[2][1], mat_birth_pnc_data[2][5]]]
+
+    cov_bar_chart(m_pnc_for_bc, [50, 48], 'Proportion of Women Receiving Any Postnatal Care Following Birth',
+                  'mat_pnc_cov_bar')
 
     def get_early_late_pnc_split(module, target, file_name):
         p = extract_results(
@@ -1338,8 +1385,12 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
         if title == 'Total':
             ax.set(ylim=(0, 900))
+        elif title == 'Direct':
+            ax.set(ylim=(0, 700))
         else:
-            ax.set(ylim=(0, 900))
+            ax.set(ylim=(0, 350))
+
+
         plt.xlabel('Year')
         plt.ylabel("Deaths per 100 000 live births")
         plt.title(f'{title} Maternal Mortality Ratio per Year')
@@ -1521,21 +1572,6 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     simplified_causes = ['ectopic_pregnancy', 'abortion', 'severe_pre_eclampsia', 'sepsis', 'uterine_rupture',
                          'postpartum_haemorrhage',  'antepartum_haemorrhage']
 
-    # ec_tr = {'double': True, 'first': {'year': 2010, 'value': 18.9, 'label': 'UNK.', 'ci': 0},
-    #                          'second': {'year': 2015, 'value': 3.51, 'label': 'UNK.', 'ci': 0}}
-    # ab_tr = {'double': True, 'first': {'year': 2010, 'value': 51.3, 'label': 'UNK.', 'ci': 0},
-    #          'second': {'year': 2015, 'value': 29.9, 'label': 'UNK.', 'ci': 0}}
-    # spe_ec_tr = {'double': True, 'first': {'year': 2010, 'value': 64.8, 'label': 'UNK.', 'ci': 0},
-    #                              'second': {'year': 2015, 'value': 69.8, 'label': 'UNK.', 'ci': 0}}
-    # sep_tr = {'double': True, 'first': {'year': 2010, 'value': 74.3, 'label': 'UNK.', 'ci': 0},
-    #          'second': {'year': 2015, 'value': 55.3, 'label': 'UNK.', 'ci': 0}}
-    # ur_tr = {'double': True, 'first': {'year': 2010, 'value': 18.9, 'label': 'UNK.', 'ci': 0},
-    #          'second': {'year': 2015, 'value': 3.51, 'label': 'UNK.', 'ci': 0}}
-    # pph_tr = {'double': True, 'first': {'year': 2010, 'value': 229.5, 'label': 'UNK.', 'ci': 0},
-    #          'second': {'year': 2015, 'value': 116.8, 'label': 'UNK.', 'ci': 0}}
-    # aph_tr = {'double': True, 'first': {'year': 2010, 'value': 47.3, 'label': 'UNK.', 'ci': 0},
-    #          'second': {'year': 2015, 'value': 23.3, 'label': 'UNK.', 'ci': 0}}
-
     ec_tr = {'double': True, 'first': {'year': 2010, 'value': 1.4, 'label': 'UNK.', 'ci': 0},
              'second': {'year': 2015, 'value': 3, 'label': 'UNK.', 'ci': 0}}
     ab_tr = {'double': True, 'first': {'year': 2010, 'value': 36.8, 'label': 'UNK.', 'ci': 0},
@@ -1587,84 +1623,69 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
             f'Maternal Mortality Ratio per Year for {cause}', graph_location, f'mmr_{cause}')
 
     # =================================== DEATH PROPORTIONS... ========================================================
-    proportions_dicts = dict()
-    total_deaths_per_year = list()
-
+    simp_causes = ['ectopic_pregnancy', 'uterine_rupture', 'antepartum_haemorrhage','abortion', 'severe_pe_ec', 'pph',
+                   'sepsis']
+    t = []
     for year in sim_years:
-        yearly_mean_number = list()
-        causes = dict()
+        for cause in simp_causes:
+            index = pd.MultiIndex.from_tuples([(year, cause)], names=["year", "cause_of_death"])
+            new_df = pd.DataFrame(columns=death_results.columns, index=index)
 
-        for complication in direct_causes:
-            if complication in death_results.loc[year].index:
-                mean = death_results.loc[year, complication].mean()
-                yearly_mean_number.append(mean)
-                causes.update({f'{complication}': mean})
+            if cause == 'abortion':
+                new_df.loc[year, cause] = death_results.loc[year, 'induced_abortion'] + \
+                                          death_results.loc[year, 'spontaneous_abortion']
+                new_df.loc[year, cause] = (new_df.loc[year, cause] / mat_d_unscaled['direct_deaths_final'].loc[year])\
+                                           * 100
+                t.append(new_df)
+            elif cause == 'severe_pe_ec':
+                new_df.loc[year, cause] = death_results.loc[year, 'severe_pre_eclampsia'] + \
+                                          death_results.loc[year, 'eclampsia']
+                new_df.loc[year, cause] = (new_df.loc[year, cause] / mat_d_unscaled['direct_deaths_final'].loc[year]) \
+                                          * 100
+                t.append(new_df)
+
+            elif cause == 'pph':
+                new_df.loc[year, cause] = death_results.loc[year, 'postpartum_haemorrhage'] + \
+                                          death_results.loc[year, 'secondary_postpartum_haemorrhage']
+                new_df.loc[year, cause] = (new_df.loc[year, cause] / mat_d_unscaled['direct_deaths_final'].loc[year]) \
+                                          * 100
+                t.append(new_df)
+
+            elif cause == 'sepsis':
+                new_df.loc[year, cause] = death_results.loc[year, 'postpartum_sepsis'] + \
+                                          death_results.loc[year, 'intrapartum_sepsis']+ \
+                                          death_results.loc[year, 'antenatal_sepsis']
+                new_df.loc[year, cause] = (new_df.loc[year, cause] / mat_d_unscaled['direct_deaths_final'].loc[year]) \
+                                          * 100
+                t.append(new_df)
+
+            elif cause == 'aph':
+                new_df.loc[year, cause] = death_results.loc[year, 'antepartum'] + \
+                                          death_results.loc[year, 'secondary_postpartum_haemorrhage']
+                new_df.loc[year, cause] = (new_df.loc[year, cause] / mat_d_unscaled['direct_deaths_final'].loc[year]) \
+                                          * 100
+                t.append(new_df)
+
             else:
-                yearly_mean_number.append(0)
+                new_df.loc[year, cause] = death_results.loc[year, cause]
+                new_df.loc[year, cause] = (new_df.loc[year, cause] / mat_d_unscaled['direct_deaths_final'].loc[year]) \
+                                          * 100
+                t.append(new_df)
 
-        total_deaths_this_year = sum(yearly_mean_number)
-        total_deaths_per_year.append(total_deaths_this_year)
+    direct_d_by_cause_df = pd.concat(t)
+    all_values_2015 =[]
+    av_u_ci = []
+    av_l_ci = []
 
-        for complication in causes:
-            causes[complication] = (causes[complication] / total_deaths_this_year) * 100
-        new_dict = {year: causes}
-        proportions_dicts.update(new_dict)
-    #
-    # def pie_prop_cause_of_death(values, years, labels, title):
-    #     sizes = values
-    #     fig1, ax1 = plt.subplots()
-    #     ax1.pie(sizes, shadow=True, startangle=90)
-    #     ax1.axis('equal')
-    #     box = ax.get_position()
-    #     ax.set_position([box.x0, box.y0, box.width * 0.5, box.height])
-    #     plt.legend(labels, loc='center left', bbox_to_anchor=(1, 0.5))
-    #     # Equal aspect ratio ensures that pie is drawn as a circle.
-    #     plt.title(f'Proportion of total maternal deaths by cause ({title}) {years}')
-    #     plt.savefig(f'{graph_location}/mat_death_by_cause_{title}_{years}.png',
-    #                 bbox_inches="tight")
-    #     plt.show()
-
-    props_df = pd.DataFrame(data=proportions_dicts)
-    props_df = props_df.fillna(0)
-
-    simplified_df = props_df.transpose()
-
-    simplified_df['Abortion'] = simplified_df['induced_abortion'] + simplified_df['spontaneous_abortion']
-    simplified_df['Severe PE/Eclampsia'] = simplified_df['severe_pre_eclampsia'] + simplified_df['eclampsia']
-    simplified_df['PPH'] = simplified_df['postpartum_haemorrhage'] + simplified_df['secondary_postpartum_haemorrhage']
-
-    simplified_df['Sepsis'] = pd.Series(0, index=sim_years)
-    if 'postpartum_sepsis' in simplified_df.columns:
-        simplified_df['Sepsis'] = simplified_df['Sepsis'] + simplified_df['postpartum_sepsis']
-    if 'intrapartum_sepsis' in simplified_df.columns:
-        simplified_df['Sepsis'] = simplified_df['Sepsis'] + simplified_df['intrapartum_sepsis']
-    if 'antenatal_sepsis' in simplified_df.columns:
-        simplified_df['Sepsis'] = simplified_df['Sepsis'] + simplified_df['antenatal_sepsis']
-
-    for column in ['postpartum_haemorrhage', 'secondary_postpartum_haemorrhage', 'severe_pre_eclampsia', 'eclampsia',
-                   'severe_gestational_hypertension',
-                   'induced_abortion', 'spontaneous_abortion', 'intrapartum_sepsis', 'postpartum_sepsis',
-                   'antenatal_sepsis']:
-        if column in simplified_df.columns:
-            simplified_df = simplified_df.drop(columns=[column])
-
-    all_labels = list()
-    all_values = list()
-    av_l_ci = list()
-    av_u_ci = list()
-    for column in simplified_df.columns:
-        all_values.append(simplified_df[column].mean())
-        ci = st.t.interval(0.95, len(simplified_df[column]) - 1, loc=np.mean(simplified_df[column]),
-                           scale=st.sem(simplified_df[column]))
+    for cause in simp_causes:
+        row = direct_d_by_cause_df.loc[2015, cause]
+        all_values_2015.append(row.mean())
+        ci = st.t.interval(0.95, len(row) - 1, loc=np.mean(row), scale=st.sem(row))
         av_l_ci.append(ci[0])
         av_u_ci.append(ci[1])
-        all_labels.append(f'{column} ({round(simplified_df[column].mean(), 2)} %)')
-
-    # pie_prop_cause_of_death(all_values, '2010-2020', all_labels, 'total')
 
     labels = ['EP', 'UR', 'APH', 'Abr.', 'SPE/E.', 'PPH', 'Sep.']
-    model = all_values
-    # bemonc_data = [0.8, 12.6, 5.3, 6.8, 15.9, 26, 18.9]  # order = ectopic,
+    model = all_values_2015
     bemonc_data = [0.1, 14, 5.3, 6.8, 18, 31, 22]  # order = ectopic,
 
     ui = [(x - y) / 2 for x, y in zip(av_u_ci, av_l_ci)]
@@ -1673,144 +1694,19 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     width = 0.35  # the width of the bars
 
     fig, ax = plt.subplots()
-    ax.bar(x - width / 2, model, width, yerr=ui, label='Model (95% CI)')
-    ax.bar(x + width / 2, bemonc_data, width, label='BEmONC Survey 2015')
+    ax.bar(x - width / 2, model, width, yerr=ui, label='Model 2015 (95% CI)', color='blue')
+    ax.bar(x + width / 2, bemonc_data, width, label='BEmONC Survey 2015', color='green')
     # ax.bar_label(labels)
     # Add some text for labels, title and custom x-axis tick labels, etc.
-    ax.set_ylabel('% of total direct deaths')
-    ax.set_xlabel('Cause of death')
-    ax.set_title('Proportion of total direct maternal deaths by cause (2010-2022)')
+    ax.set_ylabel('% of Total Direct Deaths in 2015')
+    ax.set_xlabel('Cause of Death')
+    ax.set_title('Proportion of Total Direct Maternal Deaths by Cause in 2015')
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
     ax.legend(loc='upper left')
     fig.tight_layout()
-    plt.savefig(f'{graph_location}/proportions_cause_of_death.png')
+    plt.savefig(f'{graph_location}/proportions_cause_of_death_2015.png')
     plt.show()
-
-    # =========================================== CASE FATALITY PER COMPLICATION ======================================
-    # tr = list()  # todo:update?
-    # dummy_denom = list()
-    # for years in sim_years:
-    #     tr.append(0)
-    #     dummy_denom.append(1)
-    #
-    # mean_ep = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     an_comps, 'ectopic_unruptured', sim_years)[0]
-    # mean_sa = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     an_comps, 'complicated_spontaneous_abortion', sim_years)[0]
-    # mean_ia = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     an_comps, 'complicated_induced_abortion', sim_years)[0]
-    # mean_ur = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     la_comps, 'uterine_rupture', sim_years)[0]
-    # mean_lsep = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     la_comps, 'sepsis', sim_years)[0]
-    # mean_psep = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     pn_comps, 'sepsis', sim_years)[0]
-    # mean_asep = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     an_comps, 'clinical_chorioamnionitis', sim_years)[0]
-    #
-    # mean_ppph = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     la_comps, 'primary_postpartum_haemorrhage', sim_years)[0]
-    # mean_spph = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     pn_comps, 'secondary_postpartum_haemorrhage', sim_years)[0]
-    #
-    # mean_spe = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
-    #     'severe_pre_eclamp', dummy_denom, 1, [an_comps, la_comps, pn_comps], sim_years)[0]
-    #
-    # mean_ec = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
-    #     'eclampsia', dummy_denom, 1, [an_comps, la_comps, pn_comps], sim_years)[0]
-    #
-    # mean_sgh = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
-    #     'severe_gest_htn', dummy_denom, 1, [an_comps, la_comps, pn_comps], sim_years)[0]
-    #
-    # mm_aph_mean = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
-    #     'mild_mod_antepartum_haemorrhage', dummy_denom, 1, [an_comps, la_comps], sim_years)[0]
-    #
-    # s_aph_mean = analysis_utility_functions.get_comp_mean_and_rate_across_multiple_dataframes(
-    #     'severe_antepartum_haemorrhage', dummy_denom, 1, [an_comps, la_comps], sim_years)[0]
-    #
-    # mean_aph = [x + y for x, y in zip(mm_aph_mean, s_aph_mean)]
-    #
-    # for inc_list in [mean_ep, mean_sa, mean_ia, mean_ur, mean_lsep,
-    #                  mean_psep, mean_asep, mean_ppph, mean_spph, mean_spe, mean_ec, mean_sgh, mean_aph]:
-    #
-    #     for index, item in enumerate(inc_list):
-    #         if item == 0:
-    #             inc_list[index] = 0.1
-    #
-    #     print(inc_list)
-    #
-    # for inc_list, complication in \
-    #     zip([mean_ep, mean_sa, mean_ia, mean_ur, mean_psep, mean_ppph, mean_spph, mean_spe, mean_ec,
-    #          mean_sgh, mean_aph],
-    #         ['ectopic_pregnancy', 'spontaneous_abortion', 'induced_abortion', 'uterine_rupture',
-    #          'postpartum_sepsis', 'postpartum_haemorrhage', 'secondary_postpartum_haemorrhage',
-    #          'severe_pre_eclampsia', 'eclampsia', 'severe_gestational_hypertension', 'antepartum_haemorrhage']):
-    #
-    #     cfr = analysis_utility_functions.get_comp_mean_and_rate(
-    #         complication, inc_list, death_results, 100, sim_years)[0]
-    #     print(complication, cfr)
-    #     analysis_utility_functions.simple_line_chart_with_target(
-    #         sim_years, cfr, tr, 'Total CFR', f'Yearly CFR for {complication}', f'{complication}_cfr_per_year',
-    #         graph_location)
-    #
-    # mean_lsep = analysis_utility_functions.get_mean_and_quants_from_str_df(la_comps, 'sepsis', sim_years)[0]
-    # mean_asep = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     an_comps, 'clinical_chorioamnionitis', sim_years)[0]
-    # total_an_cases = [x + y for x, y in zip(mean_asep, mean_lsep)]
-    #
-    # a_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     death_results, 'antenatal_sepsis', sim_years)[0]
-    # i_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     death_results, 'intrapartum_sepsis', sim_years)[0]
-    #
-    # total_an_sepsis_deaths = [x + y for x, y in zip(a_deaths, i_deaths)]
-    # an_sep_cfr = [(x/y) * 100 for x, y in zip(total_an_sepsis_deaths, total_an_cases)]
-    # analysis_utility_functions.simple_line_chart_with_target(
-    #     sim_years, an_sep_cfr, tr, 'Total CFR', 'Yearly CFR for antenatal/intrapartum sepsis',
-    #     'an_ip_sepsis_cfr_per_year', graph_location)
-    #
-    # # todo: issue with incidenec and logging of sepsis
-    # total_sepsis_cases = [x + y for x, y in zip(total_an_cases, mean_psep)]
-    # p_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(death_results, 'postpartum_sepsis',
-    #                                                                       sim_years)[0]
-    # total_sepsis_deaths = [x + y for x, y in zip(p_deaths, total_an_sepsis_deaths)]
-    # sep_cfr = [(x/y) * 100 for x, y in zip(total_sepsis_deaths, total_sepsis_cases)]
-    # analysis_utility_functions.simple_line_chart_with_target(
-    #     sim_years, sep_cfr, tr, 'Total CFR', 'Yearly CFR for Sepsis (combined)', 'combined_sepsis_cfr_per_year',
-    #     graph_location)
-    #
-    # total_pph_cases = [x + y for x, y in zip(mean_ppph, mean_spph)]
-    # p_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     death_results, 'postpartum_haemorrhage', sim_years)[0]
-    # s_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     death_results, 'secondary_postpartum_haemorrhage', sim_years)[0]
-    # total_pph_deaths = [x + y for x, y in zip(p_deaths, s_deaths)]
-    # cfr = [(x/y) * 100 for x, y in zip(total_pph_deaths, total_pph_cases)]
-    # analysis_utility_functions.simple_line_chart_with_target(
-    #     sim_years, cfr, tr, 'Total CFR', 'Yearly CFR for PPH (combined)', 'combined_pph_cfr_per_year', graph_location)
-    #
-    # total_ab_cases = [x + y for x, y in zip(mean_ia, mean_sa)]
-    # ia_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     death_results, 'induced_abortion', sim_years)[0]
-    # sa_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     death_results, 'spontaneous_abortion', sim_years)[0]
-    # total_ab_deaths = [x + y for x, y in zip(ia_deaths, sa_deaths)]
-    # cfr = [(x/y) * 100 for x, y in zip(total_ab_deaths, total_ab_cases)]
-    # analysis_utility_functions.simple_line_chart_with_target(
-    #     sim_years, cfr, tr, 'Total CFR', 'Yearly CFR for Abortion (combined)', 'combined_abortion_cfr_per_year',
-    #     graph_location)
-    #
-    # total_spec_cases = [x + y + z for x, y, z in zip(mean_spe, mean_ec, mean_sgh)]
-    # spe_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     death_results, 'severe_pre_eclampsia', sim_years)[0]
-    # ec_deaths = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     death_results, 'eclampsia', sim_years)[0]
-    # total_spec_deaths = [x + y + z for x, y, z in zip(spe_deaths, ec_deaths, sgh_deaths)]
-    # cfr = [(x/y) * 100 for x, y in zip(total_spec_deaths, total_spec_cases)]
-    # analysis_utility_functions.simple_line_chart_with_target(
-    #     sim_years, cfr, tr, 'Total CFR', 'Yearly CFR for Severe Pre-eclampsia/Eclampsia',
-    #     'combined_spe_ec_cfr_per_year', graph_location)
 
     # ================================================================================================================
     # =================================================== Neonatal Death ==============================================
@@ -1846,8 +1742,6 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         un_yrs = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021]
 
         data = {'dhs': {'mean': [31, 27], 'lq': [26, 22], 'uq': [34, 34]},
-                     # 'hug': {'mean': 22.7, 'lq': 15.6, 'uq': 28.8},
-                     # 'gbd': {'mean': 25, 'lq': 21.4, 'uq': 26.6},
                      'un': {'mean': [28, 27, 26, 25, 24, 23, 22, 22, 20, 20, 20, 19],
                             'lq': [25, 24, 23, 22, 20, 18, 16, 15, 14, 13, 13, 12],
                             'uq': [31, 31, 30, 29, 29, 28, 28, 29, 29, 30, 30, 31]}}
@@ -1861,14 +1755,6 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                      yerr=(data['dhs']['uq'][1] - data['dhs']['lq'][1]) / 2, fmt='o', color='mediumseagreen',
                      ecolor='green',
                      elinewidth=3, capsize=0)
-
-        # plt.errorbar(2017, data['hug']['mean'], label='Hug (2017)',
-        #              yerr=(data['hug']['uq'] - data['hug']['lq']) / 2,
-        #              fmt='o', color='purple', ecolor='purple', elinewidth=3, capsize=0)
-        #
-        # plt.errorbar(2019, data['gbd']['mean'], label='GBD (2019)',
-        #              yerr=(data['gbd']['uq'] - data['gbd']['lq']) / 2,
-        #              fmt='o', color='pink', ecolor='pink', elinewidth=3, capsize=0)
 
         ax.plot(un_yrs, data['un']['mean'], label="UN IGCME (Uncertainty interval)", color='grey')
         ax.fill_between(un_yrs, data['un']['lq'], data['un']['uq'], color='grey', alpha=.1)
@@ -1884,9 +1770,9 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     get_nmr_graphs(nd_nmr, ['deepskyblue', 'b'], 'Yearly NMR due to GBD "Neonatal Disorders"', 'neonatal_disorders_nmr')
 
     fig, ax = plt.subplots()
-    ax.plot(sim_years, tnmr[0], label="Model-Total NMR(95% CI)", color='deepskyblue')
+    ax.plot(sim_years, tnmr[0], label="Model: Total NMR(95% CI)", color='deepskyblue')
     ax.fill_between(sim_years, tnmr[1], tnmr[2], color='b', alpha=.1)
-    ax.plot(sim_years, nd_nmr[0], label="Model-ND NMR (95% CI)", color='salmon')
+    ax.plot(sim_years, nd_nmr[0], label="Model: 'Neonatal Disorders' NMR (95% CI)", color='salmon')
     ax.fill_between(sim_years, nd_nmr[1], nd_nmr[2], color='r', alpha=.1)
 
     un_yrs = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021]
@@ -1908,10 +1794,10 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     ax.plot(un_yrs, data['un']['mean'], label="UN IGCME (Uncertainty interval)", color='grey')
     ax.fill_between(un_yrs, data['un']['lq'], data['un']['uq'], color='grey', alpha=.1)
-    ax.set(ylim=(0, 35))
+    ax.set(ylim=(0, 40))
     plt.xlabel('Year')
-    plt.ylabel("Neonatal deaths per 1000 live births")
-    plt.title('Yearly neonatal mortality ratio (NMR)')
+    plt.ylabel("Neonatal Deaths per 1000 Live Births")
+    plt.title('Yearly Neonatal Mortality Rate (NMR)')
     plt.legend(loc='lower left')
     plt.savefig(f'{graph_location}/all_nmr_one_graph.png')
     plt.show()
@@ -1945,11 +1831,12 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         N = len(data[0])
         ind = np.arange(N)
         width = 0.35
-        plt.bar(ind, data[0], width, label='Model', yerr=model_ci_neo, color='teal')
-        plt.bar(ind + width, gbd_data[0], width, label='GBD', yerr=gbd_ci_neo, color='olivedrab')
+        plt.bar(ind, data[0], width, label='Model (95% CI)', yerr=model_ci_neo, color='teal')
+        plt.bar(ind + width, gbd_data[0], width, label='GBD (Lower & Upper bounds)', yerr=gbd_ci_neo, color='olivedrab')
         plt.ylabel('Crude Deaths (scaled)')
         plt.title(title)
         plt.xticks(ind + width / 2, gbd_years)
+        plt.xlabel('Year')
         plt.legend(loc='best')
         plt.savefig(f'{graph_location}/{save_name}.png')
         plt.show()
@@ -1964,56 +1851,63 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     neo_calib_targets_fottrell = [27.3, 25.8, 8.95]  # prematuirty, birth asphyxia, early onset sepsis
     neo_calib_targets_bemonc = [26, 52, 6] # prematuirty, birth asphyxia, early onset sepsis
 
-    direct_neonatal_causes = ['early_onset_sepsis', 'late_onset_sepsis', 'encephalopathy', 'preterm_other',
-                              'respiratory_distress_syndrome', 'neonatal_respiratory_depression']
-
-    causes_prop = dict()
-    for cause in direct_neonatal_causes:
-        causes_prop.update({cause: [0, 0, 0]})
-
+    simp_causes_neo = ['Prematurity', 'Birth Asphyxia', 'Neonatal Sepsis']
+    t = []
     for year in sim_years:
-        total_deaths_py = tnd.loc[year].mean()
+        for cause in simp_causes_neo:
+            index = pd.MultiIndex.from_tuples([(year, cause)], names=["year", "cause_of_death"])
+            new_df = pd.DataFrame(columns=death_results.columns, index=index)
 
-        for complication in direct_neonatal_causes:
-            if complication in death_results.loc[year].index:
-                prop = (death_results.loc[year, complication] / total_deaths_py) * 100
+            if cause == 'Prematurity':
+                new_df.loc[year, cause] = death_results.loc[year, 'respiratory_distress_syndrome'] + \
+                                          death_results.loc[year, 'preterm_other']
+                new_df.loc[year, cause] = (new_df.loc[year, cause] / total_neonatal_deaths.loc[year]) \
+                                          * 100
+                t.append(new_df)
+            elif cause == 'Birth Asphyxia':
+                new_df.loc[year, cause] = death_results.loc[year, 'encephalopathy'] + \
+                                          death_results.loc[year, 'neonatal_respiratory_depression']
+                new_df.loc[year, cause] = (new_df.loc[year, cause] / total_neonatal_deaths.loc[year]) \
+                                          * 100
+                t.append(new_df)
 
-                causes_prop[complication][0] += prop.mean()
-                ci = st.t.interval(0.95, len(prop) - 1, loc=np.mean(prop), scale=st.sem(prop))
-                causes_prop[complication][1] += ci[0]
-                causes_prop[complication][2] += ci[1]
+            elif cause == 'Neonatal Sepsis':
+                new_df.loc[year, cause] = death_results.loc[year, 'early_onset_sepsis'] + \
+                                          death_results.loc[year, 'late_onset_sepsis']
+                new_df.loc[year, cause] = (new_df.loc[year, cause] / total_neonatal_deaths.loc[year]) \
+                                          * 100
+                t.append(new_df)
 
-    for c in causes_prop:
-        causes_prop[c] = [x / len(sim_years) for x in causes_prop[c]]
 
-    results = [(causes_prop['respiratory_distress_syndrome'][0] + causes_prop['preterm_other'][0]),
-               (causes_prop['encephalopathy'][0] + causes_prop['neonatal_respiratory_depression'][0]),
-               causes_prop['early_onset_sepsis'][0] + causes_prop['late_onset_sepsis'][0]]
+    direct_nd_by_cause_df = pd.concat(t)
+    all_values_2015_neo = []
+    av_u_ci_neo = []
+    av_l_ci_neo = []
 
-    results_uq = [(causes_prop['respiratory_distress_syndrome'][2] + causes_prop['preterm_other'][2]),
-               (causes_prop['encephalopathy'][2] + causes_prop['neonatal_respiratory_depression'][2]),
-               causes_prop['early_onset_sepsis'][2] + causes_prop['late_onset_sepsis'][2]]
+    for cause in simp_causes_neo:
+        row = direct_nd_by_cause_df.loc[2015, cause]
+        all_values_2015_neo.append(row.mean())
+        ci = st.t.interval(0.95, len(row) - 1, loc=np.mean(row), scale=st.sem(row))
+        av_l_ci_neo.append(ci[0])
+        av_u_ci_neo.append(ci[1])
 
-    results_lq = [(causes_prop['respiratory_distress_syndrome'][1] + causes_prop['preterm_other'][1]),
-               (causes_prop['encephalopathy'][1] + causes_prop['neonatal_respiratory_depression'][1]),
-               causes_prop['early_onset_sepsis'][1] + causes_prop['late_onset_sepsis'][1]]
 
-    ui = [(x - y) / 2 for x, y in zip(results_uq, results_lq)]
+    ui = [(x - y) / 2 for x, y in zip(av_u_ci_neo, av_l_ci_neo)]
     # create the base axis
     fig, ax = plt.subplots(1, 1, figsize=(8, 6))
     # set the labels
     # and the x positions
-    label = ['Prematurity', '"Birth Asphyxia"', 'Neonatal sepsis']
-    x = np.arange(len(label))
+
+    x = np.arange(len(simp_causes_neo))
     width = 0.2
-    rect1 = ax.bar(x - width, results, width=width, yerr=ui, label='Model')
-    rect2 = ax.bar(x, neo_calib_targets_fottrell, width=width, label='Fottrell (2015)',)
-    rects2 = ax.bar(x + width, neo_calib_targets_bemonc, width=width, label='EMoNC (2015)',)
-    ax.set_ylabel("% of total deaths")
-    ax.set_xlabel("Cause of death")
-    ax.set_title("Proportion of total neonatal deaths by leading causes (2010-2020)")
+    rect1 = ax.bar(x - width, all_values_2015_neo, width=width, yerr=ui, label='Model', color='cornflowerblue')
+    rect2 = ax.bar(x, neo_calib_targets_fottrell, width=width, label='Fottrell (2015)',color='lightsteelblue')
+    rects2 = ax.bar(x + width, neo_calib_targets_bemonc, width=width, label='EMoNC (2015)',color='forestgreen')
+    ax.set_ylabel("% of Total Neonatal Deaths")
+    ax.set_xlabel("Cause of Death")
+    ax.set_title("Proportion of Total Neonatal Deaths by Leading Causes in 2015")
     ax.set_xticks(x)
-    ax.set_xticklabels(label)
+    ax.set_xticklabels(simp_causes_neo)
     ax.legend(loc='upper right')
     ax.tick_params(axis="x",  which="both")
     ax.tick_params(axis="y",  which="both")
@@ -2021,95 +1915,6 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     plt.show()
 
     # # ------------------------------------------- CASE FATALITY PER COMPLICATION ------------------------------------
-    # nb_oc_df = extract_results(
-    #         results_folder,
-    #         module="tlo.methods.newborn_outcomes",
-    #         key="newborn_complication",
-    #         custom_generate_series=(
-    #             lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
-    #         do_scaling=False
-    #     )
-    # nb_outcomes_df = nb_oc_df.fillna(0)
-    #
-    # nb_oc_pn_df = extract_results(
-    #         results_folder,
-    #         module="tlo.methods.postnatal_supervisor",
-    #         key="newborn_complication",
-    #         custom_generate_series=(
-    #             lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
-    #         do_scaling=False
-    #     )
-    # nb_outcomes_pn_df = nb_oc_pn_df.fillna(0)
-    #
-    # tr = list()
-    # dummy_denom = list()
-    # for years in sim_years:
-    #     tr.append(0)
-    #     dummy_denom.append(1)
-    #
-    # early_ns = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     nb_outcomes_df, 'early_onset_sepsis', sim_years)[0]
-    # early_ns_pn = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     nb_outcomes_pn_df, 'early_onset_sepsis', sim_years)[0]
-    #
-    # total_ens = [x + y for x, y in zip(early_ns, early_ns_pn)]
-    #
-    # late_ns_nb = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     nb_outcomes_df, 'late_onset_sepsis', sim_years)[0]
-    # late_ns_pn = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     nb_outcomes_pn_df, 'late_onset_sepsis', sim_years)[0]
-    #
-    # late_ns = [x + y for x, y in zip(late_ns_nb, late_ns_pn)]
-    #
-    # mild_en = analysis_utility_functions.get_mean_and_quants_from_str_df(nb_outcomes_df, 'mild_enceph', sim_years)[0]
-    # mod_en = analysis_utility_functions.get_mean_and_quants_from_str_df(nb_outcomes_df, 'moderate_enceph', sim_years)[0]
-    # sev_en = analysis_utility_functions.get_mean_and_quants_from_str_df(nb_outcomes_df, 'severe_enceph', sim_years)[0]
-    # total_encp = [x + y + z for x, y, z in zip(mild_en, mod_en, sev_en)]
-    #
-    # early_ptl_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     la_comps, 'early_preterm_labour', sim_years)[0]
-    # late_ptl_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     la_comps, 'late_preterm_labour', sim_years)[0]
-    # total_ptl_rates = [x + y for x, y in zip(early_ptl_data, late_ptl_data)]
-    #
-    # rd = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     nb_outcomes_df, 'not_breathing_at_birth', sim_years)[0]
-    #
-    # rds_data = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     nb_outcomes_df, 'respiratory_distress_syndrome', sim_years)[0]
-    #
-    # rate_of_ca = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     nb_outcomes_df, 'congenital_heart_anomaly', sim_years)[0]
-    # rate_of_laa = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     nb_outcomes_df, 'limb_or_musculoskeletal_anomaly', sim_years)[0]
-    # rate_of_ua = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     nb_outcomes_df, 'urogenital_anomaly', sim_years)[0]
-    # rate_of_da = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     nb_outcomes_df, 'digestive_anomaly', sim_years)[0]
-    # rate_of_oa = analysis_utility_functions.get_mean_and_quants_from_str_df(
-    #     nb_outcomes_df, 'other_anomaly', sim_years)[0]
-    #
-    # for inc_list in [total_ens, late_ns, total_encp, total_ptl_rates, rds_data, rd, rate_of_ca, rate_of_laa, rate_of_ua,
-    #                  rate_of_da, rate_of_oa]:
-    #
-    #     for index, item in enumerate(inc_list):
-    #         if item == 0:
-    #             inc_list[index] = 0.1
-    #
-    # for inc_list, complication in \
-    #     zip([total_ens, late_ns, total_encp, total_ptl_rates, rds_data, rd, rate_of_ca, rate_of_laa, rate_of_ua,
-    #          rate_of_da, rate_of_oa],
-    #         ['early_onset_sepsis', 'late_onset_sepsis', 'encephalopathy', 'preterm_other',
-    #          'respiratory_distress_syndrome', 'neonatal_respiratory_depression',
-    #          'congenital_heart_anomaly', 'limb_or_musculoskeletal_anomaly', 'urogenital_anomaly',
-    #          'digestive_anomaly', 'other_anomaly']):
-    #
-    #     cfr = analysis_utility_functions.get_comp_mean_and_rate(
-    #         complication, inc_list, death_results, 100, sim_years)[0]
-    #
-    #     analysis_utility_functions.simple_line_chart_with_target(
-    #         sim_years, cfr, tr, 'Total CFR', f'Yearly CFR for {complication}', f'{complication}_neo_cfr_per_year',
-    #         graph_location)
 
     # PROPORTION OF NMR
     simplified_causes = ['prematurity', 'encephalopathy', 'neonatal_sepsis', 'neonatal_respiratory_depression',
@@ -2277,7 +2082,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
         plt.xlabel('Year')
         plt.ylabel("DALYs (stacked)")
-        plt.title(f'Total DALYs per year attributable to {group} disorders')
+        plt.title(f'Total DALYs per Year Attributable to {group} disorders')
         plt.legend()
         plt.savefig(f'{graph_location}/{group}_dalys_stacked.png')
         plt.show()
@@ -2294,13 +2099,13 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
             # ax.plot(gbd_years, gbd_data['rate_adj'][0], label="GBD DALY Adj. rate", color='darkslateblue')
             # ax.fill_between(gbd_years, gbd_data['rate_adj'][1], gbd_data['rate_adj'][2], color='slateblue'
             #                 , alpha=.1)
-            ax.set(ylim=(0, 850))
+            ax.set(ylim=(0, 950))
         else:
             ax.set(ylim=0)
 
         plt.xlabel('Year')
-        plt.ylabel("DALYs per 100k person years")
-        plt.title(f'Total DALYs per 100,000 person years per year attributable to {group} Disorders')
+        plt.ylabel("DALYs per 100k Person Years")
+        plt.title(f'Total DALYs per 100,000 Person Years per Year Attributable to {group} Disorders')
         plt.legend()
         plt.savefig(f'{graph_location}/{group}_dalys_stacked_rate.png')
         plt.show()

@@ -44,12 +44,47 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         columns=['scenario',
                  'output',
                  'mean_95%CI_value_for_int_period',
+                 'mean_95%CI_value_for_int_period_not_rounded',
                  'skew_for_int_data',
                  'mean_95%CI_diff_outcome_int_period',
+                 'mean_95%CI_diff_outcome_int_period_not_rounded',
                  'skew_for_diff_data',
-                 'median_diff_outcome_int_period'])
+                 'median_diff_outcome_int_period',
+                 'percent_diff' ])
 
     # DEFINE HELPER FUNCTIONs....
+    def update_dfs_to_replace_missing_causes(df, causes):
+        t = []
+        for year in sim_years:
+            for cause in causes:
+                if cause not in df.loc[year].index:
+                    index = pd.MultiIndex.from_tuples([(year, cause)], names=["year", "cause_of_death"])
+                    new_row = pd.DataFrame(columns=df.columns, index=index)
+                    f_df = new_row.fillna(0.0)
+                    t.append(f_df)
+        if t:
+            causes_df = pd.concat(t)
+            updated_df = df.append(causes_df)
+            return updated_df
+        else:
+            return df
+
+    def update_dfs_to_replace_missing_rows(df):
+        t = []
+        for year in sim_years:
+            if year not in df.index:
+                index = [year]
+                new_row = pd.DataFrame(columns=df.columns, index=index)
+                f_df = new_row.fillna(0.0)
+                t.append(f_df)
+
+        if t:
+            final_df = pd.concat(t)
+            updated_df = df.append(final_df)
+            return updated_df
+        else:
+            return df
+
     def plot_agg_graph(data, key, y_label, title, save_name, save_location):
         labels = results_folders.keys()
 
@@ -100,18 +135,23 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
         # TODO: replace with below, neater
         # st.t.interval(0.95, len(mean_diff_list) - 1, loc=np.mean(mean_diff_list), scale=st.sem(mean_diff_list))
-
         for k in keys:
             # Get DF which gives difference between outcomes for each run
-            diff = dfs[baseline][k] - dfs[intervention][k]
+            diff = dfs[intervention][k]- dfs[baseline][k]
             int_diff = diff.loc[intervention_years[0]: intervention_years[-1]]
 
-            # Calculate, skew, mean and 95% CI for outcome in intervention
             if 'total' in k:
                 operation = 'agg'
             else:
                 operation = 'mean'
 
+            # get mean outcome for sq to calculate pdiff
+            sq_mean_outcome_list_int = get_med_or_mean_from_columns(dfs['Status Quo'][k].loc[intervention_years[0]:
+                                                                                             intervention_years[-1]],
+                                                                    operation)
+            sq_mean_outcome_value_int = get_mean_and_confidence_interval(sq_mean_outcome_list_int)
+
+            # get mean outcome for the intervention of interest
             mean_outcome_list_int = get_med_or_mean_from_columns(dfs[intervention][k].loc[intervention_years[0]:
                                                                                           intervention_years[-1]],
                                                                  operation)
@@ -125,25 +165,34 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
             skew_diff_list = scipy.stats.skew(mean_diff_list)
             mean_outcome_diff = get_mean_and_confidence_interval(mean_diff_list)
+
             median_outcome_diff = [round(np.median(mean_diff_list), 2),
                                    round(np.quantile(mean_diff_list, 0.025), 2),
                                    round(np.quantile(mean_diff_list, 0.975), 2)]
 
+            pdiff = ((mean_outcome_value_int[0] - sq_mean_outcome_value_int[0]) / sq_mean_outcome_value_int[0]) * 100
+
             res_df = pd.DataFrame([(intervention,
                                     k,
                                     [round(x, 2) for x in mean_outcome_value_int],
+                                    mean_outcome_value_int,
                                     round(skew_mean_outcome_list_int, 2),
                                     [round(x, 2) for x in mean_outcome_diff],
+                                    mean_outcome_diff,
                                     skew_diff_list,
-                                    median_outcome_diff
+                                    median_outcome_diff,
+                                    round(pdiff, 2)
                                     )],
                                   columns=['scenario',
                                            'output',
                                            'mean_95%CI_value_for_int_period',
+                                           'mean_95%CI_value_for_int_period_not_rounded',
                                            'skew_for_int_data',
                                            'mean_95%CI_diff_outcome_int_period',
+                                           'mean_95%CI_diff_outcome_int_period_not_rounded',
                                            'skew_for_diff_data',
-                                           'median_diff_outcome_int_period'])
+                                           'median_diff_outcome_int_period',
+                                           'percent_diff'])
 
             output_df = output_df.append(res_df)
 
@@ -162,8 +211,12 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
     births_dict = analysis_utility_functions.return_birth_data_from_multiple_scenarios(
         results_folders,  sim_years, intervention_years)
 
+    save_outputs(births_dict, ['births_data_frame'], 'total_births', primary_oc_path)
+
     preg_dict = analysis_utility_functions.return_pregnancy_data_from_multiple_scenarios(results_folders,
                                                                                          sim_years, intervention_years)
+
+    save_outputs(preg_dict, ['preg_data_frame'], 'total_preg', primary_oc_path)
 
     comps_dfs = {k: analysis_utility_functions.get_modules_maternal_complication_dataframes(results_folders[k])
                  for k in results_folders}
@@ -258,7 +311,6 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
         total_deaths = direct_deaths_final + indirect_deaths_final
 
-
         mmr = (total_deaths / birth_df) * 100_000
         total_mmr_by_year = return_95_CI_across_runs(mmr, sim_years)
 
@@ -339,6 +391,9 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         sum_neo_death_int_by_run = get_mean_from_columns(neo_deaths_int, 'sum')
         total_neonatal_deaths_by_scenario = get_mean_95_CI_from_list(sum_neo_death_int_by_run)
 
+        # TOTAL NEONATAL AND MATERNAL DEATHS
+        all_deaths_df = neo_deaths + total_deaths
+
         # STILLBIRTH
         an_stillbirth_results = extract_results(
             folder,
@@ -398,6 +453,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                 'mat_deaths_total_df': total_deaths,
                 'nmr_df': nmr,
                 'neo_deaths_total_df': neo_deaths,
+                'all_deaths_total_df': all_deaths_df,
                 'sbr_df': sbr_df,
                 'ip_sbr_df': ip_sbr_df,
                 'an_sbr_df': an_sbr_df,
@@ -446,48 +502,48 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
              'agg_total_mr',
              'agg_n_deaths',
              'agg_nmr'],
-            ['Total Direct Maternal Deaths By Scenario',
-             'Average Direct MMR by Scenario',
-             'Total Indirect Maternal Deaths By Scenario',
-             'Average Indirect MMR by Scenario',
-             'Total Maternal Deaths By Scenario',
-             'Average MMR by Scenario',
-             'Total Neonatal Deaths By Scenario',
-             'Average NMR by Scenario'],
+            ['Total Direct Maternal Deaths by Scenario (2023-2030)',
+             'Average Direct Maternal Mortality Ratio by Scenario (2023-2030)',
+             'Total Indirect Maternal Deaths By Scenario (2023-2030)',
+             'Average Indirect Maternal Mortality Ratio by Scenario (2023-2030)',
+             'Total Maternal Deaths By Scenario (2023-2030)',
+             'Average Maternal Mortality Ratio by Scenario (2023-2030)',
+             'Total Neonatal Deaths By Scenario (2023-2030)',
+             'Average Neonatal Mortality Rate by Scenario (2023-2030)'],
             ['Total Direct Maternal Deaths',
-             'Average MMR',
+             'Average Maternal Mortality Ratio',
              'Total Indirect Maternal Deaths',
-             'Average MMR',
+             'Average Maternal Mortality Ratio',
              'Total Maternal Deaths',
-             'Average MMR',
+             'Average Maternal Mortality Ratio',
              'Total Neonatal Deaths',
-             'Average NMR']):
+             'Average Neonatal Mortality Rate']):
         plot_agg_graph(death_data, data, y_lable, title, data, primary_oc_path)
 
     # 2.) TRENDS IN DEATHS
     # Output and save the relevant graphs
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
         scen_colours, sim_years, death_data, 'direct_mmr',
-        'Deaths per 100,000 live births',
-        'MMR per Year at Baseline and Under Intervention (Direct only)', primary_oc_path,
+        'Deaths per 100,000 Live Births',
+        'Direct Maternal Mortality Ratio per Year by Scenario ', primary_oc_path,
         'maternal_mr_direct')
 
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
-        scen_colours,sim_years, death_data, 'total_mmr',
-        'Deaths per 100,000 live births',
-        'MMR per Year at Baseline and Under Intervention (Total)',
+        scen_colours, sim_years, death_data, 'total_mmr',
+        'Deaths per 100,000 Live Births',
+        'Maternal Mortality Ratio per Year by Scenario ',
         primary_oc_path, 'maternal_mr_total')
 
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
         scen_colours, sim_years, death_data, 'nmr',
-        'Total Deaths per 1000 live births',
-        'Neonatal Mortality Ratio per Year at Baseline and Under Intervention',
+        'Total Deaths per 1000 Live Births',
+        'Neonatal Mortality Rate per Year by Scenario ',
         primary_oc_path, 'neonatal_mr_int')
 
     for group, l in zip(['Maternal', 'Neonatal'], ['dir_m', 'n']):
         analysis_utility_functions.comparison_bar_chart_multiple_bars(
             death_data, f'crude_{l}_deaths', sim_years, scen_colours,
-            f'Total {group} Deaths (scaled)', f'Yearly Baseline {group} Deaths Compared to Intervention',
+            f'Total {group} Deaths (scaled)', f'Total {group} Deaths per by Scenario ',
             primary_oc_path, f'{group}_crude_deaths_comparison.png')
 
     def extract_deaths_by_cause(results_folder, births_df, intervention_years):
@@ -501,20 +557,6 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                       'chronic_ischemic_hd', 'ever_heart_attack',
                       'chronic_kidney_disease']
 
-        def update_dfs_to_replace_missing_causes(df, causes):
-            t = []
-            for year in sim_years:
-                for cause in causes:
-                    if cause not in df.loc[year].index:
-                        index = pd.MultiIndex.from_tuples([(year, cause)], names=["year", "cause_of_death"])
-                        new_row = pd.DataFrame(columns=df.columns, index=index)
-                        f_df = new_row.fillna(0.0)
-                        t.append(f_df)
-
-            causes_df = pd.concat(t)
-            updated_df = df.append(causes_df)
-
-            return updated_df
 
         dd = extract_results(
             results_folder,
@@ -592,6 +634,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
     cod_neo_data = {k: extract_neonatal_deaths_by_cause(results_folders[k], births_dict[k]['births_data_frame'],
                                                         intervention_years) for k in results_folders}
+
     def save_mr_by_cause_data_and_output_graphs(group, cause_d):
         if group == 'mat':
             d = ['m', 'MMR']
@@ -608,31 +651,53 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         labels = [l.replace(f'_{d[0]}mr_df', '') for l in cod_keys]
 
         for k, colour in zip(cause_d, scen_colours):
-            mean_vals = list()
-            lq_vals = list()
-            uq_vals = list()
-            for key in cause_d[k]:
-                if 'avg' in key:
-                    mean_vals.append(cause_d[k][key][0])
-                    lq_vals.append(cause_d[k][key][1])
-                    uq_vals.append(cause_d[k][key][2])
+            if 'Status Quo' not in k:
+                data = [[], [], []]
+                sq_data = [[], [], []]
 
-            width = 0.55  # the width of the bars: can also be len(x) sequence
-            fig, ax = plt.subplots()
+                for key in cause_d[k]:
+                    if 'avg' in key:
+                        data[0].append(cause_d[k][key][0])
+                        data[1].append(cause_d[k][key][1])
+                        data[2].append(cause_d[k][key][2])
 
-            ci = [(x - y) / 2 for x, y in zip(uq_vals, lq_vals)]
-            ax.bar(labels, mean_vals, color=colour, width=width, yerr=ci)
-            ax.tick_params(axis='x', which='major', labelsize=8, labelrotation=90)
-            if group == 'mat':
-                plt.gca().set_ylim(bottom=0, top=70)
-            else:
-                plt.gca().set_ylim(bottom=0, top=7)
+                        sq_data[0].append(cause_d['Status Quo'][key][0])
+                        sq_data[1].append(cause_d['Status Quo'][key][1])
+                        sq_data[2].append(cause_d['Status Quo'][key][2])
 
-            ax.set_ylabel(d[1])
-            ax.set_xlabel('Complication')
-            ax.set_title(f'Cause specific {d[1]} for {k} scenario')
-            plt.savefig(f'{primary_oc_path}/{k}_{d[0]}mr_by_cause.png', bbox_inches='tight')
-            plt.show()
+                labels = labels
+                model_sq = sq_data[0]
+                model_int = data[0]
+
+                sq_ui = [(x - y) / 2 for x, y in zip(sq_data[2], sq_data[1])]
+                int_uq = [(x - y) / 2 for x, y in zip(data[2], data[1])]
+
+                x = np.arange(len(labels))  # the label locations
+                width = 0.35  # the width of the bars
+
+                fig, ax = plt.subplots()
+                ax.bar(x - width / 2, model_sq, width, yerr=sq_ui, label='Status Quo (95% CI)', color=scen_colours[0])
+                ax.bar(x + width / 2, model_int, width, yerr=int_uq, label=f'{k} (95% CI)', color=colour)
+                # ax.bar_label(labels)
+                # Add some text for labels, title and custom x-axis tick labels, etc.
+
+                if group == 'mat':
+                    title_data = ['100,000', 'Maternal', 'Ratios', 110]
+                else:
+                    title_data = ['1000', 'Neonatal', 'Rates', 9]
+
+                ax.set_ylabel(f'Deaths per {title_data[0]} Live Births')
+                ax.set_xlabel('Cause of Death')
+                ax.set_title(f'Average Cause-specific {title_data[1]} Mortality {title_data[2]} by Scenario (2023-2030)')
+                ax.set_xticks(x)
+                ax.set_xticklabels(labels)
+                plt.xticks(rotation=90, size=7)
+                plt.gca().set_ylim(bottom=0, top=title_data[3])
+                ax.legend(loc='upper left')
+                fig.tight_layout()
+                plt.savefig(f'{primary_oc_path}/{k}_{d[0]}mr_by_cause.png', bbox_inches='tight')
+                plt.show()
+
     save_mr_by_cause_data_and_output_graphs('mat', cod_data)
     save_mr_by_cause_data_and_output_graphs('neo', cod_neo_data)
 
@@ -676,6 +741,8 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         plt.savefig(f'{primary_oc_path}/cs_mmr_one_graph.png', bbox_inches='tight')
         plt.show()
         pass
+
+    get_cause_spef_mmrs_on_same_graph('mat', cod_data)
 
     #  ---------------- STILLBIRTH GRAPHS ---------------
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
@@ -736,8 +803,8 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         plt.savefig(f'{primary_oc_path}/{data}.png')
         plt.show()
 
-    keys = ['mmr_df', 'nmr_df', 'sbr_df', 'an_sbr_df', 'ip_sbr_df', 'mat_deaths_total_df', 'neo_deaths_total_df',
-            'stillbirths_total_df']
+    keys = ['mmr_df', 'nmr_df', 'sbr_df', 'an_sbr_df', 'ip_sbr_df', 'mat_deaths_total_df',
+            'neo_deaths_total_df', 'stillbirths_total_df', 'all_deaths_total_df']
     save_outputs(death_data, keys, 'diff_in_mortality_outcomes', primary_oc_path)
 
     def extract_dalys(folder):
@@ -779,12 +846,16 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
             results_dict.update({f'maternal_total_dalys_df_{type}': md})
             results_dict.update({f'neonatal_total_dalys_df_{type}': nd})
+            results_dict.update({f'all_total_dalys_df_{type}': md+nd})
 
             m_d_rate_df = (md / person_years_total) * 100_000
             n_d_rate_df = (nd / person_years_total) * 100_000
+            all_dalys = nd + md
+            all_d_rate_df = (all_dalys / person_years_total) * 100_000
 
             results_dict.update({f'maternal_dalys_rate_df_{type}': m_d_rate_df})
             results_dict.update({f'neonatal_dalys_rate_df_{type}': n_d_rate_df})
+            results_dict.update({f'all_dalys_rate_df_{type}': all_d_rate_df})
 
             results_dict.update({f'maternal_dalys_rate_{type}': return_95_CI_across_runs(m_d_rate_df, sim_years)})
             results_dict.update({f'neonatal_dalys_rate_{type}': return_95_CI_across_runs(n_d_rate_df, sim_years)})
@@ -860,6 +931,9 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             do_scaling=True)
         yld_final = yld.fillna(0)
 
+        yll_final = update_dfs_to_replace_missing_causes(yll_final, mat_causes_death)
+        yll_stacked_final = update_dfs_to_replace_missing_causes(yll_stacked_final, mat_causes_death)
+
         def get_total_dfs(df, causes):
             dfs = []
             for k in causes:
@@ -913,14 +987,14 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
              'agg_neo_dalys_stacked',
              'avg_mat_dalys_rate_stacked',
              'avg_neo_dalys_rate_stacked'],
-            ['Average Total Maternal DALYs (stacked) by Scenario',
-             'Average Total Neonatal DALYs (stacked) by Scenario',
-             'Average Total Maternal DALYs per 100k PY by Scenario',
-             'Average Total Neonatal DALYs per 100k PY by Scenario'],
+            ['Average Total Maternal DALYs (stacked) by Scenario (2023-2030)',
+             'Average Total Neonatal DALYs (stacked) by Scenario (2023-2030)',
+             'Average Total Maternal DALYs per 100,000 Person-Years by Scenario (2023-2030)',
+             'Average Total Neonatal DALYs per 100,000 Person-Years by Scenario (2023-2030)'],
             ['DALYs',
              'DALYs',
-             'DALYs per 100k PY',
-             'DALYs per 100k PY']):
+             'DALYs per 100,000 Person-Years',
+             'DALYs per 100,000 Person-Years']):
         labels = results_folders.keys()
 
         mean_vals = list()
@@ -952,25 +1026,41 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                                                  'neonatal_yll_crude_stacked', 'neonatal_yll_rate_stacked',
                                                  'neonatal_yld_crude_unstacked', 'neonatal_yld_rate_unstacked'],
 
-                                                ['DALYs', 'DALYs per 100k Person-Years', 'YLL',
-                                                 'YLL per 100k Person-Years', 'YLD', 'YLD per 100k Person-Years',
+                                                ['DALYs', 'DALYs per 100,000 Person-Years', 'Years of Life Lost',
+                                                 'Years of Life Lost per 100,000 Person-Years',
+                                                 'Years Lived with Disability',
+                                                 'Years Lived with Disability per 100,000 Person-Years',
 
-                                                 'DALYs', 'DALYs per 100k Person-Years', 'YLL',
-                                                 'YLL per 100k Person-Years', 'YLD', 'YLD per 100k Person-Years'],
+                                                 'DALYs', 'DALYs per 100,000 Person-Years', 'Years of Life Lost',
+                                                 'Years of Life Lost per 100,000 Person-Years',
+                                                 'Years Lived with Disability',
+                                                 'Years Lived with Disability per 100,000 Person-Years'],
 
-                                                ['Crude Total DALYs per Year Attributable to Maternal disorders',
-                                                 'DALYs per 100k Person-Years Attributable to Maternal disorders',
-                                                 'Crude Total YLL per Year Attributable to Maternal disorders',
-                                                 'YLL per 100k Person-Years Attributable to Maternal disorders',
-                                                 'Crude Total YLD per Year Attributable to Maternal disorders',
-                                                 'YLD per 100k Person-Years Attributable to Maternal disorders',
+                                                ['DALYs per Year Attributable to Maternal Disorders by '
+                                                 'Scenario ',
+                                                 'DALYs per 100,000 Person-Years per Year Attributable to Maternal'
+                                                 ' Disorders by Scenario ',
+                                                 'Years of Life Lost per Year Attributable to Maternal Disorders '
+                                                 'by Scenario ',
+                                                 'Years of Life Lost per 100,000 Person-Years per Year Attributable to '
+                                                 'Maternal Disorders by Scenario ',
+                                                 'Years Lived with Disability per Year Attributable to Maternal '
+                                                 'Disorders by Scenario ',
+                                                 'Years Lived with Disability per 100,000 Person-Years per Year'
+                                                 ' Attributable to Maternal Disorders by Scenario ',
 
-                                                 'Crude Total DALYs per Year Attributable to Neonatal disorders',
-                                                 'DALYs per 100k Person-Years Attributable to Neonatal disorders',
-                                                 'Crude Total YLL per Year Attributable to Neonatal disorders',
-                                                 'YLL per 100k Person-Years Attributable to Neonatal disorders',
-                                                 'Crude Total YLD per Year Attributable to Neonatal disorders',
-                                                 'YLD per 100k Person-Years Attributable to Neonatal disorders'],
+                                                 'DALYs per Year Attributable to Neonatal Disorders by Scenario '
+                                                 '',
+                                                 'DALYs per 100,000 Person-Years per Year Attributable to Neonatal'
+                                                 ' Disorders by Scenario ',
+                                                 'Years of Life Lost per Year Attributable to Neonatal disorders by '
+                                                 'Scenario ',
+                                                 'Years of Life Lost per 100,000 Person-Years per Year Attributable '
+                                                 'to Neonatal Disorders by Scenario ',
+                                                 'Years Lived with Disability per Year Attributable to Neonatal '
+                                                 'Disorders by Scenario ',
+                                                 'Years Lived with Disability per 100,000 Person-Years per Year '
+                                                 'Attributable to Neonatal Disorders by Scenario '],
 
                                                 ['maternal_dalys_stacked', 'maternal_dalys_rate',
                                                  'maternal_yll', 'maternal_yll_rate',
@@ -982,7 +1072,9 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             scen_colours, sim_years, dalys_folders, dict_key, axis, title, primary_oc_path, save_name)
 
     keys = ['maternal_total_dalys_df_stacked', 'neonatal_total_dalys_df_stacked',
-            'maternal_dalys_rate_df_stacked', 'neonatal_dalys_rate_df_stacked']
+            'maternal_dalys_rate_df_stacked', 'neonatal_dalys_rate_df_stacked',
+            'all_total_dalys_df_stacked', 'all_dalys_rate_df_stacked',
+            ]
     save_outputs(dalys_folders, keys, 'diff_in_daly_outcomes', primary_oc_path)
 
     # ----------------------------------------- SECONDARY OUTCOMES --------------------------------------------------
@@ -1099,22 +1191,6 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             do_scaling=True
         )
 
-        def update_dfs_to_replace_missing_rows(df):
-            t = []
-            for year in sim_years:
-                if year not in df.index:
-                    index = [year]
-                    new_row = pd.DataFrame(columns=df.columns, index=index)
-                    f_df = new_row.fillna(0.0)
-                    t.append(f_df)
-
-            if t:
-                final_df = pd.concat(t)
-                updated_df = df.append(final_df)
-                return updated_df
-
-            else:
-                return df
 
         pnc_mat = update_dfs_to_replace_missing_rows(pnc_results_maternal)
         pnc_neo = update_dfs_to_replace_missing_rows(pnc_results_newborn)
@@ -1256,7 +1332,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
         praevia = comps_df['pregnancy_supervisor'].loc[(slice(None), 'placenta_praevia'), slice(None)].droplevel(1)
         pravia_rate_df = get_rate_df(praevia, pregnancy_df, 1000)
-        results.update({'praevia_rate_df': get_rate_df(pravia_rate_df, pregnancy_df, 1000)})
+        results.update({'praevia_rate_df': pravia_rate_df})
         results.update({'praevia_rate_per_year': return_95_CI_across_runs(pravia_rate_df, sim_years)})
         results.update({'praevia_rate_avg': get_avg_result(pravia_rate_df)})
 
@@ -1267,7 +1343,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         results.update({'abruption_rate_avg': get_avg_result(abruptio_rate_df)})
 
         potl = comps_df['labour'].loc[(slice(None), 'post_term_labour'), slice(None)].droplevel(1)
-        potl_rate_df = get_rate_df(potl, pregnancy_df, 100)
+        potl_rate_df = get_rate_df(potl, births_df, 100)
         results.update({'potl_rate_df': potl_rate_df})
         results.update({'potl_rate_per_year': return_95_CI_across_runs(potl_rate_df, sim_years)})
         results.update({'potl_rate_avg': get_avg_result(potl_rate_df)})
@@ -1513,40 +1589,40 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
              'Rate per 1000 Births',
              'Rate per 1000 Births'],
 
-            ['Mean Rate of Ectopic Pregnancy per Year by Scenario',
-             'Mean Rate of Spontaneous Abortion per Year by Scenario',
+            ['Mean Rate of Ectopic Pregnancy per Year by Scenario ',
+             'Mean Rate of Spontaneous Abortion per Year by Scenario ',
              'Mean Rate of Induced Abortion per Year by Scenario',
              'Mean Rate of Syphilis per Year by Scenario',
-             'Mean Rate of Gestational Diabetes per Year by Scenario',
-             'Mean Rate of PROM per Year by Scenario',
-             'Mean Rate of Placenta Praevia per Year by Scenario',
-             'Mean Rate of Placental Abruption per Year by Scenario',
-             'Mean Rate of Post term labour per Year by Scenario',
-             'Mean Rate of Obstructed Labour per Year by Scenario',
-             'Mean Rate of Uterine Rupture per Year by Scenario',
-             'Mean Rate of Gestational Hypertension per Year by Scenario',
-             'Mean Rate of Mild Pre-eclampsia per Year by Scenario',
-             'Mean Rate of Severe Gestational Hypertension per Year by Scenario',
-             'Mean Rate of Severe Pre-eclampsia per Year by Scenario',
-             'Mean Rate of Eclampsia per Year by Scenario',
-             'Mean Rate of Antepartum Haemorrhage per Year by Scenario',
-             'Mean Rate of Preterm Labour per Year by Scenario',
-             'Mean Rate of Maternal Sepsis per Year by Scenario',
-             'Mean Rate of Antenatal Maternal Sepsis per Year by Scenario',
-             'Mean Rate of Intrapartum Maternal Sepsis per Year by Scenario',
-             'Mean Rate of Postpartum Maternal Sepsis per Year by Scenario',
-             'Mean Rate of Postpartum Haemorrhage per Year by Scenario',
-             'Mean Rate of Primary Postpartum Haemorrhage per Year by Scenario',
-             'Mean Rate of Secondary Postpartum Haemorrhage per Year by Scenario',
-             'Mean Prevalence of Anaemia at birth per Year by Scenario',
-             'Mean Prevalence of Anaemia following birth per Year by Scenario',
-             'Mean Rate of Macrosomia per Year by Scenario',
-             'Mean Rate of Small for Gestational Age per Year by Scenario',
-             'Mean Rate of Low Birth Rate per Year by Scenario',
-             'Mean Rate of  Newborn Respiratory Depression per Year by Scenario',
-             'Mean Rate of Preterm Respiratory Distress Syndrome per Year by Scenario',
-             'Mean Rate of Neonatal Sepsis per Year by Scenario',
-             'Mean Rate of Neonatal Encephalopathy per Year by Scenario'],
+             'Mean Rate of Gestational Diabetes per Year by Scenario ',
+             'Mean Rate of PROM per Year by Scenario ',
+             'Mean Rate of Placenta Praevia per Year by Scenario ',
+             'Mean Rate of Placental Abruption per Year by Scenario ',
+             'Mean Rate of Post term labour per Year by Scenario ',
+             'Mean Rate of Obstructed Labour per Year by Scenario ',
+             'Mean Rate of Uterine Rupture per Year by Scenario ',
+             'Mean Rate of Gestational Hypertension per Year by Scenario ',
+             'Mean Rate of Mild Pre-eclampsia per Year by Scenario ',
+             'Mean Rate of Severe Gestational Hypertension per Year by Scenario ',
+             'Mean Rate of Severe Pre-eclampsia per Year by Scenario ',
+             'Mean Rate of Eclampsia per Year by Scenario ',
+             'Mean Rate of Antepartum Haemorrhage per Year by Scenario ',
+             'Mean Rate of Preterm Labour per Year by Scenario ',
+             'Mean Rate of Maternal Sepsis per Year by Scenario ',
+             'Mean Rate of Antenatal Maternal Sepsis per Year by Scenario ',
+             'Mean Rate of Intrapartum Maternal Sepsis per Year by Scenario ',
+             'Mean Rate of Postpartum Maternal Sepsis per Year by Scenario ',
+             'Mean Rate of Postpartum Haemorrhage per Year by Scenario ',
+             'Mean Rate of Primary Postpartum Haemorrhage per Year by Scenario ',
+             'Mean Rate of Secondary Postpartum Haemorrhage per Year by Scenario ',
+             'Mean Prevalence of Anaemia at birth per Year by Scenario ',
+             'Mean Prevalence of Anaemia following birth per Year by Scenario ',
+             'Mean Rate of Macrosomia per Year by Scenario ',
+             'Mean Rate of Small for Gestational Age per Year by Scenario ',
+             'Mean Rate of Low Birth Rate per Year by Scenario ',
+             'Mean Rate of  Newborn Respiratory Depression per Year by Scenario ',
+             'Mean Rate of Preterm Respiratory Distress Syndrome per Year by Scenario ',
+             'Mean Rate of Neonatal Sepsis per Year by Scenario ',
+             'Mean Rate of Neonatal Encephalopathy per Year by Scenario '],
             rate_keys):
         analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
             scen_colours, sim_years, comp_inc_folders, dict_key, axis, title, comp_incidence_path, save_name)
@@ -1558,10 +1634,10 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
     for dict_key, axis, title, save_name in \
         zip(avg_keys,
-            ['Rate per 1000 pregnancies',
-             'Rate per 1000 pregnancies',
-             'Rate per 1000 pregnancies',
-             'Rate per 1000 pregnancies',
+            ['Rate per 1000 Pregnancies',
+             'Rate per 1000 Pregnancies',
+             'Rate per 1000 Pregnancies',
+             'Rate per 1000 Pregnancies',
              'Rate per 1000 Births',
              'Rate per 1000 Births',
              'Rate per 1000 Births',
@@ -1584,7 +1660,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
              'Rate per 1000 Births',
              'Rate per 1000 Births',
              'Prevalence at birth',
-             'Prevalence following birth',
+             'Prevalence Following Birth',
              'Rate per 100 Births',
              'Rate per 100 Births',
              'Rate per 100 Births',
@@ -1593,40 +1669,40 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
              'Rate per 1000 Births',
              'Rate per 1000 Births'],
 
-            ['Mean Rate of Ectopic Pregnancy During Intervention by Scenario',
-             'Mean Rate of Spontaneous Abortion During Intervention by Scenario',
-             'Mean Rate of Induced Abortion During Intervention by Scenario',
-             'Mean Rate of Syphilis During Intervention by Scenario',
-             'Mean Rate of Gestational Diabetes During Intervention by Scenario',
-             'Mean Rate of PROM During Intervention by Scenario',
-             'Mean Rate of Placenta Praevia During Intervention by Scenario',
-             'Mean Rate of Placental Abruption During Intervention by Scenario',
-             'Mean Rate of Post term labour During Intervention by Scenario',
-             'Mean Rate of Obstructed Labour During Intervention by Scenario',
-             'Mean Rate of Uterine Rupture During Intervention by Scenario',
-             'Mean Rate of Gestational Hypertension During Intervention by Scenario',
-             'Mean Rate of Mild Pre-eclampsia During Intervention by Scenario',
-             'Mean Rate of Severe Gestational Hypertension During Intervention by Scenario',
-             'Mean Rate of Severe Pre-eclampsia During Intervention by Scenario',
-             'Mean Rate of Eclampsia During Intervention by Scenario',
-             'Mean Rate of Antepartum Haemorrhage During Intervention by Scenario',
-             'Mean Rate of Preterm Labour During Intervention by Scenario',
-             'Mean Rate of Maternal Sepsis During Intervention by Scenario',
-             'Mean Rate of Antenatal Maternal Sepsis During Intervention by Scenario',
-             'Mean Rate of Intrapartum Maternal Sepsis During Intervention by Scenario',
-             'Mean Rate of Postpartum Maternal Sepsis During Intervention by Scenario',
-             'Mean Rate of Postpartum Haemorrhage During Intervention by Scenario',
-             'Mean Rate of Primary Postpartum Haemorrhage During Intervention by Scenario',
-             'Mean Rate of Secondary Postpartum Haemorrhage During Intervention by Scenario',
-             'Mean Prevalence of Anaemia at birth During Intervention by Scenario',
-             'Mean Prevalence of Anaemia following birth During Intervention by Scenario',
-             'Mean Rate of Macrosomia During Intervention by Scenario',
-             'Mean Rate of Small for Gestational Age During Intervention by Scenario',
-             'Mean Rate of Low Birth Weight During Intervention by Scenario',
-             'Mean Rate of  Newborn Respiratory Depression During Intervention by Scenario',
-             'Mean Rate of Preterm Respiratory Distress Syndrome During Intervention by Scenario',
-             'Mean Rate of Neonatal Sepsis During Intervention by Scenario',
-             'Mean Rate of Neonatal Encephalopathy During Intervention by Scenario'],
+            ['Mean Rate of Ectopic Pregnancy During Intervention by Scenario (2023-2030)',
+             'Mean Rate of Spontaneous Abortion by Scenario (2023-2030)',
+             'Mean Rate of Induced Abortion by Scenario (2023-2030)',
+             'Mean Rate of Syphilis by Scenario (2023-2030)',
+             'Mean Rate of Gestational Diabetes by Scenario (2023-2030)',
+             'Mean Rate of Premature Rupture of Membranes by Scenario (2023-2030)',
+             'Mean Rate of Placenta Praevia by Scenario (2023-2030)',
+             'Mean Rate of Placental Abruption by Scenario (2023-2030)',
+             'Mean Rate of Post term labour by Scenario (2023-2030)',
+             'Mean Rate of Obstructed Labour by Scenario (2023-2030)',
+             'Mean Rate of Uterine Rupture by Scenario (2023-2030)',
+             'Mean Rate of Gestational Hypertension by Scenario (2023-2030)',
+             'Mean Rate of Mild Pre-eclampsia by Scenario (2023-2030)',
+             'Mean Rate of Severe Gestational Hypertension by Scenario (2023-2030)',
+             'Mean Rate of Severe Pre-eclampsia by Scenario (2023-2030)',
+             'Mean Rate of Eclampsia by Scenario (2023-2030)',
+             'Mean Rate of Antepartum Haemorrhage by Scenario (2023-2030)',
+             'Mean Rate of Preterm Labour by Scenario (2023-2030)',
+             'Mean Rate of Maternal Sepsis by Scenario (2023-2030)',
+             'Mean Rate of Antenatal Maternal Sepsis by Scenario (2023-2030)',
+             'Mean Rate of Intrapartum Maternal Sepsis by Scenario (2023-2030)',
+             'Mean Rate of Postpartum Maternal Sepsis by Scenario (2023-2030)',
+             'Mean Rate of Postpartum Haemorrhage by Scenario (2023-2030)',
+             'Mean Rate of Primary Postpartum Haemorrhage by Scenario (2023-2030)',
+             'Mean Rate of Secondary Postpartum Haemorrhage by Scenario (2023-2030)',
+             'Mean Prevalence of Anaemia at Birth by Scenario (2023-2030)',
+             'Mean Prevalence of Anaemia Following Birth by Scenario (2023-2030)',
+             'Mean Rate of Macrosomia During by Scenario (2023-2030)',
+             'Mean Rate of Small for Gestational Age by Scenario (2023-2030)',
+             'Mean Rate of Low Birth Weight by Scenario (2023-2030)',
+             'Mean Rate of  Newborn Respiratory Depression by Scenario (2023-2030)',
+             'Mean Rate of Preterm Respiratory Distress Syndrome by Scenario (2023-2030)',
+             'Mean Rate of Neonatal Sepsis by Scenario (2023-2030)',
+             'Mean Rate of Neonatal Encephalopathy by Scenario (2023-2030)'],
             avg_keys):
         plot_agg_graph(comp_inc_folders, dict_key, axis, title, save_name, comp_incidence_path)
 
@@ -1686,29 +1762,20 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                     year=df['date'].dt.year).groupby(['year'])['PostnatalCare_Neonatal'].sum()),
             do_scaling=True)
 
-        if 'min_pnc' in folder.name:
-            pre_int_years = list(range(2010, intervention_years[0]))
-            pnc_data_mat_data = return_95_CI_across_runs(pnc_mat_count, pre_int_years)
-            pnc_data_neo_data = return_95_CI_across_runs(pnc_neo_count, pre_int_years)
 
-            for data in [pnc_data_mat_data, pnc_data_neo_data]:
-                for l in data:
-                    for y in intervention_years:
-                        l.append(0)
-            mat_agg = [0, 0, 0]
-            neo_agg = [0, 0, 0]
+        pnc_mat_count = update_dfs_to_replace_missing_rows(pnc_mat_count)
+        pnc_neo_count = update_dfs_to_replace_missing_rows(pnc_neo_count)
 
-        else:
 
-            pnc_data_mat_data = return_95_CI_across_runs(pnc_mat_count, sim_years)
-            pnc_mat_data_int = pnc_mat_count.loc[intervention_years[0]:intervention_years[-1]]
-            mat_agg_data = get_mean_from_columns(pnc_mat_data_int, 'sum')
-            mat_agg = get_mean_95_CI_from_list(mat_agg_data)
+        pnc_data_mat_data = return_95_CI_across_runs(pnc_mat_count, sim_years)
+        pnc_mat_data_int = pnc_mat_count.loc[intervention_years[0]:intervention_years[-1]]
+        mat_agg_data = get_mean_from_columns(pnc_mat_data_int, 'sum')
+        mat_agg = get_mean_95_CI_from_list(mat_agg_data)
 
-            pnc_data_neo_data = return_95_CI_across_runs(pnc_neo_count, sim_years)
-            pnc_neo_data_int = pnc_neo_count.loc[intervention_years[0]:intervention_years[-1]]
-            neo_agg_data = get_mean_from_columns(pnc_neo_data_int, 'sum')
-            neo_agg = get_mean_95_CI_from_list(neo_agg_data)
+        pnc_data_neo_data = return_95_CI_across_runs(pnc_neo_count, sim_years)
+        pnc_neo_data_int = pnc_neo_count.loc[intervention_years[0]:intervention_years[-1]]
+        neo_agg_data = get_mean_from_columns(pnc_neo_data_int, 'sum')
+        neo_agg = get_mean_95_CI_from_list(neo_agg_data)
 
         results.update({'total_mat_pnc_count_df': pnc_mat_count,
                         'total_neo_pnc_count_df': pnc_neo_count,

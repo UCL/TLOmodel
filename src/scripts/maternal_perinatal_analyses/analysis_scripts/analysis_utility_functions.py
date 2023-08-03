@@ -550,7 +550,8 @@ def comparison_graph_multiple_scenarios_multi_level_dict(colours, intervention_y
     plt.title(title)
     plt.gca().set_ylim(bottom=0)
     plt.legend()
-    plt.savefig(f'./{graph_location}/{save_name}.png')
+    plt.xticks(intervention_years, labels=intervention_years, rotation=45, fontsize=8)
+    plt.savefig(f'./{graph_location}/{save_name}.png', bbox_inches='tight')
     plt.show()
 
 
