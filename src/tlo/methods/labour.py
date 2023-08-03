@@ -3047,6 +3047,10 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive'] or pd.isnull(df.at[person_id, 'la_date_most_recent_delivery']):
             return None
 
+        if person_id in mni:
+            if pd.isnull(mni[person_id]['pnc_date']):
+                return None
+
         # Ensure that women who were scheduled to receive early PNC have received care prior to passing through
         # PostnatalWeekOneMaternalEvent
         if (mni[person_id]['will_receive_pnc'] == 'early') and not mni[person_id]['passed_through_week_one']:

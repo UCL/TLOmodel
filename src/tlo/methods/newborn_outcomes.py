@@ -1392,6 +1392,10 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
         if not df.at[person_id, 'is_alive'] or df.at[person_id, 'nb_death_after_birth'] or (person_id not in nci):
             return
 
+        if person_id in nci:
+            if pd.isnull(nci[person_id]['pnc_date']):
+                return None
+
         if (nci[person_id]['will_receive_pnc'] == 'early') and not nci[person_id]['passed_through_week_one']:
             if not self.sim.date < (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2)):
                 logger.info(key='error', data=f'Child {person_id} arrived at early PNC too late')
