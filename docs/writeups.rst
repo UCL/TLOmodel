@@ -94,6 +94,8 @@ Non-Communicable Conditions
 
     * **Chronic Kidney Disease**: Summary representation of chronic kidney disease as part of a set of common non-communicable conditions. :download:`.docx <./write-ups/CardioMetabolicDisorders.docx>`
 
+    * **Chronic Obstructive Pulmonary Disease**: Summary representation of COPD as a cause of death/disability and as a risk factor for other conditions. :download:`.docx <./write-ups/Copd.docx>`
+
     * **Depression**: Depression, self-harm and suicide, and the treatment of depression. :download:`.docx <./write-ups/Depression.docx>`
 
     * **Epilepsy** Epilepsy and its treatment. :download:`.docx <./write-ups/Epilepsy.docx>`
