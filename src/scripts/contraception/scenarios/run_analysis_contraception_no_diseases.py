@@ -14,7 +14,7 @@ used modules:
     - cons_availability="all", i.e. all consumables are assumed to be always available,
 * Contraception, for which SimplifiedPregnancyAndLabour is used
     - use_interventions=False/True according to what we need (False => without interventions,
-    True => interventions since 2023)
+    True => interventions since 2023; it needs to be set in the ResourceFile_ContraceptionParams.csv)
 * DummyHivModule (a supporting module required by Contraception module)
 
 logging above warning level:
@@ -75,9 +75,6 @@ class RunAnalysisCo(BaseScenario):
 
             # - Contraception and replacement for Labour etc.
             contraception.Contraception(resourcefilepath=self.resources,
-                                        # use_interventions=False,  # default: False
-                                        # interventions_start_date=Date(2016, 1, 1),  # if needs to be changed
-                                        # the default date is Date(2023, 1, 1)
                                         use_healthsystem=True  # default: True <-- using HealthSystem
                                         # if True initiation and switches to contraception require an HSI
                                         ),
