@@ -2181,7 +2181,12 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
         mother = df.loc[person_id]
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        if not mother.is_alive or not mother.is_pregnant or mother.la_currently_in_labour or mother.hs_is_inpatient:
+        if (
+            (not mother.is_alive)
+            or (not mother.is_pregnant)
+            or mother.la_currently_in_labour
+            or mother.hs_is_inpatient
+        ):
             return
 
         if pd.isnull(mni[person_id]['date_preg_emergency']) and pd.isnull(mni[person_id]['date_anc_admission']):
