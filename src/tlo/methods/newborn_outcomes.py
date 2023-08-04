@@ -1461,9 +1461,6 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
     def did_not_run(self):
         pass
 
-    def not_available(self):
-        self.module.run_if_care_of_the_receives_postnatal_check_cant_run(self)
-
     def _get_facility_level_for_pnc(self, person_id):
         nci = self.module.newborn_care_info
 
@@ -1495,9 +1492,6 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
     def did_not_run(self):
         logger.debug(key='message', data='HSI_PostnatalSupervisor_NeonatalWardInpatientCare: did not run')
 
-    def not_available(self):
-        logger.debug(key='message', data='HSI_PostnatalSupervisor_NeonatalWardInpatientCare: cannot not run with '
-                                         'this configuration')
         return False
 
 

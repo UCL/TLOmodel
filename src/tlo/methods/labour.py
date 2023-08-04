@@ -3018,9 +3018,6 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
     def did_not_run(self):
         pass
 
-    def not_available(self):
-        self.module.run_if_receives_skilled_birth_attendance_cant_run(self)
-
 
 class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
     """
@@ -3145,9 +3142,6 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
 
     def did_not_run(self):
         pass
-
-    def not_available(self):
-        self.module.run_if_receives_postnatal_check_cant_run(self)
 
     def _get_facility_level_for_pnc(self, person_id):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -3300,9 +3294,6 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
     def did_not_run(self):
         pass
 
-    def not_available(self):
-        self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
-
 
 class HSI_Labour_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
     """
@@ -3326,10 +3317,6 @@ class HSI_Labour_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_Labour_PostnatalWardInpatientCare: did not run')
-
-    def not_available(self):
-        logger.debug(key='message', data='HSI_Labour_PostnatalWardInpatientCare: cannot not run with '
-                                         'this configuration')
 
 
 class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
