@@ -310,20 +310,17 @@ def test_death_rate():
 
     # 1) -------------TEST ZERO DEATH RATE LEAD TO ZERO DEATH------------------------
     # make death rate due to severe exacerbation to zero. This will ensure no copd death rate is scheduled
-    copd_module.parameters['prob_will_die_sev_exacerbation_ge80'] = 0.0
-    copd_module.parameters['prob_will_die_sev_exacerbation_7079'] = 0.0
-    copd_module.parameters['prob_will_die_sev_exacerbation_6069'] = 0.0
-    copd_module.parameters['prob_will_die_sev_exacerbation_5059'] = 0.0
-    copd_module.parameters['prob_will_die_sev_exacerbation_4049'] = 0.0
     copd_module.parameters['prob_will_die_sev_exacerbation_3039'] = 0.0
-    copd_module.parameters['prob_will_die_sev_exacerbation_lt30'] = 0.0
+
+    # re-initialise models to use updated parameters
+    copd_module.pre_initialise_population()
 
     # call copd exacerbation event and check no one is scheduled to die
     for idx in range(len(df.index)):
         _event = copd.CopdExacerbationEvent(copd_module, idx, severe=True)
         _event.run()
     # no one should be scheduled to die
-    assert not df.ch_will_die_this_episode.all(), 'no one should be scheduled to die when death rate is 0'
+    assert all(~df.ch_will_die_this_episode), 'no one should be scheduled to die when death rate is 0'
 
     # schedule death event and confirm no one has died
     for idx in range(len(df.index)):
@@ -335,9 +332,14 @@ def test_death_rate():
 
     # 2) -------- TEST HIGH DEATH RATE BUT PERFECT TREATMENT SHOULD LEAD TO NO DEATHS ------------
     # reset death rate due to severe exacerbation to 1. This will ensure many deaths are scheduled
-    copd_module.parameters['prob_will_die_sev_exacerbation_less40'] = 1.0
+    copd_module.parameters['prob_will_die_sev_exacerbation_3039'] = 1.0
+
     # reset will survive given oxygen probability to 1.0 to ensure all survive when care is given
     copd_module.parameters['eff_oxygen'] = 1.0
+
+    # re-initialise models to use updated parameters
+    copd_module.pre_initialise_population()
+
     # call copd exacerbation event and confirm all have been scheduled to die
     for idx in range(len(df.index)):
         _event = copd.CopdExacerbationEvent(copd_module, idx, severe=True)
@@ -356,7 +358,6 @@ def test_death_rate():
     assert all(~df.ch_will_die_this_episode), 'now that individuals have received perfect treatment,' \
                                               'death should be canceled'
 
-    print(f'the df is {list(df.ch_will_die_this_episode)}')
     # schedule death event and confirm no one is dead
     for idx in range(len(df.index)):
         _event = copd.CopdDeath(copd_module, idx)
