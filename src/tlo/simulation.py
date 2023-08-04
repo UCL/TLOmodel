@@ -105,7 +105,7 @@ class Simulation:
             # if modules have already been registered
             if self.modules:
                 module_paths = (module.__module__ for module in self.modules.values())
-                logging.set_logging_levels(custom_levels, module_paths)
+                logging.set_logging_levels(custom_levels)
             else:
                 # save the configuration and apply in the `register` phase
                 self._custom_log_levels = custom_levels
@@ -121,9 +121,6 @@ class Simulation:
     @property
     def log_filepath(self):
         return self._log_filepath
-
-    def _set_module_log_level(self, module_path, level):
-        logging.set_logging_levels({module_path: level}, [module_path])
 
     def register(self, *modules, sort_modules=True, check_all_dependencies=True):
         """Register one or more disease modules with the simulation.
@@ -164,18 +161,12 @@ class Simulation:
             )
             module.rng = np.random.RandomState(np.random.MT19937(seed_seq))
 
-            # if user provided custom log levels
-            if self._custom_log_levels is not None:
-                # get the log level of this module
-                path = module.__module__
-                if path in self._custom_log_levels:
-                    self._set_module_log_level(path, self._custom_log_levels[path])
-                elif '*' in self._custom_log_levels:
-                    self._set_module_log_level(path, self._custom_log_levels['*'])
-
             self.modules[module.name] = module
             module.sim = self
             module.read_parameters('')
+
+        if self._custom_log_levels:
+            logging.set_logging_levels(self._custom_log_levels)
 
     def make_initial_population(self, *, n):
         """Create the initial population to simulate.
