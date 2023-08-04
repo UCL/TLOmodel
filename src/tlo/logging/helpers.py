@@ -1,7 +1,7 @@
 import logging as _logging
 import sys
 from pathlib import Path
-from typing import Dict, Iterable
+from typing import Dict
 
 from .core import _FORMATTER, _LOGGERS, DEBUG, getLogger
 
@@ -28,6 +28,10 @@ def set_logging_levels(custom_levels: Dict[str, int]):
     # get list of `tlo.` loggers to process (this assumes logger have been setup on module import)
     loggers = {_logging.getLogger(name) for name in _logging.root.manager.loggerDict if name.startswith('tlo.methods')}
 
+    # set the baseline logging level from methods, if it's been set
+    if '*' in custom_levels:
+        getLogger('tlo.methods').setLevel(custom_levels['*'])
+
     # loop over each of the tlo loggers
     for logger in loggers:
         # get the full name
@@ -39,9 +43,11 @@ def set_logging_levels(custom_levels: Dict[str, int]):
                 getLogger(logger_name).setLevel(custom_levels[logger_name])
                 matched = True
                 break
-            elif logger_name == 'tlo.methods':  # the top-level of the `tlo.methods` loggers
+            elif logger_name == 'tlo.methods':
+                # we've reached the top-level of the `tlo.methods` logger
                 break
             else:
+                # get the parent logger name
                 logger_name = '.'.join(logger_name.split(".")[:-1])
         # if we exited without finding a matching logger in custom levels
         if not matched:
@@ -53,6 +59,9 @@ def set_logging_levels(custom_levels: Dict[str, int]):
     for logger_name, logger_level in custom_levels.items():
         if logger_name != "*" and logger_name not in loggers:
             getLogger(logger_name).setLevel(logger_level)
+
+    print('after set_logging_levels()')
+    print([_logging.getLogger(name) for name in _logging.root.manager.loggerDict if name.startswith('tlo.methods')])
 
 
 def init_logging(add_stdout_handler=True):

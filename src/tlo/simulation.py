@@ -104,7 +104,6 @@ class Simulation:
         if custom_levels:
             # if modules have already been registered
             if self.modules:
-                module_paths = (module.__module__ for module in self.modules.values())
                 logging.set_logging_levels(custom_levels)
             else:
                 # save the configuration and apply in the `register` phase
