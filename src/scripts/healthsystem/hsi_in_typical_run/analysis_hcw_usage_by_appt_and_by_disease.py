@@ -157,6 +157,9 @@ def get_expected_appt_time(resourcefilepath) -> pd.DataFrame:
     expected_appt_time['Appt_Cat'] = expected_appt_time['Appt_Cat'].replace(appt_cat)
     expected_appt_time.rename(columns={'Appt_Cat': 'Appt_Category'}, inplace=True)
 
+    # modify time for dummy ConWithDCSA so that no overworking/underworking
+    expected_appt_time.loc[expected_appt_time['Appt_Category'] == 'ConWithDCSA', 'Time_Taken_Mins'] = 20.0
+
     return expected_appt_time
 
 
