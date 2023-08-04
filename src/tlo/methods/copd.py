@@ -60,14 +60,26 @@ class Copd(Module):
             Types.REAL, 'probability of changing from a lower lung function category to a higher lung function category'
         ),
 
-        'prob_will_die_sev_exacerbation_gr59': Parameter(
-            Types.REAL, 'probability that a person greater than 59 years will die of severe exacerbation '
+        'prob_will_die_sev_exacerbation_ge80': Parameter(
+            Types.REAL, 'probability that a person equal to or greater than 80 years will die of severe exacerbation '
         ),
-        'prob_will_die_sev_exacerbation40_59': Parameter(
-            Types.REAL, 'probability that a person between 40 to 59 years will die of severe exacerbation '
+        'prob_will_die_sev_exacerbation_7079': Parameter(
+            Types.REAL, 'probability that a person between 70 to 79 years will die of severe exacerbation '
         ),
-        'prob_will_die_sev_exacerbation_less40': Parameter(
-            Types.REAL, 'probability that a person less than 40 years will die of severe exacerbation '
+        'prob_will_die_sev_exacerbation_6069': Parameter(
+            Types.REAL, 'probability that a person between 60 to 99 years will die of severe exacerbation '
+        ),
+        'prob_will_die_sev_exacerbation_5059': Parameter(
+            Types.REAL, 'probability that a person between 50 to 59 years will die of severe exacerbation '
+        ),
+        'prob_will_die_sev_exacerbation_4049': Parameter(
+            Types.REAL, 'probability that a person between 40 to 49 years will die of severe exacerbation '
+        ),
+        'prob_will_die_sev_exacerbation_3039': Parameter(
+            Types.REAL, 'probability that a person between 30 to 39 years will die of severe exacerbation '
+        ),
+        'prob_will_die_sev_exacerbation_lt30': Parameter(
+            Types.REAL, 'probability that a person less than 30 years will die of severe exacerbation '
         ),
 
         'eff_oxygen': Parameter(
@@ -274,6 +286,29 @@ class CopdModels:
             .when(6, self.params['prob_sev_exacerb'][6])
         )
 
+        self.__Prob_Will_Die_SevereExacerbation__ = LinearModel.multiplicative(
+            Predictor(
+                'age_years'
+            ).when('>=80', self.params['prob_will_die_sev_exacerbation_ge80'])
+            .when('.between(70, 79)', self.params['prob_will_die_sev_exacerbation_7079'])
+            .when('.between(60, 69)', self.params['prob_will_die_sev_exacerbation_6069'])
+            .when('.between(50, 59)', self.params['prob_will_die_sev_exacerbation_5059'])
+            .when('.between(40, 49)', self.params['prob_will_die_sev_exacerbation_4049'])
+            .when('.between(30, 39)', self.params['prob_will_die_sev_exacerbation_3039'])
+            .when('<30', self.params['prob_will_die_sev_exacerbation_lt30'])
+        )
+        self.__Prob_OxygenEffect_On_Mortality__ = LinearModel.multiplicative(
+            Predictor(
+                'age_years'
+            ).when('>=80', self.params['eff_oxygen'] * self.params['prob_will_die_sev_exacerbation_ge80'])
+            .when('.between(70, 79)', self.params['eff_oxygen'] * self.params['prob_will_die_sev_exacerbation_7079'])
+            .when('.between(60, 69)', self.params['eff_oxygen'] * self.params['prob_will_die_sev_exacerbation_6069'])
+            .when('.between(50, 59)', self.params['eff_oxygen'] * self.params['prob_will_die_sev_exacerbation_5059'])
+            .when('.between(40, 49)', self.params['eff_oxygen'] * self.params['prob_will_die_sev_exacerbation_4049'])
+            .when('.between(30, 39)', self.params['eff_oxygen'] * self.params['prob_will_die_sev_exacerbation_3039'])
+            .when('<30', self.params['eff_oxygen'] * self.params['prob_will_die_sev_exacerbation_lt30'])
+        )
+
     def init_lung_function(self, df: pd.DataFrame) -> pd.Series:
         """Returns the values for ch_lungfunction for an initial population described in `df`
         """
@@ -321,18 +356,13 @@ class CopdModels:
         """ Returns value for ch_lungfunction for the person at birth."""
         return 0
 
-    def prob_livesaved_given_treatment(self, age_years: int, oxygen: bool, aminophylline: bool):
+    def prob_livesaved_given_treatment(self, df: pd.DataFrame, oxygen: bool, aminophylline: bool):
         """ Returns the probability that a treatment prevents death during an exacerbation, according to the treatment
         provided (we're considering oxygen only as there is no evidence of a mortality benefits on aminophylline) """
         if oxygen:
-            if age_years >= 60:
-                return self.params['eff_oxygen'] * self.params['prob_will_die_sev_exacerbation_gr59']
-            elif 40 <= age_years <= 59:
-                return self.params['eff_oxygen'] * self.params['prob_will_die_sev_exacerbation40_59']
-            else:
-                return self.params['eff_oxygen'] * self.params['prob_will_die_sev_exacerbation_less40']
+            return self.__Prob_OxygenEffect_On_Mortality__.predict(df, self.rng)
         else:
-            return 0.0
+            return False
 
     @property
     def disability_weight_given_lungfunction(self) -> Dict:
@@ -366,14 +396,10 @@ class CopdModels:
         will_get_ex = self.__Prob_SevereExacerbation__.predict(df, self.rng, squeeze_single_row_output=False)
         return will_get_ex[will_get_ex].index.to_list()
 
-    def will_die_given_severe_exacerbation(self, age_years: int) -> bool:
-        """Return bool indicating if a person will die due to a severe exacerbation."""
-        if age_years >= 60:
-            return self.rng.random_sample() < self.params['prob_will_die_sev_exacerbation_gr59']
-        elif 40 <= age_years <= 59:
-            return self.rng.random_sample() < self.params['prob_will_die_sev_exacerbation40_59']
-        else:
-            return self.rng.random_sample() < self.params['prob_will_die_sev_exacerbation_less40']
+    def will_die_given_severe_exacerbation(self, df: pd.DataFrame) -> bool:
+        """Return bool indicating if a person will die due to a severe exacerbation.
+        :param df: pandas dataframe """
+        return self.__Prob_Will_Die_SevereExacerbation__.predict(df, self.rng)
 
 
 def eligible_to_progress_to_next_lung_function(df: pd.DataFrame) -> pd.Series:
@@ -460,7 +486,7 @@ class CopdExacerbationEvent(Event, IndividualScopeEventMixin):
 
         if self.severe:
             # Work out if the person will die of this exacerbation (if not treated). If they die, they die the next day.
-            if self.module.models.will_die_given_severe_exacerbation(df.at[person_id, 'age_years']):
+            if self.module.models.will_die_given_severe_exacerbation(df.iloc[[person_id]]):
                 df.at[person_id, "ch_will_die_this_episode"] = True
                 self.sim.schedule_event(CopdDeath(self.module, person_id), self.sim.date + pd.DateOffset(days=1))
 
@@ -476,7 +502,7 @@ class CopdDeath(Event, IndividualScopeEventMixin):
     def apply(self, person_id):
         df = self.sim.population.props
         person = df.loc[person_id, ['is_alive', 'ch_will_die_this_episode', 'ch_lungfunction']]
-        # Check if they should still die and, if so, cause the death
+        # Check if an individual should still die and, if so, cause the death
         if person.is_alive and person.ch_will_die_this_episode:
             self.sim.modules['Demography'].do_death(
                 individual_id=person_id,
@@ -525,9 +551,10 @@ class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixi
         else:
             # Give oxygen and AminoPhylline, if possible, ... and cancel death if the treatment is successful.
             prob_treatment_success = self.module.models.prob_livesaved_given_treatment(
-                age_years=df.at[person_id, 'age_years'],
+                df=df.iloc[[person_id]],
                 oxygen=self.get_consumables(self.module.item_codes['oxygen']),
                 aminophylline=self.get_consumables(self.module.item_codes['aminophylline'])
             )
-            if self.module.rng.random_sample() < prob_treatment_success:
+
+            if prob_treatment_success:
                 df.at[person_id, 'ch_will_die_this_episode'] = False

@@ -310,7 +310,13 @@ def test_death_rate():
 
     # 1) -------------TEST ZERO DEATH RATE LEAD TO ZERO DEATH------------------------
     # make death rate due to severe exacerbation to zero. This will ensure no copd death rate is scheduled
-    copd_module.parameters['prob_will_die_sev_exacerbation'] = 0
+    copd_module.parameters['prob_will_die_sev_exacerbation_ge80'] = 0.0
+    copd_module.parameters['prob_will_die_sev_exacerbation_7079'] = 0.0
+    copd_module.parameters['prob_will_die_sev_exacerbation_6069'] = 0.0
+    copd_module.parameters['prob_will_die_sev_exacerbation_5059'] = 0.0
+    copd_module.parameters['prob_will_die_sev_exacerbation_4049'] = 0.0
+    copd_module.parameters['prob_will_die_sev_exacerbation_3039'] = 0.0
+    copd_module.parameters['prob_will_die_sev_exacerbation_lt30'] = 0.0
 
     # call copd exacerbation event and check no one is scheduled to die
     for idx in range(len(df.index)):
@@ -388,41 +394,15 @@ def test_initialise_lung_function():
     #  function is initialised as we now have probabilities in all lung function categories despite whether an
     #  individual do smoke or not
 
-    # sim = get_simulation(10_000)
-    #
-    # # 1----------- CHECK LUNG FUNCTION ASSIGNMENT ON TOBACCO SMOKERS ------------
-    # # Make all the population alive, over 15 years old and tobacco smokers
-    # sim.population.props.is_alive = True
-    # sim.population.props.age_years = np.random.choice(range(20, 50), len(sim.population.props))
-    # sim.population.props.li_tob = True
-    # sim.modules['Copd'].initialise_population(sim.population)
-    #
-    # # create a population dataframe
-    # df = sim.population.props
-    #
-    # # check properties have been reset properly
-    # assert all(df.li_tob), 'some are not tobacco smokers'
-    # assert all(df.age_years > 15), 'some are minors'
-    #
-    # # check all tobacco smokers have a lung function of either 4 or 5
-    # assert all(df.ch_lungfunction > 4), 'tobacco smokers should have a lung function of greater than 4'
-    #
-    # # 2 ----------- CHECK LUNG FUNCTION ASSIGNMENT ON NON-TOBACCO SMOKERS ------------
-    # # Reset tobacco intake property(li_tob) to false. This will ensure all individuals are non-smokers. re-initialise
-    # # population and check lung function is assigned properly(a lung function of either 2 or 3 should be assigned)
-    # sim.population.props.li_tob = False
-    # sim.modules['Copd'].initialise_population(sim.population)
-    #
-    # # check all tobacco non-smokers have a lung function of either 2 or 3
-    # assert all(df.ch_lungfunction.between(2, 3)), 'tobacco non-smokers should have a lung function of either 2 or 3'
-    #
-    # # 3 ----------- CHECK LUNG FUNCTION ASSIGNMENT ON INDIVIDUALS <15 YEARS ------------
-    # sim.population.props.age_years = np.random.choice(range(0, 14), len(sim.population.props))
-    # sim.modules['Copd'].initialise_population(sim.population)
-    #
-    # # check individuals <15 years should have a lung function of 0
-    # assert all(0 == df.ch_lungfunction), 'individuals <15 years should have lung function of 0 at population ' \
-    #                                      'initialisation'
+    sim = get_simulation(10_000)
+    df = sim.population.props
+    # 1 ----------- CHECK LUNG FUNCTION ASSIGNMENT ON INDIVIDUALS <15 YEARS ------------
+    sim.population.props.age_years = np.random.choice(range(0, 14), len(sim.population.props))
+    sim.modules['Copd'].initialise_population(sim.population)
+
+    # check individuals <15 years should have a lung function of 0
+    assert all(0 == df.ch_lungfunction), 'individuals <15 years should have lung function of 0 at population ' \
+                                         'initialisation'
 
 
 def test_referral_logic():
