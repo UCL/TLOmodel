@@ -168,7 +168,8 @@ class Contraception(Module):
         self.rng2 = None  # (Will be a second random number generator, used for things to do with scheduling HSI)
 
     def read_parameters(self, data_folder):
-        """Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters.
+        """Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters
+        (CSV ResourceFile).
         """
         workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Contraception.xlsx', sheet_name=None)
 
@@ -193,7 +194,9 @@ class Contraception(Module):
             self.parameters[sheet] = workbook[sheet]
 
         # Declare values for other parameters
-        self.load_parameters_from_dataframe(workbook['Parameters'])
+        self.load_parameters_from_dataframe(pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_ContraceptionParams.csv'
+        ))
 
         # Import the Age-specific fertility rate data from WPP
         self.parameters['age_specific_fertility_rates'] = \
