@@ -373,6 +373,55 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.axhline(1.0, color='r')
     format_and_save(fig, ax, name_of_plot)
 
+    # Plot two stacked bars for Model and Data to compare the total appt usage,
+    # to show the overall and main appts like OPD have been calibrated well.
+    real_usage_all = real_usage.sum(axis=0).reset_index().rename(columns={0: 'Data'})
+    simulation_usage_all = simulation_usage.sum(axis=0).reset_index().rename(columns={'index': 'Appt_Type', 0: 'Model'})
+    usage_all = simulation_usage_all.merge(real_usage_all, on='Appt_Type', how='inner').melt(
+        id_vars='Appt_Type', value_vars=['Model', 'Data'], var_name='Type', value_name='Value').pivot(
+        index='Type', columns='Appt_Type', values='Value')
+    usage_all = usage_all / 1e6
+    appt_color_dict = {
+        'OPD': 'lightpink',
+        'IPAdmission': 'palevioletred',
+        'InpatientDays': 'mediumvioletred',
+
+        'U5Malnutr': 'orchid',
+
+        'FamPlan': 'darkseagreen',
+        'AntenatalTotal': 'green',
+        'Delivery': 'limegreen',
+        'Csection': 'springgreen',
+        'EPI': 'paleturquoise',
+        'STI': 'mediumaquamarine',
+
+        'AccidentsandEmerg': 'orange',
+
+        'TBNew': 'yellow',
+
+        'VCTTests': 'lightsteelblue',
+        'NewAdult': 'cornflowerblue',
+        'EstAdult': 'royalblue',
+        'Peds': 'lightskyblue',
+        'PMTCT': 'deepskyblue',
+        'MaleCirc': 'mediumslateblue',
+
+        'MentalAll': 'darkgrey',
+
+        'DentalAll': 'silver',
+    }
+
+    name_of_plot = 'Model vs Data on average annual health service volume'
+    fig, ax = plt.subplots()
+    usage_all.plot(kind='bar', stacked=True, color=appt_color_dict, rot=0, ax=ax)
+    ax.set_ylabel('Health service volume in millions')
+    ax.set(xlabel=None)
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Appointment type', fontsize=9)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
+    plt.show()
+
     # Plot Simulation with 95% CI vs Adjusted Real usage by appt type, across all levels (trimmed to 0.1 and 10)
     # format data
     def format_rel_diff(adjusted=True):
