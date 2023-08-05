@@ -218,13 +218,13 @@ def apply(results_folder: Path, output_folder: Path):
     """Description of the usage of healthcare system resources."""
 
     figure1_distribution_of_hsi_event_by_date(
-       results_folder=results_folder, output_folder=results_folder
+       results_folder=results_folder, output_folder=output_folder
     )
     figure2_distribution_of_hsi_event_by_treatment(
-        results_folder=results_folder, output_folder=results_folder
+        results_folder=results_folder, output_folder=output_folder
     )
     figure3_appointments_used(
-       results_folder=results_folder, output_folder=results_folder
+       results_folder=results_folder, output_folder=output_folder
     )
 
 
