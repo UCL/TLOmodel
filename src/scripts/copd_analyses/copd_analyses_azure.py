@@ -1,12 +1,19 @@
 """
 Azure copd analyses
  """
-from tlo.methods import demography, simplified_births, enhanced_lifestyle, healthsystem, symptommanager, \
-    healthseekingbehaviour, healthburden, copd
-
 import warnings
 
 from tlo import Date, logging
+from tlo.methods import (
+    copd,
+    demography,
+    enhanced_lifestyle,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    simplified_births,
+    symptommanager,
+)
 from tlo.scenario import BaseScenario
 
 # Ignore warnings to avoid cluttering output from simulation - generally you do not
