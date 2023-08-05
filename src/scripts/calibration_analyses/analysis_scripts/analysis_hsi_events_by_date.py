@@ -229,15 +229,11 @@ def apply(results_folder: Path, output_folder: Path):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser("Analyse logged HSI event data from scenario run")
-    parser.add_argument(
-        "--results-folder",
-        type=Path,
-        help="Path to folder containing results of scenario to perform analysis for"
-    )
+    parser = argparse.ArgumentParser()
+    parser.add_argument("resultsfolder", type=Path)
     args = parser.parse_args()
 
     apply(
-        results_folder=args.results_folder,
-        output_folder=args.results_folder
+        results_folder=args.resultsfolder,
+        output_folder=args.resultsfolder,
     )
