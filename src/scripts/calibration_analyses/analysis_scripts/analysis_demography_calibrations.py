@@ -787,7 +787,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser("Analyse logged HSI event data from scenario run")
+    parser = argparse.ArgumentParser("Do demography calibration analyses for a given scenario run")
     parser.add_argument(
         "--results-folder",
         type=Path,
