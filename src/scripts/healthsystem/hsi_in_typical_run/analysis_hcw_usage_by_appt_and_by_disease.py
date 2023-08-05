@@ -72,6 +72,9 @@ def get_annual_num_hsi_by_appt_and_level(results_folder: Path) -> pd.DataFrame:
     hsi_count = hsi_count.groupby(['Treatment_ID', 'Appt_Type_Code', 'Facility_Level'])['Count'].sum()/yr_count
     hsi_count = hsi_count.to_frame().reset_index()
 
+    # drop dummy PharmDispensing for HCW paper results and plots
+    hsi_count = hsi_count.drop(index=hsi_count[hsi_count['Appt_Type_Code'] == 'PharmDispensing'].index)
+
     return hsi_count
 
 
@@ -97,7 +100,8 @@ def get_annual_hcw_time_used_with_confidence_interval(results_folder: Path, reso
             .mean(axis=0) \
             .to_frame().reset_index() \
             .rename(columns={'level_0': 'Facility_Level', 'level_1': 'Appt_Type_Code', 0: 'Count'}) \
-            .pivot(index='Facility_Level', columns='Appt_Type_Code', values='Count')
+            .pivot(index='Facility_Level', columns='Appt_Type_Code', values='Count') \
+            .drop(columns='PharmDispensing')  # do not include this dummy appt for HCW paper results and plots
 
         # get appt time definitions
         appt_time = get_expected_appt_time(resourcefilepath)
