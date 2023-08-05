@@ -221,7 +221,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     hcw_usage_ratio_actual, error_actual = format_hcw_usage(hcwscenario='actual')
     hcw_usage_ratio_establishment, error_establishment = format_hcw_usage(hcwscenario='funded_plus')
 
-    name_of_plot = 'Simulated annual working time vs Capability per cadre'
+    name_of_plot = 'Simulated average annual working time (95% CI) vs Capability per cadre'
     fig, ax = plt.subplots(figsize=(8, 5))
     hcw_usage_ratio_establishment.plot(kind='bar', yerr=error_establishment, width=0.4,
                                        ax=ax, position=0, bottom=1.0,
