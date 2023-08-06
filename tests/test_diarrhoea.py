@@ -70,7 +70,7 @@ def test_basic_run_of_diarrhoea_module_with_default_params(tmpdir, seed):
     log_config = {'filename': 'tmpfile',
                   'directory': tmpdir,
                   'custom_levels': {
-                      "Diarrhoea": logging.INFO}
+                      "tlo.methods.diarrhoea": logging.INFO}
                   }
 
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
