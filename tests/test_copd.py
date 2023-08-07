@@ -396,14 +396,14 @@ def test_initialise_lung_function():
     #  individual do smoke or not
 
     sim = get_simulation(10_000)
-    df = sim.population.props
     # 1 ----------- CHECK LUNG FUNCTION ASSIGNMENT ON INDIVIDUALS <15 YEARS ------------
+    sim.population.props.is_alive = True
     sim.population.props.age_years = np.random.choice(range(0, 14), len(sim.population.props))
     sim.modules['Copd'].initialise_population(sim.population)
 
     # check individuals <15 years should have a lung function of 0
-    assert all(0 == df.ch_lungfunction), 'individuals <15 years should have lung function of 0 at population ' \
-                                         'initialisation'
+    assert all(0 == sim.population.props.ch_lungfunction), 'individuals <15 years should have lung function of 0 at ' \
+                                                           'population initialisation'
 
 
 def test_referral_logic():
