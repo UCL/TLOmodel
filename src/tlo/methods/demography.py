@@ -303,7 +303,7 @@ class Demography(Module):
 
         # Log the initial population scaling-factor (to the logger of this module and that of `tlo.methods.population`)
         for _logger in (logger,  logging.getLogger('tlo.methods.population')):
-            _logger.info(
+            _logger.warning(
                 key='scaling_factor',
                 data={'scaling_factor': 1.0 / self.initial_model_to_data_popsize_ratio},
                 description='The data-to-model scaling factor (based on the initial population size, used to '
