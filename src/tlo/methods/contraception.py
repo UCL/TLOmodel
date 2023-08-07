@@ -307,8 +307,8 @@ class Contraception(Module):
         birth."""
 
         # Check whether it is appropriate and time to implement interventions
-        if self.parameters['use_interventions'] and self.sim.date == self.parameters['interventions_start_date'] \
-                and not self.interventions_on:
+        if self.parameters['use_interventions'] and (self.sim.date == self.parameters['interventions_start_date']) \
+                and (not self.interventions_on):
             # Update module parameters to enable interventions
             self.processed_params = self.process_params()
             self.interventions_on = True
@@ -779,8 +779,8 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
         # Check whether it is appropriate and time to implement interventions
         if self.module.parameters['use_interventions'] \
-                and self.sim.date == self.module.parameters['interventions_start_date'] \
-                and not self.module.interventions_on:
+                and (self.sim.date == self.module.parameters['interventions_start_date']) \
+                and (not self.module.interventions_on):
             # Update module parameters to enable interventions
             self.module.processed_params = self.module.process_params()
             self.module.interventions_on = True
@@ -1177,7 +1177,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
             # (N.B. If the current method is the same as the new method, there is no logging.)
 
         # If the intended change was not possible due to non-available consumable, reschedule the appointment
-        if not co_administrated and (
+        if (not co_administrated) and (
             self._number_of_times_run < self.module.parameters['max_number_of_runs_of_hsi_if_consumable_not_available']
         ):
             self.reschedule()
