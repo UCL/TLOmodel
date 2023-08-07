@@ -139,7 +139,7 @@ def test_bed_days_basics(tmpdir, seed):
         'filename': 'bed_days',
         'directory': tmpdir,
         'custom_levels': {
-            "BedDays": logging.INFO}
+            'tlo.methods.healthsystem': logging.INFO}
     })
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
@@ -338,7 +338,7 @@ def test_bed_days_property_is_inpatient(tmpdir, seed):
         'filename': 'temp',
         'directory': tmpdir,
         'custom_levels': {
-            "BedDays": logging.INFO,
+            'tlo.methods.healthsystem': logging.INFO,
         }
     })
     sim.register(
@@ -462,7 +462,7 @@ def test_bed_days_released_on_death(tmpdir, seed):
         'filename': 'temp',
         'directory': tmpdir,
         'custom_levels': {
-            "BedDays": logging.INFO,
+            'tlo.methods.healthsystem': logging.INFO,
         }
     })
     sim.register(

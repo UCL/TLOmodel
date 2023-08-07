@@ -85,9 +85,10 @@ def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None):
 
 @cli.command()
 @click.argument("scenario_file", type=click.Path(exists=True))
+@click.option("--asserts-on", type=bool, default=False, is_flag=True, help="Enable assertions in simulation run.")
 @click.option("--keep-pool-alive", type=bool, default=False, is_flag=True, hidden=True)
 @click.pass_context
-def batch_submit(ctx, scenario_file, keep_pool_alive):
+def batch_submit(ctx, scenario_file, asserts_on, keep_pool_alive):
     """Submit a scenario to the batch system.
 
     SCENARIO_FILE is path to file containing scenario class.
@@ -116,7 +117,7 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
 
     # ID of the Batch job.
     timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
-    job_id = Path(scenario_file).stem + "-" + timestamp
+    job_id = scenario.get_log_config()["filename"] + "-" + timestamp
 
     # Path in Azure storage where to store the files for this job
     azure_directory = f"{config['DEFAULT']['USERNAME']}/{job_id}"
@@ -202,6 +203,11 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
         azure_file_share_configuration=azure_file_share_configuration,
     )
 
+    # we turn off assertions by default
+    py_opt = "PYTHONOPTIMIZE=1"
+    if asserts_on:
+        py_opt = ""
+
     azure_directory = "${{AZ_BATCH_NODE_MOUNTS_DIR}}/" + \
         f"{file_share_mount_point}/{azure_directory}"
     azure_run_json = f"{azure_directory}/{os.path.basename(run_json)}"
@@ -212,7 +218,7 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
     git fetch origin {commit.hexsha}
     git checkout {commit.hexsha}
     pip install -r requirements/base.txt
-    tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
+    {py_opt} tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
     cp {task_dir}/std*.txt {working_dir}/{{draw_number}}/{{run_number}}/.
     gzip {working_dir}/{{draw_number}}/{{run_number}}/*.{gzip_pattern_match}
     cp -r {working_dir}/* {azure_directory}/.
