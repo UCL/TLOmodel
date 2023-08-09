@@ -20,6 +20,7 @@ for each month by facility.
 
 import calendar
 import datetime
+import os
 from collections import defaultdict
 from pathlib import Path
 
@@ -181,6 +182,105 @@ for m in range(1, 13):
     cond2 = lmis_df_wide_flat['received', months_dict[m]].notna()
     lmis_df_wide_flat.loc[cond1 & ~cond2, [('received', months_dict[m])]] = 0
 
+# Before interpolation, make corrections for items whose name changed mid-year
+inconsistent_item_names_mapping = {
+    'Zidovudine/Lamivudine (AZT/3TC), 300+150mg':
+        '''Zidovudine (AZT) + Lamivudine (3TC), 300mg+150mg, 60''s (4A, 8A)''',
+    'Zidovudine/Lamivudine (AZT/3TC), 60+30mg':
+        '''Zidovudine (AZT) + Lamivudine (3TC), 60mg+30mg, 60''s (4P)''',
+    'Zidovudine/Lamivudine/Nevirapine (AZT/3TC/NVP), 300+150+200mg':
+        '''Zidovudine (AZT) + Lamivudine (3TC) + Nvevirapine (NVP), 300mg + 150mg + 200mg, 60''s (2A)''',
+    'Zidovudine/Lamivudine/Nevirapine (AZT/3TC/NVP), 60+30+50mg':
+        '''Zidovudine(AZT) + Lamivudine (3TC) + Nevirapine(NVP), 60mg + 30mg + 50mg, 60''s (2P)''',
+    'Tenofovir Disoproxil Fumarate/Lamivudine(TDF/3TC ), 300+300mg':
+        '''Tenofovir (TDF) + Lamivudine (3TC), 300mg+300mg, 30''s (7A, 6A)''',
+    'Tenofovir Disoproxil Fumarate/Lamivudine/Efavirenz(TDF/3TC /EFV), 300+300+600mg':
+        '''Tenofovir (TDF) + Lamivudine (3TC) + Efavirenz (EFV), 300+300+600, 30''s (5A)''',
+    'Nevirapine (NVP), 50mg': '''Nevirapine 50mg, 60''s''',
+    'Nevirapine (NVP), 200mg': '''Nevirapine (NVP), 200mg, 60''s (6A)''',
+    'Lopinavir/Ritonavir (LPV/r ), 200+50mg': '''Lopinavir + Ritonavir (LPV/r), 200mg + 50mg, 120''s (7A)''',
+    'Lopinavir/Ritonavir(LPV/r ), 100+25mg': '''Lopinavir (LPV/r), 100mg + 25mg, 60''s (9P)''',
+    'Gentamicin, 80mg/2ml': '''Gentamicin 40mg/ml, 2ml''',
+    '''Nevirapine (NVP syrup with syringe), 10mg/ml''': '''Nevirapine (NVP) Syrup, 10mg/ml''',
+    'Efavirenz (EFV), 600mg': '''Efavirenz (EFV), 600mg, 30''s (3A)''',
+    'Efavirenz (EFV), 200mg': '''Efavirenz (EFV), 200mg, 90''s (3P)''',
+    'Unigold HIV test kits, Kit of 20 Tests': '''Unigold HIV Test Kits''',
+    'Determine HIV test Kits, Kit of 100 Tests': '''Determine HIV Test Kits''',
+    '''Cotrimoxazole, 960 mg''': '''Cotrimoxazole 960mg Tabs''',
+    'Abacavir/Lamivudine (ABC/3TC), 60+30mg': '''Abacavir (ABC) + Lamivudine(3TC), 60mg+30mg, 60''S (9P)''',
+    '''Atazanavir /Ritonavir (ATV/r), 300+100mg''': '''Atazanavir +  Ritonavir, 300mg + 100mg, 30''S (7A)''',
+    'SD Bioline, Syphilis test kits, Kit of 30 Tests': 'Determine Syphillis Test Kits',
+    'Isoniazid tablets, 100mg': '''Isoniazid 100mg''',
+    'Isoniazid tablets, 300mg': '''Isoniazid 300mg''',
+    'Morphine slow rel, 30mg': 'Morphine sulphate 10mg (slow release)',
+    'Male condoms, Each': 'Male Condoms',
+    'Benzathine penicillin, 2.4M': 'Benzathine benzylpenicillin 1.44g (2.4MU), PFR',
+    'Doxycycline, 100mg': 'Doxycycline 100mg',
+    'Ciprofloxicin, 500mg': 'Ciprofloxacin 500mg',
+    'Metronidazole, 200mg': 'Metronidazole 200mg',
+    '''Atazanavir /Ritonavir (ATV/r), 300+100mg''': '''Atazanavir +  Ritonavir, 300mg + 100mg, 30''S (7A)''',
+    'Cotrimoxazole (dispersible tabs), 100+20mg': 'Cotrimoxazole 120mg Tablets',
+    'Cotrimoxazole, 400+ 80mg': 'Cotrimoxazole 480mg tablets',
+    'Cotrimoxazole, 960 mg': 'Cotrimoxazole 960mg Tabs',
+    'Erythromycin, 250mg': 'Erythromycin 250mg',
+    'Clotrimazole 500mg vaginal tablet (blister 10 x 10, with app)': 'Clotrimazole 500mg vaginal (Tablets/Pessaries)',
+}
+
+items_introduced_in_september = {
+    'Tenofovir Disoproxil Fumarate/Lamivudine/Dolutegravir (TDF/3TC /DTG), 300+300+50mg': '',
+    'Abacavir/Lamivudine (ABC/3TC), 600+300mg': '',
+    'DBS Bundles, 70 microlitre, Pack of 50 Tests': '',
+    'Dolutegravir (DTG), 50mg': '',
+    'Lopinavir/Ritonavir(LPV/r ), 40+10mg': '',
+    'OraQuick HIV Self Test, Pouch': '',
+}
+
+
+# TODO check whether there is any issue with the above items_introduced_in_september which only show up from September
+#  onwards
+
+def rename_items_to_address_inconsistentencies(_df, item_dict):
+    """Return a dataframe with rows for the same item with inconsistent names collapsed into one"""
+    # Recode item names appearing from Jan to Aug to the new names adopted from September onwards
+    old_unique_item_count = _df.item.nunique()
+    for item in item_dict:
+        print(len(_df[_df.item == item_dict[item]]), ''' instances of "''', item_dict[item], '''"'''
+                                                                                             ''' changed to "''', item,
+              '''"''')
+        # row_newname = _df.item == item
+        row_oldname = _df.item == item_dict[item]
+        _df.loc[row_oldname, 'item'] = item
+
+    # Make a list of column names to be collapsed using different methods
+    columns_to_sum = [col for col in _df.columns if
+                      col[0].startswith(('amc', 'closing_bal', 'dispensed', 'received', 'stkout_days'))]
+    columns_to_preserve = [col for col in _df.columns if
+                           col[0].startswith(('data_source'))]
+
+    # Define aggregation function to be applied to collapse data by item
+    def custom_agg(x):
+        if x.name in columns_to_sum:
+            return x.sum(skipna=True) if np.any(
+                x.notnull() & (x >= 0)) else np.nan  # this ensures that the NaNs are retained
+        # , i.e. not changed to 0, when the corresponding data for both item name variations are NaN, and when there
+        # is a 0 or positive value for one or both item name variation, the sum is taken.
+        elif x.name in columns_to_preserve:
+            return x.str.cat(
+                sep='')  # for the data_source column, this function concatenates the string values
+
+    # Collapse dataframe
+    _collapsed_df = _df.groupby(['program', 'item', 'district', 'fac_type_tlo', 'fac_name']).agg(
+        {col: custom_agg for col in columns_to_preserve + columns_to_sum}
+    ).reset_index()
+
+    # Test that all items in the dictionary have been found in the dataframe
+    new_unique_item_count = _collapsed_df.item.nunique()
+    assert len(item_dict) == old_unique_item_count - new_unique_item_count
+    return _collapsed_df
+
+
+lmis_df_wide_flat = rename_items_to_address_inconsistentencies(lmis_df_wide_flat, inconsistent_item_names_mapping)
+
 # --- 3.1 RULE: 1.If i) stockout is missing, ii) closing_bal, amc and received are not missing , and iii) amc !=0 and,
 #          then stkout_days[m] = (amc[m] - closing_bal[m-1] - received)/amc * number of days in the month ---
 # (Note that the number of entries for closing balance, dispensed and received is always the same)
@@ -289,7 +389,8 @@ lmis = lmis.reset_index()
 
 # 5.1 --- Load and clean data ---
 # Import matched list of consumanbles
-consumables_df = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False)
+consumables_df = pd.read_csv(path_for_new_resourcefiles / 'ResourceFile_consumables_matched.csv', low_memory=False,
+                             encoding="ISO-8859-1")
 cond = consumables_df['matching_status'] == 'Remove'
 consumables_df = consumables_df[~cond]  # Remove items which were removed due to updates or the existence of duplicates
 
@@ -303,53 +404,71 @@ NameChangeList = [('consumable_name_lmis', 'item'), ]
 change_colnames(consumables_df, NameChangeList)
 change_colnames(matched_consumables, NameChangeList)
 
+
+# Update matched consumable name where the name in the OpenLMIS data was updated in September
+def replace_old_item_names_in_lmis_data(_df, item_dict):
+    """Return a dataframe with old LMIS consumable names replaced with the new name"""
+    for item in item_dict:
+        cond_oldname = _df.item == item_dict[item]
+        _df.loc[cond_oldname, 'item'] = item
+    return _df
+
+
+matched_consumables = replace_old_item_names_in_lmis_data(matched_consumables, inconsistent_item_names_mapping)
+
 # 5.2 --- Merge data with LMIS data ---
 lmis_matched_df = pd.merge(lmis, matched_consumables, how='inner', on=['item'])
 lmis_matched_df = lmis_matched_df.sort_values('data_source')
 
+
+def collapse_stockout_data(_df, groupby_list, var):
+    """Return a dataframe with rows for the same TLO model item code collapsed into 1"""
+    # Define column lists based on the aggregation function to be applied
+    columns_to_multiply = [var]
+    columns_to_sum = ['closing_bal', 'amc', 'dispensed', 'received']
+    columns_to_preserve = ['data_source', 'consumable_reporting_freq', 'consumables_reported_in_mth']
+
+    # Define aggregation function to be applied to collapse data by item
+    def custom_agg_stkout(x):
+        if x.name in columns_to_multiply:
+            return x.prod(skipna=True) if np.any(
+                x.notnull() & (x >= 0)) else np.nan  # this ensures that the NaNs are retained
+        elif x.name in columns_to_sum:
+            return x.sum(skipna=True) if np.any(
+                x.notnull() & (x >= 0)) else np.nan  # this ensures that the NaNs are retained
+        # , i.e. not changed to 1, when the corresponding data for both item name variations are NaN, and when there
+        # is a 0 or positive value for one or both item name variation, the sum is taken.
+        elif x.name in columns_to_preserve:
+            return x.iloc[0]  # this function extracts the first value
+
+    # Collapse dataframe
+    _collapsed_df = _df.groupby(groupby_list).agg(
+        {col: custom_agg_stkout for col in columns_to_multiply + columns_to_sum + columns_to_preserve}
+    ).reset_index()
+
+    return _collapsed_df
+
+
 # 2.i. For substitable drugs (within drug category), collapse by taking the product of stkout_prop (OR condition)
 # This represents Pr(all substitutes with the item code are stocked out)
-stkout_df = lmis_matched_df.groupby(
-    ['module_name', 'district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'consumable_name_tlo', 'match_level1',
-     'match_level2'],
-    as_index=False).agg({'stkout_prop': 'prod',
-                         'closing_bal': 'sum',
-                         'amc': 'sum',
-                         'dispensed': 'sum',
-                         'received': 'sum',
-                         'data_source': 'first',
-                         'consumable_reporting_freq': 'first',
-                         'consumables_reported_in_mth': 'first'})
+groupby_list1 = ['module_name', 'district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'consumable_name_tlo',
+                 'match_level1',
+                 'match_level2']
+stkout_df = collapse_stockout_data(lmis_matched_df, groupby_list1, 'stkout_prop')
 
 # 2.ii. For complementary drugs, collapse by taking the product of (1-stkout_prob)
 # This represents Pr(All drugs within item code (in different match_group's) are available)
 stkout_df['available_prop'] = 1 - stkout_df['stkout_prop']
-stkout_df = stkout_df.groupby(
-    ['module_name', 'district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'consumable_name_tlo',
-     'match_level2'],
-    as_index=False).agg({'available_prop': 'prod',
-                         'closing_bal': 'sum',  # could be min
-                         'amc': 'sum',  # could be max
-                         'dispensed': 'sum',  # could be max
-                         'received': 'sum',  # could be min
-                         'data_source': 'first',
-                         'consumable_reporting_freq': 'first',
-                         'consumables_reported_in_mth': 'first'})
+groupby_list2 = ['module_name', 'district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'consumable_name_tlo',
+                 'match_level2']
+stkout_df = collapse_stockout_data(stkout_df, groupby_list2, 'available_prop')
 
 # 2.iii. For substitutable drugs (within consumable_name_tlo), collapse by taking the product of stkout_prop (OR
 # condition).
 # This represents Pr(all substitutes with the item code are stocked out)
 stkout_df['stkout_prop'] = 1 - stkout_df['available_prop']
-stkout_df = stkout_df.groupby(
-    ['module_name', 'district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'consumable_name_tlo'],
-    as_index=False).agg({'stkout_prop': 'prod',
-                         'closing_bal': 'sum',
-                         'amc': 'sum',
-                         'dispensed': 'sum',
-                         'received': 'sum',
-                         'data_source': 'first',
-                         'consumable_reporting_freq': 'first',
-                         'consumables_reported_in_mth': 'first'})
+groupby_list3 = ['module_name', 'district', 'fac_type_tlo', 'fac_name', 'month', 'item_code', 'consumable_name_tlo']
+stkout_df = collapse_stockout_data(stkout_df, groupby_list3, 'stkout_prop')
 
 # Update impossible stockout values (This happens due to some stockout days figures being higher than the number of
 #  days in the month)
@@ -460,7 +579,7 @@ change_colnames(unmatched_consumables_df, NameChangeList)
 # Append common consumables stockout dataframe with the main dataframe
 cond = unmatched_consumables_df['available_prop'].notna()
 unmatched_consumables_df.loc[~cond, 'data_source'] = 'Not available'
-stkout_df = stkout_df.append(unmatched_consumables_df)
+stkout_df = pd.concat([stkout_df, unmatched_consumables_df], axis=0, ignore_index=True)
 
 # --- 6.3 Append stockout rate for facility level 0 from HHFA --- #
 cond = hhfa_df['item_code'].notna()
@@ -477,7 +596,7 @@ hhfa_fac0 = hhfa_fac0.drop_duplicates()
 
 cond = stkout_df['fac_type_tlo'] == 'Facility_level_0'
 stkout_df = stkout_df[~cond]
-stkout_df = stkout_df.append(hhfa_fac0)
+stkout_df = pd.concat([stkout_df, hhfa_fac0], axis=0, ignore_index=True)
 
 # --- 6.4 Generate new category variable for analysis --- #
 stkout_df['category'] = stkout_df['module_name'].str.lower()
@@ -569,27 +688,27 @@ copy_source_to_destination = {
 for source, destination in copy_source_to_destination.items():
     new_rows = sf.loc[sf.district_std == source].copy()
     new_rows.district_std = destination
-    sf = sf.append(new_rows)
+    sf = pd.concat([sf, new_rows], axis=0, ignore_index=True)
 
 # 2) Fill in Likoma (for which no data) with the means
 means = sf.loc[sf.fac_type_tlo.isin(['1a', '1b', '2'])].groupby(by=['fac_type_tlo', 'month', 'item_code'])[
     'available_prop'].mean().reset_index()
 new_rows = means.copy()
 new_rows['district_std'] = 'Likoma'
-sf = sf.append(new_rows)
+sf = pd.concat([sf, new_rows], axis=0, ignore_index=True)
 
 assert sorted(set(districts)) == sorted(set(pd.unique(sf.district_std)))
 
 # 3) copy the results for 'Mwanza/1b' to be equal to 'Mwanza/1a'.
 mwanza_1a = sf.loc[(sf.district_std == 'Mwanza') & (sf.fac_type_tlo == '1a')]
 mwanza_1b = sf.loc[(sf.district_std == 'Mwanza') & (sf.fac_type_tlo == '1a')].copy().assign(fac_type_tlo='1b')
-sf = sf.append(mwanza_1b)
+sf = pd.concat([sf, mwanza_1b], axis=0, ignore_index=True)
 
 # 4) Copy all the results to create a level 0 with an availability equal to half that in the respective 1a
 all_1a = sf.loc[sf.fac_type_tlo == '1a']
 all_0 = sf.loc[sf.fac_type_tlo == '1a'].copy().assign(fac_type_tlo='0')
 all_0.available_prop *= 0.5
-sf = sf.append(all_0)
+sf = pd.concat([sf, all_0], axis=0, ignore_index=True)
 
 # Now, merge-in facility_id
 sf_merge = sf.merge(mfl[['District', 'Facility_Level', 'Facility_ID']],
@@ -671,15 +790,17 @@ for fac in fac_ids:
         else:
             # If there is no record of this item at this facility, check to see if it's available at other facilities
             # of the same level
+            facilities = list(get_other_facilities_of_same_level(fac))
             recorded_at_other_facilities_of_same_level = pd.notnull(
-                full_set.loc[(get_other_facilities_of_same_level(fac), slice(None), item)]
+                full_set.loc[(facilities, slice(None), item)]
             ).any()
 
             if recorded_at_other_facilities_of_same_level:
                 # If it recorded at other facilities of same level, find the average availability of the item at other
                 # facilities of the same level.
+                facilities = list(get_other_facilities_of_same_level(fac))
                 _monthly_records = interpolate_missing_with_mean(
-                    full_set.loc[(get_other_facilities_of_same_level(fac), slice(None), item)].groupby(level=1).mean()
+                    full_set.loc[(facilities, slice(None), item)].groupby(level=1).mean()
                 )
 
             else:
@@ -704,51 +825,60 @@ full_set_interpolated.reset_index().to_csv(
 )
 
 # %%
-# 8. CALIBRATION TO HHFA DATA, 2018/19 ##
+# 7. COMPARISON WITH HHFA DATA, 2018/19 ##
 #########################################################################################
-# --- 8.1 Prepare calibration dataframe --- ##
-# i. Prepare calibration data from HHFA
-hhfa_calibration_df = hhfa_df[['item_code', 'consumable_name_tlo', 'item_hhfa', 'available_prop_hhfa_Facility_level_0',
-                               'available_prop_hhfa_Facility_level_1a', 'available_prop_hhfa_Facility_level_1b',
-                               'available_prop_hhfa_Facility_level_2', 'available_prop_hhfa_Facility_level_3']]
-hhfa_calibration_df = pd.wide_to_long(hhfa_calibration_df.dropna(), stubnames='available_prop_hhfa',
-                                      i=['consumable_name_tlo', 'item_code', 'item_hhfa'], j='fac_type_tlo',
-                                      sep='_', suffix=r'\w+')
-hhfa_calibration_df = hhfa_calibration_df.reset_index()
+# --- 7.1 Prepare comparison dataframe --- ##
+# Note that this only plot consumables for which data is available in the HHFA
+# i. Prepare data from HHFA
+hhfa_comparison_df = hhfa_df[['item_code', 'consumable_name_tlo', 'item_hhfa', 'available_prop_hhfa_Facility_level_0',
+                              'available_prop_hhfa_Facility_level_1a', 'available_prop_hhfa_Facility_level_1b',
+                              'available_prop_hhfa_Facility_level_2', 'available_prop_hhfa_Facility_level_3']]
+hhfa_comparison_df = pd.wide_to_long(hhfa_comparison_df.dropna(), stubnames='available_prop_hhfa',
+                                     i=['consumable_name_tlo', 'item_code', 'item_hhfa'], j='fac_type_tlo',
+                                     sep='_', suffix=r'\w+')
+hhfa_comparison_df = hhfa_comparison_df.reset_index()
+hhfa_comparison_df['fac_type_tlo'] = hhfa_comparison_df['fac_type_tlo'].str.replace("Facility_level_", "")
+hhfa_comparison_df = hhfa_comparison_df.rename({'fac_type_tlo': 'Facility_Level'}, axis=1)
 
-# ii. Collapse district level data in stkout_df and exclude data extracted from HHFA
-cond1 = stkout_df['data_source'] == 'hhfa_2018-19'
-lmis_calibration_df = stkout_df[~cond1].groupby(['module_name', 'fac_type_tlo', 'item_code']).mean().reset_index()
+# ii. Collapse final model availability data by facility level
+final_availability_df = full_set_interpolated.reset_index()
+mfl = pd.read_csv(resourcefilepath / "healthsystem" / "organisation" / "ResourceFile_Master_Facilities_List.csv")
+final_availability_df = pd.merge(final_availability_df, mfl[['District', 'Facility_Level', 'Facility_ID']], how="left",
+                                 on=['Facility_ID'],
+                                 indicator=False)
+final_availability_df = final_availability_df.groupby(['Facility_Level', 'item_code']).agg(
+    {'available_prop': "mean"}).reset_index()
 
 # iii. Merge HHFA with stkout_df
-calibration_df = pd.merge(lmis_calibration_df, hhfa_calibration_df, how='inner', on=['item_code', 'fac_type_tlo'])
-calibration_df['difference'] = (calibration_df['available_prop_hhfa'] - calibration_df['available_prop'])
+hhfa_comparison_df['item_code'] = hhfa_comparison_df['item_code'].astype(int)
+final_availability_df['item_code'] = final_availability_df['item_code'].astype(int)
+comparison_df = pd.merge(final_availability_df, hhfa_comparison_df, how='inner', on=['item_code', 'Facility_Level'])
+comparison_df['difference'] = (comparison_df['available_prop_hhfa'] - comparison_df['available_prop'])
 
-# --- 8.2 Compare OpenLMIS estimates with HHFA estimates (CALIBRATION) --- ##
+# --- 7.2 Compare OpenLMIS estimates with HHFA estimates (CALIBRATION) --- ##
 # Summary results by level of care
-calibration_df.groupby(['fac_type_tlo'])[['available_prop', 'available_prop_hhfa', 'difference']].mean()
+comparison_df.groupby(['Facility_Level'])[['available_prop', 'available_prop_hhfa', 'difference']].mean()
 
 # Plots
 size = 10
-calibration_df['item_code'] = calibration_df['item_code'].astype(str)
-calibration_df['labels'] = calibration_df['consumable_name_tlo'].str[:10]
+comparison_df['consumable_labels'] = comparison_df['consumable_name_tlo'].str[:10]
 
 
 # Define function to draw calibration plots at different levels of disaggregation
-def calibration_plot(level_of_disaggregation, group_by_var, colour):
-    calibration_df_agg = calibration_df.groupby([group_by_var],
-                                                as_index=False).agg({'available_prop': 'mean',
-                                                                     'available_prop_hhfa': 'mean',
-                                                                     'fac_type_tlo': 'first',
-                                                                     'consumable_name_tlo': 'first'})
-    calibration_df_agg['labels'] = calibration_df_agg[level_of_disaggregation]
+def comparison_plot(level_of_disaggregation, group_by_var, colour):
+    comparison_df_agg = comparison_df.groupby([group_by_var],
+                                              as_index=False).agg({'available_prop': 'mean',
+                                                                   'available_prop_hhfa': 'mean',
+                                                                   'Facility_Level': 'first',
+                                                                   'consumable_labels': 'first'})
+    comparison_df_agg['labels'] = comparison_df_agg[level_of_disaggregation]
 
-    ax = calibration_df_agg.plot.scatter('available_prop', 'available_prop_hhfa', c=colour)
+    ax = comparison_df_agg.plot.scatter('available_prop', 'available_prop_hhfa', c=colour)
     ax.axline([0, 0], [1, 1])
-    for i, label in enumerate(calibration_df_agg['labels']):
+    for i, label in enumerate(comparison_df_agg['labels']):
         plt.annotate(label,
-                     (calibration_df_agg['available_prop'][i] + 0.005,
-                      calibration_df_agg['available_prop_hhfa'][i] + 0.005),
+                     (comparison_df_agg['available_prop'][i] + 0.005,
+                      comparison_df_agg['available_prop_hhfa'][i] + 0.005),
                      fontsize=6, rotation=38)
     if level_of_disaggregation != 'aggregate':
         plt.title('Disaggregated by ' + level_of_disaggregation, fontsize=size, weight="bold")
@@ -756,40 +886,46 @@ def calibration_plot(level_of_disaggregation, group_by_var, colour):
         plt.title('Aggregate', fontsize=size, weight="bold")
     plt.xlabel('Pr(drug available) as per TLO model')
     plt.ylabel('Pr(drug available) as per HHFA')
-    save_name = 'calibration_plots/calibration_to_hhfa_' + level_of_disaggregation + '.png'
-    plt.savefig(path_to_files_in_the_tlo_dropbox / save_name)
+    save_name = 'comparison_plots/calibration_to_hhfa_' + level_of_disaggregation + '.png'
+    plt.savefig(outputfilepath / save_name)
 
 
-# 8.2.1 Aggregate plot
-calibration_df['aggregate'] = 'aggregate'
+# 7.2.1 Aggregate plot
+# First create folder in which to store the plots
+
+if not os.path.exists(outputfilepath / 'comparison_plots'):
+    os.makedirs(outputfilepath / 'comparison_plots')
+    print("folder to store Model-HHFA comparison plots created")
+
+comparison_df['aggregate'] = 'aggregate'
 level_of_disaggregation = 'aggregate'
 colour = 'red'
 group_by_var = 'aggregate'
-calibration_plot(level_of_disaggregation, group_by_var, colour)
+comparison_plot(level_of_disaggregation, group_by_var, colour)
 
-# 8.2.2 Plot by facility level
-level_of_disaggregation = 'fac_type_tlo'
-group_by_var = 'fac_type_tlo'
+# 7.2.2 Plot by facility level
+level_of_disaggregation = 'Facility_Level'
+group_by_var = 'Facility_Level'
 colour = 'orange'
-calibration_plot(level_of_disaggregation, group_by_var, colour)
+comparison_plot(level_of_disaggregation, group_by_var, colour)
 
-# 8.2.3 Plot by item
-level_of_disaggregation = 'consumable_name_tlo'
+# 7.2.3 Plot by item
+level_of_disaggregation = 'consumable_labels'
 group_by_var = 'consumable_name_tlo'
 colour = 'yellow'
-calibration_plot(level_of_disaggregation, group_by_var, colour)
+comparison_plot(level_of_disaggregation, group_by_var, colour)
 
 
-# 8.2.4 Plot by item and facility level
-def calibration_plot_by_level(fac_type):
-    cond_fac_type = calibration_df['fac_type_tlo'] == fac_type
-    calibration_df_by_level = calibration_df[cond_fac_type].reset_index()
-    plt.scatter(calibration_df_by_level['available_prop'],
-                calibration_df_by_level['available_prop_hhfa'])
+# 7.2.4 Plot by item and facility level
+def comparison_plot_by_level(fac_type):
+    cond_fac_type = comparison_df['Facility_Level'] == fac_type
+    comparison_df_by_level = comparison_df[cond_fac_type].reset_index()
+    plt.scatter(comparison_df_by_level['available_prop'],
+                comparison_df_by_level['available_prop_hhfa'])
     plt.axline([0, 0], [1, 1])
-    for i, label in enumerate(calibration_df_by_level['labels']):
-        plt.annotate(label, (calibration_df_by_level['available_prop'][i] + 0.005,
-                             calibration_df_by_level['available_prop_hhfa'][i] + 0.005),
+    for i, label in enumerate(comparison_df_by_level['consumable_labels']):
+        plt.annotate(label, (comparison_df_by_level['available_prop'][i] + 0.005,
+                             comparison_df_by_level['available_prop_hhfa'][i] + 0.005),
                      fontsize=6, rotation=27)
     plt.title(fac_type, fontsize=size, weight="bold")
     plt.xlabel('Pr(drug available) as per TLO model')
@@ -798,11 +934,11 @@ def calibration_plot_by_level(fac_type):
 
 fig = plt.figure(figsize=(22, 22))
 plt.subplot(421)
-calibration_plot_by_level(calibration_df['fac_type_tlo'].unique()[0])
+comparison_plot_by_level(comparison_df['Facility_Level'].unique()[1])
 plt.subplot(422)
-calibration_plot_by_level(calibration_df['fac_type_tlo'].unique()[1])
+comparison_plot_by_level(comparison_df['Facility_Level'].unique()[2])
 plt.subplot(423)
-calibration_plot_by_level(calibration_df['fac_type_tlo'].unique()[2])
+comparison_plot_by_level(comparison_df['Facility_Level'].unique()[3])
 plt.subplot(424)
-calibration_plot_by_level(calibration_df['fac_type_tlo'].unique()[3])
-plt.savefig(path_to_files_in_the_tlo_dropbox / 'calibration_plots/calibration_to_hhfa_fac_type_and_consumable.png')
+comparison_plot_by_level(comparison_df['Facility_Level'].unique()[4])
+plt.savefig(outputfilepath / 'comparison_plots/calibration_to_hhfa_fac_type_and_consumable.png')
