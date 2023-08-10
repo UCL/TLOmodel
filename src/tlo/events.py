@@ -1,10 +1,10 @@
 """Support for creating different kinds of events."""
 from __future__ import annotations
+
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from tlo import DateOffset
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from tlo import Simulation
