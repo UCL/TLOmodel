@@ -18,7 +18,7 @@ class Population:
         The Simulation instance controlling this population.
 
     `props`
-        A pandas DataFrame with the properties of all individuals as columns.
+        A Pandas DataFrame with the properties of all individuals as columns.
     """
 
     __slots__ = ('props', 'sim', 'initial_size', 'new_row', 'next_person_id', 'new_rows')
@@ -26,8 +26,8 @@ class Population:
     def __init__(self, sim, initial_size: int, append_size: int = None):
         """Create a new population.
 
-        This will create the required Person objects and initialise their
-        properties with 'empty' values. The simulation will then ask disease
+        This will create the required the population dataframe and initialise individual's
+        properties as dataframe columns with 'empty' values. The simulation will then call disease
         modules to fill in suitable starting values.
 
         :param sim: the Simulation containing this population
@@ -49,7 +49,7 @@ class Population:
 
         logger.info(key="info", data=f"Dataframe capacity append size: {append_size}")
 
-        # keep a copy of a new rows to quickly append as population grows
+        # keep a copy of a new, empty, row to quickly append as population grows
         self.new_row = self.props.loc[[0]].copy()
         self.new_rows = self.props.loc[[0] * append_size].copy()
 
