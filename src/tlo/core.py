@@ -271,7 +271,7 @@ class Module:
                 continue
 
             # For each parameter, raise error if the value can't be coerced
-            parameter_value = resource.loc[parameter_name, 'value']
+            parameter_value = resource.at[parameter_name, 'value']
             error_message = (
                 f"The value of '{parameter_value}' for parameter '{parameter_name}' "
                 f"could not be parsed as a {parameter_definition.type_.name} data type"
