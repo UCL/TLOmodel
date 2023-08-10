@@ -60,9 +60,6 @@ def set_logging_levels(custom_levels: Dict[str, int]):
         if logger_name != "*" and logger_name not in loggers:
             getLogger(logger_name).setLevel(logger_level)
 
-    print('after set_logging_levels()')
-    print([_logging.getLogger(name) for name in _logging.root.manager.loggerDict if name.startswith('tlo.methods')])
-
 
 def init_logging(add_stdout_handler=True):
     """Initialise default logging with stdout stream"""
