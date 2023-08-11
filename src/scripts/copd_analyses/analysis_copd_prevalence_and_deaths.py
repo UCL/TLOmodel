@@ -65,6 +65,9 @@ class CopdAnalyses:
                               'F': 'Females'
                               }
 
+        # colors for plotting
+        self.__plot_colors = ['#239B56', '#58D68D', '#ABEBC6', '#EDBB99', '#EB984E', '#D35400', '#641E16']
+
     def construct_dfs(self) -> dict:
         """ Create dict of pd.DataFrames containing counts of different lifestyle properties by date, sex and
         age-group """
@@ -83,11 +86,12 @@ class CopdAnalyses:
             for _lung_func, _ in enumerate(self.__lung_func_cats):
                 plot_df[_lung_func] = re_ordered_copd_prev[_tob][f'{_lung_func}'].sum(axis=1)
             # get totals per year
-            plot_df = plot_df.groupby(plot_df.index.year).sum()
+            plot_df = plot_df[[5, 6]].groupby(plot_df.index.year).sum()
             # convert totals into proportions
             plot_df = plot_df.apply(lambda row: row / row.sum(), axis=1)
+
             # do plotting
-            plot_df.plot(kind='bar', stacked=True, ax=ax[_col_counter],
+            plot_df.plot(kind='bar', stacked=True, ax=ax[_col_counter], color=self.__plot_colors[5:],
                          title=f"Proportion of {self.__smokers_desc[_tob].lower()} in each Lung Function Category",
                          xlabel="Year",
                          ylabel="Proportions")
@@ -99,7 +103,7 @@ class CopdAnalyses:
         fontP = FontProperties()
         fontP.set_size('small')
         # add one legend on `plt
-        plt.legend(self.__lung_func_cats, title="lung function categories", bbox_to_anchor=(0.7, 0.74),
+        plt.legend(self.__lung_func_cats[5:], title="lung function categories", bbox_to_anchor=(0.7, 0.74),
                    loc='upper left', prop=fontP)
         plt.tight_layout()
         plt.savefig(
@@ -118,16 +122,22 @@ class CopdAnalyses:
             plot_df = pd.DataFrame()
             for _lung_func, _ in enumerate(self.__lung_func_cats):
                 plot_df[_lung_func] = re_ordered_df[_gender][f'{_lung_func}'].sum(axis=1)
-            _df_dict[_gender] = plot_df
+            _df_dict[_gender] = plot_df[[5, 6]]
             # get totals per year
             _df_dict[_gender] = _df_dict[_gender].groupby(_df_dict[_gender].index.year).sum()
             # convert totals into proportions
             _df_dict[_gender] = _df_dict[_gender].apply(lambda row: row / row.sum(), axis=1)
             # do plotting
-            ax = _df_dict[_gender].plot(kind='bar', stacked=True, ax=axes[_rows_counter],
+            ax = _df_dict[_gender].plot(kind='bar', stacked=True, ax=axes[_rows_counter], color=self.__plot_colors[5:],
                                         title=f"{self.__gender_desc[_gender]} "
                                               f"proportion in each Lung Function Category")
-            ax.legend(self.__lung_func_cats, loc='lower right')
+            # ax.legend(self.__lung_func_cats[5:], loc='lower right')
+
+            fontP = FontProperties()
+            fontP.set_size('small')
+
+            ax.legend(self.__lung_func_cats[5:], title="lung function categories", bbox_to_anchor=(0.7, 0.74),
+                       loc='upper left', prop=fontP)
             ax.set_xlabel("Year")
             ax.set_ylabel("Proportion of each lung function category")
             _rows_counter += 1
@@ -143,25 +153,31 @@ class CopdAnalyses:
         # select logs from the latest year. In this case we are selecting year 2022
         re_ordered_df = self.__copd_prev.reorder_levels([3, 0, 2, 1], axis=1)
         plot_df = pd.DataFrame()
-        mask = (re_ordered_df.index > pd.to_datetime('2022-01-01')) & (
-            re_ordered_df.index <= pd.to_datetime('2023-01-01'))
+        mask = (re_ordered_df.index > pd.to_datetime('2019-01-01')) & (
+            re_ordered_df.index <= pd.to_datetime('2020-01-01'))
         re_ordered_df = re_ordered_df.loc[mask]
         _rows_counter: int = 0  # a counter for plotting. setting rows
+        __dict_age_cats = dict()
         fig, ax = plt.subplots(ncols=2, sharex=True, sharey=True)  # plot setup
         for _tob in ['True', 'False']:
             for _lung_func, _ in enumerate(self.__lung_func_cats):
                 plot_df[f'{_lung_func}'] = re_ordered_df[f'{_lung_func}']['M'][_tob].sum(axis=0) + \
                                            re_ordered_df[f'{_lung_func}']['F'][_tob].sum(axis=0)
 
+            __dataframe = pd.DataFrame(index=['15_39', '40_59', 'gr60'], data=[plot_df.iloc[3:8].sum(axis=0),
+                                                                               plot_df.iloc[8:12].sum(axis=0),
+                                                                               plot_df.iloc[12:].sum(axis=0)])
+
+            __dataframe = __dataframe.apply(lambda row: row / row.sum(), axis=1)
+            __dict_age_cats[_tob] = __dataframe
             plot_df = plot_df.apply(lambda row: row / row.sum(), axis=1)
-            plot_df.plot(kind='bar', ax=ax[_rows_counter], stacked=True,
+            plot_df.plot(kind='bar', ax=ax[_rows_counter], stacked=True, color=self.__plot_colors,
                          title=f"{self.__smokers_desc[_tob]} lung function categories per each age group in 2022",
                          ylabel="Proportions",
                          xlabel="age group",
 
                          )
             _rows_counter += 1  # increase row number
-            # ax[_rows_counter].legend(self.__lung_func_cats, loc="lower right")
         # remove all the subplot legends
         for ax in ax:
             ax.get_legend().remove()
@@ -191,9 +207,14 @@ class CopdAnalyses:
         # do plotting
         fig, ax = plt.subplots()
         plot_lung_func_deaths.plot(kind='bar', stacked=True, ax=ax, title="COPD deaths by lung function",
-                                   xlabel="Year", ylabel="proportion of COPD deaths per each lung function")
-        ax.legend([self.__lung_func_cats[column_name] for column_name in plot_lung_func_deaths.columns],
-                  loc="upper right")
+                                   color=self.__plot_colors[5:], xlabel="Year",
+                                   ylabel="proportion of COPD deaths per each lung function")
+
+        fontP = FontProperties()
+        fontP.set_size('small')
+
+        # add one legend on `plt
+        plt.legend(self.__lung_func_cats[5:], title="Lung function categories", loc='upper right', prop=fontP)
         plt.savefig(
             outputpath / ('copd_deaths_by_lung_function' + datestamp + ".pdf"), format="pdf"
         )
@@ -210,8 +231,8 @@ class CopdAnalyses:
             ax.errorbar(x=plot_df['model'].index, y=plot_df.GBD_mean,
                         yerr=[plot_df.GBD_lower, plot_df.GBD_upper],
                         fmt='o', color='#23395d', label="GBD")
-            ax.set_title(f'{self.__gender_desc[sex]} mean annual deaths, 2010-2019')
-            ax.set_title(f'{self.__gender_desc[sex]} annual COPD deaths, 2010-2019')
+            # ax.set_title(f'{self.__gender_desc[sex]} mean annual deaths, 2010-2019')
+            ax.set_title(f'{self.__gender_desc[sex]} COPD deaths, 2010-2019')
             ax.set_xlabel("Time period")
             ax.set_ylabel("Number of deaths")
             ax.legend(loc=2)
@@ -231,7 +252,8 @@ class CopdAnalyses:
         ax.errorbar(x=plot_df['model'].index, y=plot_df.GBD_mean,
                     yerr=[plot_df.GBD_lower, plot_df.GBD_upper],
                     fmt='o', color='#23395d', label="GBD")
-        ax.set_title('Mean annual deaths by age group, 2010-2019')
+        # ax.set_title('Mean annual deaths by age group, 2010-2019')
+        ax.set_title('COPD deaths by age group, 2010-2019')
         ax.set_xlabel("Age group")
         ax.set_ylabel("Number of deaths")
         ax.legend(loc=1)
@@ -280,8 +302,10 @@ def get_simulation(popsize):
 
 
 # run simulation and store logfile path
-sim = get_simulation(50_000)
-path_to_logfile = sim.log_filepath
+# sim = get_simulation(50_000)
+# path_to_logfile = sim.log_filepath
+# path_to_logfile = Path("./outputs/emmanuelmnjowe@gmail.com/copd_analyses_azure__2023-08-07T124706.log")
+path_to_logfile = Path("./outputs/copd_analyses__2023-08-11T094658.log")
 
 # initialise Copd analyses class
 copd_analyses = CopdAnalyses(logfile_path=path_to_logfile)

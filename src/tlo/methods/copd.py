@@ -110,7 +110,7 @@ class Copd(Module):
         'prob_tob_lung_func_40_59': Parameter(
             Types.LIST, 'probability of lung function categories in individuals aged 40-59 who smoke tobacco'
         ),
-        'prob_tob_lung_func_gr60': Parameter(
+        'prob_tob_lung_func_gr59': Parameter(
             Types.LIST, 'probability of lung function categories in individuals aged 60+ who smoke tobacco'
         )
     }
@@ -258,7 +258,7 @@ class CopdModels:
             Predictor(
                 'li_tob'
             ).when(True, self.params['rel_risk_tob']),
-            Predictor('sex').when('F', self.params['rel_risk_wood_burn_stove'])
+            Predictor('li_wood_burn_stove').when(True, self.params['rel_risk_wood_burn_stove'])
         )
         # The probability (in a 3-month period) of having a Moderate Exacerbation
         self.__Prob_ModerateExacerbation__ = LinearModel.multiplicative(
@@ -341,7 +341,7 @@ class CopdModels:
                                                                  size=len(idx_40_59_tob))))
 
         idx_gr59_tob = df.index[(df.age_years >= 60) & df.li_tob]
-        cats_gr59_tob = dict(zip(idx_gr59_tob, self.rng.choice(cats, p=self.params['prob_tob_lung_func_gr60'],
+        cats_gr59_tob = dict(zip(idx_gr59_tob, self.rng.choice(cats, p=self.params['prob_tob_lung_func_gr59'],
                                                                size=len(idx_gr59_tob))))
 
         # For under-15s, assign the category that would be given at birth
