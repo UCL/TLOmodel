@@ -227,10 +227,10 @@ class CopdAnalyses:
         fig, axs = plt.subplots(nrows=1, ncols=2, sharey=True, sharex=True)
         for _col, sex in enumerate(('M', 'F')):
             plot_df = death_compare.loc[(['2010-2014', '2015-2019'], sex, slice(None), 'COPD')].groupby('period').sum()
-            ax = plot_df['model'].plot.bar(color='#ADD8E6', label='Model', ax=axs[_col], rot=0)
+            ax = plot_df['model'].plot.bar(color=self.__plot_colors[6], label='Model', ax=axs[_col], rot=0)
             ax.errorbar(x=plot_df['model'].index, y=plot_df.GBD_mean,
                         yerr=[plot_df.GBD_lower, plot_df.GBD_upper],
-                        fmt='o', color='#23395d', label="GBD")
+                        fmt='o', color='#000', label="GBD")
             # ax.set_title(f'{self.__gender_desc[sex]} mean annual deaths, 2010-2019')
             ax.set_title(f'{self.__gender_desc[sex]} COPD deaths, 2010-2019')
             ax.set_xlabel("Time period")
@@ -248,10 +248,10 @@ class CopdAnalyses:
         death_compare = compare_number_of_deaths(self.__logfile_path, resourcefilepath)
         plot_df = death_compare.loc[(['2010-2014', '2015-2019'], slice(None), slice(None), 'COPD')].groupby(
             'age_grp').sum()
-        ax = plot_df['model'].plot.bar(color='#ADD8E6', label='Model', rot=0)
+        ax = plot_df['model'].plot.bar(color=self.__plot_colors[6], label='Model', rot=0)
         ax.errorbar(x=plot_df['model'].index, y=plot_df.GBD_mean,
                     yerr=[plot_df.GBD_lower, plot_df.GBD_upper],
-                    fmt='o', color='#23395d', label="GBD")
+                    fmt='o', color='#000', label="GBD")
         # ax.set_title('Mean annual deaths by age group, 2010-2019')
         ax.set_title('COPD deaths by age group, 2010-2019')
         ax.set_xlabel("Age group")
@@ -302,10 +302,8 @@ def get_simulation(popsize):
 
 
 # run simulation and store logfile path
-# sim = get_simulation(50_000)
-# path_to_logfile = sim.log_filepath
-# path_to_logfile = Path("./outputs/emmanuelmnjowe@gmail.com/copd_analyses_azure__2023-08-07T124706.log")
-path_to_logfile = Path("./outputs/copd_analyses__2023-08-11T094658.log")
+sim = get_simulation(50_000)
+path_to_logfile = sim.log_filepath
 
 # initialise Copd analyses class
 copd_analyses = CopdAnalyses(logfile_path=path_to_logfile)
