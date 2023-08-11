@@ -137,7 +137,7 @@ class CopdAnalyses:
             fontP.set_size('small')
 
             ax.legend(self.__lung_func_cats[5:], title="lung function categories", bbox_to_anchor=(0.7, 0.74),
-                       loc='upper left', prop=fontP)
+                      loc='upper left', prop=fontP)
             ax.set_xlabel("Year")
             ax.set_ylabel("Proportion of each lung function category")
             _rows_counter += 1
