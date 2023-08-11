@@ -169,9 +169,9 @@ tlo.methods.care_of_women_during_pregnancy module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Lifestyle', 'Contraception', 'Labour'}
+     ADDITIONAL_DEPENDENCIES : {'Contraception', 'Lifestyle', 'Labour'}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Demography', 'PregnancySupervisor'}
+     INIT_DEPENDENCIES : {'PregnancySupervisor', 'HealthSystem', 'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 
@@ -468,30 +468,6 @@ tlo.methods.care_of_women_during_pregnancy module
      .. automethod:: __init__
 
      .. automethod:: apply
-
-
-
-
-
-
-
-
-.. autoclass:: HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment
-
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
-
-
-     **Functions (defined or overridden in class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment):**
-
-     .. automethod:: __init__
-
-     .. automethod:: apply
-
-     .. automethod:: never_ran
-
-     .. automethod:: did_not_run
-
-     .. automethod:: not_available
 
 
 

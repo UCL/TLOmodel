@@ -186,6 +186,12 @@ tlo.methods.hiv module
         * - prob_circ_after_hiv_test
           - REAL
           - Probability that a male will be circumcised, if HIV-negative, following testing
+        * - prob_circ_for_child_before_2020
+          - REAL
+          - Probability that a male aging <15 yrs will be circumcised before year 2020
+        * - prob_circ_for_child_from_2020
+          - REAL
+          - Probability that a male aging <15 yrs will be circumcised from year 2020, which is different from before 2020 as children vmmc policy/fund/cases has changed, according to PEPFAR 2020 Country Operational Plan and DHIS2 data
         * - probability_of_being_retained_on_prep_every_3_months
           - REAL
           - Probability that someone who has initiated on prep will attend an appointment and be on prep for the next 3 months, until the next appointment.
@@ -256,15 +262,15 @@ tlo.methods.hiv module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Tb', 'NewbornOutcomes'}
+     ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes', 'Tb'}
 
-     CAUSES_OF_DEATH : {'AIDS_non_TB': <tlo.methods.causes.Cause object at 0x7fabf980b550>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x7fabf980b5e0>}
+     CAUSES_OF_DEATH : {'AIDS_non_TB': <tlo.methods.causes.Cause object at 0x7fd2149fae20>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x7fd2149faeb0>}
 
-     CAUSES_OF_DISABILITY : {'HIV': <tlo.methods.causes.Cause object at 0x7fabf980b640>}
+     CAUSES_OF_DISABILITY : {'HIV': <tlo.methods.causes.Cause object at 0x7fd2149faf10>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Lifestyle', 'Demography', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'Lifestyle', 'HealthSystem', 'SymptomManager', 'Demography'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -294,7 +300,9 @@ tlo.methods.hiv module
 
      .. automethod:: do_new_infection
 
-     .. automethod:: get_time_from_infection_to_aids
+     .. automethod:: sample_time_from_infection_to_aids_given_parameters
+
+     .. automethod:: get_time_from_infection_to_aids_distribution_parameters
 
      .. automethod:: get_time_from_aids_to_death
 
@@ -546,6 +554,11 @@ tlo.methods.hiv module
      Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x7fd214a18770>
+
      **Functions (defined or overridden in class HSI_Hiv_StartOrContinueTreatment):**
 
      .. automethod:: __init__
@@ -563,8 +576,6 @@ tlo.methods.hiv module
      .. automethod:: consider_tb
 
      .. automethod:: never_ran
-
-     .. automethod:: _make_appt_footprint_according_age_and_patient_status
 
 
 

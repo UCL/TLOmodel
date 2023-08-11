@@ -210,67 +210,71 @@ to if the symptom is associated with a particular effect.</p>
 <td><p>BOOL</p></td>
 <td><p>Whether every symptom [except those that declare they should not lead to any healthcare seeking] should always lead to healthcare seeking immediately.</p></td>
 </tr>
-<tr class="row-odd"><td><p>baseline_odds_of_healthcareseeking_children</p></td>
+<tr class="row-odd"><td><p>prob_non_emergency_care_seeking_by_level</p></td>
+<td><p>LIST</p></td>
+<td><p>The probability of going to each facility-level when non-emergency care is sought. The values in the list are the probabilities of going to facility level 0 / 1a / 1b / 2, respectively, and these values must sum to 1.0.</p></td>
+</tr>
+<tr class="row-even"><td><p>baseline_odds_of_healthcareseeking_children</p></td>
 <td><p>REAL</p></td>
 <td><p>odds of health-care seeking (children: 0-14) if male, 0-5 years-old, living in a rural setting in the Northern region, and not in the wealth categories 4 or 5</p></td>
 </tr>
-<tr class="row-even"><td><p>odds_ratio_children_sex_Female</p></td>
+<tr class="row-odd"><td><p>odds_ratio_children_sex_Female</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (children) if sex is Female</p></td>
 </tr>
-<tr class="row-odd"><td><p>odds_ratio_children_age_5to14</p></td>
+<tr class="row-even"><td><p>odds_ratio_children_age_5to14</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (children) if aged 5-14</p></td>
 </tr>
-<tr class="row-even"><td><p>odds_ratio_children_setting_urban</p></td>
+<tr class="row-odd"><td><p>odds_ratio_children_setting_urban</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (children) if setting is Urban</p></td>
 </tr>
-<tr class="row-odd"><td><p>odds_ratio_children_region_Central</p></td>
+<tr class="row-even"><td><p>odds_ratio_children_region_Central</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (children) if region is Central</p></td>
 </tr>
-<tr class="row-even"><td><p>odds_ratio_children_region_Southern</p></td>
+<tr class="row-odd"><td><p>odds_ratio_children_region_Southern</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (children) if region is Southern</p></td>
 </tr>
-<tr class="row-odd"><td><p>odds_ratio_children_wealth_higher</p></td>
+<tr class="row-even"><td><p>odds_ratio_children_wealth_higher</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (children) if wealth is in categories 4 or 5</p></td>
 </tr>
-<tr class="row-even"><td><p>baseline_odds_of_healthcareseeking_adults</p></td>
+<tr class="row-odd"><td><p>baseline_odds_of_healthcareseeking_adults</p></td>
 <td><p>REAL</p></td>
 <td><p>odds of health-care seeking (adults: 15+) if male, 15-34 year-olds, living in a rural setting in the Northern region, and not in the wealth categories 4 or 5.</p></td>
 </tr>
-<tr class="row-odd"><td><p>odds_ratio_adults_sex_Female</p></td>
+<tr class="row-even"><td><p>odds_ratio_adults_sex_Female</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (adults) if sex is Female</p></td>
 </tr>
-<tr class="row-even"><td><p>odds_ratio_adults_age_35to59</p></td>
+<tr class="row-odd"><td><p>odds_ratio_adults_age_35to59</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (adults) if aged 35-59</p></td>
 </tr>
-<tr class="row-odd"><td><p>odds_ratio_adults_age_60plus</p></td>
+<tr class="row-even"><td><p>odds_ratio_adults_age_60plus</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (adults) if aged 60+</p></td>
 </tr>
-<tr class="row-even"><td><p>odds_ratio_adults_setting_urban</p></td>
+<tr class="row-odd"><td><p>odds_ratio_adults_setting_urban</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (adults) if setting is Urban</p></td>
 </tr>
-<tr class="row-odd"><td><p>odds_ratio_adults_region_Central</p></td>
+<tr class="row-even"><td><p>odds_ratio_adults_region_Central</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (adults) if region is Central</p></td>
 </tr>
-<tr class="row-even"><td><p>odds_ratio_adults_region_Southern</p></td>
+<tr class="row-odd"><td><p>odds_ratio_adults_region_Southern</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (adults) if region is Southern</p></td>
 </tr>
-<tr class="row-odd"><td><p>odds_ratio_adults_wealth_higher</p></td>
+<tr class="row-even"><td><p>odds_ratio_adults_wealth_higher</p></td>
 <td><p>REAL</p></td>
 <td><p>odds ratio for health-care seeking (adults) if wealth is in categories 4 or 5</p></td>
 </tr>
-<tr class="row-even"><td><p>max_days_delay_to_generic_HSI_after_symptoms</p></td>
+<tr class="row-odd"><td><p>max_days_delay_to_generic_HSI_after_symptoms</p></td>
 <td><p>INT</p></td>
 <td><p>Maximum days delay between symptom onset and firstgeneric HSI. Actual delay is sample between 0 and this value.</p></td>
 </tr>
@@ -280,7 +284,7 @@ to if the symptom is associated with a particular effect.</p>
 <p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’}</p>
 <p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘SymptomManager’, ‘Demography’}</p>
 <p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
-<p>force_any_symptom_to_lead_to_healthcareseeking : &lt;property object at 0x7fabf89be090&gt;</p>
+<p>force_any_symptom_to_lead_to_healthcareseeking : &lt;property object at 0x7fd213f5a2c0&gt;</p>
 <p><strong>Functions (defined or overridden in class HealthSeekingBehaviour):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthseekingbehaviour.HealthSeekingBehaviour.__init__">
@@ -382,7 +386,7 @@ FirstAttendance on the same day.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

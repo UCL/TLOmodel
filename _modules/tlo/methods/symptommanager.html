@@ -353,13 +353,17 @@
 
     <span class="n">PARAMETERS</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;generic_symptoms_spurious_occurrence&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;probability and duration of spurious occureneces of generic symptoms&#39;</span><span class="p">)</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s1">&#39;probability and duration of spurious occureneces of generic symptoms&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;spurious_symptoms&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;whether or not there will be the spontaneous occurrence of generic symptoms. &#39;</span>
+                        <span class="s1">&#39;NB. This is over-ridden if a module key-word argument is provided.&#39;</span><span class="p">),</span>
     <span class="p">}</span>
 
-<div class="viewcode-block" id="SymptomManager.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">spurious_symptoms</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="SymptomManager.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">spurious_symptoms</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">spurious_symptoms</span> <span class="o">=</span> <span class="n">spurious_symptoms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spurious_symptoms</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arg_spurious_symptoms</span> <span class="o">=</span> <span class="n">spurious_symptoms</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_persons_with_newly_onset_symptoms</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">generic_symptoms</span> <span class="o">=</span> <span class="p">{</span>
@@ -392,7 +396,9 @@
 <div class="viewcode-block" id="SymptomManager.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read in the generic symptoms and register them&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;generic_symptoms_spurious_occurrence&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_GenericSymptoms_and_HealthSeeking.csv&#39;</span><span class="p">)</span></div>
+            <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_GenericSymptoms_and_HealthSeeking.csv&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_parameters_from_dataframe</span><span class="p">(</span>
+            <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_SymptomManager.csv&#39;</span><span class="p">))</span></div>
 
 <div class="viewcode-block" id="SymptomManager.register_symptom"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.register_symptom">[docs]</a>    <span class="k">def</span> <span class="nf">register_symptom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">symptoms_to_register</span><span class="p">:</span> <span class="n">Symptom</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -456,7 +462,7 @@
             <span class="n">population</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="p">,</span>
             <span class="n">column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">elements</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">modules_that_can_impose_symptoms</span>
-        <span class="p">)</span></div>
+        <span class="p">)</span>
         <span class="c1"># NB. Bitset handler will establish such that everyone has no symptoms. i.e. can check below:</span>
         <span class="c1"># symptom_col_names = [self.get_column_name_for_symptom(s) for s in self.symptom_names]</span>
         <span class="c1"># uncompressed = self.bsh.uncompress(columns=symptom_col_names)</span>
@@ -464,6 +470,10 @@
         <span class="c1">#     assert key in symptom_col_names</span>
         <span class="c1">#     assert set(u.columns) == set(modules_that_can_impose_symptoms)</span>
         <span class="c1">#     assert not u.any().any()</span>
+
+        <span class="c1"># Determine whether there will be spurious symptoms. Use parameter value, unless a module kwarg provided.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">spurious_symptoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;spurious_symptoms&#39;</span><span class="p">]</span> \
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_spurious_symptoms</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_spurious_symptoms</span></div>
 
 <div class="viewcode-block" id="SymptomManager.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Schedule SpuriousSymptomsOnset/Resolve if the parameter &#39;spurious_symptoms&#39; is True&quot;&quot;&quot;</span>
@@ -531,7 +541,7 @@
 
         <span class="c1"># Check that a sensible or no date_of_onset is provided</span>
         <span class="k">assert</span> <span class="p">(</span><span class="n">date_of_onset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
-            <span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">date_of_onset</span><span class="p">)</span> <span class="o">==</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">)</span>
+            <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">date_of_onset</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timestamp</span><span class="p">))</span>
             <span class="ow">and</span> <span class="p">(</span><span class="n">date_of_onset</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
         <span class="p">)</span>
 
@@ -612,7 +622,7 @@
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
         <span class="c1"># Check that symptom string is OK</span>
-        <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">symptom_string</span><span class="p">)</span> <span class="o">==</span> <span class="nb">str</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">symptom_string</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
         <span class="k">assert</span> <span class="n">symptom_string</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symptom_names</span><span class="p">,</span> <span class="s1">&#39;Symptom not registered&#39;</span>
 
         <span class="c1"># Does not have symptom:</span>
@@ -886,7 +896,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

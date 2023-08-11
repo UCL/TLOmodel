@@ -173,9 +173,11 @@
             
   <h1>Source code for tlo.methods.healthburden</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">This Module runs the counting of DALYS</span>
+<span class="sd">This Module runs the counting of Life-years Lost, Life-years Lived with Disability,</span>
+<span class="sd">and Disability-Adjusted Life-years (DALYS).</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -187,7 +189,9 @@
     <span class="n">Cause</span><span class="p">,</span>
     <span class="n">collect_causes_from_disease_modules</span><span class="p">,</span>
     <span class="n">create_mappers_from_causes_to_label</span><span class="p">,</span>
+    <span class="n">get_gbd_causes_not_represented_in_disease_modules</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span> <span class="nn">tlo.methods.demography</span> <span class="kn">import</span> <span class="n">age_at_date</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
@@ -271,12 +275,13 @@
         <span class="c1"># Check that all registered disease modules have the report_daly_values() function</span>
         <span class="k">for</span> <span class="n">module_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">recognised_modules_names</span><span class="p">:</span>
             <span class="k">assert</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">module_name</span><span class="p">],</span> <span class="s1">&#39;report_daly_values&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> \
-                   <span class="n">callable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">module_name</span><span class="p">]</span><span class="o">.</span><span class="n">report_daly_values</span><span class="p">),</span> <span class="s1">&#39;A module that declares use of &#39;</span> \
+                   <span class="nb">callable</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">module_name</span><span class="p">]</span><span class="o">.</span><span class="n">report_daly_values</span><span class="p">),</span> <span class="s1">&#39;A module that declares use of &#39;</span> \
                                                                                <span class="s1">&#39;HealthBurden module must have a &#39;</span> \
                                                                                <span class="s1">&#39;callable function &quot;report_daly_values&quot;&#39;</span>
 
-        <span class="c1"># 3) Process the declarations of causes of disability made by the disease modules</span>
+        <span class="c1"># 3) Process the declarations of causes of disability and DALYS made by the disease modules</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">process_causes_of_disability</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">process_causes_of_dalys</span><span class="p">()</span>
 
         <span class="c1"># 4) Launch the DALY Logger to run every month, starting with the end of the first month of simulation</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">Get_Current_DALYS</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div>
@@ -298,17 +303,97 @@
         <span class="c1"># 2) Define the &quot;Other&quot; tlo_cause of disability</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">causes_of_disability</span><span class="p">[</span><span class="s1">&#39;Other&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Cause</span><span class="p">(</span>
             <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Other&#39;</span><span class="p">,</span>
-            <span class="n">gbd_causes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_gbd_causes_of_disability_not_represented_in_disease_modules</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">causes_of_disability</span><span class="p">)</span>
+            <span class="n">gbd_causes</span><span class="o">=</span><span class="n">get_gbd_causes_not_represented_in_disease_modules</span><span class="p">(</span>
+                <span class="n">causes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">causes_of_disability</span><span class="p">,</span>
+                <span class="n">gbd_causes</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;gbd_causes_of_disability&#39;</span><span class="p">])</span>
+            <span class="p">)</span>
         <span class="p">)</span>
 
         <span class="c1"># 3) Output to the log mappers for causes of disability</span>
-        <span class="n">mapper_from_tlo_causes</span><span class="p">,</span> <span class="n">mapper_from_gbd_causes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_mappers_from_causes_of_death_to_label</span><span class="p">()</span>
+        <span class="n">mapper_from_tlo_causes</span><span class="p">,</span> <span class="n">mapper_from_gbd_causes</span> <span class="o">=</span> <span class="n">create_mappers_from_causes_to_label</span><span class="p">(</span>
+            <span class="n">causes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">causes_of_disability</span><span class="p">,</span>
+            <span class="n">all_gbd_causes</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;gbd_causes_of_disability&#39;</span><span class="p">])</span>
+        <span class="p">)</span>
+
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="n">key</span><span class="o">=</span><span class="s1">&#39;mapper_from_tlo_cause_to_common_label&#39;</span><span class="p">,</span>
+            <span class="n">key</span><span class="o">=</span><span class="s1">&#39;disability_mapper_from_tlo_cause_to_common_label&#39;</span><span class="p">,</span>
             <span class="n">data</span><span class="o">=</span><span class="n">mapper_from_tlo_causes</span>
         <span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="n">key</span><span class="o">=</span><span class="s1">&#39;mapper_from_gbd_cause_to_common_label&#39;</span><span class="p">,</span>
+            <span class="n">key</span><span class="o">=</span><span class="s1">&#39;disability_mapper_from_gbd_cause_to_common_label&#39;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">mapper_from_gbd_causes</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="HealthBurden.process_causes_of_dalys"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.HealthBurden.process_causes_of_dalys">[docs]</a>    <span class="k">def</span> <span class="nf">process_causes_of_dalys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        1) Collect causes of DALYS (i.e., death _and_ disability) that are reported by each disease module</span>
+<span class="sd">        2) Define the &quot;Other&quot; tlo_cause of DALYS (corresponding to those gbd_causes that are not represented by</span>
+<span class="sd">        the disease modules in this sim.)</span>
+<span class="sd">        3) Output to the log mappers for causes of disability to the label</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="o">...</span>
+        <span class="c1"># 1) Collect causes of death and disability that are reported by each disease module,</span>
+        <span class="c1">#    merging the gbd_causes declared for deaths or disabilities under the same label,</span>
+
+        <span class="k">def</span> <span class="nf">merge_dicts_of_causes</span><span class="p">(</span><span class="n">d1</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">d2</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Combine two dictionaries of the form {tlo_cause_name: Cause}, merging the values of `Cause.gbd_causes`</span>
+<span class="sd">             where the values of `Cause.label` are common, attaching to the first key in d1 that uses that label.&quot;&quot;&quot;</span>
+            <span class="n">labels_seen</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>  <span class="c1"># Look-up of the form {label: tlo_cause_name} for the tlo_cause_name associated</span>
+            <span class="c1">#                       (first) with a label.</span>
+            <span class="n">merged_causes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>  <span class="c1"># Dict that will build-up as {tlo_cause_name: Cause} and be returned</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">_tlo_cause_name</span><span class="p">,</span> <span class="n">_cause</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">_cause</span><span class="o">.</span><span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">labels_seen</span><span class="p">:</span>
+                        <span class="c1"># If label is not already included, add this cause to the merged dict</span>
+                        <span class="n">merged_causes</span><span class="p">[</span><span class="n">_tlo_cause_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">_cause</span>
+                        <span class="n">labels_seen</span><span class="p">[</span><span class="n">_cause</span><span class="o">.</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">_tlo_cause_name</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># If label is already included, merge the gbd_causes into the cause defined.</span>
+                        <span class="n">tlo_cause_name_to_merge_into</span> <span class="o">=</span> <span class="n">labels_seen</span><span class="p">[</span><span class="n">_cause</span><span class="o">.</span><span class="n">label</span><span class="p">]</span>
+                        <span class="n">merged_causes</span><span class="p">[</span><span class="n">tlo_cause_name_to_merge_into</span><span class="p">]</span><span class="o">.</span><span class="n">gbd_causes</span> <span class="o">=</span> \
+                            <span class="n">merged_causes</span><span class="p">[</span><span class="n">tlo_cause_name_to_merge_into</span><span class="p">]</span><span class="o">.</span><span class="n">gbd_causes</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">_cause</span><span class="o">.</span><span class="n">gbd_causes</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">merged_causes</span>
+
+        <span class="n">causes_of_death_and_disability</span> <span class="o">=</span> <span class="n">merge_dicts_of_causes</span><span class="p">(</span>
+            <span class="n">collect_causes_from_disease_modules</span><span class="p">(</span>
+                <span class="n">all_modules</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
+                <span class="n">collect</span><span class="o">=</span><span class="s1">&#39;CAUSES_OF_DEATH&#39;</span><span class="p">,</span>
+                <span class="n">acceptable_causes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">gbd_causes_of_death</span><span class="p">),</span>
+            <span class="n">collect_causes_from_disease_modules</span><span class="p">(</span>
+                <span class="n">all_modules</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span>
+                <span class="n">collect</span><span class="o">=</span><span class="s1">&#39;CAUSES_OF_DISABILITY&#39;</span><span class="p">,</span>
+                <span class="n">acceptable_causes</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;gbd_causes_of_disability&#39;</span><span class="p">]))</span>
+        <span class="p">)</span>
+
+        <span class="c1"># N.B. In the GBD definitions, MANY things which disable but don&#39;t kill; but NO things that kill but which</span>
+        <span class="c1"># don&#39;t also disable (because things that kill cause DALYS that way.)</span>
+        <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;gbd_causes_of_disability&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">issuperset</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">gbd_causes_of_death</span><span class="p">)</span>
+
+        <span class="c1"># 2) Define the &quot;Other&quot; cause</span>
+        <span class="n">all_gbd_causes_of_death_and_disability</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;gbd_causes_of_disability&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">union</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">gbd_causes_of_death</span>
+        <span class="p">)</span>
+        <span class="n">causes_of_death_and_disability</span><span class="p">[</span><span class="s1">&#39;Other&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Cause</span><span class="p">(</span>
+            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Other&#39;</span><span class="p">,</span>
+            <span class="n">gbd_causes</span><span class="o">=</span><span class="n">get_gbd_causes_not_represented_in_disease_modules</span><span class="p">(</span>
+                <span class="n">causes</span><span class="o">=</span><span class="n">causes_of_death_and_disability</span><span class="p">,</span>
+                <span class="n">gbd_causes</span><span class="o">=</span><span class="n">all_gbd_causes_of_death_and_disability</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="c1"># 3) Output to the log mappers for causes of DALYs</span>
+        <span class="n">mapper_from_tlo_causes</span><span class="p">,</span> <span class="n">mapper_from_gbd_causes</span> <span class="o">=</span> <span class="n">create_mappers_from_causes_to_label</span><span class="p">(</span>
+            <span class="n">causes</span><span class="o">=</span><span class="n">causes_of_death_and_disability</span><span class="p">,</span>
+            <span class="n">all_gbd_causes</span><span class="o">=</span><span class="n">all_gbd_causes_of_death_and_disability</span>
+        <span class="p">)</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="n">key</span><span class="o">=</span><span class="s1">&#39;daly_mapper_from_tlo_cause_to_common_label&#39;</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">=</span><span class="n">mapper_from_tlo_causes</span>
+        <span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="n">key</span><span class="o">=</span><span class="s1">&#39;daly_mapper_from_gbd_cause_to_common_label&#39;</span><span class="p">,</span>
             <span class="n">data</span><span class="o">=</span><span class="n">mapper_from_gbd_causes</span>
         <span class="p">)</span></div>
 
@@ -556,7 +641,7 @@
 
         <span class="c1"># Get the age (in whole years) that this person will be on each day.</span>
         <span class="c1"># N.B. This is a slight approximation as it doesn&#39;t make allowance for leap-years.</span>
-        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;age_in_years&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;days&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">date_of_birth</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;age_in_years&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">age_at_date</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;days&#39;</span><span class="p">],</span> <span class="n">date_of_birth</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
 
         <span class="n">age_range_lookup</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">AGE_RANGE_LOOKUP</span>  <span class="c1"># get the age_range_lookup from demography</span>
         <span class="n">df</span><span class="p">[</span><span class="s1">&#39;age_range&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;age_in_years&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">age_range_lookup</span><span class="p">)</span>
@@ -566,26 +651,7 @@
 
         <span class="n">period</span> <span class="o">=</span> <span class="n">period</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;days&#39;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">period</span></div>
-
-<div class="viewcode-block" id="HealthBurden.get_gbd_causes_of_disability_not_represented_in_disease_modules"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.HealthBurden.get_gbd_causes_of_disability_not_represented_in_disease_modules">[docs]</a>    <span class="k">def</span> <span class="nf">get_gbd_causes_of_disability_not_represented_in_disease_modules</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">causes_of_disability</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Find the causes of disability in the GBD datasets that are not represented within the causes of death defined</span>
-<span class="sd">        in the modules registered in this simulation.</span>
-<span class="sd">        :return: set of gbd_causes of disability that are not represented in disease modules</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">all_gbd_causes_in_sim</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">causes_of_disability</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="n">all_gbd_causes_in_sim</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">gbd_causes</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;gbd_causes_of_disability&#39;</span><span class="p">])</span> <span class="o">-</span> <span class="n">all_gbd_causes_in_sim</span></div>
-
-<div class="viewcode-block" id="HealthBurden.create_mappers_from_causes_of_death_to_label"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.HealthBurden.create_mappers_from_causes_of_death_to_label">[docs]</a>    <span class="k">def</span> <span class="nf">create_mappers_from_causes_of_death_to_label</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Use a helper function to create mappers for causes of disability to label.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">create_mappers_from_causes_to_label</span><span class="p">(</span>
-            <span class="n">causes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">causes_of_disability</span><span class="p">,</span>
-            <span class="n">all_gbd_causes</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;gbd_causes_of_disability&#39;</span><span class="p">])</span>
-        <span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">period</span></div></div>
 
 
 <div class="viewcode-block" id="Get_Current_DALYS"><a class="viewcode-back" href="../../../reference/tlo.methods.healthburden.html#tlo.methods.healthburden.Get_Current_DALYS">[docs]</a><span class="k">class</span> <span class="nc">Get_Current_DALYS</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
@@ -709,7 +775,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

@@ -172,7 +172,8 @@
            <div itemprop="articleBody">
             
   <h1>Source code for tlo.methods.contraception</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span></span><span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -1133,6 +1134,10 @@
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;FamPlan&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_contraceptive</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;other_modern&#39;</span><span class="p">,</span> <span class="s1">&#39;pill&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;PharmDispensing&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="ne">UserWarning</span><span class="p">(</span><span class="s2">&quot;Assumed empty footprint for Contraception Routine appt because couldn&#39;t find&quot;</span>
+                                      <span class="s2">&quot;actual case.&quot;</span><span class="p">))</span>
 
 <div class="viewcode-block" id="HSI_Contraception_FamilyPlanningAppt.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;If the relevant consumable is available, do change in contraception and log it&quot;&quot;&quot;</span>
@@ -1333,7 +1338,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

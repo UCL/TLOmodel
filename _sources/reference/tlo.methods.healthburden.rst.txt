@@ -50,6 +50,8 @@ tlo.methods.healthburden module
 
      .. automethod:: process_causes_of_disability
 
+     .. automethod:: process_causes_of_dalys
+
      .. automethod:: on_birth
 
      .. automethod:: on_simulation_end
@@ -61,10 +63,6 @@ tlo.methods.healthburden module
      .. automethod:: report_live_years_lost
 
      .. automethod:: decompose_yll_by_age_and_time
-
-     .. automethod:: get_gbd_causes_of_disability_not_represented_in_disease_modules
-
-     .. automethod:: create_mappers_from_causes_of_death_to_label
 
 
 

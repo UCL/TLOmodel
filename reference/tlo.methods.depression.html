@@ -340,6 +340,10 @@
 <td><p>INT</p></td>
 <td><p>The item code used for one month of anti-depressant treatment</p></td>
 </tr>
+<tr class="row-odd"><td><p>pr_assessed_for_depression_for_perinatal_female</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a perinatal female is assessed for depression during antenatal or postnatal services</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>PROPERTIES:</strong></p>
@@ -403,10 +407,10 @@
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘Suicide’: &lt;tlo.methods.causes.Cause object at 0x7fabf9bb9d30&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘SevereDepression’: &lt;tlo.methods.causes.Cause object at 0x7fabf9bb9dc0&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Lifestyle’, ‘SymptomManager’, ‘Contraception’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘Suicide’: &lt;tlo.methods.causes.Cause object at 0x7fd214e0c850&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘SevereDepression’: &lt;tlo.methods.causes.Cause object at 0x7fd214e0c8e0&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘Contraception’, ‘Lifestyle’, ‘HealthSystem’, ‘Demography’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class Depression):</strong></p>
 <dl class="py method">
@@ -483,6 +487,12 @@ Register the assessment of depression with the DxManager.</p>
 <span class="sig-name descname"><span class="pre">report_daly_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#Depression.report_daly_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.Depression.report_daly_values" title="Permalink to this definition">¶</a></dt>
 <dd><p>Report DALYs based status in the previous month.
 A DALY weight is attached to a status of depression for as long as the depression lasted in the previous month.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.depression.Depression.do_on_presentation_to_care">
+<span class="sig-name descname"><span class="pre">do_on_presentation_to_care</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#Depression.do_on_presentation_to_care"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.Depression.do_on_presentation_to_care" title="Permalink to this definition">¶</a></dt>
+<dd><p>This member function is called when a person is in an HSI, and there may need to be screening for depression.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -770,7 +780,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

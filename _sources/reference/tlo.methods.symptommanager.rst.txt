@@ -21,6 +21,9 @@ tlo.methods.symptommanager module
         * - generic_symptoms_spurious_occurrence
           - DATA_FRAME
           - probability and duration of spurious occureneces of generic symptoms
+        * - spurious_symptoms
+          - BOOL
+          - whether or not there will be the spontaneous occurrence of generic symptoms. NB. This is over-ridden if a module key-word argument is provided.
 
 
 

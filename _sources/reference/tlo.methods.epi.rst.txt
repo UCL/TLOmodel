@@ -24,9 +24,9 @@ tlo.methods.epi module
         * - vaccine_schedule
           - SERIES
           - vaccination schedule applicable from 2018 onwards
-        * - district_vaccine_coverage
-          - DATA_FRAME
-          - coverage of each vaccine type by year and district
+        * - prob_facility_level_for_vaccine
+          - LIST
+          - The probability of going to each facility-level (0 / 1a / 1b / 2) for child having vaccines given through childhood immunisation schedule. The probabilities must sum to 1.0 
 
 
      **PROPERTIES:**
@@ -125,157 +125,11 @@ tlo.methods.epi module
 
      .. automethod:: on_birth
 
-     .. automethod:: on_hsi_alert
-
      .. automethod:: report_daly_values
 
      .. automethod:: increment_dose
 
      .. automethod:: get_item_codes
-
-
-
-
-
-
-
-
-.. autoclass:: BcgVaccineEvent
-
-     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
-
-
-     **Functions (defined or overridden in class BcgVaccineEvent):**
-
-     .. automethod:: apply
-
-
-
-
-
-
-
-
-.. autoclass:: OpvEvent
-
-     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
-
-
-     **Functions (defined or overridden in class OpvEvent):**
-
-     .. automethod:: apply
-
-
-
-
-
-
-
-
-.. autoclass:: DtpHepVaccineEvent
-
-     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
-
-
-     **Functions (defined or overridden in class DtpHepVaccineEvent):**
-
-     .. automethod:: apply
-
-
-
-
-
-
-
-
-.. autoclass:: DtpHibHepVaccineEvent
-
-     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
-
-
-     **Functions (defined or overridden in class DtpHibHepVaccineEvent):**
-
-     .. automethod:: apply
-
-
-
-
-
-
-
-
-.. autoclass:: RotavirusVaccineEvent
-
-     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
-
-
-     **Functions (defined or overridden in class RotavirusVaccineEvent):**
-
-     .. automethod:: apply
-
-
-
-
-
-
-
-
-.. autoclass:: PneumococcalVaccineEvent
-
-     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
-
-
-     **Functions (defined or overridden in class PneumococcalVaccineEvent):**
-
-     .. automethod:: apply
-
-
-
-
-
-
-
-
-.. autoclass:: HibVaccineEvent
-
-     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
-
-
-     **Functions (defined or overridden in class HibVaccineEvent):**
-
-     .. automethod:: apply
-
-
-
-
-
-
-
-
-.. autoclass:: MeaslesVaccineEvent
-
-     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
-
-
-     **Functions (defined or overridden in class MeaslesVaccineEvent):**
-
-     .. automethod:: apply
-
-
-
-
-
-
-
-
-.. autoclass:: MeaslesRubellaVaccineEvent
-
-     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
-
-
-     **Functions (defined or overridden in class MeaslesRubellaVaccineEvent):**
-
-     .. automethod:: apply
 
 
 

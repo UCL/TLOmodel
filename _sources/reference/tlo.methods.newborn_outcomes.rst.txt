@@ -316,15 +316,15 @@ tlo.methods.newborn_outcomes module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'PostnatalSupervisor', 'PregnancySupervisor', 'Labour', 'CareOfWomenDuringPregnancy'}
+     ADDITIONAL_DEPENDENCIES : {'CareOfWomenDuringPregnancy', 'PregnancySupervisor', 'Labour', 'PostnatalSupervisor'}
 
-     CAUSES_OF_DEATH : {'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x7fabf9a8f280>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x7fabf9a8f310>, 'encephalopathy': <tlo.methods.causes.Cause object at 0x7fabf9a8f370>, 'neonatal_respiratory_depression': <tlo.methods.causes.Cause object at 0x7fabf9a8f3d0>, 'preterm_other': <tlo.methods.causes.Cause object at 0x7fabf9a8f430>, 'respiratory_distress_syndrome': <tlo.methods.causes.Cause object at 0x7fabf9a8f490>, 'congenital_heart_anomaly': <tlo.methods.causes.Cause object at 0x7fabf9a8f4f0>, 'limb_or_musculoskeletal_anomaly': <tlo.methods.causes.Cause object at 0x7fabf9a8f550>, 'urogenital_anomaly': <tlo.methods.causes.Cause object at 0x7fabf9a8f5b0>, 'digestive_anomaly': <tlo.methods.causes.Cause object at 0x7fabf9a8f610>, 'other_anomaly': <tlo.methods.causes.Cause object at 0x7fabf9a8f670>}
+     CAUSES_OF_DEATH : {'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x7fd214c71d90>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x7fd214c71e20>, 'encephalopathy': <tlo.methods.causes.Cause object at 0x7fd214c71e80>, 'neonatal_respiratory_depression': <tlo.methods.causes.Cause object at 0x7fd214c71ee0>, 'preterm_other': <tlo.methods.causes.Cause object at 0x7fd214c71f40>, 'respiratory_distress_syndrome': <tlo.methods.causes.Cause object at 0x7fd214c71fa0>, 'congenital_heart_anomaly': <tlo.methods.causes.Cause object at 0x7fd214cb1040>, 'limb_or_musculoskeletal_anomaly': <tlo.methods.causes.Cause object at 0x7fd214cb10a0>, 'urogenital_anomaly': <tlo.methods.causes.Cause object at 0x7fd214cb1100>, 'digestive_anomaly': <tlo.methods.causes.Cause object at 0x7fd214cb1160>, 'other_anomaly': <tlo.methods.causes.Cause object at 0x7fd214cb11c0>}
 
-     CAUSES_OF_DISABILITY : {'Retinopathy of Prematurity': <tlo.methods.causes.Cause object at 0x7fabf9a8f6d0>, 'Neonatal Encephalopathy': <tlo.methods.causes.Cause object at 0x7fabf9a8f730>, 'Neonatal Sepsis Long term Disability': <tlo.methods.causes.Cause object at 0x7fabf9a8f790>, 'Preterm Birth Disability': <tlo.methods.causes.Cause object at 0x7fabf9a8f7f0>}
+     CAUSES_OF_DISABILITY : {'Retinopathy of Prematurity': <tlo.methods.causes.Cause object at 0x7fd214cb1220>, 'Neonatal Encephalopathy': <tlo.methods.causes.Cause object at 0x7fd214cb1280>, 'Neonatal Sepsis Long term Disability': <tlo.methods.causes.Cause object at 0x7fd214cb12e0>, 'Preterm Birth Disability': <tlo.methods.causes.Cause object at 0x7fd214cb1340>}
 
      INIT_DEPENDENCIES : {'HealthSystem', 'Demography'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -366,7 +366,7 @@ tlo.methods.newborn_outcomes module
 
      .. automethod:: hiv_screening_for_at_risk_newborns
 
-     .. automethod:: assessment_and_initiation_of_neonatal_resus
+     .. automethod:: apply_effect_of_neonatal_resus
 
      .. automethod:: assessment_and_treatment_newborn_sepsis
 
@@ -380,33 +380,7 @@ tlo.methods.newborn_outcomes module
 
      .. automethod:: report_daly_values
 
-     .. automethod:: run_if_care_of_the_newborn_by_skilled_attendant_at_birth_cant_run
-
      .. automethod:: run_if_care_of_the_receives_postnatal_check_cant_run
-
-
-
-
-
-
-
-
-.. autoclass:: HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth
-
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
-
-
-     **Functions (defined or overridden in class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth):**
-
-     .. automethod:: __init__
-
-     .. automethod:: apply
-
-     .. automethod:: never_ran
-
-     .. automethod:: did_not_run
-
-     .. automethod:: not_available
 
 
 

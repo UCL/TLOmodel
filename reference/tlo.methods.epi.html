@@ -209,9 +209,9 @@ it sets up the vaccination schedule for all children from birth</p>
 <td><p>SERIES</p></td>
 <td><p>vaccination schedule applicable from 2018 onwards</p></td>
 </tr>
-<tr class="row-even"><td><p>district_vaccine_coverage</p></td>
-<td><p>DATA_FRAME</p></td>
-<td><p>coverage of each vaccine type by year and district</p></td>
+<tr class="row-even"><td><p>prob_facility_level_for_vaccine</p></td>
+<td><p>LIST</p></td>
+<td><p>The probability of going to each facility-level (0 / 1a / 1b / 2) for child having vaccines given through childhood immunisation schedule. The probabilities must sum to 1.0</p></td>
 </tr>
 </tbody>
 </table>
@@ -381,15 +381,11 @@ It is a good place to add initial events to the event queue.</p>
 <span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#Epi.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.Epi.on_birth" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialise our properties for a newborn individual</p>
 <p>birth doses occur within 24 hours of delivery</p>
-<p>from 2010-2018 data on vaccine coverage are used to determine probability of receiving vaccine
-vaccinations are scheduled to occur with a probability dependent on the year and district
-from 2019 onwards, probability will be determined by personnel and vaccine availability</p>
 <p>2012 data is patchy, no record of Hep vaccine but it was used before 2012
 assume hepB3 coverage in 2012 same as 2011
 same with Hib</p>
-<p>for births up to end 2018 schedule the vaccine as individual event (not HSI)
-schedule the dates as the exact due date
-then from 2019 use the HSI events - only need the current vaccines in use that way</p>
+<p>Measles - first dose, only one dose pre-2016 and no rubella
+Measles, rubella - first dose, 2018 onwards</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -398,12 +394,6 @@ then from 2019 use the HSI events - only need the current vaccines in use that w
 </ul>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.epi.Epi.on_hsi_alert">
-<span class="sig-name descname"><span class="pre">on_hsi_alert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#Epi.on_hsi_alert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.Epi.on_hsi_alert" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is called whenever there is an HSI event commissioned by one of the other disease modules.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -421,186 +411,6 @@ then from 2019 use the HSI events - only need the current vaccines in use that w
 <dt class="sig sig-object py" id="tlo.methods.epi.Epi.get_item_codes">
 <span class="sig-name descname"><span class="pre">get_item_codes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#Epi.get_item_codes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.Epi.get_item_codes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Look-up the item-codes for each vaccine and update <cite>self.cons_item_codes</cite></p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.epi.BcgVaccineEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BcgVaccineEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Priority.FIRST_HALF_OF_DAY</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#BcgVaccineEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.BcgVaccineEvent" title="Permalink to this definition">¶</a></dt>
-<dd><p>give BCG vaccine at birth</p>
-<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class BcgVaccineEvent):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.epi.BcgVaccineEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#BcgVaccineEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.BcgVaccineEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
-<p>Must be implemented by subclasses.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.epi.OpvEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OpvEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Priority.FIRST_HALF_OF_DAY</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#OpvEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.OpvEvent" title="Permalink to this definition">¶</a></dt>
-<dd><p>give oral poliovirus vaccine (OPV)</p>
-<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class OpvEvent):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.epi.OpvEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#OpvEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.OpvEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
-<p>Must be implemented by subclasses.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.epi.DtpHepVaccineEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DtpHepVaccineEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Priority.FIRST_HALF_OF_DAY</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#DtpHepVaccineEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.DtpHepVaccineEvent" title="Permalink to this definition">¶</a></dt>
-<dd><p>give DTP_Hep vaccine</p>
-<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class DtpHepVaccineEvent):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.epi.DtpHepVaccineEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#DtpHepVaccineEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.DtpHepVaccineEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
-<p>Must be implemented by subclasses.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.epi.DtpHibHepVaccineEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DtpHibHepVaccineEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Priority.FIRST_HALF_OF_DAY</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#DtpHibHepVaccineEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.DtpHibHepVaccineEvent" title="Permalink to this definition">¶</a></dt>
-<dd><p>give DTP_Hib_Hep vaccine</p>
-<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class DtpHibHepVaccineEvent):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.epi.DtpHibHepVaccineEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#DtpHibHepVaccineEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.DtpHibHepVaccineEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
-<p>Must be implemented by subclasses.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.epi.RotavirusVaccineEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RotavirusVaccineEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Priority.FIRST_HALF_OF_DAY</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#RotavirusVaccineEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.RotavirusVaccineEvent" title="Permalink to this definition">¶</a></dt>
-<dd><p>give Rotavirus vaccine</p>
-<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class RotavirusVaccineEvent):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.epi.RotavirusVaccineEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#RotavirusVaccineEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.RotavirusVaccineEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
-<p>Must be implemented by subclasses.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.epi.PneumococcalVaccineEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PneumococcalVaccineEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Priority.FIRST_HALF_OF_DAY</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#PneumococcalVaccineEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.PneumococcalVaccineEvent" title="Permalink to this definition">¶</a></dt>
-<dd><p>give Pneumococcal vaccine (PCV)</p>
-<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class PneumococcalVaccineEvent):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.epi.PneumococcalVaccineEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#PneumococcalVaccineEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.PneumococcalVaccineEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
-<p>Must be implemented by subclasses.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.epi.HibVaccineEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HibVaccineEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Priority.FIRST_HALF_OF_DAY</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HibVaccineEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HibVaccineEvent" title="Permalink to this definition">¶</a></dt>
-<dd><p>give Haemophilus influenza B vaccine</p>
-<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class HibVaccineEvent):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.epi.HibVaccineEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HibVaccineEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HibVaccineEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
-<p>Must be implemented by subclasses.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.epi.MeaslesVaccineEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeaslesVaccineEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Priority.FIRST_HALF_OF_DAY</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#MeaslesVaccineEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.MeaslesVaccineEvent" title="Permalink to this definition">¶</a></dt>
-<dd><p>give measles vaccine</p>
-<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class MeaslesVaccineEvent):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.epi.MeaslesVaccineEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#MeaslesVaccineEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.MeaslesVaccineEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
-<p>Must be implemented by subclasses.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.epi.MeaslesRubellaVaccineEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeaslesRubellaVaccineEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Priority.FIRST_HALF_OF_DAY</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#MeaslesRubellaVaccineEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.MeaslesRubellaVaccineEvent" title="Permalink to this definition">¶</a></dt>
-<dd><p>give measles/rubella vaccine</p>
-<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class MeaslesRubellaVaccineEvent):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.epi.MeaslesRubellaVaccineEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#MeaslesRubellaVaccineEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.MeaslesRubellaVaccineEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
-<p>Must be implemented by subclasses.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
-</dd>
-</dl>
 </dd></dl>
 
 </dd></dl>
@@ -647,15 +457,18 @@ schedule doses 1 month apart</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.epi.HsiBaseVaccine">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HsiBaseVaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HsiBaseVaccine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HsiBaseVaccine" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HsiBaseVaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HsiBaseVaccine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HsiBaseVaccine" title="Permalink to this definition">¶</a></dt>
 <dd><p>This is a base class for all vaccination HSI_Events. Handles initialisation and requesting consumables needed
 for the vaccination. For custom behaviour, you can override __init__ in subclasses and implemented your own
-constructors (or inherit directly from HSI_Event)</p>
+constructors (or inherit directly from HSI_Event)
+unless specified, default facility level is 1a
+unless specified, footprint returned in 1 EPI appt
+if vaccine occurs as part of a treatment package within another appointment, use suppress_footprint=True</p>
 <p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class HsiBaseVaccine):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.epi.HsiBaseVaccine.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HsiBaseVaccine.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HsiBaseVaccine.__init__" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HsiBaseVaccine.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HsiBaseVaccine.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -691,7 +504,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.epi.HSI_BcgVaccine">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_BcgVaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HSI_BcgVaccine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HSI_BcgVaccine" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_BcgVaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HSI_BcgVaccine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HSI_BcgVaccine" title="Permalink to this definition">¶</a></dt>
 <dd><p>gives bcg vaccine 24 hours after birth or as soon as possible afterwards</p>
 <p>Bases: <a class="reference internal" href="#tlo.methods.epi.HsiBaseVaccine" title="tlo.methods.epi.HsiBaseVaccine"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.epi.HsiBaseVaccine</span></code></a>, <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class HSI_BcgVaccine):</strong></p>
@@ -711,7 +524,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.epi.HSI_opv">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_opv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HSI_opv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HSI_opv" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_opv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HSI_opv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HSI_opv" title="Permalink to this definition">¶</a></dt>
 <dd><p>gives poliovirus vaccine 24 hours after birth, plus weeks 6, 10, 14 or as soon as possible afterwards</p>
 <p>Bases: <a class="reference internal" href="#tlo.methods.epi.HsiBaseVaccine" title="tlo.methods.epi.HsiBaseVaccine"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.epi.HsiBaseVaccine</span></code></a>, <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class HSI_opv):</strong></p>
@@ -731,7 +544,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.epi.HSI_DtpHibHepVaccine">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_DtpHibHepVaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HSI_DtpHibHepVaccine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HSI_DtpHibHepVaccine" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_DtpHibHepVaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HSI_DtpHibHepVaccine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HSI_DtpHibHepVaccine" title="Permalink to this definition">¶</a></dt>
 <dd><p>gives DTP-Hib_HepB vaccine</p>
 <p>Bases: <a class="reference internal" href="#tlo.methods.epi.HsiBaseVaccine" title="tlo.methods.epi.HsiBaseVaccine"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.epi.HsiBaseVaccine</span></code></a>, <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class HSI_DtpHibHepVaccine):</strong></p>
@@ -751,7 +564,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.epi.HSI_RotaVaccine">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RotaVaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HSI_RotaVaccine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HSI_RotaVaccine" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_RotaVaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HSI_RotaVaccine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HSI_RotaVaccine" title="Permalink to this definition">¶</a></dt>
 <dd><p>gives Rotavirus vaccine 6 and 10 weeks after birth</p>
 <p>Bases: <a class="reference internal" href="#tlo.methods.epi.HsiBaseVaccine" title="tlo.methods.epi.HsiBaseVaccine"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.epi.HsiBaseVaccine</span></code></a>, <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class HSI_RotaVaccine):</strong></p>
@@ -771,7 +584,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.epi.HSI_PneumoVaccine">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_PneumoVaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HSI_PneumoVaccine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HSI_PneumoVaccine" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_PneumoVaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HSI_PneumoVaccine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HSI_PneumoVaccine" title="Permalink to this definition">¶</a></dt>
 <dd><p>gives Pneumococcal vaccine 6, 10 and 14 weeks after birth</p>
 <p>Bases: <a class="reference internal" href="#tlo.methods.epi.HsiBaseVaccine" title="tlo.methods.epi.HsiBaseVaccine"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.epi.HsiBaseVaccine</span></code></a>, <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class HSI_PneumoVaccine):</strong></p>
@@ -791,7 +604,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.epi.HSI_MeaslesRubellaVaccine">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_MeaslesRubellaVaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HSI_MeaslesRubellaVaccine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HSI_MeaslesRubellaVaccine" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_MeaslesRubellaVaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HSI_MeaslesRubellaVaccine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HSI_MeaslesRubellaVaccine" title="Permalink to this definition">¶</a></dt>
 <dd><p>administers measles+rubella vaccine</p>
 <p>Bases: <a class="reference internal" href="#tlo.methods.epi.HsiBaseVaccine" title="tlo.methods.epi.HsiBaseVaccine"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.epi.HsiBaseVaccine</span></code></a>, <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class HSI_MeaslesRubellaVaccine):</strong></p>
@@ -811,7 +624,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.epi.HSI_HpvVaccine">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_HpvVaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HSI_HpvVaccine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HSI_HpvVaccine" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_HpvVaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HSI_HpvVaccine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HSI_HpvVaccine" title="Permalink to this definition">¶</a></dt>
 <dd><p>gives HPV vaccine to 9 year old girls; recommended 2 doses (WHO)</p>
 <p>Bases: <a class="reference internal" href="#tlo.methods.epi.HsiBaseVaccine" title="tlo.methods.epi.HsiBaseVaccine"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.epi.HsiBaseVaccine</span></code></a>, <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class HSI_HpvVaccine):</strong></p>
@@ -831,7 +644,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.epi.HSI_TdVaccine">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_TdVaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HSI_TdVaccine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HSI_TdVaccine" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_TdVaccine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_footprint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/epi.html#HSI_TdVaccine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.epi.HSI_TdVaccine" title="Permalink to this definition">¶</a></dt>
 <dd><p>gives tetanus/diphtheria vaccine to pregnant women as part of routine antenatal care
 recommended 2+ doses (WHO)</p>
 <p>Bases: <a class="reference internal" href="#tlo.methods.epi.HsiBaseVaccine" title="tlo.methods.epi.HsiBaseVaccine"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.epi.HsiBaseVaccine</span></code></a>, <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
@@ -892,7 +705,7 @@ recommended 2+ doses (WHO)</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

@@ -181,7 +181,8 @@
             
   <div class="section" id="module-tlo.methods.healthburden">
 <span id="tlo-methods-healthburden-module"></span><h1>tlo.methods.healthburden module<a class="headerlink" href="#module-tlo.methods.healthburden" title="Permalink to this heading">¶</a></h1>
-<p>This Module runs the counting of DALYS</p>
+<p>This Module runs the counting of Life-years Lost, Life-years Lived with Disability,
+and Disability-Adjusted Life-years (DALYS).</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.healthburden.HealthBurden">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HealthBurden</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthburden.html#HealthBurden"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthburden.HealthBurden" title="Permalink to this definition">¶</a></dt>
@@ -285,6 +286,17 @@ the disease modules in this sim.)
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthburden.HealthBurden.process_causes_of_dalys">
+<span class="sig-name descname"><span class="pre">process_causes_of_dalys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthburden.html#HealthBurden.process_causes_of_dalys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthburden.HealthBurden.process_causes_of_dalys" title="Permalink to this definition">¶</a></dt>
+<dd><ol class="arabic simple">
+<li><p>Collect causes of DALYS (i.e., death _and_ disability) that are reported by each disease module</p></li>
+</ol>
+<p>2) Define the “Other” tlo_cause of DALYS (corresponding to those gbd_causes that are not represented by
+the disease modules in this sim.)
+3) Output to the log mappers for causes of disability to the label</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthburden.HealthBurden.on_birth">
 <span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthburden.html#HealthBurden.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthburden.HealthBurden.on_birth" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialise our properties for a newborn individual.</p>
@@ -346,20 +358,6 @@ calendar year
 :return: a dataframe (X) of the person-time (in years) spent by age-group and time-period</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthburden.HealthBurden.get_gbd_causes_of_disability_not_represented_in_disease_modules">
-<span class="sig-name descname"><span class="pre">get_gbd_causes_of_disability_not_represented_in_disease_modules</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">causes_of_disability</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthburden.html#HealthBurden.get_gbd_causes_of_disability_not_represented_in_disease_modules"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthburden.HealthBurden.get_gbd_causes_of_disability_not_represented_in_disease_modules" title="Permalink to this definition">¶</a></dt>
-<dd><p>Find the causes of disability in the GBD datasets that are not represented within the causes of death defined
-in the modules registered in this simulation.
-:return: set of gbd_causes of disability that are not represented in disease modules</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthburden.HealthBurden.create_mappers_from_causes_of_death_to_label">
-<span class="sig-name descname"><span class="pre">create_mappers_from_causes_of_death_to_label</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthburden.html#HealthBurden.create_mappers_from_causes_of_death_to_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthburden.HealthBurden.create_mappers_from_causes_of_death_to_label" title="Permalink to this definition">¶</a></dt>
-<dd><p>Use a helper function to create mappers for causes of disability to label.</p>
-</dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
@@ -417,7 +415,7 @@ A known (small) limitation of this is that persons who died during the previous 
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

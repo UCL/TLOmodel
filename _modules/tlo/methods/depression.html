@@ -357,7 +357,11 @@
 
         <span class="s1">&#39;anti_depressant_medication_item_code&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span>
                                                           <span class="s1">&#39;The item code used for one month of anti-depressant &#39;</span>
-                                                          <span class="s1">&#39;treatment&#39;</span><span class="p">)</span>
+                                                          <span class="s1">&#39;treatment&#39;</span><span class="p">),</span>
+
+        <span class="s1">&#39;pr_assessed_for_depression_for_perinatal_female&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
+            <span class="s1">&#39;Probability that a perinatal female is assessed for depression during antenatal or postnatal services&#39;</span><span class="p">),</span>
     <span class="p">}</span>
 
     <span class="c1"># Properties of individuals &#39;owned&#39; by this module</span>
@@ -676,6 +680,35 @@
             <span class="n">fraction_of_month_depr</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">daly_wts</span><span class="p">[</span><span class="s1">&#39;average_per_day_during_any_episode&#39;</span><span class="p">],</span> <span class="n">fill_value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">av_daly_wt_last_month</span></div>
+
+<div class="viewcode-block" id="Depression.do_on_presentation_to_care"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.do_on_presentation_to_care">[docs]</a>    <span class="k">def</span> <span class="nf">do_on_presentation_to_care</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;This member function is called when a person is in an HSI, and there may need to be screening for depression.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="k">if</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">==</span> <span class="s2">&quot;FirstAttendance_NonEmergency&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;pr_assessed_for_depression_in_generic_appt_level1&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">do_when_suspected_depression</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">==</span> <span class="s2">&quot;FirstAttendance_Emergency&quot;</span><span class="p">:</span>
+            <span class="n">symptoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s1">&#39;Injuries_From_Self_Harm&#39;</span> <span class="ow">in</span> <span class="n">symptoms</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">do_when_suspected_depression</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
+                <span class="c1"># TODO: Trigger surgical care for injuries.</span>
+
+        <span class="k">elif</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">==</span> <span class="s2">&quot;AntenatalCare_Outpatient&quot;</span><span class="p">:</span>  <span class="c1"># module care_of_women_during_pregnancy</span>
+            <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;de_ever_diagnosed_depression&#39;</span><span class="p">])</span> <span class="ow">and</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;pr_assessed_for_depression_for_perinatal_female&#39;</span><span class="p">]</span>
+            <span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">do_when_suspected_depression</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">==</span> <span class="s2">&quot;PostnatalCare_Maternal&quot;</span><span class="p">:</span>  <span class="c1"># module labour</span>
+            <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;de_ever_diagnosed_depression&#39;</span><span class="p">])</span> <span class="ow">and</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;pr_assessed_for_depression_for_perinatal_female&#39;</span><span class="p">]</span>
+            <span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">do_when_suspected_depression</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 <div class="viewcode-block" id="Depression.do_when_suspected_depression"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.do_when_suspected_depression">[docs]</a>    <span class="k">def</span> <span class="nf">do_when_suspected_depression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1121,7 +1154,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

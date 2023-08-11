@@ -460,6 +460,14 @@ still occur.</p>
 <td><p>REAL</p></td>
 <td><p>Probability that a male will be circumcised, if HIV-negative, following testing</p></td>
 </tr>
+<tr class="row-even"><td><p>prob_circ_for_child_before_2020</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a male aging &lt;15 yrs will be circumcised before year 2020</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_circ_for_child_from_2020</p></td>
+<td><p>REAL</p></td>
+<td><p>Probability that a male aging &lt;15 yrs will be circumcised from year 2020, which is different from before 2020 as children vmmc policy/fund/cases has changed, according to PEPFAR 2020 Country Operational Plan and DHIS2 data</p></td>
+</tr>
 <tr class="row-even"><td><p>probability_of_being_retained_on_prep_every_3_months</p></td>
 <td><p>REAL</p></td>
 <td><p>Probability that someone who has initiated on prep will attend an appointment and be on prep for the next 3 months, until the next appointment.</p></td>
@@ -551,11 +559,11 @@ still occur.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Tb’, ‘NewbornOutcomes’}</p>
-<p>CAUSES_OF_DEATH : {‘AIDS_non_TB’: &lt;tlo.methods.causes.Cause object at 0x7fabf980b550&gt;, ‘AIDS_TB’: &lt;tlo.methods.causes.Cause object at 0x7fabf980b5e0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘HIV’: &lt;tlo.methods.causes.Cause object at 0x7fabf980b640&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Lifestyle’, ‘Demography’, ‘SymptomManager’}</p>
-<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘NewbornOutcomes’, ‘Tb’}</p>
+<p>CAUSES_OF_DEATH : {‘AIDS_non_TB’: &lt;tlo.methods.causes.Cause object at 0x7fd2149fae20&gt;, ‘AIDS_TB’: &lt;tlo.methods.causes.Cause object at 0x7fd2149faeb0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘HIV’: &lt;tlo.methods.causes.Cause object at 0x7fd2149faf10&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Lifestyle’, ‘HealthSystem’, ‘SymptomManager’, ‘Demography’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class Hiv):</strong></p>
 <dl class="py method">
@@ -696,13 +704,45 @@ further polling etc.)</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.get_time_from_infection_to_aids">
-<span class="sig-name descname"><span class="pre">get_time_from_infection_to_aids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.get_time_from_infection_to_aids"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.get_time_from_infection_to_aids" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gives time between onset of infection and AIDS, returning a pd.DateOffset.
-For those infected prior to, or at, birth: (this is a draw from an exponential distribution)
-For those infected after birth but before reaching age 5.0 (this is drawn from a weibull distribution)
-For adults: (this is a drawn from a weibull distribution (with scale depending on age);
-* NB. It is further assumed that the time from aids to death is 18 months.</p>
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.sample_time_from_infection_to_aids_given_parameters">
+<span class="sig-name descname"><span class="pre">sample_time_from_infection_to_aids_given_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scale</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shape</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.sample_time_from_infection_to_aids_given_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.sample_time_from_infection_to_aids_given_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate time(s) between onset of infection and AIDS as Pandas time deltas.</p>
+<p>The times are generated from translated Weibull distributions discretised to
+an integer number of months.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scale</strong> – Scale parameters of Weibull distributions (unit: years).</p></li>
+<li><p><strong>shape</strong> – Shape parameters of Weibull distributions.</p></li>
+<li><p><strong>offset</strong> – Offset to (negatively) shift Weibull variable by (unit: months).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Generated time deltas.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.hiv.Hiv.get_time_from_infection_to_aids_distribution_parameters">
+<span class="sig-name descname"><span class="pre">get_time_from_infection_to_aids_distribution_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_ids</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#Hiv.get_time_from_infection_to_aids_distribution_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.Hiv.get_time_from_infection_to_aids_distribution_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute per-person parameters of distribution of time from infection to aids.</p>
+<p>Evaluates three linear models which output age specific scale, shape and offset
+parameters for the (translated) Weibull distribution used to generate the time
+from infection to aids for an individual.</p>
+<p>For those infected prior to, or at, birth, a Weibull distribution with shape
+parameter 1 (equivalent to an exponential distribution) is used.</p>
+<p>For those infected after birth a Weibull distribution with both shape and
+scale depending on age is used.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>person_ids</strong> – Iterable of ID indices of individuals to get parameters for.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Per-person parameters as a 3-tuple <code class="docutils literal notranslate"><span class="pre">(scale,</span> <span class="pre">shape,</span> <span class="pre">offset)</span></code> of
+<code class="docutils literal notranslate"><span class="pre">pandas.Series</span></code> objects.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -1251,6 +1291,8 @@ Default the person to being off PrEP</p>
 <dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Hiv_StartOrContinueTreatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_StartOrContinueTreatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x7fd214a18770&gt;</p>
 <p><strong>Functions (defined or overridden in class HSI_Hiv_StartOrContinueTreatment):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.__init__">
@@ -1312,16 +1354,6 @@ Consider whether IPT is needed at this time. This is run only when treatment is 
 <dd><p>This is called if this HSI was never run.
 * Default the person to being off ART.
 * Determine if they will re-seek care themselves in the future:</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment._make_appt_footprint_according_age_and_patient_status">
-<span class="sig-name descname"><span class="pre">_make_appt_footprint_according_age_and_patient_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_StartOrContinueTreatment._make_appt_footprint_according_age_and_patient_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment._make_appt_footprint_according_age_and_patient_status" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the appointment footprint for this person according to their current status:
-* <cite>NewAdult</cite> for an adult, newly starting (or re-starting) treatment
-* <cite>EstNonCom</cite> for an adult, already on treatment
-(NB. This is an appointment type that assumes that the patient does not have complications.)
-* <cite>Peds</cite> for a child - whether newly starting or already on treatment</p>
 </dd></dl>
 
 </dd></dl>
@@ -1507,7 +1539,7 @@ It is a good place to add initial events to the event queue.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

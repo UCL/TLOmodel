@@ -117,6 +117,9 @@ tlo.methods.cardio_metabolic_disorders module
         * - pr_bmi_reduction
           - INT
           - probability of an individual having a reduction in BMI following weight loss treatment
+        * - prob_care_provided_given_seek_emergency_care
+          - REAL
+          - The probability that correct care is fully provided to persons that have sought emergency care for a Cardio-metabolic disorder.
 
 
      **PROPERTIES:**
@@ -276,13 +279,13 @@ tlo.methods.cardio_metabolic_disorders module
 
      ADDITIONAL_DEPENDENCIES : {'Depression'}
 
-     CAUSES_OF_DEATH : {'diabetes': <tlo.methods.causes.Cause object at 0x7fabf9c24640>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x7fabf9c246a0>, 'ever_heart_attack': <tlo.methods.causes.Cause object at 0x7fabf9c24700>, 'ever_stroke': <tlo.methods.causes.Cause object at 0x7fabf9c24760>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x7fabf9c247c0>}
+     CAUSES_OF_DEATH : {'diabetes': <tlo.methods.causes.Cause object at 0x7fd214e54220>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x7fd214e54280>, 'ever_heart_attack': <tlo.methods.causes.Cause object at 0x7fd214e542e0>, 'ever_stroke': <tlo.methods.causes.Cause object at 0x7fd214e54340>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x7fd214e543a0>}
 
-     CAUSES_OF_DISABILITY : {'diabetes': <tlo.methods.causes.Cause object at 0x7fabf9c24820>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x7fabf9c24880>, 'heart_attack': <tlo.methods.causes.Cause object at 0x7fabf9c248e0>, 'stroke': <tlo.methods.causes.Cause object at 0x7fabf9c24940>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x7fabf9c249a0>, 'lower_back_pain': <tlo.methods.causes.Cause object at 0x7fabf9c24a00>}
+     CAUSES_OF_DISABILITY : {'diabetes': <tlo.methods.causes.Cause object at 0x7fd214e54400>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x7fd214e54460>, 'heart_attack': <tlo.methods.causes.Cause object at 0x7fd214e544c0>, 'stroke': <tlo.methods.causes.Cause object at 0x7fd214e54520>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x7fd214e54580>, 'lower_back_pain': <tlo.methods.causes.Cause object at 0x7fd214e545e0>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Lifestyle', 'Demography', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'Lifestyle', 'HealthSystem', 'SymptomManager', 'Demography'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -477,36 +480,18 @@ tlo.methods.cardio_metabolic_disorders module
 
 
 
-.. autoclass:: HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms
+.. autoclass:: HSI_CardioMetabolicDisorders_Investigations
 
      Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
-     **Functions (defined or overridden in class HSI_CardioMetabolicDisorders_InvestigationNotFollowingSymptoms):**
+     **Functions (defined or overridden in class HSI_CardioMetabolicDisorders_Investigations):**
 
      .. automethod:: __init__
 
-     .. automethod:: apply
-
-
-
-
-
-
-
-
-.. autoclass:: HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms
-
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
-
-
-     **Functions (defined or overridden in class HSI_CardioMetabolicDisorders_InvestigationFollowingSymptoms):**
-
-     .. automethod:: __init__
+     .. automethod:: do_for_each_condition
 
      .. automethod:: apply
-
-     .. automethod:: did_not_run
 
 
 
@@ -561,6 +546,8 @@ tlo.methods.cardio_metabolic_disorders module
      **Functions (defined or overridden in class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment):**
 
      .. automethod:: __init__
+
+     .. automethod:: do_for_each_event_to_be_investigated
 
      .. automethod:: apply
 

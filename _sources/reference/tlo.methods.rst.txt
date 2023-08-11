@@ -17,6 +17,7 @@ Submodules
    tlo.methods.chronicsyndrome
    tlo.methods.consumables
    tlo.methods.contraception
+   tlo.methods.copd
    tlo.methods.demography
    tlo.methods.depression
    tlo.methods.diarrhoea
@@ -47,6 +48,7 @@ Submodules
    tlo.methods.pregnancy_supervisor_lm
    tlo.methods.prostate_cancer
    tlo.methods.rti
+   tlo.methods.scenario_switcher
    tlo.methods.schisto
    tlo.methods.simplified_births
    tlo.methods.skeleton

@@ -173,6 +173,7 @@
             
   <h1>Source code for tlo.methods.epilepsy</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
@@ -534,7 +535,36 @@
 <div class="viewcode-block" id="Epilepsy.stop_antiep"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.stop_antiep">[docs]</a>    <span class="k">def</span> <span class="nf">stop_antiep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">probability</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;stop individuals on antiep with given probability&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">indices</span><span class="p">,</span> <span class="s1">&#39;ep_antiep&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">probability</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">))</span></div></div>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">indices</span><span class="p">,</span> <span class="s1">&#39;ep_antiep&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">probability</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="Epilepsy.get_best_available_medicine"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.get_best_available_medicine">[docs]</a>    <span class="k">def</span> <span class="nf">get_best_available_medicine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the best available medicine (as string), or None if none are available&quot;&quot;&quot;</span>
+        <span class="c1"># Check what drugs are available. (`to_log` is set to false in order to not actually request the consumables</span>
+        <span class="c1"># from the health system before we know what is available)</span>
+        <span class="n">possible_treatments</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;phenobarbitone&#39;</span><span class="p">:</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;phenobarbitone&#39;</span><span class="p">],</span>
+                <span class="n">to_log</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;carbamazepine&#39;</span><span class="p">:</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;carbamazepine&#39;</span><span class="p">],</span>
+                <span class="n">to_log</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">),</span>
+            <span class="s1">&#39;phenytoin&#39;</span><span class="p">:</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;phenytoin&#39;</span><span class="p">],</span>
+                <span class="n">to_log</span><span class="o">=</span><span class="kc">False</span>
+            <span class="p">),</span>
+        <span class="p">}</span>
+        <span class="c1"># Now we know which treatments are available, we will determine the most preferable treatment by finding the</span>
+        <span class="c1"># index in available_treatments of the first True value:</span>
+        <span class="n">best_option_index</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">possible_treatments</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="k">if</span> <span class="n">j</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">best_option_index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># At least one of the treatment is available: Return the name of the most preferable medicine</span>
+            <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">possible_treatments</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="n">best_option_index</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># None of the treatment is available: return None</span>
+            <span class="k">return</span> <span class="kc">None</span></div></div>
 
 
 <div class="viewcode-block" id="EpilepsyEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.EpilepsyEvent">[docs]</a><span class="k">class</span> <span class="nc">EpilepsyEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
@@ -683,7 +713,9 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get some summary statistics and log them&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
-        <span class="n">status_groups</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;ep_seiz_stat&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">status_groups</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span>
+            <span class="p">[</span><span class="s2">&quot;ep_seiz_stat&quot;</span><span class="p">,</span> <span class="s2">&quot;is_alive&quot;</span><span class="p">,</span> <span class="s2">&quot;ep_antiep&quot;</span><span class="p">]</span>
+        <span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;ep_seiz_stat&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
 
         <span class="n">n_seiz_stat_1_3</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">status_groups</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">is_alive</span><span class="p">)</span>
         <span class="n">n_seiz_stat_2_3</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">status_groups</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span><span class="o">.</span><span class="n">is_alive</span><span class="p">)</span>
@@ -736,31 +768,12 @@
 <div class="viewcode-block" id="HSI_Epilepsy_Start_Anti_Epileptic.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.HSI_Epilepsy_Start_Anti_Epileptic.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">hs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span>
-        <span class="c1"># Check what drugs are available, to_log is set to false in order to not actually request the consumables from</span>
-        <span class="c1"># the health system before we know what is available</span>
-        <span class="n">available_treatments</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;phenobarbitone&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;phenobarbitone&#39;</span><span class="p">],</span>
-                <span class="n">to_log</span><span class="o">=</span><span class="kc">False</span>
-            <span class="p">),</span>
-            <span class="s1">&#39;carbamazepine&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;carbamazepine&#39;</span><span class="p">],</span>
-                <span class="n">to_log</span><span class="o">=</span><span class="kc">False</span>
-            <span class="p">),</span>
-            <span class="s1">&#39;phenytoin&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;phenytoin&#39;</span><span class="p">],</span>
-                <span class="n">to_log</span><span class="o">=</span><span class="kc">False</span>
-            <span class="p">),</span>
-        <span class="p">}</span>
-        <span class="c1"># Now we know which treatments are available, we will request the best treatment from the health system.</span>
-        <span class="c1"># Determine the most preferable treatment by finding the index in available_treatments of the first True value:</span>
-        <span class="n">best_option_index</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">available_treatments</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="k">if</span> <span class="n">j</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="c1"># If at least one of the medicines is available, request the medicine from the health system</span>
-        <span class="k">if</span> <span class="n">best_option_index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># Get the name of the most preferable medicine currently available</span>
-            <span class="n">best_available_medicine</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">available_treatments</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="n">best_option_index</span><span class="p">]</span>
-            <span class="c1"># Request the medicine from the health system, with to_log set to True to actually consume the medicine</span>
-            <span class="c1"># from the health system</span>
+
+        <span class="c1"># Check what drugs are available</span>
+        <span class="n">best_available_medicine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_best_available_medicine</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">best_available_medicine</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Request the medicine from the health system</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="n">best_available_medicine</span><span class="p">])</span>
             <span class="c1"># Update this person&#39;s properties to show that they are currently on medication</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ep_antiep&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -789,9 +802,14 @@
 <div class="viewcode-block" id="HSI_Epilepsy_Follow_Up.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.HSI_Epilepsy_Follow_Up.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_DEFAULT_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;Over5OPD&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_REPEATED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;PharmDispensing&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;Epilepsy_Treatment_Followup&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;Over5OPD&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_DEFAULT_APPT_FOOTPRINT</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_counter_of_failed_attempts_due_to_unavailable_medicines</span> <span class="o">=</span> <span class="mi">0</span></div>
 
 <div class="viewcode-block" id="HSI_Epilepsy_Follow_Up.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.HSI_Epilepsy_Follow_Up.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -800,14 +818,48 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span> <span class="n">hs</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
 
-        <span class="c1"># Schedule a reoccurrence of this follow-up in 3 months if ep_seiz_stat == &#39;3&#39;,</span>
-        <span class="c1"># else, schedule this reoccurrence of it in 1 year (i.e., if ep_seiz_stat == &#39;2&#39;)</span>
-        <span class="n">hs</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
-            <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
-            <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span> <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ep_seiz_stat&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;3&#39;</span> <span class="k">else</span> <span class="mi">12</span><span class="p">),</span>
-            <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-            <span class="n">priority</span><span class="o">=</span><span class="mi">0</span>
-        <span class="p">)</span></div></div>
+        <span class="c1"># If the person does not remain on anti-epileptics, do nothing:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ep_antiep&#39;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">hs</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
+
+        <span class="c1"># Request the medicine</span>
+        <span class="n">best_available_medicine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">get_best_available_medicine</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">best_available_medicine</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># The medicine is available, so request it</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="n">best_available_medicine</span><span class="p">])</span>
+
+            <span class="c1"># Reset counter of &quot;failed attempts&quot; and put the appointment for the next occurrence to the usual</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_counter_of_failed_attempts_due_to_unavailable_medicines</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_DEFAULT_APPT_FOOTPRINT</span>
+
+            <span class="c1"># Schedule a reoccurrence of this follow-up in 3 months if ep_seiz_stat == &#39;3&#39;,</span>
+            <span class="c1"># else, schedule this reoccurrence of it in 1 year (i.e., if ep_seiz_stat == &#39;2&#39;)</span>
+            <span class="n">hs</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+                <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span> <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ep_seiz_stat&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;3&#39;</span> <span class="k">else</span> <span class="mi">12</span><span class="p">),</span>
+                <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">priority</span><span class="o">=</span><span class="mi">0</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_counter_of_failed_attempts_due_to_unavailable_medicines</span>
+            <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING</span>
+        <span class="p">):</span>
+            <span class="c1"># Nothing is available currently: schedule a recurrence of this appointment in one month, with a modified</span>
+            <span class="c1"># footprint. (This will repeat a certain number of time before the person defaults to being off</span>
+            <span class="c1"># anti-epileptics: see next clause.)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_counter_of_failed_attempts_due_to_unavailable_medicines</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_REPEATED_APPT_FOOTPRINT</span>
+
+            <span class="n">hs</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
+                <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">priority</span><span class="o">=</span><span class="mi">0</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># No medicine is available and the maximum number of repeats has been reached: The person will default</span>
+            <span class="c1"># to being off the anti-epileptics and no further follow-ups are scheduled.</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ep_antiep&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div></div>
 </pre></div>
 
            </div>
@@ -820,7 +872,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

@@ -202,101 +202,105 @@ including the malaria RDT using DxTest</p>
 </tr>
 </thead>
 <tbody>
-<tr class="row-even"><td><p>mal_inc</p></td>
-<td><p>REAL</p></td>
-<td><p>monthly incidence of malaria in all ages</p></td>
-</tr>
-<tr class="row-odd"><td><p>interv</p></td>
+<tr class="row-even"><td><p>interv</p></td>
 <td><p>REAL</p></td>
 <td><p>data frame of intervention coverage by year</p></td>
 </tr>
-<tr class="row-even"><td><p>clin_inc</p></td>
+<tr class="row-odd"><td><p>clin_inc</p></td>
 <td><p>REAL</p></td>
 <td><p>data frame of clinical incidence by age, district, intervention coverage</p></td>
 </tr>
-<tr class="row-odd"><td><p>inf_inc</p></td>
+<tr class="row-even"><td><p>inf_inc</p></td>
 <td><p>REAL</p></td>
 <td><p>data frame of infection incidence by age, district, intervention coverage</p></td>
 </tr>
-<tr class="row-even"><td><p>sev_inc</p></td>
+<tr class="row-odd"><td><p>sev_inc</p></td>
 <td><p>REAL</p></td>
 <td><p>data frame of severe case incidence by age, district, intervention coverage</p></td>
 </tr>
-<tr class="row-odd"><td><p>itn_district</p></td>
+<tr class="row-even"><td><p>itn_district</p></td>
 <td><p>REAL</p></td>
 <td><p>data frame of ITN usage rates by district</p></td>
 </tr>
-<tr class="row-even"><td><p>irs_district</p></td>
+<tr class="row-odd"><td><p>irs_district</p></td>
 <td><p>REAL</p></td>
 <td><p>data frame of IRS usage rates by district</p></td>
 </tr>
-<tr class="row-odd"><td><p>sev_symp_prob</p></td>
+<tr class="row-even"><td><p>sev_symp_prob</p></td>
 <td><p>REAL</p></td>
 <td><p>probabilities of each symptom for severe malaria cases</p></td>
 </tr>
-<tr class="row-even"><td><p>sensitivity_rdt</p></td>
+<tr class="row-odd"><td><p>sensitivity_rdt</p></td>
 <td><p>REAL</p></td>
 <td><p>Sensitivity of rdt</p></td>
 </tr>
-<tr class="row-odd"><td><p>cfr</p></td>
+<tr class="row-even"><td><p>cfr</p></td>
 <td><p>REAL</p></td>
 <td><p>case-fatality rate for severe malaria</p></td>
 </tr>
-<tr class="row-even"><td><p>dur_asym</p></td>
+<tr class="row-odd"><td><p>dur_asym</p></td>
 <td><p>REAL</p></td>
 <td><p>duration (days) of asymptomatic malaria</p></td>
 </tr>
-<tr class="row-odd"><td><p>dur_clin</p></td>
+<tr class="row-even"><td><p>dur_clin</p></td>
 <td><p>REAL</p></td>
 <td><p>duration (days) of clinical symptoms of malaria</p></td>
 </tr>
-<tr class="row-even"><td><p>dur_clin_para</p></td>
+<tr class="row-odd"><td><p>dur_clin_para</p></td>
 <td><p>REAL</p></td>
 <td><p>duration (days) of parasitaemia for clinical malaria cases</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_hiv</p></td>
+<tr class="row-even"><td><p>rr_hiv</p></td>
 <td><p>REAL</p></td>
 <td><p>relative risk of clinical malaria if hiv-positive</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_adjustment</p></td>
+<tr class="row-odd"><td><p>treatment_adjustment</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of death from severe malaria if on treatment</p></td>
 </tr>
-<tr class="row-odd"><td><p>p_sev_anaemia_preg</p></td>
+<tr class="row-even"><td><p>p_sev_anaemia_preg</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of severe anaemia in pregnant women with clinical malaria</p></td>
 </tr>
-<tr class="row-even"><td><p>itn_proj</p></td>
+<tr class="row-odd"><td><p>itn_proj</p></td>
 <td><p>REAL</p></td>
 <td><p>coverage of ITN for projections 2020 onwards</p></td>
 </tr>
-<tr class="row-odd"><td><p>mortality_adjust</p></td>
+<tr class="row-even"><td><p>mortality_adjust</p></td>
 <td><p>REAL</p></td>
 <td><p>adjustment of case-fatality rate to match WHO/MAP</p></td>
 </tr>
-<tr class="row-even"><td><p>data_end</p></td>
+<tr class="row-odd"><td><p>data_end</p></td>
 <td><p>REAL</p></td>
 <td><p>final year of ICL malaria model outputs, after 2018 = projections</p></td>
 </tr>
-<tr class="row-odd"><td><p>irs_rates_boundary</p></td>
+<tr class="row-even"><td><p>irs_rates_boundary</p></td>
 <td><p>REAL</p></td>
 <td><p>threshold for indoor residual spraying coverage</p></td>
 </tr>
-<tr class="row-even"><td><p>irs_rates_upper</p></td>
+<tr class="row-odd"><td><p>irs_rates_upper</p></td>
 <td><p>REAL</p></td>
 <td><p>indoor residual spraying high coverage</p></td>
 </tr>
-<tr class="row-odd"><td><p>irs_rates_lower</p></td>
+<tr class="row-even"><td><p>irs_rates_lower</p></td>
 <td><p>REAL</p></td>
 <td><p>indoor residual spraying low coverage</p></td>
 </tr>
-<tr class="row-even"><td><p>testing_adj</p></td>
+<tr class="row-odd"><td><p>prob_malaria_case_tests</p></td>
 <td><p>REAL</p></td>
-<td><p>adjusted testing rates to match rdt/tx levels</p></td>
+<td><p>probability that a malaria case will have a scheduled rdt</p></td>
 </tr>
-<tr class="row-odd"><td><p>itn</p></td>
+<tr class="row-even"><td><p>itn</p></td>
 <td><p>REAL</p></td>
 <td><p>projected future itn coverage</p></td>
+</tr>
+<tr class="row-odd"><td><p>rdt_testing_rates</p></td>
+<td><p>REAL</p></td>
+<td><p>per capita rdt testing rate of general population</p></td>
+</tr>
+<tr class="row-even"><td><p>scaling_factor_for_rdt_availability</p></td>
+<td><p>REAL</p></td>
+<td><p>scaling factor applied to the reports of rdt usage to compensate fornon-availability of rdts at some facilities</p></td>
 </tr>
 </tbody>
 </table>
@@ -350,25 +354,29 @@ including the malaria RDT using DxTest</p>
 <td><p>INT</p></td>
 <td><p>annual counter for malaria clinical episodes</p></td>
 </tr>
-<tr class="row-odd"><td><p>ma_tx_counter</p></td>
+<tr class="row-odd"><td><p>ma_dx_counter</p></td>
+<td><p>INT</p></td>
+<td><p>annual counter for malaria diagnoses</p></td>
+</tr>
+<tr class="row-even"><td><p>ma_tx_counter</p></td>
 <td><p>INT</p></td>
 <td><p>annual counter for malaria treatment episodes</p></td>
 </tr>
-<tr class="row-even"><td><p>ma_clinical_preg_counter</p></td>
+<tr class="row-odd"><td><p>ma_clinical_preg_counter</p></td>
 <td><p>INT</p></td>
 <td><p>annual counter for malaria clinical episodes in pregnant women</p></td>
 </tr>
-<tr class="row-odd"><td><p>ma_iptp</p></td>
+<tr class="row-even"><td><p>ma_iptp</p></td>
 <td><p>BOOL</p></td>
 <td><p>if woman has IPTp in current pregnancy</p></td>
 </tr>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘Malaria’: &lt;tlo.methods.causes.Cause object at 0x7fabf96b93d0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘Malaria’: &lt;tlo.methods.causes.Cause object at 0x7fabf96b9460&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Contraception’, ‘Demography’, ‘SymptomManager’}</p>
-<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘Malaria’: &lt;tlo.methods.causes.Cause object at 0x7fd2149bebe0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘Malaria’: &lt;tlo.methods.causes.Cause object at 0x7fd2149bec70&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Contraception’, ‘HealthSystem’, ‘SymptomManager’, ‘Demography’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class Malaria):</strong></p>
 <dl class="py method">
@@ -421,6 +429,14 @@ simulation knows what order to initialise modules in!</p>
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.malaria.Malaria.general_population_rdt_scheduler">
+<span class="sig-name descname"><span class="pre">general_population_rdt_scheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria.general_population_rdt_scheduler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria.general_population_rdt_scheduler" title="Permalink to this definition">¶</a></dt>
+<dd><p>schedule rdt for general population - performed in the community by DCSAs
+independent of any current symptoms
+rates are set to match rdt usage reports from WHO / NMCP</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.malaria.Malaria.initialise_simulation">
 <span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria.initialise_simulation" title="Permalink to this definition">¶</a></dt>
 <dd><ul class="simple">
@@ -456,45 +472,9 @@ simulation knows what order to initialise modules in!</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.Malaria.on_hsi_alert">
-<span class="sig-name descname"><span class="pre">on_hsi_alert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">treatment_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria.on_hsi_alert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria.on_hsi_alert" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is called whenever there is an HSI event commissioned by one of the other disease modules.</p>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.malaria.Malaria.report_daly_values">
 <span class="sig-name descname"><span class="pre">report_daly_values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria.report_daly_values"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria.report_daly_values" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.Malaria.clinical_symptoms">
-<span class="sig-name descname"><span class="pre">clinical_symptoms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clinical_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria.clinical_symptoms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria.clinical_symptoms" title="Permalink to this definition">¶</a></dt>
-<dd><p>assign clinical symptoms to new clinical malaria cases and schedule symptom resolution</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>population</strong> – </p></li>
-<li><p><strong>clinical_index</strong> – </p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.Malaria.severe_symptoms">
-<span class="sig-name descname"><span class="pre">severe_symptoms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">severe_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria.severe_symptoms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria.severe_symptoms" title="Permalink to this definition">¶</a></dt>
-<dd><p>assign clinical symptoms to new severe malaria cases. Symptoms can only be resolved by treatment
-handles both adult and child (using the child parameter) symptoms</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>population</strong> – the population dataframe</p></li>
-<li><p><strong>severe_index</strong> – the indices of new clinical cases</p></li>
-<li><p><strong>child</strong> – to apply severe symptoms to children (otherwise applied to adults)</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.malaria.Malaria.check_if_fever_is_caused_by_malaria">
@@ -502,12 +482,39 @@ handles both adult and child (using the child parameter) symptoms</p>
 <dd><p>Run by an HSI when an adult presents with fever</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.malaria.Malaria.do_for_suspected_malaria_case">
+<span class="sig-name descname"><span class="pre">do_for_suspected_malaria_case</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria.do_for_suspected_malaria_case"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria.do_for_suspected_malaria_case" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>person_id</strong> – </p></li>
+<li><p><strong>hsi_event</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+<p>This is called for a person (of any age) that attends non-emergency generic HSI and has
+any symptoms suggestive of malaria</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.malaria.Malaria.do_on_emergency_presentation_with_severe_malaria">
+<span class="sig-name descname"><span class="pre">do_on_emergency_presentation_with_severe_malaria</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria.do_on_emergency_presentation_with_severe_malaria"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria.do_on_emergency_presentation_with_severe_malaria" title="Permalink to this definition">¶</a></dt>
+<dd><p>This is called for a person (of any age) that attends an emergency generic HSI and has a fever.
+(Quick diagnosis algorithm - just perfectly recognises the symptoms of severe malaria.)</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.malaria.MalariaPollingEventDistrict">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MalariaPollingEventDistrict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaPollingEventDistrict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaPollingEventDistrict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<dd><p>this calls functions to assign new malaria infections
+and schedules rdt at a community level (non-symptom driven)</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class MalariaPollingEventDistrict):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.malaria.MalariaPollingEventDistrict.__init__">
@@ -527,42 +534,6 @@ handles both adult and child (using the child parameter) symptoms</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.malaria.MalariaPollingEventDistrict.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaPollingEventDistrict.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaPollingEventDistrict.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>population</strong> – the current population</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.malaria.MalariaScheduleTesting">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MalariaScheduleTesting</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaScheduleTesting"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaScheduleTesting" title="Permalink to this definition">¶</a></dt>
-<dd><p>additional malaria testing happening outside the symptom-driven generic HSI event
-to increase tx coverage up to reported levels</p>
-<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class MalariaScheduleTesting):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.MalariaScheduleTesting.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaScheduleTesting.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaScheduleTesting.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new regular event.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>module</strong> – the module that created this event</p></li>
-<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
-(must be supplied as a keyword argument)</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.MalariaScheduleTesting.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaScheduleTesting.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaScheduleTesting.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -649,13 +620,14 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_rdt">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Malaria_rdt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_rdt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_rdt" title="Permalink to this definition">¶</a></dt>
-<dd><p>this is a point-of-care malaria rapid diagnostic test, with results within 2 minutes</p>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Malaria_rdt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_rdt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_rdt" title="Permalink to this definition">¶</a></dt>
+<dd><p>this is a point-of-care malaria rapid diagnostic test, with results within 2 minutes
+default facility level is 1a unless specified</p>
 <p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class HSI_Malaria_rdt):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_rdt.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_rdt.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_rdt.__init__" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1a'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_rdt.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_rdt.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -675,24 +647,20 @@ constructor, but may also take further keyword arguments.</p>
 <p>Must be implemented by subclasses.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_rdt.did_not_run">
-<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_rdt.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_rdt.did_not_run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
-to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
-</dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_age0_5">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Malaria_non_complicated_treatment_age0_5</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_non_complicated_treatment_age0_5"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_age0_5" title="Permalink to this definition">¶</a></dt>
-<dd><p>this is anti-malarial treatment for children &lt;15 kg. Includes treatment plus one rdt</p>
+<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_rdt_community">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Malaria_rdt_community</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_rdt_community"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_rdt_community" title="Permalink to this definition">¶</a></dt>
+<dd><p>this is a point-of-care malaria rapid diagnostic test, with results within 2 minutes
+this is performed in the community at facility level 0 by a DCSA
+positive result will schedule a referral to HSI_Malaria_rdt at facility level 1a
+where a confirmatory rdt will be performed and treatment will be scheduled</p>
 <p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class HSI_Malaria_non_complicated_treatment_age0_5):</strong></p>
+<p><strong>Functions (defined or overridden in class HSI_Malaria_rdt_community):</strong></p>
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_age0_5.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_non_complicated_treatment_age0_5.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_age0_5.__init__" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_rdt_community.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_rdt_community.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_rdt_community.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -706,30 +674,23 @@ constructor, but may also take further keyword arguments.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_age0_5.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_non_complicated_treatment_age0_5.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_age0_5.apply" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_rdt_community.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_rdt_community.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_rdt_community.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_age0_5.did_not_run">
-<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_non_complicated_treatment_age0_5.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_age0_5.did_not_run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
-to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_age5_15">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Malaria_non_complicated_treatment_age5_15</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_non_complicated_treatment_age5_15"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_age5_15" title="Permalink to this definition">¶</a></dt>
-<dd><p>this is anti-malarial treatment for children &gt;15 kg. Includes treatment plus one rdt</p>
+<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_Treatment">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Malaria_Treatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_Treatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_Treatment" title="Permalink to this definition">¶</a></dt>
+<dd><p>this is anti-malarial treatment for all ages. Includes treatment plus one rdt</p>
 <p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class HSI_Malaria_non_complicated_treatment_age5_15):</strong></p>
+<p><strong>Functions (defined or overridden in class HSI_Malaria_Treatment):</strong></p>
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_age5_15.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_non_complicated_treatment_age5_15.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_age5_15.__init__" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_Treatment.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_Treatment.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_Treatment.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -743,15 +704,30 @@ constructor, but may also take further keyword arguments.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_age5_15.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_non_complicated_treatment_age5_15.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_age5_15.apply" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_Treatment.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_Treatment.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_Treatment.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_age5_15.did_not_run">
-<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_non_complicated_treatment_age5_15.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_age5_15.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_Treatment.get_drugs">
+<span class="sig-name descname"><span class="pre">get_drugs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">age_of_person</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_Treatment.get_drugs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_Treatment.get_drugs" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>age_of_person</strong> – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+<p>Helper function to get treatment according to the age of the person being treated. Returns bool to indicate
+whether drugs were available</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_Treatment.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_Treatment.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_Treatment.did_not_run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
 to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
 </dd></dl>
@@ -759,14 +735,14 @@ to allow the rescheduling. This is called each time that the event is tried to b
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_adult">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Malaria_non_complicated_treatment_adult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_non_complicated_treatment_adult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_adult" title="Permalink to this definition">¶</a></dt>
-<dd><p>this is anti-malarial treatment for adults. Includes treatment plus one rdt</p>
+<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_Treatment_Complicated">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Malaria_Treatment_Complicated</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_Treatment_Complicated"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_Treatment_Complicated" title="Permalink to this definition">¶</a></dt>
+<dd><p>this is anti-malarial treatment for complicated malaria in all ages</p>
 <p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class HSI_Malaria_non_complicated_treatment_adult):</strong></p>
+<p><strong>Functions (defined or overridden in class HSI_Malaria_Treatment_Complicated):</strong></p>
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_adult.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_non_complicated_treatment_adult.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_adult.__init__" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_Treatment_Complicated.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_Treatment_Complicated.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_Treatment_Complicated.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -780,89 +756,15 @@ constructor, but may also take further keyword arguments.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_adult.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_non_complicated_treatment_adult.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_adult.apply" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_Treatment_Complicated.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_Treatment_Complicated.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_Treatment_Complicated.apply" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>Must be implemented by subclasses.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_adult.did_not_run">
-<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_non_complicated_treatment_adult.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_non_complicated_treatment_adult.did_not_run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
-to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_complicated_treatment_child">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Malaria_complicated_treatment_child</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_complicated_treatment_child"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_complicated_treatment_child" title="Permalink to this definition">¶</a></dt>
-<dd><p>this is anti-malarial treatment for complicated malaria in children</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class HSI_Malaria_complicated_treatment_child):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_complicated_treatment_child.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_complicated_treatment_child.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_complicated_treatment_child.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new event.</p>
-<p>Note that just creating an event does not schedule it to happen; that
-must be done by calling Simulation.schedule_event.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
-All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_complicated_treatment_child.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_complicated_treatment_child.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_complicated_treatment_child.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_complicated_treatment_child.did_not_run">
-<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_complicated_treatment_child.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_complicated_treatment_child.did_not_run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
-to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_complicated_treatment_adult">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Malaria_complicated_treatment_adult</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_complicated_treatment_adult"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_complicated_treatment_adult" title="Permalink to this definition">¶</a></dt>
-<dd><p>this is anti-malarial treatment for complicated malaria in adults</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class HSI_Malaria_complicated_treatment_adult):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_complicated_treatment_adult.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_complicated_treatment_adult.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_complicated_treatment_adult.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new event.</p>
-<p>Note that just creating an event does not schedule it to happen; that
-must be done by calling Simulation.schedule_event.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
-All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_complicated_treatment_adult.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_complicated_treatment_adult.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_complicated_treatment_adult.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_complicated_treatment_adult.did_not_run">
-<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_complicated_treatment_adult.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_complicated_treatment_adult.did_not_run" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.malaria.HSI_Malaria_Treatment_Complicated.did_not_run">
+<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#HSI_Malaria_Treatment_Complicated.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.HSI_Malaria_Treatment_Complicated.did_not_run" title="Permalink to this definition">¶</a></dt>
 <dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
 to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
 </dd></dl>
@@ -907,13 +809,13 @@ to allow the rescheduling. This is called each time that the event is tried to b
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.malaria.MalariaCureEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MalariaCureEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaCureEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaCureEvent" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.malaria.MalariaUpdateEvent">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MalariaUpdateEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaUpdateEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaUpdateEvent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class MalariaCureEvent):</strong></p>
+<p><strong>Functions (defined or overridden in class MalariaUpdateEvent):</strong></p>
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.MalariaCureEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaCureEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaCureEvent.__init__" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.malaria.MalariaUpdateEvent.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaUpdateEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaUpdateEvent.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create a new regular event.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -927,11 +829,14 @@ to allow the rescheduling. This is called each time that the event is tried to b
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.MalariaCureEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaCureEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaCureEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>this is a regular event which cures people currently on treatment for malaria
-and clears symptoms for those not on treatment
-it also clears parasites if treated</p>
+<dt class="sig sig-object py" id="tlo.methods.malaria.MalariaUpdateEvent.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaUpdateEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaUpdateEvent.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>this is a regular event for clinical and severe cases which:
+* assigns symptoms
+* schedules rdt
+* cures people currently on treatment for malaria
+* clears symptoms for those not on treatment
+* clears parasites if treated</p>
 </dd></dl>
 
 </dd></dl>
@@ -1072,40 +977,6 @@ it also clears parasites if treated</p>
 
 </dd></dl>
 
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.malaria.MalariaResetCounterEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MalariaResetCounterEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaResetCounterEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaResetCounterEvent" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class MalariaResetCounterEvent):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.MalariaResetCounterEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaResetCounterEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaResetCounterEvent.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new regular event.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>module</strong> – the module that created this event</p></li>
-<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
-(must be supplied as a keyword argument)</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.malaria.MalariaResetCounterEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaResetCounterEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaResetCounterEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>population</strong> – the current population</p>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 
 
@@ -1123,7 +994,7 @@ it also clears parasites if treated</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

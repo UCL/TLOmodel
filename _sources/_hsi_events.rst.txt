@@ -24,11 +24,10 @@ CardioMetabolicDisorders
 ************************
 
 * ``Investigation`` at facility level 1b with appointment footprint: ``Over5OPD``.
-* ``Investigation`` at facility level 1b with appointment footprint: ``Over5OPD``.
 * ``Prevention_CommunityTestingForHypertension`` at facility level 1a with appointment footprint: ``Over5OPD``.
 * ``Prevention_WeightLoss`` at facility level 1b with appointment footprint: ``Over5OPD``.
 * ``Treatment`` at facility level 1b with appointment footprint: ``Over5OPD``.
-* ``Treatment`` at facility level 2 with appointment footprint: ``AccidentsandEmerg``, ``Over5OPD``.
+* ``Treatment`` at facility level 2 with appointment footprint: ``AccidentsandEmerg``.
 
 CareOfWomenDuringPregnancy
 **************************
@@ -36,7 +35,6 @@ CareOfWomenDuringPregnancy
 * ``AntenatalCare_FollowUp`` at facility level 1a with appointment footprint: ``Over5OPD``.
 * ``AntenatalCare_FollowUp`` at facility level 1a with appointment footprint: ``Over5OPD``.
 * ``AntenatalCare_Inpatient`` at facility level 1a with appointment footprint:  and bed days footprint: ``maternity_bed`` (1 days).
-* ``AntenatalCare_Inpatient`` at facility level 1b with appointment footprint:  and bed days footprint: ``maternity_bed`` (1 days).
 * ``AntenatalCare_Inpatient`` at facility level 1b with appointment footprint:  and bed days footprint: ``maternity_bed`` (1 days).
 * ``AntenatalCare_Outpatient`` at facility level 1a with appointment footprint: ``ANCSubsequent``.
 * ``AntenatalCare_Outpatient`` at facility level 1a with appointment footprint: ``ANCSubsequent``.
@@ -54,6 +52,11 @@ Contraception
 *************
 
 * ``Routine`` at facility level 1a with appointment footprint: ``FamPlan``.
+
+Copd
+****
+
+* ``Treatment`` at facility level 1a with appointment footprint: ``Over5OPD`` and bed days footprint: ``general_bed`` (2 days).
 
 Depression
 **********
@@ -89,18 +92,18 @@ Epilepsy
 HealthSeekingBehaviour
 **********************
 
-* ``FirstAttendance_Emergency`` at facility level 1b with appointment footprint: ``Over5OPD``.
-* ``FirstAttendance_NonEmergency`` at facility level 0 with appointment footprint: ``ConWithDCSA``.
+* ``FirstAttendance_Emergency`` at facility level 1b with appointment footprint: .
+* ``FirstAttendance_NonEmergency`` at facility level 0 with appointment footprint: .
 * ``FirstAttendance_SpuriousEmergencyCare`` at facility level 1a with appointment footprint: ``AccidentsandEmerg``.
 
 Hiv
 ***
 
 * ``Prevention_Circumcision`` at facility level 1a with appointment footprint: ``MaleCirc``.
-* ``Prevention_Infant`` at facility level 1a with appointment footprint: ``Under5OPD``, ``VCTNegative``.
-* ``Prevention_Prep`` at facility level 1a with appointment footprint: ``Over5OPD``, ``VCTNegative``.
+* ``Prevention_Infant`` at facility level 1a with appointment footprint: ``Peds``, ``VCTNegative``.
+* ``Prevention_Prep`` at facility level 1a with appointment footprint: ``PharmDispensing``, ``VCTNegative``.
 * ``Test`` at facility level 1a with appointment footprint: ``VCTNegative``.
-* ``Treatment`` at facility level ? with appointment footprint: ``NewAdult``.
+* ``Treatment`` at facility level ? with appointment footprint: ``Peds``.
 
 Labour
 ******
@@ -114,12 +117,10 @@ Malaria
 *******
 
 * ``Prevention_Iptp`` at facility level 1a with appointment footprint: ``Over5OPD``.
+* ``Test`` at facility level 0 with appointment footprint: ``ConWithDCSA``.
 * ``Test`` at facility level 1a with appointment footprint: ``Over5OPD``.
-* ``Treatment_Complicated_Adult`` at facility level 1b with appointment footprint:  and bed days footprint: ``general_bed`` (5 days).
-* ``Treatment_Complicated_Child`` at facility level 1b with appointment footprint:  and bed days footprint: ``general_bed`` (5 days).
-* ``Treatment_NotComplicated_Adult`` at facility level 1a with appointment footprint: ``Over5OPD``.
-* ``Treatment_NotComplicated_Child`` at facility level 1a with appointment footprint: ``Over5OPD``.
-* ``Treatment_NotComplicated_Child`` at facility level 1a with appointment footprint: ``Under5OPD``.
+* ``Treatment`` at facility level 1a with appointment footprint: ``Over5OPD``.
+* ``Treatment_Complicated`` at facility level 1b with appointment footprint: ``Over5OPD`` and bed days footprint: ``general_bed`` (5 days).
 
 Measles
 *******
@@ -129,7 +130,6 @@ Measles
 NewbornOutcomes
 ***************
 
-* ``DeliveryCare_Neonatal`` at facility level ? with appointment footprint:  and bed days footprint: ``general_bed`` (1 days).
 * ``PostnatalCare_Neonatal`` at facility level 1a with appointment footprint: ``Under5OPD``.
 * ``PostnatalCare_Neonatal_Inpatient`` at facility level 1b with appointment footprint:  and bed days footprint: ``general_bed`` (5 days).
 

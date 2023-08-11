@@ -1,0 +1,180 @@
+tlo.methods.copd module
+=======================
+
+.. automodule:: tlo.methods.copd
+
+
+.. autoclass:: Copd
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - prob_progress_to_next_cat
+          - REAL
+          - probability of changing from a lower lung function category to a higher lung function category
+        * - prob_mod_exacerb
+          - LIST
+          - probability of moderate exacerbation given lung function, for each lungfunction category. 
+        * - prob_sev_exacerb
+          - LIST
+          - probability of severe exacerbation given lung function, for each lungfunction category.
+        * - prob_will_die_sev_exacerbation
+          - REAL
+          - probability that a person will die of severe exacerbation 
+        * - prob_will_survive_given_oxygen
+          - REAL
+          - probability that an individual with severe copd will not die when given oxygen 
+
+
+     **PROPERTIES:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - ch_lungfunction
+          - CATEGORICAL
+          - Lung function of the person.NaN for those under 15; on a 7-point scale for others, from 0 (Perfect) to 6 (End-Stage COPD)..  Possible values are: [0, 1, 2, 3, 4, 5, 6, ]
+        * - ch_will_die_this_episode
+          - BOOL
+          - Whether this person will die during a current severe exacerbation
+        * - ch_has_inhaler
+          - BOOL
+          - Whether the person is currently using an inhaler
+
+
+
+     **Class attributes:**
+
+     ADDITIONAL_DEPENDENCIES : set()
+
+     CAUSES_OF_DEATH : {'COPD': <tlo.methods.causes.Cause object at 0x7fd214b9e8b0>}
+
+     CAUSES_OF_DISABILITY : {'COPD': <tlo.methods.causes.Cause object at 0x7fd214b9e910>}
+
+     INIT_DEPENDENCIES : {'SymptomManager'}
+
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
+
+     gbd_causes_of_copd_represented_in_this_module : {'Other chronic respiratory diseases'}
+
+     **Functions (defined or overridden in class Copd):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: pre_initialise_population
+
+     .. automethod:: initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+     .. automethod:: report_daly_values
+
+     .. automethod:: define_symptoms
+
+     .. automethod:: lookup_item_codes
+
+     .. automethod:: do_logging
+
+     .. automethod:: give_inhaler
+
+     .. automethod:: do_when_present_with_breathless
+
+
+
+
+
+
+
+
+.. autoclass:: CopdPollEvent
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class CopdPollEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+     .. automethod:: gen_random_date_in_next_three_months
+
+     .. automethod:: increment_category
+
+     .. automethod:: progress_to_next_lung_function
+
+
+
+
+
+
+
+
+.. autoclass:: CopdExacerbationEvent
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class CopdExacerbationEvent):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: CopdDeath
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class CopdDeath):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HSI_Copd_TreatmentOnSevereExacerbation
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Copd_TreatmentOnSevereExacerbation):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+

@@ -276,8 +276,7 @@
         <span class="k">if</span> <span class="n">custom_levels</span><span class="p">:</span>
             <span class="c1"># if modules have already been registered</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-                <span class="n">module_paths</span> <span class="o">=</span> <span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="vm">__module__</span> <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">set_logging_levels</span><span class="p">(</span><span class="n">custom_levels</span><span class="p">,</span> <span class="n">module_paths</span><span class="p">)</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">set_logging_levels</span><span class="p">(</span><span class="n">custom_levels</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># save the configuration and apply in the `register` phase</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_custom_log_levels</span> <span class="o">=</span> <span class="n">custom_levels</span>
@@ -293,9 +292,6 @@
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">log_filepath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log_filepath</span>
-
-    <span class="k">def</span> <span class="nf">_set_module_log_level</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module_path</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
-        <span class="n">logging</span><span class="o">.</span><span class="n">set_logging_levels</span><span class="p">({</span><span class="n">module_path</span><span class="p">:</span> <span class="n">level</span><span class="p">},</span> <span class="p">[</span><span class="n">module_path</span><span class="p">])</span>
 
 <div class="viewcode-block" id="Simulation.register"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.register">[docs]</a>    <span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">modules</span><span class="p">,</span> <span class="n">sort_modules</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check_all_dependencies</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Register one or more disease modules with the simulation.</span>
@@ -336,18 +332,12 @@
             <span class="p">)</span>
             <span class="n">module</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">MT19937</span><span class="p">(</span><span class="n">seed_seq</span><span class="p">))</span>
 
-            <span class="c1"># if user provided custom log levels</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_custom_log_levels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="c1"># get the log level of this module</span>
-                <span class="n">path</span> <span class="o">=</span> <span class="n">module</span><span class="o">.</span><span class="vm">__module__</span>
-                <span class="k">if</span> <span class="n">path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_custom_log_levels</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_set_module_log_level</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_custom_log_levels</span><span class="p">[</span><span class="n">path</span><span class="p">])</span>
-                <span class="k">elif</span> <span class="s1">&#39;*&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_custom_log_levels</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_set_module_log_level</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_custom_log_levels</span><span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">])</span>
-
             <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">module</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">module</span>
             <span class="n">module</span><span class="o">.</span><span class="n">sim</span> <span class="o">=</span> <span class="bp">self</span>
-            <span class="n">module</span><span class="o">.</span><span class="n">read_parameters</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span></div>
+            <span class="n">module</span><span class="o">.</span><span class="n">read_parameters</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_custom_log_levels</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">set_logging_levels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_custom_log_levels</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Simulation.make_initial_population"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.make_initial_population">[docs]</a>    <span class="k">def</span> <span class="nf">make_initial_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the initial population to simulate.</span>
@@ -533,7 +523,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

@@ -589,7 +589,8 @@
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Measles</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;Measles_Treatment&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span>
+            <span class="p">(</span><span class="s1">&#39;Under5OPD&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;age_years&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">5</span> <span class="k">else</span> <span class="s1">&#39;Over5OPD&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span></div>
 
 <div class="viewcode-block" id="HSI_Measles_Treatment.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.HSI_Measles_Treatment.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
@@ -754,7 +755,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

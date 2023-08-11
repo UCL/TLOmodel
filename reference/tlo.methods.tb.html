@@ -574,11 +574,11 @@ for eligible people (HIV+ and paediatric contacts of active TB cases</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘TB’: &lt;tlo.methods.causes.Cause object at 0x7fabf96db340&gt;, ‘AIDS_TB’: &lt;tlo.methods.causes.Cause object at 0x7fabf96dba90&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘TB’: &lt;tlo.methods.causes.Cause object at 0x7fabf96dbb50&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Epi’, ‘Lifestyle’, ‘SymptomManager’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
-<p>OPTIONAL_INIT_DEPENDENCIES : {‘Hiv’, ‘HealthBurden’}</p>
+<p>CAUSES_OF_DEATH : {‘TB’: &lt;tlo.methods.causes.Cause object at 0x7fd2149e6b80&gt;, ‘AIDS_TB’: &lt;tlo.methods.causes.Cause object at 0x7fd2149fa3a0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘TB’: &lt;tlo.methods.causes.Cause object at 0x7fd2149fa490&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘Epi’, ‘Lifestyle’, ‘HealthSystem’, ‘Demography’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
+<p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’, ‘Hiv’}</p>
 <p>SYMPTOMS : {‘night_sweats’, ‘fatigue’}</p>
 <p><strong>Functions (defined or overridden in class Tb):</strong></p>
 <dl class="py method">
@@ -1055,6 +1055,8 @@ constructor, but may also take further keyword arguments.</p>
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_StartTreatment">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Tb_StartTreatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_StartTreatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_StartTreatment" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x7fd214a0d950&gt;</p>
 <p><strong>Functions (defined or overridden in class HSI_Tb_StartTreatment):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_StartTreatment.__init__">
@@ -1077,6 +1079,12 @@ constructor, but may also take further keyword arguments.</p>
 <dd><p>This is a Health System Interaction Event - start TB treatment
 select appropriate treatment and request
 if available, change person’s properties</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.tb.HSI_Tb_StartTreatment.post_apply_hook">
+<span class="sig-name descname"><span class="pre">post_apply_hook</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/tb.html#HSI_Tb_StartTreatment.post_apply_hook"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.tb.HSI_Tb_StartTreatment.post_apply_hook" title="Permalink to this definition">¶</a></dt>
+<dd><p>Impose the bed-days footprint (if target of the HSI is a person_id)</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1419,7 +1427,7 @@ It is a good place to add initial events to the event queue.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

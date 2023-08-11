@@ -2269,9 +2269,18 @@
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Tb</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;Tb_Treatment&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;TBNew&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">number_of_occurrences</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">EXPECTED_APPT_FOOTPRINT</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the expected appt footprint based on whether the HSI has been rescheduled due to unavailable treatment.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">number_of_occurrences</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;TBNew&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;PharmDispensing&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
 
 <div class="viewcode-block" id="HSI_Tb_StartTreatment.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.tb.html#tlo.methods.tb.HSI_Tb_StartTreatment.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;This is a Health System Interaction Event - start TB treatment</span>
@@ -2330,6 +2339,9 @@
                     <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                     <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                 <span class="p">)</span></div>
+
+<div class="viewcode-block" id="HSI_Tb_StartTreatment.post_apply_hook"><a class="viewcode-back" href="../../../reference/tlo.methods.tb.html#tlo.methods.tb.HSI_Tb_StartTreatment.post_apply_hook">[docs]</a>    <span class="k">def</span> <span class="nf">post_apply_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">number_of_occurrences</span> <span class="o">+=</span> <span class="mi">1</span></div>
 
 <div class="viewcode-block" id="HSI_Tb_StartTreatment.select_treatment"><a class="viewcode-back" href="../../../reference/tlo.methods.tb.html#tlo.methods.tb.HSI_Tb_StartTreatment.select_treatment">[docs]</a>    <span class="k">def</span> <span class="nf">select_treatment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -3052,7 +3064,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

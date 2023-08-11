@@ -193,7 +193,7 @@
 * The probability of spurious symptoms is not informed by data.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.symptommanager.SymptomManager">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SymptomManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spurious_symptoms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/symptommanager.html#SymptomManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.symptommanager.SymptomManager" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SymptomManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spurious_symptoms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/symptommanager.html#SymptomManager"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.symptommanager.SymptomManager" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="simple">
 <dt>This module is used to track the symptoms of persons. The addition and removal of symptoms by disease modules is</dt><dd><p>handled here. This module can also causes symptoms that are not related to any disease module (representing those
 caused by conditions not represented explicitly in the model).</p>
@@ -218,6 +218,10 @@ caused by conditions not represented explicitly in the model).</p>
 <td><p>DATA_FRAME</p></td>
 <td><p>probability and duration of spurious occureneces of generic symptoms</p></td>
 </tr>
+<tr class="row-odd"><td><p>spurious_symptoms</p></td>
+<td><p>BOOL</p></td>
+<td><p>whether or not there will be the spontaneous occurrence of generic symptoms. NB. This is over-ridden if a module key-word argument is provided.</p></td>
+</tr>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
@@ -226,7 +230,7 @@ caused by conditions not represented explicitly in the model).</p>
 <p><strong>Functions (defined or overridden in class SymptomManager):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.symptommanager.SymptomManager.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spurious_symptoms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/symptommanager.html#SymptomManager.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.symptommanager.SymptomManager.__init__" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spurious_symptoms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/symptommanager.html#SymptomManager.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.symptommanager.SymptomManager.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Construct a new disease module ready to be included in a simulation.</p>
 <p>Initialises an empty parameters dictionary and module-specific random number
 generator.</p>
@@ -555,7 +559,7 @@ constructor, but may also take further keyword arguments.</p></li>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

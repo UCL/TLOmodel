@@ -4,12 +4,12 @@ tlo.methods.hsi_generic_first_appts module
 .. automodule:: tlo.methods.hsi_generic_first_appts
 
 
-.. autoclass:: HSI_GenericFirstApptAtFacilityLevel0
+.. autoclass:: HSI_GenericNonEmergencyFirstAppt
 
      Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
-     **Functions (defined or overridden in class HSI_GenericFirstApptAtFacilityLevel0):**
+     **Functions (defined or overridden in class HSI_GenericNonEmergencyFirstAppt):**
 
      .. automethod:: __init__
 
@@ -22,12 +22,12 @@ tlo.methods.hsi_generic_first_appts module
 
 
 
-.. autoclass:: HSI_GenericEmergencyFirstApptAtFacilityLevel1
+.. autoclass:: HSI_GenericEmergencyFirstAppt
 
      Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
-     **Functions (defined or overridden in class HSI_GenericEmergencyFirstApptAtFacilityLevel1):**
+     **Functions (defined or overridden in class HSI_GenericEmergencyFirstAppt):**
 
      .. automethod:: __init__
 

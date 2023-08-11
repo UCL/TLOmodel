@@ -11,7 +11,7 @@ tlo.methods.healthsystem module
 
      **Class attributes:**
 
-     bed_days_allocated_to_this_event : <property object at 0x7fabf8862ea0>
+     bed_days_allocated_to_this_event : <property object at 0x7fd213e04ae0>
 
      **Functions (defined or overridden in class HSI_Event):**
 
@@ -104,6 +104,9 @@ tlo.methods.healthsystem module
         * - Daily_Capabilities_funded_plus
           - DATA_FRAME
           - The capabilities (minutes of time available of each type of officer in each facility) based on the _potential_ number and distribution of staff estimated, with adjustments to permit each appointment type that should be run at facility level to do so in every district.
+        * - use_funded_or_actual_staffing
+          - STRING
+          - If `actual`, then use the numbers and distribution of staff estimated to be available currently; If `funded`, then use the numbers and distribution of staff that are potentially available. If 'funded_plus`, then use a dataset in which the allocation of staff to facilities is tweaked so as to allow each appointment type to run at each facility_level in each district for which it is defined. N.B. This parameter is over-ridden if an argument is provided to the module initialiser.
         * - item_and_package_code_lookups
           - DATA_FRAME
           - Data imported from the OneHealth Tool on consumable items, packages and costs.
@@ -122,6 +125,12 @@ tlo.methods.healthsystem module
         * - Service_Availability
           - LIST
           - List of services to be available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.
+        * - PriorityRank
+          - DATA_FRAME
+          - Data on the priority ranking of each of the Treatment_IDs to be adopted by  the queueing system, where the lower the number the higher the priority, and on which categories of individuals classify for fast-tracking for specific treatments
+        * - mode_appt_constraints
+          - INT
+          - Integer code in `{0, 1, 2}` determining mode of constraints with regards to officer numbers and time - 0: no constraints, all HSI events run with no squeeze factor, 1: elastic constraints, all HSI events run with squeeze factor, 2: hard constraints, only HSI events with no squeeze factor run. N.B. This parameter is over-ridden if an argument is provided to the module initialiser.
 
 
      **PROPERTIES:**
@@ -143,9 +152,9 @@ tlo.methods.healthsystem module
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     capabilities_today : <property object at 0x7fabf8862f90>
+     capabilities_today : <property object at 0x7fd213e04bd0>
 
-     hsi_event_counts : <property object at 0x7fabf886e040>
+     hsi_event_counts : <property object at 0x7fd213e04c20>
 
      **Functions (defined or overridden in class HealthSystem):**
 
@@ -167,15 +176,25 @@ tlo.methods.healthsystem module
 
      .. automethod:: format_daily_capabilities
 
+     .. automethod:: update_consumables_availability_to_represent_merging_of_levels_1b_and_2
+
      .. automethod:: get_service_availability
 
      .. automethod:: get_cons_availability
 
      .. automethod:: get_beds_availability
 
+     .. automethod:: schedule_to_call_never_ran_on_date
+
+     .. automethod:: get_mode_appt_constraints
+
+     .. automethod:: get_use_funded_or_actual_staffing
+
      .. automethod:: schedule_hsi_event
 
      .. automethod:: _add_hsi_event_queue_item_to_hsi_event_queue
+
+     .. automethod:: enforce_priority_policy
 
      .. automethod:: check_hsi_event_is_valid
 

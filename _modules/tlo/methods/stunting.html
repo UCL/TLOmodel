@@ -192,7 +192,7 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span>
 
-<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DAYS_IN_YEAR</span><span class="p">,</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
@@ -387,8 +387,11 @@
             <span class="n">low_bound_age_in_years</span> <span class="o">=</span> <span class="n">agegp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="mf">12.0</span>
             <span class="n">high_bound_age_in_years</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">agegp</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mf">12.0</span>
 
-            <span class="n">mask</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">age_exact_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">low_bound_age_in_years</span><span class="p">,</span> <span class="n">high_bound_age_in_years</span><span class="p">,</span>
-                                                            <span class="n">inclusive</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_exact_years</span> <span class="o">&gt;=</span> <span class="n">low_bound_age_in_years</span><span class="p">)</span>
+                <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_exact_years</span> <span class="o">&lt;</span> <span class="n">high_bound_age_in_years</span><span class="p">)</span>
+            <span class="p">)</span>
 
             <span class="n">stunted</span> <span class="o">=</span> <span class="n">make_scaled_linear_model_stunting</span><span class="p">(</span><span class="n">target_prob</span><span class="o">=</span><span class="n">p_stunting</span><span class="o">.</span><span class="n">prob_stunting</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">mask</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span> <span class="n">squeeze_single_row_output</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
@@ -486,21 +489,23 @@
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span>
 
         <span class="k">return</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_exact_years&#39;</span><span class="p">,</span>
-                      <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                      <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&lt; 0.5&#39;</span><span class="p">,</span>
-                                                                   <span class="n">p</span><span class="p">[</span><span class="s1">&#39;base_inc_rate_stunting_by_agegp&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-                                                             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0.5, 1.0, inclusive=&quot;left&quot;)&#39;</span><span class="p">,</span>
-                                                                   <span class="n">p</span><span class="p">[</span><span class="s1">&#39;base_inc_rate_stunting_by_agegp&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-                                                             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(1.0, 2.0, inclusive=&quot;left&quot;)&#39;</span><span class="p">,</span>
-                                                                   <span class="n">p</span><span class="p">[</span><span class="s1">&#39;base_inc_rate_stunting_by_agegp&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
-                                                             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(2.0, 3.0, inclusive=&quot;left&quot;)&#39;</span><span class="p">,</span>
-                                                                   <span class="n">p</span><span class="p">[</span><span class="s1">&#39;base_inc_rate_stunting_by_agegp&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">])</span>
-                                                             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(3.0, 4.0, inclusive=&quot;left&quot;)&#39;</span><span class="p">,</span>
-                                                                   <span class="n">p</span><span class="p">[</span><span class="s1">&#39;base_inc_rate_stunting_by_agegp&#39;</span><span class="p">][</span><span class="mi">4</span><span class="p">])</span>
-                                                             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(4.0, 5.0, inclusive=&quot;left&quot;)&#39;</span><span class="p">,</span>
-                                                                   <span class="n">p</span><span class="p">[</span><span class="s1">&#39;base_inc_rate_stunting_by_agegp&#39;</span><span class="p">][</span><span class="mi">5</span><span class="p">])</span>
-                                                             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&gt; 5.0&#39;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s2">&quot;age_exact_years &lt; 0.5&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;base_inc_rate_stunting_by_agegp&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s2">&quot;0.5 &lt;= age_exact_years &lt; 1&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;base_inc_rate_stunting_by_agegp&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s2">&quot;1 &lt;= age_exact_years &lt; 2&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;base_inc_rate_stunting_by_agegp&quot;</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s2">&quot;2 &lt;= age_exact_years &lt; 3&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;base_inc_rate_stunting_by_agegp&quot;</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s2">&quot;3 &lt;= age_exact_years &lt; 4&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;base_inc_rate_stunting_by_agegp&quot;</span><span class="p">][</span><span class="mi">4</span><span class="p">]</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s2">&quot;4 &lt;= age_exact_years &lt; 5&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;base_inc_rate_stunting_by_agegp&quot;</span><span class="p">][</span><span class="mi">5</span><span class="p">]</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s2">&quot;age_exact_years &gt;= 5&quot;</span><span class="p">,</span> <span class="mf">0.0</span>
+            <span class="p">),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_wealth&#39;</span><span class="p">,</span>
                       <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
                                                              <span class="o">.</span><span class="n">otherwise</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_stunting_wealth_level&#39;</span><span class="p">]),</span>
@@ -523,8 +528,9 @@
                              <span class="s1">&#39;(nb_breastfeeding_status == &quot;none&quot;)) &amp; (age_exact_years &lt; 0.5)&#39;</span><span class="p">,</span>
                              <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_stunting_no_exclusive_breastfeeding&#39;</span><span class="p">]),</span>
             <span class="n">Predictor</span><span class="p">()</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
-                <span class="s1">&#39;(nb_breastfeeding_status == &quot;none&quot;) &amp; (age_exact_years.between(0.5, 2.0, inclusive=&quot;left&quot;))&#39;</span><span class="p">,</span>
-                <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_stunting_no_continued_breastfeeding&#39;</span><span class="p">]),</span>
+                <span class="s1">&#39;(nb_breastfeeding_status == &quot;none&quot;) &amp; (0.5 &lt;= age_exact_years &lt; 2.0)&#39;</span><span class="p">,</span>
+                <span class="n">p</span><span class="p">[</span><span class="s1">&#39;rr_stunting_no_continued_breastfeeding&#39;</span><span class="p">]</span>
+            <span class="p">),</span>
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">make_lm_prob_progression_to_severe_stunting</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -533,21 +539,34 @@
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span>
 
         <span class="k">return</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
-            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;age_exact_years&#39;</span><span class="p">,</span>
-                      <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                      <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&lt; 0.5&#39;</span><span class="p">,</span>
-                                                                   <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_progression_severe_stunting_by_agegp&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-                                                             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(0.5, 1.0, inclusive=&quot;left&quot;)&#39;</span><span class="p">,</span>
-                                                                   <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_progression_severe_stunting_by_agegp&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-                                                             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(1.0, 2.0, inclusive=&quot;left&quot;)&#39;</span><span class="p">,</span>
-                                                                   <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_progression_severe_stunting_by_agegp&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
-                                                             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(2.0, 3.0, inclusive=&quot;left&quot;)&#39;</span><span class="p">,</span>
-                                                                   <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_progression_severe_stunting_by_agegp&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">])</span>
-                                                             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(3.0, 4.0, inclusive=&quot;left&quot;)&#39;</span><span class="p">,</span>
-                                                                   <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_progression_severe_stunting_by_agegp&#39;</span><span class="p">][</span><span class="mi">4</span><span class="p">])</span>
-                                                             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(4.0, 5.0, inclusive=&quot;left&quot;)&#39;</span><span class="p">,</span>
-                                                                   <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_progression_severe_stunting_by_agegp&#39;</span><span class="p">][</span><span class="mi">5</span><span class="p">])</span>
-                                                             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&gt; 5.0&#39;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s1">&#39;age_exact_years &lt; 0.5&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_progression_severe_stunting_by_agegp&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s1">&#39;0.5 &lt;= age_exact_years &lt; 1.0&#39;</span><span class="p">,</span>
+                <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_progression_severe_stunting_by_agegp&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s1">&#39;1.0 &lt;= age_exact_years &lt; 2.0&#39;</span><span class="p">,</span>
+                <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_progression_severe_stunting_by_agegp&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s1">&#39;2.0 &lt;= age_exact_years &lt; 3.0&#39;</span><span class="p">,</span>
+                <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_progression_severe_stunting_by_agegp&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s1">&#39;3.0 &lt;= age_exact_years &lt; 4.0&#39;</span><span class="p">,</span>
+                <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_progression_severe_stunting_by_agegp&#39;</span><span class="p">][</span><span class="mi">4</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s1">&#39;4.0 &lt;= age_exact_years &lt; 5.0&#39;</span><span class="p">,</span>
+                <span class="n">p</span><span class="p">[</span><span class="s1">&#39;r_progression_severe_stunting_by_agegp&#39;</span><span class="p">][</span><span class="mi">5</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span>
+                <span class="s1">&#39;age_exact_years &gt;= 5.0&#39;</span><span class="p">,</span> <span class="mf">1.0</span>
+            <span class="p">),</span>
             <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;un_ever_wasted&#39;</span><span class="p">,</span>
                       <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                       <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span>
@@ -640,7 +659,7 @@
         <span class="n">rng</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span>
 
         <span class="n">annual_prob</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">upper</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-        <span class="n">cum_prob_over_days_exposed</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">annual_prob</span><span class="p">)</span> <span class="o">*</span> <span class="n">days_exposed_to_risk</span> <span class="o">/</span> <span class="mf">365.25</span><span class="p">)</span>
+        <span class="n">cum_prob_over_days_exposed</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">annual_prob</span><span class="p">)</span> <span class="o">*</span> <span class="n">days_exposed_to_risk</span> <span class="o">/</span> <span class="n">DAYS_IN_YEAR</span><span class="p">)</span>
 
         <span class="k">assert</span> <span class="n">pd</span><span class="o">.</span><span class="n">notnull</span><span class="p">(</span><span class="n">cum_prob_over_days_exposed</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">mask</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">cum_prob_over_days_exposed</span> <span class="o">&gt;</span> <span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">())]</span></div></div>
@@ -799,7 +818,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

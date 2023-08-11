@@ -177,7 +177,18 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Date</span><span class="p">,</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">util</span>
+<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DAYS_IN_MONTH</span><span class="p">,</span>
+    <span class="n">DAYS_IN_YEAR</span><span class="p">,</span>
+    <span class="n">Date</span><span class="p">,</span>
+    <span class="n">DateOffset</span><span class="p">,</span>
+    <span class="n">Module</span><span class="p">,</span>
+    <span class="n">Parameter</span><span class="p">,</span>
+    <span class="n">Property</span><span class="p">,</span>
+    <span class="n">Types</span><span class="p">,</span>
+    <span class="n">logging</span><span class="p">,</span>
+    <span class="n">util</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span><span class="p">,</span> <span class="n">labour</span><span class="p">,</span> <span class="n">pregnancy_helper_functions</span><span class="p">,</span> <span class="n">pregnancy_supervisor_lm</span>
@@ -842,7 +853,6 @@
 
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;This is PregnancySupervisor reporting my health values&#39;</span><span class="p">)</span>
         <span class="n">monthly_daly</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-        <span class="n">days_per_year</span> <span class="o">=</span> <span class="mf">365.25</span>
 
         <span class="c1"># First we define a function that calculates disability associated with &#39;acute&#39; complications of pregnancy</span>
         <span class="k">def</span> <span class="nf">acute_daly_calculation</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="n">complication</span><span class="p">):</span>
@@ -874,7 +884,7 @@
             <span class="c1"># months disability</span>
             <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">mni</span><span class="p">[</span><span class="n">person</span><span class="p">][</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">complication</span><span class="si">}</span><span class="s1">_resolution&#39;</span><span class="p">]):</span>
                 <span class="k">if</span> <span class="n">mni</span><span class="p">[</span><span class="n">person</span><span class="p">][</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">complication</span><span class="si">}</span><span class="s1">_onset&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">)):</span>
-                    <span class="n">weight</span> <span class="o">=</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">complication</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">days_per_year</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">days_per_year</span> <span class="o">/</span> <span class="mi">12</span><span class="p">)</span>
+                    <span class="n">weight</span> <span class="o">=</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">complication</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">DAYS_IN_YEAR</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">DAYS_IN_YEAR</span> <span class="o">/</span> <span class="mi">12</span><span class="p">)</span>
                     <span class="n">monthly_daly</span><span class="p">[</span><span class="n">person</span><span class="p">]</span> <span class="o">+=</span> <span class="n">weight</span>
 
                 <span class="c1"># Otherwise, if the complication started this month she gets a daly weight relative to the number of</span>
@@ -883,7 +893,7 @@
                      <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">complication</span><span class="si">}</span><span class="s1">_onset&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">:</span>
                     <span class="n">days_since_onset</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timedelta</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">mni</span><span class="p">[</span><span class="n">person</span><span class="p">][</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">complication</span><span class="si">}</span><span class="s1">_onset&#39;</span><span class="p">]),</span>
                                                     <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;d&#39;</span><span class="p">)</span>
-                    <span class="n">daly_weight</span> <span class="o">=</span> <span class="n">days_since_onset</span><span class="o">.</span><span class="n">days</span> <span class="o">*</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">complication</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">days_per_year</span><span class="p">)</span>
+                    <span class="n">daly_weight</span> <span class="o">=</span> <span class="n">days_since_onset</span><span class="o">.</span><span class="n">days</span> <span class="o">*</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">complication</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">DAYS_IN_YEAR</span><span class="p">)</span>
 
                     <span class="n">monthly_daly</span><span class="p">[</span><span class="n">person</span><span class="p">]</span> <span class="o">+=</span> <span class="n">daly_weight</span>
 
@@ -900,15 +910,14 @@
                         <span class="k">return</span>
 
                     <span class="c1"># Calculate daily weight and how many days this woman hasnt had the complication</span>
-                    <span class="n">daily_weight</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">complication</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">days_per_year</span>
+                    <span class="n">daily_weight</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">complication</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">DAYS_IN_YEAR</span>
                     <span class="n">days_without_complication</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timedelta</span><span class="p">((</span>
                         <span class="n">mni</span><span class="p">[</span><span class="n">person</span><span class="p">][</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">complication</span><span class="si">}</span><span class="s1">_onset&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">mni</span><span class="p">[</span><span class="n">person</span><span class="p">][</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">complication</span><span class="si">}</span><span class="s1">_resolution&#39;</span><span class="p">]),</span>
                         <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;d&#39;</span><span class="p">)</span>
 
                     <span class="c1"># Use the average days in a month to calculate how many days shes had the complication this</span>
                     <span class="c1"># month</span>
-                    <span class="n">avg_days_in_month</span> <span class="o">=</span> <span class="n">days_per_year</span> <span class="o">/</span> <span class="mi">12</span>
-                    <span class="n">days_with_comp</span> <span class="o">=</span> <span class="n">avg_days_in_month</span> <span class="o">-</span> <span class="n">days_without_complication</span><span class="o">.</span><span class="n">days</span>
+                    <span class="n">days_with_comp</span> <span class="o">=</span> <span class="n">DAYS_IN_MONTH</span> <span class="o">-</span> <span class="n">days_without_complication</span><span class="o">.</span><span class="n">days</span>
 
                     <span class="n">monthly_daly</span><span class="p">[</span><span class="n">person</span><span class="p">]</span> <span class="o">+=</span> <span class="n">daily_weight</span> <span class="o">*</span> <span class="n">days_with_comp</span>
 
@@ -931,7 +940,7 @@
                                                                 <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;d&#39;</span><span class="p">)</span>
                     <span class="n">mid_way_calc</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span> <span class="o">+</span> <span class="n">days_free_of_comp_this_month</span>
                     <span class="n">days_with_comp_this_month</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timedelta</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">mid_way_calc</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;d&#39;</span><span class="p">)</span>
-                    <span class="n">daly_weight</span> <span class="o">=</span> <span class="n">days_with_comp_this_month</span><span class="o">.</span><span class="n">days</span> <span class="o">*</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">complication</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">days_per_year</span><span class="p">)</span>
+                    <span class="n">daly_weight</span> <span class="o">=</span> <span class="n">days_with_comp_this_month</span><span class="o">.</span><span class="n">days</span> <span class="o">*</span> <span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">complication</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">DAYS_IN_YEAR</span><span class="p">)</span>
                     <span class="n">monthly_daly</span><span class="p">[</span><span class="n">person</span><span class="p">]</span> <span class="o">+=</span> <span class="n">daly_weight</span>
 
                     <span class="k">if</span> <span class="ow">not</span> <span class="n">monthly_daly</span><span class="p">[</span><span class="n">person</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
@@ -1677,7 +1686,7 @@
         <span class="c1"># who are post term)</span>
         <span class="n">non_care_seekers</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">care_seekers</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">care_seekers</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
         <span class="n">still_birth_risk</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ps_linear_models</span><span class="p">[</span><span class="s1">&#39;antenatal_stillbirth&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">non_care_seekers</span><span class="p">)</span>
-        <span class="n">weeks_per_month</span> <span class="o">=</span> <span class="p">(</span><span class="mf">365.25</span><span class="o">/</span><span class="mi">12</span><span class="p">)</span> <span class="o">/</span> <span class="mi">7</span>
+        <span class="n">weeks_per_month</span> <span class="o">=</span> <span class="p">(</span><span class="n">DAYS_IN_YEAR</span> <span class="o">/</span> <span class="mi">12</span><span class="p">)</span> <span class="o">/</span> <span class="mi">7</span>
         <span class="n">weekly_risk</span> <span class="o">=</span> <span class="n">still_birth_risk</span> <span class="o">/</span> <span class="n">weeks_per_month</span>
         <span class="n">still_birth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">weekly_risk</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">weekly_risk</span>
 
@@ -1706,12 +1715,10 @@
 
             <span class="c1"># We assume women will seek care via HSI_GenericEmergencyFirstApptAtFacilityLevel1 and will be admitted for</span>
             <span class="c1"># care in CareOfWomenDuringPregnancy module</span>
-            <span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="p">(</span>
-                <span class="n">HSI_GenericEmergencyFirstApptAtFacilityLevel1</span><span class="p">,</span>
-            <span class="p">)</span>
+            <span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">HSI_GenericEmergencyFirstAppt</span>
 
-            <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_GenericEmergencyFirstApptAtFacilityLevel1</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">],</span>
-                                                                  <span class="n">person_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">)</span>
+            <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_GenericEmergencyFirstAppt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">],</span>
+                                                  <span class="n">person_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span>
                                                                 <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
@@ -2017,13 +2024,13 @@
                 <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">check_if_delayed_careseeking</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person</span><span class="p">)</span>
 
                 <span class="kn">from</span> <span class="nn">tlo.methods.care_of_women_during_pregnancy</span> <span class="kn">import</span> <span class="p">(</span>
-                    <span class="n">HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment</span><span class="p">,</span>
+                    <span class="n">HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare</span><span class="p">,</span>
                 <span class="p">)</span>
 
-                <span class="n">acute_pregnancy_hsi</span> <span class="o">=</span> <span class="n">HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment</span><span class="p">(</span>
+                <span class="n">inpatient_pregnancy_hsi</span> <span class="o">=</span> <span class="n">HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;CareOfWomenDuringPregnancy&#39;</span><span class="p">],</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person</span><span class="p">)</span>
 
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">acute_pregnancy_hsi</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">inpatient_pregnancy_hsi</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                                                                     <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
                                                                     <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
@@ -2312,19 +2319,13 @@
                 <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_anc1_months_2_to_4&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
                 <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_late_initiation_anc4&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
 
-                <span class="c1"># Finally, remove squeeze factor threshold for ANC attendance to ensure that higher levels of ANC</span>
-                <span class="c1"># coverage can  be reached with current logic</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;CareOfWomenDuringPregnancy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">current_parameters</span><span class="p">[</span><span class="s1">&#39;squeeze_factor_threshold_anc&#39;</span><span class="p">]</span> <span class="o">=</span> \
-                    <span class="mi">10_000</span>
-
             <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;alternative_anc_quality&#39;</span><span class="p">]:</span>
 
                 <span class="c1"># Override the availability of IPTp consumables with the set level of coverage</span>
                 <span class="k">if</span> <span class="s1">&#39;Malaria&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
                     <span class="n">iptp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Malaria&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;malaria_iptp&#39;</span><span class="p">]</span>
-                    <span class="n">ic</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">iptp</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">override_availability_of_consumables</span><span class="p">(</span>
-                        <span class="p">{</span><span class="n">ic</span><span class="p">:</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;anc_availability_probability&#39;</span><span class="p">]})</span>
+                        <span class="p">{</span><span class="n">iptp</span><span class="p">:</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;anc_availability_probability&#39;</span><span class="p">]})</span>
 
                 <span class="c1"># And then override the quality parameters in the model</span>
                 <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;prob_intervention_delivered_urine_ds&#39;</span><span class="p">,</span> <span class="s1">&#39;prob_intervention_delivered_bp&#39;</span><span class="p">,</span>
@@ -2391,7 +2392,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

@@ -203,7 +203,7 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
-<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
+<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">DAYS_IN_YEAR</span><span class="p">,</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
 <span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.lm</span> <span class="kn">import</span> <span class="n">LinearModel</span><span class="p">,</span> <span class="n">LinearModelType</span><span class="p">,</span> <span class="n">Predictor</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
@@ -907,6 +907,11 @@
                       <span class="s1">&#39;Control the availability of the pulse oximeter and oxygen. &quot;Default&quot; does not over-ride &#39;</span>
                       <span class="s1">&#39;availability; &quot;Yes&quot; forces them to be available; &quot;No&quot; forces them to not be available&#39;</span><span class="p">,</span>
                       <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Yes&#39;</span><span class="p">,</span> <span class="s1">&#39;No&#39;</span><span class="p">,</span> <span class="s1">&#39;Default&#39;</span><span class="p">]</span>
+                      <span class="p">),</span>
+
+        <span class="s1">&#39;prob_for_followup_if_treatment_failure&#39;</span><span class="p">:</span>
+            <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span>
+                      <span class="s1">&#39;The probability for scheduling a follow-up appointment following treatment failure&#39;</span>
                       <span class="p">),</span>
     <span class="p">}</span>
 
@@ -2117,7 +2122,7 @@
     <span class="k">def</span> <span class="nf">fraction_of_year_between_polling_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the fraction of a year that elapses between polling event. This is used to adjust the risk of</span>
 <span class="sd">        infection&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">frequency</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">timedelta64</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Y&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">frequency</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span> <span class="o">/</span> <span class="n">pd</span><span class="o">.</span><span class="n">Timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">DAYS_IN_YEAR</span><span class="p">)</span>
 
 <div class="viewcode-block" id="AlriPollingEvent.get_probs_of_acquiring_pathogen"><a class="viewcode-back" href="../../../reference/tlo.methods.alri.html#tlo.methods.alri.AlriPollingEvent.get_probs_of_acquiring_pathogen">[docs]</a>    <span class="k">def</span> <span class="nf">get_probs_of_acquiring_pathogen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interval_as_fraction_of_a_year</span><span class="p">:</span> <span class="nb">float</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the probability of each person in the dataframe acquiring each pathogen, during the time interval</span>
@@ -2795,6 +2800,8 @@
 <span class="sd">        entails referrals upwards and/or admission at in-patient, and when at the appropriate level, trying to provide</span>
 <span class="sd">        the ideal treatment.&quot;&quot;&quot;</span>
 
+        <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span>
+
         <span class="k">def</span> <span class="nf">_provide_consumable_and_refer</span><span class="p">(</span><span class="n">cons</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;Provide a consumable (ignoring availability) and refer patient to next level up.&quot;&quot;&quot;</span>
             <span class="k">if</span> <span class="n">cons</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -2833,7 +2840,8 @@
                     <span class="n">oxygen_provided</span><span class="o">=</span><span class="n">oxygen_provided</span>
                 <span class="p">)</span>
                 <span class="k">if</span> <span class="n">treatment_outcome</span> <span class="o">==</span> <span class="s1">&#39;failure&#39;</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_schedule_follow_up_following_treatment_failure</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;prob_for_followup_if_treatment_failure&#39;</span><span class="p">]:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_schedule_follow_up_following_treatment_failure</span><span class="p">()</span>
 
         <span class="k">def</span> <span class="nf">_do_if_fast_breathing_pneumonia</span><span class="p">():</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;What to do if classification is `fast_breathing`.&quot;&quot;&quot;</span>
@@ -3307,7 +3315,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

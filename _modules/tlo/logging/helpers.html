@@ -173,7 +173,7 @@
 <span></span><span class="kn">import</span> <span class="nn">logging</span> <span class="k">as</span> <span class="nn">_logging</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterable</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
 
 <span class="kn">from</span> <span class="nn">.core</span> <span class="kn">import</span> <span class="n">_FORMATTER</span><span class="p">,</span> <span class="n">_LOGGERS</span><span class="p">,</span> <span class="n">DEBUG</span><span class="p">,</span> <span class="n">getLogger</span>
 
@@ -192,18 +192,48 @@
     <span class="k">return</span> <span class="n">file_handler</span></div>
 
 
-<div class="viewcode-block" id="set_logging_levels"><a class="viewcode-back" href="../../../reference/tlo.logging.helpers.html#tlo.logging.set_logging_levels">[docs]</a><span class="k">def</span> <span class="nf">set_logging_levels</span><span class="p">(</span><span class="n">custom_levels</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">modules</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
+<div class="viewcode-block" id="set_logging_levels"><a class="viewcode-back" href="../../../reference/tlo.logging.helpers.html#tlo.logging.set_logging_levels">[docs]</a><span class="k">def</span> <span class="nf">set_logging_levels</span><span class="p">(</span><span class="n">custom_levels</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Set custom logging levels for disease modules</span>
 
 <span class="sd">    :param custom_levels: Dictionary of modules and their level, &#39;*&#39; can be used as a key for all modules</span>
-<span class="sd">    :param modules: string values of all registered modules</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">custom_levels</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s1">&#39;*&#39;</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">modules</span><span class="p">:</span>
-                <span class="n">getLogger</span><span class="p">(</span><span class="n">module</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">getLogger</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div>
+    <span class="c1"># get list of `tlo.` loggers to process (this assumes logger have been setup on module import)</span>
+    <span class="n">loggers</span> <span class="o">=</span> <span class="p">{</span><span class="n">_logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">_logging</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">loggerDict</span> <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;tlo.methods&#39;</span><span class="p">)}</span>
+
+    <span class="c1"># set the baseline logging level from methods, if it&#39;s been set</span>
+    <span class="k">if</span> <span class="s1">&#39;*&#39;</span> <span class="ow">in</span> <span class="n">custom_levels</span><span class="p">:</span>
+        <span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;tlo.methods&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">custom_levels</span><span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">])</span>
+
+    <span class="c1"># loop over each of the tlo loggers</span>
+    <span class="k">for</span> <span class="n">logger</span> <span class="ow">in</span> <span class="n">loggers</span><span class="p">:</span>
+        <span class="c1"># get the full name</span>
+        <span class="n">logger_name</span> <span class="o">=</span> <span class="n">logger</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">matched</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># look for name, or any parent name, in the custom levels</span>
+        <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">logger_name</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">logger_name</span> <span class="ow">in</span> <span class="n">custom_levels</span><span class="p">:</span>
+                <span class="n">getLogger</span><span class="p">(</span><span class="n">logger_name</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">custom_levels</span><span class="p">[</span><span class="n">logger_name</span><span class="p">])</span>
+                <span class="n">matched</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+            <span class="k">elif</span> <span class="n">logger_name</span> <span class="o">==</span> <span class="s1">&#39;tlo.methods&#39;</span><span class="p">:</span>
+                <span class="c1"># we&#39;ve reached the top-level of the `tlo.methods` logger</span>
+                <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># get the parent logger name</span>
+                <span class="n">logger_name</span> <span class="o">=</span> <span class="s1">&#39;.&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">logger_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="c1"># if we exited without finding a matching logger in custom levels</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">matched</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s1">&#39;*&#39;</span> <span class="ow">in</span> <span class="n">custom_levels</span><span class="p">:</span>
+                <span class="n">getLogger</span><span class="p">(</span><span class="n">logger</span><span class="o">.</span><span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">custom_levels</span><span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">])</span>
+
+    <span class="c1"># loggers named in custom_level but, for some reason, haven&#39;t been getLogger-ed yet</span>
+    <span class="n">loggers</span> <span class="o">=</span> <span class="p">{</span><span class="n">logger</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">logger</span> <span class="ow">in</span> <span class="n">loggers</span><span class="p">}</span>
+    <span class="k">for</span> <span class="n">logger_name</span><span class="p">,</span> <span class="n">logger_level</span> <span class="ow">in</span> <span class="n">custom_levels</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">logger_name</span> <span class="o">!=</span> <span class="s2">&quot;*&quot;</span> <span class="ow">and</span> <span class="n">logger_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">loggers</span><span class="p">:</span>
+            <span class="n">getLogger</span><span class="p">(</span><span class="n">logger_name</span><span class="p">)</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logger_level</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;after set_logging_levels()&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">([</span><span class="n">_logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">_logging</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">loggerDict</span> <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;tlo.methods&#39;</span><span class="p">)])</span></div>
 
 
 <div class="viewcode-block" id="init_logging"><a class="viewcode-back" href="../../../reference/tlo.logging.helpers.html#tlo.logging.init_logging">[docs]</a><span class="k">def</span> <span class="nf">init_logging</span><span class="p">(</span><span class="n">add_stdout_handler</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -238,7 +268,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

@@ -1019,7 +1019,11 @@
 
         <span class="c1"># ---------------------------------- IRON AND FOLIC ACID ------------------------------------------------------</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;iron_folic_acid&#39;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="n">get_item_code_from_pkg</span><span class="p">(</span><span class="s1">&#39;Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg&#39;</span><span class="p">)</span></div>
+            <span class="n">get_item_code_from_pkg</span><span class="p">(</span><span class="s1">&#39;Ferrous Salt + Folic Acid, tablet, 200 + 0.25 mg&#39;</span><span class="p">)</span>
+
+        <span class="c1"># -------------------------------------------- RESUSCITATION ------------------------------------------</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">[</span><span class="s1">&#39;resuscitation&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">get_list_of_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Infant resuscitator, clear plastic + mask + bag_each_CMST&#39;</span><span class="p">])</span></div>
 
 <div class="viewcode-block" id="Labour.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
         <span class="c1"># Update self.current_parameters</span>
@@ -2387,12 +2391,11 @@
 <span class="sd">        is called within HSI_Labour_ReceivesPostnatalCheck.</span>
 <span class="sd">        :param hsi_event: HSI event in which the function has been called</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
 
         <span class="k">if</span> <span class="s1">&#39;Depression&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;de_ever_diagnosed_depression&#39;</span><span class="p">]:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Depression&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_when_suspected_depression</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Depression&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_on_presentation_to_care</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                                                                      <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Labour.interventions_delivered_pre_discharge"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.interventions_delivered_pre_discharge">[docs]</a>    <span class="k">def</span> <span class="nf">interventions_delivered_pre_discharge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -2663,7 +2666,7 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">,</span> <span class="n">facility_level_of_this_hsi</span><span class="o">=</span><span class="s1">&#39;1a&#39;</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">health_centre_delivery</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                                                                     <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                                                                    <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+                                                                    <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 
             <span class="k">elif</span> <span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;delivery_setting&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;hospital&#39;</span><span class="p">:</span>
                 <span class="n">facility_level</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s1">&#39;1a&#39;</span><span class="p">,</span> <span class="s1">&#39;1b&#39;</span><span class="p">])</span>
@@ -2671,7 +2674,7 @@
                     <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">,</span> <span class="n">facility_level_of_this_hsi</span><span class="o">=</span><span class="n">facility_level</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">hospital_delivery</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                                                                     <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                                                                    <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+                                                                    <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 
             <span class="c1"># Determine if the labouring woman will be delayed in attending for facility delivery</span>
             <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">check_if_delayed_careseeking</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">)</span>
@@ -2754,11 +2757,9 @@
                     <span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;delay_one_two&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
                     <span class="c1"># We assume women present to the health system through the generic a&amp;e appointment</span>
-                    <span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="p">(</span>
-                        <span class="n">HSI_GenericEmergencyFirstApptAtFacilityLevel1</span><span class="p">,</span>
-                    <span class="p">)</span>
+                    <span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">HSI_GenericEmergencyFirstAppt</span>
 
-                    <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_GenericEmergencyFirstApptAtFacilityLevel1</span><span class="p">(</span>
+                    <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_GenericEmergencyFirstAppt</span><span class="p">(</span>
                         <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
                         <span class="n">person_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">)</span>
 
@@ -2979,7 +2980,7 @@
                         <span class="n">early_event</span><span class="p">,</span>
                         <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                         <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                        <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+                        <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 
                 <span class="k">else</span><span class="p">:</span>
                     <span class="c1"># For women who do not have prompt PNC, we determine if they will die from complications occurring</span>
@@ -3129,6 +3130,22 @@
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;residual_prob_avd&#39;</span><span class="p">]:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">assessment_for_assisted_vaginal_delivery</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indication</span><span class="o">=</span><span class="s1">&#39;other&#39;</span><span class="p">)</span>
 
+        <span class="c1"># -------------------------- Newborn resuscitation ------------------------------------------------------------</span>
+        <span class="c1"># We check in this HSI that if the mother has a live born baby who requires resucitation that they will receive</span>
+        <span class="c1"># the intervention</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;sought_care_for_complication&#39;</span><span class="p">]:</span>
+            <span class="c1"># TODO: potential issue is that this consumable is being logged now for every birth as opposed to</span>
+            <span class="c1">#  for each birth where resuscitation of the newborn is required</span>
+            <span class="n">avail</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">return_cons_avail</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes_lab_consumables</span><span class="p">,</span> <span class="n">core</span><span class="o">=</span><span class="s1">&#39;resuscitation&#39;</span><span class="p">)</span>
+
+            <span class="c1"># Run HCW check</span>
+            <span class="n">sf_check</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">check_emonc_signal_function_will_run</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
+                                                                                       <span class="n">sf</span><span class="o">=</span><span class="s1">&#39;neo_resus&#39;</span><span class="p">,</span>
+                                                                                       <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">sf_check</span> <span class="ow">and</span> <span class="n">avail</span><span class="p">:</span>
+                <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;neo_will_receive_resus_if_needed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
         <span class="c1"># ========================================== SCHEDULING CEMONC CARE =========================================</span>
         <span class="c1"># Finally women who require additional treatment have the appropriate HSI scheduled to deliver further care</span>
 
@@ -3140,7 +3157,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">surgical_management</span><span class="p">,</span>
                                                                 <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                                                                 <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                                                                <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+                                                                <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 
         <span class="c1"># If a this woman has experienced a complication the appointment footprint is changed from normal to</span>
         <span class="c1"># complicated</span>
@@ -3469,8 +3486,10 @@
         <span class="n">nb_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;NewbornOutcomes&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">current_parameters</span>
 
         <span class="c1"># Check to see if analysis is being conducted when this event runs</span>
-        <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;alternative_bemonc_availability&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;alternative_cemonc_availability&#39;</span><span class="p">]</span> <span class="ow">or</span> \
-            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;alternative_pnc_coverage&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;alternative_pnc_quality&#39;</span><span class="p">]:</span>\
+        <span class="k">if</span> <span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;alternative_bemonc_availability&#39;</span><span class="p">]</span>
+                <span class="ow">or</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;alternative_cemonc_availability&#39;</span><span class="p">]</span>
+                <span class="ow">or</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;alternative_pnc_coverage&#39;</span><span class="p">]</span>
+                <span class="ow">or</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;alternative_pnc_quality&#39;</span><span class="p">]):</span>
 
             <span class="n">params</span><span class="p">[</span><span class="s1">&#39;la_analysis_in_progress&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
@@ -3565,7 +3584,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

@@ -70,7 +70,7 @@ tlo.methods.simplified_births module
 
      **Class attributes:**
 
-     ALTERNATIVE_TO : {'NewbornOutcomes', 'Labour', 'PregnancySupervisor', 'Contraception', 'PostnatalSupervisor'}
+     ALTERNATIVE_TO : {'NewbornOutcomes', 'Labour', 'PostnatalSupervisor', 'PregnancySupervisor', 'Contraception'}
 
      INIT_DEPENDENCIES : {'Demography'}
 

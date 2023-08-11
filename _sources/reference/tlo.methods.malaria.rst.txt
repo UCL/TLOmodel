@@ -18,9 +18,6 @@ tlo.methods.malaria module
         * - Item
           - Type
           - Description
-        * - mal_inc
-          - REAL
-          - monthly incidence of malaria in all ages
         * - interv
           - REAL
           - data frame of intervention coverage by year
@@ -84,12 +81,18 @@ tlo.methods.malaria module
         * - irs_rates_lower
           - REAL
           - indoor residual spraying low coverage
-        * - testing_adj
+        * - prob_malaria_case_tests
           - REAL
-          - adjusted testing rates to match rdt/tx levels
+          - probability that a malaria case will have a scheduled rdt
         * - itn
           - REAL
           - projected future itn coverage
+        * - rdt_testing_rates
+          - REAL
+          - per capita rdt testing rate of general population
+        * - scaling_factor_for_rdt_availability
+          - REAL
+          - scaling factor applied to the reports of rdt usage to compensate fornon-availability of rdts at some facilities
 
 
      **PROPERTIES:**
@@ -128,6 +131,9 @@ tlo.methods.malaria module
         * - ma_clinical_counter
           - INT
           - annual counter for malaria clinical episodes
+        * - ma_dx_counter
+          - INT
+          - annual counter for malaria diagnoses
         * - ma_tx_counter
           - INT
           - annual counter for malaria treatment episodes
@@ -142,13 +148,13 @@ tlo.methods.malaria module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Malaria': <tlo.methods.causes.Cause object at 0x7fabf96b93d0>}
+     CAUSES_OF_DEATH : {'Malaria': <tlo.methods.causes.Cause object at 0x7fd2149bebe0>}
 
-     CAUSES_OF_DISABILITY : {'Malaria': <tlo.methods.causes.Cause object at 0x7fabf96b9460>}
+     CAUSES_OF_DISABILITY : {'Malaria': <tlo.methods.causes.Cause object at 0x7fd2149bec70>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Contraception', 'Demography', 'SymptomManager'}
+     INIT_DEPENDENCIES : {'Contraception', 'HealthSystem', 'SymptomManager', 'Demography'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -162,19 +168,19 @@ tlo.methods.malaria module
 
      .. automethod:: malaria_poll2
 
+     .. automethod:: general_population_rdt_scheduler
+
      .. automethod:: initialise_simulation
 
      .. automethod:: on_birth
 
-     .. automethod:: on_hsi_alert
-
      .. automethod:: report_daly_values
 
-     .. automethod:: clinical_symptoms
-
-     .. automethod:: severe_symptoms
-
      .. automethod:: check_if_fever_is_caused_by_malaria
+
+     .. automethod:: do_for_suspected_malaria_case
+
+     .. automethod:: do_on_emergency_presentation_with_severe_malaria
 
 
 
@@ -189,24 +195,6 @@ tlo.methods.malaria module
 
 
      **Functions (defined or overridden in class MalariaPollingEventDistrict):**
-
-     .. automethod:: __init__
-
-     .. automethod:: apply
-
-
-
-
-
-
-
-
-.. autoclass:: MalariaScheduleTesting
-
-     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
-
-
-     **Functions (defined or overridden in class MalariaScheduleTesting):**
 
      .. automethod:: __init__
 
@@ -266,7 +254,6 @@ tlo.methods.malaria module
 
      .. automethod:: apply
 
-     .. automethod:: did_not_run
 
 
 
@@ -274,19 +261,17 @@ tlo.methods.malaria module
 
 
 
-
-.. autoclass:: HSI_Malaria_non_complicated_treatment_age0_5
+.. autoclass:: HSI_Malaria_rdt_community
 
      Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
-     **Functions (defined or overridden in class HSI_Malaria_non_complicated_treatment_age0_5):**
+     **Functions (defined or overridden in class HSI_Malaria_rdt_community):**
 
      .. automethod:: __init__
 
      .. automethod:: apply
 
-     .. automethod:: did_not_run
 
 
 
@@ -294,37 +279,18 @@ tlo.methods.malaria module
 
 
 
-
-.. autoclass:: HSI_Malaria_non_complicated_treatment_age5_15
+.. autoclass:: HSI_Malaria_Treatment
 
      Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
-     **Functions (defined or overridden in class HSI_Malaria_non_complicated_treatment_age5_15):**
+     **Functions (defined or overridden in class HSI_Malaria_Treatment):**
 
      .. automethod:: __init__
 
      .. automethod:: apply
 
-     .. automethod:: did_not_run
-
-
-
-
-
-
-
-
-.. autoclass:: HSI_Malaria_non_complicated_treatment_adult
-
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
-
-
-     **Functions (defined or overridden in class HSI_Malaria_non_complicated_treatment_adult):**
-
-     .. automethod:: __init__
-
-     .. automethod:: apply
+     .. automethod:: get_drugs
 
      .. automethod:: did_not_run
 
@@ -335,32 +301,12 @@ tlo.methods.malaria module
 
 
 
-.. autoclass:: HSI_Malaria_complicated_treatment_child
+.. autoclass:: HSI_Malaria_Treatment_Complicated
 
      Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
-     **Functions (defined or overridden in class HSI_Malaria_complicated_treatment_child):**
-
-     .. automethod:: __init__
-
-     .. automethod:: apply
-
-     .. automethod:: did_not_run
-
-
-
-
-
-
-
-
-.. autoclass:: HSI_Malaria_complicated_treatment_adult
-
-     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
-
-
-     **Functions (defined or overridden in class HSI_Malaria_complicated_treatment_adult):**
+     **Functions (defined or overridden in class HSI_Malaria_Treatment_Complicated):**
 
      .. automethod:: __init__
 
@@ -395,12 +341,12 @@ tlo.methods.malaria module
 
 
 
-.. autoclass:: MalariaCureEvent
+.. autoclass:: MalariaUpdateEvent
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
-     **Functions (defined or overridden in class MalariaCureEvent):**
+     **Functions (defined or overridden in class MalariaUpdateEvent):**
 
      .. automethod:: __init__
 
@@ -473,24 +419,6 @@ tlo.methods.malaria module
 
 
      **Functions (defined or overridden in class MalariaPrevDistrictLoggingEvent):**
-
-     .. automethod:: __init__
-
-     .. automethod:: apply
-
-
-
-
-
-
-
-
-.. autoclass:: MalariaResetCounterEvent
-
-     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
-
-
-     **Functions (defined or overridden in class MalariaResetCounterEvent):**
 
      .. automethod:: __init__
 

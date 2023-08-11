@@ -177,6 +177,7 @@
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">Counter</span><span class="p">,</span> <span class="n">defaultdict</span>
 <span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
@@ -190,7 +191,7 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">squarify</span>
 
-<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Date</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">util</span>
+<span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Date</span><span class="p">,</span> <span class="n">Simulation</span><span class="p">,</span> <span class="n">logging</span><span class="p">,</span> <span class="n">util</span>
 <span class="kn">from</span> <span class="nn">tlo.logging.reader</span> <span class="kn">import</span> <span class="n">LogData</span>
 <span class="kn">from</span> <span class="nn">tlo.util</span> <span class="kn">import</span> <span class="n">create_age_range_lookup</span>
 
@@ -901,6 +902,9 @@
 
 
 <span class="n">SHORT_TREATMENT_ID_TO_COLOR_MAP</span> <span class="o">=</span> <span class="n">MappingProxyType</span><span class="p">({</span>
+
+    <span class="s1">&#39;*&#39;</span><span class="p">:</span> <span class="s1">&#39;black&#39;</span><span class="p">,</span>
+
     <span class="s1">&#39;FirstAttendance*&#39;</span><span class="p">:</span> <span class="s1">&#39;darkgrey&#39;</span><span class="p">,</span>
     <span class="s1">&#39;Inpatient*&#39;</span><span class="p">:</span> <span class="s1">&#39;silver&#39;</span><span class="p">,</span>
 
@@ -930,6 +934,7 @@
 
     <span class="s1">&#39;Depression*&#39;</span><span class="p">:</span> <span class="s1">&#39;indianred&#39;</span><span class="p">,</span>
     <span class="s1">&#39;Epilepsy*&#39;</span><span class="p">:</span> <span class="s1">&#39;red&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Copd*&#39;</span><span class="p">:</span> <span class="s1">&#39;lightcoral&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;Rti*&#39;</span><span class="p">:</span> <span class="s1">&#39;lightsalmon&#39;</span><span class="p">,</span>
 <span class="p">})</span>
@@ -965,7 +970,7 @@
     <span class="p">)</span></div>
 
 
-<span class="n">CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP</span> <span class="o">=</span> <span class="n">MappingProxyType</span><span class="p">({</span>
+<span class="n">CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP</span> <span class="o">=</span> <span class="n">MappingProxyType</span><span class="p">({</span>
     <span class="s1">&#39;Maternal Disorders&#39;</span><span class="p">:</span> <span class="s1">&#39;green&#39;</span><span class="p">,</span>
     <span class="s1">&#39;Neonatal Disorders&#39;</span><span class="p">:</span> <span class="s1">&#39;springgreen&#39;</span><span class="p">,</span>
     <span class="s1">&#39;Congenital birth defects&#39;</span><span class="p">:</span> <span class="s1">&#39;mediumaquamarine&#39;</span><span class="p">,</span>
@@ -977,6 +982,7 @@
     <span class="s1">&#39;Malaria&#39;</span><span class="p">:</span> <span class="s1">&#39;lightsteelblue&#39;</span><span class="p">,</span>
     <span class="s1">&#39;Measles&#39;</span><span class="p">:</span> <span class="s1">&#39;cornflowerblue&#39;</span><span class="p">,</span>
     <span class="s1">&#39;TB (non-AIDS)&#39;</span><span class="p">:</span> <span class="s1">&#39;mediumslateblue&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;Schistosomiasis&#39;</span><span class="p">:</span> <span class="s1">&#39;skyblue&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;Heart Disease&#39;</span><span class="p">:</span> <span class="s1">&#39;sienna&#39;</span><span class="p">,</span>
     <span class="s1">&#39;Kidney Disease&#39;</span><span class="p">:</span> <span class="s1">&#39;chocolate&#39;</span><span class="p">,</span>
@@ -991,18 +997,21 @@
 
     <span class="s1">&#39;Depression / Self-harm&#39;</span><span class="p">:</span> <span class="s1">&#39;goldenrod&#39;</span><span class="p">,</span>
     <span class="s1">&#39;Epilepsy&#39;</span><span class="p">:</span> <span class="s1">&#39;gold&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;COPD&#39;</span><span class="p">:</span> <span class="s1">&#39;khaki&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;Transport Injuries&#39;</span><span class="p">:</span> <span class="s1">&#39;lightsalmon&#39;</span><span class="p">,</span>
+
+    <span class="s1">&#39;Lower Back Pain&#39;</span><span class="p">:</span> <span class="s1">&#39;slategray&#39;</span><span class="p">,</span>
 
     <span class="s1">&#39;Other&#39;</span><span class="p">:</span> <span class="s1">&#39;dimgrey&#39;</span><span class="p">,</span>
 <span class="p">})</span>
 
 
-<div class="viewcode-block" id="order_of_cause_of_death_label"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.order_of_cause_of_death_label">[docs]</a><span class="k">def</span> <span class="nf">order_of_cause_of_death_label</span><span class="p">(</span>
+<div class="viewcode-block" id="order_of_cause_of_death_or_daly_label"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.order_of_cause_of_death_or_daly_label">[docs]</a><span class="k">def</span> <span class="nf">order_of_cause_of_death_or_daly_label</span><span class="p">(</span>
     <span class="n">cause_of_death_label</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Define a standard order for Cause-of-Death labels.&quot;&quot;&quot;</span>
-    <span class="n">ordered_cause_of_death_labels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">ordered_cause_of_death_labels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cause_of_death_label</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">ordered_cause_of_death_labels</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">cause_of_death_label</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
@@ -1011,12 +1020,12 @@
         <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="get_color_cause_of_death_label"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_color_cause_of_death_label">[docs]</a><span class="k">def</span> <span class="nf">get_color_cause_of_death_label</span><span class="p">(</span><span class="n">cause_of_death_label</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<div class="viewcode-block" id="get_color_cause_of_death_or_daly_label"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_color_cause_of_death_or_daly_label">[docs]</a><span class="k">def</span> <span class="nf">get_color_cause_of_death_or_daly_label</span><span class="p">(</span><span class="n">cause_of_death_label</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the colour (as matplotlib string) assigned to this Cause-of-Death Label.</span>
 
 <span class="sd">    Returns `np.nan` if label is not recognised.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">CAUSE_OF_DEATH_LABEL_TO_COLOR_MAP</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cause_of_death_label</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cause_of_death_label</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="squarify_neat"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.squarify_neat">[docs]</a><span class="k">def</span> <span class="nf">squarify_neat</span><span class="p">(</span><span class="n">sizes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">colormap</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">numlabels</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -1056,7 +1065,7 @@
 
 <div class="viewcode-block" id="bin_hsi_event_details"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.bin_hsi_event_details">[docs]</a><span class="k">def</span> <span class="nf">bin_hsi_event_details</span><span class="p">(</span>
     <span class="n">results_folder</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
-    <span class="n">get_counter_from_event_details</span><span class="p">:</span> <span class="n">callable</span><span class="p">,</span>
+    <span class="n">get_counter_from_event_details</span><span class="p">:</span> <span class="nb">callable</span><span class="p">,</span>
     <span class="n">start_date</span><span class="p">:</span> <span class="n">Date</span><span class="p">,</span>
     <span class="n">end_date</span><span class="p">:</span> <span class="n">Date</span><span class="p">,</span>
     <span class="n">do_scaling</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1184,11 +1193,12 @@
     <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span></div>
 
 
-<div class="viewcode-block" id="plot_clustered_stacked"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.plot_clustered_stacked">[docs]</a><span class="k">def</span> <span class="nf">plot_clustered_stacked</span><span class="p">(</span><span class="n">dfall</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">color_for_column_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">legends</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">H</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="plot_clustered_stacked"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.plot_clustered_stacked">[docs]</a><span class="k">def</span> <span class="nf">plot_clustered_stacked</span><span class="p">(</span><span class="n">dfall</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">color_for_column_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scaled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">legends</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">H</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Given a dict of dataframes, with identical columns and index, create a clustered stacked bar plot.</span>
 <span class="sd">    * H is the hatch used for identification of the different dataframe.</span>
 <span class="sd">    * color_for_column_map should return a color for every column in the dataframes</span>
 <span class="sd">    * legends=False, suppresses generation of the legends</span>
+<span class="sd">    With `scaled=True`, the height of the stacked-bar is scaled to 1.0.</span>
 <span class="sd">    From: https://stackoverflow.com/questions/22787209/how-to-have-clusters-of-stacked-bars&quot;&quot;&quot;</span>
 
     <span class="n">n_df</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dfall</span><span class="p">)</span>
@@ -1196,6 +1206,9 @@
     <span class="n">n_ind</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dfall</span><span class="o">.</span><span class="n">values</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">dfall</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>  <span class="c1"># for each data frame</span>
+        <span class="k">if</span> <span class="n">scaled</span><span class="p">:</span>
+            <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="p">(</span><span class="n">row</span> <span class="o">/</span> <span class="n">row</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mf">0.0</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
         <span class="n">ax</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span>
             <span class="n">stacked</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span>
@@ -1224,6 +1237,174 @@
         <span class="n">l1</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">_handles</span><span class="p">[:</span><span class="n">n_col</span><span class="p">],</span> <span class="n">_labels</span><span class="p">[:</span><span class="n">n_col</span><span class="p">],</span> <span class="n">loc</span><span class="o">=</span><span class="p">[</span><span class="mf">1.01</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
         <span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dfall</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">loc</span><span class="o">=</span><span class="p">[</span><span class="mf">1.01</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">])</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">add_artist</span><span class="p">(</span><span class="n">l1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_mappers_in_fullmodel"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_mappers_in_fullmodel">[docs]</a><span class="k">def</span> <span class="nf">get_mappers_in_fullmodel</span><span class="p">(</span><span class="n">resourcefilepath</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">outputpath</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the cause-of-death, cause-of-disability and cause-of-DALYS mappers that are created in a run of the</span>
+<span class="sd">    fullmodel.&quot;&quot;&quot;</span>
+
+    <span class="n">start_date</span> <span class="o">=</span> <span class="n">Date</span><span class="p">(</span><span class="mi">2010</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">sim</span> <span class="o">=</span> <span class="n">Simulation</span><span class="p">(</span><span class="n">start_date</span><span class="o">=</span><span class="n">start_date</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">log_config</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;filename&#39;</span><span class="p">:</span> <span class="s1">&#39;test_log&#39;</span><span class="p">,</span> <span class="s1">&#39;directory&#39;</span><span class="p">:</span> <span class="n">outputpath</span><span class="p">})</span>
+
+    <span class="kn">from</span> <span class="nn">tlo.methods.fullmodel</span> <span class="kn">import</span> <span class="n">fullmodel</span>
+    <span class="n">sim</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="o">*</span><span class="n">fullmodel</span><span class="p">(</span><span class="n">resourcefilepath</span><span class="o">=</span><span class="n">resourcefilepath</span><span class="p">))</span>
+
+    <span class="n">sim</span><span class="o">.</span><span class="n">make_initial_population</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">10_000</span><span class="p">)</span>
+    <span class="n">sim</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">end_date</span><span class="o">=</span><span class="n">start_date</span><span class="p">)</span>
+    <span class="n">demog_log</span> <span class="o">=</span> <span class="n">parse_log_file</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">log_filepath</span><span class="p">)[</span><span class="s1">&#39;tlo.methods.demography&#39;</span><span class="p">]</span>
+    <span class="n">hb_log</span> <span class="o">=</span> <span class="n">parse_log_file</span><span class="p">(</span><span class="n">sim</span><span class="o">.</span><span class="n">log_filepath</span><span class="p">)[</span><span class="s1">&#39;tlo.methods.healthburden&#39;</span><span class="p">]</span>
+
+    <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">demog_log</span><span class="p">,</span> <span class="s1">&#39;mapper_from_tlo_cause_to_common_label&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">demog_log</span><span class="p">,</span> <span class="s1">&#39;mapper_from_gbd_cause_to_common_label&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">hb_log</span><span class="p">,</span> <span class="s1">&#39;disability_mapper_from_tlo_cause_to_common_label&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">hb_log</span><span class="p">,</span> <span class="s1">&#39;disability_mapper_from_gbd_cause_to_common_label&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">hb_log</span><span class="p">,</span> <span class="s1">&#39;daly_mapper_from_gbd_cause_to_common_label&#39;</span><span class="p">),</span>
+        <span class="p">(</span><span class="n">hb_log</span><span class="p">,</span> <span class="s1">&#39;daly_mapper_from_tlo_cause_to_common_label&#39;</span><span class="p">),</span>
+    <span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">extract_mapper</span><span class="p">(</span><span class="n">key_tuple</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">key_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key_tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;date&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span> <span class="n">extract_mapper</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="get_parameters_for_status_quo"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_parameters_for_status_quo">[docs]</a><span class="k">def</span> <span class="nf">get_parameters_for_status_quo</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a dictionary of parameters and their updated values to indicate</span>
+<span class="sd">    the &quot;Status Quo&quot; scenario. This is the configuration that is the target</span>
+<span class="sd">    of calibrations.</span>
+
+<span class="sd">    The return dict is in the form:</span>
+<span class="sd">    e.g. {</span>
+<span class="sd">            &#39;Depression&#39;: {</span>
+<span class="sd">                &#39;pr_assessed_for_depression_for_perinatal_female&#39;: 1.0,</span>
+<span class="sd">                &#39;pr_assessed_for_depression_in_generic_appt_level1&#39;: 1.0,</span>
+<span class="sd">                },</span>
+<span class="sd">            &#39;Hiv&#39;: {</span>
+<span class="sd">                &#39;prob_start_art_or_vs&#39;: 1.0,</span>
+<span class="sd">                }</span>
+<span class="sd">         }</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;SymptomManager&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;spurious_symptoms&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;HealthSystem&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;Service_Availability&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">],</span>
+            <span class="s2">&quot;use_funded_or_actual_staffing&quot;</span><span class="p">:</span> <span class="s2">&quot;actual&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;mode_appt_constraints&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">&quot;cons_availability&quot;</span><span class="p">:</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;beds_availability&quot;</span><span class="p">:</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="get_parameters_for_improved_healthsystem_and_healthcare_seeking"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_parameters_for_improved_healthsystem_and_healthcare_seeking">[docs]</a><span class="k">def</span> <span class="nf">get_parameters_for_improved_healthsystem_and_healthcare_seeking</span><span class="p">(</span>
+    <span class="n">resourcefilepath</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+    <span class="n">max_healthsystem_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">max_healthcare_seeking</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a dictionary of parameters and their updated values to indicate</span>
+<span class="sd">    an ideal healthcare system in terms of maximum health system function, and/or</span>
+<span class="sd">    maximum healthcare seeking.</span>
+
+<span class="sd">    The return dict is in the form:</span>
+<span class="sd">    e.g. {</span>
+<span class="sd">            &#39;Depression&#39;: {</span>
+<span class="sd">                &#39;pr_assessed_for_depression_for_perinatal_female&#39;: 1.0,</span>
+<span class="sd">                &#39;pr_assessed_for_depression_in_generic_appt_level1&#39;: 1.0</span>
+<span class="sd">                },</span>
+<span class="sd">            &#39;Hiv&#39;: {</span>
+<span class="sd">                &#39;prob_start_art_or_vs&#39;: &lt;&lt;the dataframe named in the corresponding cell in the ResourceFile&gt;&gt;</span>
+<span class="sd">                }</span>
+<span class="sd">         }</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">read_value</span><span class="p">(</span><span class="n">_value</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the value, or a dataframe if the value point to a different sheet in the workbook, or a series if the</span>
+<span class="sd">        value points to sheet in the workbook with only two columns (which become the index and the values).&quot;&quot;&quot;</span>
+        <span class="n">drop_extra_columns</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">how</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># noqa E731</span>
+        <span class="n">squeeze_single_col_df_to_series</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">df</span><span class="p">:</span> \
+            <span class="n">df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]])[</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">else</span> <span class="n">df</span>  <span class="c1"># noqa E731</span>
+
+        <span class="k">def</span> <span class="nf">construct_multiindex_if_implied</span><span class="p">(</span><span class="n">df</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Detect if a multi-index is implied (by the first column header having a &quot;/&quot; in it) and construct this.&quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="s1">&#39;/&#39;</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">idx</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">))</span>
+
+                <span class="c1"># Make the dtype as `int` if possible</span>
+                <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">idx</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">idx</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">idx</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                        <span class="k">pass</span>
+
+                <span class="n">df</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_frame</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">df</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_value</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">):</span>
+            <span class="n">sheet_name</span> <span class="o">=</span> <span class="n">_value</span><span class="o">.</span><span class="n">lstrip</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;!&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">return</span> \
+                <span class="n">squeeze_single_col_df_to_series</span><span class="p">(</span>
+                    <span class="n">drop_extra_columns</span><span class="p">(</span>
+                        <span class="n">construct_multiindex_if_implied</span><span class="p">(</span>
+                            <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">workbook</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="n">sheet_name</span><span class="p">))))</span>
+
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_value</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;[&quot;</span><span class="p">):</span>
+            <span class="c1"># this looks like its intended to be a list</span>
+            <span class="k">return</span> <span class="nb">eval</span><span class="p">(</span><span class="n">_value</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">_value</span>
+
+    <span class="n">workbook</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">ExcelFile</span><span class="p">(</span>
+        <span class="n">resourcefilepath</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Load the ResourceFile for the list of parameters that may change</span>
+    <span class="n">mainsheet</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">workbook</span><span class="p">,</span> <span class="s1">&#39;main&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">set_index</span><span class="p">([</span><span class="s1">&#39;Module&#39;</span><span class="p">,</span> <span class="s1">&#39;Parameter&#39;</span><span class="p">])</span>
+
+    <span class="c1"># Select which columns for parameter changes to extract</span>
+    <span class="n">cols</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">max_healthsystem_function</span><span class="p">:</span>
+        <span class="n">cols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;max_healthsystem_function&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">max_healthcare_seeking</span><span class="p">:</span>
+        <span class="n">cols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;max_healthcare_seeking&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Collect parameters that will be changed (collecting the first encountered non-NAN value)</span>
+    <span class="n">params_to_change</span> <span class="o">=</span> <span class="n">mainsheet</span><span class="p">[</span><span class="n">cols</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>\
+                                      <span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">row</span><span class="p">:</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">row</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">v</span><span class="p">)][</span><span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Convert to dictionary</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">params_to_change</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">params</span><span class="p">[</span><span class="n">idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">idx</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">read_value</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">params</span></div>
+
+
+<div class="viewcode-block" id="mix_scenarios"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.mix_scenarios">[docs]</a><span class="k">def</span> <span class="nf">mix_scenarios</span><span class="p">(</span><span class="o">*</span><span class="n">dicts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to combine a Dicts that show which parameters should be over-written.</span>
+<span class="sd">     * Warnings are generated if a parameter appears in more than one Dict with a different value;</span>
+<span class="sd">     * Items under the same top-level key (i.e., for the Module) are merged rather than being over-written.&quot;&quot;&quot;</span>
+
+    <span class="n">d</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">dict</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">_d</span> <span class="ow">in</span> <span class="n">dicts</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">mod</span><span class="p">,</span> <span class="n">params_in_mod</span> <span class="ow">in</span> <span class="n">_d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">params_in_mod</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">d</span><span class="p">[</span><span class="n">mod</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="n">mod</span><span class="p">][</span><span class="n">param</span><span class="p">]</span> <span class="o">!=</span> <span class="n">value</span><span class="p">:</span>
+                        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Parameter is being updated more than once: module=</span><span class="si">{</span><span class="n">mod</span><span class="si">}</span><span class="s1">, parameter=</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                                      <span class="ne">UserWarning</span><span class="p">,)</span>
+                <span class="n">d</span><span class="p">[</span><span class="n">mod</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">param</span><span class="p">:</span> <span class="n">value</span><span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">d</span></div>
 </pre></div>
 
            </div>
@@ -1236,7 +1417,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

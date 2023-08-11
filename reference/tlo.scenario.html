@@ -326,6 +326,12 @@ returns <code class="docutils literal notranslate"><span class="pre">None</span>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tlo.scenario.BaseScenario.get_log_config">
+<span class="sig-name descname"><span class="pre">get_log_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">override_output_directory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/scenario.html#BaseScenario.get_log_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.scenario.BaseScenario.get_log_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the log configuration for the scenario, with some post_processing.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tlo.scenario.BaseScenario.save_draws">
 <span class="sig-name descname"><span class="pre">save_draws</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">return_config</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/scenario.html#BaseScenario.save_draws"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.scenario.BaseScenario.save_draws" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -404,17 +410,14 @@ returns <code class="docutils literal notranslate"><span class="pre">None</span>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.scenario.SampleRunner.run_sample_by_number">
 <span class="sig-name descname"><span class="pre">run_sample_by_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">draw_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_number</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/scenario.html#SampleRunner.run_sample_by_number"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.scenario.SampleRunner.run_sample_by_number" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.scenario.SampleRunner.run_sample">
-<span class="sig-name descname"><span class="pre">run_sample</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sample</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_directory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/scenario.html#SampleRunner.run_sample"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.scenario.SampleRunner.run_sample" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Runs a single sample from a draw, saving the output to the given directory</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.scenario.SampleRunner.run">
 <span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/scenario.html#SampleRunner.run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.scenario.SampleRunner.run" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Run all samples for the scenario. Used by <cite>tlo scenario-run</cite> to run the scenario locally</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.scenario.SampleRunner.override_parameters">
@@ -504,7 +507,7 @@ point in the Cartesian grid across the parameter space.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

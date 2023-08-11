@@ -24,7 +24,6 @@ Submodules
    tlo.docs
    tlo.events
    tlo.lm
-   tlo.lm_play
    tlo.population
    tlo.progressbar
    tlo.scenario

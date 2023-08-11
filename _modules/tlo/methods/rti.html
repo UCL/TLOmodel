@@ -1840,8 +1840,9 @@
             <span class="c1"># check that this person&#39;s injuries that were decided to be treated with a minor surgery and the injuries</span>
             <span class="c1"># actually treated by minor surgeries coincide</span>
             <span class="k">if</span> <span class="n">count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_injuries_for_minor_surgery&#39;</span><span class="p">])</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">surgically_treated_codes</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span>\
-                    <span class="s1">&#39;This person has asked for a minor surgery but does not need it&#39;</span>
+                <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span>
+                    <span class="nb">set</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_injuries_for_minor_surgery&#39;</span><span class="p">])</span> <span class="o">&amp;</span> <span class="nb">set</span><span class="p">(</span><span class="n">surgically_treated_codes</span><span class="p">)</span>
+                <span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;This person has asked for a minor surgery but does not need it&#39;</span>
             <span class="c1"># Isolate the relevant injury information</span>
             <span class="n">person_injuries</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[[</span><span class="n">person_id</span><span class="p">],</span> <span class="n">RTI</span><span class="o">.</span><span class="n">INJURY_COLUMNS</span><span class="p">]</span>
             <span class="c1"># Check whether the person requesting minor surgeries has an injury that requires minor surgery</span>
@@ -2193,7 +2194,7 @@
 
         <span class="n">daly_change</span> <span class="o">=</span> <span class="n">selected_for_rti_inj</span><span class="o">.</span><span class="n">applymap</span><span class="p">(</span>
             <span class="k">lambda</span> <span class="n">code</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ASSIGN_INJURIES_AND_DALY_CHANGES</span><span class="p">[</span><span class="n">code</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
-        <span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">numeric_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">injured_index</span><span class="p">,</span> <span class="s1">&#39;rt_disability&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">daly_change</span>
 
         <span class="c1"># Store the true sum of DALY weights in the df</span>
@@ -2256,8 +2257,16 @@
                          <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2"> has had too many daly weights removed&quot;</span><span class="p">)</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_debugging_DALY_wt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="c1"># the reported disability should satisfy 0&lt;=disability&lt;=1, check that they do</span>
-        <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_disability&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;Negative disability burden&#39;</span>
-        <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_disability&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Too large disability burden&#39;</span>
+
+        <span class="c1"># Check the daly weights fall within the accepted bounds</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_disability&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s2">&quot;rt disability &lt; 0 in rti_alter_daly_post_treatment&quot;</span><span class="p">)</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_disability&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_disability&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s2">&quot;rt disability &gt; 1 in rti_alter_daly_post_treatment&quot;</span><span class="p">)</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_disability&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
         <span class="c1"># remover the treated injury code from the person using rti_treated_injuries</span>
         <span class="n">RTI</span><span class="o">.</span><span class="n">rti_treated_injuries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">codes</span><span class="p">)</span></div>
 
@@ -2315,9 +2324,15 @@
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_disability&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_disability&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_debugging_DALY_wt&#39;</span><span class="p">]</span>
+
         <span class="c1"># Check the daly weights fall within the accepted bounds</span>
-        <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_disability&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;Negative disability burden&#39;</span>
-        <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_disability&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;Too large disability burden&#39;</span></div>
+        <span class="k">if</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_disability&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s2">&quot;rt disability &lt; 0 in rti_swap_injury_daly_upon_treatment&quot;</span><span class="p">)</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_disability&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_disability&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;warning&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s2">&quot;rt disability &gt; 1 in rti_swap_injury_daly_upon_treatment&quot;</span><span class="p">)</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;rt_disability&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span></div>
 
 <div class="viewcode-block" id="RTI.rti_determine_LOS"><a class="viewcode-back" href="../../../reference/tlo.methods.rti.html#tlo.methods.rti.RTI.rti_determine_LOS">[docs]</a>    <span class="k">def</span> <span class="nf">rti_determine_LOS</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -5561,35 +5576,26 @@
         <span class="c1"># Make some summary statistics</span>
         <span class="c1"># Get the dataframe and isolate the important information</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="c1"># dump dataframe each month if population size is large (used to find the minimum viable population size)</span>
-        <span class="n">thoseininjuries</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_road_traffic_inc</span><span class="p">]</span>
+        <span class="n">population_with_injuries</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_road_traffic_inc</span><span class="p">]</span>
         <span class="c1"># ================================= Injury severity ===========================================================</span>
-        <span class="n">sev</span> <span class="o">=</span> <span class="n">thoseininjuries</span><span class="p">[</span><span class="s1">&#39;rt_inj_severity&#39;</span><span class="p">]</span>
-        <span class="n">rural_injuries</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_road_traffic_inc</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">li_urban</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rural_injuries</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">percent_sev_rural</span> <span class="o">=</span> \
-                <span class="nb">len</span><span class="p">(</span><span class="n">rural_injuries</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">rural_injuries</span><span class="p">[</span><span class="s1">&#39;rt_inj_severity&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;severe&#39;</span><span class="p">])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">rural_injuries</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">percent_sev_rural</span> <span class="o">=</span> <span class="s1">&#39;none_injured&#39;</span>
-        <span class="n">urban_injuries</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">rt_road_traffic_inc</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">li_urban</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">urban_injuries</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">percent_sev_urban</span> <span class="o">=</span> \
-                <span class="nb">len</span><span class="p">(</span><span class="n">urban_injuries</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">urban_injuries</span><span class="p">[</span><span class="s1">&#39;rt_inj_severity&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;severe&#39;</span><span class="p">])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">urban_injuries</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">percent_sev_urban</span> <span class="o">=</span> <span class="s1">&#39;none_injured&#39;</span>
-        <span class="n">severity</span><span class="p">,</span> <span class="n">severitycount</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">sev</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s1">&#39;mild&#39;</span> <span class="ow">in</span> <span class="n">severity</span><span class="p">:</span>
-            <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">severity</span> <span class="o">==</span> <span class="s1">&#39;mild&#39;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">totmild</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s1">&#39;severe&#39;</span> <span class="ow">in</span> <span class="n">severity</span><span class="p">:</span>
-            <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">severity</span> <span class="o">==</span> <span class="s1">&#39;severe&#39;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">totsevere</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span>
+        <span class="n">population_subsets_with_injuries</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;rural&quot;</span><span class="p">:</span> <span class="n">population_with_injuries</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">population_with_injuries</span><span class="o">.</span><span class="n">li_urban</span><span class="p">],</span>
+            <span class="s2">&quot;urban&quot;</span><span class="p">:</span> <span class="n">population_with_injuries</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">population_with_injuries</span><span class="o">.</span><span class="n">li_urban</span><span class="p">],</span>
+        <span class="p">}</span>
+        <span class="n">proportion_severely_injured</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">label</span><span class="p">:</span> <span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">pop_subset</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">pop_subset</span><span class="p">[</span><span class="s1">&#39;rt_inj_severity&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;severe&#39;</span><span class="p">])</span>
+                <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">pop_subset</span><span class="p">)</span>
+            <span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pop_subset</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;none_injured&quot;</span>
+            <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">pop_subset</span> <span class="ow">in</span> <span class="n">population_subsets_with_injuries</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">totmild</span> <span class="o">+=</span> <span class="p">(</span><span class="n">population_with_injuries</span><span class="o">.</span><span class="n">rt_inj_severity</span> <span class="o">==</span> <span class="s2">&quot;mild&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">totsevere</span> <span class="o">+=</span> <span class="p">(</span><span class="n">population_with_injuries</span><span class="o">.</span><span class="n">rt_inj_severity</span> <span class="o">==</span> <span class="s2">&quot;severe&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
         <span class="n">dict_to_output</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;total_mild_injuries&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">totmild</span><span class="p">,</span>
-            <span class="s1">&#39;&#39;</span>
-            <span class="s1">&#39;_severe_injuries&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">totsevere</span><span class="p">,</span>
-            <span class="s1">&#39;Percent_severe_rural&#39;</span><span class="p">:</span> <span class="n">percent_sev_rural</span><span class="p">,</span>
-            <span class="s1">&#39;Percent_severe_urban&#39;</span><span class="p">:</span> <span class="n">percent_sev_urban</span>
+            <span class="s1">&#39;total_severe_injuries&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">totsevere</span><span class="p">,</span>
+            <span class="s1">&#39;proportion_severe_rural&#39;</span><span class="p">:</span> <span class="n">proportion_severely_injured</span><span class="p">[</span><span class="s2">&quot;rural&quot;</span><span class="p">],</span>
+            <span class="s1">&#39;proportion_severe_urban&#39;</span><span class="p">:</span> <span class="n">proportion_severely_injured</span><span class="p">[</span><span class="s2">&quot;urban&quot;</span><span class="p">],</span>
         <span class="p">}</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;injury_severity&#39;</span><span class="p">,</span>
                     <span class="n">data</span><span class="o">=</span><span class="n">dict_to_output</span><span class="p">,</span>
@@ -5769,7 +5775,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

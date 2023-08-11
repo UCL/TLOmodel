@@ -596,27 +596,22 @@
                   <span class="sa">f</span><span class="s1">&#39;The squeeze-factor is </span><span class="si">{</span><span class="n">squeeze_factor</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">),</span>
         <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">squeeze_factor</span> <span class="o">&lt;</span> <span class="mf">0.5</span><span class="p">:</span>
-            <span class="c1"># If squeeze factor is not too large:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;Treatment will be provided.&#39;</span><span class="p">)</span>
-            <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-            <span class="n">treatmentworks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;p_cure&#39;</span><span class="p">]</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;Treatment will be provided.&#39;</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="n">treatmentworks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;p_cure&#39;</span><span class="p">]</span>
 
-            <span class="k">if</span> <span class="n">treatmentworks</span><span class="p">:</span>
-                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;cs_has_cs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;cs_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;P&#39;</span>
+        <span class="k">if</span> <span class="n">treatmentworks</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;cs_has_cs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;cs_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;P&#39;</span>
 
-                <span class="c1"># (in this we nullify the death event that has been scheduled.)</span>
-                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;cs_scheduled_date_death&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
-                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;cs_date_cure&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+            <span class="c1"># (in this we nullify the death event that has been scheduled.)</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;cs_scheduled_date_death&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;cs_date_cure&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
 
-                <span class="c1"># remove all symptoms instantly</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">clear_symptoms</span><span class="p">(</span>
-                    <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                    <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Squeeze factor is too large</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;Treatment will not be provided due to squeeze factor.&#39;</span><span class="p">)</span></div>
+            <span class="c1"># remove all symptoms instantly</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">clear_symptoms</span><span class="p">(</span>
+                <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.chronicsyndrome.html#tlo.methods.chronicsyndrome.HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;debug&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: did not run&#39;</span><span class="p">)</span>
@@ -717,7 +712,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

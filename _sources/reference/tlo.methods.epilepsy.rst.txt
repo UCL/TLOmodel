@@ -106,13 +106,13 @@ tlo.methods.epilepsy module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Epilepsy': <tlo.methods.causes.Cause object at 0x7fabf9826d00>}
+     CAUSES_OF_DEATH : {'Epilepsy': <tlo.methods.causes.Cause object at 0x7fd214a2b6d0>}
 
-     CAUSES_OF_DISABILITY : {'Epilepsy': <tlo.methods.causes.Cause object at 0x7fabf9826d90>}
+     CAUSES_OF_DISABILITY : {'Epilepsy': <tlo.methods.causes.Cause object at 0x7fd214a2b760>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'SymptomManager', 'Demography', 'HealthBurden'}
+     INIT_DEPENDENCIES : {'HealthBurden', 'HealthSystem', 'SymptomManager', 'Demography'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      TREATMENT_ID : antiepileptic
 
@@ -133,6 +133,8 @@ tlo.methods.epilepsy module
      .. automethod:: transition_seizure_stat
 
      .. automethod:: stop_antiep
+
+     .. automethod:: get_best_available_medicine
 
 
 

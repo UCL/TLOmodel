@@ -435,14 +435,14 @@ flattened labels were created and applies it to the pd.DataFrame.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="tlo.analysis.utils.order_of_cause_of_death_label">
-<span class="sig-name descname"><span class="pre">order_of_cause_of_death_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cause_of_death_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Index</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Index</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#order_of_cause_of_death_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.order_of_cause_of_death_label" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.analysis.utils.order_of_cause_of_death_or_daly_label">
+<span class="sig-name descname"><span class="pre">order_of_cause_of_death_or_daly_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cause_of_death_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Index</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Index</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#order_of_cause_of_death_or_daly_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.order_of_cause_of_death_or_daly_label" title="Permalink to this definition">¶</a></dt>
 <dd><p>Define a standard order for Cause-of-Death labels.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="tlo.analysis.utils.get_color_cause_of_death_label">
-<span class="sig-name descname"><span class="pre">get_color_cause_of_death_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cause_of_death_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_color_cause_of_death_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_color_cause_of_death_label" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.analysis.utils.get_color_cause_of_death_or_daly_label">
+<span class="sig-name descname"><span class="pre">get_color_cause_of_death_or_daly_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cause_of_death_label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_color_cause_of_death_or_daly_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_color_cause_of_death_or_daly_label" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the colour (as matplotlib string) assigned to this Cause-of-Death Label.</p>
 <p>Returns <cite>np.nan</cite> if label is not recognised.</p>
 </dd></dl>
@@ -525,12 +525,76 @@ bars with. If <code class="docutils literal notranslate"><span class="pre">None<
 
 <dl class="py function">
 <dt class="sig sig-object py" id="tlo.analysis.utils.plot_clustered_stacked">
-<span class="sig-name descname"><span class="pre">plot_clustered_stacked</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfall</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_for_column_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legends</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#plot_clustered_stacked"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.plot_clustered_stacked" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">plot_clustered_stacked</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dfall</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color_for_column_map</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scaled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legends</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">H</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/'</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#plot_clustered_stacked"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.plot_clustered_stacked" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a dict of dataframes, with identical columns and index, create a clustered stacked bar plot.
 * H is the hatch used for identification of the different dataframe.
 * color_for_column_map should return a color for every column in the dataframes
 * legends=False, suppresses generation of the legends
+With <cite>scaled=True</cite>, the height of the stacked-bar is scaled to 1.0.
 From: <a class="reference external" href="https://stackoverflow.com/questions/22787209/how-to-have-clusters-of-stacked-bars">https://stackoverflow.com/questions/22787209/how-to-have-clusters-of-stacked-bars</a></p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.get_mappers_in_fullmodel">
+<span class="sig-name descname"><span class="pre">get_mappers_in_fullmodel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outputpath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_mappers_in_fullmodel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_mappers_in_fullmodel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the cause-of-death, cause-of-disability and cause-of-DALYS mappers that are created in a run of the
+fullmodel.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.get_parameters_for_status_quo">
+<span class="sig-name descname"><span class="pre">get_parameters_for_status_quo</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_parameters_for_status_quo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_parameters_for_status_quo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dictionary of parameters and their updated values to indicate
+the “Status Quo” scenario. This is the configuration that is the target
+of calibrations.</p>
+<p>The return dict is in the form:
+e.g. {</p>
+<blockquote>
+<div><blockquote>
+<div><dl class="simple">
+<dt>‘Depression’: {</dt><dd><p>‘pr_assessed_for_depression_for_perinatal_female’: 1.0,
+‘pr_assessed_for_depression_in_generic_appt_level1’: 1.0,
+},</p>
+</dd>
+<dt>‘Hiv’: {</dt><dd><p>‘prob_start_art_or_vs’: 1.0,
+}</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>}</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.get_parameters_for_improved_healthsystem_and_healthcare_seeking">
+<span class="sig-name descname"><span class="pre">get_parameters_for_improved_healthsystem_and_healthcare_seeking</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resourcefilepath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_healthsystem_function</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_healthcare_seeking</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#get_parameters_for_improved_healthsystem_and_healthcare_seeking"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.get_parameters_for_improved_healthsystem_and_healthcare_seeking" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a dictionary of parameters and their updated values to indicate
+an ideal healthcare system in terms of maximum health system function, and/or
+maximum healthcare seeking.</p>
+<p>The return dict is in the form:
+e.g. {</p>
+<blockquote>
+<div><blockquote>
+<div><dl class="simple">
+<dt>‘Depression’: {</dt><dd><p>‘pr_assessed_for_depression_for_perinatal_female’: 1.0,
+‘pr_assessed_for_depression_in_generic_appt_level1’: 1.0
+},</p>
+</dd>
+<dt>‘Hiv’: {</dt><dd><p>‘prob_start_art_or_vs’: &lt;&lt;the dataframe named in the corresponding cell in the ResourceFile&gt;&gt;
+}</p>
+</dd>
+</dl>
+</div></blockquote>
+<p>}</p>
+</div></blockquote>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="tlo.analysis.utils.mix_scenarios">
+<span class="sig-name descname"><span class="pre">mix_scenarios</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">dicts</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="../_modules/tlo/analysis/utils.html#mix_scenarios"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.analysis.utils.mix_scenarios" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function to combine a Dicts that show which parameters should be over-written.
+* Warnings are generated if a parameter appears in more than one Dict with a different value;
+* Items under the same top-level key (i.e., for the Module) are merged rather than being over-written.</p>
 </dd></dl>
 
 </div>
@@ -550,7 +614,7 @@ From: <a class="reference external" href="https://stackoverflow.com/questions/22
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

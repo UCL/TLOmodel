@@ -602,11 +602,11 @@ via HSI_NewbornOutcomes_ReceivesPostnatalCheck.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘PostnatalSupervisor’, ‘PregnancySupervisor’, ‘Labour’, ‘CareOfWomenDuringPregnancy’}</p>
-<p>CAUSES_OF_DEATH : {‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fabf9a8f280&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fabf9a8f310&gt;, ‘encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x7fabf9a8f370&gt;, ‘neonatal_respiratory_depression’: &lt;tlo.methods.causes.Cause object at 0x7fabf9a8f3d0&gt;, ‘preterm_other’: &lt;tlo.methods.causes.Cause object at 0x7fabf9a8f430&gt;, ‘respiratory_distress_syndrome’: &lt;tlo.methods.causes.Cause object at 0x7fabf9a8f490&gt;, ‘congenital_heart_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fabf9a8f4f0&gt;, ‘limb_or_musculoskeletal_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fabf9a8f550&gt;, ‘urogenital_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fabf9a8f5b0&gt;, ‘digestive_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fabf9a8f610&gt;, ‘other_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fabf9a8f670&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘Retinopathy of Prematurity’: &lt;tlo.methods.causes.Cause object at 0x7fabf9a8f6d0&gt;, ‘Neonatal Encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x7fabf9a8f730&gt;, ‘Neonatal Sepsis Long term Disability’: &lt;tlo.methods.causes.Cause object at 0x7fabf9a8f790&gt;, ‘Preterm Birth Disability’: &lt;tlo.methods.causes.Cause object at 0x7fabf9a8f7f0&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘CareOfWomenDuringPregnancy’, ‘PregnancySupervisor’, ‘Labour’, ‘PostnatalSupervisor’}</p>
+<p>CAUSES_OF_DEATH : {‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fd214c71d90&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fd214c71e20&gt;, ‘encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x7fd214c71e80&gt;, ‘neonatal_respiratory_depression’: &lt;tlo.methods.causes.Cause object at 0x7fd214c71ee0&gt;, ‘preterm_other’: &lt;tlo.methods.causes.Cause object at 0x7fd214c71f40&gt;, ‘respiratory_distress_syndrome’: &lt;tlo.methods.causes.Cause object at 0x7fd214c71fa0&gt;, ‘congenital_heart_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fd214cb1040&gt;, ‘limb_or_musculoskeletal_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fd214cb10a0&gt;, ‘urogenital_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fd214cb1100&gt;, ‘digestive_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fd214cb1160&gt;, ‘other_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fd214cb11c0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘Retinopathy of Prematurity’: &lt;tlo.methods.causes.Cause object at 0x7fd214cb1220&gt;, ‘Neonatal Encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x7fd214cb1280&gt;, ‘Neonatal Sepsis Long term Disability’: &lt;tlo.methods.causes.Cause object at 0x7fd214cb12e0&gt;, ‘Preterm Birth Disability’: &lt;tlo.methods.causes.Cause object at 0x7fd214cb1340&gt;}</p>
 <p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class NewbornOutcomes):</strong></p>
 <dl class="py method">
@@ -821,8 +821,8 @@ of frequent and exclusive breastfeeding
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.NewbornOutcomes.assessment_and_initiation_of_neonatal_resus">
-<span class="sig-name descname"><span class="pre">assessment_and_initiation_of_neonatal_resus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#NewbornOutcomes.assessment_and_initiation_of_neonatal_resus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.NewbornOutcomes.assessment_and_initiation_of_neonatal_resus" title="Permalink to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.NewbornOutcomes.apply_effect_of_neonatal_resus">
+<span class="sig-name descname"><span class="pre">apply_effect_of_neonatal_resus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#NewbornOutcomes.apply_effect_of_neonatal_resus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.NewbornOutcomes.apply_effect_of_neonatal_resus" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function manages the diagnosis of failure to transition/encephalopathy and the administration of neonatal
 resuscitation for neonates delivered in a facility. It is called by the HSI_NewbornOutcomes_CareOfTheNewborn
 BySkilledAttendant.
@@ -898,21 +898,6 @@ after being delivered in a facility.
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.NewbornOutcomes.run_if_care_of_the_newborn_by_skilled_attendant_at_birth_cant_run">
-<span class="sig-name descname"><span class="pre">run_if_care_of_the_newborn_by_skilled_attendant_at_birth_cant_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#NewbornOutcomes.run_if_care_of_the_newborn_by_skilled_attendant_at_birth_cant_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.NewbornOutcomes.run_if_care_of_the_newborn_by_skilled_attendant_at_birth_cant_run" title="Permalink to this definition">¶</a></dt>
-<dd><p>This function is called by HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth if the HSI is unable to
-run on the date it has been scheduled for. Risk of death is applied to newborns as this would have been applied</p>
-<blockquote>
-<div><p>within the event</p>
-</div></blockquote>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>hsi_event</strong> – HSI event in which the function has been called:</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.NewbornOutcomes.run_if_care_of_the_receives_postnatal_check_cant_run">
 <span class="sig-name descname"><span class="pre">run_if_care_of_the_receives_postnatal_check_cant_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#NewbornOutcomes.run_if_care_of_the_receives_postnatal_check_cant_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.NewbornOutcomes.run_if_care_of_the_receives_postnatal_check_cant_run" title="Permalink to this definition">¶</a></dt>
 <dd><p>This function is called by HSI_NewbornOutcomes_ReceivesPostnatalCheck if the HSI is unable to
@@ -920,57 +905,6 @@ run on the date it has been scheduled for. Risk of death is applied to newborns 
 within the event
 :param hsi_event: HSI event in which the function has been called:</p>
 </dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth" title="Permalink to this definition">¶</a></dt>
-<dd><p>This is HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth. It is scheduled by on_birth for any newborns
-who were delivered in a health facility. Currently it applies the effect of interventions that would reasonably be
-delivered as part of the process of birth (i.e. resuscitation of a flat newborn) but is not a full postnatal
-check</p>
-<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
-<p><strong>Functions (defined or overridden in class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth):</strong></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth.__init__" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a new event.</p>
-<p>Note that just creating an event does not schedule it to happen; that
-must be done by calling Simulation.schedule_event.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>module</strong> – the module that created this event.
-All subclasses of Event take this as the first argument in their
-constructor, but may also take further keyword arguments.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth.never_ran">
-<span class="sig-name descname"><span class="pre">never_ran</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth.never_ran"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth.never_ran" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called when this event is was entered to the HSI Event Queue, but was never run.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth.did_not_run">
-<span class="sig-name descname"><span class="pre">did_not_run</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth.did_not_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth.did_not_run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
-to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth.not_available">
-<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth.not_available" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </dd></dl>
 
@@ -1170,7 +1104,7 @@ constructor, but may also take further keyword arguments.</p></li>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

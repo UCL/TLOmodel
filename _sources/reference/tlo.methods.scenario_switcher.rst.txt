@@ -1,0 +1,55 @@
+tlo.methods.scenario_switcher module
+====================================
+
+.. automodule:: tlo.methods.scenario_switcher
+
+
+.. autoclass:: ScenarioSwitcher
+
+     Bases: :class:`tlo.core.Module`
+
+
+     **PARAMETERS:**
+     
+     .. list-table::
+        :widths: 25 25 50
+        :header-rows: 1
+     
+        * - Item
+          - Type
+          - Description
+        * - max_healthsystem_function
+          - BOOL
+          - If True, over-writes parameters that define maximal health system function.Parameter passed through to `get_parameters_for_improved_healthsystem_and_healthcare_seeking`.
+        * - max_healthcare_seeking
+          - BOOL
+          - If True, over-writes parameters that define maximal healthcare-seeking behaviour. Parameter passed through to `get_parameters_for_improved_healthsystem_and_healthcare_seeking`.
+
+
+
+     **Class attributes:**
+
+     INIT_DEPENDENCIES : set()
+
+     METADATA : set()
+
+     OPTIONAL_INIT_DEPENDENCIES : set()
+
+     **Functions (defined or overridden in class ScenarioSwitcher):**
+
+     .. automethod:: __init__
+
+     .. automethod:: read_parameters
+
+     .. automethod:: initialise_population
+
+     .. automethod:: pre_initialise_population
+
+     .. automethod:: initialise_simulation
+
+     .. automethod:: on_birth
+
+
+
+
+

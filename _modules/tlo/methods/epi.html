@@ -174,10 +174,11 @@
   <h1>Source code for tlo.methods.epi</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Date</span><span class="p">,</span> <span class="n">DateOffset</span><span class="p">,</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
-<span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
+<span class="kn">from</span> <span class="nn">tlo.events</span> <span class="kn">import</span> <span class="n">IndividualScopeEventMixin</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">,</span> <span class="n">RegularEvent</span>
 <span class="kn">from</span> <span class="nn">tlo.methods</span> <span class="kn">import</span> <span class="n">Metadata</span>
 <span class="kn">from</span> <span class="nn">tlo.methods.healthsystem</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
 
@@ -199,7 +200,10 @@
     <span class="n">PARAMETERS</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;baseline_coverage&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s2">&quot;baseline vaccination coverage (all vaccines)&quot;</span><span class="p">),</span>
         <span class="s2">&quot;vaccine_schedule&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">SERIES</span><span class="p">,</span> <span class="s2">&quot;vaccination schedule applicable from 2018 onwards&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;district_vaccine_coverage&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">DATA_FRAME</span><span class="p">,</span> <span class="s2">&quot;coverage of each vaccine type by year and district&quot;</span><span class="p">)</span>
+        <span class="s2">&quot;prob_facility_level_for_vaccine&quot;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span>
+                                                     <span class="s2">&quot;The probability of going to each facility-level (0 / 1a / 1b / 2)&quot;</span>
+                                                     <span class="s2">&quot; for child having vaccines given through childhood immunisation &quot;</span>
+                                                     <span class="s2">&quot;schedule. The probabilities must sum to 1.0 &quot;</span><span class="p">)</span>
     <span class="p">}</span>
 
     <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{</span>
@@ -245,12 +249,10 @@
             <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_EPI_WHO_estimates.xlsx&#39;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span>
         <span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">load_parameters_from_dataframe</span><span class="p">(</span><span class="n">workbook</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">])</span>
+
         <span class="n">p</span><span class="p">[</span><span class="s2">&quot;baseline_coverage&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">workbook</span><span class="p">[</span><span class="s2">&quot;WHO_estimates&quot;</span><span class="p">]</span>
         <span class="n">p</span><span class="p">[</span><span class="s2">&quot;vaccine_schedule&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">workbook</span><span class="p">[</span><span class="s2">&quot;vaccine_schedule&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;vaccine&#39;</span><span class="p">)[</span><span class="s1">&#39;date_administration_days&#39;</span><span class="p">]</span>
-
-        <span class="n">p</span><span class="p">[</span><span class="s2">&quot;district_vaccine_coverage&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
-            <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;ResourceFile_EPI_vaccine_coverage.csv&quot;</span>
-        <span class="p">)</span>
 
         <span class="c1"># Declare definitions of how many doses is labelled as &quot;all doses&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">all_doses</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
@@ -343,7 +345,7 @@
         <span class="c1"># available since 1980</span>
         <span class="c1"># second dose only started in 2015</span>
         <span class="c1"># by Jan 2010, anyone &lt;=30 years has 77.2% prob of having vaccine</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">random_draw</span> <span class="o">&lt;</span> <span class="n">df_vaccine_baseline</span><span class="p">[</span><span class="s2">&quot;MCV1&quot;</span><span class="p">]),</span> <span class="s2">&quot;va_measles&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">random_draw</span> <span class="o">&lt;</span> <span class="n">df_vaccine_baseline</span><span class="p">[</span><span class="s2">&quot;MCV1&quot;</span><span class="p">]),</span> <span class="s2">&quot;va_measles&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
 
         <span class="c1"># update the &#39;all_doses&#39; properties for initial population</span>
         <span class="k">for</span> <span class="n">vaccine</span><span class="p">,</span> <span class="n">max_dose</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_doses</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -352,45 +354,34 @@
 <div class="viewcode-block" id="Epi.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.Epi.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
         <span class="c1"># add an event to log to screen</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">EpiLoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+
         <span class="c1"># HPV vaccine given from 2018 onwards</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">HpvScheduleEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">Date</span><span class="p">(</span><span class="mi">2018</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
 
-        <span class="c1"># Update paramerer &quot;district_vaccine_coverage&quot; to use district_num rather than the name of the district;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;district_vaccine_coverage&quot;</span><span class="p">][</span><span class="s2">&quot;District&quot;</span><span class="p">]</span> <span class="o">=</span> \
-            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;district_vaccine_coverage&quot;</span><span class="p">][</span><span class="s2">&quot;District&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span>
-                <span class="p">{</span><span class="n">v</span><span class="p">:</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;district_num_to_district_name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-            <span class="p">)</span>
-
         <span class="c1"># Look up item codes for consumables</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">get_item_codes</span><span class="p">()</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_item_codes</span><span class="p">()</span>
+
+        <span class="c1"># Check that the values enetered for &#39;prob_facility_level_for_vaccine&#39; sum to 1.0</span>
+        <span class="n">probs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;prob_facility_level_for_vaccine&#39;</span><span class="p">]</span>
+        <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">probs</span><span class="p">))</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="n">probs</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Epi.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.Epi.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual</span>
 
 <span class="sd">        birth doses occur within 24 hours of delivery</span>
 
-<span class="sd">        from 2010-2018 data on vaccine coverage are used to determine probability of receiving vaccine</span>
-<span class="sd">        vaccinations are scheduled to occur with a probability dependent on the year and district</span>
-<span class="sd">        from 2019 onwards, probability will be determined by personnel and vaccine availability</span>
-
 <span class="sd">        2012 data is patchy, no record of Hep vaccine but it was used before 2012</span>
 <span class="sd">        assume hepB3 coverage in 2012 same as 2011</span>
 <span class="sd">        same with Hib</span>
 
-<span class="sd">        for births up to end 2018 schedule the vaccine as individual event (not HSI)</span>
-<span class="sd">        schedule the dates as the exact due date</span>
-<span class="sd">        then from 2019 use the HSI events - only need the current vaccines in use that way</span>
+<span class="sd">        Measles - first dose, only one dose pre-2016 and no rubella</span>
+<span class="sd">        Measles, rubella - first dose, 2018 onwards</span>
 
 <span class="sd">        :param mother_id: the ID for the mother for this child</span>
 <span class="sd">        :param child_id: the ID for the new child</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>  <span class="c1"># shortcut to the population props dataframe</span>
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
-        <span class="n">year</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">year</span>
-
-        <span class="c1"># look up coverage of every vaccine</span>
-        <span class="c1"># anything delivered after 12months needs the estimate from the following year</span>
-        <span class="n">district</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;district_num_of_residence&#39;</span><span class="p">]</span>
 
         <span class="c1"># Initialise all the properties that this module looks after:</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="p">[</span>
@@ -424,101 +415,39 @@
         <span class="c1"># ----------------------------------- 2010-2018 -----------------------------------</span>
         <span class="n">vax_date</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;vaccine_schedule&quot;</span><span class="p">]</span>
 
-        <span class="c1"># from 2010-2018 use the reported vaccine coverage values and schedule individual events (not HSI)</span>
-        <span class="c1"># no consumables will be tracked up to end-2018</span>
-        <span class="k">if</span> <span class="n">year</span> <span class="o">&lt;=</span> <span class="mi">2018</span><span class="p">:</span>
+        <span class="c1"># each entry is (hsi event class, [days to administration key 1, days to administration key 2, ...]</span>
+        <span class="n">vax_schedule</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="c1"># schedule bcg - now dependent on health system capacity / stocks</span>
+            <span class="p">(</span><span class="n">HSI_BcgVaccine</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;bcg&#39;</span><span class="p">]),</span>
+            <span class="c1"># OPV doses 2-4 are given during the week 6, 10, 14 penta, pneumo, rota appts</span>
+            <span class="p">(</span><span class="n">HSI_opv</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;opv1&#39;</span><span class="p">,</span> <span class="s1">&#39;opv2&#39;</span><span class="p">,</span> <span class="s1">&#39;opv3&#39;</span><span class="p">,</span> <span class="s1">&#39;opvIpv4&#39;</span><span class="p">]),</span>
+            <span class="p">(</span><span class="n">HSI_PneumoVaccine</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;pneumo1&#39;</span><span class="p">,</span> <span class="s1">&#39;pneumo2&#39;</span><span class="p">,</span> <span class="s1">&#39;pneumo3&#39;</span><span class="p">]),</span>
+            <span class="p">(</span><span class="n">HSI_RotaVaccine</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;rota1&#39;</span><span class="p">,</span> <span class="s1">&#39;rota2&#39;</span><span class="p">]),</span>
+            <span class="p">(</span><span class="n">HSI_DtpHibHepVaccine</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;dtpHibHep1&#39;</span><span class="p">,</span> <span class="s1">&#39;dtpHibHep2&#39;</span><span class="p">,</span> <span class="s1">&#39;dtpHibHep3&#39;</span><span class="p">]),</span>
+            <span class="p">(</span><span class="n">HSI_MeaslesRubellaVaccine</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;MR1&#39;</span><span class="p">,</span> <span class="s1">&#39;MR2&#39;</span><span class="p">])</span>
+        <span class="p">]</span>
 
-            <span class="c1"># lookup the correct table of vaccine estimates for this child</span>
-            <span class="n">vax_coverage</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;district_vaccine_coverage&quot;</span><span class="p">]</span>
-            <span class="n">ind_vax_coverage</span> <span class="o">=</span> <span class="n">vax_coverage</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">vax_coverage</span><span class="o">.</span><span class="n">District</span> <span class="o">==</span> <span class="n">district</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">vax_coverage</span><span class="o">.</span><span class="n">Year</span> <span class="o">==</span> <span class="n">year</span><span class="p">)]</span>
-            <span class="k">assert</span> <span class="ow">not</span> <span class="n">ind_vax_coverage</span><span class="o">.</span><span class="n">empty</span>
+        <span class="c1"># choose facility level where child will receive all their childhood vaccinations</span>
+        <span class="c1"># Determine the level at which care is sought</span>
+        <span class="n">facility_levels</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="s1">&#39;1a&#39;</span><span class="p">,</span> <span class="s1">&#39;1b&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">)</span>
+        <span class="n">facility_level_for_vaccines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+            <span class="n">facility_levels</span><span class="p">,</span>
+            <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;prob_facility_level_for_vaccine&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
 
-            <span class="c1"># schedule bcg birth dose according to current coverage</span>
-            <span class="c1"># some values are &gt;1</span>
-            <span class="c1"># each entry is (coverage prob key, event class, [days_to_1_administration, days_to_2_administration, etc])</span>
-            <span class="n">pre_2018_vax_schedule</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="p">(</span><span class="s1">&#39;BCG&#39;</span><span class="p">,</span> <span class="n">BcgVaccineEvent</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;bcg&#39;</span><span class="p">]),</span>
-                <span class="c1"># assign OPV first dose according to current coverage</span>
-                <span class="c1"># OPV doses 2-4 are given during the week 6, 10, 14 penta, pneumo, rota appts</span>
-                <span class="c1"># coverage estimates for 3 doses reported, use these for doses 2-4</span>
-                <span class="p">(</span><span class="s1">&#39;OPV3&#39;</span><span class="p">,</span> <span class="n">OpvEvent</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;opv1&#39;</span><span class="p">]),</span>
-                <span class="p">(</span><span class="s1">&#39;OPV3&#39;</span><span class="p">,</span> <span class="n">OpvEvent</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;opv2&#39;</span><span class="p">,</span> <span class="s1">&#39;opv3&#39;</span><span class="p">,</span> <span class="s1">&#39;opvIpv4&#39;</span><span class="p">]),</span>
-
-                <span class="c1"># DTP1_HepB - up to and including 2012, then replaced by pentavalent vaccine</span>
-                <span class="p">(</span><span class="s1">&#39;DTP1&#39;</span><span class="p">,</span> <span class="n">DtpHepVaccineEvent</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;dtpHibHep1&#39;</span><span class="p">]),</span>
-
-                <span class="c1"># DTP2_HepB - up to and including 2012</span>
-                <span class="c1"># second doses not reported - same coverage for second and third doses</span>
-                <span class="p">(</span><span class="s1">&#39;DTP3&#39;</span><span class="p">,</span> <span class="n">DtpHepVaccineEvent</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;dtpHibHep2&#39;</span><span class="p">,</span> <span class="s1">&#39;dtpHibHep3&#39;</span><span class="p">]),</span>
-
-                <span class="p">(</span><span class="s1">&#39;Hib3&#39;</span><span class="p">,</span> <span class="n">HibVaccineEvent</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;dtpHibHep1&#39;</span><span class="p">,</span> <span class="s1">&#39;dtpHibHep2&#39;</span><span class="p">,</span> <span class="s1">&#39;dtpHibHep3&#39;</span><span class="p">]),</span>
-
-                <span class="c1"># PNEUMO - all three doses reported separately</span>
-                <span class="p">(</span><span class="s1">&#39;Pneumo1&#39;</span><span class="p">,</span> <span class="n">PneumococcalVaccineEvent</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;pneumo1&#39;</span><span class="p">]),</span>
-                <span class="p">(</span><span class="s1">&#39;Pneumo2&#39;</span><span class="p">,</span> <span class="n">PneumococcalVaccineEvent</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;pneumo2&#39;</span><span class="p">]),</span>
-                <span class="p">(</span><span class="s1">&#39;Pneumo3&#39;</span><span class="p">,</span> <span class="n">PneumococcalVaccineEvent</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;pneumo3&#39;</span><span class="p">]),</span>
-
-                <span class="c1"># ROTA - doses 1 and 2 reported separately</span>
-                <span class="p">(</span><span class="s1">&#39;Rotavirus1&#39;</span><span class="p">,</span> <span class="n">RotavirusVaccineEvent</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;rota1&#39;</span><span class="p">]),</span>
-                <span class="p">(</span><span class="s1">&#39;Rotavirus2&#39;</span><span class="p">,</span> <span class="n">RotavirusVaccineEvent</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;rota2&#39;</span><span class="p">]),</span>
-
-                <span class="c1"># PENTA1</span>
-                <span class="p">(</span><span class="s1">&#39;DTPHepHib1&#39;</span><span class="p">,</span> <span class="n">DtpHibHepVaccineEvent</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;dtpHibHep1&#39;</span><span class="p">]),</span>
-                <span class="c1"># PENTA2 - second dose not reported so use 3 dose coverage</span>
-                <span class="p">(</span><span class="s1">&#39;DTPHepHib3&#39;</span><span class="p">,</span> <span class="n">DtpHibHepVaccineEvent</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;dtpHibHep2&#39;</span><span class="p">,</span> <span class="s1">&#39;dtpHibHep3&#39;</span><span class="p">]),</span>
-
-                <span class="c1"># Measles, rubella - first dose, 2018 onwards</span>
-                <span class="p">(</span><span class="s1">&#39;MCV1_MR1&#39;</span><span class="p">,</span> <span class="n">MeaslesRubellaVaccineEvent</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;MR1&#39;</span><span class="p">]),</span>
-                <span class="p">(</span><span class="s1">&#39;MCV2_MR2&#39;</span><span class="p">,</span> <span class="n">MeaslesRubellaVaccineEvent</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;MR2&#39;</span><span class="p">]),</span>
-
-                <span class="c1"># Measles - first dose, only one dose pre-2017 and no rubella</span>
-                <span class="p">(</span><span class="s1">&#39;MCV1&#39;</span><span class="p">,</span> <span class="n">MeaslesVaccineEvent</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;MR1&#39;</span><span class="p">])</span>
-            <span class="p">]</span>
-
-            <span class="k">for</span> <span class="n">each_vax</span> <span class="ow">in</span> <span class="n">pre_2018_vax_schedule</span><span class="p">:</span>
-                <span class="n">coverage_key</span><span class="p">,</span> <span class="n">vax_event</span><span class="p">,</span> <span class="n">admin_schedule</span> <span class="o">=</span> <span class="n">each_vax</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">ind_vax_coverage</span><span class="p">[</span><span class="n">coverage_key</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">:</span>
-                    <span class="n">vax_event_instance</span> <span class="o">=</span> <span class="n">vax_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">child_id</span><span class="p">)</span>
-                    <span class="k">for</span> <span class="n">admin_key</span> <span class="ow">in</span> <span class="n">admin_schedule</span><span class="p">:</span>
-                        <span class="n">days_to_admin</span> <span class="o">=</span> <span class="n">vax_date</span><span class="p">[</span><span class="n">admin_key</span><span class="p">]</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">vax_event_instance</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">days_to_admin</span><span class="p">))</span>
-
-        <span class="c1"># ----------------------------------- 2019 onwards -----------------------------------</span>
-        <span class="k">else</span><span class="p">:</span>
-
-            <span class="c1"># after 2018</span>
-            <span class="c1"># each entry is (hsi event class, [days to administration key 1, days to administration key 2, ...]</span>
-            <span class="n">post_2018_vax_schedule</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="c1"># schedule bcg - now dependent on health system capacity / stocks</span>
-                <span class="p">(</span><span class="n">HSI_BcgVaccine</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;bcg&#39;</span><span class="p">]),</span>
-                <span class="c1"># OPV doses 2-4 are given during the week 6, 10, 14 penta, pneumo, rota appts</span>
-                <span class="p">(</span><span class="n">HSI_opv</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;opv1&#39;</span><span class="p">,</span> <span class="s1">&#39;opv2&#39;</span><span class="p">,</span> <span class="s1">&#39;opv3&#39;</span><span class="p">,</span> <span class="s1">&#39;opvIpv4&#39;</span><span class="p">]),</span>
-                <span class="p">(</span><span class="n">HSI_PneumoVaccine</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;pneumo1&#39;</span><span class="p">,</span> <span class="s1">&#39;pneumo2&#39;</span><span class="p">,</span> <span class="s1">&#39;pneumo3&#39;</span><span class="p">]),</span>
-                <span class="p">(</span><span class="n">HSI_RotaVaccine</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;rota1&#39;</span><span class="p">,</span> <span class="s1">&#39;rota2&#39;</span><span class="p">]),</span>
-                <span class="p">(</span><span class="n">HSI_DtpHibHepVaccine</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;dtpHibHep1&#39;</span><span class="p">,</span> <span class="s1">&#39;dtpHibHep2&#39;</span><span class="p">,</span> <span class="s1">&#39;dtpHibHep3&#39;</span><span class="p">]),</span>
-                <span class="p">(</span><span class="n">HSI_MeaslesRubellaVaccine</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;MR1&#39;</span><span class="p">,</span> <span class="s1">&#39;MR2&#39;</span><span class="p">])</span>
-            <span class="p">]</span>
-
-            <span class="k">for</span> <span class="n">each_vax</span> <span class="ow">in</span> <span class="n">post_2018_vax_schedule</span><span class="p">:</span>
-                <span class="n">vax_hsi_event</span><span class="p">,</span> <span class="n">admin_schedule</span> <span class="o">=</span> <span class="n">each_vax</span>
-                <span class="k">for</span> <span class="n">admin_key</span> <span class="ow">in</span> <span class="n">admin_schedule</span><span class="p">:</span>
-                    <span class="n">vax_event_instance</span> <span class="o">=</span> <span class="n">vax_hsi_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">child_id</span><span class="p">)</span>
-                    <span class="n">scheduled_date</span> <span class="o">=</span> <span class="n">vax_date</span><span class="p">[</span><span class="n">admin_key</span><span class="p">]</span>
-                    <span class="c1"># Request the health system to have this vaccination appointment</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
-                        <span class="n">vax_event_instance</span><span class="p">,</span>
-                        <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                        <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">scheduled_date</span><span class="p">),</span>
-                        <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
-                    <span class="p">)</span></div>
-
-<div class="viewcode-block" id="Epi.on_hsi_alert"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.Epi.on_hsi_alert">[docs]</a>    <span class="k">def</span> <span class="nf">on_hsi_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This is called whenever there is an HSI event commissioned by one of the other disease modules.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span></div>
-        <span class="c1"># TODO: consider here how early interventions are bundled</span>
-        <span class="c1"># TODO: routine infant check-ups may occur alongside vaccinations</span>
+        <span class="k">for</span> <span class="n">each_vax</span> <span class="ow">in</span> <span class="n">vax_schedule</span><span class="p">:</span>
+            <span class="n">vax_hsi_event</span><span class="p">,</span> <span class="n">admin_schedule</span> <span class="o">=</span> <span class="n">each_vax</span>
+            <span class="k">for</span> <span class="n">admin_key</span> <span class="ow">in</span> <span class="n">admin_schedule</span><span class="p">:</span>
+                <span class="n">vax_event_instance</span> <span class="o">=</span> <span class="n">vax_hsi_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">child_id</span><span class="p">,</span>
+                                                   <span class="n">facility_level_of_this_hsi</span><span class="o">=</span><span class="n">facility_level_for_vaccines</span><span class="p">)</span>
+                <span class="n">scheduled_date</span> <span class="o">=</span> <span class="n">vax_date</span><span class="p">[</span><span class="n">admin_key</span><span class="p">]</span>
+                <span class="c1"># Request the health system to have this vaccination appointment</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                    <span class="n">vax_event_instance</span><span class="p">,</span>
+                    <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">scheduled_date</span><span class="p">),</span>
+                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
+                <span class="p">)</span></div>
 
 <div class="viewcode-block" id="Epi.report_daly_values"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.Epi.report_daly_values">[docs]</a>    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; epi module returns dalys=0 for all persons alive &quot;&quot;&quot;</span>
@@ -537,98 +466,25 @@
 
 <div class="viewcode-block" id="Epi.get_item_codes"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.Epi.get_item_codes">[docs]</a>    <span class="k">def</span> <span class="nf">get_item_codes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Look-up the item-codes for each vaccine and update `self.cons_item_codes`&quot;&quot;&quot;</span>
-        <span class="c1"># get_item_codes_from_package_name = self.sim.modules[&#39;HealthSystem&#39;].get_item_codes_from_package_name</span>
         <span class="n">get_item_code_from_item_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;bcg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Syringe, autodisposable, BCG, 0.1 ml, with needle&quot;</span><span class="p">),</span>
-            <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Safety box for used syringes/needles, 5 liter&quot;</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;bcg&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Syringe, autodisposable, BCG, 0.1 ml, with needle&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;opv&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Polio vaccine&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;pentavalent_vaccine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Pentavalent vaccine (DPT, Hep B, Hib)&quot;</span><span class="p">),</span>
-                <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Syringe, Autodisable SoloShot IX &quot;</span><span class="p">),</span>
-                <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Safety box for used syringes/needles, 5 liter&quot;</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;pentavalent_vaccine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_code_from_item_name</span><span class="p">(</span>
+            <span class="s2">&quot;Pentavalent vaccine (DPT, Hep B, Hib)&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;rota&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Rotavirus vaccine&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;pneumo&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-                <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Pneumococcal vaccine&quot;</span><span class="p">),</span>
-                <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Syringe, Autodisable SoloShot IX &quot;</span><span class="p">),</span>
-                <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Safety box for used syringes/needles, 5 liter&quot;</span><span class="p">)]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;measles_and_rubella&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Measles vaccine&quot;</span><span class="p">),</span>
-            <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Syringe, Autodisable SoloShot IX &quot;</span><span class="p">),</span>
-            <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Safety box for used syringes/needles, 5 liter&quot;</span><span class="p">)]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;hpv&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;HPV vaccine&quot;</span><span class="p">),</span>
-            <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Syringe, Autodisable SoloShot IX &quot;</span><span class="p">),</span>
-            <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Safety box for used syringes/needles, 5 liter&quot;</span><span class="p">)]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;td&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Tetanus toxoid, injection&quot;</span><span class="p">),</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;pneumo&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Pneumococcal vaccine&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;measles_and_rubella&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Measles vaccine&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;hpv&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;HPV vaccine&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;td&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Tetanus toxoid, injection&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;syringes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Syringe, Autodisable SoloShot IX &quot;</span><span class="p">),</span>
             <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s2">&quot;Safety box for used syringes/needles, 5 liter&quot;</span><span class="p">)]</span></div></div>
 
+
 <span class="c1"># ---------------------------------------------------------------------------------</span>
-<span class="c1"># Individually Scheduled Vaccine Events</span>
+<span class="c1"># Schedule vaccines outside EPI</span>
 <span class="c1"># ---------------------------------------------------------------------------------</span>
-
-
-<span class="c1"># BCG</span>
-<div class="viewcode-block" id="BcgVaccineEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.BcgVaccineEvent">[docs]</a><span class="k">class</span> <span class="nc">BcgVaccineEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; give BCG vaccine at birth &quot;&quot;&quot;</span>
-<div class="viewcode-block" id="BcgVaccineEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.BcgVaccineEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;bcg&quot;</span><span class="p">)</span></div></div>
-
-
-<div class="viewcode-block" id="OpvEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.OpvEvent">[docs]</a><span class="k">class</span> <span class="nc">OpvEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; give oral poliovirus vaccine (OPV) &quot;&quot;&quot;</span>
-<div class="viewcode-block" id="OpvEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.OpvEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;opv&quot;</span><span class="p">)</span></div></div>
-
-
-<div class="viewcode-block" id="DtpHepVaccineEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.DtpHepVaccineEvent">[docs]</a><span class="k">class</span> <span class="nc">DtpHepVaccineEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; give DTP_Hep vaccine &quot;&quot;&quot;</span>
-<div class="viewcode-block" id="DtpHepVaccineEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.DtpHepVaccineEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;dtp&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;hep&quot;</span><span class="p">)</span></div></div>
-
-
-<div class="viewcode-block" id="DtpHibHepVaccineEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.DtpHibHepVaccineEvent">[docs]</a><span class="k">class</span> <span class="nc">DtpHibHepVaccineEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; give DTP_Hib_Hep vaccine &quot;&quot;&quot;</span>
-<div class="viewcode-block" id="DtpHibHepVaccineEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.DtpHibHepVaccineEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;dtp&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;hep&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;hib&quot;</span><span class="p">)</span></div></div>
-
-
-<div class="viewcode-block" id="RotavirusVaccineEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.RotavirusVaccineEvent">[docs]</a><span class="k">class</span> <span class="nc">RotavirusVaccineEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; give Rotavirus vaccine &quot;&quot;&quot;</span>
-<div class="viewcode-block" id="RotavirusVaccineEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.RotavirusVaccineEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;rota&quot;</span><span class="p">)</span></div></div>
-
-
-<div class="viewcode-block" id="PneumococcalVaccineEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.PneumococcalVaccineEvent">[docs]</a><span class="k">class</span> <span class="nc">PneumococcalVaccineEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; give Pneumococcal vaccine (PCV) &quot;&quot;&quot;</span>
-<div class="viewcode-block" id="PneumococcalVaccineEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.PneumococcalVaccineEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pneumo&quot;</span><span class="p">)</span></div></div>
-
-
-<div class="viewcode-block" id="HibVaccineEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HibVaccineEvent">[docs]</a><span class="k">class</span> <span class="nc">HibVaccineEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; give Haemophilus influenza B vaccine &quot;&quot;&quot;</span>
-<div class="viewcode-block" id="HibVaccineEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HibVaccineEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;hib&quot;</span><span class="p">)</span></div></div>
-
-
-<div class="viewcode-block" id="MeaslesVaccineEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.MeaslesVaccineEvent">[docs]</a><span class="k">class</span> <span class="nc">MeaslesVaccineEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; give measles vaccine &quot;&quot;&quot;</span>
-<div class="viewcode-block" id="MeaslesVaccineEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.MeaslesVaccineEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;measles&quot;</span><span class="p">)</span></div></div>
-
-
-<div class="viewcode-block" id="MeaslesRubellaVaccineEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.MeaslesRubellaVaccineEvent">[docs]</a><span class="k">class</span> <span class="nc">MeaslesRubellaVaccineEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot; give measles/rubella vaccine &quot;&quot;&quot;</span>
-<div class="viewcode-block" id="MeaslesRubellaVaccineEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.MeaslesRubellaVaccineEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;measles&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;rubella&quot;</span><span class="p">)</span></div></div>
-
 
 <div class="viewcode-block" id="HpvScheduleEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HpvScheduleEvent">[docs]</a><span class="k">class</span> <span class="nc">HpvScheduleEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; HPV vaccine event - each year sample from 9 year old girls and schedule vaccine</span>
@@ -638,6 +494,7 @@
 <span class="sd">    WHO recommends 2 doses</span>
 <span class="sd">    schedule doses 1 month apart</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="HpvScheduleEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HpvScheduleEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">12</span><span class="p">))</span></div>
 
@@ -663,8 +520,15 @@
             <span class="c1"># then select that value from the scheduled_vax_date</span>
             <span class="n">vax_date</span> <span class="o">=</span> <span class="n">scheduled_vax_dates</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
 
+            <span class="n">facility_levels</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="s1">&#39;1a&#39;</span><span class="p">,</span> <span class="s1">&#39;1b&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">)</span>
+            <span class="n">facility_level_for_vaccines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+                <span class="n">facility_levels</span><span class="p">,</span>
+                <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;prob_facility_level_for_vaccine&#39;</span><span class="p">]</span>
+            <span class="p">)</span>
+
             <span class="c1"># first dose</span>
-            <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_HpvVaccine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
+            <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_HpvVaccine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
+                                   <span class="n">facility_level_of_this_hsi</span><span class="o">=</span><span class="n">facility_level_for_vaccines</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
                 <span class="n">event</span><span class="p">,</span>
@@ -685,22 +549,27 @@
 <span class="c1"># ---------------------------------------------------------------------------------</span>
 <span class="c1"># Health System Interaction Events</span>
 <span class="c1"># ---------------------------------------------------------------------------------</span>
-<span class="c1"># TODO: note syringe disposal units will accommodate ~100 syringes</span>
-<span class="c1"># request a box with each vaccine but don&#39;t need to condition HSI on availability</span>
-<span class="c1"># likely always safety boxes available</span>
-<span class="c1"># could request 1/100 of a box with each vaccine</span>
+
 
 <div class="viewcode-block" id="HsiBaseVaccine"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HsiBaseVaccine">[docs]</a><span class="k">class</span> <span class="nc">HsiBaseVaccine</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a base class for all vaccination HSI_Events. Handles initialisation and requesting consumables needed</span>
 <span class="sd">    for the vaccination. For custom behaviour, you can override __init__ in subclasses and implemented your own</span>
-<span class="sd">    constructors (or inherit directly from HSI_Event)&quot;&quot;&quot;</span>
-<div class="viewcode-block" id="HsiBaseVaccine.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HsiBaseVaccine.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<span class="sd">    constructors (or inherit directly from HSI_Event)</span>
+<span class="sd">    unless specified, default facility level is 1a</span>
+<span class="sd">    unless specified, footprint returned in 1 EPI appt</span>
+<span class="sd">    if vaccine occurs as part of a treatment package within another appointment, use suppress_footprint=True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="HsiBaseVaccine.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HsiBaseVaccine.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">facility_level_of_this_hsi</span><span class="o">=</span><span class="s2">&quot;1a&quot;</span><span class="p">,</span> <span class="n">suppress_footprint</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Epi</span><span class="p">)</span>
 
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">suppress_footprint</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">suppress_footprint</span> <span class="o">=</span> <span class="n">suppress_footprint</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">treatment_id</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;EPI&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({}</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">suppress_footprint</span> <span class="k">else</span> <span class="p">{</span><span class="s2">&quot;EPI&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="n">facility_level_of_this_hsi</span></div>
 
 <div class="viewcode-block" id="HsiBaseVaccine.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HsiBaseVaccine.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;subclasses should implement this method to return the TREATMENT_ID&quot;&quot;&quot;</span>
@@ -716,33 +585,39 @@
 
 <div class="viewcode-block" id="HSI_BcgVaccine"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_BcgVaccine">[docs]</a><span class="k">class</span> <span class="nc">HSI_BcgVaccine</span><span class="p">(</span><span class="n">HsiBaseVaccine</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;gives bcg vaccine 24 hours after birth or as soon as possible afterwards&quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="HSI_BcgVaccine.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_BcgVaccine.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;Epi_Childhood_Bcg&quot;</span></div>
 
 <div class="viewcode-block" id="HSI_BcgVaccine.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_BcgVaccine.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;va_bcg&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">all_doses</span><span class="p">[</span><span class="s2">&quot;bcg&quot;</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;bcg&quot;</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;bcg&quot;</span><span class="p">],</span>
+                                    <span class="n">optional_item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;syringes&quot;</span><span class="p">]):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;bcg&quot;</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="HSI_opv"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_opv">[docs]</a><span class="k">class</span> <span class="nc">HSI_opv</span><span class="p">(</span><span class="n">HsiBaseVaccine</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;gives poliovirus vaccine 24 hours after birth, plus weeks 6, 10, 14 or as soon as possible afterwards&quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="HSI_opv.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_opv.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;Epi_Childhood_Opv&quot;</span></div>
 
 <div class="viewcode-block" id="HSI_opv.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_opv.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;opv&quot;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;opv&quot;</span><span class="p">],</span>
+                                <span class="n">optional_item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;syringes&quot;</span><span class="p">]):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;opv&quot;</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="HSI_DtpHibHepVaccine"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_DtpHibHepVaccine">[docs]</a><span class="k">class</span> <span class="nc">HSI_DtpHibHepVaccine</span><span class="p">(</span><span class="n">HsiBaseVaccine</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; gives DTP-Hib_HepB vaccine &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="HSI_DtpHibHepVaccine.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_DtpHibHepVaccine.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;Epi_Childhood_DtpHibHep&quot;</span></div>
 
 <div class="viewcode-block" id="HSI_DtpHibHepVaccine.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_DtpHibHepVaccine.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;pentavalent_vaccine&#39;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;pentavalent_vaccine&#39;</span><span class="p">],</span>
+                                <span class="n">optional_item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;syringes&quot;</span><span class="p">]):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;dtp&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;hib&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;hep&quot;</span><span class="p">)</span></div></div>
@@ -750,6 +625,7 @@
 
 <div class="viewcode-block" id="HSI_RotaVaccine"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_RotaVaccine">[docs]</a><span class="k">class</span> <span class="nc">HSI_RotaVaccine</span><span class="p">(</span><span class="n">HsiBaseVaccine</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; gives Rotavirus vaccine 6 and 10 weeks after birth &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="HSI_RotaVaccine.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_RotaVaccine.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;Epi_Childhood_Rota&quot;</span></div>
 
@@ -760,40 +636,56 @@
         <span class="c1"># available from 2012 onwards</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;va_rota&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">all_doses</span><span class="p">[</span><span class="s2">&quot;rota&quot;</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;rota&quot;</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;rota&quot;</span><span class="p">],</span>
+                                    <span class="n">optional_item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;syringes&quot;</span><span class="p">]):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;rota&quot;</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="HSI_PneumoVaccine"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_PneumoVaccine">[docs]</a><span class="k">class</span> <span class="nc">HSI_PneumoVaccine</span><span class="p">(</span><span class="n">HsiBaseVaccine</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; gives Pneumococcal vaccine 6, 10 and 14 weeks after birth &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="HSI_PneumoVaccine.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_PneumoVaccine.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;Epi_Childhood_Pneumo&quot;</span></div>
 
 <div class="viewcode-block" id="HSI_PneumoVaccine.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_PneumoVaccine.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;pneumo&quot;</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;pneumo&quot;</span><span class="p">],</span>
+                                <span class="n">optional_item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;syringes&quot;</span><span class="p">]):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;pneumo&quot;</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="HSI_MeaslesRubellaVaccine"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_MeaslesRubellaVaccine">[docs]</a><span class="k">class</span> <span class="nc">HSI_MeaslesRubellaVaccine</span><span class="p">(</span><span class="n">HsiBaseVaccine</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; administers measles+rubella vaccine &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="HSI_MeaslesRubellaVaccine.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_MeaslesRubellaVaccine.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;Epi_Childhood_MeaslesRubella&quot;</span></div>
 
 <div class="viewcode-block" id="HSI_MeaslesRubellaVaccine.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_MeaslesRubellaVaccine.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;measles_and_rubella&quot;</span><span class="p">]):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;measles&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;rubella&quot;</span><span class="p">)</span></div></div>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+
+        <span class="c1"># give vaccine if first dose or if second dose and after 2016</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;va_measles&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+                <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;va_measles&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">year</span> <span class="o">&gt;=</span> <span class="mi">2016</span><span class="p">)):</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;measles_and_rubella&quot;</span><span class="p">],</span>
+                                    <span class="n">optional_item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;syringes&quot;</span><span class="p">]):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;measles&quot;</span><span class="p">)</span>
+
+                <span class="c1"># rubella contained in vaccine from 2018</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">year</span> <span class="o">&gt;=</span> <span class="mi">2018</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;rubella&quot;</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="HSI_HpvVaccine"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_HpvVaccine">[docs]</a><span class="k">class</span> <span class="nc">HSI_HpvVaccine</span><span class="p">(</span><span class="n">HsiBaseVaccine</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; gives HPV vaccine to 9 year old girls; recommended 2 doses (WHO) &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="HSI_HpvVaccine.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_HpvVaccine.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;Epi_Adolescent_Hpv&quot;</span></div>
 
 <div class="viewcode-block" id="HSI_HpvVaccine.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_HpvVaccine.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;va_hpv&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">all_doses</span><span class="p">[</span><span class="s2">&quot;hpv&quot;</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;hpv&quot;</span><span class="p">]):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;hpv&quot;</span><span class="p">],</span>
+                                    <span class="n">optional_item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;syringes&quot;</span><span class="p">]):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;hpv&quot;</span><span class="p">)</span></div></div>
 
 
@@ -801,11 +693,14 @@
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; gives tetanus/diphtheria vaccine to pregnant women as part of routine antenatal care</span>
 <span class="sd">    recommended 2+ doses (WHO)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="HSI_TdVaccine.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_TdVaccine.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="s2">&quot;Epi_Pregnancy_Td&quot;</span></div>
 
 <div class="viewcode-block" id="HSI_TdVaccine.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_TdVaccine.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;td&quot;</span><span class="p">]):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;td&quot;</span><span class="p">],</span>
+                                <span class="n">optional_item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;syringes&quot;</span><span class="p">]):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;td&quot;</span><span class="p">)</span></div></div>
 
 
@@ -849,6 +744,7 @@
         <span class="c1"># so check coverage in 15 month -2 year olds</span>
         <span class="n">from_15_months_to_two</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_exact_years</span> <span class="o">&gt;=</span> <span class="mf">1.25</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&lt;=</span> <span class="mi">2</span><span class="p">)</span>
         <span class="n">measles_coverage</span> <span class="o">=</span> <span class="n">get_coverage</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">va_measles</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">from_15_months_to_two</span><span class="p">)</span>
+        <span class="n">measles2_coverage</span> <span class="o">=</span> <span class="n">get_coverage</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">va_measles</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">from_15_months_to_two</span><span class="p">)</span>
 
         <span class="c1"># rubella vaccination coverage in &lt;2 year old children - 1 dose</span>
         <span class="c1"># first dose is at 9 months, second dose is 15 months</span>
@@ -871,6 +767,7 @@
                 <span class="s2">&quot;epPneumo3Coverage&quot;</span><span class="p">:</span> <span class="n">pneumo3_coverage</span><span class="p">,</span>
                 <span class="s2">&quot;epRota2Coverage&quot;</span><span class="p">:</span> <span class="n">rota_coverage</span><span class="p">,</span>
                 <span class="s2">&quot;epMeaslesCoverage&quot;</span><span class="p">:</span> <span class="n">measles_coverage</span><span class="p">,</span>
+                <span class="s2">&quot;epMeasles2Coverage&quot;</span><span class="p">:</span> <span class="n">measles2_coverage</span><span class="p">,</span>
                 <span class="s2">&quot;epRubellaCoverage&quot;</span><span class="p">:</span> <span class="n">rubella_coverage</span><span class="p">,</span>
                 <span class="s2">&quot;epHpvCoverage&quot;</span><span class="p">:</span> <span class="n">hpv_coverage</span>
             <span class="p">}</span>
@@ -887,7 +784,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Apr 06, 2023.
+        Last updated on Aug 11, 2023.
       </span>
 
     </p>

@@ -123,6 +123,9 @@ tlo.methods.depression module
         * - anti_depressant_medication_item_code
           - INT
           - The item code used for one month of anti-depressant treatment
+        * - pr_assessed_for_depression_for_perinatal_female
+          - REAL
+          - Probability that a perinatal female is assessed for depression during antenatal or postnatal services
 
 
      **PROPERTIES:**
@@ -172,13 +175,13 @@ tlo.methods.depression module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Suicide': <tlo.methods.causes.Cause object at 0x7fabf9bb9d30>}
+     CAUSES_OF_DEATH : {'Suicide': <tlo.methods.causes.Cause object at 0x7fd214e0c850>}
 
-     CAUSES_OF_DISABILITY : {'SevereDepression': <tlo.methods.causes.Cause object at 0x7fabf9bb9dc0>}
+     CAUSES_OF_DISABILITY : {'SevereDepression': <tlo.methods.causes.Cause object at 0x7fd214e0c8e0>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Lifestyle', 'SymptomManager', 'Contraception', 'Demography'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'Contraception', 'Lifestyle', 'HealthSystem', 'Demography'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -199,6 +202,8 @@ tlo.methods.depression module
      .. automethod:: on_hsi_alert
 
      .. automethod:: report_daly_values
+
+     .. automethod:: do_on_presentation_to_care
 
      .. automethod:: do_when_suspected_depression
 
