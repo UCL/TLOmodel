@@ -6,7 +6,7 @@ import itertools
 import time
 from collections import OrderedDict
 from pathlib import Path
-from typing import Dict, Union, Optional
+from typing import Dict, Optional, Union
 
 import numpy as np
 
