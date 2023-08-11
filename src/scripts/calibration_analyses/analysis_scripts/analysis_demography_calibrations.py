@@ -10,7 +10,7 @@ or
 src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py
 
 """
-
+import argparse
 from pathlib import Path
 
 import numpy as np
@@ -21,7 +21,6 @@ from matplotlib.ticker import FormatStrFormatter
 from tlo.analysis.utils import (
     extract_results,
     format_gbd,
-    get_scenario_outputs,
     make_age_grp_lookup,
     make_age_grp_types,
     make_calendar_period_lookup,
@@ -103,9 +102,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             marker='o', markersize=10, linestyle='none', label='Census', zorder=10, color=colors['Census'])
     ax.plot(pop_model.index, pop_model['mean'] / 1e6,
             label='Model (mean)', color=colors['Model'])
-    ax.fill_between(pop_model.index,
-                    pop_model['lower'] / 1e6,
-                    pop_model['upper'] / 1e6,
+    ax.fill_between((pop_model.index).to_numpy(),
+                    (pop_model['lower'] / 1e6).to_numpy(),
+                    (pop_model['upper'] / 1e6).to_numpy(),
                     color=colors['Model'],
                     alpha=0.2,
                     zorder=5
@@ -361,9 +360,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             label='Model',
             color=colors['Model']
         )
-        ax.fill_between(births_loc.index,
-                        births_loc['Model_lower'] / 1e6,
-                        births_loc['Model_upper'] / 1e6,
+        ax.fill_between((births_loc.index).to_numpy(),
+                        (births_loc['Model_lower'] / 1e6).to_numpy(),
+                        (births_loc['Model_upper'] / 1e6).to_numpy(),
                         facecolor=colors['Model'], alpha=0.2)
         ax.plot(
             births_loc.index,
@@ -371,9 +370,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             color=colors['WPP'],
             label='WPP'
         )
-        ax.fill_between(births_loc.index,
-                        births_loc['WPP_Low variant'] / 1e6,
-                        births_loc['WPP_High variant'] / 1e6,
+        ax.fill_between((births_loc.index).to_numpy(),
+                        (births_loc['WPP_Low variant'] / 1e6).to_numpy(),
+                        (births_loc['WPP_High variant'] / 1e6).to_numpy(),
                         facecolor=colors['WPP'], alpha=0.2)
         ax.legend(loc='upper left')
         plt.xticks(rotation=90)
@@ -544,8 +543,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         l1 = ax[i].plot(data_year, data_asfr, 'k-', label='WPP')
         l2 = ax[i].plot(model.index, model[(0, 'mean', _agegrp)], 'r-', label='Model')
-        ax[i].fill_between(model.index, model[(0, 'lower', _agegrp)], model[(0, 'upper', _agegrp)],
-                           color='r', alpha=0.2)
+        ax[i].fill_between((model.index).to_numpy(),
+                           (model[(0, 'lower', _agegrp)]).to_numpy(),
+                           (model[(0, 'upper', _agegrp)]).to_numpy(),
+                           color='r',
+                           alpha=0.2)
         ax[i].set_ylim(0, 0.4)
         ax[i].set_title(f'Age at Conception: {_agegrp}y', fontsize=6)
         ax[i].set_xlabel('Year')
@@ -574,7 +576,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     to_plot = pd.concat([model_asfr.loc[_period], data_asfr.loc[_period]], axis=1)
     ax.plot(to_plot.index, to_plot[_period], label='WPP', color=colors['WPP'])
     ax.plot(to_plot.index, to_plot['mean'], label='Model', color=colors['Model'])
-    ax.fill_between(to_plot.index, to_plot['lower'], to_plot['upper'], color=colors['Model'], alpha=0.2)
+    ax.fill_between((to_plot.index).to_numpy(),
+                    (to_plot['lower']).to_numpy(),
+                    (to_plot['upper']).to_numpy(),
+                    color=colors['Model'],
+                    alpha=0.2)
     ax.set_xlabel('Age at Conception')
     ax.set_ylabel('Live births per woman-year')
     ax.set_title(f'{_period}')
@@ -658,9 +664,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         label='WPP',
         color=colors['WPP'])
     ax.fill_between(
-        deaths_by_period.index,
-        deaths_by_period['WPP_Low variant'] / 1e6,
-        deaths_by_period['WPP_High variant'] / 1e6,
+        (deaths_by_period.index).to_numpy(),
+        (deaths_by_period['WPP_Low variant'] / 1e6).to_numpy(),
+        (deaths_by_period['WPP_High variant'] / 1e6).to_numpy(),
         facecolor=colors['WPP'], alpha=0.2)
     ax.plot(
         deaths_by_period.index,
@@ -669,9 +675,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         color=colors['GBD']
     )
     ax.fill_between(
-        deaths_by_period.index,
-        deaths_by_period['GBD_Lower'] / 1e6,
-        deaths_by_period['GBD_Upper'] / 1e6,
+        (deaths_by_period.index).to_numpy(),
+        (deaths_by_period['GBD_Lower'] / 1e6).to_numpy(),
+        (deaths_by_period['GBD_Upper'] / 1e6).to_numpy(),
         facecolor=colors['GBD'], alpha=0.2)
     ax.plot(
         deaths_by_period.index,
@@ -680,9 +686,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         color=colors['Model']
     )
     ax.fill_between(
-        deaths_by_period.index,
-        deaths_by_period['Model_lower'] / 1e6,
-        deaths_by_period['Model_upper'] / 1e6,
+        (deaths_by_period.index).to_numpy(),
+        (deaths_by_period['Model_lower'] / 1e6).to_numpy(),
+        (deaths_by_period['Model_upper'] / 1e6).to_numpy(),
         facecolor=colors['Model'], alpha=0.2)
 
     ax.set_title('Number of Deaths')
@@ -739,9 +745,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     label='WPP',
                     color=colors['WPP'])
                 ax.fill_between(
-                    tot_deaths_byage.index,
-                    tot_deaths_byage['WPP_Low variant'] / 1e3,
-                    tot_deaths_byage['WPP_High variant'] / 1e3,
+                    (tot_deaths_byage.index).to_numpy(),
+                    (tot_deaths_byage['WPP_Low variant'] / 1e3).to_numpy(),
+                    (tot_deaths_byage['WPP_High variant'] / 1e3).to_numpy(),
                     facecolor=colors['WPP'], alpha=0.2)
             else:
                 ax.plot(
@@ -757,9 +763,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     label='GBD',
                     color=colors['GBD'])
                 ax.fill_between(
-                    tot_deaths_byage.index,
-                    tot_deaths_byage['GBD_Lower'] / 1e3,
-                    tot_deaths_byage['GBD_Upper'] / 1e3,
+                    (tot_deaths_byage.index).to_numpy(),
+                    (tot_deaths_byage['GBD_Lower'] / 1e3).to_numpy(),
+                    (tot_deaths_byage['GBD_Upper'] / 1e3).to_numpy(),
                     facecolor=colors['GBD'], alpha=0.2)
 
             ax.plot(
@@ -768,9 +774,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 label='Model',
                 color=colors['Model'])
             ax.fill_between(
-                tot_deaths_byage.index,
-                tot_deaths_byage['Model_lower'] / 1e3,
-                tot_deaths_byage['Model_upper'] / 1e3,
+                (tot_deaths_byage.index).to_numpy(),
+                (tot_deaths_byage['Model_lower'] / 1e3).to_numpy(),
+                (tot_deaths_byage['Model_upper'] / 1e3).to_numpy(),
                 facecolor=colors['Model'], alpha=0.2)
 
             ax.set_xticks(np.arange(len(tot_deaths_byage.index)))
@@ -788,11 +794,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 if __name__ == "__main__":
-    outputspath = Path('./outputs/tbh03@ic.ac.uk')
-    rfp = Path('./resources')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("results_folder", type=Path)
+    args = parser.parse_args()
 
-    # Find results folder (most recent run generated using that scenario_filename)
-    scenario_filename = 'long_run_all_diseases.py'
-    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
-
-    apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
+    apply(
+        results_folder=args.results_folder,
+        output_folder=args.results_folder,
+        resourcefilepath=Path('./resources')
+    )
