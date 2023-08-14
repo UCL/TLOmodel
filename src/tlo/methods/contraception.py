@@ -975,8 +975,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
         new_co_30plus = transition_states(
             df.loc[switch_idx_30plus, 'co_contraception'], pp['p_switching_to_30plus'], rng
         )
-        new_co = [new_co_below30, new_co_30plus]
-        new_co = pd.concat(new_co)
+        new_co = pd.concat([new_co_below30, new_co_30plus])
 
         # Do the contraceptive change for those switching
         if len(new_co) > 0:
