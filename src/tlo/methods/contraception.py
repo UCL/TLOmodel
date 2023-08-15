@@ -164,6 +164,9 @@ class Contraception(Module):
         self.cons_codes = dict()  # (Will store the consumables codes for use in the HSI)
         self.rng2 = None  # (Will be a second random number generator, used for things to do with scheduling HSI)
 
+        self._women_ids_sterilized_below30 = set()  # The ids of women who had female sterilization initiated when they
+        #                                             were less than 30 years old.
+
     def read_parameters(self, data_folder):
         """Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters
         (CSV ResourceFile).
@@ -697,8 +700,9 @@ class Contraception(Module):
             new_contraceptive = self.rng.choice(probs_30plus.index, p=probs_30plus.values)
 
         # Do the change in contraceptive
-        if new_contraceptive == 'female_sterilization':
-            assert mother_age >= 30
+        if (new_contraceptive == 'female_sterilization') & (mother_age < 30):
+            self._women_ids_sterilized_below30.add(mother_id)
+
         self.schedule_batch_of_contraceptive_changes(ids=[mother_id], old=['not_using'], new=[new_contraceptive])
 
     def get_item_code_for_each_contraceptive(self):
@@ -738,8 +742,9 @@ class Contraception(Module):
         states_to_maintain_on = sorted(self.states_that_may_require_HSI_to_maintain_on)
 
         for _woman_id, _old, _new in zip(ids, old, new):
-            if _new == 'female_sterilization':
-                assert df.loc[_woman_id, 'age_years'] >= 30
+            if (_new == 'female_sterilization') and (df.loc[_woman_id, 'age_years'] < 30):
+                self._women_ids_sterilized_below30.add(_woman_id)
+
             # Does this change require an HSI?
             is_a_switch = _old != _new
             reqs_appt = _new in self.states_that_may_require_HSI_to_switch_to if is_a_switch \
@@ -826,6 +831,17 @@ class Contraception(Module):
             self.sim.schedule_event(DirectBirth(person_id=_id * (-1), module=self),
                                     random_date(self.sim.date, self.sim.date + pd.DateOffset(months=9), self.rng)
                                     )
+
+    def on_simulation_end(self):
+        """Do tasks at the end of the simulation: Raise warning and enter to log about women_ids who are sterilized
+        when under 30 years old."""
+        if self._women_ids_sterilized_below30:
+            warnings.warn(UserWarning(f"IDs of women for whom sterilization was initiated when they were under 30:/n"
+                                      f"{self._women_ids_sterilized_below30}"))
+            logger.info(
+                key="women_ids_sterilized_below30",
+                data={"ids": self._women_ids_sterilized_below30}
+            )
 
 
 class DirectBirth(Event, IndividualScopeEventMixin):
