@@ -17,6 +17,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HealthSystemChangeParameters, HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
+from pandas.tseries.offsets import DateOffset
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -2049,13 +2050,14 @@ def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         now = self.sim.date
         p = self.module.parameters
+        person = df.loc[person_id]
         rng = self.module.rng
 
         logger.debug(key="message", data=f"Selecting persons for xray services")
         prob_cxr_screening = p['probability_access_to_xray']
 
         # 1. get (and hold) index of eligible people
-        eligible = df.index[~df.tb_diagnosed & df.is_alive]
+        eligible = df.index[~df.tb_diagnosed & df.is_alive] & person["age_years"] < 5
 
         # 2. select people for CXR screening
         select_for_screening = rng.choice([True, False],
@@ -2070,7 +2072,8 @@ def apply(self, person_id, squeeze_factor):
             for person_id in screen_idx:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
-                    topen=now + DateOffset(days=7),
+                    #topen=now + DateOffset(days=7),
+                    topen=self.sim.date + pd.DateOffset(weeks=1),
                     tclose=None,
                     priority=0,
                 )
@@ -2205,13 +2208,14 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         now = self.sim.date
         p = self.module.parameters
+        person = df.loc[person_id]
         rng = self.module.rng
 
         logger.debug(key="message", data=f"Selecting persons for xray services")
         prob_cxr_screening = p['probability_access_to_xray']
 
         # 1. get (and hold) index of eligible people
-        eligible = df.index[~df.tb_diagnosed & df.is_alive]
+        eligible = df.index[~df.tb_diagnosed & df.is_alive] & person["age_years"] < 5
 
         # 2. select people for CXR screening
         select_for_screening = rng.choice([True, False],
@@ -2226,7 +2230,8 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             for person_id in screen_idx:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
-                    topen=now + DateOffset(days=7),
+                    #topen=now + DateOffset(days=7),
+                    topen=self.sim.date + pd.DateOffset(weeks=1),
                     tclose=None,
                     priority=0,
                 )
@@ -2455,12 +2460,10 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         months_since_tx = int(
             (self.sim.date - df.at[person_id, "tb_date_treated"]).days / 30.5
         )
-
         logger.debug(
             key="message",
             data=f"HSI_Tb_FollowUp: person {person_id} on month {months_since_tx} of treatment",
         )
-
         # default clinical monitoring schedule for first infection ds-tb
         xperttest_result = None
         follow_up_times = p["followup_times"]
