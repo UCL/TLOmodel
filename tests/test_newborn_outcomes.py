@@ -420,6 +420,7 @@ def test_newborn_postnatal_check_hsi_delivers_treatment_as_expected(seed):
     sim.population.props.at[child_id, 'nb_early_onset_neonatal_sepsis'] = True
     sim.population.props.at[child_id, 'nb_low_birth_weight_status'] = 'low_birth_weight'
     sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['delivery_setting'] = 'hospital'
+    sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['pnc_date'] = sim.date
 
     # Run the newborn care event
     newborn_care = newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck(
