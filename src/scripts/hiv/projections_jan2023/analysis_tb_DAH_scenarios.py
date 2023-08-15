@@ -379,7 +379,7 @@ baseline_total = dalys_summary.loc[:, ('Baseline', 'mean')].sum()
 No_Xpert_total = dalys_summary.loc[:, ('No Xpert Available', 'mean')].sum()
 No_CXR_total = dalys_summary.loc[:, ('No CXR Available', 'mean')].sum()
 CXR_scaleup_total = dalys_summary.loc[:, ('CXR scaleup', 'mean')].sum()
-outreach_total = dalys_summary.loc[:, ('Outreach', 'mean')].sum()
+outreach_total = dalys_summary.loc[:, ('Outreach services', 'mean')].sum()
 
 # Calculate the corresponding lower and upper bounds
 baseline_lower = dalys_summary.loc[:, ('Baseline', 'lower')].sum()
@@ -394,8 +394,8 @@ No_CXR_upper = dalys_summary.loc[:, ('No CXR Available', 'upper')].sum()
 CXR_scaleup_lower = dalys_summary.loc[:, ('CXR scaleup', 'lower')].sum()
 CXR_scaleup_upper = dalys_summary.loc[:, ('CXR scaleup', 'upper')].sum()
 
-outreach_lower = dalys_summary.loc[:, ('Outreach', 'lower')].sum()
-outreach_upper = dalys_summary.loc[:, ('Outreach', 'upper')].sum()
+outreach_lower = dalys_summary.loc[:, ('Outreach services', 'lower')].sum()
+outreach_upper = dalys_summary.loc[:, ('Outreach services', 'upper')].sum()
 
 # Plotting bar graph
 x = np.arange(5)
@@ -406,14 +406,14 @@ bar1 = ax.bar(x[0], baseline_total, width, label='Baseline', yerr=[[baseline_tot
 bar2 = ax.bar(x[1], No_Xpert_total, width, label='No Xpert Available', yerr=[[No_Xpert_total - No_Xpert_lower], [No_Xpert_upper - No_Xpert_total]])
 bar3 = ax.bar(x[2], No_CXR_total, width, label='No CXR Available', yerr=[[No_CXR_total - No_CXR_lower], [No_CXR_upper - No_CXR_total]])
 bar4 = ax.bar(x[3], CXR_scaleup_total, width, label='CXR Scale-up', yerr=[[CXR_scaleup_total - CXR_scaleup_lower], [CXR_scaleup_upper - CXR_scaleup_total]])
-bar5 = ax.bar(x[4], outreach_total, width, label='Outreach', yerr=[[outreach_total - outreach_lower], [outreach_upper - outreach_total]])
+bar5 = ax.bar(x[4], outreach_total, width, label='Outreach services', yerr=[[outreach_total - outreach_lower], [outreach_upper - outreach_total]])
 
 # Adding labels and title
 ax.set_xlabel('Scenario')
 ax.set_ylabel('Total DALYs')
 ax.set_title('Cumulative TB DALYs 2010-2013')
 ax.set_xticks(x)
-ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scale-up', 'Outreach'])
+ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scale-up', 'Outreach services'])
 ax.legend()
 
 # Displaying graph
@@ -425,7 +425,7 @@ baseline_total = tb_mortality.loc[:, ('Baseline', 'mean')].sum()
 No_Xpert_total = tb_mortality.loc[:, ('No Xpert Available', 'mean')].sum()
 No_CXR_total = tb_mortality.loc[:, ('No CXR Available', 'mean')].sum()
 CXR_scaleup_total = tb_mortality.loc[:, ('CXR scaleup', 'mean')].sum()
-outreach_total = tb_mortality.loc[:, ('Outreach', 'mean')].sum()
+outreach_total = tb_mortality.loc[:, ('Outreach services', 'mean')].sum()
 
 # Calculate the corresponding lower and upper bounds
 baseline_lower = tb_mortality.loc[:, ('Baseline', 'lower')].sum()
@@ -440,8 +440,8 @@ No_CXR_upper = tb_mortality.loc[:, ('No CXR Available', 'upper')].sum()
 CXR_scaleup_lower = tb_mortality.loc[:, ('CXR scaleup', 'lower')].sum()
 CXR_scaleup_upper = tb_mortality.loc[:, ('CXR scaleup', 'upper')].sum()
 
-outreach_lower = tb_mortality.loc[:, ('Outreach', 'lower')].sum()
-outreach_upper = tb_mortality.loc[:, ('Outreach', 'upper')].sum()
+outreach_lower = tb_mortality.loc[:, ('Outreach services', 'lower')].sum()
+outreach_upper = tb_mortality.loc[:, ('Outreach services', 'upper')].sum()
 
 # Plotting bar graph
 x = np.arange(5)
@@ -452,14 +452,14 @@ bar1 = ax.bar(x[0], baseline_total, width, label='Baseline', yerr=[[baseline_tot
 bar2 = ax.bar(x[1], No_Xpert_total, width, label='No Xpert Available', yerr=[[No_Xpert_total - No_Xpert_lower], [No_Xpert_upper - No_Xpert_total]])
 bar3 = ax.bar(x[2], No_CXR_total, width, label='No CXR Available', yerr=[[No_CXR_total - No_CXR_lower], [No_CXR_upper - No_CXR_total]])
 bar4 = ax.bar(x[3], CXR_scaleup_total, width, label='CXR Scale-up', yerr=[[CXR_scaleup_total - CXR_scaleup_lower], [CXR_scaleup_upper - CXR_scaleup_total]])
-bar5 = ax.bar(x[4], outreach_total, width, label='Outreach', yerr=[[outreach_total - outreach_lower], [outreach_upper - outreach_total]])
+bar5 = ax.bar(x[4], outreach_total, width, label='Outreach services', yerr=[[outreach_total - outreach_lower], [outreach_upper - outreach_total]])
 
 # Adding labels and title
 ax.set_xlabel('Scenario')
 ax.set_ylabel('TB Mortality')
 ax.set_title('Cumulative TB Mortality 2010-2013')
 ax.set_xticks(x)
-ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scale-up', 'Outreach'])
+ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scale-up', 'Outreach services'])
 ax.legend()
 
 # Displaying graph
