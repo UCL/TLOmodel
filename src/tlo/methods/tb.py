@@ -17,7 +17,7 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HealthSystemChangeParameters, HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
-from pandas.tseries.offsets import DateOffset
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -2048,7 +2048,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
 def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
-        now = self.sim.date
+    #    now = self.sim.date
         p = self.module.parameters
         person = df.loc[person_id]
         rng = self.module.rng
@@ -2072,7 +2072,7 @@ def apply(self, person_id, squeeze_factor):
             for person_id in screen_idx:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Tb_Xray_level1b(person_id=person_id, module=self.module),
-                    #topen=now + DateOffset(days=7),
+                   # topen=now + DateOffset(days=7),
                     topen=self.sim.date + pd.DateOffset(weeks=1),
                     tclose=None,
                     priority=0,
@@ -2206,7 +2206,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
-        now = self.sim.date
+       # now = self.sim.date
         p = self.module.parameters
         person = df.loc[person_id]
         rng = self.module.rng
