@@ -380,7 +380,7 @@ class Tb(Module):
             Types.REAL,
             "probability of referral to TB screening HSI if presenting with TB-related symptoms"
         ),
-        "scenario_SI": Parameter(
+       "scenario_SI": Parameter(
             Types.STRING,
             "sub-set of scenarios used for sensitivity analysis"
         ),

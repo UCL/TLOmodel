@@ -97,7 +97,7 @@ class ImpactOfTbDaH(BaseScenario):
                     'probability_community_chest_xray': 0.0,
                 }
             },
-            "Outreach": {
+            "Outreach services": {
                 'Tb': {
                     'scenario': 0,
                     'probability_community_chest_xray': 0.01,
