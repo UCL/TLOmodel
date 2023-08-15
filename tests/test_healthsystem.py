@@ -127,7 +127,7 @@ def test_all_treatment_ids_defined_in_priority_policies(seed, tmpdir):
 
     clean_set_of_filtered_treatment_ids = set([i.replace("_*", "") for i in get_filtered_treatment_ids()])
 
-    for policy_name in sim.modules['HealthSystem'].parameters['PriorityRank'].keys():
+    for policy_name in sim.modules['HealthSystem'].parameters['priority_rank'].keys():
         sim.modules['HealthSystem'].load_priority_policy(policy_name)
         policy = list(sim.modules['HealthSystem'].priority_rank_dict.keys())
         assert not pd.Series(policy).duplicated().any()  # Check that no duplicates are included in priority input file

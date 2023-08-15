@@ -530,14 +530,14 @@ class HealthSystem(Module):
             Types.LIST, 'List of services to be available. NB. This parameter is over-ridden if an argument is provided'
                         ' to the module initialiser.'),
 
-        'Policy_Name': Parameter(
+        'policy_name': Parameter(
             Types.STRING, "Name of priority policy assumed to have been adopted until policy switch"),
-        'Policy_Name_postSwitch': Parameter(
+        'policy_name_post_switch': Parameter(
             Types.STRING, "Name of priority policy to be adopted from policy switch year onwards"),
         'year_policy_switch': Parameter(
             Types.INT, "Year in which priority policy switch in enforced"),
 
-        'PriorityRank': Parameter(
+        'priority_rank': Parameter(
             Types.DICT, "Data on the priority ranking of each of the Treatment_IDs to be adopted by "
                         " the queueing system under different policies, where the lower the number the higher"
                         " the priority, and on which categories of individuals classify for fast-tracking "
@@ -793,9 +793,9 @@ class HealthSystem(Module):
 
         # Data on the priority of each Treatment_ID that should be adopted in the queueing system according to different
         # priority policies. Load all policies at this stage, and decide later which one to adopt.
-        self.parameters['PriorityRank'] = pd.read_excel(path_to_resourcefiles_for_healthsystem / 'priority_policies' /
-                                                        'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx',
-                                                        sheet_name=None)
+        self.parameters['priority_rank'] = pd.read_excel(path_to_resourcefiles_for_healthsystem / 'priority_policies' /
+                                                         'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx',
+                                                         sheet_name=None)
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
@@ -832,14 +832,6 @@ class HealthSystem(Module):
 
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
-
-        print("Health System considered:")
-        print(f"{self.ignore_priority=}")
-        print(f"{self.mode_appt_constraints=}")
-        print(f"{self.priority_policy=}")
-        print(f"{self.lowest_priority_considered=}")
-        print(f"{self.tclose_overwrite=}")
-        print(f"{self.tclose_days_offset_overwrite=}")
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -880,7 +872,7 @@ class HealthSystem(Module):
             sim.schedule_event(self.healthsystemscheduler, sim.date)
 
         # Schedule priority policy change
-        if self.parameters["Policy_Name"] != self.parameters["Policy_Name_postSwitch"]:
+        if self.parameters["policy_name"] != self.parameters["policy_name_post_switch"]:
             sim.schedule_event(HealthSystemChangePriorityPolicy(self),
                                Date(self.parameters["year_policy_switch"], 1, 1))
 
@@ -1243,14 +1235,14 @@ class HealthSystem(Module):
         """Returns `priority_policy`. (Should be equal to what is specified by the parameter, but
         overwrite with what was provided in argument if an argument was specified -- provided for backward
         compatibility/debugging.)"""
-        return self.parameters['Policy_Name'] \
+        return self.parameters['policy_name'] \
             if self.arg_policy_name is None \
             else self.arg_policy_name
 
     def load_priority_policy(self, policy):
 
         # Select the chosen policy from dictionary of all possible policies
-        Policy_df = self.parameters['PriorityRank'][policy]
+        Policy_df = self.parameters['priority_rank'][policy]
 
         # If a policy is adopted, following variable *must* always be taken from policy.
         # Over-write any other values here.
@@ -2791,10 +2783,13 @@ class HealthSystemChangePriorityPolicy(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=100))
 
     def apply(self, population):
-        self.module.priority_policy = self.module.parameters["Policy_Name_postSwitch"]
+        self.module.priority_policy = self.module.parameters["policy_name_post_switch"]
         self.module.mode_appt_constraints = self.module.parameters["mode_appt_constraints_postSwitch"]
         if self.module.priority_policy != "":
             self.module.load_priority_policy(self.module.priority_policy)
-        print("Switched policy at sim date ", self.module.sim.date)
-        print(f"{self.module.mode_appt_constraints=}")
-        print(f"{self.module.priority_policy=}")
+        logger.info(key="message",
+                    data=f"Switched policy at sim date: "
+                         f"{self.service_availability}"
+                         f"Now using policy: "
+                         f"{self.module.priority_policy}"
+                    )
