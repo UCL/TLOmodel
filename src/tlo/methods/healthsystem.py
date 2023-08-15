@@ -1780,7 +1780,7 @@ class HealthSystem(Module):
         # Invoke never ran function here
         hsi_event.never_ran()
 
-        try:
+        if hsi_event.facility_info is not None:
             # Fully-defined HSI Event
             self.write_to_never_ran_hsi_log(
                  event_details=hsi_event.as_namedtuple(),
@@ -1788,7 +1788,7 @@ class HealthSystem(Module):
                  facility_id=hsi_event.facility_info.id,
                  priority=priority,
                  )
-        except Exception:
+        else:
             self.write_to_never_ran_hsi_log(
                  event_details=hsi_event.as_namedtuple(),
                  person_id=-1,
