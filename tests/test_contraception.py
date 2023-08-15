@@ -911,3 +911,36 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
         return all([equals(A[k], B[k], tol=_tol) for k in set(A.keys() & B.keys())])
 
     assert compare_dictionaries(contraception_use_healthsystem_true, contraception_use_healthsystem_false, tol=0.011)
+
+
+def test_init_probs_sum_less_one_with_interv():
+    """Check that the initiation probabilities increased due to intervention sum across all methods (except 'not_using')
+    into less than 1.0, i.e. the interventions do not lead to absurdly large increase in probabilities."""
+
+    # Import relevant sheets from the workbook
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    workbook = pd.read_excel(Path(resourcefilepath) / 'ResourceFile_Contraception.xlsx', sheet_name=None)
+    sheet_names = [
+        'Initiation_ByMethod',
+        'Interventions_Pop',
+        'Interventions_PPFP',
+        'Initiation_AfterBirth',
+    ]
+
+    sheets = {}
+    for sheet in sheet_names:
+        sheets[sheet] = workbook[sheet]
+
+    print(sheets)
+    print(type(sheets))
+
+    # PPFP intervention increases the initiation probs of contraception methods after birth
+    p_init_by_method_after_birth = sheets['Initiation_AfterBirth'].loc[0].drop('not_using')
+    p_init_by_method_after_birth = p_init_by_method_after_birth.mul(sheets['Interventions_PPFP'].loc[0])
+    assert p_init_by_method_after_birth.sum() < 1.0
+
+    # Pop intervention increases the initiation probs of contraception methods any other time when not using any
+    # contraceptive
+    p_init_by_method = sheets['Initiation_ByMethod'].loc[0].drop('not_using')
+    p_init_by_method = p_init_by_method.mul(sheets['Interventions_Pop'].loc[0])
+    assert p_init_by_method.sum() < 1.0

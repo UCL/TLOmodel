@@ -615,7 +615,7 @@ class Contraception(Module):
             # Probability of initiation by method per month (average over all ages)
             p_init_by_method = self.parameters['Initiation_ByMethod'].loc[0].drop('not_using')
 
-            # Pop intervention multiplier:
+            # Apply Pop intervention multipliers
             p_init_by_method = p_init_by_method.mul(self.parameters['Interventions_Pop'].loc[0])
 
             # Effect of age
@@ -650,21 +650,19 @@ class Contraception(Module):
             """Get the probability of a woman starting a contraceptive following giving birth if FP interventions are
             applied.."""
 
-            # Get data from read-in Excel sheets
+            # Get initiation probabilities of contraception methods after birth from read-in Excel sheet
             probs = self.parameters['Initiation_AfterBirth'].loc[0].drop('not_using')
 
-            # PPFP intervention multiplier:
+            # Apply PPFP intervention multipliers
             probs = probs.mul(self.parameters['Interventions_PPFP'].loc[0])
-            assert probs.sum() < 1
-            not_using = pd.Series((1 - probs.sum()), index=['not_using'])
-            probs = not_using.append(probs)
 
-            # Scale so that the probability of all outcomes sum to 1.0
-            probs = probs / probs.sum()
+            # Add 'not_using' to initiation probabilities of contraception methods after birth
+            probs = pd.Series((1.0 - probs.sum()), index=['not_using']).append(probs)
 
             # Prevent women below 30 years having 'female_sterilization'
             probs_below30 = probs.copy()
             probs_below30['female_sterilization'] = 0.0
+            # Scale so that the probabilities of all outcomes sum to 1.0
             p_start_after_birth_below30 = probs_below30 / probs_below30.sum()
 
             assert set(p_start_after_birth_below30.index) == self.all_contraception_states
@@ -675,6 +673,7 @@ class Contraception(Module):
             probs_30plus['female_sterilization'] =\
                 probs.loc['female_sterilization'] /\
                 (self.n_female3049_in_2010 / self.n_female1549_in_2010)
+            # Scale so that the probabilities of all outcomes sum to 1.0
             p_start_after_birth_30plus = probs_30plus / probs_30plus.sum()
 
             assert set(p_start_after_birth_30plus.index) == self.all_contraception_states
