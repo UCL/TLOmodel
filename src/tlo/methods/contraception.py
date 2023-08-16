@@ -900,7 +900,7 @@ class ContraceptionPoll(RegularEvent, PopulationScopeEventMixin):
 
     def initiate(self, individuals_not_using: pd.Index):
         """Check all females not using contraception to determine if contraception starts
-        (i.e. category should change from 'not_using' to something else) with reference to initiation_rate1 (irate_1).
+        (i.e. category change from 'not_using' to something else).
         """
 
         # Exit if there are no individuals currently not using a contraceptive:
