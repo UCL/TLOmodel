@@ -97,7 +97,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
     scaling_factor = df_scale.loc['2010-01-01', 'scaling_factor']
 
     # Define line styles
-    if not in_calc_intervention_costs_bool:  # used as approximation of sim withou interv
+    if not in_calc_intervention_costs_bool:  # used as approximation of sim without interv
         # => TODO: fix for an option of when we analyse sim with intervention without this calculation
         line_style = '-'
     else:
@@ -866,15 +866,16 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             # Calculate ratio of population of reproductive age compared to 2016 as base year (a year for which Pop and
             # PPFP intervention implementation costs are estimated)
             popsize1549['ratio'] = popsize1549.loc[:, '15-49'] / popsize1549.loc[2016, '15-49']
-            # Mulitply Pop and PPFP intervention costs by this ratio for each year:
-            # TODO?: these 2 parameters below are approximated from costs for 2016-2020 - ie not approximation for pop
-            #  of 2016 as we use it, hence may be used rather as approximation for average pop of 2016-2020?
+            # Multiply Pop and PPFP intervention costs by this ratio for each year:
             # cost of Pop and PPFP intervention implementations for whole population of Malawi at the end of 2015
             # (MWK - Malawi Kwacha) with inflation rate of 81% to 2020
             # TODO?: these 2 parameters are approximated from costs for 2016-2020 - ie not approximation for pop of 2016
             #  as we use it, hence may be used rather as approximation for average pop of 2016-2020 if decided to
-            pop_interv_cost_2016 = interv_info_df.loc['2010-01-01', 'pop_intervention_cost_2016_in2015MWK'] * 1.81
-            ppfp_interv_cost_2016 = interv_info_df.loc['2010-01-01', 'ppfp_intervention_cost_2016_in2015MWK'] * 1.81
+            co_analysis_params = pd.read_csv('resources/ResourceFile_ContraceptionAnalysisParams.csv')
+            pop_interv_cost_2016 = float(co_analysis_params['value'].loc[co_analysis_params['parameter_name'] ==
+                                                                         'pop_intervention_cost']) * 1.81
+            ppfp_interv_cost_2016 = float(co_analysis_params['value'].loc[co_analysis_params['parameter_name'] ==
+                                                                          'ppfp_intervention_cost']) * 1.81
             # Calculate interventions costs for each year (proportional to popsize of reproductive age)
             popsize1549['pop_intervention_cost'] = popsize1549['ratio'] * pop_interv_cost_2016
             popsize1549['ppfp_intervention_cost'] = popsize1549['ratio'] * ppfp_interv_cost_2016

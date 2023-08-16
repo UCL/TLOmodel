@@ -96,13 +96,6 @@ class Contraception(Module):
             Types.INT, "The maximum delay (in days) between the decision for a contraceptive to change and the `topen` "
                        "date of the HSI that is scheduled to effect the change (when using the healthsystem)."),
 
-        'pop_intervention_cost': Parameter(
-            Types.INT, "Cost of Pop intervention (population scale contraception intervention) for whole population of "
-                       "Malawi in 2016 (2015 MWK - Malawi Kwacha)"),
-
-        'ppfp_intervention_cost': Parameter(
-            Types.INT, "Cost of PPFP (post-partum family planning) intervention for whole population of Malawi in 2016 "
-                       "(2015 MWK - Malawi Kwacha)"),
         'use_interventions': Parameter(
             Types.BOOL, "if True: FP interventions (pop & ppfp) are simulated from the date 'interventions_start_date',"
                         " if False: FP interventions (pop & ppfp) are not simulated."),
@@ -275,13 +268,11 @@ class Contraception(Module):
             sim.schedule_event(StartInterventions(self), Date(self.parameters['interventions_start_date']))
 
             # Log initiation date of interventions and implementation costs
-            logger.info(key='contraception_intervention',
+            logger.info(key='interventions_start_date',
                         data={
-                            'date_co_interv_implemented': self.parameters['interventions_start_date'],
-                            'pop_intervention_cost_2016_in2015MWK': self.parameters['pop_intervention_cost'],
-                            'ppfp_intervention_cost_2016_in2015MWK': self.parameters['ppfp_intervention_cost'],
+                            'date_co_interv_implemented': self.parameters['interventions_start_date']
                         },
-                        description='Information about contraception interventions.'
+                        description='The date when parameters are updated to enable the FP interventions.'
                         )
 
     def on_birth(self, mother_id, child_id):
