@@ -34,7 +34,7 @@ output_path = './outputs/sejjj49@ucl.ac.uk/'
 
 
 for scenario_dict, service, colours in zip([scenario_dict1, scenario_dict2, scenario_dict3], ['anc', 'sba', 'pnc'],
-                                              [['lightcoral', 'firebrick', 'red', 'chocolate', 'darkorange'],
+                                               [['lightcoral', 'firebrick', 'red', 'chocolate', 'darkorange'],
                                                  ['cadetblue', 'deepskyblue', 'midnightblue', 'green', 'palegreen'],
                                                 ['plum', 'purple', 'deeppink', 'crimson', 'maroon']]):
 

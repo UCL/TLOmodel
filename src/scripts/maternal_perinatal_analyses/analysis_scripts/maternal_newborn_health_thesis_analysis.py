@@ -137,7 +137,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         # st.t.interval(0.95, len(mean_diff_list) - 1, loc=np.mean(mean_diff_list), scale=st.sem(mean_diff_list))
         for k in keys:
             # Get DF which gives difference between outcomes for each run
-            diff = dfs[intervention][k]- dfs[baseline][k]
+            diff = dfs[intervention][k] - dfs[baseline][k]
             int_diff = diff.loc[intervention_years[0]: intervention_years[-1]]
 
             if 'total' in k:
@@ -682,9 +682,9 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                 # Add some text for labels, title and custom x-axis tick labels, etc.
 
                 if group == 'mat':
-                    title_data = ['100,000', 'Maternal', 'Ratios', 110]
+                    title_data = ['100,000', 'Maternal', 'Ratios']
                 else:
-                    title_data = ['1000', 'Neonatal', 'Rates', 9]
+                    title_data = ['1000', 'Neonatal', 'Rates']
 
                 ax.set_ylabel(f'Deaths per {title_data[0]} Live Births')
                 ax.set_xlabel('Cause of Death')
@@ -692,7 +692,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                 ax.set_xticks(x)
                 ax.set_xticklabels(labels)
                 plt.xticks(rotation=90, size=7)
-                plt.gca().set_ylim(bottom=0, top=title_data[3])
+                plt.gca().set_ylim(bottom=0)
                 ax.legend(loc='upper left')
                 fig.tight_layout()
                 plt.savefig(f'{primary_oc_path}/{k}_{d[0]}mr_by_cause.png', bbox_inches='tight')
@@ -1742,6 +1742,17 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                         'anc_contacts_trend': hsi_data,
                         'agg_anc_contacts': agg})
 
+        an_ip = extract_results(
+            folder,
+            module="tlo.methods.healthsystem.summary",
+            key="HSI_Event",
+            custom_generate_series=(
+                lambda df: pd.concat([df, df['TREATMENT_ID'].apply(pd.Series)], axis=1).assign(
+                    year=df['date'].dt.year).groupby(['year'])['AntenatalCare_Inpatient'].sum()),
+            do_scaling=True)
+
+        results.update({'total_an_ip_df': an_ip})
+
         # PNC HSI numbers
         # todo: this might crash on min pnc
         pnc_mat_count = extract_results(
@@ -2032,8 +2043,8 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
         scen_colours, sim_years, sec_outcomes_df, 'anc_contacts_trend',
-        'Number of Visits',
-        'Total Number of Antenatal Care Visits per Year Per Scenario',
+        'Number of Contacts (millions)',
+        'Total Number of Routine Antenatal Care Contacts per Year Per Scenario',
         secondary_oc_path, 'anc_visits_crude_rate')
 
     plot_agg_graph(sec_outcomes_df, 'agg_anc_contacts', 'Total ANC contacts', 'Total Number of ANC visits per Scenario',

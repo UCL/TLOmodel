@@ -189,7 +189,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         ind = np.arange(N)
         width = 0.28
         plt.bar(ind, mdata[0], width, label='Model (95% CI)', yerr=model_ci, color='cornflowerblue')
-        plt.bar(ind + width, cdata, width, label='DHS (upper & lower bounds)', color='forestgreen')
+        plt.bar(ind + width, cdata, width, label='DHS', color='forestgreen')
         plt.ylabel('Proportion of Total Births')
         plt.xlabel('Year')
         plt.ylim(0, 100)
@@ -198,8 +198,6 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         plt.legend(bbox_to_anchor=(1.4, 1.1))
         plt.savefig(f'{graph_location}/{save_name}.png', bbox_inches="tight")
         plt.show()
-
-
 
     # 1.) Antenatal Care... # TODO: THIS COULD CERTAINLY BE SIMPLIFIED
     # Mean proportion of women (across draws) who have given birth that have attended ANC1, ANC4+ and ANC8+ per year...
@@ -251,12 +249,12 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                         'second': {'year': 2015, 'value': 51, 'label': 'DHS (2015)', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, anc1_coverage, target_anc1_dict, '% of women who gave birth',
+        sim_years, anc1_coverage, target_anc1_dict, 100, '% of women who gave birth',
         'Proportion of women who gave birth that attended one or more ANC contacts per year', graph_location,
         'anc_prop_anc1')
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, anc4_coverage, target_anc4_dict, '% of women who gave birth',
+        sim_years, anc4_coverage, target_anc4_dict, 100, '% of women who gave birth',
         'Proportion of women who gave birth that attended four or more ANC contacts per year', graph_location,
         'anc_prop_anc4')
 
@@ -281,8 +279,13 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     # get yearly outputs
     columns = ['DHS 2010', 2010, 2011, 2012, 2013, 2014, 'DHS 2015', 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022]
     anc_count_df = pd.DataFrame(columns=columns, index=[0, 1, 2, 3, 4, 5, 6, 7, 8])
-    anc_count_df['DHS 2010'] = pd.Series([0, 2.8, 25.3, 25.3, 46.6, 0, 0, 0, 0], index=anc_count_df.index)
-    anc_count_df['DHS 2015'] = pd.Series([0, 2, 23.1, 23.1, 51.7, 0, 0, 0, 0], index=anc_count_df.index)
+    # anc_count_df['DHS 2010'] = pd.Series([0, 2.8, 25.3, 25.3, 46.6, 0, 0, 0, 0], index=anc_count_df.index)
+    # anc_count_df['DHS 2015'] = pd.Series([0, 2, 23.1, 23.1, 51.7, 0, 0, 0, 0], index=anc_count_df.index)
+    anc_count_df['DHS 2010'] = pd.Series([0, 2.8, 13.5, 38, 25.9, 12, 4.9, 1.3, 1.6], index=anc_count_df.index)
+    anc_count_df['DHS 2015'] = pd.Series([0, 2, 10, 36, 30, 14, 5, 1.2, 1.8], index=anc_count_df.index)
+
+    #  1.7, 2, 10, 36, 30, 14, 5, 1.2, 1.8
+    #  1.4, 2.8, 13.5, 38, 25.9, 12, 4.9, 1.3, 1.6
 
     for year in sim_years:
         for row in anc_count_df.index:
@@ -322,6 +325,34 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     ax.set_title('Number of ANC Contacts Attended by Women Attending at Least One Contact per Year')
     ax.legend(bbox_to_anchor=(1.2, 1.1))
     plt.savefig(f'{graph_location}/anc_total_visits.png', bbox_inches="tight")
+    plt.show()
+
+    new_anc_count_df = anc_count_df.drop([2011, 2012, 2013, 2014, 2016, 2017, 2018, 2019, 2020, 2021, 2022], axis=1)
+    labels = ['DHS 2010', '2010', 'DHS 2015', '2015']
+    width = 0.35  # the width of the bars: can also be len(x) sequence
+    fig, ax = plt.subplots()
+    ax.bar(labels, new_anc_count_df.loc[8], width, label=8, bottom=new_anc_count_df.loc[1] + new_anc_count_df.loc[2] +
+                                                                   new_anc_count_df.loc[3] + new_anc_count_df.loc[4] +
+                                                                   new_anc_count_df.loc[5] + new_anc_count_df.loc[6] +
+                                                                   new_anc_count_df.loc[7])
+    ax.bar(labels, new_anc_count_df.loc[7], width, label=7, bottom=new_anc_count_df.loc[1] + new_anc_count_df.loc[2] +
+                                                                   new_anc_count_df.loc[3] + new_anc_count_df.loc[4] +
+                                                                   new_anc_count_df.loc[5] + new_anc_count_df.loc[6])
+    ax.bar(labels, new_anc_count_df.loc[6], width, label=6, bottom=new_anc_count_df.loc[1] + new_anc_count_df.loc[2] +
+                                                                   new_anc_count_df.loc[3] + new_anc_count_df.loc[4] +
+                                                                   new_anc_count_df.loc[5])
+    ax.bar(labels, new_anc_count_df.loc[5], width, label=5, bottom=new_anc_count_df.loc[1] + new_anc_count_df.loc[2] +
+                                                                   new_anc_count_df.loc[3] + new_anc_count_df.loc[4])
+    ax.bar(labels, new_anc_count_df.loc[4], width, label=4, bottom=new_anc_count_df.loc[1] + new_anc_count_df.loc[2] +
+                                                                   new_anc_count_df.loc[3])
+    ax.bar(labels, new_anc_count_df.loc[3], width, label=3, bottom=new_anc_count_df.loc[1] + new_anc_count_df.loc[2])
+    ax.bar(labels, new_anc_count_df.loc[2], width, label=2, bottom=new_anc_count_df.loc[1])
+    ax.bar(labels, new_anc_count_df.loc[1], width, label=1, )
+    ax.set_ylabel('Proportion of women attending one or more ANC contact')
+    ax.set_xlabel('Year')
+    ax.set_title('Number of ANC Contacts Attended by Women Attending at Least One Contact (2010 & 2015)')
+    ax.legend(bbox_to_anchor=(1.2, 1.1))
+    plt.savefig(f'{graph_location}/anc_total_visits_2010_2015.png', bbox_inches="tight")
     plt.show()
 
     # Mean proportion of women who attended at least one ANC visit that attended at < 4, 4-5, 6-7 and > 8 months
@@ -415,6 +446,30 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     plt.savefig(f'{graph_location}/anc_ga_first_visit_update.png', bbox_inches="tight")
     plt.show()
 
+    a_4 = [anc_before_four_months[0], anc_before_four_months[1], anc_before_four_months[6], anc_before_four_months[8]]
+    a_5 = [anc_before_four_five_months[0], anc_before_four_five_months[1], anc_before_four_five_months[6],
+           anc_before_four_five_months[8]]
+    a_6 = [anc_before_six_seven_months[0], anc_before_six_seven_months[1], anc_before_six_seven_months[6],
+           anc_before_six_seven_months[8]]
+    a_8 = [anc_before_eight_plus_months[0], anc_before_eight_plus_months[1], anc_before_eight_plus_months[6],
+           anc_before_eight_plus_months[8]]
+
+    labels = ['2010 (DHS)', '2010 (Model)', '2015 (DHS)', '2016 (Model)']
+    fig, ax = plt.subplots()
+    ax.bar(labels, a_8, width, label='>8m',
+           bottom=[x + y + z for x, y, z in zip(a_4, a_5, a_6)])
+    ax.bar(labels, a_6, width, label='6-7m',
+           bottom=[x + y for x, y in zip(a_4, a_5)])
+    ax.bar(labels, a_5, width, label='4-5m',
+           bottom=a_4)
+    ax.bar(labels, a_4, width, label='<4m')
+    # Put a legend to the right of the current axis
+    ax.legend(bbox_to_anchor=(1.2, 1.1))
+    ax.set_ylabel('% of first ANC contacts')
+    ax.set_title('Maternal gestational age at first ANC contact by year')
+    plt.savefig(f'{graph_location}/anc_ga_first_visit_update_2010_2015.png', bbox_inches="tight")
+    plt.show()
+
     target_rate_eanc4 = list()
     for year in sim_years:
         if year < 2015:
@@ -472,20 +527,23 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                       'second': {'year': 2015, 'value': 91, 'label': 'DHS (2015)', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, fd_data, target_fd_dict, '% of total births',
+        sim_years, fd_data, target_fd_dict, 100, '% of total births',
         'Proportion of births occurring in a health facility per year ', graph_location, 'sba_prop_facility_deliv')
 
-    labels = sim_years
+    hb_data = [27, hb_data[0][0], 8, hb_data[0][5]]
+    hc_data = [41, hc_data[0][0], 52, hc_data[0][5]]
+    hp_data = [32, hp_data[0][0], 40, hp_data[0][5]]
+    labels = ['2010 (DHS)', '2010 (Model)', '2015 (DHS)', '2015 (model)']
     width = 0.35       # the width of the bars: can also be len(x) sequence
     fig, ax = plt.subplots()
 
-    ax.bar(labels, hp_data[0], width, label='Hospital',
-           bottom=[x + y for x, y in zip(hb_data[0], hc_data[0])])
-    ax.bar(labels, hc_data[0], width, label='Health Centre',
-           bottom=hb_data[0])
-    ax.bar(labels, hb_data[0], width, label='Home')
+    ax.bar(labels, hp_data, width, label='Hospital',
+           bottom=[x + y for x, y in zip(hb_data, hc_data)])
+    ax.bar(labels, hc_data, width, label='Health Centre',
+           bottom=hb_data)
+    ax.bar(labels, hb_data, width, label='Home')
     ax.set_ylabel('% of total births')
-    ax.set_title('Proportion of total births by location of delivery')
+    ax.set_title('Proportion of total births (2010 & 2015) by location of delivery')
     ax.legend(bbox_to_anchor=(1.3, 1.))
     plt.savefig(f'{graph_location}/sba_delivery_location.png', bbox_inches="tight")
     plt.show()
@@ -553,11 +611,11 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                         'first': {'year': 2015, 'value': 60, 'label': 'DHS (2015)', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, mat_birth_pnc_data, target_mpnc_dict, '% of total births',
+        sim_years, mat_birth_pnc_data, target_mpnc_dict, 100, '% of total births',
         'Proportion of total births after which the mother received any PNC per year', graph_location, 'pnc_mat')
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, neo_birth_pnc_data, target_npnc_dict, '% of total births',
+        sim_years, neo_birth_pnc_data, target_npnc_dict, 100, '% of total births',
         'Proportion of total births after which the neonate received any PNC per year', graph_location, 'pnc_neo')
 
     m_pnc_for_bc = [[mat_birth_pnc_data[0][1], mat_birth_pnc_data[0][5]],
@@ -566,6 +624,24 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     cov_bar_chart(m_pnc_for_bc, [50, 48], 'Proportion of Women Receiving Any Postnatal Care Following Birth',
                   'mat_pnc_cov_bar')
+
+    n_pnc_for_bc = [neo_birth_pnc_data[0][5], neo_birth_pnc_data[1][5], neo_birth_pnc_data[2][5]]
+    model_ci = (n_pnc_for_bc[2] - n_pnc_for_bc[1]) / 2
+    N = 1
+    ind = np.arange(N)
+    width = 0.3
+    plt.bar(ind, n_pnc_for_bc[0], width, label='Model (95% CI)', yerr=model_ci, color='cornflowerblue')
+    plt.bar(ind + 0.5, 60, width, label='DHS', color='forestgreen')
+    plt.ylabel('Proportion of Total Births')
+    plt.xlabel('Year')
+    plt.ylim(0, 100)
+    plt.title('Proportion of Neonates Receiving Any Postnatal Care Following Birth')
+    plt.xticks(ind + 0.5 / 2, ['2015'])
+    plt.legend()
+    plt.savefig(f'{graph_location}/pnc_neo_2015'
+                f'.png', bbox_inches="tight")
+    plt.show()
+
 
     def get_early_late_pnc_split(module, target, file_name):
         p = extract_results(
@@ -602,10 +678,13 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     get_early_late_pnc_split('labour', 'Maternal', 'pnc_maternal_early')
     get_early_late_pnc_split('newborn_outcomes', 'Neonatal', 'pnc_neonatal_early')
 
+    #
     # ========================================== COMPLICATION/DISEASE RATES.... =======================================
+    alt_years = sim_years[1:13]
+
     def return_rate(num_df, denom_df, denom_val):
         rate_df = (num_df / denom_df) * denom_val
-        data = analysis_utility_functions.return_95_CI_across_runs(rate_df, sim_years)
+        data = analysis_utility_functions.return_95_CI_across_runs(rate_df, alt_years)
         return data
 
     # ---------------------------------------- Twinning Rate... -------------------------------------------------------
@@ -623,22 +702,22 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     final_twining_rate = return_rate(twins_results, total_deliv, 100)
 
     target_twin_dict = {'double': False,
-                        'first': {'year': 2010, 'value': 3.9, 'label': 'DHS 2010', 'ci': 0}}
+                        'first': {'year': 2011, 'value': 3.9, 'label': 'Monden & Smits', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, final_twining_rate, target_twin_dict, 'Rate per 100 pregnancies',
-        'Yearly trends for Twin Births', graph_location, 'twin_rate')
+        alt_years, final_twining_rate, target_twin_dict, 5, 'Rate per 100 births',
+        'Twin Births per 100 Births per Year', graph_location, 'twin_rate')
 
     # ---------------------------------------- Early Pregnancy Loss... ------------------------------------------------
     # Ectopic pregnancies/Total pregnancies
     ep = an_comps.loc[(slice(None), 'ectopic_unruptured'), slice(None)].droplevel(1)
     ectopic_data = return_rate(ep, pregnancy_poll_results, 1000)
     target_ect_dict = {'double': False,
-                       'first': {'year': 2015, 'value': 10, 'label': 'Est.', 'ci': 0}}
+                       'first': {'year': 2015, 'value': 10, 'label': 'Panelli et al.,', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, ectopic_data, target_ect_dict, 'Rate per 1000 pregnancies',
-        'Yearly trends for Ectopic Pregnancy', graph_location, 'ectopic_rate')
+        alt_years, ectopic_data, target_ect_dict, 12, 'Rate per 1000 pregnancies',
+        'Ectopic Pregnancies per 1000 Pregnancies per Year', graph_location, 'ectopic_rate')
 
     # Ruptured ectopic pregnancies / Total Pregnancies
     ep_r = an_comps.loc[(slice(None), 'ectopic_ruptured'), slice(None)].droplevel(1)
@@ -648,7 +727,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                        'first': {'year': 2015, 'value': 92, 'label': 'Est.', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, proportion_of_ectopics_that_rupture_per_year, target_rate_rup, 'Proportion of ectopic pregnancies',
+        alt_years, proportion_of_ectopics_that_rupture_per_year, target_rate_rup, 100,
+        'Proportion of ectopic pregnancies',
         'Proportion of Ectopic Pregnancies ending in rupture', graph_location, 'prop_rupture')
 
     # Spontaneous Abortions....
@@ -656,11 +736,12 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     spotaneous_abortion_data = return_rate(sa, total_completed_pregnancies_df, 1000)
 
     target_sa_dict = {'double': False,
-                      'first': {'year': 2016, 'value': 130, 'label': 'Dellicour et al.', 'ci': 0}}
+                      'first': {'year': 2015, 'value': 153, 'label': 'Polis et al.', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, spotaneous_abortion_data,
-        target_sa_dict, 'Rate per 1000 completed pregnancies', 'Yearly rate of Miscarriage', graph_location,
+        alt_years, spotaneous_abortion_data,
+        target_sa_dict, 165, 'Rate per 1000 completed pregnancies',
+        'Spontaneous Abortions per 1000 Completed Pregnancies per Year', graph_location,
         'miscarriage_rate')
 
     # Complicated SA / Total SA
@@ -669,8 +750,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     # TODO: COULD ADD 95% CI now
     analysis_utility_functions.simple_bar_chart(
-        proportion_of_complicated_sa_per_year[0], 'Year', '% of Total Miscarriages',
-        'Proportion of miscarriages leading to complications', 'miscarriage_prop_complicated', sim_years,
+        proportion_of_complicated_sa_per_year[0], 'Year', '% of Spontaneous Abortions',
+        'Proportion of Spontaneous Abortions Leading to Complications', 'miscarriage_prop_complicated', alt_years,
         graph_location)
 
     # Induced Abortions...
@@ -678,21 +759,21 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     ia_data = return_rate(ia, total_completed_pregnancies_df, 1000)
 
     target_ia_dict = {'double': True,
-                      'first': {'year': 2010, 'value': 86, 'label': 'Levandowski et al.', 'ci': 0},
+                      'first': {'year': 2011, 'value': 86, 'label': 'Levandowski et al.', 'ci': 0},
                       'second': {'year': 2015, 'value': 159, 'label': 'Polis et al.', 'ci': 0},
                       }
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, ia_data, target_ia_dict, 'Rate per 1000 completed pregnancies',
-        'Yearly rate of Induced Abortion',  graph_location, 'abortion_rate')
+        alt_years, ia_data, target_ia_dict, 170, 'Rate per 1000 completed pregnancies',
+        'Induced Abortions per 1000 Completed Pregnancies per Year',  graph_location, 'abortion_rate')
 
     # Complicated IA / Total IA
     c_ia = an_comps.loc[(slice(None), 'complicated_induced_abortion'), slice(None)].droplevel(1)
     proportion_of_complicated_ia_per_year = return_rate(c_ia, ia, 100)
 
     analysis_utility_functions.simple_bar_chart(
-        proportion_of_complicated_ia_per_year[0], 'Year', '% of Total Abortions',
-        'Proportion of Abortions leading to complications', 'abortion_prop_complicated', sim_years, graph_location)
+        proportion_of_complicated_ia_per_year[0], 'Year', '% of Induced Abortions',
+        'Proportion of Induced Abortions Leading to Complications', 'abortion_prop_complicated', alt_years, graph_location)
 
     # --------------------------------------------------- Syphilis Rate... --------------------------------------------
     syphilis_data = return_rate(an_comps.loc[(slice(None), 'syphilis'), slice(None)].droplevel(1),
@@ -702,8 +783,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                         'first': {'year': 2018, 'value': 20, 'label': 'HIV rpt data', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, syphilis_data, target_syph_dict,
-        'Rate per 1000 completed pregnancies', 'Yearly rate of Syphilis', graph_location, 'syphilis_rate')
+        alt_years, syphilis_data, target_syph_dict, 30,
+        'Rate per 1000 completed pregnancies', 'Syphilis Cases in Pregnancy per 1000 Completed Pregnancies', graph_location, 'syphilis_rate')
 
     # ------------------------------------------------ Gestational Diabetes... ----------------------------------------
     gdm_data = return_rate(an_comps.loc[(slice(None), 'gest_diab'), slice(None)].droplevel(1),
@@ -713,7 +794,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                        'first': {'year': 2019, 'value': 16, 'label': 'Phiri et al.', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, gdm_data, target_gdm_dict, 'Rate per 1000 completed pregnancies',
+        alt_years, gdm_data, target_gdm_dict, 20, 'Rate per 1000 completed pregnancies',
         'Yearly rate of Gestational Diabetes', graph_location, 'gest_diab_rate', )
 
     # ------------------------------------------------ PROM... --------------------------------------------------------
@@ -724,7 +805,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                        'first': {'year': 2020, 'value': 27, 'label': 'Onwughara et al.', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, prom_data, target_prm_dict, 'Rate per 1000 births', 'Yearly rate of PROM', graph_location,
+        alt_years, prom_data, target_prm_dict, 35, 'Rate per 1000 births', 'Yearly rate of PROM', graph_location,
         'prom_rate')
 
     # ---------------------------------------------- Anaemia... -------------------------------------------------------
@@ -766,13 +847,13 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     def get_anaemia_graphs(df, timing, severity_df):
         target_an_dict = {'double': True,
-                          'first': {'year': 2010, 'value': 37.5, 'label': 'DHS 2010', 'ci': 0},
+                          'first': {'year': 2011, 'value': 37.5, 'label': 'DHS 2010', 'ci': 0},
                           'second': {'year': 2015, 'value': 45.1, 'label': 'DHS 2015', 'ci': 0},
                           }
         prev = return_rate(df, births_results_exc_2010, 100)
 
         analysis_utility_functions.line_graph_with_ci_and_target_rate(
-            sim_years, prev, target_an_dict,
+            alt_years, prev, target_an_dict, 100,
             'Prevalence at birth', f'Yearly prevalence of Anaemia (all severity) at {timing}', graph_location,
             f'anaemia_prev_{timing}')
 
@@ -785,9 +866,9 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         prevalence_of_sev_anaemia_per_year = return_rate(
             severity_df.loc[(slice(None), 'severe'), slice(None)].droplevel(1), births_results_exc_2010, 100)
 
-        plt.plot(sim_years, prevalence_of_mild_anaemia_per_year[0], label="mild")
-        plt.plot(sim_years, prevalence_of_mod_anaemia_per_year[0], label="moderate")
-        plt.plot(sim_years, prevalence_of_sev_anaemia_per_year[0], label="severe")
+        plt.plot(alt_years, prevalence_of_mild_anaemia_per_year[0], label="mild")
+        plt.plot(alt_years, prevalence_of_mod_anaemia_per_year[0], label="moderate")
+        plt.plot(alt_years, prevalence_of_sev_anaemia_per_year[0], label="severe")
         plt.xlabel('Year')
         plt.ylabel(f'Prevalence at {timing}')
         plt.title(f'Yearly trends for prevalence of anaemia by severity at {timing}')
@@ -826,7 +907,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                       'first': {'year': 2019, 'value': 43.8, 'label': 'Noubiap et al.', 'ci': 0},
                       }
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, gh_data, target_gh_dict, 'Rate per 1000 births',
+        alt_years, gh_data, target_gh_dict, 55, 'Rate per 1000 births',
         'Rate of Gestational Hypertension per Year',  graph_location, 'gest_htn_rate',)
 
     target_sgh_dict = {'double': False,
@@ -834,7 +915,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                        }
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, sgh_data, target_sgh_dict, 'Rate per 1000 births',
+        alt_years, sgh_data, target_sgh_dict, 8, 'Rate per 1000 births',
         'Rate of Severe Gestational Hypertension per Year', graph_location, 'severe_gest_htn_rate', )
 
     target_mpe_dict = {'double': False,
@@ -842,7 +923,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                        }
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, mpe_data, target_mpe_dict, 'Rate per 1000 births',
+        alt_years, mpe_data, target_mpe_dict, 55, 'Rate per 1000 births',
         'Rate of Mild pre-eclampsia per Year', graph_location, 'mild_pre_eclampsia_rate')
 
     target_spe_dict = {'double': False,
@@ -850,14 +931,14 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                        }
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, spe_data, target_spe_dict, 'Rate per 1000 births',
+        alt_years, spe_data, target_spe_dict, 35, 'Rate per 1000 births',
         'Rate of Severe pre-eclampsia per Year', graph_location,  'severe_pre_eclampsia_rate')
 
     target_ec_dict = {'double': False,
                       'first': {'year': 2019, 'value': 10, 'label': 'Vousden et al.', 'ci': 0},
                       }
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, ec_data, target_ec_dict, 'Rate per 1000 births',
+        alt_years, ec_data, target_ec_dict, 15, 'Rate per 1000 births',
         'Rate of Eclampsia per Year', graph_location, 'eclampsia_rate')
 
     #  ---------------------------------------------Placenta praevia... ----------------------------------------------
@@ -868,7 +949,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                       'first': {'year': 2017, 'value': 5.67, 'label': 'Senkoro et al.', 'ci': 0},
                       }
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, pp_data, target_pp_dict, 'Rate per 1000 pregnancies',
+        alt_years, pp_data, target_pp_dict, 8, 'Rate per 1000 pregnancies',
         'Rate of Placenta Praevia per Year', graph_location, 'praevia_rate')
 
     #  ---------------------------------------------Placental abruption... --------------------------------------------
@@ -881,7 +962,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                       }
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, pa_data, target_pa_dict, 'Rate per 1000 births',
+        alt_years, pa_data, target_pa_dict, 5, 'Rate per 1000 births',
         'Rate of Placental Abruption per Year', graph_location, 'abruption_rate')
 
     # --------------------------------------------- Antepartum Haemorrhage... -----------------------------------------
@@ -897,7 +978,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                        'first': {'year': 2015, 'value': 4.6, 'label': 'BEmONC.', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, aph_data, target_aph_dict, 'Rate per 1000 births',
+        alt_years, aph_data, target_aph_dict, 7, 'Rate per 1000 births',
         'Rate of Antepartum Haemorrhage per Year', graph_location, 'aph_rate')
 
     # --------------------------------------------- Preterm birth ... ------------------------------------------------
@@ -911,13 +992,13 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                        }
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, ptl_data, target_ptl_dict, 'Proportion of total births',
+        alt_years, ptl_data, target_ptl_dict, 25, 'Proportion of total births',
         'Preterm birth rate', graph_location, 'ptb_rate')
 
     prop_early = return_rate(la_comps.loc[(slice(None), 'early_preterm_labour'), slice(None)].droplevel(1), ptl_df, 100)
     prop_late = return_rate(la_comps.loc[(slice(None), 'late_preterm_labour'), slice(None)].droplevel(1), ptl_df, 100)
 
-    labels = sim_years
+    labels = alt_years
     width = 0.35       # the width of the bars: can also be len(x) sequence
     fig, ax = plt.subplots()
 
@@ -940,7 +1021,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                         'first': {'year': 2014, 'value': 3.2, 'label': 'van den Broek et al.', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, potl_data, target_potl_dict, 'Proportion of total births',
+        alt_years, potl_data, target_potl_dict, 5, 'Proportion of total births',
         'Post term birth rate', graph_location, 'potl_rate')
 
     # ------------------------------------------------- Birth weight... -----------------------------------------------
@@ -974,25 +1055,25 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                   births_results_exc_2010, 100)
 
     target_lbw_dict = {'double': True,
-                       'first': {'year': 2010, 'value': 12, 'label': 'DHS 2010', 'ci': 0},
+                       'first': {'year': 2011, 'value': 12, 'label': 'DHS 2010', 'ci': 0},
                        'second': {'year': 2015, 'value': 12, 'label': 'DHS 2015', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, lbw_data, target_lbw_dict, 'Proportion of total births',
+        alt_years, lbw_data, target_lbw_dict, 17, 'Proportion of total births',
         'Yearly Prevalence of Low Birth Weight', graph_location, 'neo_lbw_prev')
 
     target_mac_dict = {'double': False,
                        'first': {'year': 2019, 'value': 5.13, 'label': 'Ngwira et al.', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, macro_data, target_mac_dict, 'Proportion of total births',
+        alt_years, macro_data, target_mac_dict, 7, 'Proportion of total births',
         'Yearly Prevalence of Macrosomia', graph_location, 'neo_macrosomia_prev')
 
     target_sga_dict = {'double': False,
-                       'first': {'year': 2010, 'value': 23.2, 'label': 'Lee et al.', 'ci': (27-19.1)/2}}
+                       'first': {'year': 2011, 'value': 23.2, 'label': 'Lee et al.', 'ci': (27-19.1)/2}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, sga_data, target_sga_dict, 'Proportion of total births',
+        alt_years, sga_data, target_sga_dict, 30, 'Proportion of total births',
         'Yearly Prevalence of Small for Gestational Age', graph_location, 'neo_sga_prev')
 
     # todo: check with Ines r.e. SGA and the impact on her modules
@@ -1002,11 +1083,11 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                   births_results_exc_2010, 1000)
 
     target_ol_dict = {'double': True,
-                      'first': {'year': 2010, 'value': 18.3, 'label': 'BEmONC 2010', 'ci': 0},
+                      'first': {'year': 2011, 'value': 18.3, 'label': 'BEmONC 2010', 'ci': 0},
                       'second': {'year': 2015, 'value': 33.7, 'label': 'BEmONC 2015', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, ol_data, target_ol_dict, 'Rate per 1000 births',
+        alt_years, ol_data, target_ol_dict, 45, 'Rate per 1000 births',
         'Obstructed Labour Rate per Year', graph_location, 'ol_rate')
 
     # --------------------------------------------- Uterine rupture... -----------------------------------------------
@@ -1014,11 +1095,11 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                   births_results_exc_2010, 1000)
 
     target_ur_dict = {'double': True,
-                      'first': {'year': 2010, 'value': 1.2, 'label': 'BEmONC 2010', 'ci': 0},
+                      'first': {'year': 2011, 'value': 1.2, 'label': 'BEmONC 2010', 'ci': 0},
                       'second': {'year': 2015, 'value': 0.8, 'label': 'BEmONC 2015', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, ur_data,  target_ur_dict, 'Rate per 1000 births',
+        alt_years, ur_data,  target_ur_dict, 3, 'Rate per 1000 births',
         'Rate of Uterine Rupture per Year', graph_location, 'ur_rate')
 
     # ---------------------------Caesarean Section Rate & Assisted Vaginal Delivery Rate... --------------------------
@@ -1047,25 +1128,47 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                   births_results_exc_2010, 100)
 
     target_cs_dict = {'double': True,
-                      'first': {'year': 2010, 'value': 3.7, 'label': 'EmONC Surv. (2010)', 'ci': 0},
+                      'first': {'year': 2011, 'value': 3.7, 'label': 'EmONC Surv. (2010)', 'ci': 0},
                       'second': {'year': 2015, 'value': 4, 'label': 'EMONC Surv. (2015)', 'ci': 0}}
     # todo: add bemonc estimates as well?
 
+    mdata = [[cs_data[0][0], cs_data[0][5]],
+                   [cs_data[1][0], cs_data[1][5]],
+                   [cs_data[2][0], cs_data[2][5]]]
+    cdata = [3.7, 4]
+
+    model_ci = [(x - y) / 2 for x, y in zip(mdata[2], mdata[1])]
+    # cdata_ci = [(x - y) / 2 for x, y in zip(cdata[2], cdata[1])]
+
+    N = len(mdata[0])
+    ind = np.arange(N)
+    width = 0.28
+    plt.bar(ind, mdata[0], width, label='Model (95% CI)', yerr=model_ci, color='cornflowerblue')
+    plt.bar(ind + width, cdata, width, label='BEmONC Survey', color='forestgreen')
+    plt.ylabel('Proportion of Total Births')
+    plt.xlabel('Year')
+    plt.ylim(0, 10)
+    plt.title('Proportion of total births delivered via caeasrean section (2010 & 2015)')
+    plt.xticks(ind + width / 2, ['2010', '2015'])
+    plt.legend()
+    plt.savefig(f'{graph_location}/cs_rate_2010_2015.png', bbox_inches="tight")
+    plt.show()
+
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, cs_data, target_cs_dict, '% of total births',
+        alt_years, cs_data, target_cs_dict, 5, '% of total births',
         'Proportion of total births delivered via caesarean section', graph_location, 'caesarean_section_rate')
 
     target_avd_dict = {'double': False,
                        'first': {'year': 2017, 'value': 1, 'label': 'HIV reports.', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, avd_data, target_avd_dict, 'Proportion of total births',
+        alt_years, avd_data, target_avd_dict, 4, 'Proportion of total births',
         'Assisted Vaginal Delivery Rate per Year', graph_location, 'avd_rate')
 
     proportions_dict_cs = dict()
     total_cs_per_year = list()
 
-    for year in sim_years:
+    for year in alt_years:
         yearly_mean_number = list()
         causes = dict()
 
@@ -1108,7 +1211,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     plt.savefig(f'{graph_location}/cs_by_indication.png')
     plt.show()
 
-    # ------------------------------------------ Maternal 5 Rate... ----------------------------------------------
+    # ------------------------------------------ Maternal sepsis Rate... ----------------------------------------------
     sepsis_df = an_comps.loc[(slice(None), 'clinical_chorioamnionitis'), slice(None)].droplevel(1) + \
                 la_comps.loc[(slice(None), 'sepsis'), slice(None)].droplevel(1) + \
                 pn_comps.loc[(slice(None), 'sepsis_postnatal'), slice(None)].droplevel(1) + \
@@ -1118,11 +1221,11 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     # todo: note, we would expect our rate to be higher than this
     target_sep_dict = {'double': True,
-                       'first': {'year': 2010, 'value': 2.34, 'label': 'BEmONC 2010', 'ci': 0},
+                       'first': {'year': 2011, 'value': 2.34, 'label': 'BEmONC 2010', 'ci': 0},
                        'second': {'year': 2015, 'value': 1.5, 'label': 'BEmONC 2015', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, total_sep_rates, target_sep_dict, 'Rate per 1000 births',
+        alt_years, total_sep_rates, target_sep_dict, 4, 'Rate per 1000 births',
         'Rate of Maternal Sepsis per Year', graph_location, 'sepsis_rate')
 
     # ----------------------------------------- Postpartum Haemorrhage... ---------------------------------------------
@@ -1132,11 +1235,11 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     total_pph_rates = return_rate(pph_data, births_results_exc_2010, 1000)
 
     target_pph_dict = {'double': True,
-                       'first': {'year': 2010, 'value': 7.95, 'label': 'BEmONC 2010', 'ci': 0},
+                       'first': {'year': 2011, 'value': 7.95, 'label': 'BEmONC 2010', 'ci': 0},
                        'second': {'year': 2015, 'value': 12.8, 'label': 'BEmONC 2015', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, total_pph_rates, target_pph_dict, 'Rate per 1000 births',
+        alt_years, total_pph_rates, target_pph_dict, 15, 'Rate per 1000 births',
         'Rate of Postpartum Haemorrhage per Year', graph_location, 'pph_rate')
 
     # ----------------------------------------- Fistula... -------------------------------------------------
@@ -1150,7 +1253,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                            'first': {'year': 2015, 'value': 6, 'label': 'DHS 2015', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, total_fistula_rates, target_fistula_dict, 'Rate per 1000 births',
+        alt_years, total_fistula_rates, target_fistula_dict, 8, 'Rate per 1000 births',
         'Rate of Obstetric Fistula per Year', graph_location, 'fistula_rate')
 
     # ==================================================== NEWBORN OUTCOMES ==========================================
@@ -1165,7 +1268,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     total_ns_rates = return_rate(ns_df, births_results_exc_2010, 1000)
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, total_ns_rates, target_nsep_dict, 'Rate per 1000 births',
+        alt_years, total_ns_rates, target_nsep_dict, 45, 'Rate per 1000 births',
         'Rate of Neonatal Sepsis per year', graph_location, 'neo_sepsis_rate')
 
     #  ------------------------------------------- Neonatal encephalopathy ------------------------------------------
@@ -1176,11 +1279,11 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     total_enceph_rates = return_rate(ne_df, births_results_exc_2010, 1000)
 
     target_enceph_dict = {'double': True,
-                          'first': {'year': 2010, 'value': 19.42, 'label': 'GBD 2010', 'ci': 0},
+                          'first': {'year': 2011, 'value': 19.42, 'label': 'GBD 2010', 'ci': 0},
                           'second': {'year': 2015, 'value': 18.59, 'label': 'GBD 2015', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, total_enceph_rates, target_enceph_dict, 'Rate per 1000 births',
+        alt_years, total_enceph_rates, target_enceph_dict, 25, 'Rate per 1000 births',
         'Rate of Neonatal Encephalopathy per year', graph_location, 'neo_enceph_rate')
 
     # ----------------------------------------- Respiratory Depression ------------------------------------------------
@@ -1188,10 +1291,10 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                   births_results_exc_2010, 1000)
 
     dummy_dict = {'double': False,
-                  'first': {'year': 2010, 'value': 0, 'label': 'UNK.', 'ci': 0}}
+                  'first': {'year': 2011, 'value': 0, 'label': 'UNK.', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, rd_data, dummy_dict, 'Rate per 1000 births',
+        alt_years, rd_data, dummy_dict, 15, 'Rate per 1000 births',
         'Rate of Neonatal Respiratory Depression per year', graph_location, 'neo_resp_depression_rate')
 
     # ----------------------------------------Preterm Respiratory Distress Syndrome -----------------------------------
@@ -1205,11 +1308,11 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                        'first': {'year': 2019, 'value': 0, 'label': 'Unk.', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, rds_data_lb, target_rds_dict, 'Rate per 1000 live births',
+        alt_years, rds_data_lb, target_rds_dict, 35, 'Rate per 1000 live births',
         'Rate of Preterm Respiratory Distress Syndrome per year (live births)', graph_location, 'neo_rds_rate_lb')
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, rds_data_ptb, target_rds_dict, 'Rate per 1000 preterm births',
+        alt_years, rds_data_ptb, target_rds_dict, 190, 'Rate per 1000 preterm births',
         'Rate of Preterm Respiratory Distress Syndrome per year (preterm births)', graph_location, 'neo_rds_rate_ptb')
 
     # - TOTAL NOT BREATHING NEWBORNS-
@@ -1223,7 +1326,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                      'first': {'year': 2019, 'value': 100, 'label': 'Muhe et al.', 'ci': 0}}
 
     analysis_utility_functions.line_graph_with_ci_and_target_rate(
-        sim_years, nb_rate, target_nb_dict, 'Rate per 1000  births',
+        alt_years, nb_rate, target_nb_dict, 120, 'Rate per 1000  births',
         'Rate of Respiratory Complications in all newborns', graph_location, 'neo_total_not_breathing')
 
     # TODO: add calibration target for 'apnea' which should be approx 5.7% total births
@@ -1248,11 +1351,11 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         nb_outcomes_df.loc[(slice(None), 'other_anomaly'), slice(None)].droplevel(1),
         births_results_exc_2010, 1000)
 
-    plt.plot(sim_years, rate_of_ca[0], label="heart")
-    plt.plot(sim_years, rate_of_laa[0], label="limb/musc.")
-    plt.plot(sim_years, rate_of_ua[0], label="urogenital")
-    plt.plot(sim_years, rate_of_da[0], label="digestive")
-    plt.plot(sim_years, rate_of_oa[0], label="other")
+    plt.plot(alt_years, rate_of_ca[0], label="heart")
+    plt.plot(alt_years, rate_of_laa[0], label="limb/musc.")
+    plt.plot(alt_years, rate_of_ua[0], label="urogenital")
+    plt.plot(alt_years, rate_of_da[0], label="digestive")
+    plt.plot(alt_years, rate_of_oa[0], label="other")
 
     plt.xlabel('Year')
     plt.ylabel('Rate per 1000 births')
@@ -1572,19 +1675,19 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     simplified_causes = ['ectopic_pregnancy', 'abortion', 'severe_pre_eclampsia', 'sepsis', 'uterine_rupture',
                          'postpartum_haemorrhage',  'antepartum_haemorrhage']
 
-    ec_tr = {'double': True, 'first': {'year': 2010, 'value': 1.4, 'label': 'UNK.', 'ci': 0},
+    ec_tr = {'double': True, 'first': {'year': 2011, 'value': 1.4, 'label': 'UNK.', 'ci': 0},
              'second': {'year': 2015, 'value': 3, 'label': 'UNK.', 'ci': 0}}
-    ab_tr = {'double': True, 'first': {'year': 2010, 'value': 36.8, 'label': 'UNK.', 'ci': 0},
+    ab_tr = {'double': True, 'first': {'year': 2011, 'value': 36.8, 'label': 'UNK.', 'ci': 0},
              'second': {'year': 2015, 'value': 20.9, 'label': 'UNK.', 'ci': 0}}
-    spe_ec_tr = {'double': True, 'first': {'year': 2010, 'value': 50.6, 'label': 'UNK.', 'ci': 0},
+    spe_ec_tr = {'double': True, 'first': {'year': 2011, 'value': 50.6, 'label': 'UNK.', 'ci': 0},
                  'second': {'year': 2015, 'value': 55.3, 'label': 'UNK.', 'ci': 0}}
-    sep_tr = {'double': True, 'first': {'year': 2010, 'value': 91, 'label': 'UNK.', 'ci': 0},
+    sep_tr = {'double': True, 'first': {'year': 2011, 'value': 91, 'label': 'UNK.', 'ci': 0},
               'second': {'year': 2015, 'value': 67.6, 'label': 'UNK.', 'ci': 0}}
-    ur_tr = {'double': True, 'first': {'year': 2010, 'value': 55, 'label': 'UNK.', 'ci': 0},
+    ur_tr = {'double': True, 'first': {'year': 2011, 'value': 55, 'label': 'UNK.', 'ci': 0},
              'second': {'year': 2015, 'value': 43, 'label': 'UNK.', 'ci': 0}}
-    pph_tr = {'double': True, 'first': {'year': 2010, 'value': 174.8, 'label': 'UNK.', 'ci': 0},
+    pph_tr = {'double': True, 'first': {'year': 2011, 'value': 174.8, 'label': 'UNK.', 'ci': 0},
               'second': {'year': 2015, 'value': 95.4, 'label': 'UNK.', 'ci': 0}}
-    aph_tr = {'double': True, 'first': {'year': 2010, 'value': 36.8, 'label': 'UNK.', 'ci': 0},
+    aph_tr = {'double': True, 'first': {'year': 2011, 'value': 36.8, 'label': 'UNK.', 'ci': 0},
               'second': {'year': 2015, 'value': 16.9, 'label': 'UNK.', 'ci': 0}}
 
     trs = [ec_tr, ab_tr, spe_ec_tr, sep_tr, ur_tr, pph_tr, aph_tr]
@@ -1618,8 +1721,10 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
             deaths = a_deaths + i_deaths + p_deaths
 
         mmr = return_rate(deaths, births_results_exc_2010, 100_000)
+        ylim = mmr[0] + 20
+
         analysis_utility_functions.line_graph_with_ci_and_target_rate(
-            sim_years, mmr, tr, 'Rate per 100,000 births',
+            sim_years, mmr, tr, ylim, 'Rate per 100,000 births',
             f'Maternal Mortality Ratio per Year for {cause}', graph_location, f'mmr_{cause}')
 
     # =================================== DEATH PROPORTIONS... ========================================================
@@ -1694,8 +1799,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     width = 0.35  # the width of the bars
 
     fig, ax = plt.subplots()
-    ax.bar(x - width / 2, model, width, yerr=ui, label='Model 2015 (95% CI)', color='blue')
-    ax.bar(x + width / 2, bemonc_data, width, label='BEmONC Survey 2015', color='green')
+    ax.bar(x - width / 2, model, width, yerr=ui, label='Model 2015 (95% CI)', color='cornflowerblue')
+    ax.bar(x + width / 2, bemonc_data, width, label='BEmONC Survey 2015', color='forestgreen')
     # ax.bar_label(labels)
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel('% of Total Direct Deaths in 2015')
@@ -1746,7 +1851,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                             'lq': [25, 24, 23, 22, 20, 18, 16, 15, 14, 13, 13, 12],
                             'uq': [31, 31, 30, 29, 29, 28, 28, 29, 29, 30, 30, 31]}}
 
-        plt.errorbar(2010, data['dhs']['mean'][0], label='DHS 2010 (95% CI)',
+        plt.errorbar(2011, data['dhs']['mean'][0], label='DHS 2010 (95% CI)',
                      yerr=(data['dhs']['uq'][0] - data['dhs']['lq'][0]) / 2, fmt='o', color='mediumseagreen',
                      ecolor='green',
                      elinewidth=3, capsize=0)
@@ -1831,8 +1936,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         N = len(data[0])
         ind = np.arange(N)
         width = 0.35
-        plt.bar(ind, data[0], width, label='Model (95% CI)', yerr=model_ci_neo, color='teal')
-        plt.bar(ind + width, gbd_data[0], width, label='GBD (Lower & Upper bounds)', yerr=gbd_ci_neo, color='olivedrab')
+        plt.bar(ind, data[0], width, label='Model (95% CI)', yerr=model_ci_neo, color='cornflowerblue')
+        plt.bar(ind + width, gbd_data[0], width, label='GBD (Lower & Upper bounds)', yerr=gbd_ci_neo, color='forestgreen')
         plt.ylabel('Crude Deaths (scaled)')
         plt.title(title)
         plt.xticks(ind + width / 2, gbd_years)
@@ -1940,15 +2045,15 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
             rd_tr.append(0)
             ca_tr.append(0)
 
-    ptb_tr = {'double': True, 'first': {'year': 2010, 'value': 6.75, 'label': 'UNK.', 'ci': 0},
+    ptb_tr = {'double': True, 'first': {'year': 2011, 'value': 6.75, 'label': 'UNK.', 'ci': 0},
              'second': {'year': 2015, 'value': 5.94, 'label': 'UNK.', 'ci': 0}}
-    enceph_tr = {'double': True, 'first': {'year': 2010, 'value': 6.25, 'label': 'UNK.', 'ci': 0},
+    enceph_tr = {'double': True, 'first': {'year': 2011, 'value': 6.25, 'label': 'UNK.', 'ci': 0},
              'second': {'year': 2015, 'value': 5.5, 'label': 'UNK.', 'ci': 0}}
-    sep = {'double': True, 'first': {'year': 2010, 'value': 2, 'label': 'UNK.', 'ci': 0},
+    sep = {'double': True, 'first': {'year': 2011, 'value': 2, 'label': 'UNK.', 'ci': 0},
                  'second': {'year': 2015, 'value': 1.76, 'label': 'UNK.', 'ci': 0}}
-    rd_tr = {'double': True, 'first': {'year': 2010, 'value': 0, 'label': 'UNK.', 'ci': 0},
+    rd_tr = {'double': True, 'first': {'year': 2011, 'value': 0, 'label': 'UNK.', 'ci': 0},
               'second': {'year': 2015, 'value': 0, 'label': 'UNK.', 'ci': 0}}
-    ca_tr = {'double': True, 'first': {'year': 2010, 'value': 0, 'label': 'UNK.', 'ci': 0},
+    ca_tr = {'double': True, 'first': {'year': 2011, 'value': 0, 'label': 'UNK.', 'ci': 0},
              'second': {'year': 2015, 'value': 0, 'label': 'UNK.', 'ci': 0}}
 
     trs = [ptb_tr, enceph_tr, sep, rd_tr, ca_tr]
@@ -1976,8 +2081,10 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
             deaths = ca_deaths + la_deaths + ua_deaths + da_deaths + oa_deaths
         nmr = return_rate(deaths, births_results_exc_2010, 1000)
+        ylim = nmr[0] + 20
+
         analysis_utility_functions.line_graph_with_ci_and_target_rate(
-            sim_years, nmr, tr, 'Rate per 1000 live births',
+            sim_years, nmr, tr, ylim, 'Rate per 1000 live births',
             f'Neonatal Mortality Rate per Year for {cause}', graph_location, f'nmr_{cause}')
 
     # proportion causes for preterm birth
@@ -2024,8 +2131,21 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                     [9576, 9191, 8784, 8402, 8010, 7798, 7458, 7091, 6901, 6756],
                     [6785, 6460, 6115, 5773, 5449, 5167, 4847, 4486, 4246, 4044]]
 
+            yll =[[1130667.95, 1116648.79, 1090423.39, 1063931.80, 1031135.75, 1001028.50,
+                   979690.75, 932464.88, 917047.17, 907909.52],
+                  [948017.12, 926580.96, 898355.11, 868688.00, 838840.05, 806310.38, 806310.38, 730865.10,
+                   707276.07, 693996.45],
+                  [1347727.01, 1325484.32, 1303762.52, 1278501.75, 1249389.10, 1243491.38, 1216195.29, 1187856.17,
+                   1186101.78, 1190897.86]]
+            yld = [[20412.92, 22980.05, 27396.62, 32943.15, 38722.71, 43760.64, 48920.63, 52681.07, 52985.03, 50919.88],
+                   [14682.57, 17003.09, 20257.22, 24621.60,  28670.33, 32352.21, 36966.02, 39836.19, 39901.68,
+                    37275.59],
+                   [27855.12, 31058.88, 36616.19, 43246.68, 51007.54, 57403.37, 61380.25, 66633.24, 66586.96, 67266.20]]
+
             return {'total': [gbd_dalys, gbd_dalys_lq, gbd_dalys_uq],
-                    'rate': rate}
+                    'rate': rate,
+                    'yll': yll,
+                    'yld': yld}
 
     maternal_gbd_dalys = extract_dalys_gbd_data('Maternal')
     neonatal_gbd_dalys = extract_dalys_gbd_data('Neonatal')
@@ -2038,6 +2158,26 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
             lambda df: df.drop(
                 columns='date').groupby(['year']).sum().stack()),
         do_scaling=True)
+
+    yll_stacked = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="yll_by_causes_of_death_stacked",
+        custom_generate_series=(
+            lambda df: df.drop(
+                columns='date').groupby(['year']).sum().stack()),
+        do_scaling=True)
+    yll_stacked_final = yll_stacked.fillna(0)
+
+    yld = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="yld_by_causes_of_disability",
+        custom_generate_series=(
+            lambda df: df.drop(
+                columns='date').groupby(['year']).sum().stack()),
+        do_scaling=True)
+    yld_final = yld.fillna(0)
 
     person_years_total = extract_results(
         results_folder,
@@ -2061,6 +2201,30 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         dalys_stacked.loc[(slice(None), 'Maternal Disorders'), slice(None)].droplevel(1), sim_years)})
     neo_model_dalys_data.update({'total': analysis_utility_functions.return_95_CI_across_runs(
         dalys_stacked.loc[(slice(None), 'Neonatal Disorders'), slice(None)].droplevel(1), sim_years)})
+
+    neo_causes_death = ['early_onset_sepsis', 'late_onset_sepsis', 'encephalopathy', 'preterm_other',
+                        'respiratory_distress_syndrome', 'neonatal_respiratory_depression']
+
+    neo_causes_disab = ['Retinopathy of Prematurity', 'Neonatal Encephalopathy',
+                        'Neonatal Sepsis Long term Disability', 'Preterm Birth Disability']
+
+    def get_total_dfs(df, causes):
+        dfs = []
+        for k in causes:
+            scen_df = df.loc[(slice(None), k), slice(None)].droplevel(1)
+            dfs.append(scen_df)
+
+        final_df = sum(dfs)
+        return final_df
+
+    neo_yll_s_df = get_total_dfs(yll_stacked_final, neo_causes_death)
+    neo_yld_df = get_total_dfs(yld_final, neo_causes_disab)
+
+    neo_model_dalys_data.update({'yll': analysis_utility_functions.return_95_CI_across_runs(
+        neo_yll_s_df, sim_years)})
+
+    neo_model_dalys_data.update({'yld': analysis_utility_functions.return_95_CI_across_runs(
+        neo_yld_df, sim_years)})
 
     def get_daly_graphs(group, model_data, gbd_data):
 
@@ -2110,6 +2274,45 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         plt.savefig(f'{graph_location}/{group}_dalys_stacked_rate.png')
         plt.show()
 
+        if group == 'Neonatal':
+            # YLL and YLD
+            fig, ax = plt.subplots()
+            ax.plot(sim_years, model_data['yll'][0], label=f"Model (95% CI)", color='deepskyblue')
+            ax.fill_between(sim_years, model_data['yll'][1], model_data['yll'][2], color='b', alpha=.1)
+
+            ax.plot(gbd_years, gbd_data['yll'][0], label="GBD (Lower & Upper bounds)", color='olivedrab')
+            ax.fill_between(gbd_years, gbd_data['yll'][1], gbd_data['yll'][2], color='g', alpha=.1)
+
+            plt.xlabel('Year')
+            plt.ylabel("Years of Life Lost")
+            plt.title(f'Total Years of Life Lost (YLL) per Year Attributable to {group} Disorders')
+            plt.legend()
+            plt.savefig(f'{graph_location}/{group}_yll_stacked.png')
+            plt.show()
+
+            fig, ax = plt.subplots()
+            ax.plot(sim_years, model_data['yld'][0], label=f"Model (95% CI)", color='deepskyblue')
+            ax.fill_between(sim_years, model_data['yld'][1], model_data['yld'][2], color='b', alpha=.1)
+
+            ax.plot(gbd_years, gbd_data['yld'][0], label="GBD (Lower & Upper bounds)", color='olivedrab')
+            ax.fill_between(gbd_years, gbd_data['yld'][1], gbd_data['yld'][2], color='g', alpha=.1)
+
+            plt.xlabel('Year')
+            plt.ylabel("Years Live with Disability")
+            plt.title(f'Total Years Lived with Disability (YLD) per Year Attributable to {group} Disorders')
+            plt.legend()
+            plt.savefig(f'{graph_location}/{group}_yld.png')
+            plt.show()
+
+
+
+
+
+
     get_daly_graphs('Maternal', mat_model_dalys_data, maternal_gbd_dalys)
     get_daly_graphs('Neonatal', neo_model_dalys_data, neonatal_gbd_dalys)
+
+
+
+
 

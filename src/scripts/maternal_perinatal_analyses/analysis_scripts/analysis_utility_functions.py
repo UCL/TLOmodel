@@ -326,7 +326,7 @@ def extract_comp_inc_folders(folder, comps_df, neo_comps_df, pregnancy_df, birth
     return results
 
 
-def line_graph_with_ci_and_target_rate(sim_years, data, target_data_dict, y_label, title,
+def line_graph_with_ci_and_target_rate(sim_years, data, target_data_dict, ylim, y_label, title,
                                        graph_location, file_name):
     fig, ax = plt.subplots()
     ax.plot(sim_years, data[0], label="Model", color='deepskyblue')
@@ -348,12 +348,12 @@ def line_graph_with_ci_and_target_rate(sim_years, data, target_data_dict, y_labe
     plt.xlabel('Year')
     plt.ylabel(y_label)
     plt.title(title)
-
-    if ('anc_prop' in file_name) or ('sba' in file_name) or ('pnc' in file_name):
-        ax.set(ylim=(0, 100))
-    if 'caesarean' in file_name:
-        ax.set(ylim=(0, 10))
-
+    ax.set(ylim=(0, ylim))
+    # if ('anc_prop' in file_name) or ('sba' in file_name) or ('pnc' in file_name):
+    #     ax.set(ylim=(0, 100))
+    # if 'caesarean' in file_name:
+    #     ax.set(ylim=(0, 10))
+    plt.xticks(sim_years, labels=sim_years, rotation=45, fontsize=8)
     plt.gca().set_ylim(bottom=0)
     plt.legend()
     plt.savefig(f'{graph_location}/{file_name}.png')
