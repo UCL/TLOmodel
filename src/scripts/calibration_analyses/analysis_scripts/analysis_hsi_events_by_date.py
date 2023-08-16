@@ -218,26 +218,22 @@ def apply(results_folder: Path, output_folder: Path):
     """Description of the usage of healthcare system resources."""
 
     figure1_distribution_of_hsi_event_by_date(
-       results_folder=results_folder, output_folder=results_folder
+       results_folder=results_folder, output_folder=output_folder
     )
     figure2_distribution_of_hsi_event_by_treatment(
-        results_folder=results_folder, output_folder=results_folder
+        results_folder=results_folder, output_folder=output_folder
     )
     figure3_appointments_used(
-       results_folder=results_folder, output_folder=results_folder
+       results_folder=results_folder, output_folder=output_folder
     )
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser("Analyse logged HSI event data from scenario run")
-    parser.add_argument(
-        "--results-folder",
-        type=Path,
-        help="Path to folder containing results of scenario to perform analysis for"
-    )
+    parser = argparse.ArgumentParser()
+    parser.add_argument("results_folder", type=Path)
     args = parser.parse_args()
 
     apply(
         results_folder=args.results_folder,
-        output_folder=args.results_folder
+        output_folder=args.results_folder,
     )

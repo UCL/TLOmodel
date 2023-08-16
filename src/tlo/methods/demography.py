@@ -42,6 +42,10 @@ logger.setLevel(logging.INFO)
 logger_detail = logging.getLogger(f"{__name__}.detail")
 logger_detail.setLevel(logging.INFO)
 
+# Population scale factor logger
+logger_scale_factor = logging.getLogger('tlo.methods.population')
+logger_scale_factor.setLevel(logging.INFO)
+
 # Limits for setting up age range categories
 MIN_AGE_FOR_RANGE = 0
 MAX_AGE_FOR_RANGE = 100
@@ -302,8 +306,8 @@ class Demography(Module):
         sim.schedule_event(self.other_death_poll, sim.date)
 
         # Log the initial population scaling-factor (to the logger of this module and that of `tlo.methods.population`)
-        for _logger in (logger,  logging.getLogger('tlo.methods.population')):
-            _logger.info(
+        for _logger in (logger, logger_scale_factor):
+            _logger.warning(
                 key='scaling_factor',
                 data={'scaling_factor': 1.0 / self.initial_model_to_data_popsize_ratio},
                 description='The data-to-model scaling factor (based on the initial population size, used to '

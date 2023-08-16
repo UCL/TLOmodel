@@ -343,16 +343,16 @@ def test_arithmetic_of_dalys_calcs(seed):
 
     # Examine YLL, YLD and DALYS for 'A' recorded at the end of the simulation
     hb = sim.modules['HealthBurden']
-    yld = hb.years_lived_with_disability.sum()
-    yll = hb.years_life_lost.sum()
-    dalys = hb.compute_dalys()[0].sum()
+    yld = hb.years_lived_with_disability.reset_index()
+    yll = hb.years_life_lost.reset_index()
+    dalys = hb.get_dalys(yld=yld, yll=yll)
 
     daly_wt = sim.modules['DiseaseThatCausesA'].daly_wt
 
-    # Check record of YLD and YLLL (accurate to within a day (due to odd number of days in a year))
-    assert yld['cause_of_disability_A'] == approx(daly_wt * 0.25, abs=(daly_wt / 365))
-    assert yll['cause_of_death_A'] == approx(0.5, abs=1 / 365)
-    assert dalys['Label_A'] == approx(0.5 + 0.25 * daly_wt, abs=1 / 365)
+    # Check record of YLD and YLL (accurate to within a day (due to odd number of days in a year))
+    assert yld['cause_of_disability_A'].sum() == approx(daly_wt * 0.25, abs=(daly_wt / 365))
+    assert yll['cause_of_death_A'].sum() == approx(0.5, abs=1 / 365)
+    assert dalys['Label_A'].sum() == approx(0.5 + 0.25 * daly_wt, abs=1 / 365)
 
 
 def test_airthmetic_of_lifeyearslost(seed, tmpdir):
