@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date
-from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize
+from tlo.analysis.utils import extract_results, summarize
 
 PREFIX_ON_FILENAME = '4'
 
