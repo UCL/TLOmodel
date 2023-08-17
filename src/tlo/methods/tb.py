@@ -22,7 +22,6 @@ from tlo.util import random_date
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-
 class Tb(Module):
     """Set up the baseline population with TB prevalence"""
 
@@ -2048,7 +2047,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
 def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
-    #    now = self.sim.date
+        now = self.sim.date
         p = self.module.parameters
         person = df.loc[person_id]
         rng = self.module.rng

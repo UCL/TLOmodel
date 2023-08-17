@@ -29,7 +29,6 @@ from tlo.scenario import BaseScenario
 # we will do so here for the purposes of this example to keep things simple.
 warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 
-
 class ImpactOfTbDaH(BaseScenario):
     def __init__(self):
         super().__init__()
