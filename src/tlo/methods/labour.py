@@ -3047,10 +3047,16 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
             if pd.isnull(mni[person_id]['pnc_date']):
                 return None
 
+        if (self.sim.date - mni[person_id]['pnc_date']).days > 2:
+            mni[person_id]['pnc_date'] = pd.NaT
+            self.module.apply_risk_of_early_postpartum_death(person_id)
+            return
+
         # Ensure that women who were scheduled to receive early PNC have received care prior to passing through
-        # PostnatalWeekOneMaternalEvent
+            # PostnatalWeekOneMaternalEvent
+
         if (mni[person_id]['will_receive_pnc'] == 'early') and not mni[person_id]['passed_through_week_one']:
-            if not self.sim.date < (df.at[person_id, 'la_date_most_recent_delivery'] + pd.DateOffset(days=2)):
+            if not self.sim.date <= (df.at[person_id, 'la_date_most_recent_delivery'] + pd.DateOffset(days=2)):
                 logger.info(key='error', data=f'Mother {person_id} attended early PNC too late')
 
             if not df.at[person_id, 'la_pn_checks_maternal'] == 0:
@@ -3068,11 +3074,6 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
 
         # Run checks
         self.module.postpartum_characteristics_checker(person_id)
-
-        if (self.sim.date - mni[person_id]['pnc_date']).days > 2:
-            mni[person_id]['pnc_date'] = pd.NaT
-            self.module.apply_risk_of_early_postpartum_death(person_id)
-            return
 
         # log the PNC visit
         logger.info(key='postnatal_check', data={'person_id': person_id,
