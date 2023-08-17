@@ -96,9 +96,11 @@ class Contraception(Module):
             Types.INT, "The maximum delay (in days) between the decision for a contraceptive to change and the `topen` "
                        "date of the HSI that is scheduled to effect the change (when using the healthsystem)."),
 
+        # TODO: needs to be fixed to be BOOL parameter (together with resolving the temporary fix below)
         'use_interventions': Parameter(
-            Types.BOOL, "if True: FP interventions (pop & ppfp) are simulated from the date 'interventions_start_date',"
-                        " if False: FP interventions (pop & ppfp) are not simulated."),
+            Types.STRING, "if True: FP interventions (pop & ppfp) are simulated since 'interventions_start_date',"
+                          " if False: FP interventions (pop & ppfp) are not simulated."),
+
         'interventions_start_date': Parameter(
             Types.DATE, "The date since which the FP interventions (pop & ppfp) are implemented, if at all (ie, if "
                         "use_interventions==True")
@@ -190,6 +192,22 @@ class Contraception(Module):
         self.load_parameters_from_dataframe(pd.read_csv(
             Path(self.resourcefilepath) / 'ResourceFile_ContraceptionParams.csv'
         ))
+
+        # Temporary fix of loading the boolean  parameter 'use_interventions':
+        co_params = pd.read_csv('resources/ResourceFile_ContraceptionParams.csv')
+        self.parameters['use_interventions_loaded'] =\
+            co_params['value'].loc[co_params['parameter_name'] == 'use_interventions'].values[0]
+        self.parameters['use_interventions'] = self.parameters['use_interventions_loaded'] == 'On'
+        if self.parameters['use_interventions_loaded'] not in ('On', 'Off'):
+            warnings.warn(UserWarning(f"'use_intervention' parameter set to 'Off' (=False) as the given value "
+                                      f"{self.parameters['use_interventions_loaded']} was not recognised."))
+            logger.info(
+                key="use_intervention",
+                data={"input_given": self.parameters['use_interventions_loaded'],
+                      "value_used": self.parameters['use_interventions']
+                      },
+                description='Unrecognised value given for use_intervention parameter replaced.'
+            )
 
         # Import the Age-specific fertility rate data from WPP
         self.parameters['age_specific_fertility_rates'] = \
