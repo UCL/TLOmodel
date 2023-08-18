@@ -1,3 +1,4 @@
+import argparse
 from collections import Counter
 from pathlib import Path
 
@@ -262,6 +263,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     hcw_usage_hsi = appt_time.drop(index=appt_time[~appt_time.Appt_Type_Code.isin(appts_sim)].index
                                    ).reset_index(drop=True)
     hcw_usage_hsi = hsi_count.merge(hcw_usage_hsi, on=['Facility_Level', 'Appt_Type_Code'], how='left')
+    # save the data to draw sankey diagram of appt to hsi
+    hcw_usage_hsi.to_csv(output_folder / 'hsi_count_by_treatment_appt_level.csv', index=False)
     hcw_usage_hsi['Total_Mins_Used_Per_Year'] = hcw_usage_hsi['Count'] * hcw_usage_hsi['Time_Taken_Mins']
     hcw_usage_hsi = hcw_usage_hsi.groupby(['Treatment_ID', 'Appt_Category', 'Officer_Category']
                                           )['Total_Mins_Used_Per_Year'].sum().reset_index()
@@ -270,23 +273,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     hcw_usage_hsi.Officer_Category = hcw_usage_hsi.Officer_Category.replace(
         {'Nursing_and_Midwifery': 'Nursing and Midwifery'})
 
-    # save the data to draw sankey diagram
+    # save the data to draw sankey diagram of hcw time via appt to disease
     hcw_usage_hsi.to_csv(output_folder/'hcw_working_time_per_hsi.csv', index=False)
 
 
 if __name__ == "__main__":
-    outputspath = Path('./outputs/bshe@ic.ac.uk')
-    rfp = Path('./resources')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("results_folder", type=Path)
+    args = parser.parse_args()
 
-    # Find results folder (most recent run generated using that scenario_filename)
-    scenario_filename = '10_year_scale_run.py'
-    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-4]
-
-    # Test dataset:
-    # results_folder = Path('/Users/tbh03/GitHub/TLOmodel/outputs/tbh03@ic.ac.uk/long_run_all_diseases-small')
-
-    # If needed -- in the case that pickles were not created remotely during batch
-    # create_pickles_locally(results_folder)
-
-    # Run all the calibrations
-    apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
+    apply(
+        results_folder=args.results_folder,
+        output_folder=args.results_folder,
+        resourcefilepath=Path('./resources')
+    )
