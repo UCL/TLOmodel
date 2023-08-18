@@ -834,7 +834,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
         calc_intervention_costs_bool = in_calc_intervention_costs_bool
         if in_calc_intervention_costs_bool:
             interv_info_df =\
-                log_df['tlo.methods.contraception']['contraception_intervention'].set_index('date').copy()
+                log_df['tlo.methods.contraception']['interventions_start_date'].set_index('date').copy()
             interv_implem_date = Date(interv_info_df.loc['2010-01-01', 'date_co_interv_implemented'])
             if Date(last_day_simulated) < interv_implem_date:
                 warnings.warn(
