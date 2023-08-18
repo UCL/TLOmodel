@@ -161,6 +161,10 @@ class TestLoadParametersFromDataframe:
         assert 'series' in self.module.PARAMETERS.keys()
         assert 'series' not in self.module.parameters.keys()
 
+    def test_bools(self):
+        self.module.load_parameters_from_dataframe(self.resource)
+        assert self.module.parameters['bool_true'] is True
+        assert self.module.parameters['bool_false'] is False
 
 class TestLoadParametersFromDataframe_Bools_From_Csv:
     """Tests for the load_parameters_from_dataframe method, including handling of bools when loading from csv"""
