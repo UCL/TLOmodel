@@ -36,14 +36,14 @@ class ImpactOfTbDaH(BaseScenario):
         self.seed = random.randint(0, 50000),
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2012, 12, 31)
-        self.pop_size = 500
+        self.pop_size = 5000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 4
 
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_scenarios_test_run02',
+            'filename': 'Tb_DAH_scenarios_test_run03',
            'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -74,12 +74,14 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 0,
                     'probability_community_chest_xray': 0.0,
+                    'scaling_factor_WHO': 99.9,
                 },
             },
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
                     'probability_community_chest_xray': 0.0,
+                    'scaling_factor_WHO': 99.9,
                 },
             },
             "No CXR Available": {
@@ -87,6 +89,7 @@ class ImpactOfTbDaH(BaseScenario):
                     'scenario': 2,
                     'probability_access_to_xray': 0.0,
                     'probability_community_chest_xray': 0.0,
+                    'scaling_factor_WHO': 99.9,
                 },
             },
             "CXR scaleup": {
@@ -94,12 +97,14 @@ class ImpactOfTbDaH(BaseScenario):
                     'scenario': 0,
                     'probability_access_to_xray': 0.11,
                     'probability_community_chest_xray': 0.0,
+                    'scaling_factor_WHO': 99.9,
                 }
             },
             "Outreach services": {
                 'Tb': {
                     'scenario': 0,
                     'probability_community_chest_xray': 0.01,
+                    'scaling_factor_WHO': 99.9,
                 }
             }
         }
