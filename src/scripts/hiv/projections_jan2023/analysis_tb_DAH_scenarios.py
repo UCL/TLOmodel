@@ -27,6 +27,7 @@ results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_run03-2023-08-17T18
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
+#info.to_excel(outputspath / "info.xlsx")
 params = extract_params(results_folder)
 print("the parameter info as follows")
 params.to_excel(outputspath / "parameters.xlsx")
@@ -358,11 +359,22 @@ properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_pe
 # wealth_quintile.index = wealth_quintile.index.year
 # wealth_quintile.to_excel(outputspath / "wealth_quintiles.xlsx")
 
-# HSE = log["tlo.methods.healthsystem.summary"]["hsi_event_details"]
-# HSE = HSE.set_index("date")
-# print("Health system events as follows",HSE)
-# HSE.to_excel(outputspath / "HSE.xlsx")
-#
+HSE = log["tlo.methods.healthsystem.summary"]["hsi_event_details"]
+HSE = HSE.set_index("date")
+print("Health system events as follows",HSE)
+HSE.to_excel(outputspath / "HSE.xlsx")
+
+HSEvents = log["tlo.methods.healthsystem.summary"]["HSI_Event"]
+HSEvents = HSEvents.set_index("date")
+print("Health system events as follows",HSEvents)
+HSEvents.to_excel(outputspath / "HSEvents.xlsx")
+
+hsi_event_counts = log["tlo.methods.healthsystem.summary"]["hsi_event_counts"]
+hsi_event_counts = hsi_event_counts.set_index("date")
+print("Health system events as follows",hsi_event_counts)
+hsi_event_counts.to_excel(outputspath / "hsi_event_counts")
+print(hsi_event_counts)
+
 # print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
 # print(f"Keys of log['tlo.methods.healthburden']: {log['tlo.methods.healthburden'].keys()}")
 # print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography.detail'].keys()}")
@@ -500,4 +512,31 @@ if __name__ == "__main__":
     # )
 print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
 print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
-print(f"Keys of log['tlo.methods.healthsystem']: {log['tlo.methods.healthsystem'].keys()}")
+#print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
+
+consumables_list = log['tlo.methods.healthsystem.summary']['Consumables']
+# Print the list of consumables
+print("List of Consumables:")
+print(consumables_list)
+print(params)
+
+print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
+print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
+#consumables_baseline = log['tlo.methods.healthsystem.summary']['Consumables'] & params[draw]==1
+
+#consumables_baseline = log['tlo.methods.healthsystem.summary']['Consumables']
+
+#Active Tb prevalence in adults
+adult_Tb_prevalence= summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_prevalence",
+        column="tbPrevActiveAdult",
+        index="date",
+        do_scaling=False,
+    ),
+    collapse_columns=True,
+).pipe(set_param_names_as_column_index_level_0)
+adult_Tb_prevalence.index = adult_Tb_prevalence.index.year
+adult_Tb_prevalence.to_excel(outputspath / "adult_Tb_prevalence_sample.xlsx")

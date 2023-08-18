@@ -1,6 +1,8 @@
 import warnings
 from typing import Dict
 import random
+
+from scripts.hiv.projections_jan2023.archive.analysis_full_model import log_config
 from tlo.scenario import BaseScenario
 import random
 from pathlib import Path
@@ -27,14 +29,14 @@ class ImpactOfTbDaH(BaseScenario):
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2012, 12, 31)
-        self.pop_size = 5000
+        self.pop_size = 10000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 4
 
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_scenarios_test_run03',
+            'filename': 'Tb_DAH_scenarios_test_run04_partial',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -48,6 +50,7 @@ class ImpactOfTbDaH(BaseScenario):
         }
 # The resource files
 resourcefilepath = Path("./resources")
+
 sim = Simulation(start_date= Date(2012, 12, 31), seed=2025, log_config=log_config, show_progress_bar=True)
 sim.register(
     demography.Demography(resourcefilepath=resourcefilepath),
