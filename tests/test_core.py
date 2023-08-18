@@ -166,6 +166,7 @@ class TestLoadParametersFromDataframe:
         assert self.module.parameters['bool_true'] is True
         assert self.module.parameters['bool_false'] is False
 
+
 class TestLoadParametersFromDataframe_Bools_From_Csv:
     """Tests for the load_parameters_from_dataframe method, including handling of bools when loading from csv"""
     def setup(self):
@@ -173,11 +174,24 @@ class TestLoadParametersFromDataframe_Bools_From_Csv:
             def __init__(self):
                 super().__init__(name=None)
                 self.PARAMETERS = {
-                    'bool_true': Parameter(Types.BOOL, 'string'),
-                    'bool_false': Parameter(Types.BOOL, 'string'),
+                    'bool_true_int': Parameter(Types.BOOL, 'string'),
+                    #                   <-- Correct value True, provided in csv as int
+                    'bool_true_string': Parameter(Types.BOOL, 'string'),
+                    #                   <-- Correct value True, provided in csv as str
+                    'bool_false_int': Parameter(Types.BOOL, 'string'),
+                    #                   <-- Correct value False, provided in csv as int
+                    'bool_false_none': Parameter(Types.BOOL, 'string'),
+                    #                   <-- Correct value False, provided in csv as <None>
+                    'bool_false_false': Parameter(Types.BOOL, 'string'),
+                    #                   <-- Correct value False, provided in csv as string of "False"
+                    'bool_false_falsecaps': Parameter(Types.BOOL, 'string'),
+                    #                   <-- Correct value False, provided in csv as string of "FALSE"
                     'int': Parameter(Types.INT, 'string'),
+                    #                   <-- Other parameter (not of interest)
                     'float': Parameter(Types.REAL, 'string'),
+                    #                   <-- Other parameter (not of interest)
                     'string': Parameter(Types.STRING, 'string'),
+                    #                   <-- Other parameter (not of interest)
                 }
 
         self.module = ParameterModule()
@@ -188,13 +202,21 @@ class TestLoadParametersFromDataframe_Bools_From_Csv:
                 "int,12\n"
                 "float,1.0\n"
                 "string,'hello'\n"
-                "bool_true,1\n"
-                "bool_false,0\n"
+                "bool_true_int,1\n"
+                "bool_true_string,'X'\n"
+                "bool_false_int,0\n"
+                "bool_false_none,\n"
+                "bool_false_false,False\n"
+                "bool_false_falsecaps,FALSE\n"
             ))
 
     def test_read_bool(self):
         """Check that value of bools defined correctly."""
 
         self.module.load_parameters_from_dataframe(self.resource)
-        assert self.module.parameters['bool_true'] is True, "Incorrect read of True bool from."
-        assert self.module.parameters['bool_false'] is False, "Incorrect read of False bool from."
+
+        for p in [p for p in self.module.parameters.keys() if p.startswith('bool_true')]:
+            assert self.module.parameters[p] is True, f"Incorrect read of True bool from {p}."
+
+        for p in [p for p in self.module.parameters.keys() if p.startswith('bool_false')]:
+            assert self.module.parameters[p] is False, f"Incorrect read of False bool from {p}"
