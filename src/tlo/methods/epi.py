@@ -394,7 +394,6 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
         self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = self.treatment_id()
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({} if self.suppress_footprint else {"EPI": 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
 
     def treatment_id(self):
@@ -405,8 +404,30 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
         """must be implemented by subclasses"""
         raise NotImplementedError
 
-    def did_not_run(self):
-        logger.debug(key="debug", data=f"{self.__class__.__name__}: did not run")
+    @property
+    def EXPECTED_APPT_FOOTPRINT(self):
+        """Returns the EPI appointment footprint for this person according to the vaccine:
+        * tetanus/diphtheria for pregnant women uses 1 EPI appt
+        * childhood vaccines can occur in bundles at birth, weeks 6, 10 and 14
+        * measles/rubella given in one appt in months 9, 15
+        * hpv given for adolescents uses 1 EPI appt
+        * if a vaccine is given at the same time as other vaccines, decrease the EPI footprint to 0.5
+        """
+
+        if self.suppress_footprint:
+            return self.make_appt_footprint({})
+
+        # these vaccines are always given jointly with other childhood vaccines
+        vaccine_bundle = ['Epi_Childhood_Bcg', 'Epi_Childhood_Opv', 'Epi_Childhood_DtpHibHep', 'Epi_Childhood_Rota',
+                          'Epi_Childhood_Pneumo']
+
+        # determine whether this HSI gives a vaccine as part of a vaccine bundle
+        # if vaccine is in list of vaccine bundles, return EPI footprint 0.5
+        # all other vaccines use 1 full EPI appt
+        if self.treatment_id() in vaccine_bundle:
+            return self.make_appt_footprint({"EPI": 0.5})
+        else:
+            return self.make_appt_footprint({"EPI": 1})
 
 
 class HSI_BcgVaccine(HsiBaseVaccine):
@@ -524,7 +545,6 @@ class HSI_TdVaccine(HsiBaseVaccine):
         return "Epi_Pregnancy_Td"
 
     def apply(self, person_id, squeeze_factor):
-
         if self.get_consumables(item_codes=self.module.cons_item_codes["td"],
                                 optional_item_codes=self.module.cons_item_codes["syringes"]):
             self.module.increment_dose(person_id, "td")
