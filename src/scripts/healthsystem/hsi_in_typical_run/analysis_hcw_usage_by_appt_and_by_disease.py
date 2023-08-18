@@ -11,7 +11,6 @@ from tlo.analysis.utils import (
     bin_hsi_event_details,
     compute_mean_across_runs,
     extract_results,
-    get_scenario_outputs,
     summarize,
 )
 
