@@ -1,5 +1,6 @@
 import os
 import pathlib
+from io import StringIO
 
 import pandas as pd
 import pytest
@@ -159,3 +160,36 @@ class TestLoadParametersFromDataframe:
         assert 'data_frame' not in self.module.parameters.keys()
         assert 'series' in self.module.PARAMETERS.keys()
         assert 'series' not in self.module.parameters.keys()
+
+
+class TestLoadParametersFromDataframe_Bools_From_Csv_And_Excel:
+    """Tests for the load_parameters_from_dataframe method, including handling of bools when loading from csv
+    and from Excel resource files."""
+    def setup(self):
+        class ParameterModule(Module):
+            def __init__(self):
+                super().__init__(name=None)
+                self.PARAMETERS = {
+                    'bool_true': Parameter(Types.BOOL, 'string'),
+                    'bool_false': Parameter(Types.BOOL, 'string'),
+                }
+
+        self.module = ParameterModule()
+
+        self.resource_excel = pd.read_excel(
+            pathlib.Path(os.path.dirname(__file__)) / "resources/ResourceFile_load-parameters.xlsx",
+            sheet_name="parameter_values")
+        self.resource_excel = self.resource_excel.loc[
+            self.resource_excel.parameter_name.isin(['bool_true', 'bool_false'])]  # drop rows for other parameters
+
+        self.resource_csv = pd.read_csv(
+            StringIO("""parameter_name,value\nbool_true,1\nbool_false,0""")
+        )
+
+    def test_read_bool(self):
+        """Check that value of bools defined correctly."""
+
+        for source, resource in {'csv': self.resource_csv, 'excel': self.resource_excel}.items():
+            self.module.load_parameters_from_dataframe(resource)
+            assert self.module.parameters['bool_true'] is True, f"Incorrect read of True bool from {source}."
+            assert self.module.parameters['bool_false'] is False, f"Incorrect read of False bool from {source}."
