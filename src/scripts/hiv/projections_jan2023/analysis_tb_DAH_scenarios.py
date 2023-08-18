@@ -2,6 +2,7 @@
 
 # python src/scripts/hiv/projections_jan2023/analysis_tb_DAH_scenarios.py --scenario-outputs-folder outputs\nic503@york.ac.uk
 import argparse
+from typing import Optional, Iterable, List
 import datetime
 from pathlib import Path
 import matplotlib.pyplot as plt
@@ -540,3 +541,4 @@ adult_Tb_prevalence= summarize(
 ).pipe(set_param_names_as_column_index_level_0)
 adult_Tb_prevalence.index = adult_Tb_prevalence.index.year
 adult_Tb_prevalence.to_excel(outputspath / "adult_Tb_prevalence_sample.xlsx")
+
