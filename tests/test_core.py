@@ -1,5 +1,6 @@
 import os
 import pathlib
+from io import StringIO
 
 import pandas as pd
 import pytest
@@ -159,3 +160,37 @@ class TestLoadParametersFromDataframe:
         assert 'data_frame' not in self.module.parameters.keys()
         assert 'series' in self.module.PARAMETERS.keys()
         assert 'series' not in self.module.parameters.keys()
+
+
+class TestLoadParametersFromDataframe_Bools_From_Csv:
+    """Tests for the load_parameters_from_dataframe method, including handling of bools when loading from csv"""
+    def setup(self):
+        class ParameterModule(Module):
+            def __init__(self):
+                super().__init__(name=None)
+                self.PARAMETERS = {
+                    'bool_true': Parameter(Types.BOOL, 'string'),
+                    'bool_false': Parameter(Types.BOOL, 'string'),
+                    'int': Parameter(Types.INT, 'string'),
+                    'float': Parameter(Types.REAL, 'string'),
+                    'string': Parameter(Types.STRING, 'string'),
+                }
+
+        self.module = ParameterModule()
+
+        self.resource = pd.read_csv(
+            StringIO(
+                "parameter_name,value\n"
+                "int,12\n"
+                "float,1.0\n"
+                "string,'hello'\n"
+                "bool_true,1\n"
+                "bool_false,0\n"
+            ))
+
+    def test_read_bool(self):
+        """Check that value of bools defined correctly."""
+
+        self.module.load_parameters_from_dataframe(self.resource)
+        assert self.module.parameters['bool_true'] is True, "Incorrect read of True bool from."
+        assert self.module.parameters['bool_false'] is False, "Incorrect read of False bool from."
