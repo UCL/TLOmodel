@@ -409,7 +409,7 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
         """Returns the EPI appointment footprint for this person according to the vaccine:
         * tetanus/diphtheria for pregnant women uses 1 EPI appt
         * childhood vaccines can occur in bundles at birth, weeks 6, 10 and 14
-        * measles/rubella given in one appt in months 9, 15
+        * measles/rubella given in always given in one appt anyway (`HSI_MeaslesRubellaVaccine`) in months 9, 15
         * hpv given for adolescents uses 1 EPI appt
         * if a vaccine is given at the same time as other vaccines, decrease the EPI footprint to 0.5
         """
