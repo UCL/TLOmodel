@@ -417,7 +417,8 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
         if self.suppress_footprint:
             return self.make_appt_footprint({})
 
-        # these vaccines are always given jointly with other childhood vaccines
+        # these vaccines are always given jointly with other childhood vaccines.
+        # NB. If p["vaccine_schedule"] changes, this would need to be updated.
         vaccine_bundle = ['Epi_Childhood_Bcg', 'Epi_Childhood_Opv', 'Epi_Childhood_DtpHibHep', 'Epi_Childhood_Rota',
                           'Epi_Childhood_Pneumo']
 
