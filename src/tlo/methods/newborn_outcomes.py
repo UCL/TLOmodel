@@ -1396,8 +1396,13 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
             if pd.isnull(nci[person_id]['pnc_date']):
                 return None
 
+        if (self.sim.date - nci[person_id]['pnc_date']).days > 2:
+            nci[person_id]['date_pnc_check'] = pd.NaT
+            self.module.set_death_status(person_id)
+            return
+
         if (nci[person_id]['will_receive_pnc'] == 'early') and not nci[person_id]['passed_through_week_one']:
-            if not self.sim.date < (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2)):
+            if not self.sim.date <= (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2)):
                 logger.info(key='error', data=f'Child {person_id} arrived at early PNC too late')
 
             if not df.at[person_id, 'nb_pnc_check'] == 0:
@@ -1412,11 +1417,6 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
 
         if pd.isnull(nci[person_id]['pnc_date']):
             logger.info(key='error', data='Individual at neonatal PNC HSI without topen')
-
-        if (self.sim.date - nci[person_id]['pnc_date']).days > 2:
-            nci[person_id]['date_pnc_check'] = pd.NaT
-            self.module.set_death_status(person_id)
-            return
 
         # Log the PNC check
         logger.info(key='postnatal_check', data={'person_id': person_id,

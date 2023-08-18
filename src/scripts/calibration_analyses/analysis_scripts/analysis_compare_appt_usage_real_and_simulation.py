@@ -33,6 +33,37 @@ appt_dict = {'Under5OPD': 'OPD',
              'MentClinic': 'MentalAll'
              }
 
+# appt color for plots
+appt_color_dict = {
+    'OPD': 'lightpink',
+    'IPAdmission': 'palevioletred',
+    'InpatientDays': 'mediumvioletred',
+
+    'U5Malnutr': 'orchid',
+
+    'FamPlan': 'darkseagreen',
+    'AntenatalTotal': 'green',
+    'Delivery': 'limegreen',
+    'Csection': 'springgreen',
+    'EPI': 'paleturquoise',
+    'STI': 'mediumaquamarine',
+
+    'AccidentsandEmerg': 'orange',
+
+    'TBNew': 'yellow',
+
+    'VCTTests': 'lightsteelblue',
+    'NewAdult': 'cornflowerblue',
+    'EstAdult': 'royalblue',
+    'Peds': 'lightskyblue',
+    'PMTCT': 'deepskyblue',
+    'MaleCirc': 'mediumslateblue',
+
+    'MentalAll': 'darkgrey',
+
+    'DentalAll': 'silver',
+}
+
 
 def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
     """Return pd.DataFrame gives the (mean) simulated annual number of appointments of each type at each level."""
@@ -374,44 +405,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.axhline(1.0, color='r')
     format_and_save(fig, ax, name_of_plot)
 
-    # Plot two stacked bars for Model and Data to compare the total appt usage,
-    # to show the overall and main appts like OPD have been calibrated well.
+    # Plot two stacked bars for Model and Data to compare the usage of overall and individual appts
+    # format data
     real_usage_all = real_usage.sum(axis=0).reset_index().rename(columns={0: 'Data'})
     simulation_usage_all = simulation_usage.sum(axis=0).reset_index().rename(columns={'index': 'Appt_Type', 0: 'Model'})
     usage_all = simulation_usage_all.merge(real_usage_all, on='Appt_Type', how='inner').melt(
         id_vars='Appt_Type', value_vars=['Model', 'Data'], var_name='Type', value_name='Value').pivot(
         index='Type', columns='Appt_Type', values='Value')
     usage_all = usage_all / 1e6
-    appt_color_dict = {
-        'OPD': 'lightpink',
-        'IPAdmission': 'palevioletred',
-        'InpatientDays': 'mediumvioletred',
 
-        'U5Malnutr': 'orchid',
-
-        'FamPlan': 'darkseagreen',
-        'AntenatalTotal': 'green',
-        'Delivery': 'limegreen',
-        'Csection': 'springgreen',
-        'EPI': 'paleturquoise',
-        'STI': 'mediumaquamarine',
-
-        'AccidentsandEmerg': 'orange',
-
-        'TBNew': 'yellow',
-
-        'VCTTests': 'lightsteelblue',
-        'NewAdult': 'cornflowerblue',
-        'EstAdult': 'royalblue',
-        'Peds': 'lightskyblue',
-        'PMTCT': 'deepskyblue',
-        'MaleCirc': 'mediumslateblue',
-
-        'MentalAll': 'darkgrey',
-
-        'DentalAll': 'silver',
-    }
-
+    # plot
     name_of_plot = 'Model vs Data on average annual health service volume'
     fig, ax = plt.subplots()
     usage_all.plot(kind='bar', stacked=True, color=appt_color_dict, rot=0, ax=ax)
