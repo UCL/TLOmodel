@@ -21,8 +21,8 @@ from tlo.methods import (
 from tlo.methods.epi import HSI_BcgVaccine, HSI_HpvVaccine, HSI_RotaVaccine
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2014, 1, 1)
-popsize = 100
+end_date = Date(2021, 1, 1)
+popsize = 500
 
 try:
     resourcefilepath = Path(os.path.dirname(__file__)) / "../resources"
@@ -84,6 +84,8 @@ def test_epi_scheduling_hsi_events(tmpdir, seed):
     assert (ep_out.epPneumo3Coverage > 0).any()
     assert (ep_out.epRota2Coverage > 0).any()
     assert (ep_out.epMeaslesCoverage > 0).any()
+    assert (ep_out.epRubellaCoverage > 0).any()  # begins in 2018
+    assert (ep_out.epHpvCoverage > 0).any()  # begins in 2019
 
     # check only 3 doses max of dtp/pneumo
     assert (df.va_dtp <= 3).all()
@@ -180,7 +182,7 @@ def test_facility_level_distribution(tmpdir, seed):
     sim.modules['Epi'].parameters['prob_facility_level_for_vaccine'] = [0, 0, 0, 1.0]
 
     sim.make_initial_population(n=popsize)
-    sim.simulate(end_date=end_date)
+    sim.simulate(end_date=Date(2014, 1, 1))
     check_dtypes(sim)
 
     # check we can read the results
