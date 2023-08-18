@@ -297,16 +297,18 @@ class CopdModels:
             .when('.between(30, 39)', self.params['prob_will_die_sev_exacerbation_3039'])
             .when('<30', self.params['prob_will_die_sev_exacerbation_lt30'])
         )
-        self.__Prob_OxygenEffect_On_Mortality__ = LinearModel.multiplicative(
+        self.__Prob_OxygenEffect_On_Mortality__ = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            self.params['eff_oxygen'],
             Predictor(
                 'age_years'
-            ).when('>=80', self.params['eff_oxygen'] * self.params['prob_will_die_sev_exacerbation_ge80'])
-            .when('.between(70, 79)', self.params['eff_oxygen'] * self.params['prob_will_die_sev_exacerbation_7079'])
-            .when('.between(60, 69)', self.params['eff_oxygen'] * self.params['prob_will_die_sev_exacerbation_6069'])
-            .when('.between(50, 59)', self.params['eff_oxygen'] * self.params['prob_will_die_sev_exacerbation_5059'])
-            .when('.between(40, 49)', self.params['eff_oxygen'] * self.params['prob_will_die_sev_exacerbation_4049'])
-            .when('.between(30, 39)', self.params['eff_oxygen'] * self.params['prob_will_die_sev_exacerbation_3039'])
-            .when('<30', self.params['eff_oxygen'] * self.params['prob_will_die_sev_exacerbation_lt30'])
+            ).when('>=80', self.params['prob_will_die_sev_exacerbation_ge80'])
+            .when('.between(70, 79)', self.params['prob_will_die_sev_exacerbation_7079'])
+            .when('.between(60, 69)', self.params['prob_will_die_sev_exacerbation_6069'])
+            .when('.between(50, 59)', self.params['prob_will_die_sev_exacerbation_5059'])
+            .when('.between(40, 49)', self.params['prob_will_die_sev_exacerbation_4049'])
+            .when('.between(30, 39)', self.params['prob_will_die_sev_exacerbation_3039'])
+            .when('<30', self.params['prob_will_die_sev_exacerbation_lt30'])
         )
 
     def init_lung_function(self, df: pd.DataFrame) -> pd.Series:
