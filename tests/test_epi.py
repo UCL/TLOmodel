@@ -266,4 +266,3 @@ def test_hsi_epi_footprint(seed):
 
     # Check the footprint returned by this event
     assert t.EXPECTED_APPT_FOOTPRINT.get('EPI') == 1
-
