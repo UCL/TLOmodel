@@ -498,3 +498,6 @@ if __name__ == "__main__":
     #     output_folder=args.output_path,
     #     resourcefilepath=args.resources_path
     # )
+print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
+print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
+print(f"Keys of log['tlo.methods.healthsystem']: {log['tlo.methods.healthsystem'].keys()}")
