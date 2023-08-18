@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -241,6 +242,16 @@ class Epi(Module):
         # ----------------------------------- 2010-2018 -----------------------------------
         vax_date = p["vaccine_schedule"]
 
+        # Work out which vaccines will occur on the same day for the same child as at least one other
+        date_to_vacc = defaultdict(list)
+        for vacc, date in vax_date.items():
+            date_to_vacc[int(date)].append(vacc)
+        things_that_occur_on_the_same_day_as_something_else = set()
+        for k, v in date_to_vacc.items():
+            if len(v) > 1:
+                for _v in v:
+                    things_that_occur_on_the_same_day_as_something_else.add(_v)
+
         # each entry is (hsi event class, [days to administration key 1, days to administration key 2, ...]
         vax_schedule = [
             # schedule bcg - now dependent on health system capacity / stocks
@@ -265,7 +276,10 @@ class Epi(Module):
             vax_hsi_event, admin_schedule = each_vax
             for admin_key in admin_schedule:
                 vax_event_instance = vax_hsi_event(self, person_id=child_id,
-                                                   facility_level_of_this_hsi=facility_level_for_vaccines)
+                                                   facility_level_of_this_hsi=facility_level_for_vaccines,
+                                                   joint_appointment=(
+                                                       admin_key in things_that_occur_on_the_same_day_as_something_else)
+                                                   )
                 scheduled_date = vax_date[admin_key]
                 # Request the health system to have this vaccination appointment
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -386,11 +400,14 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
     if vaccine occurs as part of a treatment package within another appointment, use suppress_footprint=True
     """
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi="1a", suppress_footprint=False):
+    def __init__(self, module, person_id, facility_level_of_this_hsi="1a", joint_appointment=False,
+                 suppress_footprint=False):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Epi)
 
         assert isinstance(suppress_footprint, bool)
+        self.joint_appointment = joint_appointment  # This instance is expected to occur for the same child on the same
+        #                                             day as another instance.
         self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = self.treatment_id()
@@ -406,29 +423,12 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
 
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
-        """Returns the EPI appointment footprint for this person according to the vaccine:
-        * tetanus/diphtheria for pregnant women uses 1 EPI appt
-        * childhood vaccines can occur in bundles at birth, weeks 6, 10 and 14
-        * measles/rubella always given in one appt (`HSI_MeaslesRubellaVaccine`) in months 9, 15
-        * hpv given for adolescents uses 1 EPI appt
-        * if a vaccine is given at the same time as other vaccines, decrease the EPI footprint to 0.5
-        """
-
         if self.suppress_footprint:
             return self.make_appt_footprint({})
-
-        # these vaccines are always given jointly with other childhood vaccines.
-        # NB. If p["vaccine_schedule"] changes, this would need to be updated.
-        vaccine_bundle = ['Epi_Childhood_Bcg', 'Epi_Childhood_Opv', 'Epi_Childhood_DtpHibHep', 'Epi_Childhood_Rota',
-                          'Epi_Childhood_Pneumo']
-
-        # determine whether this HSI gives a vaccine as part of a vaccine bundle
-        # if vaccine is in list of vaccine bundles, return EPI footprint 0.5
-        # all other vaccines use 1 full EPI appt
-        if self.treatment_id() in vaccine_bundle:
+        elif self.joint_appointment:
             return self.make_appt_footprint({"EPI": 0.5})
         else:
-            return self.make_appt_footprint({"EPI": 1})
+            self.make_appt_footprint({"EPI": 1})
 
 
 class HSI_BcgVaccine(HsiBaseVaccine):
