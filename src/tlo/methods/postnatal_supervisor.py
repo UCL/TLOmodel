@@ -698,6 +698,7 @@ class PostnatalSupervisor(Module):
         # Schedule the HSI event
         for person in care_seekers.loc[care_seekers].index:
             from tlo.methods.labour import HSI_Labour_ReceivesPostnatalCheck
+            mni[person]['pnc_date'] = self.sim.date
 
             # check if care seeking is delayed
             if self.rng.random_sample() < self.sim.modules['Labour'].current_parameters['prob_delay_one_two_fd']:
@@ -797,6 +798,7 @@ class PostnatalSupervisor(Module):
 
         # We schedule the HSI according
         for person in care_seeking.loc[care_seeking].index:
+            nci[person]['pnc_date'] = self.sim.date
 
             from tlo.methods.newborn_outcomes import HSI_NewbornOutcomes_ReceivesPostnatalCheck
             postnatal_check = HSI_NewbornOutcomes_ReceivesPostnatalCheck(
@@ -1185,6 +1187,8 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
             if (mni[individual_id]['will_receive_pnc'] == 'late') or (self.module.rng.random_sample() <
                                                                       params['prob_care_seeking_postnatal_emergency']):
 
+                mni[individual_id]['pnc_date'] = self.sim.date
+
                 # If care will be sought, check if they experience delay seeking care
                 pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id)
 
@@ -1199,6 +1203,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
             # Women without complications in week one are scheduled to attend PNC in the future
             if mni[individual_id]['will_receive_pnc'] == 'late':
                 appt_date = self.sim.date + pd.DateOffset(self.module.rng.randint(0, 35))
+                mni[individual_id]['pnc_date'] = appt_date
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     pnc_one_maternal, priority=0, topen=appt_date, tclose=appt_date + pd.DateOffset(days=2))
 
@@ -1243,9 +1248,11 @@ class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
 
         # Neonates with sepsis are more likely to receive PNC that those without
         if df.at[individual_id, 'pn_sepsis_early_neonatal']:
+
             if ((nci[individual_id]['will_receive_pnc'] == 'late') or (self.module.rng.random_sample() <
                                                                        params['prob_care_seeking_postnatal_'
                                                                               'emergency_neonate'])):
+                nci[individual_id]['pnc_date'] = self.sim.date
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(pnc_one_neonatal,
                                                                     priority=0,
@@ -1260,6 +1267,7 @@ class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
         elif not df.at[individual_id, 'pn_sepsis_early_neonatal'] and (nci[individual_id]['will_'
                                                                                           'receive_pnc'] == 'late'):
             days_till_day_7 = 7 - df.at[individual_id, 'age_days']
+            nci[individual_id]['pnc_date'] = self.sim.date
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 pnc_one_neonatal,

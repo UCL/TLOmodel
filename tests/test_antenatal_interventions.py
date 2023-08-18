@@ -211,9 +211,6 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     params['sensitivity_blood_test_glucose'] = 1.0
     params['specificity_blood_test_glucose'] = 1.0
 
-    # set coverage of tetatnus for her district to 1
-    sim.modules['Epi'].parameters['district_vaccine_coverage']['TT2+'] = 1.0
-
     # Register the anc HSIs
     first_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
         module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
@@ -280,6 +277,9 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     sim.date = sim.date + pd.DateOffset(weeks=10)
     df.at[mother_id, 'ps_gestational_age_in_weeks'] += 10
 
+    # reset admitting variable which doesnt get reset if the event doesnt run
+    df.at[mother_id, 'ac_to_be_admitted'] = False
+
     # Clear the event queue
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
 
@@ -297,6 +297,7 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     # Here, we check that a woman with a pre-exsisting condition (pre-eclampsia) who is on treatment is not readmitted
     # if her condition has remained static (not progressed)
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
+    assert not df.at[mother_id, 'ac_to_be_admitted']
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare not in hsi_events
 
     # Check scheduling for second tetanus vaccine
@@ -323,6 +324,7 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
 
     # Check that this woman has undergone screening for diabetes, and will be admitted for treatment
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
+    assert df.at[mother_id, 'ac_to_be_admitted']
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare in hsi_events
     assert (sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['gest_diab_onset'] == sim.date)
 
@@ -339,6 +341,8 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     # Set that her diabetes is now controlled by treatment
     df.at[mother_id, 'ps_gest_diab'] = 'controlled'
     df.at[mother_id, 'ac_gest_diab_on_treatment'] = 'insulin'
+
+    df.at[mother_id, 'ac_to_be_admitted'] = False
 
     # Run the HSI
     fourth_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
@@ -360,12 +364,15 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     df.at[mother_id, 'ps_htn_disorders'] = 'severe_pre_eclamp'
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['new_onset_spe'] = True
 
+    df.at[mother_id, 'ac_to_be_admitted'] = False
+
     fifth_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
     assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 5)
 
     # Check her severe pre-eclampsia has correctly been identified and she is scheduled to be admitted as an inpatient
     # (despite already being on antihypertensives)
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
+    assert df.at[mother_id, 'ac_to_be_admitted']
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare in hsi_events
 
     # Check scheduling of the next ANC contact
@@ -382,12 +389,15 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     df.at[mother_id, 'ps_htn_disorders'] = 'mild_pre_eclamp'
     df.at[mother_id, 'ps_anaemia_in_pregnancy'] = 'severe'
 
+    df.at[mother_id, 'ac_to_be_admitted'] = False
+
     sixth_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
     assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 6)
 
     # Check her severe anaemia has correctly been identified via point of care screening (occurs at visit 2 and visit 6)
     # and she is scheduled to be admitted as an inpatient for further treatment
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
+    assert df.at[mother_id, 'ac_to_be_admitted']
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare in hsi_events
 
     # Check scheduling of the next ANC contact
@@ -400,6 +410,8 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     sim.date = sim.date + pd.DateOffset(weeks=2)
     df.at[mother_id, 'ps_gestational_age_in_weeks'] += 2
     df.at[mother_id, 'ps_anaemia_in_pregnancy'] = 'none'
+
+    df.at[mother_id, 'ac_to_be_admitted'] = False
 
     seventh_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
     assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 7)
@@ -601,7 +613,10 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 22
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'severe_anaemia_resolution': pd.NaT,
                                                                              'delay_one_two': False,
-                                                                             'delay_three': False}
+                                                                             'delay_three': False,
+                                                                             'date_preg_emergency': sim.date,
+
+                                                                             }
 
     # and over ride quality parameters
     lparams = sim.modules['Labour'].current_parameters
