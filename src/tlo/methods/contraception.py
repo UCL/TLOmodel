@@ -98,8 +98,8 @@ class Contraception(Module):
 
         # TODO: needs to be fixed to be BOOL parameter (together with resolving the temporary fix below)
         'use_interventions': Parameter(
-            Types.STRING, "if True: FP interventions (pop & ppfp) are simulated since 'interventions_start_date',"
-                          " if False: FP interventions (pop & ppfp) are not simulated."),
+            Types.STRING, "if 'On': FP interventions (pop & ppfp) are simulated since 'interventions_start_date',"
+                          " if 'Off': FP interventions (pop & ppfp) are not simulated."),
 
         'interventions_start_date': Parameter(
             Types.DATE, "The date since which the FP interventions (pop & ppfp) are implemented, if at all (ie, if "
