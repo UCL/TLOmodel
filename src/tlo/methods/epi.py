@@ -1,3 +1,4 @@
+from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -241,6 +242,16 @@ class Epi(Module):
         # ----------------------------------- 2010-2018 -----------------------------------
         vax_date = p["vaccine_schedule"]
 
+        # Work out which vaccines will occur on the same day for the same child as at least one other
+        date_to_vacc = defaultdict(list)
+        for vacc, date in vax_date.items():
+            date_to_vacc[int(date)].append(vacc)
+        things_that_occur_on_the_same_day_as_something_else = set()
+        for k, v in date_to_vacc.items():
+            if len(v) > 1:
+                for _v in v:
+                    things_that_occur_on_the_same_day_as_something_else.add(_v)
+
         # each entry is (hsi event class, [days to administration key 1, days to administration key 2, ...]
         vax_schedule = [
             # schedule bcg - now dependent on health system capacity / stocks
@@ -265,7 +276,10 @@ class Epi(Module):
             vax_hsi_event, admin_schedule = each_vax
             for admin_key in admin_schedule:
                 vax_event_instance = vax_hsi_event(self, person_id=child_id,
-                                                   facility_level_of_this_hsi=facility_level_for_vaccines)
+                                                   facility_level_of_this_hsi=facility_level_for_vaccines,
+                                                   joint_appointment=(
+                                                       admin_key in things_that_occur_on_the_same_day_as_something_else)
+                                                   )
                 scheduled_date = vax_date[admin_key]
                 # Request the health system to have this vaccination appointment
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
@@ -386,15 +400,17 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
     if vaccine occurs as part of a treatment package within another appointment, use suppress_footprint=True
     """
 
-    def __init__(self, module, person_id, facility_level_of_this_hsi="1a", suppress_footprint=False):
+    def __init__(self, module, person_id, facility_level_of_this_hsi="1a", joint_appointment=False,
+                 suppress_footprint=False):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Epi)
 
         assert isinstance(suppress_footprint, bool)
+        self.joint_appointment = joint_appointment  # This instance is expected to occur for the same child on the same
+        #                                             day as another instance.
         self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = self.treatment_id()
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({} if self.suppress_footprint else {"EPI": 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
 
     def treatment_id(self):
@@ -405,8 +421,14 @@ class HsiBaseVaccine(HSI_Event, IndividualScopeEventMixin):
         """must be implemented by subclasses"""
         raise NotImplementedError
 
-    def did_not_run(self):
-        logger.debug(key="debug", data=f"{self.__class__.__name__}: did not run")
+    @property
+    def EXPECTED_APPT_FOOTPRINT(self):
+        if self.suppress_footprint:
+            return self.make_appt_footprint({})
+        elif self.joint_appointment:
+            return self.make_appt_footprint({"EPI": 0.5})
+        else:
+            self.make_appt_footprint({"EPI": 1})
 
 
 class HSI_BcgVaccine(HsiBaseVaccine):
@@ -524,7 +546,6 @@ class HSI_TdVaccine(HsiBaseVaccine):
         return "Epi_Pregnancy_Td"
 
     def apply(self, person_id, squeeze_factor):
-
         if self.get_consumables(item_codes=self.module.cons_item_codes["td"],
                                 optional_item_codes=self.module.cons_item_codes["syringes"]):
             self.module.increment_dose(person_id, "td")
