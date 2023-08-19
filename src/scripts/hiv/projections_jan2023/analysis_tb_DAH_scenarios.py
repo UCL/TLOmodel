@@ -24,6 +24,7 @@ outputspath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
+#results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_run04_partial-2023-08-18T203453Z", outputspath)[-1]
 results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_run03-2023-08-17T185230Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
@@ -519,7 +520,7 @@ consumables_list = log['tlo.methods.healthsystem.summary']['Consumables']
 # Print the list of consumables
 print("List of Consumables:")
 print(consumables_list)
-print(params)
+#print(params)
 
 print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
 print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
@@ -527,18 +528,5 @@ print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healt
 
 #consumables_baseline = log['tlo.methods.healthsystem.summary']['Consumables']
 
-#Active Tb prevalence in adults
-adult_Tb_prevalence= summarize(
-    extract_results(
-        results_folder,
-        module="tlo.methods.tb",
-        key="tb_prevalence",
-        column="tbPrevActiveAdult",
-        index="date",
-        do_scaling=False,
-    ),
-    collapse_columns=True,
-).pipe(set_param_names_as_column_index_level_0)
-adult_Tb_prevalence.index = adult_Tb_prevalence.index.year
-adult_Tb_prevalence.to_excel(outputspath / "adult_Tb_prevalence_sample.xlsx")
+
 

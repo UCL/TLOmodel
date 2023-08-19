@@ -2541,7 +2541,6 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
             )
 
-
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
     """Helper event that is used to 'decide' if someone on IPT should continue or end
     This event is scheduled by 'HSI_Tb_Start_or_Continue_Ipt' after 6 months
