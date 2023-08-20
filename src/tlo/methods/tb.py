@@ -2101,7 +2101,6 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
                 tclose=None,
                 priority=0,
             )
-
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
             return self.make_appt_footprint({})
@@ -2581,8 +2580,6 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
                     tclose=None,
                     priority=0,
                 )
-
-
 class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event for community chest X-ray screening
@@ -2594,7 +2591,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         self.TREATMENT_ID = "Tb_Test_ScreeningCommunity"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '0'
 
     def apply(self, person_id, squeeze_factor):
@@ -2667,13 +2664,9 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
                 tclose=self.sim.date + pd.DateOffset(days=14),
                 priority=0,
             )
-
-
 # ---------------------------------------------------------------------------
 #   Deaths
 # ---------------------------------------------------------------------------
-
-
 class TbDeathEvent(Event, IndividualScopeEventMixin):
     """
     The scheduled death for a tb case
