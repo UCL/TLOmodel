@@ -8,7 +8,7 @@ include .bumpversion.cfg
 include .coveragerc
 include tox.ini
 include tlo.example.conf
-Include CITATION.cff
+include CITATION.cff
 
 exclude .editorconfig
 recursive-exclude .ci *
