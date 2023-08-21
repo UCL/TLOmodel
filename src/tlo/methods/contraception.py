@@ -609,6 +609,15 @@ class Contraception(Module):
 
         processed_params = self.processed_params
 
+        def contraception_initiation_with_interv_v2(p_start_per_month_without_interv):
+            p_start_per_month_with_interv = {}
+            for year, age_method_df in p_start_per_month_without_interv.items():
+                p_start_per_month_with_interv[year] = age_method_df * self.parameters['Interventions_Pop'].loc[0]
+            return p_start_per_month_with_interv
+
+        processed_params['p_start_per_month_v2'] = \
+            contraception_initiation_with_interv_v2(processed_params['p_start_per_month'])
+
         def expand_to_age_years(values_by_age_groups, ages_by_year):
             _d = dict(zip(['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49'], values_by_age_groups))
             return np.array(
@@ -1341,6 +1350,54 @@ class StartInterventions(Event, PopulationScopeEventMixin):
 
         # Update module parameters to enable interventions
         self.module.processed_params = self.module.update_params_for_interventions()
+
+        # Verify dicts are the same
+        dict1 = self.module.processed_params['p_start_per_month']
+        dict2 = self.module.processed_params['p_start_per_month_v2']
+
+        def are_floats_equal(value1, value2, in_decimal_places):
+            tolerance = 10 ** (-in_decimal_places)
+            return abs(value1 - value2) < tolerance
+
+        # Function to compare dataframes for equality with tolerance
+        def are_dataframes_equal(df1, df2, in_decimal_places):
+            if df1.shape != df2.shape:
+                return False
+
+            differing_values_in_df = []  # To store differing values
+
+            for _col in df1.columns:
+                for i, row in df1.iterrows():
+                    if not are_floats_equal(row[_col], df2.loc[i, _col], in_decimal_places):
+                        differing_values_in_df.append((i, _col, row[_col], df2.loc[i, _col]))
+
+            return differing_values_in_df
+
+        print("")
+        # Step 1: Check if keys match
+        if dict1.keys() != dict2.keys():
+            print("Dictionaries have different keys")
+        else:
+            # Step 2: Compare dataframes for equality
+            differing_values = {}  # To store differing values for each dataframe
+            equal_flag = True
+            decimal_places = 16
+            for key in dict1.keys():
+                differing_values[key] = are_dataframes_equal(dict1[key], dict2[key], decimal_places)
+                if differing_values[key]:
+                    equal_flag = False
+                    break
+
+            if equal_flag:
+                print("Dictionaries are exactly the same.")
+            else:
+                print("Dictionaries are not exactly the same. Differing values:")
+                for key, values in differing_values.items():
+                    if values:
+                        print(f"Dataframe: {key}")
+                        for index, col, val1, val2 in values:
+                            print(f"  Row {index}, Column {col}: {val1} (dict1) != {val2} (dict2)")
+
 
 
 # -----------------------------------------------------------------------------------------------------------
