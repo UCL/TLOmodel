@@ -2545,7 +2545,6 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
     * Everyone equally likely to be selected (independent of symptoms)
     * Excludes people with a current diagnosis of TB
     """
-
     def __init__(self, module):
         self.repeat = 3
         super().__init__(module, frequency=DateOffset(months=self.repeat))
@@ -2580,27 +2579,36 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
                     tclose=None,
                     priority=0,
                 )
+
+#nic503-revised the self.make_appt_footprint({"DiagRadio": 1}) to include DiagRadio
+# also added return footprint at the end
 class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
     """
-    This is a Health System Interaction Event for community chest X-ray screening
-    Perform a chest X-ray for an individual
-    This event relies on community health workers and radiographer time
-    The footprint is set to ConWithDCSA as it occurs outside of the main health system
+    This is a Health System Interaction Event for community chest X-ray screening.
+    Perform a chest X-ray for an individual.
+    This event relies on community health workers and radiographer time.
+    The footprint is set to ConWithDCSA as it occurs outside of the main health system.
     """
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, suppress_footprint=False):
         super().__init__(module, person_id=person_id)
+
+        assert isinstance(module, Tb)
+        assert isinstance(suppress_footprint, bool)
+        self.suppress_footprint = suppress_footprint
+
         self.TREATMENT_ID = "Tb_Test_ScreeningCommunity"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '0'
 
+## revised this code to include diagRadio for expected footprint and
     def apply(self, person_id, squeeze_factor):
-
+        print(f"apply method of HSI_Tb_CommunityXray called for person_id {person_id}")
         logger.debug(key="message", data=f"Performing community chest X-ray screening for {person_id}")
 
         df = self.sim.population.props  # Shortcut to the dataframe
-
         person = df.loc[person_id]
+        ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
         smear_status = person['tb_smear']
 
         # Perform the X-ray and decide the result
@@ -2627,6 +2635,12 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
                 tclose=None,
                 priority=0,
             )
+
+        # Return the footprint. If it should be suppressed, return a blank footprint.
+        if self.suppress_footprint:
+            return self.make_appt_footprint({})
+        else:
+            return ACTUAL_APPT_FOOTPRINT
 ##revised to up
 
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
@@ -2673,7 +2687,6 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
     check whether this death should occur using a linear model
     will depend on treatment status, smear status and age
     """
-
     def __init__(self, module, person_id, cause):
         super().__init__(module, person_id=person_id)
         self.cause = cause
@@ -2707,13 +2720,9 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
                 cause=self.cause,
                 originating_module=self.module,
             )
-
-
 # ---------------------------------------------------------------------------
 #   Logging
 # ---------------------------------------------------------------------------
-
-
 class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """produce some outputs to check"""

@@ -1,4 +1,6 @@
-"""  This script partially run the tb code as running the full model might take longer"""
+"""  This script partially run the tb code as running the full model might take longer
+ tlo scenario-run src/scripts/hiv/projections_jan2023/partial_run.py
+  execute a single run:"""
 import warnings
 from typing import Dict
 from tlo.scenario import BaseScenario
@@ -27,14 +29,14 @@ class ImpactOfTbDaHx(BaseScenario):
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2013, 12, 31)
-        self.pop_size = 5000
+        self.pop_size = 1000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 4
 
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_scenarios_test_run05_partial',
+            'filename': 'Tb_DAH_scenarios_test_run06_partial',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
