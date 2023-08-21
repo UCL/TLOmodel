@@ -708,9 +708,6 @@ class Contraception(Module):
             new_contraceptive = self.rng.choice(probs_30plus.index, p=probs_30plus.values)
 
         # Do the change in contraceptive
-        if (new_contraceptive == 'female_sterilization') & (mother_age < 30):
-            self._women_ids_sterilized_below30.add(mother_id)
-
         self.schedule_batch_of_contraceptive_changes(ids=[mother_id], old=['not_using'], new=[new_contraceptive])
 
     def get_item_code_for_each_contraceptive(self):
