@@ -913,9 +913,8 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
     assert compare_dictionaries(contraception_use_healthsystem_true, contraception_use_healthsystem_false, tol=0.011)
 
 
-def test_init_probs_sum_less_one_with_interv():
-    """Check that the initiation probabilities increased due to intervention sum across all methods (except 'not_using')
-    into less than 1.0, i.e. the interventions do not lead to absurdly large increase in probabilities."""
+def test_input_probs_sum():
+    """Check assumptions about the input probabilities."""
 
     # Import relevant sheets from the workbook
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
@@ -930,6 +929,16 @@ def test_init_probs_sum_less_one_with_interv():
     sheets = {}
     for sheet in sheet_names:
         sheets[sheet] = workbook[sheet]
+
+    # ### Check that the input sets of probabilities which should sum across all methods including 'not_using' into 1.0,
+    # do sum into 1.0.
+    for sheet_to_check in ['Initiation_ByMethod', 'Initiation_AfterBirth']:
+        if 'age' in sheets[sheet_to_check].columns:
+            sheets[sheet_to_check] = sheets[sheet_to_check].set_index('age')
+        assert np.isclose(1.0, sheets[sheet_to_check].sum(axis=1)).all()
+
+    # ### Check that the initiation probabilities increased due to intervention sum across all methods (except
+    # 'not_using') into less than 1.0, i.e. the interventions do not lead to absurdly large increase in probabilities
 
     # PPFP intervention increases the initiation probs of contraception methods after birth
     p_init_by_method_after_birth = sheets['Initiation_AfterBirth'].loc[0].drop('not_using')
