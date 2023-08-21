@@ -931,9 +931,6 @@ def test_init_probs_sum_less_one_with_interv():
     for sheet in sheet_names:
         sheets[sheet] = workbook[sheet]
 
-    print(sheets)
-    print(type(sheets))
-
     # PPFP intervention increases the initiation probs of contraception methods after birth
     p_init_by_method_after_birth = sheets['Initiation_AfterBirth'].loc[0].drop('not_using')
     p_init_by_method_after_birth = p_init_by_method_after_birth.mul(sheets['Interventions_PPFP'].loc[0])
