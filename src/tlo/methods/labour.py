@@ -2278,7 +2278,12 @@ class Labour(Module):
         :param hsi_event: HSI event in which the function has been called:
         """
         person_id = hsi_event.target
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
         logger.debug(key='message', data=f'HSI_Labour_ReceivesPostnatalCheck will not run for {person_id}')
+        if person_id in mni:
+            mni[person_id]['pnc_date'] = pd.NaT
+
         self.apply_risk_of_early_postpartum_death(person_id)
 
     def run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self, hsi_event):
@@ -2290,12 +2295,17 @@ class Labour(Module):
         :param hsi_event: HSI event in which the function has been called:
         """
         person_id = hsi_event.target
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
         logger.debug(key='message', data=f'HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare will not run for'
                                          f' {person_id}')
 
         # For women referred to this event after the postnatal SBA HSI we apply risk of death (as if should have been
         # applied in this event if it ran)
         if hsi_event.timing == 'postpartum':
+            if person_id in mni:
+                mni[person_id]['pnc_date'] = pd.NaT
+
             self.apply_risk_of_early_postpartum_death(person_id)
 
 
@@ -2798,6 +2808,7 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
 
                 if timing == '<48' or has_comps:
                     mni[mother_id]['will_receive_pnc'] = 'early'
+                    mni[mother_id]['pnc_date'] = self.sim.date
 
                     early_event = HSI_Labour_ReceivesPostnatalCheck(
                         module=self.module, person_id=mother_id)
@@ -2855,6 +2866,10 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         params = self.module.current_parameters
 
         if not df.at[person_id, 'is_alive']:
+            return
+
+        # If more than 2 days have passed, keep expected footprint but assume no effect
+        if (self.sim.date - df.at[person_id, 'la_due_date_current_pregnancy']).days > 2:
             return
 
         # First we capture women who have presented to this event during labour at home. Currently we just set these
@@ -3001,11 +3016,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         self.module.run_if_receives_skilled_birth_attendance_cant_run(self)
 
     def did_not_run(self):
-        self.module.run_if_receives_skilled_birth_attendance_cant_run(self)
-        return False
-
-    def not_available(self):
-        self.module.run_if_receives_skilled_birth_attendance_cant_run(self)
+        pass
 
 
 class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
@@ -3032,10 +3043,20 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive'] or pd.isnull(df.at[person_id, 'la_date_most_recent_delivery']):
             return None
 
+        if person_id in mni:
+            if pd.isnull(mni[person_id]['pnc_date']):
+                return None
+
+        if (self.sim.date - mni[person_id]['pnc_date']).days > 2:
+            mni[person_id]['pnc_date'] = pd.NaT
+            self.module.apply_risk_of_early_postpartum_death(person_id)
+            return
+
         # Ensure that women who were scheduled to receive early PNC have received care prior to passing through
-        # PostnatalWeekOneMaternalEvent
+            # PostnatalWeekOneMaternalEvent
+
         if (mni[person_id]['will_receive_pnc'] == 'early') and not mni[person_id]['passed_through_week_one']:
-            if not self.sim.date < (df.at[person_id, 'la_date_most_recent_delivery'] + pd.DateOffset(days=2)):
+            if not self.sim.date <= (df.at[person_id, 'la_date_most_recent_delivery'] + pd.DateOffset(days=2)):
                 logger.info(key='error', data=f'Mother {person_id} attended early PNC too late')
 
             if not df.at[person_id, 'la_pn_checks_maternal'] == 0:
@@ -3047,6 +3068,9 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
 
             if not df.at[person_id, 'la_pn_checks_maternal'] == 0:
                 logger.info(key='error', data=f'Mother {person_id} attended late PNC twice')
+
+        if pd.isnull(mni[person_id]['pnc_date']) and (df.at[person_id, 'la_pn_checks_maternal'] == 0):
+            logger.info(key='error', data='Individual at PNC HSI without topen')
 
         # Run checks
         self.module.postpartum_characteristics_checker(person_id)
@@ -3109,6 +3133,7 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
 
         # ====================================== APPLY RISK OF DEATH===================================================
         if not mni[person_id]['referred_for_surgery'] and not mni[person_id]['referred_for_blood']:
+            mni[person_id]['pnc_date'] = pd.NaT
             self.module.apply_risk_of_early_postpartum_death(person_id)
 
         return self.EXPECTED_APPT_FOOTPRINT
@@ -3117,11 +3142,7 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         self.module.run_if_receives_postnatal_check_cant_run(self)
 
     def did_not_run(self):
-        self.module.run_if_receives_postnatal_check_cant_run(self)
-        return False
-
-    def not_available(self):
-        self.module.run_if_receives_postnatal_check_cant_run(self)
+        pass
 
     def _get_facility_level_for_pnc(self, person_id):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -3154,6 +3175,20 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.module.current_parameters
+
+        # If more than 2 days have passed, keep expected footprint but assume no effect
+        if (self.timing == 'intrapartum') and \
+           (self.sim.date - df.at[person_id, 'la_due_date_current_pregnancy']).days > 2:
+            return
+
+        if self.timing == 'postpartum':
+            if pd.isnull(mni[person_id]['pnc_date']) and (df.at[person_id, 'la_pn_checks_maternal'] == 0):
+                logger.info(key='error', data='Individual at PNC HSI (comp) without topen')
+
+            if (self.sim.date - mni[person_id]['pnc_date']).days > 2:
+                mni[person_id]['pnc_date'] = pd.NaT
+                self.module.apply_risk_of_early_postpartum_death(person_id)
+                return
 
         # If the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk
         # of death if complications occur)
@@ -3232,6 +3267,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         # Women who have passed through the postpartum SBA HSI have not yet had their risk of death calculated because
         # they required interventions delivered via this event. We now determine if these women will survive
         if self.timing == 'postpartum':
+            mni[person_id]['pnc_date'] = pd.NaT
             self.module.apply_risk_of_early_postpartum_death(person_id)
 
         # Schedule HSI that captures inpatient days
@@ -3257,11 +3293,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
 
     def did_not_run(self):
-        self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
-        return False
-
-    def not_available(self):
-        self.module.run_if_receives_comprehensive_emergency_obstetric_care_cant_run(self)
+        pass
 
 
 class HSI_Labour_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
@@ -3286,11 +3318,6 @@ class HSI_Labour_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_Labour_PostnatalWardInpatientCare: did not run')
-        return False
-
-    def not_available(self):
-        logger.debug(key='message', data='HSI_Labour_PostnatalWardInpatientCare: cannot not run with '
-                                         'this configuration')
 
 
 class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
@@ -3312,8 +3339,10 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
         nb_params = self.sim.modules['NewbornOutcomes'].current_parameters
 
         # Check to see if analysis is being conducted when this event runs
-        if params['alternative_bemonc_availability'] or params['alternative_cemonc_availability'] or \
-            params['alternative_pnc_coverage'] or params['alternative_pnc_quality']:\
+        if (params['alternative_bemonc_availability']
+                or params['alternative_cemonc_availability']
+                or params['alternative_pnc_coverage']
+                or params['alternative_pnc_quality']):
 
             params['la_analysis_in_progress'] = True
 

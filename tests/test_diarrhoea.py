@@ -70,7 +70,7 @@ def test_basic_run_of_diarrhoea_module_with_default_params(tmpdir, seed):
     log_config = {'filename': 'tmpfile',
                   'directory': tmpdir,
                   'custom_levels': {
-                      "Diarrhoea": logging.INFO}
+                      "tlo.methods.diarrhoea": logging.INFO}
                   }
 
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
@@ -163,7 +163,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_zero_death(tmpdir
     log_config = {'filename': 'tmpfile',
                   'directory': tmpdir,
                   'custom_levels': {
-                      "Diarrhoea": logging.INFO}
+                      "tlo.methods.diarrhoea": logging.INFO}
                   }
 
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
@@ -215,7 +215,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_no
     log_config = {'filename': 'tmpfile',
                   'directory': tmpdir,
                   'custom_levels': {
-                      "Diarrhoea": logging.INFO}
+                      "tlo.methods.diarrhoea": logging.INFO}
                   }
 
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
@@ -278,7 +278,7 @@ def test_basic_run_of_diarrhoea_module_with_high_incidence_and_high_death_and_wi
         log_config = {'filename': 'tmpfile',
                       'directory': tmpdir,
                       'custom_levels': {
-                          "Diarrhoea": logging.INFO}
+                          "tlo.methods.diarrhoea": logging.INFO}
                       }
 
         sim = Simulation(start_date=start_date, seed=seed, show_progress_bar=True, log_config=log_config)

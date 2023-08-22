@@ -53,15 +53,12 @@ class HSI_GenericNonEmergencyFirstAppt(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = 'FirstAttendance_NonEmergency'
 
-        if facility_level == '0':
-            appt_type = 'ConWithDCSA'
-        elif self.sim.population.props.at[person_id, 'age_years'] < 5:
-            appt_type = 'Under5OPD'
-        else:
-            appt_type = 'Over5OPD'
-
         self.ACCEPTED_FACILITY_LEVEL = facility_level
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({appt_type: 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})  # <-- No footprint, as this HSI (mostly just)
+        #                                                                  determines which further HSI will be needed
+        #                                                                  for this person. In some cases, small bits
+        #                                                                  of care are provided (e.g. a diagnosis, or
+        #                                                                  the provision of inhaler.).
 
     def apply(self, person_id, squeeze_factor):
         """Run the actions required during the HSI."""
@@ -84,8 +81,11 @@ class HSI_GenericEmergencyFirstAppt(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = 'FirstAttendance_Emergency'
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
-            ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})  # <-- No footprint, as this HSI (mostly just)
+        #                                                                  determines which further HSI will be needed
+        #                                                                  for this person. In some cases, small bits
+        #                                                                  of care are provided (e.g. a diagnosis, or
+        #                                                                  the provision of inhaler.).
 
     def apply(self, person_id, squeeze_factor):
 
@@ -267,8 +267,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                                                                  hsi_event=hsi_event)
 
         if 'CardioMetabolicDisorders' in sim.modules:
-            # Take a blood pressure measurement for proportion of individuals who have not been diagnosed and
-            # are either over 50 or younger than 50 but are selected to get tested.
             sim.modules['CardioMetabolicDisorders'].determine_if_will_be_investigated(person_id=person_id)
 
         if 'Copd' in sim.modules:
@@ -340,21 +338,6 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
                          topen=sim.date,
                          tclose=None)
 
-    # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
-    if 'craving_sandwiches' in symptoms:
-        event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
-            module=sim.modules['ChronicSyndrome'],
-            person_id=person_id
-        )
-        schedule_hsi(event, priority=1, topen=sim.date)
-
-    if 'extreme_pain_in_the_nose' in symptoms:
-        event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(
-            module=sim.modules['Mockitis'],
-            person_id=person_id
-        )
-        schedule_hsi(event, priority=1, topen=sim.date)
-
     if 'severe_trauma' in symptoms:
         if 'RTI' in sim.modules:
             sim.modules['RTI'].do_rti_diagnosis_and_treatment(person_id=person_id)
@@ -374,3 +357,18 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
     if 'Copd' in sim.modules:
         if ('breathless_moderate' in symptoms) or ('breathless_severe' in symptoms):
             sim.modules['Copd'].do_when_present_with_breathless(person_id=person_id, hsi_event=hsi_event)
+
+    # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
+    if 'craving_sandwiches' in symptoms:
+        event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
+            module=sim.modules['ChronicSyndrome'],
+            person_id=person_id
+        )
+        schedule_hsi(event, priority=1, topen=sim.date)
+
+    if 'extreme_pain_in_the_nose' in symptoms:
+        event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(
+            module=sim.modules['Mockitis'],
+            person_id=person_id
+        )
+        schedule_hsi(event, priority=1, topen=sim.date)

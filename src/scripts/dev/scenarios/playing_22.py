@@ -12,17 +12,17 @@ from tlo.scenario import BaseScenario
 class Playing22(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 12
+        self.seed = 655123742
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2011, 1, 1)
         self.pop_size = 200
-        self.number_of_draws = 1
-        self.runs_per_draw = 10
+        self.number_of_draws = 2
+        self.runs_per_draw = 2
 
     def log_configuration(self):
         return {
-            'filename': 'playing_22',
-            'directory': None,
+            # 'filename': 'my-scenario',
+            'directory': './outputs',
             'custom_levels': {
                 '*': logging.INFO,
             }

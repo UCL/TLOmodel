@@ -71,7 +71,7 @@ def test_storage_of_cause_of_death(seed):
     sim.make_initial_population(n=20)
     df = sim.population.props
     orig = df.dtypes
-    assert type(orig['cause_of_death']) == pd.CategoricalDtype
+    assert isinstance(orig['cause_of_death'], pd.CategoricalDtype)
     assert set(['Other', 'a_cause']) == set(df['cause_of_death'].cat.categories)
 
     # Cause a person to die by the DummyModule

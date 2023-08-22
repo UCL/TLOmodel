@@ -59,6 +59,7 @@ def set_all_women_as_pregnant_and_reset_baseline_parity(sim):
     women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
     df.loc[women_repro.index, 'is_pregnant'] = True
     df.loc[women_repro.index, 'date_of_last_pregnancy'] = sim.start_date
+    df.loc[women_repro.index, 'co_contraception'] = "not_using"
     for person in women_repro.index:
         sim.modules['Labour'].set_date_of_labour(person)
 
@@ -136,6 +137,9 @@ def test_run_core_modules_high_volumes_of_pregnancy(seed, tmpdir):
     output = parse_log_file(sim.log_filepath)
     assert 'error' not in output['tlo.methods.pregnancy_supervisor']
     assert 'error' not in output['tlo.methods.care_of_women_during_pregnancy']
+    assert 'error' not in output['tlo.methods.labour']
+    assert 'error' not in output['tlo.methods.postnatal_supervisor']
+    assert 'error' not in output['tlo.methods.newborn_outcomes']
 
 
 @pytest.mark.slow
