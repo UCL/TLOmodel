@@ -2603,9 +2603,8 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
 
 ## revised this code to include diagRadio for expected footprint and
     def apply(self, person_id, squeeze_factor):
-        print(f"apply method of HSI_Tb_CommunityXray called for person_id {person_id}")
+        print(f'"STARTED COMMUNITY CHEST XRAY SCREENING"')
         logger.debug(key="message", data=f"Performing community chest X-ray screening for {person_id}")
-
         df = self.sim.population.props  # Shortcut to the dataframe
         person = df.loc[person_id]
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
@@ -2641,6 +2640,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({})
         else:
             return ACTUAL_APPT_FOOTPRINT
+        print(f'"ENDING COMMUNITY CHEST X-RAY SCREENING"')
 ##revised to up
 
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
