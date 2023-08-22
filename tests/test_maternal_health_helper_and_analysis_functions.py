@@ -431,6 +431,7 @@ def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed)
     df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 38
     df.at[mother_id, 'is_pregnant'] = True
+    df.at[mother_id, 'co_contraception'] = "not_using"
 
     # Populate the minimum set of keys within the mni dict so the on_birth function will run
     pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
