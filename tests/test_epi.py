@@ -18,6 +18,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.epi import HSI_BcgVaccine, HSI_HpvVaccine, HSI_RotaVaccine
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2021, 1, 1)
@@ -210,3 +211,60 @@ def test_facility_level_distribution(tmpdir, seed):
 
     assert epi_levels.level3.sum() == 0
     assert epi_levels.level4.sum() == 0
+
+
+def test_hsi_epi_footprint(seed):
+    """
+    Test that the HSI for vaccine delivery is returning the correct footprint
+    * as an example, test BCG and rota - both are given in bundles at different time-points
+    and should have a footprint of 0.5 EPI
+    * test HPV vaccine, should have full EPI footprint
+    """
+
+    popsize = 10
+    sim = Simulation(start_date=start_date, seed=seed)
+
+    # Register the appropriate modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath, cons_availability='default'),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 )
+
+    # set up initial population
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+
+    # Get target person and eligible for a childhood vaccine
+    person_id = 0
+    df.at[person_id, "age_years"] = 0
+
+    # Run the BCG vaccine event
+    t = HSI_BcgVaccine(module=sim.modules['Epi'], person_id=person_id)
+    t.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # Check the footprint returned by this event
+    assert t.EXPECTED_APPT_FOOTPRINT.get('EPI') == 0.5
+
+    # Run the Rotavirus vaccine event
+    t = HSI_RotaVaccine(module=sim.modules['Epi'], person_id=person_id)
+    t.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # Check the footprint returned by this event
+    assert t.EXPECTED_APPT_FOOTPRINT.get('EPI') == 0.5
+
+    # Run the HPV vaccine event - this should have one full EPI appt as footprint
+    # Get target person and eligible for a childhood vaccine
+    person_id = 1
+    df.at[person_id, "age_years"] = 9
+
+    t = HSI_HpvVaccine(module=sim.modules['Epi'], person_id=person_id)
+    t.apply(person_id=person_id, squeeze_factor=0.0)
+
+    # Check the footprint returned by this event
+    assert t.EXPECTED_APPT_FOOTPRINT.get('EPI') == 1

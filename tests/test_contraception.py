@@ -124,8 +124,10 @@ def run_sim(tmpdir,
         )
         sim.modules['Contraception'].processed_params['p_switch_from_per_month'] *= 0.0
 
-        sim.modules['Contraception'].processed_params['p_start_after_birth']['not_using'] = 1.0
-        sim.modules['Contraception'].processed_params['p_start_after_birth'][list(states - {'not_using'})] = 0.0
+        sim.modules['Contraception'].processed_params['p_start_after_birth_below30']['not_using'] = 1.0
+        sim.modules['Contraception'].processed_params['p_start_after_birth_30plus']['not_using'] = 1.0
+        sim.modules['Contraception'].processed_params['p_start_after_birth_below30'][list(states - {'not_using'})] = 0.0
+        sim.modules['Contraception'].processed_params['p_start_after_birth_30plus'][list(states - {'not_using'})] = 0.0
 
     if equalised_risk_of_preg is not None:
         sim.modules['Contraception'].processed_params['p_pregnancy_no_contraception_per_month'].loc[:, :] = \
@@ -330,7 +332,7 @@ def test_woman_starting_contraceptive_after_birth(tmpdir, seed):
         sim.population.props.at[person_id, 'co_contraception'] = "not_using"
 
         # Run `select_contraceptive_following_birth`
-        sim.modules['Contraception'].select_contraceptive_following_birth(person_id)
+        sim.modules['Contraception'].select_contraceptive_following_birth(person_id, _props["age_years"])
 
         # Get new status
         co_after_birth.append(sim.population.props.at[person_id, 'co_contraception'])
@@ -340,7 +342,7 @@ def test_woman_starting_contraceptive_after_birth(tmpdir, seed):
 
 
 def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir, seed):
-    """Check HSI for the maintenance of a person on a contraceptive are scheduled as expected.."""
+    """Check HSI for the maintenance of a person on a contraceptive are scheduled as expected."""
 
     # Create a simulation that has run for zero days and clear the event queue
     sim = run_sim(tmpdir,
@@ -358,18 +360,24 @@ def test_occurrence_of_HSI_for_maintaining_on_and_switching_to_methods(tmpdir, s
     pp['p_stop_per_month'] = zero_param(pp['p_stop_per_month'])
     pp['p_switch_from_per_month'] = zero_param(pp['p_switch_from_per_month'])
 
-    # Set that person_id=0 is a woman on a contraceptive for longer than six months
+    # Set that person_id=0 is a woman on a contraceptive for longer than days_between_appt_for_maintenance specific for
+    # the contraception method
     person_id = 0
     df = sim.population.props
+    states_that_may_require_HSI_to_maintain_on = \
+        sorted(sim.modules['Contraception'].states_that_may_require_HSI_to_maintain_on)
+    co_method = 'pill'
+    assert co_method in states_that_may_require_HSI_to_maintain_on
+    meth_spec_days_between_appt = sim.modules['Contraception'].\
+        parameters['days_between_appts_for_maintenance'][states_that_may_require_HSI_to_maintain_on.index(co_method)]
     original_props = {
         'sex': 'F',
         'age_years': 30,
-        'date_of_birth': sim.date - pd.DateOffset(years=30),
-        'co_contraception': 'pill',  # <-- requires appointments for maintenance
+        'co_contraception': co_method,  # <-- requires appointments for maintenance
         'is_pregnant': False,
         'date_of_last_pregnancy': pd.NaT,
         'co_unintended_preg': False,
-        'co_date_of_last_fp_appt': sim.date - pd.DateOffset(months=7)
+        'co_date_of_last_fp_appt': sim.date - pd.DateOffset(days=meth_spec_days_between_appt + 31)
     }
     df.loc[person_id, original_props.keys()] = original_props.values()
 
@@ -817,6 +825,8 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
         """Helper function to find the availability of consumables used in the Contraception module."""
         sim = run_sim(tmpdir, seed, run=False, consumables_available='default')
         item_codes = sim.modules['Contraception'].get_item_code_for_each_contraceptive()
+        # do not check the `co_initiation` items, only contraception methods items
+        del item_codes['co_initiation']
         cons = sim.modules['HealthSystem'].consumables._prob_item_codes_available
 
         def find_average_availability(items: List, level: str):
@@ -901,3 +911,42 @@ def test_contraception_coverage_with_use_healthsystem(tmpdir, seed):
         return all([equals(A[k], B[k], tol=_tol) for k in set(A.keys() & B.keys())])
 
     assert compare_dictionaries(contraception_use_healthsystem_true, contraception_use_healthsystem_false, tol=0.011)
+
+
+def test_input_probs_sum():
+    """Check assumptions about the input probabilities."""
+
+    # Import relevant sheets from the workbook
+    resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
+    workbook = pd.read_excel(Path(resourcefilepath) / 'ResourceFile_Contraception.xlsx', sheet_name=None)
+    sheet_names = [
+        'Initiation_ByMethod',
+        'Interventions_Pop',
+        'Interventions_PPFP',
+        'Initiation_AfterBirth',
+    ]
+
+    sheets = {}
+    for sheet in sheet_names:
+        sheets[sheet] = workbook[sheet]
+
+    # ### Check that the input sets of probabilities which should sum across all methods including 'not_using' into 1.0,
+    # do sum into 1.0.
+    for sheet_to_check in ['Initiation_ByMethod', 'Initiation_AfterBirth']:
+        if 'age' in sheets[sheet_to_check].columns:
+            sheets[sheet_to_check] = sheets[sheet_to_check].set_index('age')
+        assert np.isclose(1.0, sheets[sheet_to_check].sum(axis=1)).all()
+
+    # ### Check that the initiation probabilities increased due to intervention sum across all methods (except
+    # 'not_using') into less than 1.0, i.e. the interventions do not lead to absurdly large increase in probabilities
+
+    # PPFP intervention increases the initiation probs of contraception methods after birth
+    p_init_by_method_after_birth = sheets['Initiation_AfterBirth'].loc[0].drop('not_using')
+    p_init_by_method_after_birth = p_init_by_method_after_birth.mul(sheets['Interventions_PPFP'].loc[0])
+    assert p_init_by_method_after_birth.sum() < 1.0
+
+    # Pop intervention increases the initiation probs of contraception methods any other time when not using any
+    # contraceptive
+    p_init_by_method = sheets['Initiation_ByMethod'].loc[0].drop('not_using')
+    p_init_by_method = p_init_by_method.mul(sheets['Interventions_Pop'].loc[0])
+    assert p_init_by_method.sum() < 1.0
