@@ -599,10 +599,10 @@ class Contraception(Module):
         def contraception_initiation_with_interv(p_start_per_month_without_interv):
             """Increase the probabilities of a woman starting modern contraceptives due to Pop intervention being
             applied."""
-            # TODO: remove the keys before intervention year
             p_start_per_month_with_interv = {}
             for year, age_method_df in p_start_per_month_without_interv.items():
-                p_start_per_month_with_interv[year] = age_method_df * self.parameters['Interventions_Pop'].loc[0]
+                if year >= self.sim.date.year:
+                    p_start_per_month_with_interv[year] = age_method_df * self.parameters['Interventions_Pop'].loc[0]
             return p_start_per_month_with_interv
 
         def contraception_initiation_after_birth_with_interv(p_start_after_birth_without_interv):
