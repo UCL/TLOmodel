@@ -36,7 +36,7 @@ class ImpactOfTbDaHx(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_scenarios_test_run06_partial',
+            'filename': 'Tb_DAH_scenarios_test_run07_partial',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -76,14 +76,14 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                     'scenario': 0,
                     'probability_community_chest_xray': 0.0,
-                    'scaling_factor_WHO': 99.9,
+                    'scaling_factor_WHO': 80.9,
                 },
             },
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
                     'probability_community_chest_xray': 0.0,
-                    'scaling_factor_WHO': 99.9,
+                    'scaling_factor_WHO': 80.9,
                 },
             },
             "No CXR Available": {
@@ -91,7 +91,7 @@ class ImpactOfTbDaHx(BaseScenario):
                     'scenario': 2,
                     'probability_access_to_xray': 0.0,
                     'probability_community_chest_xray': 0.0,
-                    'scaling_factor_WHO': 99.9,
+                    'scaling_factor_WHO': 80.9,
                 },
             },
             "CXR scaleup": {
@@ -99,14 +99,14 @@ class ImpactOfTbDaHx(BaseScenario):
                     'scenario': 0,
                     'probability_access_to_xray': 0.11,
                     'probability_community_chest_xray': 0.0,
-                    'scaling_factor_WHO': 99.9,
+                    'scaling_factor_WHO': 80.9,
                 }
             },
             "Outreach services": {
                 'Tb': {
                     'scenario': 0,
-                    'probability_community_chest_xray': 0.01,
-                    'scaling_factor_WHO': 99.9,
+                    'probability_community_chest_xray': 0.3,
+                    'scaling_factor_WHO': 80.9,
                 }
             }
         }
