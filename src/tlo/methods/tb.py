@@ -2579,7 +2579,7 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
                     tclose=None,
                     priority=0,
                 )
-
+            return select_for_screening.sum()
 #nic503-revised the self.make_appt_footprint({"DiagRadio": 1}) to include DiagRadio
 # also added return footprint at the end
 class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
@@ -2603,7 +2603,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
 
 ## revised this code to include diagRadio for expected footprint and
     def apply(self, person_id, squeeze_factor):
-        print(f'"STARTED COMMUNITY CHEST XRAY SCREENING"')
+        print(f'"STARTING COMMUNITY CHEST XRAY SCREENING"')
         logger.debug(key="message", data=f"Performing community chest X-ray screening for {person_id}")
         df = self.sim.population.props  # Shortcut to the dataframe
         person = df.loc[person_id]
