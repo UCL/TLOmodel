@@ -126,6 +126,9 @@ def test_all_treatment_ids_defined_in_priority_policies(seed, tmpdir):
     sim.make_initial_population(n=100)
 
     clean_set_of_filtered_treatment_ids = set([i.replace("_*", "") for i in get_filtered_treatment_ids()])
+    # Manually add treatment_IDs which are not found by get_filtered_treatment_ids
+    clean_set_of_filtered_treatment_ids.add("Alri_Pneumonia_Treatment_Inpatient")
+    clean_set_of_filtered_treatment_ids.add("Alri_Pneumonia_Treatment_Inpatient_Followup")
 
     for policy_name in sim.modules['HealthSystem'].parameters['priority_rank'].keys():
         sim.modules['HealthSystem'].load_priority_policy(policy_name)
