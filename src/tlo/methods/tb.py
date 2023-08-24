@@ -2599,7 +2599,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "Tb_Test_ScreeningCommunity"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '0'
+        self.ACCEPTED_FACILITY
 
 ## revised this code to include diagRadio for expected footprint and
     def apply(self, person_id, squeeze_factor):
