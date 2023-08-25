@@ -2580,8 +2580,7 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
                     priority=0,
                 )
             return select_for_screening.sum()
-#nic503-revised the self.make_appt_footprint({"DiagRadio": 1}) to include DiagRadio
-# also added return footprint at the end
+
 class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event for community chest X-ray screening.
@@ -2601,7 +2600,6 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY
 
-## revised this code to include diagRadio for expected footprint and
     def apply(self, person_id, squeeze_factor):
         print(f'"STARTING COMMUNITY CHEST XRAY SCREENING"')
         logger.debug(key="message", data=f"Performing community chest X-ray screening for {person_id}")
@@ -2641,7 +2639,6 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
         else:
             return ACTUAL_APPT_FOOTPRINT
         print(f'"ENDING COMMUNITY CHEST X-RAY SCREENING"')
-##revised to up
 
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
     """Helper event that is used to 'decide' if someone on IPT should continue or end
