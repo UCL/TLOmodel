@@ -345,7 +345,7 @@ class HSI_Event:
         health_system = self.sim.modules['HealthSystem']
 
         # Over-write ACCEPTED_FACILITY_LEVEL to to redirect all '1b' appointments to '2'
-        self.ACCEPTED_FACILITY_LEVEL = adjust_facility_level_to_merge_1b_and_2(self.ACCEPTED_FACILITY_LEVEL)
+        # self.ACCEPTED_FACILITY_LEVEL = adjust_facility_level_to_merge_1b_and_2(self.ACCEPTED_FACILITY_LEVEL)
 
         if not isinstance(self.target, tlo.population.Population):
             self.facility_info = health_system.get_facility_info(self)
@@ -821,8 +821,7 @@ class HealthSystem(Module):
 
         # Initialise the Consumables class
         self.consumables = Consumables(
-            data=self.update_consumables_availability_to_represent_merging_of_levels_1b_and_2(
-                self.parameters['availability_estimates']),
+            data=self.parameters['availability_estimates'],
             rng=rng_for_consumables,
             availability=self.get_cons_availability()
         )
@@ -1044,8 +1043,7 @@ class HealthSystem(Module):
         """
 
         # Get the capabilities data imported (according to the specified underlying assumptions).
-        capabilities = pool_capabilities_at_levels_1b_and_2(
-            self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}'])
+        capabilities = self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
         capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
 
         # Create dataframe containing background information about facility and officer types
@@ -1860,7 +1858,7 @@ class HealthSystem(Module):
         # Compute Fraction of Time For Each Officer and level
         officer = [_f.rsplit('Officer_')[1] for _f in comparison.index]
         level = [self._facility_by_facility_id[int(_fac_id)].level for _fac_id in facility_id]
-        level = list(map(lambda x: x.replace('1b', '2'), level))
+        # level = list(map(lambda x: x.replace('1b', '2'), level))
         summary_by_officer = comparison.groupby(by=[officer, level])[['Total_Minutes_Per_Day', 'Minutes_Used']].sum()
         summary_by_officer['Fraction_Time_Used'] = (
             summary_by_officer['Minutes_Used'] / summary_by_officer['Total_Minutes_Per_Day']

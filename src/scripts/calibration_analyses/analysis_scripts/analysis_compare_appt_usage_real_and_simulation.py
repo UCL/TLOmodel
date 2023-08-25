@@ -83,7 +83,6 @@ def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
             .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code_And_Level'] \
             .pipe(unpack_nested_dict_in_series) \
             .rename(columns=appt_dict, level=1) \
-            .rename(columns={'1b': '2'}, level=0) \
             .groupby(level=[0, 1], axis=1).sum() \
             .mean(axis=0)  # mean over each year (row)
 
@@ -119,7 +118,6 @@ def get_annual_num_appts_by_level_with_confidence_interval(results_folder: Path)
             .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'Number_By_Appt_Type_Code_And_Level'] \
             .pipe(unpack_nested_dict_in_series) \
             .rename(columns=appt_dict, level=1) \
-            .rename(columns={'1b': '2'}, level=0) \
             .groupby(level=[0, 1], axis=1).sum() \
             .mean(axis=0)  # mean over each year (row)
 
@@ -213,6 +211,10 @@ def get_simulation_usage_with_confidence_interval(results_folder: Path) -> pd.Da
     model_output.drop(columns='name', inplace=True)
     model_output.reset_index(drop=True, inplace=True)
 
+    # drop dummy PharmDispensing for HCW paper
+    model_output = model_output.drop(index=model_output[model_output.appt_type == 'PharmDispensing'].index
+                                     ).reset_index(drop=True)
+
     return model_output
 
 
@@ -276,9 +278,10 @@ def get_real_usage(resourcefilepath, adjusted=True) -> pd.DataFrame:
     # get facility_level for each record
     real_usage = real_usage.merge(mfl[['Facility_ID', 'Facility_Level']], left_on='Facility_ID', right_on='Facility_ID')
 
-    # adjust annual MentalAll usage using annual reporting rates
-    if adjusted:
-        real_usage = adjust_real_usage_on_mentalall(real_usage)
+    # adjust annual MentalAll usage using annual reporting rates if needed
+    # for now not adjust it considering very low reporting rates and better match with Model usage
+    # if adjusted:
+    #     real_usage = adjust_real_usage_on_mentalall(real_usage)
 
     # assign date to each record
     real_usage['date'] = pd.to_datetime({'year': real_usage['Year'], 'month': real_usage['Month'], 'day': 1})
@@ -302,7 +305,7 @@ def get_real_usage(resourcefilepath, adjusted=True) -> pd.DataFrame:
     annual_usage_by_level = pd.concat([totals_by_year.reset_index(), totals_by_year_TB.reset_index()], axis=0)
 
     # group levels 1b and 2 into 2
-    annual_usage_by_level['Facility_Level'] = annual_usage_by_level['Facility_Level'].replace({'1b': '2'})
+    # annual_usage_by_level['Facility_Level'] = annual_usage_by_level['Facility_Level'].replace({'1b': '2'})
     annual_usage_by_level = annual_usage_by_level.groupby(
         ['Year', 'Appt_Type', 'Facility_Level'])['Usage'].sum().reset_index()
 
@@ -445,15 +448,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _rel_diff['upper_error'] = (_rel_diff['upper'] - _rel_diff['mean'])
         _asymmetric_error = [_rel_diff['lower_error'].values, _rel_diff['upper_error'].values]
 
-        _rel_diff = pd.DataFrame(_rel_diff['mean'])
+        _rel_diff = pd.DataFrame(_rel_diff['mean']).clip(lower=0.1, upper=10.0)
 
         return _rel_diff, _asymmetric_error
 
     rel_diff_real, err_real = format_rel_diff(adjusted=True)
 
     # plot
-    name_of_plot = 'Model vs Data usage per appointment type at all facility levels' \
-                   '\n[Model average annual 95% CI, Adjusted Data average annual]'
+    name_of_plot = 'Model vs Data on health service volume per appointment type' \
+                   '\n[Model average annual 95% CI, Data average annual]'
     fig, ax = plt.subplots()
     ax.errorbar(rel_diff_real.index.values,
                 rel_diff_real['mean'].values,
@@ -462,9 +465,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     for idx in rel_diff_real.index:
         if not pd.isna(rel_diff_real.loc[idx, 'mean']):
             ax.text(idx,
-                    rel_diff_real.loc[idx, 'mean'] * (1 + 0.2),
+                    rel_diff_real.loc[idx, 'mean'] * (1 + 0.3),
                     round(rel_diff_real.loc[idx, 'mean'], 1),
-                    ha='left', fontsize=8)
+                    ha='center', fontsize=8)
     ax.axhline(1.0, color='r')
     format_and_save(fig, ax, name_of_plot)
 

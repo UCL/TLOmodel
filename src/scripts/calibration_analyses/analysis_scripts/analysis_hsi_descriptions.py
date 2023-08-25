@@ -391,7 +391,7 @@ def figure4_hr_use_overall(results_folder: Path, output_folder: Path, resourcefi
     ).set_index('Facility_ID')
 
     def find_level_for_facility(id):
-        return mfl.loc[id].Facility_Level if mfl.loc[id].Facility_Level != '1b' else '2'
+        return mfl.loc[id].Facility_Level
 
     color_for_level = {'0': 'blue', '1a': 'yellow', '1b': 'green', '2': 'grey', '3': 'orange', '4': 'black',
                        '5': 'white'}
@@ -422,7 +422,6 @@ def figure4_hr_use_overall(results_folder: Path, output_folder: Path, resourcefi
     capacity_unstacked_average = capacity_by_facility.unstack().mean()
     # levels = [find_level_for_facility(i) if i != 'All' else 'All' for i in capacity_unstacked_average.index]
     xpos_for_level = dict(zip((color_for_level.keys()), range(len(color_for_level))))
-    xpos_for_level.update({'1b': 2, '2': 2, '3': 3, '4': 4, '5': 5})
     for id, val in capacity_unstacked_average.items():
         if id != 'All':
             _level = find_level_for_facility(id)

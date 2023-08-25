@@ -1101,9 +1101,9 @@ def test_treatment_pathway_if_all_consumables_severe_case(seed, tmpdir):
     # If the child is older than 2 months (classification will be `danger_signs_pneumonia`).
     # - If Treatments Works --> No follow-up
     assert [
-               ('FirstAttendance_Emergency', '2'),  # <-- these would all be '1b' if levels '1b' and '2' are separate
-               ('Alri_Pneumonia_Treatment_Outpatient', '2'),
-               ('Alri_Pneumonia_Treatment_Inpatient', '2'),
+               ('FirstAttendance_Emergency', '1b'),
+               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
+               ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       treatment_effect='perfectly_effective',
@@ -1112,10 +1112,10 @@ def test_treatment_pathway_if_all_consumables_severe_case(seed, tmpdir):
 
     # - If Treatment Does Not Work --> One follow-up as an inpatient.
     assert [
-               ('FirstAttendance_Emergency', '2'),   # <-- these would all be '1b' if levels '1b' and '2' are separate
-               ('Alri_Pneumonia_Treatment_Outpatient', '2'),
-               ('Alri_Pneumonia_Treatment_Inpatient', '2'),
-               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '2')
+               ('FirstAttendance_Emergency', '1b'),
+               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
+               ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
+               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '1b')
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       treatment_effect='perfectly_ineffective',
@@ -1125,9 +1125,9 @@ def test_treatment_pathway_if_all_consumables_severe_case(seed, tmpdir):
     # If the child is younger than 2 months
     # - If Treatments Works --> No follow-up
     assert [
-               ('FirstAttendance_Emergency', '2'),   # <-- these would all be '1b' if levels '1b' and '2' are separate
-               ('Alri_Pneumonia_Treatment_Outpatient', '2'),
-               ('Alri_Pneumonia_Treatment_Inpatient', '2'),
+               ('FirstAttendance_Emergency', '1b'),
+               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
+               ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       age_of_person_under_2_months=True,
@@ -1136,10 +1136,10 @@ def test_treatment_pathway_if_all_consumables_severe_case(seed, tmpdir):
 
     # - If Treatment Does Not Work --> One follow-up as an inpatient.
     assert [
-               ('FirstAttendance_Emergency', '2'),   # <-- these would all be '1b' if levels '1b' and '2' are separate
-               ('Alri_Pneumonia_Treatment_Outpatient', '2'),
-               ('Alri_Pneumonia_Treatment_Inpatient', '2'),
-               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '2'),
+               ('FirstAttendance_Emergency', '1b'),
+               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
+               ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
+               ('Alri_Pneumonia_Treatment_Inpatient_Followup', '1b'),
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='all'),
                                       incident_case_event=AlriIncidentCase_Lethal_DangerSigns_Pneumonia,
                                       age_of_person_under_2_months=True,
@@ -1156,8 +1156,7 @@ def test_treatment_pathway_if_no_consumables_mild_case(seed, tmpdir):
                ('FirstAttendance_NonEmergency', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '0'),
                ('Alri_Pneumonia_Treatment_Outpatient', '1a'),  # <-- referral due to lack of consumables
-               # ('Alri_Pneumonia_Treatment_Outpatient', '1b'),  # <-- referral due to lack of consumables
-               #                                                    (would occur if levels '1b' and '2' are separate)
+               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),  # <-- referral due to lack of consumables
                ('Alri_Pneumonia_Treatment_Outpatient', '2'),  # <-- referral due to lack of consumables
                ('Alri_Pneumonia_Treatment_Inpatient_Followup', '2'),  # <-- follow-up because treatment not successful
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='none'),
@@ -1171,9 +1170,9 @@ def test_treatment_pathway_if_no_consumables_severe_case(seed, tmpdir):
     # Severe case and not available consumables --> successive referrals up to level 2, following emergency
     # appointment, plus follow-up appointment because treatment was not successful.
     assert [
-               ('FirstAttendance_Emergency', '2'),
-               ('Alri_Pneumonia_Treatment_Outpatient', '2'),
-               # ('Alri_Pneumonia_Treatment_Inpatient', '1b'),  # <-- would occur if levels '1b' and '2' are separate
+               ('FirstAttendance_Emergency', '1b'),
+               ('Alri_Pneumonia_Treatment_Outpatient', '1b'),
+               ('Alri_Pneumonia_Treatment_Inpatient', '1b'),
                ('Alri_Pneumonia_Treatment_Inpatient', '2'),  # <-- referral due to lack of consumables
                ('Alri_Pneumonia_Treatment_Inpatient_Followup', '2'),  # <-- follow-up because treatment not successful
            ] == generate_hsi_sequence(sim=get_sim(seed=seed, tmpdir=tmpdir, cons_available='none'),
