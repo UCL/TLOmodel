@@ -276,8 +276,9 @@ def get_real_usage(resourcefilepath, adjusted=True) -> pd.DataFrame:
     # get facility_level for each record
     real_usage = real_usage.merge(mfl[['Facility_ID', 'Facility_Level']], left_on='Facility_ID', right_on='Facility_ID')
 
-    # adjust annual MentalAll usage using annual reporting rates if needed
-    # for now not adjust it considering very low reporting rates and better match with Model usage
+    # adjust annual MentalAll usage using annual reporting rates if needed,
+    # for now do not adjust it considering very low reporting rates of Mental Health report
+    # and better match with Model usage
     # if adjusted:
     #     real_usage = adjust_real_usage_on_mentalall(real_usage)
 
