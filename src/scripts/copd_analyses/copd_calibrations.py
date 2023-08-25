@@ -113,17 +113,17 @@ class CopdCalibrations:
         demog = output['tlo.methods.demography']['death']
 
         # get scaling factor and scale-up the deaths
-        if 'scaling_factor' in output['tlo.methods.population']:
-            sf = output['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
-        else:
-            sf = 1.0
+        # if 'scaling_factor' in output['tlo.methods.population']:
+        #     sf = output['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+        # else:
+        #     sf = 1.0
 
         # - extract number of death by year/sex/age-group (copied from utils compare deaths function)
         model = demog.assign(
             year=lambda x: x['date'].dt.year
         ).groupby(
             ['year', 'sex', 'age', 'cause']
-        )['person_id'].count().mul(sf)
+        )['person_id'].count()
 
         #  extract copd category 5 and 6 deaths
         copd_deaths_cat5 = model.loc[(slice(None), slice(None), slice(None), ['COPD_cat5'])].groupby('year').sum()
@@ -134,8 +134,8 @@ class CopdCalibrations:
                                             'copd_v_severe_modal': copd_deaths_cat6,
                                             'person_years': np.nan,
                                             'total_pop_21': np.nan,
-                                            'obs_data_severe_copd': np.nan,
-                                            'obs_data_very_severe_copd': np.nan,
+                                            'obs_data_copd_cat5': np.nan,
+                                            'obs_data_copd_cat6': np.nan,
                                             })
 
         # get total population in 2021
@@ -155,10 +155,31 @@ class CopdCalibrations:
         obs_data_sev_and_v_sev = [15.3, 27.8]
 
         # update the dataframe with person years data
-        copd_deaths_df.loc[2021, ['total_pop_21', 'person_years', 'obs_data_severe_copd', 'obs_data_very_severe_copd']]\
+        copd_deaths_df.loc[2021, ['total_pop_21', 'person_years', 'obs_data_copd_cat5', 'obs_data_copd_cat6']] \
             = [pop_21, total_person_yrs_21, obs_data_sev_and_v_sev[0], obs_data_sev_and_v_sev[1]]
 
-        print(f'the output is {copd_deaths_df}')
+        copd_deaths_df['mild_deaths'] = copd_deaths_df.loc[2021, 'obs_data_copd_cat5'] / \
+                                        copd_deaths_df.loc[2021, 'person_years']
+
+        fig, axes = plt.subplots(ncols=2, sharey=True)  # plot setup
+        # do plotting
+        ncols = 0
+        _titles = ['severe', 'very severe']
+        for _ in range(2):
+            ax = copd_deaths_df.plot.line(ax=axes[ncols], title=f"{_titles[_]} COPD death rate",
+                                          y=['mild_deaths'],
+                                          xlabel="Year",
+                                          ylabel="Proportions")
+
+            copd_deaths_df.plot.line(
+                y=[f'obs_data_copd_cat{5 + ncols}'],
+                marker='^',
+                color='red',
+                ax=ax
+            )
+            ax.legend(["modal", "observed data"])
+            ncols += 1
+        plt.show()
 
 
 start_date = Date(2010, 1, 1)
@@ -206,7 +227,7 @@ path_to_logfile = Path('./outputs/copd_analyses__2023-08-24T170704.log')
 copd_analyses = CopdCalibrations(logfile_path=path_to_logfile)
 
 # plot lung function categories per each category
-copd_analyses.copd_prevalence()
+# copd_analyses.copd_prevalence()
 
 # calibrate copd death rate
 copd_analyses.plot_death_rate()
