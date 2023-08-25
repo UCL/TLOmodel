@@ -2594,7 +2594,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(suppress_footprint, bool)
         self.suppress_footprint = suppress_footprint
 
-        self.TREATMENT_ID = "Tb_Test_ScreeningCommunity"
+        self.TREATMENT_ID = "Tb_Test_ScreeningOutreach"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY
 
