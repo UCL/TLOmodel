@@ -2106,13 +2106,11 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({})
         else:
             return ACTUAL_APPT_FOOTPRINT
-
 # # ---------------------------------------------------------------------------
 # #   Treatment
 # # ---------------------------------------------------------------------------
 # # the consumables at treatment initiation include the cost for the full course of treatment
 # # so the follow-up appts don't need to account for consumables, just appt time
-
 
 class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
