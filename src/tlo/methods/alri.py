@@ -2293,6 +2293,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             self._age_exact_years = self.sim.population.props.at[person_id, 'age_exact_years']
 
     def _as_out_patient(self, facility_level):
+
         """Cast this HSI as an out-patient appointment."""
         self.TREATMENT_ID = f'{self._treatment_id_stub}_Outpatient'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
