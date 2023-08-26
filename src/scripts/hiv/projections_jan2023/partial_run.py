@@ -82,7 +82,6 @@ class ImpactOfTbDaHx(BaseScenario):
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                    'scenario_start_date': Date(2010, 1, 1),
                     'probability_community_chest_xray': 0.0,
                    # 'scaling_factor_WHO': 80.9,
                 },
@@ -90,7 +89,6 @@ class ImpactOfTbDaHx(BaseScenario):
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
-                    'scenario_start_date': Date(2010, 1, 1),
                     'probability_access_to_xray': 0.0,
                     'probability_community_chest_xray': 0.0,
                    # 'scaling_factor_WHO': 80.9,
@@ -99,7 +97,6 @@ class ImpactOfTbDaHx(BaseScenario):
             "CXR scaleup": {
                 'Tb': {
                     'scenario': 0,
-                    'scenario_start_date': Date(2010, 1, 1),
                     'probability_access_to_xray': 0.11,
                     'probability_community_chest_xray': 0.0,
                    # 'scaling_factor_WHO': 80.9,
@@ -108,9 +105,7 @@ class ImpactOfTbDaHx(BaseScenario):
             "Outreach services": {
                 'Tb': {
                     'scenario': 0,
-                    'scenario_start_date': Date(2010, 1, 1),
                     'probability_community_chest_xray': 0.01,
-                    'outreach_xray_start_date': Date(2010, 1, 1),
                    # 'scaling_factor_WHO': 80.9,
                 }
             }
