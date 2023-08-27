@@ -25,7 +25,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
 #results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_run04_partial-2023-08-18T203453Z", outputspath)[-1]
-results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_run12_partial-2023-08-26T191826Z", outputspath)[-1]
+results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_run13_partial-2023-08-27T075412Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
