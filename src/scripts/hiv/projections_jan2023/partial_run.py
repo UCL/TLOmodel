@@ -29,14 +29,14 @@ class ImpactOfTbDaHx(BaseScenario):
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2012, 12, 31)
-        self.pop_size = 10000
+        self.pop_size = 40000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 4
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_scenarios_test_run13_partial',
+            'filename': 'Tb_DAH_scenarios_test_run15_partial',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -76,6 +76,8 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                     'scenario': 0,
                     'probability_community_chest_xray': 0.0,
+                    'probability_access_to_xray': 0.1,
+
                    # 'scaling_factor_WHO': 80.9,
                 },
             },
@@ -83,6 +85,7 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                     'scenario': 1,
                     'probability_community_chest_xray': 0.0,
+                    'probability_access_to_xray': 0.1,
                    # 'scaling_factor_WHO': 80.9,
                 },
             },
@@ -109,15 +112,15 @@ class ImpactOfTbDaHx(BaseScenario):
                    # 'scaling_factor_WHO': 80.9,
                 }
             },
+         "Outreach services10": {
+                'Tb': {
+                    'scenario': 0,
+                    'probability_community_chest_xray': 0.1,
+                   # 'scaling_factor_WHO': 80.9,
+                }
+            },
         }
-        #    "Outreach10per": {
-        #        'Tb': {
-        #           'scenario': 0,
-        #           'probability_community_chest_xray': 0.1,
-        #         # 'scaling_factor_WHO': 80.9,
-        #     }
-        #   }
-        # }
+
 if __name__ == '__main__':
     from tlo.cli import scenario_run
     scenario_run([__file__])
