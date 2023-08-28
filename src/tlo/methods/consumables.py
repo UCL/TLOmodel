@@ -71,7 +71,7 @@ class Consumables:
             self.override_availability(dict(zip(self.item_codes, repeat(0.0))))
 
     def _refresh_availability_of_consumables(self, date: datetime.datetime):
-        """Update the availability of all items based on the data for the probability of availability, givem the current
+        """Update the availability of all items based on the data for the probability of availability, given the current
         date."""
         # Work out which items are available in which facilities for this date.
         month = date.month

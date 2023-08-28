@@ -1846,6 +1846,8 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         for person in care_seeking.loc[care_seeking].index:
             if not df.at[person, 'hs_is_inpatient']:
 
+                mni[person]['date_preg_emergency'] = self.sim.date
+
                 # Determine if care seeking is delayed
                 pregnancy_helper_functions.check_if_delayed_careseeking(self.module, person)
 
