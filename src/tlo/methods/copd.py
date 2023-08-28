@@ -18,6 +18,10 @@ logger.setLevel(logging.INFO)
 
 ch_lungfunction_cats = list(range(7))
 
+gbd_causes_of_copd_represented_in_this_module = {
+    'Chronic obstructive pulmonary disease',
+}
+
 
 class Copd(Module):
     """The module responsible for determining Chronic Obstructive Pulmonary Diseases (COPD) status and outcomes.
@@ -33,14 +37,10 @@ class Copd(Module):
         Metadata.USES_HEALTHBURDEN,
     }
 
-    gbd_causes_of_copd_represented_in_this_module = {
-        'Chronic obstructive pulmonary disease',
-    }
-
     CAUSES_OF_DEATH = {
         # Chronic Obstructive Pulmonary Diseases
-        'COPD': Cause(gbd_causes=sorted(gbd_causes_of_copd_represented_in_this_module),
-                      label='COPD')
+        f'COPD_cat{lung_f_category}': Cause(gbd_causes=sorted(gbd_causes_of_copd_represented_in_this_module),
+                                            label='COPD') for lung_f_category in ch_lungfunction_cats
     }
 
     CAUSES_OF_DISABILITY = {
@@ -204,12 +204,12 @@ class Copd(Module):
             data=flatten_multi_index_series_into_dict_for_logging(counts)
         )
 
-        _ex_tobacco_smokers = df.loc[df.is_alive].groupby(by='li_date_not_tob').size()
-        logger.info(
-            key='ex_smokers',
-            description='Proportion of alive persons in each COPD category ever smoked tobacco',
-            data=_ex_tobacco_smokers
-        )
+        # _ex_tobacco_smokers = df.loc[df.is_alive].groupby(by='li_date_not_tob').size()
+        # logger.info(
+        #     key='ex_smokers',
+        #     description='Proportion of alive persons in each COPD category ever smoked tobacco',
+        #     data=_ex_tobacco_smokers
+        # )
 
     def give_inhaler(self, person_id: int, hsi_event: HSI_Event):
         """Give inhaler if person does not already have one"""
@@ -503,12 +503,12 @@ class CopdDeath(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props
-        person = df.loc[person_id, ['is_alive', 'ch_will_die_this_episode', 'ch_lungfunction']]
+        person = df.loc[person_id, ['is_alive', 'age_years', 'ch_will_die_this_episode', 'ch_lungfunction']]
         # Check if an individual should still die and, if so, cause the death
         if person.is_alive and person.ch_will_die_this_episode:
             self.sim.modules['Demography'].do_death(
                 individual_id=person_id,
-                cause='COPD',
+                cause=f'COPD_cat{person.ch_lungfunction}',
                 originating_module=self.module,
             )
 

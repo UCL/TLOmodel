@@ -81,12 +81,14 @@ class CopdAnalyses:
         re_ordered_copd_prev = self.__copd_prev.reorder_levels([2, 3, 0, 1], axis=1)
         _col_counter: int = 0  # a counter for plotting. setting rows
         fig, ax = plt.subplots(ncols=2, sharex=True)  # plot setup
+        _df = dict()
         for _tob in ['True', 'False']:
             plot_df = pd.DataFrame()
             for _lung_func, _ in enumerate(self.__lung_func_cats):
                 plot_df[_lung_func] = re_ordered_copd_prev[_tob][f'{_lung_func}'].sum(axis=1)
             # get totals per year
             plot_df = plot_df.groupby(plot_df.index.year).sum()
+            _df[_tob] = plot_df
             # convert totals into proportions
             plot_df = plot_df.apply(lambda row: row / row.sum(), axis=1)
 
@@ -99,7 +101,6 @@ class CopdAnalyses:
             _col_counter += 1  # increment column counter
         for ax in ax:
             ax.get_legend().remove()
-
         fontP = FontProperties()
         fontP.set_size('small')
         # add one legend on `plt
@@ -228,23 +229,17 @@ class CopdAnalyses:
         # select logs from the latest year. In this case we are selecting year 2022
         re_ordered_df = self.__copd_prev.reorder_levels([3, 0, 2, 1], axis=1)
         plot_df = pd.DataFrame()
-        mask = (re_ordered_df.index > pd.to_datetime('2019-01-01')) & (
-            re_ordered_df.index <= pd.to_datetime('2020-01-01'))
+        mask = (re_ordered_df.index > pd.to_datetime('2022-01-01')) & (
+            re_ordered_df.index <= pd.to_datetime('2023-01-01'))
         re_ordered_df = re_ordered_df.loc[mask]
         _rows_counter: int = 0  # a counter for plotting. setting rows
-        __dict_age_cats = dict()
+
         fig, ax = plt.subplots(ncols=2, sharex=True, sharey=True)  # plot setup
         for _tob in ['True', 'False']:
             for _lung_func, _ in enumerate(self.__lung_func_cats):
                 plot_df[f'{_lung_func}'] = re_ordered_df[f'{_lung_func}']['M'][_tob].sum(axis=0) + \
                                            re_ordered_df[f'{_lung_func}']['F'][_tob].sum(axis=0)
 
-            __dataframe = pd.DataFrame(index=['15_39', '40_59', 'gr60'], data=[plot_df.iloc[3:8].sum(axis=0),
-                                                                               plot_df.iloc[8:12].sum(axis=0),
-                                                                               plot_df.iloc[12:].sum(axis=0)])
-
-            __dataframe = __dataframe.apply(lambda row: row / row.sum(), axis=1)
-            __dict_age_cats[_tob] = __dataframe
             plot_df = plot_df.apply(lambda row: row / row.sum(), axis=1)
             plot_df.plot(kind='bar', ax=ax[_rows_counter], stacked=True, color=self.__plot_colors,
                          title=f"{self.__smokers_desc[_tob]} lung function categories per each age group in 2022",
@@ -329,7 +324,6 @@ class CopdAnalyses:
                                        plot_df.iloc[12:14].sum(axis=0), plot_df.iloc[14:16].sum(axis=0),
                                        plot_df.iloc[16:18].sum(axis=0)])
 
-        print(f'the dataframe is {__plot_df, plot_df}')
         ax = __plot_df['model'].plot.bar(color=self.__plot_colors[6], label='Model', rot=0)
         ax.errorbar(x=__plot_df['model'].index, y=__plot_df.GBD_mean,
                     yerr=[__plot_df.GBD_lower, __plot_df.GBD_upper],
@@ -384,9 +378,8 @@ def get_simulation(popsize):
 
 
 # run simulation and store logfile path
-# sim = get_simulation(50_000)
-# path_to_logfile = sim.log_filepath
-path_to_logfile = Path('./outputs/copd_analyses__2023-08-17T092145.log')
+sim = get_simulation(50_000)
+path_to_logfile = sim.log_filepath
 
 # initialise Copd analyses class
 copd_analyses = CopdAnalyses(logfile_path=path_to_logfile)
