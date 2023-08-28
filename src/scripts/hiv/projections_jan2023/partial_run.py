@@ -108,18 +108,20 @@ class ImpactOfTbDaHx(BaseScenario):
             "Outreach services": {
                 'Tb': {
                     'scenario': 0,
-                    'probability_community_chest_xray': 0.05,
-                   # 'scaling_factor_WHO': 80.9,
-                }
-            },
-         "Outreach services10": {
-                'Tb': {
-                    'scenario': 0,
                     'probability_community_chest_xray': 0.1,
                    # 'scaling_factor_WHO': 80.9,
                 }
             },
         }
+
+       #  "Outreach services10": {
+            #    'Tb': {
+            #        'scenario': 0,
+           #         'probability_community_chest_xray': 0.1,
+           #        # 'scaling_factor_WHO': 80.9,
+           #     }
+        #    },
+    #    }
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run

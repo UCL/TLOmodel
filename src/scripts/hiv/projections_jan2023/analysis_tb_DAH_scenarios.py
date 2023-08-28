@@ -142,6 +142,11 @@ tb_dalys = extract_results(
 ).pipe(set_param_names_as_column_index_level_0)
 
 # Get mean/upper/lower statistics
+print("Shape of tb_dalys:", tb_dalys.shape)
+dalys_summary = summarize(tb_dalys).sort_index()
+print("Shape after summarize:", dalys_summary.shape)
+
+
 dalys_summary = summarize(tb_dalys).sort_index()
 print("DALYs for TB are as follows:")
 print(dalys_summary)
