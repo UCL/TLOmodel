@@ -458,4 +458,4 @@ def test_referral_logic():
 
     #  Run event and confirm referrals are happening as expected(facility level should move up to the next higher level)
     sev_exacerbation_event.run(0.0)
-    assert not '1a' == sev_exacerbation_event.facility_info.level, 'referrals are not happening'
+    assert  '1a' != sev_exacerbation_event.facility_info.level, 'referrals are not happening'
