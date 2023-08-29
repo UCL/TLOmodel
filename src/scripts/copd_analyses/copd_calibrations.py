@@ -157,10 +157,10 @@ class CopdCalibrations:
         # data
         death_rate_per100 = (100 * copd_deaths / prev).mean()
         print(death_rate_per100)
-        # mild           0.000000
-        # moderate       0.000000
-        # severe         1.674310
-        # very_severe    4.507594
+        # mild           0.000000   (vs 3.8)
+        # moderate       0.000000   (vs 5.1)
+        # severe         1.674310   (vs 15.3)
+        # very_severe    4.507594   (vs 27.8)
 
 
 start_date = Date(2010, 1, 1)
