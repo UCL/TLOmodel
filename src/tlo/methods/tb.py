@@ -2595,9 +2595,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "Tb_Test_ScreeningOutreach"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
-       # self.ACCEPTED_FACILITY_LEVEL = '0'
-        self.ACCEPTED_FACILITY   #[Is this defined in the health system]
-
+        self.ACCEPTED_FACILITY_LEVEL = '0'
 
     def apply(self, person_id, squeeze_factor):
         print(f'"STARTING COMMUNITY CHEST XRAY SCREENING"')
