@@ -1,9 +1,0 @@
--r base.in
-
-# Running tests
-pytest
-virtualenv
-tox
-
-# Building requirements files
-pip-tools

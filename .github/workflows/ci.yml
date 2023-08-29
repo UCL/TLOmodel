@@ -60,9 +60,10 @@ jobs:
           virtualenv --version
           pip --version
           tox --version
+          conda info
       - name: Test with tox
         run: |
-          tox -v -e py38,report -- pytest --cov --cov-report=term-missing -vv "${{ matrix.file }}"
+          tox -v -e test-linux,report -- --cov --cov-report=term-missing -vv "${{ matrix.file }}"
 
   check:
     name: Checks
@@ -106,4 +107,4 @@ jobs:
           pip --version
           tox --version
       - name: Build documentation
-        run: tox -v -e docs
+        run: tox -v -e docs-linux
