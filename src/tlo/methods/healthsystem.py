@@ -1392,7 +1392,7 @@ class HealthSystem(Module):
             return _priority_ranking
 
         else:  # If treatment is not ranked in the policy, issue a warning and assign priority=3 by default
-            warnings.warn(UserWarning(f"Couldn't find priority ranking for TREATMENT_ID /n"
+            warnings.warn(UserWarning(f"Couldn't find priority ranking for TREATMENT_ID \n"
                                       f"{hsi_event.TREATMENT_ID}"))
             return self.lowest_priority_considered
 
