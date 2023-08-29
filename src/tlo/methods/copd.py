@@ -204,13 +204,6 @@ class Copd(Module):
             data=flatten_multi_index_series_into_dict_for_logging(counts)
         )
 
-        # _ex_tobacco_smokers = df.loc[df.is_alive].groupby(by='li_date_not_tob').size()
-        # logger.info(
-        #     key='ex_smokers',
-        #     description='Proportion of alive persons in each COPD category ever smoked tobacco',
-        #     data=_ex_tobacco_smokers
-        # )
-
     def give_inhaler(self, person_id: int, hsi_event: HSI_Event):
         """Give inhaler if person does not already have one"""
         df = self.sim.population.props
