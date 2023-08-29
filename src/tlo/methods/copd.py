@@ -505,14 +505,6 @@ class CopdDeath(Event, IndividualScopeEventMixin):
                 originating_module=self.module,
             )
 
-            copd_deaths_lung_func = {
-                'lung_function': person['ch_lungfunction'],
-            }
-            logger.info(
-                key="copd_deaths_lung_func",
-                data=copd_deaths_lung_func
-            )
-
 
 class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixin):
     """ HSI event for issuing treatment to all individuals with severe exacerbation. We first check the availability of
