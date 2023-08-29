@@ -271,6 +271,66 @@ class CopdCalibrations:
             ncols += 1
         plt.show()
 
+    def rate_of_death_by_lungfunction_category(self):
+        """Make the comparison to Alupo P et al. (2021) study. This study found that the rate of COPD death was as
+        follows:
+         Persons with Mild COPD Stage: 3.8 deaths per 100 person-years
+         Persons with Moderate COPD Stage: 5.1 deaths per 100 person-years
+         Persons with Severe COPD Stage: 15.3 deaths per 100 person-years
+         Persons with Very Severe COPD Stage: 27.8 deaths per 100 person-years
+        We will compare this with fraction of people that die each year, averaged over many years, as an estimate of the
+        risk of persons in each stage dying.
+        We assume that the disease stages in the model correspond to the study as:
+        Mild - Stages 1, 2
+        Moderate - Stages 3, 4
+        Severe - Stage 5
+        Very Severe - Stage 6
+        """
+
+        # Get the number of deaths each year in each category of lung function
+        output = parse_log_file(self.__logfile_path)  # parse output file
+        demog = output['tlo.methods.demography']['death']  # read deaths from demography module
+
+        model = demog.assign(
+            year=lambda x: x['date'].dt.year).groupby(['year', 'sex', 'age', 'cause'])['person_id'].count()
+
+        # extract copd deaths:
+        copd_deaths = pd.concat(
+            {
+                'mild': (
+                    model.loc[(slice(None), slice(None), slice(None), ['COPD_cat1'])].groupby('year').sum()
+                    + model.loc[(slice(None), slice(None), slice(None), ['COPD_cat2'])].groupby('year').sum()
+                ),
+                'moderate': (
+                    model.loc[(slice(None), slice(None), slice(None), ["COPD_cat3"])].groupby("year").sum()
+                    + model.loc[(slice(None), slice(None), slice(None), ["COPD_cat4"])].groupby("year").sum()
+                ),
+                'severe': model.loc[(slice(None), slice(None), slice(None), ['COPD_cat5'])].groupby('year').sum(),
+                'very_severe': model.loc[(slice(None), slice(None), slice(None), ['COPD_cat6'])].groupby('year').sum(),
+            },
+            axis=1
+        ).fillna(0).astype(float)
+
+        # Get the number of person each year in each category of lung function (irrespective of sex/age/smokingstatus)
+        # average within the year
+        prev = self.construct_dfs()['copd_prevalence']
+        prev = (prev.groupby(axis=1, by=prev.columns.droplevel([0, 1, 2])).sum()
+                .groupby(axis=0, by=prev.index.year).mean())
+        prev['mild'] = prev['1'] + prev['2']
+        prev['moderate'] = prev['3'] + prev['4']
+        prev['severe'] = prev['5']
+        prev['very_severe'] = prev['6']
+        prev = prev.drop(columns=['0', '1', '2', '3', '4', '5', '6'])
+
+        # Compute fraction that die each year in each category of lung function, average over many years and compare to
+        # data
+        death_rate_per100 = (100 * copd_deaths / prev).mean()
+        print(death_rate_per100)
+        # mild           0.000000
+        # moderate       0.000000
+        # severe         1.674310
+        # very_severe    4.507594
+
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2030, 1, 1)
@@ -320,3 +380,6 @@ copd_analyses.copd_prevalence()
 
 # calibrate copd death rate
 copd_analyses.death_rate()
+
+# Examine rate of daath by lung function
+copd_analyses.rate_of_death_by_lungfunction_category()
