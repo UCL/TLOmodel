@@ -123,6 +123,7 @@ def test_ch_lungfunction():
     # set probability of progressing to next lung function to 1. This will ensure everyone progresses
     # to the next lung function
     copd_module.parameters['prob_progress_to_next_cat'] = 1.0
+    copd_module.parameters['rel_risk_progress_per_higher_cat'] = 1.0
     # re-initialise models to use updated parameters
     copd_module.pre_initialise_population()
 
@@ -136,7 +137,7 @@ def test_ch_lungfunction():
 
 def test_exacerbations():
     """ test copd exacerbations. Zero risk of exacerbation should lead to no exacerbation event scheduled and higher
-    risk of exacerbation should lead to many exacerbation events scheduled"""
+    risk of exacerbation should lead to many exacerbation events scheduled """
     sim = get_simulation(1)  # get simulation object
     copd_module = sim.modules['Copd']  # get copd module
 
@@ -146,7 +147,7 @@ def test_exacerbations():
     df = sim.population.props
     df.loc[df.index, 'is_alive'] = True
     df.loc[df.index, 'age_years'] = 10
-    df.loc[df.index, 'ch_lungfunction'] = np.NAN
+    df.loc[df.index, 'ch_lungfunction'] = 0
 
     # clear the event queue
     sim.event_queue.queue = []
@@ -250,7 +251,7 @@ def test_severe_exacerbation():
     sim = get_simulation(1)  # get simulation object
     copd_module = sim.modules['Copd']  # the copd module
 
-    # reset value to make an individual eligible for moderate exacerbations
+    # reset value to make an individual eligible for severe exacerbations
     df = sim.population.props
     person_id = df.index[0]  # get person id
     df.at[person_id, 'is_alive'] = True
@@ -297,7 +298,7 @@ def test_death_rate():
             iii) High death rate should lead to Many deaths
     """
     # create population dataframe from simulation
-    sim = get_simulation(100)   # get simulation object
+    sim = get_simulation(100)  # get simulation object
     copd_module = sim.modules['Copd']  # the copd module
 
     df = sim.population.props
@@ -309,14 +310,17 @@ def test_death_rate():
 
     # 1) -------------TEST ZERO DEATH RATE LEAD TO ZERO DEATH------------------------
     # make death rate due to severe exacerbation to zero. This will ensure no copd death rate is scheduled
-    copd_module.parameters['prob_will_die_sev_exacerbation'] = 0
+    copd_module.parameters['prob_will_die_sev_exacerbation_3039'] = 0.0
+
+    # re-initialise models to use updated parameters
+    copd_module.pre_initialise_population()
 
     # call copd exacerbation event and check no one is scheduled to die
     for idx in range(len(df.index)):
         _event = copd.CopdExacerbationEvent(copd_module, idx, severe=True)
         _event.run()
     # no one should be scheduled to die
-    assert not df.ch_will_die_this_episode.all(), 'no one should be scheduled to die when death rate is 0'
+    assert all(~df.ch_will_die_this_episode), 'no one should be scheduled to die when death rate is 0'
 
     # schedule death event and confirm no one has died
     for idx in range(len(df.index)):
@@ -328,9 +332,14 @@ def test_death_rate():
 
     # 2) -------- TEST HIGH DEATH RATE BUT PERFECT TREATMENT SHOULD LEAD TO NO DEATHS ------------
     # reset death rate due to severe exacerbation to 1. This will ensure many deaths are scheduled
-    copd_module.parameters['prob_will_die_sev_exacerbation'] = 1.0
+    copd_module.parameters['prob_will_die_sev_exacerbation_3039'] = 1.0
+
     # reset will survive given oxygen probability to 1.0 to ensure all survive when care is given
-    copd_module.parameters['prob_will_survive_given_oxygen'] = 1.0
+    copd_module.parameters['eff_oxygen'] = 1.0
+
+    # re-initialise models to use updated parameters
+    copd_module.pre_initialise_population()
+
     # call copd exacerbation event and confirm all have been scheduled to die
     for idx in range(len(df.index)):
         _event = copd.CopdExacerbationEvent(copd_module, idx, severe=True)
@@ -346,8 +355,8 @@ def test_death_rate():
         _event.run(0.0)
 
     # all individuals should now not be scheduled to die
-    assert not df.ch_will_die_this_episode.all(), 'now that individuals have received perfect treatment,' \
-                                                  'death should be canceled'
+    assert all(~df.ch_will_die_this_episode), 'now that individuals have received perfect treatment,' \
+                                              'death should be canceled'
 
     # schedule death event and confirm no one is dead
     for idx in range(len(df.index)):
@@ -375,3 +384,78 @@ def test_death_rate():
 
     # all individuals should die
     assert not df.is_alive.all(), 'all individuals should die when death rate is set to max rate'
+
+
+def test_initialise_lung_function():
+    """ check individuals are assigned lung function/obstruction correctly.
+    1.  individuals <15 should be assigned a lung function of 0
+    2.  individuals >15 years and non-smokers should be assigned a lung function of either 2 or 3
+    3.  individuals >15 years and are smokers should be assigned a lung function of either 4 or 5 """
+    # todo @Tim can we re-think on what tests/checks should be done here. There is now a change on how individual lung
+    #  function is initialised as we now have probabilities in all lung function categories despite whether an
+    #  individual do smoke or not
+
+    sim = get_simulation(10_000)
+    # 1 ----------- CHECK LUNG FUNCTION ASSIGNMENT ON INDIVIDUALS <15 YEARS ------------
+    sim.population.props.is_alive = True
+    sim.population.props.age_years = np.random.choice(range(0, 14), len(sim.population.props))
+    sim.modules['Copd'].initialise_population(sim.population)
+
+    # check individuals <15 years should have a lung function of 0
+    assert all(0 == sim.population.props.ch_lungfunction), 'individuals <15 years should have lung function of 0 at ' \
+                                                           'population initialisation'
+
+
+def test_referral_logic():
+    """ Check referrals are happening as expected. An HSI event in COPD module run at a facility where oxygen is not
+    available should refer the individual to the next higher level facility """
+    sim = get_simulation(1)  # get simulation object
+    copd_module = sim.modules['Copd']  # the copd module
+
+    # reset value to make an individual eligible for severe exacerbations
+    df = sim.population.props
+    person_id = df.index[0]  # get person id
+    df.at[person_id, 'is_alive'] = True
+    df.at[person_id, 'age_years'] = 20
+    df.at[person_id, 'ch_has_inhaler'] = False
+
+    # check an individual do not have emergency symptoms before an event is run
+    assert 'breathless_severe' not in sim.modules['SymptomManager'].has_what(person_id)
+
+    # schedule exacerbations event setting severe to True. This will ensure the individual has severe exacerbation
+    copd.CopdExacerbationEvent(copd_module, person_id, severe=True).run()
+
+    # severe exacerbation should lead to severe symptom(breathless severe in this case). check this is true
+    assert 'breathless_severe' in sim.modules['SymptomManager'].has_what(person_id, copd_module)
+
+    # Run health seeking behavior event and check emergency care is sought
+    hsp = HealthSeekingBehaviourPoll(module=sim.modules['HealthSeekingBehaviour'])
+    hsp.run()
+
+    # check that an instance of HSI_GenericFirstApptAtFacilityLevel1 is created
+    assert isinstance(sim.modules['HealthSystem'].find_events_for_person(person_id)[0][1],
+                      hsi_generic_first_appts.HSI_GenericEmergencyFirstAppt)
+
+    # Run HSI_GenericFirstApptAtFacilityLevel1 event
+    hsi_emergency_event = \
+        [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+         isinstance(event_tuple[1], hsi_generic_first_appts.HSI_GenericEmergencyFirstAppt)][0]
+
+    hsi_emergency_event.run(0.0)
+
+    # run severe exacerbation treatment event
+    sev_exacerbation_event = \
+        [event_tuple[1] for event_tuple in sim.modules['HealthSystem'].find_events_for_person(person_id) if
+         isinstance(event_tuple[1], HSI_Copd_TreatmentOnSevereExacerbation)][0]
+
+    # confirm facility level is '1a' before HSI_Copd_TreatmentOnSevereExacerbation event is run. This is the default
+    # facility level where this event should occur
+    assert '1a' == sev_exacerbation_event.facility_info.level, 'facility level should be 1a'
+
+    # make oxygen unavailable
+    sim.modules['HealthSystem'].override_availability_of_consumables({copd_module.item_codes['oxygen']: 0.0})
+    sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(sim.date)
+
+    #  Run event and confirm referrals are happening as expected(facility level should move up to the next higher level)
+    sev_exacerbation_event.run(0.0)
+    assert '1a' != sev_exacerbation_event.facility_info.level, 'referrals are not happening'
