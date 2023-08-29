@@ -157,10 +157,10 @@ class CopdCalibrations:
         # data
         death_rate_per100 = (100 * copd_deaths / prev).mean()
         print(death_rate_per100)
-        # mild           0.000000   (vs 3.8)
-        # moderate       0.000000   (vs 5.1)
-        # severe         1.674310   (vs 15.3)
-        # very_severe    4.507594   (vs 27.8)
+        # mild           0.000000   (vs 3.8 in Alupo et al)
+        # moderate       0.000000   (vs 5.1 in Alupo et al)
+        # severe         1.674310   (vs 15.3 in Alupo et al)
+        # very_severe    4.507594   (vs 27.8 in Alupo et al)
 
 
 start_date = Date(2010, 1, 1)
@@ -200,8 +200,9 @@ def get_simulation(popsize):
 
 
 # run simulation and store logfile path
-sim = get_simulation(50000)
-path_to_logfile = sim.log_filepath
+# sim = get_simulation(50000)
+# path_to_logfile = sim.log_filepath
+path_to_logfile = Path('/Users/tbh03/GitHub/TLOmodel/outputs/copd/copd_analyses__2023-08-24T170704.log')
 
 # initialise Copd analyses class
 copd_analyses = CopdCalibrations(logfile_path=path_to_logfile)
