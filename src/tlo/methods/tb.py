@@ -2595,7 +2595,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
         self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = "Tb_Test_ScreeningOutreach"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA"})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
        # self.ACCEPTED_FACILITY_LEVEL = '0'
         self.ACCEPTED_FACILITY
 
