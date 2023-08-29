@@ -7,12 +7,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation
-from tlo.analysis.utils import (
-    make_calendar_period_lookup,
-    make_calendar_period_type,
-    parse_log_file,
-    unflatten_flattened_multi_index_in_logging,
-)
+from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging
 from tlo.methods import (
     copd,
     demography,
@@ -105,170 +100,6 @@ class CopdCalibrations:
             )
             ax.legend(["modal", "observed data"])
             _col_counter += 1  # increment column counter
-        plt.show()
-
-    def death_rate(self):
-        """ in this function we are calibrating;
-            1.  Rate of death (per 100 per year) by COPD stage (mild, moderate, severe, very severe)
-            2.  Relative rate of (all cause) death according to COPD stage (none, mild, moderate, severe + v severe)
-
-        For deaths rate calculations
-            death rate for copd category 5
-                1.  get all deaths in copd category 5 in the period 2020-2024
-                2.  get total person days in 2020-2024
-                3.  divide deaths in category 5 by person years
-
-             death rate for copd category 6
-                1.  get all deaths in copd category 6 in the period 2020-2024
-                2.  get total person days in the period 2020-2024
-                3.  divide deaths in category 6 by person years
-
-        For relative rate calculations
-            relative death rate for copd category 5
-                1.  divide deaths in category 5 by person years in the period 2020-2024
-                2.  divide non copd deaths by person years in the period 2020-2024
-                3.  divide result from step 1 by result from step 2
-
-            relative death rate for copd category 6
-                1.  divide deaths in category 6 by person years in the period 2020-2024
-                2.  divide non copd deaths by person years in the period 2020-2024
-                3.  divide result from step 1 by result from step 2
-        """
-        output = parse_log_file(self.__logfile_path)  # parse output file
-        demog = output['tlo.methods.demography']['death']  # read deaths from demography module
-
-        # create a dataframe that will contain data for calibration
-        calibrate_copd_deaths_df = pd.DataFrame()
-
-        # - extract number of death by year/sex/age-group (copied from utils compare deaths function)
-        model = demog.assign(
-            year=lambda x: x['date'].dt.year).groupby(['year', 'sex', 'age', 'cause'])['person_id'].count()
-
-        # extract copd deaths and multiply them by 100(this is the unit according to observed data). Currently, we only
-        # have people dying from copd category 5 and 6
-        copd_deaths_cat5 = model.loc[(slice(None), slice(None), slice(None), ['COPD_cat5'])].groupby('year').sum() * 100
-        copd_deaths_cat6 = model.loc[(slice(None), slice(None), slice(None), ['COPD_cat6'])].groupby('year').sum() * 100
-
-        # update copd calibration dataframe with copd deaths categories 5 and 6
-        calibrate_copd_deaths_df['copd_cat5_deaths'] = copd_deaths_cat5
-        calibrate_copd_deaths_df['copd_cat6_deaths'] = copd_deaths_cat6
-
-        # get person days from demography logs. Here we're getting person years for all ages for the simulation period
-        py_ = output['tlo.methods.demography']['person_years']
-        py_ = py_.set_index(py_.date.dt.year).drop(columns='date')
-        tot_py = (
-            (py_.loc[py_.index]['M']).apply(pd.Series) +
-            (py_.loc[py_.index]['F']).apply(pd.Series)
-        )
-
-        # get the total non-copd deaths and add them to copd calibration dataframe
-        all_deaths = model.groupby('year').sum() * 100
-        non_copd_deaths = all_deaths - (copd_deaths_cat5 + copd_deaths_cat6)
-        calibrate_copd_deaths_df['other_deaths'] = non_copd_deaths
-        calibrate_copd_deaths_df['person_years'] = tot_py.sum(axis=1)
-
-        # group years in 5-year period
-        calperiods, calperiodlookup = make_calendar_period_lookup()
-        calibrate_copd_deaths_df = calibrate_copd_deaths_df.reset_index()
-        calibrate_copd_deaths_df['period'] = \
-            calibrate_copd_deaths_df['year'].map(calperiodlookup).astype(make_calendar_period_type())
-        calibrate_copd_deaths_df = calibrate_copd_deaths_df.drop(columns=['year']).groupby('period').sum()
-
-        # add columns for observed data for copd categories 5 and 6
-        calibrate_copd_deaths_df['obs_data_copd_cat5'] = np.nan
-        calibrate_copd_deaths_df['obs_data_copd_cat6'] = np.nan
-
-        # get observed according to copd write-up
-        obs_data_sev_and_v_sev = [15.3, 27.8]
-
-        # update the dataframe with person years data
-        calibrate_copd_deaths_df.loc[['2020-2024'], ['obs_data_copd_cat5', 'obs_data_copd_cat6']] \
-            = [obs_data_sev_and_v_sev[0], obs_data_sev_and_v_sev[1]]
-
-        calibrate_copd_deaths_df['severe_deaths'] = \
-            calibrate_copd_deaths_df.loc[['2020-2024'], 'copd_cat5_deaths'] / \
-            calibrate_copd_deaths_df.loc[['2020-2024'], 'person_years']
-
-        calibrate_copd_deaths_df['v_severe_deaths'] = \
-            calibrate_copd_deaths_df.loc[['2020-2024'], 'copd_cat6_deaths'] \
-            / calibrate_copd_deaths_df.loc[['2020-2024'], 'person_years']
-
-        # do plotting
-        fig, axes = plt.subplots(ncols=2, sharey=True)  # plot setup
-        ncols = 0
-
-        _titles_dict = {'severe_deaths': 'severe',
-                        'v_severe_deaths': 'very severe'}
-        for _key, _title in _titles_dict.items():
-            ax = calibrate_copd_deaths_df.plot.line(ax=axes[ncols],
-                                                    title=f"Rate of death (per 100 per year) by {_title} COPD",
-                                                    y=[_key],
-                                                    marker='^',
-                                                    color='blue',
-                                                    xlabel="Year",
-                                                    ylabel="death rate")
-
-            calibrate_copd_deaths_df.plot.line(
-                y=[f'obs_data_copd_cat{5 + ncols}'],
-                marker='^',
-                color='red',
-                ax=ax
-            )
-            ax.legend(["modal", "observed data"])
-            ncols += 1
-        plt.show()
-
-        # ------- PLOT RELATIVE DEATHS--------
-
-        # add columns for observed data
-        calibrate_copd_deaths_df['obs_data_rr_copd_cat5'] = np.nan
-        calibrate_copd_deaths_df['obs_data_rr_copd_cat6'] = np.nan
-
-        # get observed according to copd write-up
-        obs_data_rr_sev_and_v_sev = [3.5, 6.6]
-
-        # update the dataframe with person years data
-        calibrate_copd_deaths_df.loc[['2020-2024'], ['obs_data_rr_copd_cat5', 'obs_data_rr_copd_cat6']] \
-            = [obs_data_rr_sev_and_v_sev[0], obs_data_rr_sev_and_v_sev[1]]
-
-        # get rate of death for non copd death
-        calibrate_copd_deaths_df['r_other_deaths'] = \
-            calibrate_copd_deaths_df.loc[['2020-2024'], 'other_deaths'] / \
-            calibrate_copd_deaths_df.loc[['2020-2024'], 'person_years']
-
-        # get relative rate of death for severe COPD
-        calibrate_copd_deaths_df['rr_severe_deaths'] = \
-            calibrate_copd_deaths_df.loc[['2020-2024'], 'severe_deaths'] / \
-            calibrate_copd_deaths_df.loc[['2020-2024'], 'r_other_deaths']
-
-        # get relative rate of death very severe COPD
-        calibrate_copd_deaths_df['rr_v_severe_deaths'] = \
-            calibrate_copd_deaths_df.loc[['2020-2024'], 'v_severe_deaths'] / \
-            calibrate_copd_deaths_df.loc[['2020-2024'], 'r_other_deaths']
-
-        # do plotting
-        fig, axes = plt.subplots(ncols=2, sharey=True)  # plot setup
-        ncols = 0
-
-        _titles_dict = {'rr_severe_deaths': 'severe',
-                        'rr_v_severe_deaths': 'very severe'}
-        for _key, _title in _titles_dict.items():
-            ax = calibrate_copd_deaths_df.plot.line(ax=axes[ncols],
-                                                    title=f"relative rate of death according to {_title} COPD",
-                                                    y=[_key],
-                                                    marker='^',
-                                                    color='blue',
-                                                    xlabel="Year",
-                                                    ylabel="death rate")
-
-            calibrate_copd_deaths_df.plot.line(
-                y=[f'obs_data_rr_copd_cat{5 + ncols}'],
-                marker='^',
-                color='red',
-                ax=ax
-            )
-            ax.legend(["modal", "observed data"])
-            ncols += 1
         plt.show()
 
     def rate_of_death_by_lungfunction_category(self):
@@ -378,8 +209,5 @@ copd_analyses = CopdCalibrations(logfile_path=path_to_logfile)
 # plot lung function categories per each category
 copd_analyses.copd_prevalence()
 
-# calibrate copd death rate
-copd_analyses.death_rate()
-
-# Examine rate of daath by lung function
+# Examine rate of death by lung function
 copd_analyses.rate_of_death_by_lungfunction_category()
