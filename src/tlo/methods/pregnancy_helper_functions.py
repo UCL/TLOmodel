@@ -627,6 +627,8 @@ def update_mni_dictionary(self, individual_id):
                               'vesicovaginal_fistula_resolution': pd.NaT,
                               'rectovaginal_fistula_onset': pd.NaT,
                               'rectovaginal_fistula_resolution': pd.NaT,
+                              'date_anc_admission': pd.NaT,
+                              'date_preg_emergency': pd.NaT,
                               'test_run': False,  # used by labour module when running some model tests
                               'pred_syph_infect': pd.NaT,  # date syphilis is predicted to onset
                               'new_onset_spe': False,
@@ -668,6 +670,7 @@ def update_mni_dictionary(self, individual_id):
                             'death_in_labour': False,  # True (T) or False (F)
                             'single_twin_still_birth': False,  # True (T) or False (F)
                             'will_receive_pnc': 'none',
+                            'pnc_date': pd.NaT,
                             'passed_through_week_one': False}
 
         mni[individual_id].update(labour_variables)

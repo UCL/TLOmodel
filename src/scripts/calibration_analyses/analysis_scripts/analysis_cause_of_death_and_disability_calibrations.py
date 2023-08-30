@@ -4,7 +4,7 @@ Produce comparisons between model and GBD of deaths by cause in a particular per
 This uses the results of the Scenario defined in: src/scripts/long_run/long_run.py but it can edited to look at other
 results (change 'scenario_filename').
 """
-
+import argparse
 from pathlib import Path
 
 import numpy as np
@@ -15,7 +15,6 @@ from tlo.analysis.utils import (
     extract_results,
     format_gbd,
     get_color_cause_of_death_or_daly_label,
-    get_scenario_outputs,
     load_pickled_dataframes,
     make_age_grp_lookup,
     make_age_grp_types,
@@ -412,11 +411,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 if __name__ == "__main__":
-    outputspath = Path('./outputs/tbh03@ic.ac.uk')
-    rfp = Path('./resources')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("results_folder", type=Path)
+    args = parser.parse_args()
 
-    # Find results folder (most recent run generated using that scenario_filename)
-    scenario_filename = 'long_run_all_diseases.py'
-    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
-
-    apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
+    apply(
+        results_folder=args.results_folder,
+        output_folder=args.results_folder,
+        resourcefilepath=Path('./resources')
+    )

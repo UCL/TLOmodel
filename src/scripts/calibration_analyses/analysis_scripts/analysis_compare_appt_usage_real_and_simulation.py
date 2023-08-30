@@ -1,3 +1,4 @@
+import argparse
 from pathlib import Path
 
 import matplotlib
@@ -6,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import Date
-from tlo.analysis.utils import extract_results, get_scenario_outputs, summarize
+from tlo.analysis.utils import extract_results, summarize
 
 PREFIX_ON_FILENAME = '4'
 
@@ -31,6 +32,37 @@ appt_dict = {'Under5OPD': 'OPD',
              'MentOPD': 'MentalAll',
              'MentClinic': 'MentalAll'
              }
+
+# appt color for plots
+appt_color_dict = {
+    'OPD': 'lightpink',
+    'IPAdmission': 'palevioletred',
+    'InpatientDays': 'mediumvioletred',
+
+    'U5Malnutr': 'orchid',
+
+    'FamPlan': 'darkseagreen',
+    'AntenatalTotal': 'green',
+    'Delivery': 'limegreen',
+    'Csection': 'springgreen',
+    'EPI': 'paleturquoise',
+    'STI': 'mediumaquamarine',
+
+    'AccidentsandEmerg': 'orange',
+
+    'TBNew': 'yellow',
+
+    'VCTTests': 'lightsteelblue',
+    'NewAdult': 'cornflowerblue',
+    'EstAdult': 'royalblue',
+    'Peds': 'lightskyblue',
+    'PMTCT': 'deepskyblue',
+    'MaleCirc': 'mediumslateblue',
+
+    'MentalAll': 'darkgrey',
+
+    'DentalAll': 'silver',
+}
 
 
 def get_annual_num_appts_by_level(results_folder: Path) -> pd.DataFrame:
@@ -244,9 +276,11 @@ def get_real_usage(resourcefilepath, adjusted=True) -> pd.DataFrame:
     # get facility_level for each record
     real_usage = real_usage.merge(mfl[['Facility_ID', 'Facility_Level']], left_on='Facility_ID', right_on='Facility_ID')
 
-    # adjust annual MentalAll usage using annual reporting rates
-    if adjusted:
-        real_usage = adjust_real_usage_on_mentalall(real_usage)
+    # adjust annual MentalAll usage using annual reporting rates if needed,
+    # for now do not adjust it considering very low reporting rates of Mental Health report
+    # and better match with Model usage
+    # if adjusted:
+    #     real_usage = adjust_real_usage_on_mentalall(real_usage)
 
     # assign date to each record
     real_usage['date'] = pd.to_datetime({'year': real_usage['Year'], 'month': real_usage['Month'], 'day': 1})
@@ -370,6 +404,27 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.plot(_results.index, _results.values, label=_level, linestyle='none', marker=marker_dict[_level])
     ax.axhline(1.0, color='r')
     format_and_save(fig, ax, name_of_plot)
+
+    # Plot two stacked bars for Model and Data to compare the usage of overall and individual appts
+    # format data
+    real_usage_all = real_usage.sum(axis=0).reset_index().rename(columns={0: 'Data'})
+    simulation_usage_all = simulation_usage.sum(axis=0).reset_index().rename(columns={'index': 'Appt_Type', 0: 'Model'})
+    usage_all = simulation_usage_all.merge(real_usage_all, on='Appt_Type', how='inner').melt(
+        id_vars='Appt_Type', value_vars=['Model', 'Data'], var_name='Type', value_name='Value').pivot(
+        index='Type', columns='Appt_Type', values='Value')
+    usage_all = usage_all / 1e6
+
+    # plot
+    name_of_plot = 'Model vs Data on average annual health service volume'
+    fig, ax = plt.subplots()
+    usage_all.plot(kind='bar', stacked=True, color=appt_color_dict, rot=0, ax=ax)
+    ax.set_ylabel('Health service volume in millions')
+    ax.set(xlabel=None)
+    plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Appointment type', fontsize=9)
+    plt.title(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
+    plt.show()
 
     # Plot Simulation with 95% CI vs Adjusted Real usage by appt type, across all levels (trimmed to 0.1 and 10)
     # format data
@@ -545,18 +600,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 if __name__ == "__main__":
-    outputspath = Path('./outputs/bshe@ic.ac.uk')
-    rfp = Path('./resources')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("results_folder", type=Path)
+    args = parser.parse_args()
 
-    # Find results folder (most recent run generated using that scenario_filename)
-    scenario_filename = 'long_run_all_diseases.py'
-    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
-
-    # Test dataset:
-    # results_folder = Path('/Users/tbh03/GitHub/TLOmodel/outputs/tbh03@ic.ac.uk/long_run_all_diseases-small')
-
-    # If needed -- in the case that pickles were not created remotely during batch
-    # create_pickles_locally(results_folder)
-
-    # Run all the calibrations
-    apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
+    apply(
+        results_folder=args.results_folder,
+        output_folder=args.results_folder,
+        resourcefilepath=Path('./resources')
+    )
