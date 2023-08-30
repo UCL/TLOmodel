@@ -9,6 +9,7 @@ include .coveragerc
 include tox.ini
 include tlo.example.conf
 include CITATION.cff
+include LICENSE.txt
 
 exclude .editorconfig
 recursive-exclude .ci *
