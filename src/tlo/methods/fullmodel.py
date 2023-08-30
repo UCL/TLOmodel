@@ -9,6 +9,7 @@ from tlo.methods import (
     cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
+    copd,
     demography,
     depression,
     diarrhoea,
@@ -114,6 +115,7 @@ def fullmodel(
         #  - Injuries
         rti.RTI,
         #  - Other Non-Communicable Conditions
+        copd.Copd,
         depression.Depression,
         epilepsy.Epilepsy,
     ]
