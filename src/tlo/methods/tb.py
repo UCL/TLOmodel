@@ -18,9 +18,9 @@ from tlo.methods.healthsystem import HealthSystemChangeParameters, HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
 
-
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
 
 class Tb(Module):
     """Set up the baseline population with TB prevalence"""
@@ -380,7 +380,7 @@ class Tb(Module):
             Types.REAL,
             "probability of referral to TB screening HSI if presenting with TB-related symptoms"
         ),
-       "scenario_SI": Parameter(
+        "scenario_SI": Parameter(
             Types.STRING,
             "sub-set of scenarios used for sensitivity analysis"
         ),
@@ -801,6 +801,24 @@ class Tb(Module):
                 item_codes=self.item_codes_for_consumables_required['chest_xray']
             )
         )
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            tb_xray_smear_positive_community=DxTest(
+                property="tb_inf",
+                target_categories=["active"],
+                sensitivity=p["sens_xray_smear_positive"],
+                specificity=p["spec_xray_smear_positive"],
+                item_codes=self.item_codes_for_consumables_required['chest_xray']
+            )
+        )
+        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+            tb_xray_smear_negative_community=DxTest(
+                property="tb_inf",
+                target_categories=["active"],
+                sensitivity=p["sens_xray_smear_negative"],
+                specificity=p["spec_xray_smear_negative"],
+                item_codes=self.item_codes_for_consumables_required['chest_xray']
+            )
+        )
 
         # add two further chest xray tests which don't require consumables
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
@@ -950,7 +968,10 @@ class Tb(Module):
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
         # schedule outreach xrays for tb screening from 2023
-        sim.schedule_event(TbCommunityXray(self), self.parameters["outreach_xray_start_date"])
+        # sim.schedule_event(TbCommunityXray(self), self.parameters["outreach_xray_start_date"])
+
+        # un comment the above and delete the below line for reading event schedule date from resourcefile
+        sim.schedule_event(TbCommunityXray(self), sim.date + DateOffset(years=2))
 
         # log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
@@ -1963,12 +1984,14 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         else:
             return ACTUAL_APPT_FOOTPRINT
 
+
 class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
     """
     This is the x-ray HSI
     usually used for testing children unable to produce sputum
     positive result will prompt referral to start treatment
     """
+
     def __init__(self, module, person_id, suppress_footprint=False):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
@@ -2041,12 +2064,14 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         else:
             return ACTUAL_APPT_FOOTPRINT
 
+
 class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
     """
     The is the x-ray HSI performed at level 2
     usually used for testing children unable to produce sputum
     positive result will prompt referral to start treatment
     """
+
     def __init__(self, module, person_id, suppress_footprint=False):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
@@ -2105,6 +2130,8 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({})
         else:
             return ACTUAL_APPT_FOOTPRINT
+
+
 # # ---------------------------------------------------------------------------
 # #   Treatment
 # # ---------------------------------------------------------------------------
@@ -2439,6 +2466,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
                         priority=0,
                     )
 
+
 #
 # class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
 #     """
@@ -2534,7 +2562,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
 #                 tclose=None,
 #                 priority=0,
 #             )
-#revised down
+# revised down
 class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
     """
     * Run a regular event which selects people to be screened in the community
@@ -2542,6 +2570,7 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
     * Everyone equally likely to be selected (independent of symptoms)
     * Excludes people with a current diagnosis of TB
     """
+
     def __init__(self, module):
         self.repeat = 3
         super().__init__(module, frequency=DateOffset(months=self.repeat))
@@ -2572,10 +2601,11 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
             for person_id in screen_idx:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Tb_CommunityXray(person_id=person_id, module=self.module),
-                    topen=now + DateOffset(days=7),
+                    topen=now,
                     tclose=None,
                     priority=0,
                 )
+
 
 class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
     """
@@ -2593,7 +2623,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
         self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = "Tb_Test_ScreeningOutreach"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
         self.ACCEPTED_FACILITY_LEVEL = '0'
 
     def apply(self, person_id, squeeze_factor):
@@ -2636,6 +2666,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
             return ACTUAL_APPT_FOOTPRINT
         print(f'"ENDING COMMUNITY CHEST X-RAY SCREENING"')
 
+
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
     """Helper event that is used to 'decide' if someone on IPT should continue or end
     This event is scheduled by 'HSI_Tb_Start_or_Continue_Ipt' after 6 months
@@ -2671,6 +2702,8 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
                 tclose=self.sim.date + pd.DateOffset(days=14),
                 priority=0,
             )
+
+
 # ---------------------------------------------------------------------------
 #   Deaths
 # ---------------------------------------------------------------------------
@@ -2680,6 +2713,7 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
     check whether this death should occur using a linear model
     will depend on treatment status, smear status and age
     """
+
     def __init__(self, module, person_id, cause):
         super().__init__(module, person_id=person_id)
         self.cause = cause
@@ -2713,6 +2747,8 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
                 cause=self.cause,
                 originating_module=self.module,
             )
+
+
 # ---------------------------------------------------------------------------
 #   Logging
 # ---------------------------------------------------------------------------
