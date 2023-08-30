@@ -23,7 +23,7 @@ setup(
     long_description=re.compile(
         '^.. start-badges.*^.. end-badges', re.M | re.S).sub('', read('README.rst')),
     long_description_content_type="text/x-rst",
-    author='The Thanzi la Onse Team',
+    author='Thanzi La Onse Model Development Team',
     author_email='a.tamuri@ucl.ac.uk',
     url='https://github.com/UCL/TLOmodel',
     packages=find_packages('src'),
