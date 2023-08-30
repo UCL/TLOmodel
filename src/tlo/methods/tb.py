@@ -2576,7 +2576,6 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
                     tclose=None,
                     priority=0,
                 )
-           # return select_for_screening.sum()
 
 class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
     """
@@ -2594,7 +2593,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
         self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = "Tb_Test_ScreeningOutreach"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"ConWithDCSA": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '0'
 
     def apply(self, person_id, squeeze_factor):
