@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
-from tlo import Date, Simulation
+from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file, unflatten_flattened_multi_index_in_logging
 from tlo.methods import (
     copd,
@@ -105,10 +105,10 @@ class CopdCalibrations:
     def rate_of_death_by_lungfunction_category(self):
         """Make the comparison to Alupo P et al. (2021) study. This study found that the rate of COPD death was as
         follows:
-         Persons with Mild COPD Stage: 3.8 deaths per 100 person-years
-         Persons with Moderate COPD Stage: 5.1 deaths per 100 person-years
-         Persons with Severe COPD Stage: 15.3 deaths per 100 person-years
-         Persons with Very Severe COPD Stage: 27.8 deaths per 100 person-years
+         Persons with Mild COPD Stage: 3.8 all-cause deaths per 100 person-years
+         Persons with Moderate COPD Stage: 5.1 all-cause deaths per 100 person-years
+         Persons with Severe COPD Stage: 15.3 all-cause deaths per 100 person-years
+         Persons with Very Severe COPD Stage: 27.8 all-cause deaths per 100 person-years
         We will compare this with fraction of people that die each year, averaged over many years, as an estimate of the
         risk of persons in each stage dying.
         We assume that the disease stages in the model correspond to the study as:
@@ -120,27 +120,35 @@ class CopdCalibrations:
 
         # Get the number of deaths each year in each category of lung function
         output = parse_log_file(self.__logfile_path)  # parse output file
-        demog = output['tlo.methods.demography']['death']  # read deaths from demography module
+        demog = output['tlo.methods.demography.detail']['properties_of_deceased_persons']  # read deaths from demography detail logger
 
-        model = demog.assign(
-            year=lambda x: x['date'].dt.year).groupby(['year', 'sex', 'age', 'cause'])['person_id'].count()
+        # Each death is a row.
+        # For each death work out the lung  function category (none/mild/severe/very severe). Do this by looking at
+        # ... ch_lung_function. Call this "cat"
+        # Then reformat date into year (as already done).
+        # Then do a groupby on year and "cat" and summarize using .count().
+        # Call that copd_deaths... everything else will work.
 
-        # extract copd deaths:
-        copd_deaths = pd.concat(
-            {
-                'mild': (
-                    model.loc[(slice(None), slice(None), slice(None), ['COPD_cat1'])].groupby('year').sum()
-                    + model.loc[(slice(None), slice(None), slice(None), ['COPD_cat2'])].groupby('year').sum()
-                ),
-                'moderate': (
-                    model.loc[(slice(None), slice(None), slice(None), ["COPD_cat3"])].groupby("year").sum()
-                    + model.loc[(slice(None), slice(None), slice(None), ["COPD_cat4"])].groupby("year").sum()
-                ),
-                'severe': model.loc[(slice(None), slice(None), slice(None), ['COPD_cat5'])].groupby('year').sum(),
-                'very_severe': model.loc[(slice(None), slice(None), slice(None), ['COPD_cat6'])].groupby('year').sum(),
-            },
-            axis=1
-        ).fillna(0).astype(float)
+        # DELETE THIS --- ITS ONLY LOOKING AT COPD DEATHS AND NOT ALL DEATHS
+        # model = demog.assign(
+        #     year=lambda x: x['date'].dt.year).groupby(['year', 'sex', 'age', 'cause'])['person_id'].count()
+        #
+        # # extract copd deaths:
+        # copd_deaths = pd.concat(
+        #     {
+        #         'mild': (
+        #             model.loc[(slice(None), slice(None), slice(None), ['COPD_cat1'])].groupby('year').sum()
+        #             + model.loc[(slice(None), slice(None), slice(None), ['COPD_cat2'])].groupby('year').sum()
+        #         ),
+        #         'moderate': (
+        #             model.loc[(slice(None), slice(None), slice(None), ["COPD_cat3"])].groupby("year").sum()
+        #             + model.loc[(slice(None), slice(None), slice(None), ["COPD_cat4"])].groupby("year").sum()
+        #         ),
+        #         'severe': model.loc[(slice(None), slice(None), slice(None), ['COPD_cat5'])].groupby('year').sum(),
+        #         'very_severe': model.loc[(slice(None), slice(None), slice(None), ['COPD_cat6'])].groupby('year').sum(),
+        #     },
+        #     axis=1
+        # ).fillna(0).astype(float)
 
         # Get the number of person each year in each category of lung function (irrespective of sex/age/smokingstatus)
         # average within the year
@@ -157,10 +165,14 @@ class CopdCalibrations:
         # data
         death_rate_per100 = (100 * copd_deaths / prev).mean()
         print(death_rate_per100)
+        # NONE....
         # mild           0.000000   (vs 3.8 in Alupo et al)
         # moderate       0.000000   (vs 5.1 in Alupo et al)
         # severe         1.674310   (vs 15.3 in Alupo et al)
         # very_severe    4.507594   (vs 27.8 in Alupo et al)
+
+        # COMPUTE THE RELATIVE RATES TO NONE
+        rr_rates = death_rate_per100 / death_rate_per100.loc['none']
 
 
 start_date = Date(2010, 1, 1)
@@ -181,6 +193,10 @@ def get_simulation(popsize):
         log_config={
             'filename': 'copd_analyses',
             'directory': outputpath,
+            'custom_logs': {
+                '*': logging.WARNING,
+                'tlo.methods.demography.detail': logging.INFO,
+            }
         },
     )
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
