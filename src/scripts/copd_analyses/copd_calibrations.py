@@ -125,6 +125,7 @@ class CopdCalibrations:
         # Each death is a row.
         # For each death work out the lung  function category (none/mild/severe/very severe). Do this by looking at
         # ... ch_lung_function. Call this "cat"
+        # Drop all deaths among persons aged under 30.
         # Then reformat date into year (as already done).
         # Then do a groupby on year and "cat" and summarize using .count().
         # Call that copd_deaths... everything else will work.
