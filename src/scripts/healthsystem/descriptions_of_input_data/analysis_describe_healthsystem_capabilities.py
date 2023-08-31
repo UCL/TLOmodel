@@ -30,9 +30,10 @@ data_funded_plus = pd.read_csv(wp_funded_plus / 'ResourceFile_Daily_Capabilities
 # MINUTES PER HEALTH OFFICER CATEGORY BY DISTRICT
 data_districts = data.dropna(inplace=False)
 dat = pd.DataFrame(data_districts.groupby(['District', 'Officer_Category'], as_index=False)['Total_Mins_Per_Day'].sum())
+dat['Total_Mins_Per_Day'] = dat['Total_Mins_Per_Day'] / 100000
 tab = dat.pivot(index='District', columns='Officer_Category', values='Total_Mins_Per_Day')
 ax = tab.plot.bar(stacked=True, fontsize='medium')
-plt.ylabel('Average Total Minutes per Day', fontsize='large')
+plt.ylabel('Average Total Minutes per Day in 1e5', fontsize='large')
 plt.xlabel('District', fontsize='large')
 
 ax.legend(ncol=3, bbox_to_anchor=(0, 1),
@@ -43,9 +44,10 @@ plt.savefig(outputpath / 'health_officer_minutes_per_district.pdf', bbox_inches=
 # STAFF COUNTS PER HEALTH OFFICER CATEGORY BY DISTRICT
 data_districts = data.dropna(inplace=False)
 dat = pd.DataFrame(data_districts.groupby(['District', 'Officer_Category'], as_index=False)['Staff_Count'].sum())
+dat['Staff_Count'] = dat['Staff_Count'] / 1000
 tab = dat.pivot(index='District', columns='Officer_Category', values='Staff_Count')
 ax = tab.plot.bar(stacked=True, fontsize='medium')
-plt.ylabel('Staff counts', fontsize='large')
+plt.ylabel('Staff counts in 1e3', fontsize='large')
 plt.xlabel('District', fontsize='large')
 
 ax.legend(ncol=3, bbox_to_anchor=(0, 1),
@@ -56,10 +58,11 @@ plt.savefig(outputpath / 'staff_allocation_per_district.pdf', bbox_inches='tight
 
 # MINUTES PER HEALTH OFFICER CATEGORY BY LEVEL
 dat = pd.DataFrame(data.groupby(['Facility_Level', 'Officer_Category'], as_index=False)['Total_Mins_Per_Day'].sum())
+dat['Total_Mins_Per_Day'] = dat['Total_Mins_Per_Day'] / 100000
 tab = dat.pivot(index='Facility_Level', columns='Officer_Category', values='Total_Mins_Per_Day')
 ax = tab.plot.bar(stacked=True, fontsize='medium')
 # ax = tab.plot.bar(stacked=True, log=True)
-plt.ylabel('Average Total Minutes per Day', fontsize='large')
+plt.ylabel('Average Total Minutes per Day in 1e5', fontsize='large')
 plt.xlabel('Facility level', fontsize='large')
 
 ax.tick_params(axis='x', rotation=0)
@@ -75,10 +78,11 @@ plt.savefig(outputpath / 'health_officer_minutes_per_level.pdf', bbox_inches='ti
 
 # STAFF COUNTS PER HEALTH OFFICER CATEGORY BY LEVEL
 dat = pd.DataFrame(data.groupby(['Facility_Level', 'Officer_Category'], as_index=False)['Staff_Count'].sum())
+dat['Staff_Count'] = dat['Staff_Count'] / 1000
 tab = dat.pivot(index='Facility_Level', columns='Officer_Category', values='Staff_Count')
 ax = tab.plot.bar(stacked=True, fontsize='medium')
 # ax = tab.plot.bar(stacked=True, log=True)
-plt.ylabel('Staff counts', fontsize='large')
+plt.ylabel('Staff counts in 1e3', fontsize='large')
 plt.xlabel('Facility level', fontsize='large')
 
 ax.tick_params(axis='x', rotation=0)
