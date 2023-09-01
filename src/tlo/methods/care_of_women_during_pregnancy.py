@@ -216,6 +216,8 @@ class CareOfWomenDuringPregnancy(Module):
         get_list_of_items = pregnancy_helper_functions.get_list_of_items
 
         # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
+        # TODO: As we now consider both consumables and equipment, using 'equipment' when meaning consumables is
+        #  confusing
         self.item_codes_preg_consumables['blood_test_equipment'] = \
             get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
 
