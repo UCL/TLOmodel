@@ -59,11 +59,15 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
         return {
-            "No Healthcare System": {
-                'HealthSystem': {
-                    'Service_Availability': []
-                },
-            },
+            "No Healthcare System":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {
+                        'HealthSystem': {
+                            'Service_Availability': []
+                        }
+                    },
+                ),
 
             "With Hard Constraints":
                 mix_scenarios(
