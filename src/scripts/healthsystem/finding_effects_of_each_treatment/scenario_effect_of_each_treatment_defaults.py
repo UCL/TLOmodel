@@ -64,7 +64,7 @@ class EffectOfEachTreatment(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        mix_scenarios(
+        return mix_scenarios(
             get_parameters_for_status_quo(),
             {
                 'HealthSystem': {
