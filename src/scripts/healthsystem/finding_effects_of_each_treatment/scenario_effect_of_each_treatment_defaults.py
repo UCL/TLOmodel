@@ -27,7 +27,11 @@ from pathlib import Path
 from typing import Dict, List
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_filtered_treatment_ids
+from tlo.analysis.utils import (
+    get_filtered_treatment_ids,
+    get_parameters_for_status_quo,
+    mix_scenarios,
+)
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
@@ -57,26 +61,18 @@ class EffectOfEachTreatment(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(
-            resourcefilepath=self.resources,
-            module_kwargs={
-                "HealthSystem": {
-                    "mode_appt_constraints": 1,
-                    "use_funded_or_actual_staffing": "actual",
-                },
-                "SymptomManager": {
-                    "spurious_symptoms": True
+        return fullmodel(resourcefilepath=self.resources)
+
+    def draw_parameters(self, draw_number, rng):
+        mix_scenarios(
+            get_parameters_for_status_quo(),
+            {
+                'HealthSystem': {
+                    'Service_Availability': list(self._scenarios.values())[draw_number],
+                    'cons_availability': 'default',
                 },
             }
         )
-
-    def draw_parameters(self, draw_number, rng):
-        return {
-            'HealthSystem': {
-                'Service_Availability': list(self._scenarios.values())[draw_number],
-                'cons_availability': 'default',
-                },
-        }
 
     def _get_scenarios(self) -> Dict[str, List[str]]:
         """Return the Dict with values for the parameter `Service_Availability` keyed by a name for the scenario.
