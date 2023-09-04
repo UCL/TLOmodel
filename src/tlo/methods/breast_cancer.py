@@ -669,6 +669,8 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
 
         # Use a biopsy to diagnose whether the person has breast Cancer:
         # todo: request consumables needed for this
+        self.used_equipment = {'Slice Master sample processing Unit', 'Paraffin Dispense', 'Whatever used with biopsy',
+                               'Mammograph maybe?'}
 
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run='biopsy_for_breast_cancer_given_breast_lump_discernible',
