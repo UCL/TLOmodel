@@ -1743,7 +1743,6 @@ class HealthSystem(Module):
                 squeeze_factor=_squeeze_factor,
                 did_run=did_run,
                 priority=priority,
-                equipment=hsi_event.EQUIPMENT,
             )
 
     def write_to_hsi_log(
