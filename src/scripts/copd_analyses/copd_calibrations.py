@@ -283,15 +283,14 @@ def get_simulation(popsize):
 
 
 # run simulation and store logfile path
-# sim = get_simulation(50000)
-# path_to_logfile = sim.log_filepath
-path_to_logfile = Path('./outputs/copd_analyses__2023-08-24T170704.log')
+sim = get_simulation(50000)
+path_to_logfile = sim.log_filepath
 
 # initialise Copd analyses class
 copd_analyses = CopdCalibrations(logfile_path=path_to_logfile)
 
 # plot lung function categories per each category
-# copd_analyses.copd_prevalence()
+copd_analyses.copd_prevalence()
 
 # Examine rate of death by lung function
 copd_analyses.rate_of_death_by_lungfunction_category()
