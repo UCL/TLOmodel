@@ -28,6 +28,7 @@ def run_profiling(
     write_pyis: bool = True,
     write_html: bool = False,
     write_json: bool = False,
+    interval: float = 1e-1,
 ) -> None:
     # Suppress "ignore" warnings
     warnings.filterwarnings("ignore")
@@ -52,7 +53,7 @@ def run_profiling(
     # combining the recorded sessions into one at the end.
     # As such, the same profiler can be used to record the profile of multiple scripts,
     # however this may create large datafiles so using separate profilers is preferable
-    p = Profiler(interval=1e-1)
+    p = Profiler(interval=interval)
 
     print(f"[{current_time('%H:%M:%S')}:INFO] Starting profiling runs")
 
@@ -115,6 +116,14 @@ if __name__ == "__main__":
         type=Path,
         help="Name to give to the output file(s). File extensions will automatically appended.",
         default=None,
+    )
+    parser.add_argument(
+        "-i",
+        "--interval-seconds",
+        dest="interval",
+        type=float,
+        help="Interval in seconds between capture frames for profiling.",
+        default=1e-1,
     )
 
     args = parser.parse_args()
