@@ -182,6 +182,7 @@ class HSI_Event:
         self._received_info_about_bed_days = None
         self.expected_time_requests = {}
         self.facility_info = None
+        self.used_equipment = set()
 
     @property
     def bed_days_allocated_to_this_event(self):
@@ -1740,6 +1741,7 @@ class HealthSystem(Module):
                 squeeze_factor=_squeeze_factor,
                 did_run=did_run,
                 priority=priority,
+                equipment=hsi_event.used_equipment,
             )
 
     def write_to_hsi_log(
@@ -1750,6 +1752,7 @@ class HealthSystem(Module):
         squeeze_factor: float,
         did_run: bool,
         priority: int,
+        equipment: set,
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         logger.debug(
@@ -1779,6 +1782,7 @@ class HealthSystem(Module):
                 squeeze_factor=squeeze_factor,
                 appt_footprint=event_details.appt_footprint,
                 level=event_details.facility_level,
+                equipment=equipment,
             )
 
     def call_and_record_never_ran_hsi_event(self, hsi_event, priority=None):
@@ -2601,6 +2605,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     squeeze_factor=0.0,
                     priority=-1,
                     did_run=True,
+                    equipment=set()  # TODO: explore more, should it be non-emtpy in some cases?
                 )
 
         # Restart the total footprint of all calls today, beginning with those due to existing in-patients.
@@ -2655,6 +2660,7 @@ class HealthSystemSummaryCounter:
         self._appts = defaultdict(int)  # Running record of the Appointments of `HSI_Event`s that have run
         self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
         # <--Same as `self._appts` but also split by facility_level
+        self._equip_by_level = {_level: set() for _level in ('0', '1a', '1b', '2', '3', '4')}
 
         # Log HSI_Events that never ran to monitor shortcoming of Health System
         self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
@@ -2671,7 +2677,8 @@ class HealthSystemSummaryCounter:
                          hsi_event_name: str,
                          squeeze_factor: float,
                          appt_footprint: Counter,
-                         level: str
+                         level: str,
+                         equipment: set
                          ) -> None:
         """Add information about an `HSI_Event` to the running summaries."""
 
@@ -2687,6 +2694,9 @@ class HealthSystemSummaryCounter:
         for appt_type, number in appt_footprint:
             self._appts[appt_type] += number
             self._appts_by_level[level][appt_type] += number
+
+        # Update used equipment by level
+        self._equip_by_level[level].update(equipment)
 
     def record_never_ran_hsi_event(self,
                                    treatment_id: str,
@@ -2747,6 +2757,14 @@ class HealthSystemSummaryCounter:
             data={
                 "average_Frac_Time_Used_Overall": np.mean(self._frac_time_used_overall),
                 # <-- leaving space here for additional summary measures that may be needed in the future.
+            },
+        )
+
+        logger_summary.info(
+            key="Equipment",
+            description="Sets of used equipment for each facility level in this calendar year.",
+            data={
+                "Equipment_By_Level": self._equip_by_level,
             },
         )
 
