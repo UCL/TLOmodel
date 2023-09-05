@@ -2782,8 +2782,8 @@ class HealthSystemChangePriorityPolicyAndMode(RegularEvent, PopulationScopeEvent
         super().__init__(module, frequency=DateOffset(years=100))
 
     def apply(self, population):
-        
-        # Change mode_appt_constraints  
+
+        # Change mode_appt_constraints
         self.module.mode_appt_constraints = self.module.parameters["mode_appt_constraints_postSwitch"]
 
         # If policy has changed, update it
