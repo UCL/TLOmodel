@@ -1350,13 +1350,12 @@ class CareOfWomenDuringPregnancy(Module):
             self.sim.schedule_event(EctopicPregnancyRuptureEvent(
                 self.sim.modules['PregnancySupervisor'], individual_id), self.sim.date + DateOffset(days=7))
 
-    def inpatient_care_doesnt_run(self, hsi_event):
+    def inpatient_care_doesnt_run(self, individual_id):
         """
         This function is called within HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare if the event cannot
         run/the intervention cannot be delivered.
-        :param hsi_event: HSI event in which the function has been called
+        :param individual_id: target of HSI event in which the function has been called
         """
-        individual_id = hsi_event.target
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
@@ -2378,7 +2377,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             mni[person_id]['delay_three'] = False
 
     def never_ran(self):
-        self.module.inpatient_care_doesnt_run(self)
+        self.module.inpatient_care_doesnt_run(self.target)
 
     def did_not_run(self):
         pass
