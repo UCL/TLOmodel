@@ -871,10 +871,9 @@ class HealthSystem(Module):
             self.healthsystemscheduler = HealthSystemScheduler(self)
             sim.schedule_event(self.healthsystemscheduler, sim.date)
 
-        # Schedule priority policy change
-        if self.parameters["policy_name"] != self.parameters["policy_name_post_switch"]:
-            sim.schedule_event(HealthSystemChangePriorityPolicy(self),
-                               Date(self.parameters["year_policy_switch"], 1, 1))
+        # Schedule priority policy and mode_appt_constraints change
+        sim.schedule_event(HealthSystemChangePriorityPolicyAndMode(self),
+                           Date(self.parameters["year_policy_switch"], 1, 1))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -2775,7 +2774,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             self.module.bed_days.availability = self._parameters['beds_availability']
 
 
-class HealthSystemChangePriorityPolicy(RegularEvent, PopulationScopeEventMixin):
+class HealthSystemChangePriorityPolicyAndMode(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to change the priority policy adopted by the
     HealthSystem at a given year.    """
 
@@ -2783,13 +2782,21 @@ class HealthSystemChangePriorityPolicy(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=100))
 
     def apply(self, population):
-        self.module.priority_policy = self.module.parameters["policy_name_post_switch"]
+        
+        # Change mode_appt_constraints  
         self.module.mode_appt_constraints = self.module.parameters["mode_appt_constraints_postSwitch"]
-        if self.module.priority_policy != "":
-            self.module.load_priority_policy(self.module.priority_policy)
+
+        # If policy has changed, update it
+        if self.module.parameters["policy_name"] != self.module.parameters["policy_name_post_switch"]:
+            self.module.priority_policy = self.module.parameters["policy_name_post_switch"]
+            if self.module.priority_policy != "":
+                self.module.load_priority_policy(self.module.priority_policy)
+        print("Switched to ", self.module.mode_appt_constraints)
         logger.info(key="message",
                     data=f"Switched policy at sim date: "
-                         f"{self.service_availability}"
+                         f"{self.sim.date}"
                          f"Now using policy: "
                          f"{self.module.priority_policy}"
+                         f"and mode: "
+                         f"{self.module.mode_appt_constraints}"
                     )
