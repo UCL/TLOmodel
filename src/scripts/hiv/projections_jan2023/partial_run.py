@@ -29,10 +29,10 @@ class ImpactOfTbDaHx(BaseScenario):
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2012, 12, 31)
-        self.pop_size = 5000
+        self.pop_size = 500
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 4
+        self.runs_per_draw = 10
 
     def log_configuration(self):
         return {
@@ -72,28 +72,30 @@ class ImpactOfTbDaHx(BaseScenario):
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
         return {
+        # baseline scenario
             "Baseline": {
                 'Tb': {
                     'scenario': 0,
-                    'probability_community_chest_xray': 0.0,
+                   # 'probability_community_chest_xray': 0.0,
                     'probability_access_to_xray': 0.1,
-
                    # 'scaling_factor_WHO': 80.9,
                 },
             },
+        # overrides availability of Xpert
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                    'probability_community_chest_xray': 0.0,
+                  #  'probability_community_chest_xray': 0.0,
                     'probability_access_to_xray': 0.1,
                    # 'scaling_factor_WHO': 80.9,
                 },
             },
+            # overrides availability of CXR
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
                     'probability_access_to_xray': 0.0,
-                    'probability_community_chest_xray': 0.0,
+                   # 'probability_community_chest_xray': 0.0,
                    # 'scaling_factor_WHO': 80.9,
                 },
             },
@@ -101,28 +103,73 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                     'scenario': 0,
                     'probability_access_to_xray': 0.11,
+                     'probability_community_chest_xray': 0.0,
+                    #'scaling_factor_WHO': 80.9,
+                }
+            },
+            # increases probability of access to CXR by 10%
+            "CXR scaleup10": {
+                'Tb': {
+                    'scenario': 0,
+                    'probability_access_to_xray': 0.11,
                     'probability_community_chest_xray': 0.0,
-                   # 'scaling_factor_WHO': 80.9,
+                    #'scaling_factor_WHO': 80.9,
+                }
+            },
+            # increases probability of access to CXR by 15%
+            "CXR scaleup15": {
+                'Tb': {
+                    'scenario': 0,
+                    'probability_access_to_xray': 0.15,
+                    'probability_community_chest_xray': 0.0,
+                  #  'scaling_factor_WHO': 80.9,
+                }
+            },
+            # increases probability of access to CXR by 20%
+            "CXR scaleup20": {
+                'Tb': {
+                    'scenario': 0,
+                    'probability_access_to_xray': 0.2,
+                    'probability_community_chest_xray': 0.0,
+                    #'scaling_factor_WHO': 80.9,
                 }
             },
             "Outreach services": {
                 'Tb': {
                     'scenario': 0,
-                    'probability_community_chest_xray': 0.1,
+                     'probability_community_chest_xray': 0.1,
                     'probability_access_to_xray': 0.1
                    # 'scaling_factor_WHO': 80.9,
                 }
             },
+            # increases probability of access to CXR by 15%
+            "Outreach services15": {
+                'Tb': {
+                    'scenario': 0,
+                    'probability_community_chest_xray': 0.15,
+                    'probability_access_to_xray': 0.1
+                    # 'scaling_factor_WHO': 80.9,
+                }
+            },
+            # increases probability of access to CXR by 20%
+            "Outreach services20": {
+                'Tb': {
+                    'scenario': 0,
+                    'probability_community_chest_xray': 0.20,
+                    'probability_access_to_xray': 0.1
+                    # 'scaling_factor_WHO': 80.9,
+                }
+            },
+            # increases probability of access to CXR by 25%
+            "Outreach services25": {
+                'Tb': {
+                    'scenario': 0,
+                    'probability_community_chest_xray': 0.25,
+                    'probability_access_to_xray': 0.1
+                    # 'scaling_factor_WHO': 80.9,
+                }
+            },
         }
-
-       #  "Outreach services10": {
-            #    'Tb': {
-            #        'scenario': 0,
-           #         'probability_community_chest_xray': 0.1,
-           #        # 'scaling_factor_WHO': 80.9,
-           #     }
-        #    },
-    #    }
 
 if __name__ == '__main__':
     from tlo.cli import scenario_run

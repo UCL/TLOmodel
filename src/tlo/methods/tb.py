@@ -402,7 +402,7 @@ class Tb(Module):
         p = self.parameters
 
         # assume cases distributed equally across districts
-        p["who_incidence_estimates"] = workbook["WHO_activeTB2023"]
+        p["who_incidence_estimates"] = workbook["WHO_activeTBoveride"]
 
         # use NTP reported treatment rates as testing rates (perfect referral)
         p["rate_testing_active_tb"] = workbook["NTP2019"]
@@ -964,8 +964,10 @@ class Tb(Module):
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
         # schedule outreach xrays for tb screening from 2023
-        sim.schedule_event(TbCommunityXray(self), self.parameters["outreach_xray_start_date"])
+       # sim.schedule_event(TbCommunityXray(self), self.parameters["outreach_xray_start_date"])
 
+        # schedule outreach xrays for tb screening to begin from 2010 just like tthe sim date- will be removed from actual sim
+        sim.schedule_event(TbCommunityXray(self), sim.date)
         # log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
 
@@ -1476,7 +1478,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         # sets availability of xray
         if scenario == 2:
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {175: 0.0})
+                {175: 1.1})
 
 
 # ######################################################

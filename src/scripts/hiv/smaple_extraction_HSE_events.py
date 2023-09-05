@@ -94,10 +94,10 @@ HSExxx = HSE_sample.set_index("date")
 print("Health system events as follows",HSExxx)
 HSExxx.to_excel(outputpath / "HSExx.xlsx")
 
-HSEvents = output["tlo.methods.healthsystem.summary"]["HSI_Event"]
-HSEvents = HSEvents.set_index("date")
-print("Health system events as follows",HSEvents)
-HSEvents.to_excel(outputpath / "HSEvents.xlsx")
+HSEvents1 = output["tlo.methods.healthsystem.summary"]["HSI_Event"]
+HSEvent1 = HSEvents1.set_index("date")
+print("Health system events as follows",HSEvents1)
+HSEvents1.to_excel(outputpath / "HSEvents1.xlsx")
 
 #HSE_keys = output['tlo.methods.healthsystem.summary'].keys()
 #HSE = output['tlo.methods.healthsystem.summary']['Consumables'].drop(columns=[])

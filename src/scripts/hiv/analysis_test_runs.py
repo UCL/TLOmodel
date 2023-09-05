@@ -78,8 +78,8 @@ sim.register(
 )
 
 # set the scenario
-sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.5
-sim.modules["Tb"].parameters["outreach_xray_start_date"] = Date(2010, 1, 1)
+sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.001
+#sim.modules["Tb"].parameters["outreach_xray_start_date"] = Date(2010, 1, 1)
 
 
 # Run the simulation and flush the logger
@@ -99,11 +99,11 @@ output = parse_log_file(sim.log_filepath)
 #     output = pickle.load(f)
 
 # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
-with open(outputpath / "default_run0509.pickle", "wb") as f:
+with open(outputpath / "default_run0509x.pickle", "wb") as f:
     # Pickle the 'data' dictionary using the highest protocol available.
     pickle.dump(dict(output), f, pickle.HIGHEST_PROTOCOL)
 
 # load the results
-with open(outputpath / "default_run0509.pickle", "rb") as f:
+with open(outputpath / "default_run0509x.pickle", "rb") as f:
     output = pickle.load(f)
 
