@@ -764,7 +764,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, "brc_stage_at_which_treatment_given"] = df.at[person_id, "brc_status"]
 
         # Record used equipment
-        self.used_equipment = 'Anything used for mastectomy as I guess this is about'
+        self.used_equipment = {'Anything used for mastectomy as I guess this is about'}
 
         # Schedule a post-treatment check for 12 months:
         hs.schedule_hsi_event(
