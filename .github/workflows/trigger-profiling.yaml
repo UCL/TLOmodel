@@ -2,6 +2,9 @@ name: Trigger Profiling
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
   # Allow profiling to be triggered by comments on pull requests
   # Trigger is /run profiling
   issue_comment:
