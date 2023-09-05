@@ -1,17 +1,19 @@
 name: Trigger Profiling
 
 on:
-  # Allow profiling to run on dispatch at request
   workflow_dispatch:
   # Allow profiling to be triggered by comments on pull requests
   # Trigger is /run profiling
   issue_comment:
-    - created
+    types:
+      - created
 
 jobs:
   not-comment-triggered:
+    runs-on: self-hosted
+    if: github.event_name != 'issue_comment'
+    steps:
     - name: Run profiling when not triggered by a comment
-      if: github.event_name != 'issue_comment'
       uses: ./.github/workflows/run-profiling.yaml
       with:
         event-name: ${{ github.event_name }}
