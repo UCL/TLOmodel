@@ -79,7 +79,7 @@ sim.register(
 
 # set the scenario
 sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.001
-#sim.modules["Tb"].parameters["outreach_xray_start_date"] = Date(2010, 1, 1)
+sim.modules["Tb"].parameters["outreach_xray_start_date"] = Date(2010, 1, 1)
 
 
 # Run the simulation and flush the logger

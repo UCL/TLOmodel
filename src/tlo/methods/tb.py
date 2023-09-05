@@ -402,7 +402,7 @@ class Tb(Module):
         p = self.parameters
 
         # assume cases distributed equally across districts
-        p["who_incidence_estimates"] = workbook["WHO_activeTBoveride"]
+        p["who_incidence_estimates"] = workbook["WHO_activeTB2023"]
 
         # use NTP reported treatment rates as testing rates (perfect referral)
         p["rate_testing_active_tb"] = workbook["NTP2019"]
@@ -1478,7 +1478,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         # sets availability of xray
         if scenario == 2:
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {175: 1.1})
+                {175: 0.0})
 
 
 # ######################################################
