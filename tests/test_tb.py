@@ -655,6 +655,9 @@ def test_ipt_to_child_of_tb_mother(seed):
     # allow HS to run and queue events
     sim = get_sim(seed, use_simplified_birth=True, disable_HS=False, ignore_con_constraints=True)
 
+    # allow IPT to be given on_birth prior to 2014
+    sim.modules['Tb'].parameters['ipt_start_date'] = 2010
+
     # make IPT protection against active disease perfect
     sim.modules['Tb'].parameters['rr_ipt_child'] = 0.0
 
