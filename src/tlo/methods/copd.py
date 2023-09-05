@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Dict, List
 
-import numpy as np
 import pandas as pd
 
 from tlo import Module, Parameter, Property, Types, logging
@@ -19,12 +18,16 @@ logger.setLevel(logging.INFO)
 
 ch_lungfunction_cats = list(range(7))
 
+gbd_causes_of_copd_represented_in_this_module = {
+    'Chronic obstructive pulmonary disease',
+}
+
 
 class Copd(Module):
     """The module responsible for determining Chronic Obstructive Pulmonary Diseases (COPD) status and outcomes.
      and initialises parameters and properties associated with COPD plus functions and events related to COPD."""
 
-    INIT_DEPENDENCIES = {'SymptomManager', }
+    INIT_DEPENDENCIES = {'SymptomManager', 'Lifestyle'}
     ADDITIONAL_DEPENDENCIES = set()
 
     METADATA = {
@@ -34,14 +37,10 @@ class Copd(Module):
         Metadata.USES_HEALTHBURDEN,
     }
 
-    gbd_causes_of_copd_represented_in_this_module = {
-        'Other chronic respiratory diseases',
-    }
-
     CAUSES_OF_DEATH = {
         # Chronic Obstructive Pulmonary Diseases
-        'COPD': Cause(gbd_causes=sorted(gbd_causes_of_copd_represented_in_this_module),
-                      label='COPD')
+        f'COPD_cat{lung_f_category}': Cause(gbd_causes=sorted(gbd_causes_of_copd_represented_in_this_module),
+                                            label='COPD') for lung_f_category in ch_lungfunction_cats
     }
 
     CAUSES_OF_DISABILITY = {
@@ -51,27 +50,75 @@ class Copd(Module):
     }
 
     PARAMETERS = {
+        'prob_mod_exacerb': Parameter(
+            Types.LIST, 'probability of moderate exacerbation given lung function, for each lung function category. '
+        ),
+        'prob_sev_exacerb': Parameter(
+            Types.LIST, 'probability of severe exacerbation given lung function, for each lung function category.'
+        ),
         'prob_progress_to_next_cat': Parameter(
             Types.REAL, 'probability of changing from a lower lung function category to a higher lung function category'
         ),
-        'prob_mod_exacerb': Parameter(
-            Types.LIST, 'probability of moderate exacerbation given lung function, for each lungfunction category. '
+
+        'prob_will_die_sev_exacerbation_ge80': Parameter(
+            Types.REAL, 'probability that a person equal to or greater than 80 years will die of severe exacerbation '
         ),
-        'prob_sev_exacerb': Parameter(
-            Types.LIST, 'probability of severe exacerbation given lung function, for each lungfunction category.'
+        'prob_will_die_sev_exacerbation_7079': Parameter(
+            Types.REAL, 'probability that a person between 70 to 79 years will die of severe exacerbation '
         ),
-        'prob_will_die_sev_exacerbation': Parameter(
-            Types.REAL, 'probability that a person will die of severe exacerbation '
+        'prob_will_die_sev_exacerbation_6069': Parameter(
+            Types.REAL, 'probability that a person between 60 to 99 years will die of severe exacerbation '
         ),
-        'prob_will_survive_given_oxygen': Parameter(
-            Types.REAL, 'probability that an individual with severe copd will not die when given oxygen '
+        'prob_will_die_sev_exacerbation_5059': Parameter(
+            Types.REAL, 'probability that a person between 50 to 59 years will die of severe exacerbation '
+        ),
+        'prob_will_die_sev_exacerbation_4049': Parameter(
+            Types.REAL, 'probability that a person between 40 to 49 years will die of severe exacerbation '
+        ),
+        'prob_will_die_sev_exacerbation_3039': Parameter(
+            Types.REAL, 'probability that a person between 30 to 39 years will die of severe exacerbation '
+        ),
+        'prob_will_die_sev_exacerbation_lt30': Parameter(
+            Types.REAL, 'probability that a person less than 30 years will die of severe exacerbation '
+        ),
+
+        'eff_oxygen': Parameter(
+            Types.REAL, 'the effect of oxygen on individuals with severe exacerbation '
+        ),
+        'rel_risk_progress_per_higher_cat': Parameter(
+            Types.REAL, 'relative risk of progression to the next higher level of lung function for each higher level '
+        ),
+        'rel_risk_tob': Parameter(
+            Types.REAL, 'relative effect of tobacco on the rate of lung function progression'
+        ),
+        'rel_risk_wood_burn_stove': Parameter(
+            Types.REAL, 'relative risk of wood burn stove on the rate of lung function progression'
+        ),
+        'prob_not_tob_lung_func_15_39': Parameter(
+            Types.LIST, 'probability of lung function categories in individuals aged 15-39 and do not smoke tobacco'
+        ),
+        'prob_not_tob_lung_func_40_59': Parameter(
+            Types.LIST, 'probability of lung function categories in individuals aged 40-59 and do not smoke tobacco'
+        ),
+        'prob_not_tob_lung_func_gr59': Parameter(
+            Types.LIST, 'probability of lung function categories in individuals aged 60+ and do not smoke tobacco'
+        ),
+
+        'prob_tob_lung_func_15_39': Parameter(
+            Types.LIST, 'probability of lung function categories in individuals aged 15-39 who smoke tobacco'
+        ),
+        'prob_tob_lung_func_40_59': Parameter(
+            Types.LIST, 'probability of lung function categories in individuals aged 40-59 who smoke tobacco'
+        ),
+        'prob_tob_lung_func_gr59': Parameter(
+            Types.LIST, 'probability of lung function categories in individuals aged 60+ who smoke tobacco'
         )
     }
 
     PROPERTIES = {
         'ch_lungfunction': Property(
             Types.CATEGORICAL, 'Lung function of the person.'
-                               'NaN for those under 15; on a 7-point scale for others, from 0 (Perfect) to 6 (End-Stage'
+                               '0 for those under 15; on a 7-point scale for others, from 0 (Perfect) to 6 (End-Stage'
                                ' COPD).', categories=ch_lungfunction_cats, ordered=True,
         ),
         'ch_will_die_this_episode': Property(
@@ -141,7 +188,7 @@ class Copd(Module):
         self.item_codes = {
             'bronchodilater_inhaler': 293,
             'steroid_inhaler': 294,
-            'oxygen': 301,
+            'oxygen': 127,
             'aminophylline': 292,
             'amoxycillin': 125,
             'prednisolone': 291
@@ -150,8 +197,7 @@ class Copd(Module):
     def do_logging(self):
         """Log current states."""
         df = self.sim.population.props
-        counts = df.loc[df.is_alive].groupby(by=['sex', 'age_range', 'ch_lungfunction']).size()
-        # proportions = counts.unstack().apply(lambda row: row / row.sum(), axis=1).stack()
+        counts = df.loc[df.is_alive].groupby(by=['sex', 'age_range', 'li_tob', 'ch_lungfunction']).size()
         logger.info(
             key='copd_prevalence',
             description='Proportion of alive persons in each COPD category currently (by age and sex)',
@@ -193,78 +239,137 @@ class CopdModels:
         # The chance (in a 3-month period) of progressing to the next (greater) category of ch_lungfunction
         self.__Prob_Progress_LungFunction__ = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            self.params['prob_progress_to_next_cat']
+            self.params['prob_progress_to_next_cat'],
+            Predictor(
+                'ch_lungfunction'
+            ).when(0, (self.params['rel_risk_progress_per_higher_cat'] ** 0))
+            .when(1, (self.params['rel_risk_progress_per_higher_cat'] ** 1))
+            .when(2, (self.params['rel_risk_progress_per_higher_cat'] ** 2))
+            .when(3, (self.params['rel_risk_progress_per_higher_cat'] ** 3))
+            .when(4, (self.params['rel_risk_progress_per_higher_cat'] ** 4))
+            .when(5, (self.params['rel_risk_progress_per_higher_cat'] ** 5)),
+            Predictor(
+                'li_tob'
+            ).when(True, self.params['rel_risk_tob']),
+            Predictor('li_wood_burn_stove').when(True, self.params['rel_risk_wood_burn_stove'])
         )
-
         # The probability (in a 3-month period) of having a Moderate Exacerbation
         self.__Prob_ModerateExacerbation__ = LinearModel.multiplicative(
             Predictor(
-                'ch_lungfunction',
-                conditions_are_exhaustive=True,
-                conditions_are_mutually_exclusive=True
+                'ch_lungfunction'
             ).when(0, self.params['prob_mod_exacerb'][0])
-             .when(1, self.params['prob_mod_exacerb'][1])
-             .when(2, self.params['prob_mod_exacerb'][2])
-             .when(3, self.params['prob_mod_exacerb'][3])
-             .when(4, self.params['prob_mod_exacerb'][4])
-             .when(5, self.params['prob_mod_exacerb'][5])
-             .when(6, self.params['prob_mod_exacerb'][6])
+            .when(1, self.params['prob_mod_exacerb'][1])
+            .when(2, self.params['prob_mod_exacerb'][2])
+            .when(3, self.params['prob_mod_exacerb'][3])
+            .when(4, self.params['prob_mod_exacerb'][4])
+            .when(5, self.params['prob_mod_exacerb'][5])
+            .when(6, self.params['prob_mod_exacerb'][6])
         )
 
         # The probability (in a 3-month period) of having a Severe Exacerbation
         self.__Prob_SevereExacerbation__ = LinearModel.multiplicative(
             Predictor(
-                'ch_lungfunction',
-                conditions_are_exhaustive=True,
-                conditions_are_mutually_exclusive=True
+                'ch_lungfunction'
             ).when(0, self.params['prob_sev_exacerb'][0])
-             .when(1, self.params['prob_sev_exacerb'][1])
-             .when(2, self.params['prob_sev_exacerb'][2])
-             .when(3, self.params['prob_sev_exacerb'][3])
-             .when(4, self.params['prob_sev_exacerb'][4])
-             .when(5, self.params['prob_sev_exacerb'][5])
-             .when(6, self.params['prob_sev_exacerb'][6])
+            .when(1, self.params['prob_sev_exacerb'][1])
+            .when(2, self.params['prob_sev_exacerb'][2])
+            .when(3, self.params['prob_sev_exacerb'][3])
+            .when(4, self.params['prob_sev_exacerb'][4])
+            .when(5, self.params['prob_sev_exacerb'][5])
+            .when(6, self.params['prob_sev_exacerb'][6])
+        )
+
+        self.__Prob_Will_Die_SevereExacerbation__ = LinearModel.multiplicative(
+            Predictor(
+                'age_years'
+            ).when('>=80', self.params['prob_will_die_sev_exacerbation_ge80'])
+            .when('.between(70, 79)', self.params['prob_will_die_sev_exacerbation_7079'])
+            .when('.between(60, 69)', self.params['prob_will_die_sev_exacerbation_6069'])
+            .when('.between(50, 59)', self.params['prob_will_die_sev_exacerbation_5059'])
+            .when('.between(40, 49)', self.params['prob_will_die_sev_exacerbation_4049'])
+            .when('.between(30, 39)', self.params['prob_will_die_sev_exacerbation_3039'])
+            .when('<30', self.params['prob_will_die_sev_exacerbation_lt30'])
+        )
+        self.__Prob_OxygenEffect_On_Mortality__ = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            self.params['eff_oxygen'],
+            Predictor(
+                'age_years'
+            ).when('>=80', self.params['prob_will_die_sev_exacerbation_ge80'])
+            .when('.between(70, 79)', self.params['prob_will_die_sev_exacerbation_7079'])
+            .when('.between(60, 69)', self.params['prob_will_die_sev_exacerbation_6069'])
+            .when('.between(50, 59)', self.params['prob_will_die_sev_exacerbation_5059'])
+            .when('.between(40, 49)', self.params['prob_will_die_sev_exacerbation_4049'])
+            .when('.between(30, 39)', self.params['prob_will_die_sev_exacerbation_3039'])
+            .when('<30', self.params['prob_will_die_sev_exacerbation_lt30'])
         )
 
     def init_lung_function(self, df: pd.DataFrame) -> pd.Series:
-        """Returns the values for ch_lungfunction for an initial population described in `df`."""
-        # For over-15s, random selection of ch_lungfunction
-        idx_over15 = df.index[df.age_years >= 15]
+        """Returns the values for ch_lungfunction for an initial population described in `df`
+        """
+        # store lung function categories
         cats = ch_lungfunction_cats
-        probs = np.ones(len(cats)) / len(cats)
-        cats_for_over15s = dict(zip(idx_over15, self.rng.choice(cats, p=probs, size=len(idx_over15))))
+
+        # lung function categories for non-smokers
+        idx_15_39_not_tob = df.index[(df.age_years.between(15, 39)) & ~df.li_tob]
+        cats_15_39_not_tob = dict(
+            zip(idx_15_39_not_tob, self.rng.choice(cats, p=self.params['prob_not_tob_lung_func_15_39'],
+                                                   size=len(idx_15_39_not_tob))))
+
+        idx_40_59_not_tob = df.index[(df.age_years.between(40, 59)) & ~df.li_tob]
+        cats_40_59_not_tob = dict(
+            zip(idx_40_59_not_tob, self.rng.choice(cats, p=self.params['prob_not_tob_lung_func_40_59'],
+                                                   size=len(idx_40_59_not_tob))))
+
+        idx_gr59_not_tob = df.index[(df.age_years >= 60) & ~df.li_tob]
+        cats_gr59_not_tob = dict(
+            zip(idx_gr59_not_tob, self.rng.choice(cats, p=self.params['prob_not_tob_lung_func_gr59'],
+                                                  size=len(idx_gr59_not_tob))))
+
+        # lung function categories for smokers
+        idx_15_39_tob = df.index[(df.age_years.between(15, 39)) & df.li_tob]
+        cats_15_39_tob = dict(zip(idx_15_39_tob, self.rng.choice(cats, p=self.params['prob_tob_lung_func_15_39'],
+                                                                 size=len(idx_15_39_tob))))
+
+        idx_40_59_tob = df.index[(df.age_years.between(40, 59)) & df.li_tob]
+        cats_40_59_tob = dict(zip(idx_40_59_tob, self.rng.choice(cats, p=self.params['prob_tob_lung_func_40_59'],
+                                                                 size=len(idx_40_59_tob))))
+
+        idx_gr59_tob = df.index[(df.age_years >= 60) & df.li_tob]
+        cats_gr59_tob = dict(zip(idx_gr59_tob, self.rng.choice(cats, p=self.params['prob_tob_lung_func_gr59'],
+                                                               size=len(idx_gr59_tob))))
 
         # For under-15s, assign the category that would be given at birth
         idx_notover15 = df.index[df.age_years < 15]
         cats_for_under15s = {idx: self.at_birth_lungfunction(idx) for idx in idx_notover15}
 
-        return pd.Series(index=df.index, data={**cats_for_over15s, **cats_for_under15s})
+        return pd.Series(index=df.index, data={**cats_for_under15s, **cats_15_39_not_tob, **cats_40_59_not_tob,
+                                               **cats_gr59_not_tob, **cats_15_39_tob, **cats_40_59_tob, **cats_gr59_tob
+                                               })
 
     def at_birth_lungfunction(self, person_id: int) -> int:
-        """Returns value for ch_lungfunction for the person at birth."""
+        """ Returns value for ch_lungfunction for the person at birth."""
         return 0
 
-    def prob_livesaved_given_treatment(self, oxygen: bool, amino_phylline: bool):
-        """Returns the probability that a treatment prevents death during an exacerbation, according to the treatment
-        provided (oxygen and/or amino_phylline)"""
-        if oxygen and amino_phylline:
-            return self.params['prob_will_survive_given_oxygen']
-        elif oxygen:
-            return self.params['prob_will_survive_given_oxygen']
+    def prob_livesaved_given_treatment(self, df: pd.DataFrame, oxygen: bool, aminophylline: bool):
+        """ Returns the probability that a treatment prevents death during an exacerbation, according to the treatment
+        provided (we're considering oxygen only as there is no evidence of a mortality benefits on aminophylline) """
+        if oxygen:
+            return self.__Prob_OxygenEffect_On_Mortality__.predict(df, self.rng)
         else:
-            return 0.0
+            return False
 
     @property
     def disability_weight_given_lungfunction(self) -> Dict:
-        """Returns `dict` with the mapping between a lung_function and a disability weight"""
+        """ Returns `dict` with the mapping between a lung_function and a disability weight """
         return {
             0: 0.0,
             1: 0.0,
             2: 0.0,
-            3: 0.2,
-            4: 0.3,
-            5: 0.6,
-            6: 0.7,
+            3: 0.0,
+            4: 0.02,
+            5: 0.2,
+            6: 0.4,
         }
 
     def will_progres_to_next_cat_of_lungfunction(self, df: pd.DataFrame) -> List:
@@ -286,10 +391,10 @@ class CopdModels:
         will_get_ex = self.__Prob_SevereExacerbation__.predict(df, self.rng, squeeze_single_row_output=False)
         return will_get_ex[will_get_ex].index.to_list()
 
-    def will_die_given_severe_exacerbation(self) -> bool:
-        """Return bool indicating if a person will die due to a severe exacerbation."""
-        death_rate_prob = self.params['prob_will_die_sev_exacerbation']
-        return self.rng.random_sample() < death_rate_prob
+    def will_die_given_severe_exacerbation(self, df: pd.DataFrame) -> bool:
+        """Return bool indicating if a person will die due to a severe exacerbation.
+        :param df: pandas dataframe """
+        return self.__Prob_Will_Die_SevereExacerbation__.predict(df, self.rng)
 
 
 def eligible_to_progress_to_next_lung_function(df: pd.DataFrame) -> pd.Series:
@@ -346,7 +451,6 @@ class CopdPollEvent(RegularEvent, PopulationScopeEventMixin):
         """ make individuals progress to a next higher lung function """
         idx_will_progress_to_next_category = self.module.models.will_progres_to_next_cat_of_lungfunction(
             df.loc[eligible_to_progress_to_next_lung_function(df)])
-
         df.loc[idx_will_progress_to_next_category, 'ch_lungfunction'] = self.increment_category(
             df.loc[idx_will_progress_to_next_category, 'ch_lungfunction'])
 
@@ -362,8 +466,8 @@ class CopdExacerbationEvent(Event, IndividualScopeEventMixin):
         self.severe = severe
 
     def apply(self, person_id):
-
-        if not self.sim.population.props.at[person_id, 'is_alive']:
+        df = self.sim.population.props
+        if not df.at[person_id, 'is_alive']:
             return
 
         # Onset symptom (that will auto-resolve in two days)
@@ -377,8 +481,8 @@ class CopdExacerbationEvent(Event, IndividualScopeEventMixin):
 
         if self.severe:
             # Work out if the person will die of this exacerbation (if not treated). If they die, they die the next day.
-            if self.module.models.will_die_given_severe_exacerbation():
-                self.sim.population.props.at[person_id, "ch_will_die_this_episode"] = True
+            if self.module.models.will_die_given_severe_exacerbation(df.iloc[[person_id]]):
+                df.at[person_id, "ch_will_die_this_episode"] = True
                 self.sim.schedule_event(CopdDeath(self.module, person_id), self.sim.date + pd.DateOffset(days=1))
 
 
@@ -391,23 +495,30 @@ class CopdDeath(Event, IndividualScopeEventMixin):
         super().__init__(module, person_id=person_id)
 
     def apply(self, person_id):
-        person = self.sim.population.props.loc[person_id, ['is_alive', 'ch_will_die_this_episode']]
-        # Check if they should still die and, if so, cause the death
+        df = self.sim.population.props
+        person = df.loc[person_id, ['is_alive', 'age_years', 'ch_will_die_this_episode', 'ch_lungfunction']]
+        # Check if an individual should still die and, if so, cause the death
         if person.is_alive and person.ch_will_die_this_episode:
             self.sim.modules['Demography'].do_death(
                 individual_id=person_id,
-                cause='COPD',
+                cause=f'COPD_cat{person.ch_lungfunction}',
                 originating_module=self.module,
             )
 
 
 class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixin):
+    """ HSI event for issuing treatment to all individuals with severe exacerbation. We first check the availability of
+    oxygen at the default facility(1a). If no oxygen is found we refer individuals to the next higher level facility
+    until either we find oxygen or we are at the highest facility level. Here facility levels are ["1a", "1b", "2"]"""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
+        self.facility_levels_index = 0  # an index to facility levels
+        self.all_facility_levels = ["1a", "1b", "2"]  # available facility levels
+
         self.TREATMENT_ID = "Copd_Treatment"
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = self.all_facility_levels[self.facility_levels_index]
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
 
@@ -416,11 +527,21 @@ class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixi
          * Provide treatment: whatever is available at this facility at this time (no referral).
         """
         df = self.sim.population.props
+        if not self.get_consumables(self.module.item_codes['oxygen']):
+            # refer to the next higher facility if the current facility has no oxygen
+            self.facility_levels_index += 1
+            if self.facility_levels_index >= len(self.all_facility_levels):
+                return
+            self.ACCEPTED_FACILITY_LEVEL = self.all_facility_levels[self.facility_levels_index]
+            self.sim.modules['HealthSystem'].schedule_hsi_event(self, topen=self.sim.date, priority=0)
 
-        # Give oxygen and AminoPhylline, if possible, ... and cancel death if the treatment is successful.
-        prob_treatment_success = self.module.models.prob_livesaved_given_treatment(
-            oxygen=self.get_consumables(self.module.item_codes['oxygen']),
-            amino_phylline=self.get_consumables(self.module.item_codes['aminophylline'])
-        )
-        if self.module.rng.random_sample() < prob_treatment_success:
-            df.at[person_id, 'ch_will_die_this_episode'] = False
+        else:
+            # Give oxygen and AminoPhylline, if possible, ... and cancel death if the treatment is successful.
+            prob_treatment_success = self.module.models.prob_livesaved_given_treatment(
+                df=df.iloc[[person_id]],
+                oxygen=self.get_consumables(self.module.item_codes['oxygen']),
+                aminophylline=self.get_consumables(self.module.item_codes['aminophylline'])
+            )
+
+            if prob_treatment_success:
+                df.at[person_id, 'ch_will_die_this_episode'] = False

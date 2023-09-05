@@ -1,0 +1,36 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: The Thanzi La Onse Model
+version: 1.0.0
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - name: Thanzi La Onse Model Development Team
+    address: >-
+      Imperial College London; University College London;
+      Kamuzu University of Health Sciences; University of
+      York
+    website: https://www.tlomodel.org/authors.html
+repository-code: 'https://github.com/UCL/TLOmodel'
+url: 'https://tlomodel.org'
+abstract: >-
+  Our fundamental aim is to develop the use of
+  epidemiological and economic science to effect a
+  step-change in the way that health priorities are
+  addressed through policy interventions in low-income
+  countries. We are doing this by developing a model that
+  represents explicitly the generation of health gains in a
+  population, which can be used to examine the effect of
+  resource allocation, management and clinical practice, in
+  order to contribute to informing decision-making.
+keywords:
+  - Epidemiology
+  - Healthcare Systems
+  - Health-Economics
+  - Simulation Modelling
+  - Individual-based Modelling
+license: MIT
