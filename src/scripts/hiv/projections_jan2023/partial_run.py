@@ -29,7 +29,7 @@ class ImpactOfTbDaHx(BaseScenario):
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2012, 12, 31)
-        self.pop_size = 500
+        self.pop_size = 5000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 4
@@ -76,9 +76,8 @@ class ImpactOfTbDaHx(BaseScenario):
             "Baseline": {
                 'Tb': {
                     'scenario': 0,
-                   # 'probability_community_chest_xray': 0.0,
-                   # 'probability_access_to_xray': 0.1,
-                   # 'scaling_factor_WHO': 80.9,
+                   #'probability_community_chest_xray' : 0.0,
+                   #'probability_access_to_xray': 0.1,
                 },
             },
         # overrides availability of Xpert
@@ -87,25 +86,21 @@ class ImpactOfTbDaHx(BaseScenario):
                     'scenario': 1,
                   #  'probability_community_chest_xray': 0.0,
                   #  'probability_access_to_xray': 0.1,
-                   # 'scaling_factor_WHO': 80.9,
                 },
             },
             # overrides availability of CXR
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
-               #     'probability_access_to_xray': 0.0,
-                   # 'probability_community_chest_xray': 0.0,
-                   # 'scaling_factor_WHO': 80.9,
+                  #'probability_access_to_xray': 0.0,
+                  #'probability_community_chest_xray': 0.0,
                 },
             },
-            "CXR scaleup": {
+            "CXR scale_up": {
                 'Tb': {
-                    'scenario': 0,
-                    'override_availability_of_consumables': {175: 1.1},
+                    'scenario': 3,
                     #'probability_access_to_xray': 0.11,
-               #      'probability_community_chest_xray' : 0.0,
-                    #'scaling_factor_WHO': 80.9,
+                   # 'probability_community_chest_xray': 0.01,
                 }
             },
             # # increases probability of access to CXR by 10%
@@ -139,7 +134,7 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                     'scenario': 0,
                      'probability_community_chest_xray': 0.01,
-                 #   'probability_access_to_xray': 0.1
+                  #  'probability_access_to_xray': 0.1
                    # 'scaling_factor_WHO': 80.9,
                 }
             },
