@@ -38,7 +38,7 @@ jobs:
     needs: run-profiling
     steps:
       - name: Download the profiling results
-        uses: actions/download-artifact
+        uses: actions/download-artifact@v3
         with:
           name: profiling_${{ github.run-number }}
           path: profiling_results
