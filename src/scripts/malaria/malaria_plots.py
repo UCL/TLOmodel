@@ -298,12 +298,12 @@ ax = plt.subplot(111)  # numrows, numcols, fignum
 plt.plot(MAP_mort.Year, MAP_mort.mortality_rate_median * 100_000, color="crimson")  # MAP data
 plt.fill_between(
     MAP_mort.Year, MAP_mort.mortality_rate_LCI * 100_000, MAP_mort.mortality_rate_UCI * 100_000,
- color="crimson", alpha=0.5
+    color="crimson", alpha=0.5
 )
 plt.plot(WHO_data.Year, WHO_data.MortalityRatePer100_000, color="seagreen")  # WHO data
 plt.fill_between(
     WHO_data.Year, WHO_data.MortalityRatePer100_000Low, WHO_data.MortalityRatePer100_000_High,
- color="seagreen", alpha=0.5
+    color="seagreen", alpha=0.5
 )
 plt.plot(
     x_labels[t_mask], deaths_rate_100kpy[t_mask], color="blue")  # model
