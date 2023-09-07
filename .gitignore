@@ -47,6 +47,10 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
+# Profiling results files
+src/scripts/profiling/results/
+results/
+
 # Translations
 *.mo
 *.pot
