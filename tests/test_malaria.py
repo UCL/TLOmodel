@@ -731,4 +731,3 @@ def test_linear_model_for_clinical_malaria(sim):
 
     # make sure person 0 not assigned clinical or severe malaria
     assert df.at[person_id, "ma_inf_type"] not in ["clinical", "severe"]
-

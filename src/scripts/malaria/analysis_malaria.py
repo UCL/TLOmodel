@@ -11,15 +11,15 @@ from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
     demography,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    malaria,
     hiv,
-    tb,
+    malaria,
     simplified_births,
     symptommanager,
-    epi,
+    tb,
 )
 
 t0 = time.time()
