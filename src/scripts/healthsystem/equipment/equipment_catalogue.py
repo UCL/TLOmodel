@@ -1,8 +1,9 @@
 import argparse
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
+
 from tlo.analysis.utils import extract_results
-from functools import reduce
 
 
 def get_annual_equipment_declarations_by_levels(results_folder: Path) -> pd.DataFrame:
