@@ -10,12 +10,15 @@ from tlo.methods import (
     demography,
     diarrhoea,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     malaria,
     simplified_births,
     symptommanager,
+    tb,
 )
 from tlo.methods.healthsystem import HSI_Event
 
@@ -54,7 +57,10 @@ def sim(seed):
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath)
+        malaria.Malaria(resourcefilepath=resourcefilepath),
+        tb.Tb(resourcefilepath=resourcefilepath),
+        hiv.Hiv(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
     )
     return sim
 
@@ -703,7 +709,6 @@ def test_population_testing_and_treatment(sim):
 
 
 def test_linear_model_for_clinical_malaria(sim):
-
     # -------------- Perfect protection through IPTp -------------- #
     # set perfect protection for IPTp against clinical malaria - no cases should occur
     sim.modules['Malaria'].parameters['rr_clinical_malaria_iptp'] = 0
