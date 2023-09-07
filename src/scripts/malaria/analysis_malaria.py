@@ -15,8 +15,11 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     malaria,
+    hiv,
+    tb,
     simplified_births,
     symptommanager,
+    epi,
 )
 
 t0 = time.time()
@@ -31,8 +34,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2026, 1, 1)
-popsize = 50
+end_date = Date(2025, 1, 1)
+popsize = 2000
 
 # set up the log config
 log_config = {
@@ -40,7 +43,9 @@ log_config = {
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
+        "tlo.methods.demography": logging.INFO,
         "tlo.methods.malaria": logging.INFO,
+        "tlo.methods.hiv": logging.INFO,
         "tlo.methods.healthsystem.summary": logging.INFO,
     },
 }
@@ -54,7 +59,7 @@ sim.register(
     healthsystem.HealthSystem(
         resourcefilepath=resourcefilepath,
         service_availability=["*"],
-        mode_appt_constraints=2,
+        mode_appt_constraints=1,
         cons_availability='default',
         ignore_priority=True,
         capabilities_coefficient=1.0,
@@ -66,12 +71,19 @@ sim.register(
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
     malaria.Malaria(
         resourcefilepath=resourcefilepath,
+    ),
+    tb.Tb(
+        resourcefilepath=resourcefilepath,
+    ),
+    hiv.Hiv(
+        resourcefilepath=resourcefilepath,
+    ),
+    epi.Epi(
+        resourcefilepath=resourcefilepath,
     )
 )
 
 # Run the simulation and flush the logger
-sim.modules["HealthSeekingBehaviour"].parameters["prob_non_emergency_care_seeking_by_level"] = [0.13, 0.54, 0.24, 0.09]
-
 sim.make_initial_population(n=popsize)
 sim.simulate(end_date=end_date)
 
