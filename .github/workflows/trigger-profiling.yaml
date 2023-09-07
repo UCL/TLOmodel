@@ -96,8 +96,8 @@ jobs:
       id: get_comment_bot_token
       uses: peter-murray/workflow-application-token-action@e8782d687a306fb13d733244d0f2a50e272d3752
       with:
-        application_id: ${{ secrets.application-id }}
-        application_private_key: ${{ secrets.application-private-key }}
+        application_id: ${{ secrets.COMMENT_BOT_APP_ID }}
+        application_private_key: ${{ secrets.COMMENT_BOT_APP_PRIVATE_KEY }}
         organization: ${{ inputs.application-organization }}
     - name: Create comment with test result and link to workflow run information
       if: always() && steps.has_permissions.outputs.result == 'true'
