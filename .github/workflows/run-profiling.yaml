@@ -24,7 +24,7 @@ jobs:
           UNIQUE_ID=${GITHUB_EVENT_NAME}_${GITHUB_RUN_NUMBER}_${GITHUB_SHA} >> $GITHUB_ENV
           tox -vv -e profile -- --output_name ${UNIQUE_ID}
 
-      ## Upload the output as an artifact so we can push it to the results directory
+      ## Upload the output as an artifact so we can push it to the profiling repository
       - name: Save results as artifact
         uses: actions/upload-artifact@v3
         with:
