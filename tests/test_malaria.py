@@ -138,7 +138,10 @@ def test_remove_malaria_test(seed):
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath)
+        malaria.Malaria(resourcefilepath=resourcefilepath),
+        tb.Tb(resourcefilepath=resourcefilepath),
+        hiv.Hiv(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
     )
     # Run the simulation and flush the logger
     sim.make_initial_population(n=2000)
