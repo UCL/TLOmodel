@@ -700,3 +700,35 @@ def test_population_testing_and_treatment(sim):
         tx_appt.apply(person_id=person, squeeze_factor=0.0)
 
     assert df["ma_tx_counter"].sum() == pop
+
+
+def test_linear_model_for_clinical_malaria(sim):
+
+    # -------------- Perfect protection through IPTp -------------- #
+    # set perfect protection for IPTp against clinical malaria - no cases should occur
+    sim.modules['Malaria'].parameters['rr_clinical_malaria_iptp'] = 0
+
+    # Run the simulation and flush the logger
+    sim.make_initial_population(n=10)
+    # simulate for 0 days, just get everything set up (dxtests etc)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+
+    # make the whole population infected with parasitaemia
+    # and therefore eligible for clinical/severe malaria poll
+    df.loc["ma_is_infected"] = True
+    df.loc["ma_date_infected"] = sim.date
+    df.loc["ma_inf_type"] = "asym"
+
+    # select person and assign properties
+    person_id = 0
+    df.loc[person_id, ["ma_is_infected", "age_years", "is_pregnant", "ma_iptp"]] = (False, 1, True, True)
+
+    # run malaria poll
+    pollevent = sim.modules['Malaria'].malaria_poll2(population=df)
+    pollevent.run()
+
+    # make sure person 0 not assigned clinical or severe malaria
+    assert df.at[person_id, "ma_inf_type"] not in ["clinical", "severe"]
+
