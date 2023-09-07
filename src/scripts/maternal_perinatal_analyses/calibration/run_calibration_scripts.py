@@ -9,4 +9,3 @@ for file in ['baseline_scenario-2023-07-17T153309Z']:
        pop_size='250k',
        outputspath='./outputs/sejjj49@ucl.ac.uk/',
        sim_years=list(range(2010, 2023)))
-

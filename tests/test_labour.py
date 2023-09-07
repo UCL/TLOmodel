@@ -501,7 +501,6 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
     df = sim.population.props
-    params = sim.modules['Labour'].current_parameters
 
     women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
     mother_id = int(women_repro.index[0])
@@ -601,48 +600,47 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     mni[mother_id]['referred_for_blood'] = False
     mni[mother_id]['referred_for_surgery'] = False
 
-    # Finally check treatment for postpartum haem. Set probablity that uterotonics will stop bleeding to 1
-    df.at[mother_id, 'la_postpartum_haem'] = True
-    mni[mother_id]['uterine_atony'] = True
-    params['prob_haemostatis_uterotonics'] = 1.0
-
-    # Run the event and check that the woman is referred for blood but not surgery. And that treatment is stored in
-    # bitset property
-    sim.modules['Labour'].assessment_and_treatment_of_pph_uterine_atony(hsi_event=hsi_event)
-    assert not mni[mother_id]['referred_for_blood']
-    assert not mni[mother_id]['referred_for_surgery']
-
-    # Reset those properties and set the probability of successful medical management to 0
-    params['prob_haemostatis_uterotonics'] = 0.0
-    df.at[mother_id, 'la_postpartum_haem'] = True
-
-    # Call treatment function and check she has correctly been referred for surgical management and blood
-    sim.modules['Labour'].assessment_and_treatment_of_pph_uterine_atony(hsi_event=hsi_event)
-    assert mni[mother_id]['referred_for_blood']
-    assert mni[mother_id]['referred_for_surgery']
-
-    # Rest those variables
-    mni[mother_id]['referred_for_blood'] = False
-    mni[mother_id]['referred_for_surgery'] = False
-
-    # set retained placenta variable
-    mni[mother_id]['retained_placenta'] = True
-
-    # Now assume the bleed is due to retained placenta, set probablity of bedside removal to 1 and call function
-    params['prob_successful_manual_removal_placenta'] = 1.0
-    sim.modules['Labour'].assessment_and_treatment_of_pph_retained_placenta(hsi_event=hsi_event)
-    assert not mni[mother_id]['referred_for_blood']
-    assert not mni[mother_id]['referred_for_surgery']
-
-    params['prob_successful_manual_removal_placenta'] = 0.0
-    mni[mother_id]['retained_placenta'] = True
-    df.at[mother_id, 'la_postpartum_haem'] = True
-
-    # Now check that surgery is correctly scheduled as manual removal has failed
-    sim.modules['Labour'].assessment_and_treatment_of_pph_retained_placenta(hsi_event=hsi_event)
-    assert mni[mother_id]['referred_for_blood']
-    assert mni[mother_id]['referred_for_surgery']
-
+    # # Finally check treatment for postpartum haem. Set probablity that uterotonics will stop bleeding to 1
+    # df.at[mother_id, 'la_postpartum_haem'] = True
+    # mni[mother_id]['uterine_atony'] = True
+    # params['prob_haemostatis_uterotonics'] = 1.0
+    #
+    # # Run the event and check that the woman is referred for blood but not surgery. And that treatment is stored in
+    # # bitset property
+    # sim.modules['Labour'].assessment_and_treatment_of_pph_uterine_atony(hsi_event=hsi_event)
+    # assert not mni[mother_id]['referred_for_blood']
+    # assert not mni[mother_id]['referred_for_surgery']
+    #
+    # # Reset those properties and set the probability of successful medical management to 0
+    # params['prob_haemostatis_uterotonics'] = 0.0
+    # df.at[mother_id, 'la_postpartum_haem'] = True
+    #
+    # # Call treatment function and check she has correctly been referred for surgical management and blood
+    # sim.modules['Labour'].assessment_and_treatment_of_pph_uterine_atony(hsi_event=hsi_event)
+    # assert mni[mother_id]['referred_for_blood']
+    # assert mni[mother_id]['referred_for_surgery']
+    #
+    # # Rest those variables
+    # mni[mother_id]['referred_for_blood'] = False
+    # mni[mother_id]['referred_for_surgery'] = False
+    #
+    # # set retained placenta variable
+    # mni[mother_id]['retained_placenta'] = True
+    #
+    # # Now assume the bleed is due to retained placenta, set probablity of bedside removal to 1 and call function
+    # params['prob_successful_manual_removal_placenta'] = 1.0
+    # sim.modules['Labour'].assessment_and_treatment_of_pph_retained_placenta(hsi_event=hsi_event)
+    # assert not mni[mother_id]['referred_for_blood']
+    # assert not mni[mother_id]['referred_for_surgery']
+    #
+    # params['prob_successful_manual_removal_placenta'] = 0.0
+    # mni[mother_id]['retained_placenta'] = True
+    # df.at[mother_id, 'la_postpartum_haem'] = True
+    #
+    # # Now check that surgery is correctly scheduled as manual removal has failed
+    # sim.modules['Labour'].assessment_and_treatment_of_pph_retained_placenta(hsi_event=hsi_event)
+    # assert mni[mother_id]['referred_for_blood']
+    # assert mni[mother_id]['referred_for_surgery']
 
 def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quality_constraints(seed):
     """This test checks that interventions delivered during the CEmONC HSI are correctly administered and

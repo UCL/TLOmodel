@@ -460,22 +460,24 @@ def test_analysis_events_force_availability_of_consumables_for_pnc_analysis(seed
     df.at[mother_id, 'la_date_most_recent_delivery'] = sim.date
     mni[mother_id]['will_receive_pnc'] = 'early'
 
+    # This MNI variable blocks death being calculated which resets treatment variables - therfore setting as true
+    # allows for test on treatment variables after the event runs
+    mni[mother_id]['referred_for_surgery'] = True
+
     # set some complications
-    df.at[mother_id, 'la_postpartum_haem'] = True
-    mni[mother_id]['uterine_atony'] = True
-    params['prob_haemostatis_uterotonics'] = 1.0
+    df.at[mother_id, 'la_sepsis_pp'] = True
 
     module = sim.modules['Labour']
-    pph = module.item_codes_lab_consumables['pph_core']
+    sep_cons = module.item_codes_lab_consumables['maternal_sepsis_core']
 
-    for item in pph:
+    for item in sep_cons:
         sim.modules['HealthSystem'].override_availability_of_consumables({item: 0.0})
 
     # refresh the consumables
     sim.modules['HealthSystem'].consumables._refresh_availability_of_consumables(date=sim.date)
 
     hsi_event = get_dummy_hsi(sim, mother_id, id=3, fl=2)
-    for cons in pph:
+    for cons in sep_cons:
         available = hsi_event.get_consumables(item_codes=cons)
         assert not available
 
@@ -489,8 +491,7 @@ def test_analysis_events_force_availability_of_consumables_for_pnc_analysis(seed
 
     pnc.apply(person_id=mother_id, squeeze_factor=0.0)
 
-    assert not df.at[mother_id, 'la_postpartum_haem']
-    assert not mni[mother_id]['uterine_atony']
+    assert df.at[mother_id, 'la_sepsis_treatment']
 
 
 def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed):
