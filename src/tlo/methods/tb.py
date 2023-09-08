@@ -1479,10 +1479,10 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 2:
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {175: 0.0})
-        #increases probability of accessing chest xray by 10%
+        #increases probability of accessing chest xray by 20%
         if scenario == 3:
-                 self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                        {175: 0.11})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                 {175: 0.2})
 
 
 # ######################################################
