@@ -84,14 +84,14 @@ class ImpactOfTbDaHx(BaseScenario):
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                     'probability_access_to_xray': 0.0,
+                   #  'probability_access_to_xray': 0.0,
                 },
             },
             # overrides availability of CXR
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
-                    'probability_community_chest_xray': 0.0,
+                   # 'probability_community_chest_xray': 0.0,
                 },
             },
             "CXR scale_up": {
@@ -131,7 +131,7 @@ class ImpactOfTbDaHx(BaseScenario):
             "Outreach services": {
                 'Tb': {
                     'scenario': 0,
-                     'probability_community_chest_xray': 0.2,
+                     'probability_community_chest_xray': 0.1,
                 }
             },
         }
