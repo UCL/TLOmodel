@@ -125,8 +125,6 @@ def test_care_seeking_for_babies_delivered_at_home_who_develop_complications(see
     hsi_events = find_and_return_hsi_events_list(sim, child_id)
     assert newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck in hsi_events
 
-    # todo: normal twin birth logic
-
 
 def test_twin_and_single_twin_still_birth_logic_for_twins(seed):
     """Test that for women who experience a single twin stillbirth only produce one newborn child as expected"""
@@ -289,9 +287,6 @@ def test_on_birth_applies_risk_of_complications_and_death_in_term_newborns_deliv
     assert not sim.population.props.at[child_id, 'nb_preterm_respiratory_distress']
     assert (sim.population.props.at[child_id, 'nb_retinopathy_prem'] == 'none')
 
-    # hsi_events_child_one = find_and_return_hsi_events_list(sim, child_id)
-    # assert newborn_outcomes.HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth not in hsi_events_child_one
-
 
 def test_on_birth_applies_risk_of_complications_and_death_in_preterm_newborns_delivered_at_home_correctly(seed):
     """Test that for preterm neonates (who are at risk of a different complication set) that born at home and develop
@@ -435,9 +430,3 @@ def test_newborn_postnatal_check_hsi_delivers_treatment_as_expected(seed):
     assert sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['tetra_eye_d']
     assert sim.modules['NewbornOutcomes'].newborn_care_info[child_id]['vit_k']
     assert sim.population.props.at[child_id, 'nb_kangaroo_mother_care']
-
-
-# todo: test breastfeeding logic
-# todo: test daly output
-# todo: hsi did_not_run behaves as expected
-# todo:treatment blocks death (?)"""

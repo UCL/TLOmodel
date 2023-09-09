@@ -24,9 +24,7 @@ class NewbornOutcomes(Module):
     this model include low birth weight and small for gestational age. Complications modelled include early-onset
     neonatal sepsis, neonatal encephalopathy, congenital birth anomalies, failure to breathe at birth and complications
     of prematurity (respiratory distress syndrome and retinopathy) This module also manages any interventions that are
-    delivered by skilled birth  attendants to newborns following a facility delivery via
-    HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth and interventions delivered as part of postnatal care
-    via HSI_NewbornOutcomes_ReceivesPostnatalCheck.
+    delivered as part of postnatal care via HSI_NewbornOutcomes_ReceivesPostnatalCheck.
     """
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
@@ -550,7 +548,7 @@ class NewbornOutcomes(Module):
     def apply_risk_of_neonatal_infection_and_sepsis(self, child_id):
         """
         This function uses the linear model to determines if a neonate will develop early onset neonatal sepsis.
-        It is called during the on_birth function or during HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAt
+        It is called during the on_birth function or during HSI_NewbornOutcomes_ReceivesPostnatalCheck
         Birth dependent on delivery setting.
         :param child_id: child_id
         """
@@ -567,8 +565,7 @@ class NewbornOutcomes(Module):
         """
         This function determines if a neonate will develop neonatal encephalopathy on birth or after birth
         (if they were not breathing), at what severity, and makes the appropriate changes to the data frame.
-         It is called during the on_birth function or  during HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAt
-         Birth dependent on delivery setting.
+         It is called during the on_birth function.
         :param child_id: child_id
         :param timing: on_birth or after_birth
         """
@@ -604,8 +601,7 @@ class NewbornOutcomes(Module):
     def apply_risk_of_preterm_respiratory_distress_syndrome(self, child_id):
         """
         This function uses the linear model to determine if a preterm neonate will develop respiratory distress
-        syndrome. It is called during the on_birth function or during
-        HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth
+        syndrome. It is called during the on_birth function.
         dependent on delivery setting.
         :param child_id: child_id
         """
@@ -626,8 +622,7 @@ class NewbornOutcomes(Module):
     def apply_risk_of_not_breathing_at_birth(self, child_id):
         """
         This function uses the linear model to determines if a neonate will not sufficiently initiate breathing at birth
-         and makes the appropriate changes to the data frame. It is called during the on_birth function or
-        during HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant dependent on delivery setting.
+         and makes the appropriate changes to the data frame. It is called during the on_birth.
         :param child_id: child_id
         """
         df = self.sim.population.props
@@ -838,8 +833,7 @@ class NewbornOutcomes(Module):
         """
         This function contains interventions delivered as part of 'essential newborn care'. These include clean birth
         practices, cord care, vitamin k and eye care
-        :param hsi_event:  The HSI event in which this function is called
-        (HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant)
+        :param hsi_event:  The HSI event in which this function is called (HSI_NewbornOutcomes_ReceivesPostnatalCheck)
         """
         df = self.sim.population.props
         nci = self.newborn_care_info
@@ -864,9 +858,7 @@ class NewbornOutcomes(Module):
     def breast_feeding(self, person_id, birth_setting):
         """
         This function is used to set breastfeeding status for newborns. It schedules the BreastfeedingStatusUpdateEvent
-        for breastfed newborns. It is called during the
-        on_birth function or during HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant dependent on delivery
-        setting.
+        for breastfed newborns. It is called during the on_birth function.
         :param person_id: person_id
         :param birth_setting: hf (health facility) or hb (home birth)
         """
@@ -910,7 +902,7 @@ class NewbornOutcomes(Module):
     def kangaroo_mother_care(self, hsi_event):
         """
         This function manages the diagnosis and treatment of low birth weight neonates who have
-        delivered in a facility. It is called by the HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant.
+        delivered in a facility. It is called by the HSI_NewbornOutcomes_ReceivesPostnatalCheck.
         The intervention delivered is Kangaroo Mother Care (KMC) which includes skin-to-skin nursing and encouragement
         of frequent and exclusive breastfeeding
         :param hsi_event: The HSI event in which this function is called
@@ -941,19 +933,19 @@ class NewbornOutcomes(Module):
             if not df.at[child_id, 'hv_diagnosed']:
 
                 if df.at[child_id, 'nb_pnc_check'] == 1:
-                    for days in 0, 41: # todo: change too 6wks, 9mnths, 18mnths
+                    for days in 0, 41:
                         self.sim.modules['HealthSystem'].schedule_hsi_event(
                             HSI_Hiv_TestAndRefer(person_id=child_id, module=self.sim.modules['Hiv']),
                             topen=self.sim.date + pd.DateOffset(days=days),
-                            tclose=None,  # todo: add referred from argument, add that condition
+                            tclose=None,
                             priority=0
                         )
 
     def apply_effect_of_neonatal_resus(self, person_id):
         """
         This function manages the diagnosis of failure to transition/encephalopathy and the administration of neonatal
-        resuscitation for neonates delivered in a facility. It is called by the HSI_NewbornOutcomes_CareOfTheNewborn
-        BySkilledAttendant.
+        resuscitation for neonates delivered in a facility. It is called by the on_birth function depending on if a
+        mother delivered in a facility
         :param hsi_event: The HSI event in which this function is called
         (HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant)
         """
@@ -975,11 +967,9 @@ class NewbornOutcomes(Module):
     def assessment_and_treatment_newborn_sepsis(self, hsi_event, facility_type):
         """
         This function manages the treatment of early onset neonatal sepsis for neonates delivered in a facility.
-         It is called by the
-        HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant. Treatment for sepsis includes either injectable
+         It is called by the HSI_NewbornOutcomes_ReceivesPostnatalCheck. Treatment for sepsis includes either injectable
          antibiotics or full supportive care (antibiotics, fluids, oxygen etc) and varies between facility level.
-        :param hsi_event: The HSI event in which this function is called
-        (HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant)
+        :param hsi_event: The HSI event in which this function is called - HSI_NewbornOutcomes_ReceivesPostnatalCheck
         :param facility_type: health centre (hc) or hospital (hp)
         """
         df = self.sim.population.props
@@ -1020,7 +1010,7 @@ class NewbornOutcomes(Module):
     def link_twins(self, child_one, child_two, mother_id):
         """
         This function links twin pairs via sibling IDs and is called by the BirthEvent in the Labour module
-        :param child_one: individual_id of the first born child in a twin pair
+        :param child_one: individual_id of the first-born child in a twin pair
         :param child_two: individual_id of the second born child in a twin pair
         :param mother_id: individual_id of the mother of the twin pair
         """
@@ -1092,14 +1082,12 @@ class NewbornOutcomes(Module):
         """The on_birth function of this module sets key properties of all newborns, including prematurity
         status and schedules functions to set weight and size. For newborns delivered at home it determines if they will
         experience complications following birth (early onset sepsis, encephalopathy, failure to transition) and if
-        these complications will lead to death or disability .For newborns delivered in facility it schedules
-        HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant which represents the care newborns should receive
-        after being delivered in a facility.
+        these complications will lead to death or disability .For newborns who will receive early PNC this function
+        also scheduled HSI_NewbornOutcomes_ReceivesPostnatalCheck.
         :param mother_id: mother_id
         :param child_id: child_id
         """
         df = self.sim.population.props
-        params = self.current_parameters
         nci = self.newborn_care_info
 
         if mother_id == -1:
@@ -1189,7 +1177,6 @@ class NewbornOutcomes(Module):
         df.at[child_id, 'nb_breastfeeding_status'] = 'none'
         df.at[child_id, 'nb_kangaroo_mother_care'] = False
         df.at[child_id, 'nb_clean_birth'] = False
-        # df.at[child_id, 'nb_received_cord_care'] = False
         df.at[child_id, 'nb_death_after_birth'] = False
         df.at[child_id, 'nb_pnc_check'] = 0
 
@@ -1249,16 +1236,6 @@ class NewbornOutcomes(Module):
 
             # Next, for all preterm newborns we apply a risk of respiratory distress syndrome
             if df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']:
-
-                # if self.rng.random_sample() < params['prob_retinopathy_preterm']:
-                #
-                #    # For newborns with retinopathy we then use a weighted random draw to determine the severity of the
-                #     # retinopathy to map to DALY weights
-                #     random_draw = self.rng.choice(['mild', 'moderate', 'severe', 'blindness'],
-                #                                   p=params['prob_retinopathy_severity'])
-                #
-                #     df.at[child_id, 'nb_retinopathy_prem'] = random_draw
-
                 self.apply_risk_of_preterm_respiratory_distress_syndrome(child_id)
 
             # Finally apply risk of infect, encephalopathy and respiratory depression
@@ -1378,6 +1355,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
         if not df.at[person_id, 'is_alive'] or df.at[person_id, 'nb_death_after_birth'] or (person_id not in nci):
             return
 
+        # Run a series of checks to ensure this HSI should be running fot this individual
         if (nci[person_id]['will_receive_pnc'] == 'early') and not nci[person_id]['passed_through_week_one']:
             if not self.sim.date < (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2)):
                 logger.info(key='error', data=f'Child {person_id} arrived at early PNC too late')

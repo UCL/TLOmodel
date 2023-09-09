@@ -11,6 +11,9 @@ derive outcomes and generate plots"""
 
 
 def return_95_CI_across_runs(df, sim_years):
+    """Returns a list of lists from an outcome DF containing the mean and 95%CI values for that outcome over time.
+    The first list containins the mean value of a given outcome per year across runs, the second contains the smaller
+     value of the 95% CI and the third list contains the larger value of the 95% Ci"""
 
     year_means = list()
     lower_CI = list()
@@ -32,12 +35,14 @@ def return_95_CI_across_runs(df, sim_years):
 
 
 def get_mean_95_CI_from_list(list_item):
+    """Returns the mean and 95% CI of data in a provided list"""
     ci = st.t.interval(0.95, len(list_item) - 1, loc=np.mean(list_item), scale=st.sem(list_item))
     result = [np.mean(list_item), ci[0], ci[1]]
     return result
 
 
 def get_mean_from_columns(df, function):
+    """Returns mean value for each column in a provided data frame"""
     values = list()
     for col in df:
         if function == 'avg':
@@ -46,47 +51,10 @@ def get_mean_from_columns(df, function):
             values.append(sum(df[col]))
     return values
 
-
-def get_modules_maternal_complication_dataframes(results_folder):
-    comp_dfs = dict()
-
-    for module in ['pregnancy_supervisor', 'labour', 'postnatal_supervisor']:
-        c_df = extract_results(
-            results_folder,
-            module=f"tlo.methods.{module}",
-            key="maternal_complication",
-            custom_generate_series=(
-                lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['person'].count()),
-            do_scaling=True
-        )
-        complications_df = c_df.fillna(0)
-
-        comp_dfs[module] = complications_df
-
-    return comp_dfs
-
-
-def get_modules_neonatal_complication_dataframes(results_folder):
-    comp_dfs = dict()
-
-    for module in ['newborn_outcomes', 'postnatal_supervisor']:
-        n_df = extract_results(
-            results_folder,
-            module=f"tlo.methods.{module}",
-            key="newborn_complication",
-            custom_generate_series=(
-                lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
-            do_scaling=True
-        )
-        complications_df = n_df.fillna(0)
-
-        comp_dfs[module] = complications_df
-
-    return comp_dfs
-
-
 def line_graph_with_ci_and_target_rate(sim_years, data, target_data_dict, ylim, y_label, title,
                                        graph_location, file_name):
+    """Outputs and saves line plot of an outcome over time, including uncertainty, in addition to a pre-determined
+    calibration target"""
     fig, ax = plt.subplots()
     ax.plot(sim_years, data[0], label="Model", color='deepskyblue')
     ax.fill_between(sim_years, data[1], data[2], label="95% CI", color='b', alpha=.1)
@@ -116,6 +84,8 @@ def line_graph_with_ci_and_target_rate(sim_years, data, target_data_dict, ylim, 
 
 
 def simple_line_chart_with_target(sim_years, model_rate, target_rate, y_title, title, file_name, graph_location):
+    """Outputs and saves line plot of an outcome over time in addition to a pre-determined
+        calibration target"""
     plt.plot(sim_years, model_rate, 'o-g', label="Model", color='deepskyblue')
     plt.plot(sim_years, target_rate, 'o-g', label="Target rate", color='darkseagreen')
     plt.ylabel(y_title)
@@ -128,6 +98,7 @@ def simple_line_chart_with_target(sim_years, model_rate, target_rate, y_title, t
 
 
 def simple_line_chart_with_ci(sim_years, data, y_title, title, file_name, graph_location):
+    """Outputs and saves line plot of an outcome over time, including uncertainty"""
     fig, ax = plt.subplots()
     ax.plot(sim_years, data[0], label="Model (mean)", color='deepskyblue')
     ax.fill_between(sim_years, data[1], data[2], color='b', alpha=.1, label="95% CI")
@@ -142,6 +113,7 @@ def simple_line_chart_with_ci(sim_years, data, y_title, title, file_name, graph_
 
 
 def simple_bar_chart(model_rates, x_title, y_title, title, file_name, sim_years, graph_location):
+    """Outputs a simple bar chart over time"""
     bars = sim_years
     x_pos = np.arange(len(bars))
     plt.bar(x_pos, model_rates, label="Model", color='thistle')
@@ -156,6 +128,8 @@ def simple_bar_chart(model_rates, x_title, y_title, title, file_name, sim_years,
 
 def comparison_graph_multiple_scenarios_multi_level_dict(colours, intervention_years, data_dict, key, y_label, title,
                                                          graph_location, save_name):
+    """Outputs and saves line plot of an outcome over time, including uncertainty, in addition to a pre-determined
+        calibration target. Data from the model is provided as a dictionary with multiple entries"""
     fig, ax = plt.subplots()
 
     for k, colour in zip(data_dict, colours):
@@ -174,6 +148,8 @@ def comparison_graph_multiple_scenarios_multi_level_dict(colours, intervention_y
 
 def comparison_bar_chart_multiple_bars(data, dict_name, intervention_years, colours, y_title, title,
                                        plot_destination_folder, save_name):
+    """Outputs a barchart comparing two data sources"""
+
     N = len(intervention_years)
     ind = np.arange(N)
     if len(data.keys()) > 3:
@@ -200,12 +176,50 @@ def comparison_bar_chart_multiple_bars(data, dict_name, intervention_years, colo
 
 
 # =========================== FUNCTIONS RETURNING DATA FROM MULTIPLE SCENARIOS =======================================
+def get_modules_maternal_complication_dataframes(results_folder):
+    """Returns a dataframe from a scenario file which contains the number of maternal complications by type per year
+    for a given python script"""
+    comp_dfs = dict()
+
+    for module in ['pregnancy_supervisor', 'labour', 'postnatal_supervisor']:
+        c_df = extract_results(
+            results_folder,
+            module=f"tlo.methods.{module}",
+            key="maternal_complication",
+            custom_generate_series=(
+                lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['person'].count()),
+            do_scaling=True
+        )
+        complications_df = c_df.fillna(0)
+
+        comp_dfs[module] = complications_df
+
+    return comp_dfs
+
+
+def get_modules_neonatal_complication_dataframes(results_folder):
+    """Returns a dataframe from a scenario file which contains the number of neonatal complications by type per year
+        for a given python script"""
+    comp_dfs = dict()
+
+    for module in ['newborn_outcomes', 'postnatal_supervisor']:
+        n_df = extract_results(
+            results_folder,
+            module=f"tlo.methods.{module}",
+            key="newborn_complication",
+            custom_generate_series=(
+                lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'type'])['newborn'].count()),
+            do_scaling=True
+        )
+        complications_df = n_df.fillna(0)
+
+        comp_dfs[module] = complications_df
+
+    return comp_dfs
+
+
 def return_birth_data_from_multiple_scenarios(results_folders, sim_years, intervention_years):
-    """
-    Extract mean, lower and upper quantile births per year for a given scenario
-    :param folder: results folder for scenario
-    :return: list of total births per year of pre defined intervention period (i.e. 2020-2030)
-    """
+    """ Extracts data relating to births from a series of pre-specified scenario files"""
 
     def extract_births(folder):
         br = extract_results(
@@ -236,8 +250,7 @@ def return_birth_data_from_multiple_scenarios(results_folders, sim_years, interv
 
 
 def return_pregnancy_data_from_multiple_scenarios(results_folders, sim_years, intervention_years):
-    """
-    """
+    """ Extracts data relating to pregnancies from a series of pre-specified scenario files"""
 
     def extract_pregnancies(folder):
         pr = extract_results(

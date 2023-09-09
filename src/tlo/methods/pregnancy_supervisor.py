@@ -675,7 +675,7 @@ class PregnancySupervisor(Module):
 
         # First we define a function that calculates disability associated with 'acute' complications of pregnancy
         def acute_daly_calculation(person, complication):
-            # If the woman has not experience the complication of interest in the past month she does not accrue dalys
+            # If the woman has not experienced the complication of interest in the past month she does not accrue dalys
             if pd.isnull(mni[person][f'{complication}_onset']):
                 return
 
@@ -1098,7 +1098,7 @@ class PregnancySupervisor(Module):
         df = self.sim.population.props
 
         #  ----------------------------------- RISK OF PRE-ECLAMPSIA ----------------------------------------------
-        # We assume all women must developed a mild pre-eclampsia/gestational hypertension before progressing to a more
+        # We assume all women must develop mild pre-eclampsia/gestational hypertension before progressing to a more
         # severe disease
         pre_eclampsia = self.apply_linear_model(
             self.ps_linear_models['pre_eclampsia'],
@@ -1598,6 +1598,7 @@ class PregnancySupervisor(Module):
         df = self.sim.population.props
         params = self.current_parameters
 
+        # In analysis is occuring where ANC4+ should occur for all women this is set here
         if params['ps_analysis_in_progress'] and params['sens_analysis_max']:
             df_slice = df.loc[df['is_alive'] & df['is_pregnant'] &
                               (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
@@ -1637,8 +1638,8 @@ class PregnancySupervisor(Module):
                                                      < params['prob_early_initiation_anc_below4'],
                                                      index=anc_below_4.loc[anc_below_4].index)
 
-            # Call the functions that schedule the HSIs according to the predicted month of gestation at which each woman
-            # will attend her first visit
+            # Call the functions that schedule the HSIs according to the predicted month of gestation at which each
+            # woman will attend her first visit
             def schedule_early_visit(df_slice):
                 for person in df_slice.index:
                     random_draw_gest_at_anc = self.rng.choice([2, 3, 4], p=params['prob_anc1_months_2_to_4'])
@@ -1907,7 +1908,7 @@ class EctopicPregnancyEvent(Event, IndividualScopeEventMixin):
         ):
             return
 
-        # reset pregnancy variables and store onset for daly calculation
+        # Reset pregnancy variables and store onset for daly calculation
         self.sim.modules['Contraception'].end_pregnancy(individual_id)
         pregnancy_helper_functions.store_dalys_in_mni(individual_id, self.module.mother_and_newborn_info,
                                                       'ectopic_onset', self.sim.date)
@@ -2078,7 +2079,7 @@ class ParameterUpdateEvent(Event, PopulationScopeEventMixin):
                        self.sim.modules['PostnatalSupervisor']]:
             pregnancy_helper_functions.update_current_parameter_dictionary(module, list_position=1)
 
-        # scale the linear models again according to the distribution of the population
+        # Scale the linear models again according to the distribution of the population
         mod_ps = self.module.ps_linear_models
         mod_la = self.sim.modules['Labour'].la_linear_models
 

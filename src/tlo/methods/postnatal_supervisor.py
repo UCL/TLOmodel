@@ -556,7 +556,7 @@ class PostnatalSupervisor(Module):
 
         df.loc[resolvers.loc[resolvers].index, 'pn_htn_disorders'] = 'resolved'
 
-        # And for the women who's hypertension doesnt resolve we now see if it will progress to a worsened state
+        # And for the women whose hypertension doesn't resolve we now see if it will progress to a worsened state
 
         def apply_risk(selected, risk_of_gest_htn_progression):
             # This function uses the transition_states function to move women between states based on the
@@ -878,10 +878,10 @@ class PostnatalSupervisor(Module):
 
 class PostnatalSupervisorEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    This is the PostnatalSupervisorEvent. This event runs every week and is responsible for apply risk of complications
-    to mothers and newborns in the postnatal and neonatal periods. Risk is applied after the first week of life as this
-    is managed via PostnatalWeekOneMaternalEvent and PostnatalWeekOneNeonatalEvent. In addition this event ensures that
-    the relevant postnatal/neonatal variables are reset for those who survive.
+    This is the PostnatalSupervisorEvent. This event runs every week and is responsible for applying risk of
+    complications to mothers and newborns in the postnatal and neonatal periods. Risk is applied after the first week of
+     life as this is managed via PostnatalWeekOneMaternalEvent and PostnatalWeekOneNeonatalEvent. In addition this
+      event ensures that the relevant postnatal/neonatal variables are reset for those who survive.
     """
     def __init__(self, module, ):
         super().__init__(module, frequency=DateOffset(weeks=1))
@@ -1100,7 +1100,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                 prob_matrix['eclampsia'] = params['probs_for_ec_matrix_pn']
 
                 # We modify the probability of progressing from mild to severe gestational hypertension for women
-                # who are on anti hypertensives
+                # who are on antihypertensives
                 if df.at[individual_id, 'la_gest_htn_on_treatment']:
                     treatment_reduced_risk = prob_matrix['gest_htn']['severe_gest_htn'] * \
                                              params['treatment_effect_anti_htns_progression_pn']
@@ -1195,10 +1195,10 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
 
 class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):
     """
-    This is PostnatalWeekOneEvent. It is scheduled for all newborns who survive labour and the first 48 hours after
-    birth. This event applies risk of key complications that can occur in the first week after birth. This event also
-    schedules postnatal care for those newborns predicted to attend after 48 hours or in the situation where they have
-    developed a complication. For newborns who dont seek care for themselves risk of death is applied.
+    This is PostnatalWeekOneNeonatalEvent. It is scheduled for all newborns who survive labour and the first 48 hours
+     after birth. This event applies risk of key complications that can occur in the first week after birth. This event
+     also schedules postnatal care for those newborns predicted to attend after 48 hours or in the situation where they
+      have developed a complication. For newborns who don't seek care for themselves risk of death is applied.
     """
 
     def __init__(self, module, individual_id):
@@ -1280,6 +1280,7 @@ class HSI_PostnatalSupervisor_TreatmentForObstetricFistula(HSI_Event, Individual
         if not mother.is_alive:
             return
 
+        # Define the consumables
         of_repair_cons = pregnancy_helper_functions.get_list_of_items(
             self, ['Scalpel blade size 22 (individually wrapped)_100_CMST',
                    'Halothane (fluothane)_250ml_CMST',
@@ -1298,8 +1299,10 @@ class HSI_PostnatalSupervisor_TreatmentForObstetricFistula(HSI_Event, Individual
 
         self.get_consumables(item_codes=of_repair_cons)
 
+        # Log the end of disability in the MNI
         pregnancy_helper_functions.store_dalys_in_mni(
             person_id, self.sim.modules['PregnancySupervisor'].mother_and_newborn_info,
             f'{df.at[person_id, "pn_obstetric_fistula"]}_fistula_resolution', self.sim.date)
 
+        # Reset property
         df.at[person_id, 'pn_obstetric_fistula'] = 'none'

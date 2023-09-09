@@ -39,7 +39,7 @@ def return_cons_avail(self, hsi_event, cons_dict, **info):
     la_params = self.sim.modules['Labour'].current_parameters
 
     # If 'number' is passed as an optional argument then a predetermined number of consumables will be requested
-    if 'number' in info.keys():  # todo: will only work if the 'core' package contains only 1 IC?
+    if 'number' in info.keys():
         core_cons = {cons_dict[info['core']][0]: info['number']}
     else:
         core_cons = cons_dict[info['core']]
@@ -56,7 +56,7 @@ def return_cons_avail(self, hsi_event, cons_dict, **info):
                                               optional_item_codes=opt_cons)
 
         if not available and (hsi_event.target in mni) and (hsi_event != 'AntenatalCare_Outpatient'):
-            mni[hsi_event.target]['cons_not_avail'] = True  # todo: update r.e. delivery kit
+            mni[hsi_event.target]['cons_not_avail'] = True
 
         return available
 
@@ -101,7 +101,7 @@ def return_cons_avail(self, hsi_event, cons_dict, **info):
 def check_emonc_signal_function_will_run(self, sf, hsi_event):
     """
     Called during/after labour to determine if a B/CEmONC function will run depending on the availability of HCWs
-    train in the intervention and their competence
+    trained in the intervention and their competence
     :param self: module
     :param sf: signal function of interest
     :param hsi_event: hsi_event calling the intervention
@@ -359,7 +359,7 @@ def check_if_delayed_care_delivery(self, squeeze_factor, individual_id, hsi_type
 
 def get_treatment_effect(delay_one_two, delay_three, treatment_effect, params):
     """
-    Returns a requested treatment effect which may be modified if care was delayed
+    Returns a treatment effect which may be modified if care was delayed
     :param delay_one_two: BOOL, if delay 1/2 has occurred
     :param delay_three: BOOL, if a delay 3 has occurred
     :param treatment_effect: STR, parameter housing the treatment effect
@@ -384,7 +384,7 @@ def get_treatment_effect(delay_one_two, delay_three, treatment_effect, params):
 
 def log_mni_for_maternal_death(self, person_id):
     """
-    This function is called on the death of a women/newborn in the module and logs a number of variables from the
+    This function is called on the death of a woman/newborn in the module and logs a number of variables from the
     mni used to determine what factors may have contributed to their death.
     :param self: module
     :param person_id: person id
@@ -402,7 +402,7 @@ def log_mni_for_maternal_death(self, person_id):
 def calculate_risk_of_death_from_causes(self, risks):
     """
     This function calculates risk of death in the context of one or more 'death causing' complications in a mother of a
-    newborn. In addition it determines if the complication(s) will cause death or not. If death occurs the function
+    newborn. In addition, it determines if the complication(s) will cause death or not. If death occurs the function
     returns the primary cause of death (or False)
     return: cause of death or False
     """
@@ -709,5 +709,3 @@ def update_mni_dictionary(self, individual_id):
                             'passed_through_week_one': False}
 
         mni[individual_id].update(labour_variables)
-
-# TODO: further on birth as one function living here?

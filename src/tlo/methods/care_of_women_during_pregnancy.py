@@ -38,7 +38,7 @@ class CareOfWomenDuringPregnancy(Module):
          community including treatment and/or referral for (hypertension, diabetes, antepartum haemorrhage, anaemia,
          premature of membranes, chorioamnionitis)
 
-    Additionally the module stores a number of HSIs which represent follow up for women who are scheduled for additional
+    Additionally, the module stores a number of HSIs which represent follow up for women who are scheduled for additional
     testing following an admission and initiation of treatment (i.e. anaemia or gestational diabetes). Individual
     interventions are stored as functions within the module to prevent repetition.
     """
@@ -594,6 +594,7 @@ class CareOfWomenDuringPregnancy(Module):
                                           f' gestation lower than her current gestation')
             return
 
+        # Define possible ANC HSIs
         visit_dict = {2: HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(self, person_id=individual_id),
                       3: HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(self, person_id=individual_id),
                       4: HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(self, person_id=individual_id),
@@ -642,7 +643,7 @@ class CareOfWomenDuringPregnancy(Module):
         """
         df = self.sim.population.props
 
-        # check correct women have been sent
+        # Check correct women have been sent for admission
         if not df.at[individual_id, 'ac_to_be_admitted']:
             logger.info(key='error', data=f'Mother {individual_id} was scheduled for admission despite not requiring'
                                           f' it')
@@ -650,6 +651,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         logger.info(key='anc_interventions', data={'mother': individual_id, 'intervention': 'admission'})
 
+        # Schedule the appropriate event
         inpatient = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
             self.sim.modules['CareOfWomenDuringPregnancy'], person_id=individual_id)
 
@@ -799,9 +801,7 @@ class CareOfWomenDuringPregnancy(Module):
             avail = pregnancy_helper_functions.return_cons_avail(
                 self, hsi_event, self.item_codes_preg_consumables, core='iron_folic_acid', number=days*3)
 
-
             if avail:
-
                 logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'iron_folic_acid'})
 
                 # Importantly, only women who will be adherent to iron will experience the benefits of the

@@ -1736,9 +1736,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     # ============================================== NEONATAL MORTALITY ==============================================
     # ------------------------------------------- Neonatal mortality rate --------------------------------------------
-    # TODO: UP TO HERE FOR TIDYING....
-    # NMR due to neonatal disorders...
-    # NEONATAL DISORDERS NMR - ROUGHLY EQUATES TO FIRST WEEK NMR
+    # First the NMR secondary to 'neonatal disorders' (those modelled in the MPHM) is outputted
     death_results_labels = extract_results(
         results_folder,
         module="tlo.methods.demography",
@@ -1748,7 +1746,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     nd_nmr = return_rate(death_results_labels.loc[(slice(None), 'Neonatal Disorders'), slice(None)].droplevel(1),
                          births_results_exc_2010, 1000, sim_years)
 
-    # Total NMR...(FROM ALL CAUSES UP TO 28 DAYS)
+    # Followed by the total NMR which includes all deaths in the first 28 days of life
     tnd = extract_results(
         results_folder,
         module="tlo.methods.demography.detail",
@@ -1760,6 +1758,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     tnmr = return_rate(total_neonatal_deaths, births_results_exc_2010, 1000, sim_years)
 
     def get_nmr_graphs(data, colours, title, save_name):
+        """Generate calibration plots for the yearly mean (95%CI) NMR (total and neonatal disorders)"""
         fig, ax = plt.subplots()
         ax.plot(sim_years, data[0], label="Model (95% CI)", color=colours[0])
         ax.fill_between(sim_years, data[1], data[2], color=colours[1], alpha=.1)
@@ -1790,9 +1789,12 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         plt.savefig(f'{graph_location}/{save_name}.png')
         plt.show()
 
+    # Output relevant plots
     get_nmr_graphs(tnmr, ['deepskyblue', 'b'], 'Yearly Total Neonatal Mortality Rate', 'total_nmr')
     get_nmr_graphs(nd_nmr, ['deepskyblue', 'b'], 'Yearly NMR due to GBD "Neonatal Disorders"', 'neonatal_disorders_nmr')
 
+    # Here an additional plot is outputted where both the 'total' NMR and the 'neonatal disorders' NMR are plotted
+    # on the same graph
     fig, ax = plt.subplots()
     ax.plot(sim_years, tnmr[0], label="Model: Total NMR(95% CI)", color='deepskyblue')
     ax.fill_between(sim_years, tnmr[1], tnmr[2], color='b', alpha=.1)
@@ -1826,8 +1828,10 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     plt.savefig(f'{graph_location}/all_nmr_one_graph.png')
     plt.show()
 
-    # ------------------------------------------ CRUDE DEATHS PER YEAR ------------------------------------------------
-    # Neonatal Disorders...
+    # ---------------------------------- Total Crude Neonatal Deaths (Neonatal Disorders)------------------------------
+    # The yearly total neonatal deaths due to 'Neonatal Disorders' are outputted and compared to the GBD estimates
+
+    # Scaled deaths are extracted from the demography module
     scaled_neo_deaths = extract_results(
         results_folder,
         module="tlo.methods.demography",
@@ -1837,21 +1841,23 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                 year=df['date'].dt.year).groupby(['year', 'label'])['year'].count()),
         do_scaling=True)
 
+    # Calculate the average total deaths per year across the runs
     neo_deaths = analysis_utility_functions.return_95_CI_across_runs(
         scaled_neo_deaths.loc[(slice(None), 'Neonatal Disorders'), slice(None)].droplevel(1), gbd_years)
 
-    # Congenital Anomalies...
+    # And repeat this for congenital birth defects deaths (which are not counted as neonatal disorders)
     ca_deaths = analysis_utility_functions.return_95_CI_across_runs(
         scaled_neo_deaths.loc[(slice(None), 'Congenital birth defects'), slice(None)].droplevel(1), gbd_years)
 
-    # GBD data...
+    # Deaths estimated by the GBD group for Malawi are extracted
     gbd_neo_deaths = extract_deaths_gbd_data('Neonatal disorders')
     gbd_cba_deaths = extract_deaths_gbd_data('Congenital birth defects')
 
     def gbd_bar_chart(data, gbd_data, title, save_name):
+        """Outputs a barchart which compares crude deaths outputted by the model with estimates from the GBD
+        alongside uncertainty"""
         model_ci_neo = [(x - y) / 2 for x, y in zip(data[2], data[1])]
         gbd_ci_neo = [(x - y) / 2 for x, y in zip(gbd_data[2], gbd_data[1])]
-
         N = len(data[0])
         ind = np.arange(N)
         width = 0.35
@@ -1866,16 +1872,21 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         plt.savefig(f'{graph_location}/{save_name}.png')
         plt.show()
 
+    # Plot crude deaths compared to GBD estimates
     gbd_bar_chart(neo_deaths, gbd_neo_deaths, 'Total Deaths Attributable to "Neonatal Disorders" per Year',
                   'crude_deaths_nd')
     gbd_bar_chart(ca_deaths, gbd_cba_deaths, 'Total Deaths Attributable to "Congenital Birth Defects" per Year',
                   'crude_deaths_cba')
 
-    # --------------------------- PROPORTION OF 'NEONATAL DISORDER' DEATHS BY CAUSE -----------------------------------
-    # TODO: could output other causes also
+    # ---------------------------------- Percentage of Neonatal Deaths by Cause ---------------------------------------
+    # Here, the percentage of total neonatal deaths occuring in 2015 is compared to calibration data
+
+    # Calibration data is defined
     neo_calib_targets_fottrell = [27.3, 25.8, 8.95]  # prematuirty, birth asphyxia, early onset sepsis
     neo_calib_targets_bemonc = [26, 52, 6]  # prematuirty, birth asphyxia, early onset sepsis
 
+    # For the three leading causes of neonatal death, the percentage of deaths due to each cause is extracted from
+    # model data for each year
     simp_causes_neo = ['Prematurity', 'Birth Asphyxia', 'Neonatal Sepsis']
     t = []
     for year in sim_years:
@@ -1886,21 +1897,18 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
             if cause == 'Prematurity':
                 new_df.loc[year, cause] = death_results.loc[year, 'respiratory_distress_syndrome'] + \
                                           death_results.loc[year, 'preterm_other']
-                new_df.loc[year, cause] = (new_df.loc[year, cause] / total_neonatal_deaths.loc[year]) \
-                                          * 100
+                new_df.loc[year, cause] = (new_df.loc[year, cause] / total_neonatal_deaths.loc[year]) * 100
                 t.append(new_df)
             elif cause == 'Birth Asphyxia':
                 new_df.loc[year, cause] = death_results.loc[year, 'encephalopathy'] + \
                                           death_results.loc[year, 'neonatal_respiratory_depression']
-                new_df.loc[year, cause] = (new_df.loc[year, cause] / total_neonatal_deaths.loc[year]) \
-                                          * 100
+                new_df.loc[year, cause] = (new_df.loc[year, cause] / total_neonatal_deaths.loc[year]) * 100
                 t.append(new_df)
 
             elif cause == 'Neonatal Sepsis':
                 new_df.loc[year, cause] = death_results.loc[year, 'early_onset_sepsis'] + \
                                           death_results.loc[year, 'late_onset_sepsis']
-                new_df.loc[year, cause] = (new_df.loc[year, cause] / total_neonatal_deaths.loc[year]) \
-                                          * 100
+                new_df.loc[year, cause] = (new_df.loc[year, cause] / total_neonatal_deaths.loc[year]) * 100
                 t.append(new_df)
 
     direct_nd_by_cause_df = pd.concat(t)
@@ -1908,6 +1916,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     av_u_ci_neo = []
     av_l_ci_neo = []
 
+    # The values for 2015 are extracted in a format to allow for the plotting of a stacked barchart
     for cause in simp_causes_neo:
         row = direct_nd_by_cause_df.loc[2015, cause]
         all_values_2015_neo.append(row.mean())
@@ -1915,12 +1924,9 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         av_l_ci_neo.append(ci[0])
         av_u_ci_neo.append(ci[1])
 
+    # Then the model data is plotted compared to the calibration estimates defined above
     ui = [(x - y) / 2 for x, y in zip(av_u_ci_neo, av_l_ci_neo)]
-    # create the base axis
     fig, ax = plt.subplots(1, 1, figsize=(8, 6))
-    # set the labels
-    # and the x positions
-
     x = np.arange(len(simp_causes_neo))
     width = 0.2
     rect1 = ax.bar(x - width, all_values_2015_neo, width=width, yerr=ui, label='Model', color='cornflowerblue')
@@ -1937,17 +1943,16 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     plt.savefig(f'{graph_location}/proportions_cause_of_death_neo.png')
     plt.show()
 
-    # # ------------------------------------------- CASE FATALITY PER COMPLICATION ------------------------------------
+    #  ------------------------------------------- Cause-specific NMR ------------------------------------
+    # Finally, for neonatal mortality, I output the yearly cause specific NMR for the modelled complications listed
+    # below
+    simplified_causes = ['prematurity', 'encephalopathy', 'neonatal_sepsis', 'neonatal_respiratory_depression']
 
-    # PROPORTION OF NMR
-    simplified_causes = ['prematurity', 'encephalopathy', 'neonatal_sepsis', 'neonatal_respiratory_depression', ]
-    # 'congenital_anomalies']
-
+    # The estimated calibration targets are defined below for 2010 and 2015, for comparison
     ptb_tr = list()
     enceph_tr = list()
     sep = list()
     rd_tr = list()
-    # ca_tr = list()
 
     for year in sim_years:
         if year < 2015:
@@ -1955,13 +1960,11 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
             enceph_tr.append(25 * 0.25)
             sep.append(25 * 0.08)
             rd_tr.append(0)
-            # ca_tr.append(0)
         else:
             ptb_tr.append(22 * 0.27)
             enceph_tr.append(22 * 0.25)
             sep.append(22 * 0.08)
             rd_tr.append(0)
-            # ca_tr.append(0)
 
     ptb_tr = {'double': True, 'first': {'year': 2011, 'value': 6.75, 'label': 'UNK.', 'ci': 0},
               'second': {'year': 2015, 'value': 5.94, 'label': 'UNK.', 'ci': 0}}
@@ -1971,11 +1974,10 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
            'second': {'year': 2015, 'value': 1.76, 'label': 'UNK.', 'ci': 0}}
     rd_tr = {'double': True, 'first': {'year': 2011, 'value': 0, 'label': 'UNK.', 'ci': 0},
              'second': {'year': 2015, 'value': 0, 'label': 'UNK.', 'ci': 0}}
-    # ca_tr = {'double': True, 'first': {'year': 2011, 'value': 0, 'label': 'UNK.', 'ci': 0},
-    #          'second': {'year': 2015, 'value': 0, 'label': 'UNK.', 'ci': 0}}
 
-    trs = [ptb_tr, enceph_tr, sep, rd_tr]  # , ca_tr]
+    trs = [ptb_tr, enceph_tr, sep, rd_tr]
 
+    # Then the NMR for each complication is calculated from the cause-specific death data frame defined above
     for cause, tr in zip(simplified_causes, trs):
         if (cause == 'encephalopathy') or (cause == 'neonatal_respiratory_depression'):
             deaths = death_results.loc[(slice(None), cause), slice(None)].droplevel(1)
@@ -1994,14 +1996,17 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         ylim = nmr[0][0] + 5
         print(cause)
 
+        # Each NMR is plotted over time compared to the predefined calibration target
         analysis_utility_functions.line_graph_with_ci_and_target_rate(
             sim_years, nmr, tr, ylim, 'Rate per 1000 live births',
             f'Neonatal Mortality Rate per Year for {cause}', graph_location, f'nmr_{cause}')
 
-    # proportion causes for preterm birth
-    # -------------------------------------------------------- DALYS -------------------------------------------------
+    # ==================================== Disability Adjusted Life Years (DALYS) ===================================
+    # Finally, DALYs attributable to maternal and neonatal disorders are extracted from the model and compared to
+    # estimates from the GBD study
 
     def extract_dalys_gbd_data(group):
+        """Extracts maternal and neonatal DALYs for Malawi as estimated in the 2019 GBD study"""
         dalys_df = dalys_data.loc[(dalys_data['measure_name'] == 'DALYs (Disability-Adjusted Life Years)') &
                                   (dalys_data['cause_name'] == f'{group} disorders') & (dalys_data['Year'] > 2010)]
 
@@ -2009,13 +2014,15 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         gbd_dalys_lq = list()
         gbd_dalys_uq = list()
 
+        # Total dalys are extracted from previously defined DF containing data from Malawi
         for year in gbd_years:
             gbd_dalys.append(dalys_df.loc[(dalys_df['Year'] == year)].sum()['GBD_Est'])
             gbd_dalys_lq.append(dalys_df.loc[(dalys_df['Year'] == year)].sum()['GBD_Lower'])
             gbd_dalys_uq.append(dalys_df.loc[(dalys_df['Year'] == year)].sum()['GBD_Upper'])
 
+        # GBD 'Maternal disorders' DALYs are adjusted to remove 'indirect maternal' and HIV aggravated deaths which
+        # do not contribute to maternal DALYs in the model
         if group == 'Maternal':
-            # Rates/total DALYs are adjusted to remove 'indirect maternal' and HIV aggravated deaths
             mat_dalys_not_modelled = [[9795, 9673, 9484, 9305, 9153, 9220, 9177, 9115, 9128],
                                       [13705, 13588, 13441, 13359, 13230, 13555, 13558, 13506, 13553],
                                       [6304, 6225, 6148, 5878, 5764, 5763, 5664, 5611, 5548]]
@@ -2037,6 +2044,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                     'rate': gbd_dalys_rate,
                     'rate_adj': gbd_dalys_rate_adj}
         else:
+            # GBD data relating to DALY rates, YLL and YLD estimates are manually inputted
 
             rate = [[7754, 7388, 7039, 6667, 6323, 6051, 5637, 5402, 5199],
                     [9191, 8784, 8402, 8010, 7798, 7458, 7091, 6901, 6756],
@@ -2048,6 +2056,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                     707276.07, 693996.45],
                    [1325484.32, 1303762.52, 1278501.75, 1249389.10, 1243491.38, 1216195.29, 1187856.17,
                     1186101.78, 1190897.86]]
+
             yld = [[22980.05, 27396.62, 32943.15, 38722.71, 43760.64, 48920.63, 52681.07, 52985.03, 50919.88],
                    [17003.09, 20257.22, 24621.60, 28670.33, 32352.21, 36966.02, 39836.19, 39901.68,
                     37275.59],
@@ -2058,9 +2067,11 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                     'yll': yll,
                     'yld': yld}
 
+    # Extract GBD DALYs data
     maternal_gbd_dalys = extract_dalys_gbd_data('Maternal')
     neonatal_gbd_dalys = extract_dalys_gbd_data('Neonatal')
 
+    # Extract DALY data from the model including estimates for YLL/YLD
     dalys_stacked = extract_results(
         results_folder,
         module="tlo.methods.healthburden",
@@ -2103,19 +2114,25 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     mat_model_dalys_data = dict()
     neo_model_dalys_data = dict()
 
+    # Calculate the average rate of maternal DALYs per year using person years as a denominator
     mat_model_dalys_data.update({'rate': return_rate(
         dalys_stacked.loc[(slice(None), 'Maternal Disorders'), slice(None)].droplevel(1), person_years_total, 100_000,
         alt_years)})
+
+    # Repeat this process for neonates
     neo_model_dalys_data.update(
         {'rate': return_rate(
             dalys_stacked.loc[(slice(None), 'Neonatal Disorders'), slice(None)].droplevel(1), person_years_total,
             100_000,
             alt_years)})
+
+    # Now calculate the average number of crude DALYs attributable to maternal and neonatal disorders
     mat_model_dalys_data.update({'total': analysis_utility_functions.return_95_CI_across_runs(
         dalys_stacked.loc[(slice(None), 'Maternal Disorders'), slice(None)].droplevel(1), alt_years)})
     neo_model_dalys_data.update({'total': analysis_utility_functions.return_95_CI_across_runs(
         dalys_stacked.loc[(slice(None), 'Neonatal Disorders'), slice(None)].droplevel(1), alt_years)})
 
+    # Define the causes of neonatal death and disability which contribute to YLL/YLDs within the model
     neo_causes_death = ['early_onset_sepsis', 'late_onset_sepsis', 'encephalopathy', 'preterm_other',
                         'respiratory_distress_syndrome', 'neonatal_respiratory_depression']
 
@@ -2123,6 +2140,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
                         'Neonatal Sepsis Long term Disability', 'Preterm Birth Disability']
 
     def get_total_dfs(df, causes):
+        """Generates a new DF from an existing DF based on a list of index values"""
         dfs = []
         for k in causes:
             scen_df = df.loc[(slice(None), k), slice(None)].droplevel(1)
@@ -2131,9 +2149,12 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         final_df = sum(dfs)
         return final_df
 
+    # Using this function, a DF containing the total yearly YLL and YLD attributable to the above causes is extracted
+    # from model data
     neo_yll_s_df = get_total_dfs(yll_stacked_final, neo_causes_death)
     neo_yld_df = get_total_dfs(yld_final, neo_causes_disab)
 
+    # This allows for calculation of the average number of YLL/YLD due to these conditions per year across the runs
     neo_model_dalys_data.update({'yll': analysis_utility_functions.return_95_CI_across_runs(
         neo_yll_s_df, alt_years)})
 
@@ -2141,23 +2162,19 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         neo_yld_df, alt_years)})
 
     def get_daly_graphs(group, model_data, gbd_data):
+        """Generates calibration plots for total DALYs, YLL, YLD attributable to maternal and neonatal disorders within
+        the model compared to estimates from the 2019 GBD study"""
 
-        # Total
+        # Plot average total DALYs per year
         fig, ax = plt.subplots()
         ax.plot(alt_years, model_data['total'][0], label=f"Model (95% CI)", color='deepskyblue')
         ax.fill_between(alt_years, model_data['total'][1], model_data['total'][2], color='b', alpha=.1)
-
         ax.plot(gbd_years, gbd_data['total'][0], label="GBD (Lower & Upper bounds)", color='olivedrab')
         ax.fill_between(gbd_years, gbd_data['total'][1], gbd_data['total'][2], color='g', alpha=.1)
-
         if group == 'Maternal':
-            # ax.plot(gbd_years, gbd_data['total_adj'][0], label="GBD DALY Adj.", color='darkslateblue')
-            # ax.fill_between(gbd_years, gbd_data['total_adj'][1], gbd_data['total_adj'][2], color='slateblue'
-            #                 , alpha=.1)
             ax.set(ylim=(0, 160_000))
         else:
             ax.set(ylim=0)
-
         plt.xlabel('Year')
         plt.ylabel("DALYs (stacked)")
         plt.title(f'Total DALYs per Year Attributable to {group} disorders')
@@ -2165,22 +2182,16 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         plt.savefig(f'{graph_location}/{group}_dalys_stacked.png')
         plt.show()
 
-        # Rate
+        # Plot average DALY rate per year
         fig, ax = plt.subplots()
         ax.plot(alt_years, model_data['rate'][0], label=f"Model (95% CI)", color='deepskyblue')
         ax.fill_between(alt_years, model_data['rate'][1], model_data['rate'][2], color='b', alpha=.1)
-
         ax.plot(gbd_years, gbd_data['rate'][0], label="GBD (Lower & Upper bounds)", color='olivedrab')
         ax.fill_between(gbd_years, gbd_data['rate'][1], gbd_data['rate'][2], color='g', alpha=.1)
-
         if group == 'Maternal':
-            # ax.plot(gbd_years, gbd_data['rate_adj'][0], label="GBD DALY Adj. rate", color='darkslateblue')
-            # ax.fill_between(gbd_years, gbd_data['rate_adj'][1], gbd_data['rate_adj'][2], color='slateblue'
-            #                 , alpha=.1)
             ax.set(ylim=(0, 950))
         else:
             ax.set(ylim=0)
-
         plt.xlabel('Year')
         plt.ylabel("DALYs per 100k Person Years")
         plt.title(f'Total DALYs per 100,000 Person Years per Year Attributable to {group} Disorders')
@@ -2189,14 +2200,12 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         plt.show()
 
         if group == 'Neonatal':
-            # YLL and YLD
+            # Plot average YLL per year
             fig, ax = plt.subplots()
             ax.plot(alt_years, model_data['yll'][0], label=f"Model (95% CI)", color='deepskyblue')
             ax.fill_between(alt_years, model_data['yll'][1], model_data['yll'][2], color='b', alpha=.1)
-
             ax.plot(gbd_years, gbd_data['yll'][0], label="GBD (Lower & Upper bounds)", color='olivedrab')
             ax.fill_between(gbd_years, gbd_data['yll'][1], gbd_data['yll'][2], color='g', alpha=.1)
-
             plt.xlabel('Year')
             plt.ylabel("Years of Life Lost")
             plt.title(f'Total Years of Life Lost (YLL) per Year Attributable to {group} Disorders')
@@ -2204,13 +2213,12 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
             plt.savefig(f'{graph_location}/{group}_yll_stacked.png')
             plt.show()
 
+            # Plot average YLD per year
             fig, ax = plt.subplots()
             ax.plot(alt_years, model_data['yld'][0], label=f"Model (95% CI)", color='deepskyblue')
             ax.fill_between(alt_years, model_data['yld'][1], model_data['yld'][2], color='b', alpha=.1)
-
             ax.plot(gbd_years, gbd_data['yld'][0], label="GBD (Lower & Upper bounds)", color='olivedrab')
             ax.fill_between(gbd_years, gbd_data['yld'][1], gbd_data['yld'][2], color='g', alpha=.1)
-
             plt.xlabel('Year')
             plt.ylabel("Years Live with Disability")
             plt.title(f'Total Years Lived with Disability (YLD) per Year Attributable to {group} Disorders')
@@ -2218,5 +2226,6 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
             plt.savefig(f'{graph_location}/{group}_yld.png')
             plt.show()
 
+    # Output DALY calibration plots
     get_daly_graphs('Maternal', mat_model_dalys_data, maternal_gbd_dalys)
     get_daly_graphs('Neonatal', neo_model_dalys_data, neonatal_gbd_dalys)

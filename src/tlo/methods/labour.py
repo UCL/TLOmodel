@@ -29,7 +29,7 @@ logger_pn.setLevel(logging.INFO)
 
 
 class Labour(Module):
-    """This is module is responsible for the the process of labour, birth and the immediate postnatal period (up until
+    """This is module is responsible for the process of labour, birth and the immediate postnatal period (up until
     48hrs post birth). This model has a number of core functions including; initiating the onset of labour for women on
     their pre-determined due date (or prior to this for preterm labour/admission for delivery), applying the incidence
      of a core set of maternal complications occurring in the intrapartum period and outcomes such as maternal death or
@@ -638,7 +638,6 @@ class Labour(Module):
         df = population.props
 
         # For the first period (2010-2015) we use the first value in each list as a parameter
-        # todo: way to avoid repeating this function?
         pregnancy_helper_functions.update_current_parameter_dictionary(self, list_position=0)
 
         params = self.current_parameters
@@ -822,7 +821,6 @@ class Labour(Module):
         self.item_codes_lab_consumables['vacuum'] = get_list_of_items(self, ['Vacuum, obstetric'])
 
         # -------------------------------------  MATERNAL SEPSIS  -----------------------------------------------------
-        # todo: helen allott recommended clindamycin but not available as IV
         self.item_codes_lab_consumables['maternal_sepsis_core'] = \
             get_list_of_items(self, ['Benzylpenicillin 3g (5MU), PFR_each_CMST',
                                      'Gentamycin, injection, 40 mg/ml in 2 ml vial'])
@@ -843,7 +841,6 @@ class Labour(Module):
             get_list_of_items(self, ['Oxytocin, injection, 10 IU in 1 ml ampoule'])
 
         # -------------------------------------  POSTPARTUM HAEMORRHAGE  ---------------------------------------
-        # TODO: helen allott recommended tranexamic acid - not availble
         self.item_codes_lab_consumables['pph_core'] = \
             get_list_of_items(self, ['Oxytocin, injection, 10 IU in 1 ml ampoule'])
 
@@ -880,7 +877,7 @@ class Labour(Module):
         # dictionary
         self.get_and_store_labour_item_codes()
 
-        # We set the LoggingEvent to run a the last day of each year to produce statistics for that year
+        # We set the LoggingEvent to run on the last day of each year to produce statistics for that year
         sim.schedule_event(LabourLoggingEvent(self), sim.date + DateOffset(days=1))
 
         # Schedule analysis event
@@ -1346,12 +1343,11 @@ class Labour(Module):
 
     def set_postpartum_complications(self, individual_id, complication):
         """
-        This function is called either during a PostpartumLabourAtHomeEvent OR HSI_Labour_ReceivesSkilledBirthAttendance
-        FollowingLabour for all women following labour and birth (home birth vs facility delivery). The function is
-        used to apply risk of complications which have been passed ot it including the preceding causes of postpartum
-        haemorrhage (uterine atony, retained placenta, lacerations, other), postpartum haemorrhage, preceding infections
-         to sepsis (endometritis, skin/soft tissue infection, urinary tract, other), sepsis. Properties in the dataframe
-         are set accordingly including properties which map to disability weights to capture DALYs
+        This function is called in BirthAndPostnatalOutcomesEvent during  for all women following labour and birth
+        (home birth vs facility delivery). The function is used to apply risk of complications which have been passed
+        ot it including the preceding causes of postpartum haemorrhage (uterine atony, retained placenta, lacerations,
+        other), postpartum haemorrhag or sepsis. Properties in the dataframe are set accordingly including properties
+        which map to disability weights to capture DALYs
         :param individual_id: individual_id
         :param complication: (STR) the complication passed to the function which is being evaluated [
         'sepsis_endometritis', 'sepsis_skin_soft_tissue', 'sepsis_urinary_tract', 'pph_uterine_atony',
@@ -1422,11 +1418,11 @@ class Labour(Module):
 
     def progression_of_hypertensive_disorders(self, individual_id, property_prefix):
         """
-        This function is called during LabourAtHomeEvent/PostpartumLabourAtHomeEvent or HSI_Labour_Receives
-        SkilledBirthAttendanceDuring/FollowingLabour to determine if a woman with a hypertensive disorder will
-        experience progression to a more severe state of disease during labour or the immediate postpartum period.
-        We do not allow for new onset of  hypertensive disorders during this module - only progression of
-        exsisting disease.
+        This function is called during LabourAtHomeEvent/BirthAndPostnatalEvent or HSI_Labour_Receives
+        SkilledBirthAttendanceDuring/HSI_Labour_ReceivesPostnatalCheck to determine if a woman with a hypertensive
+        disorder will experience progression to a more severe state of disease during labour or the immediate
+         postpartum period. We do not allow for new onset of  hypertensive disorders during this module - only
+        progression of exsisting disease.
         :param individual_id: individual_id
         :param property_prefix: (STR) 'pn' or 'ps'
         """
@@ -1508,11 +1504,9 @@ class Labour(Module):
     def apply_risk_of_early_postpartum_death(self, individual_id):
         """
         This function is called for all women who have survived labour. This function is called at various points in
-        the model depending on a womans pathway through labour and includes PostpartumLabourAtHomeEvent,
-        HSI_Labour_ReceivesSkilledBirthAttendanceFollowingLabour, HSI_Labour_ReceivesComprehensiveEmergencyObstetric
-        Care and HSI_Labour_ReceivesCareFollowingCaesareanSection. The function cycles through each complication to
-        determine if that will contribute to a womans death and then schedules InstantaneousDeathEvent accordingly.
-        For women who survive their properties from the labour module are reset and they are scheduled to
+        the model depending on a womans pathway through key events/HSI events. The function cycles through each
+        complication to determine if that will contribute to a womans death and then schedules InstantaneousDeathEvent
+        accordingly.  For women who survive their properties from the labour module are reset and they are scheduled to
         PostnatalWeekOneEvent
         :param individual_id: individual_id
         """
@@ -1861,8 +1855,7 @@ class Labour(Module):
         """
         This function represents the diagnosis and management of obstructed labour during labour. This function
         defines the required consumables and administers the intervention if available. The intervention in this
-        function is assisted vaginal delivery. It is called by either HSI_Labour_PresentsForSkilledBirthAttendanceIn
-        Labour
+        function is assisted vaginal delivery. It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour
         :param hsi_event: HSI event in which the function has been called:
         :param indication: STR indication for assessment and delivery of AVD
         (STR) 'hc' == health centre, 'hp' == hospital
@@ -1959,7 +1952,7 @@ class Labour(Module):
         """
         This function represents the diagnosis of antepartum haemorrhage during  labour. This
         function ensures that woman is referred for comprehensive care via caesarean section and blood transfusion.
-        It is called by  HSI_Labour_PresentsForSkilledBirthAttendanceInLabour
+        It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour
         :param hsi_event: HSI event in which the function has been called:
         (STR) 'hc' == health centre, 'hp' == hospital
         """
@@ -1991,7 +1984,7 @@ class Labour(Module):
         """
         This function represents the diagnosis of uterine rupture during  labour and ensures
         that a woman is referred for comprehensive care via caesarean section, surgical repair and blood transfusion.
-        It is called by either HSI_Labour_PresentsForSkilledBirthAttendanceInLabour
+        It is called by HSI_Labour_PresentsForSkilledBirthAttendanceInLabour.
         :param hsi_event: HSI event in which the function has been called:
         (STR) 'hc' == health centre, 'hp' == hospital
         """
@@ -2003,6 +1996,7 @@ class Labour(Module):
         if 'assessment_and_plan_for_referral_uterine_rupture' not in params['allowed_interventions']:
             return
 
+        # When uterine rupture is present, the mni dictionary is updated to allow treatment to be scheduled
         if df.at[person_id, 'la_uterine_rupture']:
             mni[person_id]['referred_for_surgery'] = True
             mni[person_id]['referred_for_cs'] = True
@@ -2350,8 +2344,8 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
     pass through - regardless of mode of delivery or if they are already an inpatient. This event performs a number of
     different functions including populating the mni dictionary to store additional variables important to labour
     and HSIs, determining if and where a woman will seek care for delivery, schedules the LabourAtHome event and the
-    HSI_Labour_PresentsForSkilledAttendance at birth (depending on care seeking), the BirthEvent and the
-    LabourDeathEvent.
+    HSI_Labour_PresentsForSkilledAttendance at birth (depending on care seeking), the BirthAndPostnatalEvent and the
+    LabourDeathAndStillBirthEvent.
     """
 
     def __init__(self, module, individual_id):
@@ -2563,7 +2557,7 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
     This is the LabourAtHomeEvent. It is scheduled by the LabourOnsetEvent for women who will not seek delivery care at
     a  health facility. This event applies the probability that women delivering at home will experience
     complications associated with the intrapartum phase of labour and makes the appropriate changes to the data frame.
-     Additionally this event applies a probability that women who develop complications during a home birth may choose
+     Additionally, this event applies a probability that women who develop complications during a home birth may choose
      to seek care from at a health facility. In that case the appropriate HSI is scheduled.
      """
 
@@ -2724,7 +2718,7 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
             mni[individual_id]['delay_three'] = False
             mni[individual_id]['didnt_seek_care'] = False
 
-        # Finally, reset some of the treatment variables
+        # Finally, reset some treatment variables
         if not potential_cause_of_death:
             df.at[individual_id, 'la_maternal_hypertension_treatment'] = False
             df.at[individual_id, 'ac_iv_anti_htn_treatment'] = False
@@ -2737,7 +2731,7 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
     """
     This is BirthAndPostnatalOutcomesEvent. It is scheduled by LabourOnsetEvent when women go into labour. This event
     calls the do_birth function for all women who have gone into labour to generate a newborn within the simulation.
-    Additionally this event applies the incidence of complications immediately following birth and determines if each
+    Additionally, this event applies the incidence of complications immediately following birth and determines if each
     woman will receive a full postnatal check-up and when.
     """
 
@@ -3060,7 +3054,8 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
 class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
     """
     This is HSI_Labour_ReceivesPostnatalCheck. It is scheduled by BirthAndPostnatalOutcomesEvent for all women who
-    will receive full postnatal checkup after birth . This event represents the postpartum care contact after
+    will receive full postnatal checkup after birth. Additionally, this event is scheduled by the PostnatalSupervisorEvent
+     for women who require PNC later in the postnatal period. This event represents the postpartum care contact after
     delivery and includes assessment and treatment of severe pre-eclampsia, hypertension, sepsis and postpartum
     bleeding. In addition woman are scheduled HIV screening if appropriate and started on postnatal iron tablets
     """
