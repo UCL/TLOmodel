@@ -97,7 +97,7 @@ class ImpactOfTbDaHx(BaseScenario):
             "CXR scale_up": {
                 'Tb': {
                     'scenario': 3,
-                    'probability_access_to_xray': 0.11
+                   # 'probability_access_to_xray': 0.11
                    # 'probability_community_chest_xray': 0.01,
                 }
             },
