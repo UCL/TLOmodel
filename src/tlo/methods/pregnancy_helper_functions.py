@@ -326,7 +326,7 @@ def check_if_delayed_careseeking(self, individual_id, timing):
         return
 
     if self.sim.modules['PregnancySupervisor'].current_parameters['ps_analysis_in_progress'] and \
-        ((timing == 'preg_emerg') and self.sim.modules['PregnancySupervisor'].current_parameters['sens_analysis_max']):
+       ((timing == 'preg_emerg') and self.sim.modules['PregnancySupervisor'].current_parameters['sens_analysis_max']):
         mni[individual_id]['delay_one_two'] = False
 
     elif self.sim.modules['Labour'].current_parameters['la_analysis_in_progress'] and \

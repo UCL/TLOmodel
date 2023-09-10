@@ -1151,7 +1151,7 @@ class PregnancySupervisor(Module):
             # We reset the parameter here to allow for testing with the original parameter
 
             prob_matrix['gest_htn'] = [risk_ghtn_remains_mild, risk_of_gest_htn_progression,
-                                              params['probs_for_mgh_matrix'][2], 0.0, 0.0]
+                                       params['probs_for_mgh_matrix'][2], 0.0, 0.0]
             prob_matrix['severe_gest_htn'] = params['probs_for_sgh_matrix']
             prob_matrix['mild_pre_eclamp'] = params['probs_for_mpe_matrix']
             prob_matrix['severe_pre_eclamp'] = params['probs_for_spe_matrix']
@@ -1611,7 +1611,8 @@ class PregnancySupervisor(Module):
             # First we identify all the women predicted to attend ANC, with the first visit occurring before 4 months
             early_initiation_anc4 = self.apply_linear_model(
                 self.ps_linear_models['early_initiation_anc4'],
-                df.loc[df['is_alive'] & df['is_pregnant'] & (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
+                df.loc[df['is_alive'] & df['is_pregnant'] &
+                       (df['ps_gestational_age_in_weeks'] == gestation_of_interest) &
                        (df['ps_ectopic_pregnancy'] == 'none')])
 
             # Of the women who will not attend ANC4 early, we determine who will attend ANC4 later in pregnancy
@@ -2122,8 +2123,11 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
         df = self.sim.population.props
 
         # Check if either of the analysis parameters are set to True
-        if params['alternative_anc_coverage'] or params['alternative_anc_quality'] or \
-            params['alternative_ip_anc_quality'] or params['sens_analysis_max'] or params['sens_analysis_min']:
+        if params['alternative_anc_coverage'] or \
+            params['alternative_anc_quality'] or \
+            params['alternative_ip_anc_quality'] or \
+            params['sens_analysis_max'] or \
+           params['sens_analysis_min']:
 
             # Update this parameter which is a signal used in the pregnancy_helper_function_file to ensure that
             # alternative functionality for determining availability of interventions only occurs when analysis is

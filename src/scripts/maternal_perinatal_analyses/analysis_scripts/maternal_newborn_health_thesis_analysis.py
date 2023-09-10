@@ -685,7 +685,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
         # Finally, plot a series of bar charts comparing the average cause-specific NMR/MMR for each complication
         # during the intervention period between the status quo and each intervention/sensitivity scenario
-        labels = [l.replace(f'_{d[0]}mr_df', '') for l in cod_keys]
+        labels = [lab.replace(f'_{d[0]}mr_df', '') for lab in cod_keys]
         for k, colour in zip(cause_d, scen_colours):
             if 'Status Quo' not in k:
                 data = [[], [], []]
@@ -1269,10 +1269,10 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         results.update({'pn_sep_rate_per_year': return_95_CI_across_runs(pn_sep_rate_df, sim_years)})
         results.update({'pn_sep_rate_avg': get_avg_result(pn_sep_rate_df)})
 
-        l_pph = comps_df['postnatal_supervisor'].loc[(slice(None), 'primary_postpartum_haemorrhage'),
-        slice(None)].droplevel(1)
-        p_pph = comps_df['postnatal_supervisor'].loc[(slice(None), 'secondary_postpartum_haemorrhage'),
-        slice(None)].droplevel(1)
+        l_pph = comps_df['postnatal_supervisor'].loc[(slice(None),
+                                                      'primary_postpartum_haemorrhage'), slice(None)].droplevel(1)
+        p_pph = comps_df['postnatal_supervisor'].loc[(slice(None),
+                                                      'secondary_postpartum_haemorrhage'), slice(None)].droplevel(1)
         pph_rate_df = get_rate_df((l_pph + p_pph), births_df, 1000)
         results.update({'pph_rate_df': pph_rate_df})
         results.update({'pph_rate_per_year': return_95_CI_across_runs(pph_rate_df, sim_years)})
@@ -1337,15 +1337,15 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         results.update({'lbw_rate_per_year': return_95_CI_across_runs(lbw_df, sim_years)})
         results.update({'lbw_rate_avg': get_avg_result(lbw_df)})
 
-        resp_distress = neo_comps_df['newborn_outcomes'].loc[(slice(None), 'not_breathing_at_birth'),
-        slice(None)].droplevel(1)
+        resp_distress = neo_comps_df['newborn_outcomes'].loc[(slice(None),
+                                                              'not_breathing_at_birth'), slice(None)].droplevel(1)
         rd_df = get_rate_df(resp_distress, births_df, 1000)
         results.update({'rd_rate_df': rd_df})
         results.update({'rd_rate_per_year': return_95_CI_across_runs(rd_df, sim_years)})
         results.update({'rd_rate_avg': get_avg_result(rd_df)})
 
-        rds = neo_comps_df['newborn_outcomes'].loc[(slice(None), 'respiratory_distress_syndrome'),
-        slice(None)].droplevel(1)
+        rds = neo_comps_df['newborn_outcomes'].loc[(slice(None),
+                                                    'respiratory_distress_syndrome'), slice(None)].droplevel(1)
         rds_df = get_rate_df(rds, births_df, 1000)
         results.update({'rds_rate_df': rds_df})
         results.update({'rds_rate_per_year': return_95_CI_across_runs(rds_df, sim_years)})

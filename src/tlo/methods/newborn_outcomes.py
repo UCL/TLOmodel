@@ -835,7 +835,6 @@ class NewbornOutcomes(Module):
         practices, cord care, vitamin k and eye care
         :param hsi_event:  The HSI event in which this function is called (HSI_NewbornOutcomes_ReceivesPostnatalCheck)
         """
-        df = self.sim.population.props
         nci = self.newborn_care_info
         person_id = hsi_event.target
         cons = self.item_codes_nb_consumables

@@ -38,9 +38,9 @@ class CareOfWomenDuringPregnancy(Module):
          community including treatment and/or referral for (hypertension, diabetes, antepartum haemorrhage, anaemia,
          premature of membranes, chorioamnionitis)
 
-    Additionally, the module stores a number of HSIs which represent follow up for women who are scheduled for additional
-    testing following an admission and initiation of treatment (i.e. anaemia or gestational diabetes). Individual
-    interventions are stored as functions within the module to prevent repetition.
+    Additionally, the module stores a number of HSIs which represent follow up for women who are scheduled for
+    additional testing following an admission and initiation of treatment (i.e. anaemia or gestational diabetes).
+    Individual interventions are stored as functions within the module to prevent repetition.
     """
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -1434,7 +1434,7 @@ class CareOfWomenDuringPregnancy(Module):
         # they have reached that gestation
         elif ((mother.ps_placenta_praevia and (mother.ps_antepartum_haemorrhage == 'mild_moderate')) or
               (mother.ps_premature_rupture_of_membranes and not mother.ps_chorioamnionitis)) and \
-            (mother.ps_gestational_age_in_weeks < 37):
+             (mother.ps_gestational_age_in_weeks < 37):
             beddays = int((37 * 7) - (mother.ps_gestational_age_in_weeks * 7))
 
         else:

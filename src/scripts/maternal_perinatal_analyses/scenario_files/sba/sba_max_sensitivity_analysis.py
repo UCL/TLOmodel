@@ -37,7 +37,7 @@ class SBAMaxSensitivityAnalysis(BaseScenario):
         self.runs_per_draw = 20
 
     def log_configuration(self):
-            return {
+        return {
                 'filename': 'max_sens_analysis_250k', 'directory': './outputs',
                 "custom_levels": {
                     "*": logging.WARNING,

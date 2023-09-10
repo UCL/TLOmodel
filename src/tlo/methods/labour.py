@@ -685,8 +685,8 @@ class Labour(Module):
         #  ----------------------- ASSIGNING PREVIOUS CS DELIVERY AT BASELINE -----------------------------------------
         # This equation determines the proportion of women at baseline who have previously delivered via caesarean
         # section
-        reproductive_age_women = df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50) & \
-                                 (df.la_parity > 0)
+        reproductive_age_women = \
+            df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50) & (df.la_parity > 0)
 
         previous_cs = pd.Series(
             self.rng.random_sample(len(reproductive_age_women.loc[reproductive_age_women])) <
@@ -1096,7 +1096,6 @@ class Labour(Module):
         :param individual_id: individual_id
         """
         df = self.sim.population.props
-        params = self.current_parameters
         logger.debug(key='message', data=f'person {individual_id} is having their labour scheduled on date '
                                          f'{self.sim.date}', )
 
@@ -1111,7 +1110,7 @@ class Labour(Module):
         # we determine if she will go into labour post term (41+ weeks)
 
         if self.rng.random_sample() < self.la_linear_models['post_term_labour'].predict(
-            df.loc[[individual_id]])[individual_id]:
+           df.loc[[individual_id]])[individual_id]:
 
             df.at[individual_id, 'la_due_date_current_pregnancy'] = \
                 (df.at[individual_id, 'date_of_last_pregnancy'] + pd.DateOffset(
@@ -1291,8 +1290,8 @@ class Labour(Module):
                                                               self.sim.date)
 
                 logger.info(key='maternal_complication', data={'person': individual_id,
-                                                                  'type': f'{complication}',
-                                                                  'timing': 'intrapartum'})
+                                                               'type': f'{complication}',
+                                                               'timing': 'intrapartum'})
 
                 if complication == 'obstruction_cpd':
                     mni[individual_id]['cpd'] = True
@@ -1805,7 +1804,7 @@ class Labour(Module):
 
                 if (labour_stage == 'ip') and (df.at[person_id, 'ps_htn_disorders'] == 'severe_gest_htn'):
                     df.at[person_id, 'ps_htn_disorders'] = 'gest_htn'
-                elif(labour_stage == 'pp') and (df.at[person_id, 'pn_htn_disorders'] == 'severe_gest_htn'):
+                elif (labour_stage == 'pp') and (df.at[person_id, 'pn_htn_disorders'] == 'severe_gest_htn'):
                     df.at[person_id, 'pn_htn_disorders'] = 'gest_htn'
 
                 avail = hsi_event.get_consumables(
@@ -3054,10 +3053,11 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
 class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
     """
     This is HSI_Labour_ReceivesPostnatalCheck. It is scheduled by BirthAndPostnatalOutcomesEvent for all women who
-    will receive full postnatal checkup after birth. Additionally, this event is scheduled by the PostnatalSupervisorEvent
-     for women who require PNC later in the postnatal period. This event represents the postpartum care contact after
-    delivery and includes assessment and treatment of severe pre-eclampsia, hypertension, sepsis and postpartum
-    bleeding. In addition woman are scheduled HIV screening if appropriate and started on postnatal iron tablets
+    will receive full postnatal checkup after birth. Additionally, this event is scheduled by the
+    PostnatalSupervisorEvent for women who require PNC later in the postnatal period. This event represents the
+    postpartum care contact after delivery and includes assessment and treatment of severe pre-eclampsia, hypertension,
+    sepsis and postpartum bleeding. In addition woman are scheduled HIV screening if appropriate and started on
+    postnatal iron tablets
     """
 
     def __init__(self, module, person_id):
@@ -3242,16 +3242,16 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                 logger.debug(key='message', data="cs delivery blocked for this analysis")
 
             elif (avail and sf_check) or (mni[person_id]['cs_indication'] == 'other'):
-                    person = df.loc[person_id]
-                    logger.info(key='caesarean_delivery', data=person.to_dict())
-                    logger.info(key='cs_indications', data={'id': person_id,
-                                                            'indication': mni[person_id]['cs_indication']})
+                person = df.loc[person_id]
+                logger.info(key='caesarean_delivery', data=person.to_dict())
+                logger.info(key='cs_indications', data={'id': person_id,
+                                                        'indication': mni[person_id]['cs_indication']})
 
-                    # The appropriate variables in the MNI and dataframe are stored. Current caesarean section reduces
-                    # risk of intrapartum still birth and death due to antepartum haemorrhage
-                    mni[person_id]['mode_of_delivery'] = 'caesarean_section'
-                    mni[person_id]['amtsl_given'] = True
-                    df.at[person_id, 'la_previous_cs_delivery'] += 1
+                # The appropriate variables in the MNI and dataframe are stored. Current caesarean section reduces
+                # risk of intrapartum still birth and death due to antepartum haemorrhage
+                mni[person_id]['mode_of_delivery'] = 'caesarean_section'
+                mni[person_id]['amtsl_given'] = True
+                df.at[person_id, 'la_previous_cs_delivery'] += 1
 
         # ================================ SURGICAL MANAGEMENT OF RUPTURED UTERUS =====================================
         # Women referred after the labour HSI following correct identification of ruptured uterus will also need to
@@ -3377,7 +3377,7 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
         # Check to see if analysis is being conducted when this event runs
         if params['alternative_bemonc_availability'] or params['alternative_cemonc_availability'] or \
             params['alternative_pnc_coverage'] or params['alternative_pnc_quality'] or params['sba_sens_analysis_max'] \
-            or params['pnc_sens_analysis_max'] or params['pnc_sens_analysis_min']:
+           or params['pnc_sens_analysis_max'] or params['pnc_sens_analysis_min']:
 
             params['la_analysis_in_progress'] = True
 

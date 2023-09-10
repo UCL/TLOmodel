@@ -794,27 +794,27 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     # ------------------------------------------- Hypertensive disorders -----------------------------------------------
     # Total cases of each hypertensive disorder across the antenatal, intrapartum and postpartum periods are summed to
     # calculate the final yearly rate
-    gh_df = an_comps.loc[(slice(None), 'mild_gest_htn'), slice(None)].droplevel(1) + \
-            pn_comps.loc[(slice(None), 'mild_gest_htn'), slice(None)].droplevel(1)
+    gh_df = an_comps.loc[(slice(None), 'mild_gest_htn'), slice(None)].droplevel(1) + pn_comps.loc[
+        (slice(None), 'mild_gest_htn'), slice(None)].droplevel(1)
     gh_data = return_rate(gh_df, births_results_exc_2010, 1000, alt_years)
 
-    sgh_df = an_comps.loc[(slice(None), 'severe_gest_htn'), slice(None)].droplevel(1) + \
-             la_comps.loc[(slice(None), 'severe_gest_htn'), slice(None)].droplevel(1) + \
-             pn_comps.loc[(slice(None), 'severe_gest_htn'), slice(None)].droplevel(1)
+    sgh_df = an_comps.loc[(slice(None), 'severe_gest_htn'), slice(None)].droplevel(1) + la_comps.loc[
+        (slice(None), 'severe_gest_htn'), slice(None)].droplevel(1) + pn_comps.loc[
+        (slice(None), 'severe_gest_htn'), slice(None)].droplevel(1)
     sgh_data = return_rate(sgh_df, births_results_exc_2010, 1000, alt_years)
 
-    mpe_df = an_comps.loc[(slice(None), 'mild_pre_eclamp'), slice(None)].droplevel(1) + \
-             pn_comps.loc[(slice(None), 'mild_pre_eclamp'), slice(None)].droplevel(1)
+    mpe_df = an_comps.loc[(slice(None), 'mild_pre_eclamp'), slice(None)].droplevel(1) + pn_comps.loc[
+        (slice(None), 'mild_pre_eclamp'), slice(None)].droplevel(1)
     mpe_data = return_rate(mpe_df, births_results_exc_2010, 1000, alt_years)
 
-    spe_df = an_comps.loc[(slice(None), 'severe_pre_eclamp'), slice(None)].droplevel(1) + \
-             la_comps.loc[(slice(None), 'severe_pre_eclamp'), slice(None)].droplevel(1) + \
-             pn_comps.loc[(slice(None), 'severe_pre_eclamp'), slice(None)].droplevel(1)
+    spe_df = an_comps.loc[(slice(None), 'severe_pre_eclamp'), slice(None)].droplevel(1) + la_comps.loc[
+        (slice(None), 'severe_pre_eclamp'), slice(None)].droplevel(1) + pn_comps.loc[
+        (slice(None), 'severe_pre_eclamp'), slice(None)].droplevel(1)
     spe_data = return_rate(spe_df, births_results_exc_2010, 1000, alt_years)
 
-    ec_df = an_comps.loc[(slice(None), 'eclampsia'), slice(None)].droplevel(1) + \
-            la_comps.loc[(slice(None), 'eclampsia'), slice(None)].droplevel(1) + \
-            pn_comps.loc[(slice(None), 'eclampsia'), slice(None)].droplevel(1)
+    ec_df = an_comps.loc[(slice(None), 'eclampsia'), slice(None)].droplevel(1) + la_comps.loc[
+        (slice(None), 'eclampsia'), slice(None)].droplevel(1) + pn_comps.loc[
+        (slice(None), 'eclampsia'), slice(None)].droplevel(1)
     ec_data = return_rate(ec_df, births_results_exc_2010, 1000, alt_years)
 
     target_gh_dict = {'double': False,
@@ -863,8 +863,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         'Cases of Placenta Praevia per 1000 Pregnancies per Year', graph_location, 'praevia_rate')
 
     #  ---------------------------------------------Placental abruption... --------------------------------------------
-    pa_df = an_comps.loc[(slice(None), 'placental_abruption'), slice(None)].droplevel(1) + \
-            la_comps.loc[(slice(None), 'placental_abruption'), slice(None)].droplevel(1)
+    pa_df = an_comps.loc[(slice(None), 'placental_abruption'), slice(None)].droplevel(1) + la_comps.loc[
+        (slice(None), 'placental_abruption'), slice(None)].droplevel(1)
     pa_data = return_rate(pa_df, births_results_exc_2010, 1000, alt_years)
 
     target_pa_dict = {'double': False,
@@ -876,10 +876,10 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     # --------------------------------------------- Antepartum Haemorrhage... -----------------------------------------
     # Both antenatal and intrapartum bleeding are counted here to give the total rate of APH
-    aph_df = an_comps.loc[(slice(None), 'mild_mod_antepartum_haemorrhage'), slice(None)].droplevel(1) + \
-             an_comps.loc[(slice(None), 'severe_antepartum_haemorrhage'), slice(None)].droplevel(1) + \
-             la_comps.loc[(slice(None), 'mild_mod_antepartum_haemorrhage'), slice(None)].droplevel(1) + \
-             la_comps.loc[(slice(None), 'severe_antepartum_haemorrhage'), slice(None)].droplevel(1)
+    aph_df = an_comps.loc[(slice(None), 'mild_mod_antepartum_haemorrhage'), slice(None)].droplevel(1) + an_comps.loc[
+        (slice(None), 'severe_antepartum_haemorrhage'), slice(None)].droplevel(1) + la_comps.loc[
+        (slice(None), 'mild_mod_antepartum_haemorrhage'), slice(None)].droplevel(1) + la_comps.loc[
+        (slice(None), 'severe_antepartum_haemorrhage'), slice(None)].droplevel(1)
 
     aph_data = return_rate(aph_df, births_results_exc_2010, 1000, alt_years)
 
@@ -891,8 +891,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         'Cases of Antepartum & Intrapartum Haemorrhages per 1000 Births per Year', graph_location, 'aph_rate')
 
     # --------------------------------------------- Preterm birth ... ------------------------------------------------
-    ptl_df = la_comps.loc[(slice(None), 'early_preterm_labour'), slice(None)].droplevel(1) + \
-             la_comps.loc[(slice(None), 'late_preterm_labour'), slice(None)].droplevel(1)
+    ptl_df = la_comps.loc[(slice(None), 'early_preterm_labour'), slice(None)].droplevel(1) + la_comps.loc[
+        (slice(None), 'late_preterm_labour'), slice(None)].droplevel(1)
     ptl_data = return_rate(ptl_df, births_results_exc_2010, 100, alt_years)
 
     target_ptl_dict = {'double': False,
@@ -957,10 +957,10 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         'Cases of Uterine Rupture per 1000 Births per Year', graph_location, 'ur_rate')
 
     # ------------------------------------------ Maternal sepsis  --------------------------------------------------
-    sepsis_df = an_comps.loc[(slice(None), 'clinical_chorioamnionitis'), slice(None)].droplevel(1) + \
-                la_comps.loc[(slice(None), 'sepsis'), slice(None)].droplevel(1) + \
-                pn_comps.loc[(slice(None), 'sepsis_postnatal'), slice(None)].droplevel(1) + \
-                pn_comps.loc[(slice(None), 'sepsis'), slice(None)].droplevel(1)
+    sepsis_df = an_comps.loc[(slice(None), 'clinical_chorioamnionitis'), slice(None)].droplevel(1) + la_comps.loc[
+        (slice(None), 'sepsis'), slice(None)].droplevel(1) + pn_comps.loc[
+        (slice(None), 'sepsis_postnatal'), slice(None)].droplevel(1) + pn_comps.loc[
+        (slice(None), 'sepsis'), slice(None)].droplevel(1)
 
     total_sep_rates = return_rate(sepsis_df, births_results_exc_2010, 1000, alt_years)
 
@@ -973,8 +973,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         'Cases of Maternal Sepsis per 1000 Births per Year', graph_location, 'sepsis_rate')
 
     # ----------------------------------------- Postpartum Haemorrhage... ---------------------------------------------
-    pph_data = pn_comps.loc[(slice(None), 'primary_postpartum_haemorrhage'), slice(None)].droplevel(1) + \
-               pn_comps.loc[(slice(None), 'secondary_postpartum_haemorrhage'), slice(None)].droplevel(1)
+    pph_data = pn_comps.loc[(slice(None), 'primary_postpartum_haemorrhage'), slice(None)].droplevel(1) + pn_comps.loc[
+        (slice(None), 'secondary_postpartum_haemorrhage'), slice(None)].droplevel(1)
 
     total_pph_rates = return_rate(pph_data, births_results_exc_2010, 1000, alt_years)
 
@@ -987,8 +987,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         'Cases of Postpartum Haemorrhage per 1000 births Year', graph_location, 'pph_rate')
 
     # ----------------------------------------- Fistula... -------------------------------------------------
-    of_data = pn_comps.loc[(slice(None), 'vesicovaginal_fistula'), slice(None)].droplevel(1) + \
-              pn_comps.loc[(slice(None), 'rectovaginal_fistula'), slice(None)].droplevel(1)
+    of_data = pn_comps.loc[(slice(None), 'vesicovaginal_fistula'), slice(None)].droplevel(1) + pn_comps.loc[
+        (slice(None), 'rectovaginal_fistula'), slice(None)].droplevel(1)
 
     total_fistula_rates = return_rate(of_data, births_results_exc_2010, 1000, alt_years)
 
@@ -1010,15 +1010,6 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         key="delivery_setting_and_mode",
         custom_generate_series=(
             lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'mode'])['mother'].count()),
-        do_scaling=False)
-
-    # The data which groups the total number of deliveries per year by delivery mode is extracted
-    cs_results = extract_results(
-        results_folder,
-        module="tlo.methods.labour",
-        key="cs_indications",
-        custom_generate_series=(
-            lambda df_: df_.assign(year=df_['date'].dt.year).groupby(['year', 'indication'])['id'].count()),
         do_scaling=False)
 
     # Using this data the total rate of delivery by each mode is calculated and plotted as a line graph compared to
@@ -1169,9 +1160,9 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         'Cases of Small for Gestational Age per 100 Births Per Year', graph_location, 'neo_sga_prev')
 
     #  ------------------------------------------- Neonatal sepsis (labour & postnatal) ------------------------------
-    ns_df = nb_outcomes_df.loc[(slice(None), 'early_onset_sepsis'), slice(None)].droplevel(1) + \
-            nb_outcomes_pn_df.loc[(slice(None), 'early_onset_sepsis'), slice(None)].droplevel(1) + \
-            nb_outcomes_pn_df.loc[(slice(None), 'late_onset_sepsis'), slice(None)].droplevel(1)
+    ns_df = nb_outcomes_df.loc[(slice(None), 'early_onset_sepsis'), slice(None)].droplevel(1) + nb_outcomes_pn_df.loc[
+        (slice(None), 'early_onset_sepsis'), slice(None)].droplevel(1) + nb_outcomes_pn_df.loc[
+        (slice(None), 'late_onset_sepsis'), slice(None)].droplevel(1)
 
     target_nsep_dict = {'double': False,
                         'first': {'year': 2020, 'value': 39.3, 'label': 'Fleischmann et al.', 'ci': (78.1 - 19.4) / 2}}
@@ -1183,9 +1174,9 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         'Cases of Neonatal Sepsis per 1000 Births per Year', graph_location, 'neo_sepsis_rate')
 
     #  ------------------------------------------- Neonatal encephalopathy ------------------------------------------
-    ne_df = nb_outcomes_df.loc[(slice(None), 'mild_enceph'), slice(None)].droplevel(1) + \
-            nb_outcomes_df.loc[(slice(None), 'moderate_enceph'), slice(None)].droplevel(1) + \
-            nb_outcomes_df.loc[(slice(None), 'severe_enceph'), slice(None)].droplevel(1)
+    ne_df = nb_outcomes_df.loc[(slice(None), 'mild_enceph'), slice(None)].droplevel(1) + nb_outcomes_df.loc[
+        (slice(None), 'moderate_enceph'), slice(None)].droplevel(1) + nb_outcomes_df.loc[
+        (slice(None), 'severe_enceph'), slice(None)].droplevel(1)
 
     total_enceph_rates = return_rate(ne_df, births_results_exc_2010, 1000, alt_years)
 
@@ -1239,11 +1230,12 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         'neo_total_not_breathing')
 
     # ----------------------------------------- Congenital Anomalies -------------------------------------------------
-    cba_df = nb_outcomes_df.loc[(slice(None), 'congenital_heart_anomaly'), slice(None)].droplevel(1) + \
-             nb_outcomes_df.loc[(slice(None), 'limb_or_musculoskeletal_anomaly'), slice(None)].droplevel(1) + \
-             nb_outcomes_df.loc[(slice(None), 'urogenital_anomaly'), slice(None)].droplevel(1) + \
-             nb_outcomes_df.loc[(slice(None), 'digestive_anomaly'), slice(None)].droplevel(1) + \
-             nb_outcomes_df.loc[(slice(None), 'other_anomaly'), slice(None)].droplevel(1)
+    cba_df = nb_outcomes_df.loc[
+                 (slice(None), 'congenital_heart_anomaly'), slice(None)].droplevel(1) + nb_outcomes_df.loc[
+        (slice(None), 'limb_or_musculoskeletal_anomaly'), slice(None)].droplevel(1) + nb_outcomes_df.loc[
+        (slice(None), 'urogenital_anomaly'), slice(None)].droplevel(1) + nb_outcomes_df.loc[
+        (slice(None), 'digestive_anomaly'), slice(None)].droplevel(1) + nb_outcomes_df.loc[
+        (slice(None), 'other_anomaly'), slice(None)].droplevel(1)
 
     rate_of_cba = return_rate(cba_df, births_results_exc_2010, 1000, alt_years)
 
@@ -1538,42 +1530,42 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
             if cause == 'abortion':
                 new_df.loc[year, cause] = death_results.loc[year, 'induced_abortion'] + \
                                           death_results.loc[year, 'spontaneous_abortion']
-                new_df.loc[year, cause] = (new_df.loc[year, cause] / mat_d_unscaled['direct_deaths_final'].loc[year]) \
-                                          * 100
+                new_df.loc[year, cause] = \
+                    (new_df.loc[year, cause] / mat_d_unscaled['direct_deaths_final'].loc[year]) * 100
                 t.append(new_df)
             elif cause == 'severe_pe_ec':
                 new_df.loc[year, cause] = death_results.loc[year, 'severe_pre_eclampsia'] + \
                                           death_results.loc[year, 'eclampsia']
-                new_df.loc[year, cause] = (new_df.loc[year, cause] / mat_d_unscaled['direct_deaths_final'].loc[year]) \
-                                          * 100
+                new_df.loc[year, cause] = \
+                    (new_df.loc[year, cause] / mat_d_unscaled['direct_deaths_final'].loc[year]) * 100
                 t.append(new_df)
 
             elif cause == 'pph':
                 new_df.loc[year, cause] = death_results.loc[year, 'postpartum_haemorrhage'] + \
                                           death_results.loc[year, 'secondary_postpartum_haemorrhage']
-                new_df.loc[year, cause] = (new_df.loc[year, cause] / mat_d_unscaled['direct_deaths_final'].loc[year]) \
-                                          * 100
+                new_df.loc[year, cause] = \
+                    (new_df.loc[year, cause] / mat_d_unscaled['direct_deaths_final'].loc[year]) * 100
                 t.append(new_df)
 
             elif cause == 'sepsis':
                 new_df.loc[year, cause] = death_results.loc[year, 'postpartum_sepsis'] + \
                                           death_results.loc[year, 'intrapartum_sepsis'] + \
                                           death_results.loc[year, 'antenatal_sepsis']
-                new_df.loc[year, cause] = (new_df.loc[year, cause] / mat_d_unscaled['direct_deaths_final'].loc[year]) \
-                                          * 100
+                new_df.loc[year, cause] = \
+                    (new_df.loc[year, cause] / mat_d_unscaled['direct_deaths_final'].loc[year]) * 100
                 t.append(new_df)
 
             elif cause == 'aph':
                 new_df.loc[year, cause] = death_results.loc[year, 'antepartum'] + \
                                           death_results.loc[year, 'secondary_postpartum_haemorrhage']
-                new_df.loc[year, cause] = (new_df.loc[year, cause] / mat_d_unscaled['direct_deaths_final'].loc[year]) \
-                                          * 100
+                new_df.loc[year, cause] = \
+                    (new_df.loc[year, cause] / mat_d_unscaled['direct_deaths_final'].loc[year]) * 100
                 t.append(new_df)
 
             else:
                 new_df.loc[year, cause] = death_results.loc[year, cause]
-                new_df.loc[year, cause] = (new_df.loc[year, cause] / mat_d_unscaled['direct_deaths_final'].loc[year]) \
-                                          * 100
+                new_df.loc[year, cause] = \
+                    (new_df.loc[year, cause] / mat_d_unscaled['direct_deaths_final'].loc[year]) * 100
                 t.append(new_df)
 
     direct_d_by_cause_df = pd.concat(t)
@@ -2167,7 +2159,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
         # Plot average total DALYs per year
         fig, ax = plt.subplots()
-        ax.plot(alt_years, model_data['total'][0], label=f"Model (95% CI)", color='deepskyblue')
+        ax.plot(alt_years, model_data['total'][0], label="Model (95% CI)", color='deepskyblue')
         ax.fill_between(alt_years, model_data['total'][1], model_data['total'][2], color='b', alpha=.1)
         ax.plot(gbd_years, gbd_data['total'][0], label="GBD (Lower & Upper bounds)", color='olivedrab')
         ax.fill_between(gbd_years, gbd_data['total'][1], gbd_data['total'][2], color='g', alpha=.1)
@@ -2184,7 +2176,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
         # Plot average DALY rate per year
         fig, ax = plt.subplots()
-        ax.plot(alt_years, model_data['rate'][0], label=f"Model (95% CI)", color='deepskyblue')
+        ax.plot(alt_years, model_data['rate'][0], label="Model (95% CI)", color='deepskyblue')
         ax.fill_between(alt_years, model_data['rate'][1], model_data['rate'][2], color='b', alpha=.1)
         ax.plot(gbd_years, gbd_data['rate'][0], label="GBD (Lower & Upper bounds)", color='olivedrab')
         ax.fill_between(gbd_years, gbd_data['rate'][1], gbd_data['rate'][2], color='g', alpha=.1)
@@ -2202,7 +2194,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         if group == 'Neonatal':
             # Plot average YLL per year
             fig, ax = plt.subplots()
-            ax.plot(alt_years, model_data['yll'][0], label=f"Model (95% CI)", color='deepskyblue')
+            ax.plot(alt_years, model_data['yll'][0], label="Model (95% CI)", color='deepskyblue')
             ax.fill_between(alt_years, model_data['yll'][1], model_data['yll'][2], color='b', alpha=.1)
             ax.plot(gbd_years, gbd_data['yll'][0], label="GBD (Lower & Upper bounds)", color='olivedrab')
             ax.fill_between(gbd_years, gbd_data['yll'][1], gbd_data['yll'][2], color='g', alpha=.1)
@@ -2215,7 +2207,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
             # Plot average YLD per year
             fig, ax = plt.subplots()
-            ax.plot(alt_years, model_data['yld'][0], label=f"Model (95% CI)", color='deepskyblue')
+            ax.plot(alt_years, model_data['yld'][0], label="Model (95% CI)", color='deepskyblue')
             ax.fill_between(alt_years, model_data['yld'][1], model_data['yld'][2], color='b', alpha=.1)
             ax.plot(gbd_years, gbd_data['yld'][0], label="GBD (Lower & Upper bounds)", color='olivedrab')
             ax.fill_between(gbd_years, gbd_data['yld'][1], gbd_data['yld'][2], color='g', alpha=.1)

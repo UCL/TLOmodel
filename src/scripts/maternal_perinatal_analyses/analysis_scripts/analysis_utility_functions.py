@@ -51,6 +51,7 @@ def get_mean_from_columns(df, function):
             values.append(sum(df[col]))
     return values
 
+
 def line_graph_with_ci_and_target_rate(sim_years, data, target_data_dict, ylim, y_label, title,
                                        graph_location, file_name):
     """Outputs and saves line plot of an outcome over time, including uncertainty, in addition to a pre-determined
