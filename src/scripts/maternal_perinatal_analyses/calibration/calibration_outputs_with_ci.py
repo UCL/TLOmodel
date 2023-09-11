@@ -30,6 +30,9 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     graph_location = path
 
+    # Data is presented between 2011-2022 to allow for stabilisation of outputs in 2010 when the simulation starts
+    alt_years = sim_years[1:13]
+
     def get_modules_maternal_complication_dataframes(module):
         """Returns a dataframe which has the total number of maternal complications per year across scenario runs
         for a specific module"""
@@ -131,12 +134,12 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         an_comps.loc[(slice(None), 'spontaneous_abortion'), slice(None)].droplevel(1) + \
         an_stillbirth_results + ip_stillbirth_results
 
-    prop_lost_pregnancies_df = (total_pregnancy_losses_df / pregnancy_poll_results) * 100
-    prop_lost_pregnancies = analysis_utility_functions.return_95_CI_across_runs(prop_lost_pregnancies_df, sim_years)
+    percent_pregs_end_live_birth_df = 100 - ((total_pregnancy_losses_df / pregnancy_poll_results) * 100)
+    percent_live_birth = analysis_utility_functions.return_95_CI_across_runs(percent_pregs_end_live_birth_df, alt_years)
 
     analysis_utility_functions.simple_bar_chart(
-        prop_lost_pregnancies[0], 'Year', '% of Total Pregnancies',
-        'Proportion of total pregnancies ending in pregnancy loss', 'preg_loss_proportion', sim_years,
+        percent_live_birth[0], 'Year', '% of Total Pregnancies',
+        'Percentage of Total Pregnancies Ending in a Live Birth per Year', 'preg_loss_proportion', alt_years,
         graph_location)
 
     # ======================================== HEALTH SERVICE CALIBRATION =============================================
@@ -570,10 +573,6 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     # ========================================== MATERNAL COMPLICATIONS ==============================================
     # Here the yearly rate/prevalence of each of the modelled complications is outputted and compared to some
     # predetermined calibration target
-
-    # Data is presented between 2011-2022 to allow for stabilisation of outputs in 2010 when the simulation starts
-    alt_years = sim_years[1:13]
-
     def return_rate(num_df, denom_df, denom_val, years):
         """Returns the average rate of a complication per year across runs of the simulation"""
         rate_df = (num_df / denom_df) * denom_val
