@@ -1218,7 +1218,8 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
 
 def mix_scenarios(*dicts) -> Dict:
     """Helper function to combine a Dicts that show which parameters should be over-written.
-     * Warnings are generated if a parameter appears in more than one Dict with a different value;
+     * If a parameter appears in more than one Dict, the value in the "right-most" dict is taken, and a UserWarning
+      is raised;
      * Items under the same top-level key (i.e., for the Module) are merged rather than being over-written."""
 
     d = defaultdict(lambda: defaultdict(dict))
