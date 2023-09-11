@@ -29,14 +29,14 @@ class ImpactOfTbDaHx(BaseScenario):
         self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2013, 12, 31)
-        self.pop_size = 5000
+        self.pop_size = 1000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 4
 
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_scenarios_test_partial_run02_2',
+            'filename': 'Tb_DAH_scenarios_test_partial_run02_3',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -99,7 +99,7 @@ class ImpactOfTbDaHx(BaseScenario):
             "Outreach services": {
                 'Tb': {
                     'scenario': 0,
-                     'probability_community_chest_xray': 0.2,
+                     'probability_community_chest_xray': 0.1,
                 }
             },
         }
