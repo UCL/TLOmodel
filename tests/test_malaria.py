@@ -324,8 +324,11 @@ def test_dx_algorithm_for_non_malaria_outcomes(seed):
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
 
                      # Supporting modules:
-                     diarrhoea.DiarrhoeaPropertiesOfOtherModules()
-                     )
+                     diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
+                     tb.Tb(resourcefilepath=resourcefilepath),
+                     hiv.Hiv(resourcefilepath=resourcefilepath),
+                     epi.Epi(resourcefilepath=resourcefilepath),
+                     ),
 
         sim.make_initial_population(n=popsize)
         sim.simulate(end_date=start_date)
@@ -487,7 +490,10 @@ def get_sim(seed):
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath)
+        malaria.Malaria(resourcefilepath=resourcefilepath),
+        tb.Tb(resourcefilepath=resourcefilepath),
+        hiv.Hiv(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
     )
 
     return sim
