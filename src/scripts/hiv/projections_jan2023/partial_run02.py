@@ -36,7 +36,7 @@ class ImpactOfTbDaHx(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_scenarios_test_partial_run02_4',
+            'filename': 'Tb_DAH_scenarios_test_partial_run02_5',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -97,6 +97,8 @@ class ImpactOfTbDaHx(BaseScenario):
             "CXR scale_up": {
                 'Tb': {
                     'scenario': 3,
+                    'first_line_test': 'sputum',
+                    'second_line_test': 'xpert',
                 }
             },
             # increases probability of comunity CXR 20%
@@ -104,6 +106,8 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                     'scenario': 0,
                      'probability_community_chest_xray': 0.2,
+                    'first_line_test': 'sputum',
+                    'second_line_test': 'xpert',
                 }
             },
         }
