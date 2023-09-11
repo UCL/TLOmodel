@@ -748,4 +748,3 @@ def test_linear_model_for_clinical_malaria(sim):
 
     # make sure no-one assigned clinical or severe malaria
     assert not (df.loc[df.is_alive, 'ma_inf_type'].isin({'clinical', 'severe'})).any()
-
