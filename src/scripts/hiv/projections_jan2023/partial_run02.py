@@ -82,12 +82,16 @@ class ImpactOfTbDaHx(BaseScenario):
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                },
+                    'first_line_test': 'sputum',
+                    'second_line_test': 'sputum',
+        },
             },
             # overrides availability of CXR
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
+                    'first_line_test': 'sputum',
+                    'second_line_test': 'xpert',
                 },
             },
             "CXR scale_up": {
