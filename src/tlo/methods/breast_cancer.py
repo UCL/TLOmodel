@@ -648,6 +648,8 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "Mammography": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'  # Mammography only available at level 3 and above.
         # TODO: what this means, should be the mammography done within this event, or the biopsy, or both?
+        self.EQUIPMENT = {'Slice Master sample processing Unit', 'Paraffin Dispense', 'Whatever used with biopsy',
+                          'Mammography maybe?'}  # biopsy and ?mammography always performed with this HSI
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -668,8 +670,6 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
 
         # Use a biopsy to diagnose whether the person has breast Cancer:
         # todo: request consumables needed for this
-        self.used_equipment = {'Slice Master sample processing Unit', 'Paraffin Dispense', 'Whatever used with biopsy',
-                               'Mammograph maybe?'}
 
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run='biopsy_for_breast_cancer_given_breast_lump_discernible',
@@ -763,8 +763,9 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, "brc_date_treatment"] = self.sim.date
         df.at[person_id, "brc_stage_at_which_treatment_given"] = df.at[person_id, "brc_status"]
 
-        # Record used equipment
-        self.used_equipment = {'Anything used for mastectomy as I guess this is about'}
+        # Update equipment used with treatment
+        # NB. read only with HSI run and healthsystem.summary logger set at the level INFO or higher
+        self.EQUIPMENT.update({'Anything used for mastectomy as I guess this is about'})
 
         # Schedule a post-treatment check for 12 months:
         hs.schedule_hsi_event(
