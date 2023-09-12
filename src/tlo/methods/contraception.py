@@ -1295,11 +1295,12 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
             _new_contraceptive = self.new_contraceptive
 
-            # Record used equipment when needed
+            # Update equipment when needed
+            # NB. read only with HSI run and healthsystem.summary logger set at the level of logger.INFO or higher
             if _new_contraceptive == 'female_sterilization':
-                self.used_equipment = {'Smt used to sterilize a woman'}
+                self.EQUIPMENT.update({'Smt used to sterilize a woman'})
             elif _new_contraceptive == 'IUD':
-                self.used_equipment = {'Equipment used when performing IUD'}
+                self.EQUIPMENT.update({'Equipment used when performing IUD'})
 
         else:
             _new_contraceptive = "not_using"
