@@ -1707,7 +1707,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
         scen_colours, sim_years, cov_data, 'anc_cov_rate',
         '% Total Births',
-        'Proportion of women receiving four (or more) ANC visits at birth',
+        'Percentage of women receiving four (or more) ANC visits at birth',
         secondary_oc_path, 'anc4_cov')
 
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
@@ -1737,25 +1737,25 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
         scen_colours, sim_years, cov_data, 'pnc_mat_cov_birth_rate',
         '% Total Births',
-        'Maternal PNC Coverage as Proportion of Total Births',
+        'Maternal PNC Coverage as Percentage of Total Births',
         secondary_oc_path, 'mat_pnc_coverage_births')
 
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
         scen_colours, sim_years, cov_data, 'pnc_mat_cov_surv_rate',
         '% Total Survivors at Day 42',
-        'Maternal PNC Coverage as Proportion of Postnatal Survivors',
+        'Maternal PNC Coverage as Percentage of Postnatal Survivors',
         secondary_oc_path, 'mat_pnc_coverage_survivors')
 
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
         scen_colours, sim_years, cov_data, 'pnc_neo_cov_birth_rate',
         '% Total Births',
-        'Neonatal PNC Coverage as Proportion of Total Births',
+        'Neonatal PNC Coverage as Percentage of Total Births',
         secondary_oc_path, 'neo_pnc_coverage_births')
 
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
         scen_colours, sim_years, cov_data, 'pnc_neo_cov_surv_rate',
         '% Total Survivors at Day 28',
-        'Neonatal PNC Coverage as Proportion of Neonatal Survivors',
+        'Neonatal PNC Coverage as Percentage of Neonatal Survivors',
         secondary_oc_path, 'neo_pnc_coverage_survivors')
 
     # Finally, the difference between intervention/sensitivity scenario and the status quo for maternity service
@@ -2084,21 +2084,21 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
         scen_colours, sim_years, sec_outcomes_df, 'avd_rate_per_year',
         '% Total Births',
-        'Proportion of total births which occur via Assisted Vaginal Delivery',
+        'Percentage of total births which occur via Assisted Vaginal Delivery',
         secondary_oc_path, 'avd_trend')
 
     plot_agg_graph(sec_outcomes_df, 'avg_avd_rate_int', '% Total Births',
-                   'Average proportion of total births occuring via Assisted Vaginal Delivery',
+                   'Average Percentage of total births occuring via Assisted Vaginal Delivery',
                    'avg_avd_rate', secondary_oc_path)
 
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
         scen_colours, sim_years, sec_outcomes_df, 'cs_rate_per_year',
         '% Total Births',
-        'Proportion of total births which occur via Caesarean Section',
+        'Percentage of total births which occur via Caesarean Section',
         secondary_oc_path, 'cs_trend')
 
     plot_agg_graph(sec_outcomes_df, 'avg_cs_rate_int', '% Total Births',
-                   'Average proportion of total births occurring via  Caesarean Section',
+                   'Average Percentage of total births occurring via  Caesarean Section',
                    'avg_cs_rate', secondary_oc_path)
 
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
@@ -2185,19 +2185,19 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
         scen_colours, sim_years, sec_outcomes_df, 'dep_diag',
-        'Proportion (%)',
+        'Proportion',
         'Proportion of Ever Depressed Individuals Diagnosed with Depression',
         secondary_oc_path, 'depression_diag')
 
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
         scen_colours, sim_years, sec_outcomes_df, 'dep_anti_d',
-        'Proportion (%)',
+        'Proportion',
         'Proportion of Ever Depressed Individuals Started on Antidepressants',
         secondary_oc_path, 'depression_ad')
 
     analysis_utility_functions.comparison_graph_multiple_scenarios_multi_level_dict(
         scen_colours, sim_years, sec_outcomes_df, 'dep_talking_t',
-        'Proportion (%)',
+        'Proportion',
         'Proportion of Ever Depressed Individuals Started on Talking Therapy',
         secondary_oc_path, 'depression_tt')
 
