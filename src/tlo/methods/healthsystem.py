@@ -182,7 +182,7 @@ class HSI_Event:
         self._received_info_about_bed_days = None
         self.expected_time_requests = {}
         self.facility_info = None
-        self.used_equipment = set()
+        self.EQUIPMENT = set()
 
     @property
     def bed_days_allocated_to_this_event(self):
@@ -1732,7 +1732,7 @@ class HealthSystem(Module):
                 squeeze_factor=_squeeze_factor,
                 did_run=did_run,
                 priority=priority,
-                equipment=hsi_event.used_equipment,
+                equipment=hsi_event.EQUIPMENT,
             )
 
     def write_to_hsi_log(
