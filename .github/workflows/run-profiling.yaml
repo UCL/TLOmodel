@@ -21,7 +21,7 @@ jobs:
       ## The profile environment produces outputs in the /results directory
       - name: Run profiling in dev environment
         run: |
-          UNIQUE_ID=${GITHUB_EVENT_NAME}_${GITHUB_RUN_NUMBER}_${GITHUB_SHA} >> $GITHUB_ENV
+          UNIQUE_ID=${GITHUB_EVENT_NAME}_${GITHUB_RUN_NUMBER}_${GITHUB_SHA}
           tox -vv -e profile -- --output_name ${UNIQUE_ID}
 
       ## Upload the output as an artifact so we can push it to the profiling repository
