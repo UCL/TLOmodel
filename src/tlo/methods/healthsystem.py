@@ -2455,7 +2455,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             # remove them from list of available officers.
                             for officer, call in updated_call.items():
                                 if capabilities_monitor[officer] <= 0:
-                                    set_capabilities_still_available.remove(officer)
+                                    if officer in set_capabilities_still_available:
+                                        set_capabilities_still_available.remove(officer)
+                                    else:
+                                        logger.warning(
+                                            key="message",
+                                            data=(f"{event.TREATMENT_ID} actual_footprint requires different"
+                                                  f"officers than expected_footprint.")
+                                        )
 
                             # Update today's footprint based on actuall call and squeeze factor
                             self.module.running_total_footprint -= original_call
