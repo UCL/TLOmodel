@@ -1291,6 +1291,13 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
                              )
 
             _new_contraceptive = self.new_contraceptive
+
+            # Update equipment
+            if _new_contraceptive == 'female_sterilization':
+                self.EQUIPMENT.update({'Smt used to sterilize a woman'})
+            elif _new_contraceptive == 'IUD':
+                self.EQUIPMENT.update({'Equipment used when performing IUD'})
+
         else:
             _new_contraceptive = "not_using"
 
