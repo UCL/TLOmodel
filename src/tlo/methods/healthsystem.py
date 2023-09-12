@@ -1245,8 +1245,10 @@ class HealthSystem(Module):
 
             # If a policy is adopted, following variable *must* always be taken from policy.
             # Over-write any other values here.
-            self.lowest_priority_considered = Policy_df.loc[Policy_df['Treatment'] == 'lowest_priority_considered',
-                                                        'Priority'].iloc[0]
+            self.lowest_priority_considered = Policy_df.loc[
+                Policy_df['Treatment'] == 'lowest_priority_considered',
+                'Priority'
+            ].iloc[0]
 
             # Convert policy dataframe into dictionary to speed-up look-up process.
             self.priority_rank_dict = \
