@@ -1972,33 +1972,35 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
         )
 
         # check if patient has: cough, fever, night sweat, weight loss
-        # if none of the above conditions are present, no further action
+        set_of_symptoms_that_indicate_tb = set(self.module.symptom_list)
         persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
-        if not any(x in self.module.symptom_list for x in persons_symptoms):
+
+        if not set_of_symptoms_that_indicate_tb.intersection(persons_symptoms):
+            # if none of the above conditions are present, no further action
             return self.make_appt_footprint({})
 
-        # check for presence of all symptoms (clinical diagnosis)
-        if all(x in self.module.symptom_list for x in persons_symptoms):
+        elif set_of_symptoms_that_indicate_tb.issubset(persons_symptoms):
+            # All symptoms present (clinical diagnosis)
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="tb_clinical", hsi_event=self
             )
 
-        # if clinical diagnosis returns positive result, refer for appropriate treatment
-        if test_result:
-            df.at[person_id, "tb_diagnosed"] = True
-            df.at[person_id, "tb_date_diagnosed"] = now
+            # if clinical diagnosis returns positive result, refer for appropriate treatment
+            if test_result:
+                df.at[person_id, "tb_diagnosed"] = True
+                df.at[person_id, "tb_date_diagnosed"] = now
 
-            logger.debug(
-                key="message",
-                data=f"schedule HSI_Tb_StartTreatment for person {person_id}",
-            )
+                logger.debug(
+                    key="message",
+                    data=f"schedule HSI_Tb_StartTreatment for person {person_id}",
+                )
 
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
-                topen=now,
-                tclose=None,
-                priority=0,
-            )
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+                    topen=now,
+                    tclose=None,
+                    priority=0,
+                )
 
 
 class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
