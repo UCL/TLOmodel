@@ -24,7 +24,7 @@ outputspath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
-results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_partial_run02_4-2023-09-11T181638Z", outputspath)[-1]
+results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_partial_run02_5-2023-09-11T212150Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
