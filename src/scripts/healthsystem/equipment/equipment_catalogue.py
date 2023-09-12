@@ -8,7 +8,8 @@ from tlo.analysis.utils import extract_results
 
 def get_annual_equipment_declarations_by_levels(results_folder: Path) -> pd.DataFrame:
     """Return pd.DataFrame gives the simulated annual equipment declaration by facility levels for each simulated
-    year."""
+    year.
+    NB. healthsystem.summary logger required to have been set at the level INFO or higher."""
 
     def get_equipment_declaration_by_levels(_df):
         """Get the equipment declaration by facility levels for the year."""
