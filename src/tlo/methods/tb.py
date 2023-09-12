@@ -898,7 +898,9 @@ class Tb(Module):
             df.at[child_id, "sy_aids_symptoms"] = 0
             df.at[child_id, "hv_art"] = "not"
 
-        if df.at[abs(mother_id), "tb_diagnosed"]:  # Not interested in whether true or direct birth
+        # Not interested in whether true or direct birth
+        # give IPT to child of TB diagnosed mother if 2014 or later
+        if df.at[abs(mother_id), "tb_diagnosed"] and (now.year >= self.parameters["ipt_start_date"]):
             event = HSI_Tb_Start_or_Continue_Ipt(self, person_id=child_id)
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 event,
