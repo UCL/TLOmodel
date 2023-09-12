@@ -762,8 +762,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, "brc_date_treatment"] = self.sim.date
         df.at[person_id, "brc_stage_at_which_treatment_given"] = df.at[person_id, "brc_status"]
 
-        # Update equipment used with treatment
-        # NB. read only with HSI run and healthsystem.summary logger set at the level INFO or higher
+        # Update equipment
         self.EQUIPMENT.update({'Anything used for mastectomy'})
 
         # Schedule a post-treatment check for 12 months:
