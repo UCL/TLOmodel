@@ -913,8 +913,7 @@ class HealthSystem(Module):
         # If adopting a policy, initialise here all other relevant variables.
         # Use of blank instead of None is not ideal, however couldn't seem to recover actual
         # None from parameter file.
-        if self.priority_policy != "":
-            self.load_priority_policy(self.priority_policy)
+        self.load_priority_policy(self.priority_policy)
 
         # Initialise the fast-tracking routes.
         # The attributes that can be looked up to determine whether a person might be eligible
@@ -1240,18 +1239,19 @@ class HealthSystem(Module):
 
     def load_priority_policy(self, policy):
 
-        # Select the chosen policy from dictionary of all possible policies
-        Policy_df = self.parameters['priority_rank'][policy]
+        if policy != "":
+            # Select the chosen policy from dictionary of all possible policies
+            Policy_df = self.parameters['priority_rank'][policy]
 
-        # If a policy is adopted, following variable *must* always be taken from policy.
-        # Over-write any other values here.
-        self.lowest_priority_considered = Policy_df.loc[Policy_df['Treatment'] == 'lowest_priority_considered',
+            # If a policy is adopted, following variable *must* always be taken from policy.
+            # Over-write any other values here.
+            self.lowest_priority_considered = Policy_df.loc[Policy_df['Treatment'] == 'lowest_priority_considered',
                                                         'Priority'].iloc[0]
 
-        # Convert policy dataframe into dictionary to speed-up look-up process.
-        self.priority_rank_dict = \
-            Policy_df.set_index("Treatment", drop=True).to_dict(orient="index")
-        del self.priority_rank_dict["lowest_priority_considered"]
+            # Convert policy dataframe into dictionary to speed-up look-up process.
+            self.priority_rank_dict = \
+                Policy_df.set_index("Treatment", drop=True).to_dict(orient="index")
+            del self.priority_rank_dict["lowest_priority_considered"]
 
     def schedule_hsi_event(
         self,
@@ -2796,9 +2796,8 @@ class HealthSystemChangePriorityPolicyAndMode(RegularEvent, PopulationScopeEvent
         # If policy has changed, update it
         if self.module.parameters["policy_name"] != self.module.parameters["policy_name_post_switch"]:
             self.module.priority_policy = self.module.parameters["policy_name_post_switch"]
-            if self.module.priority_policy != "":
-                self.module.load_priority_policy(self.module.priority_policy)
-        print("Switched to ", self.module.mode_appt_constraints)
+            self.module.load_priority_policy(self.module.priority_policy)
+
         logger.info(key="message",
                     data=f"Switched policy at sim date: "
                          f"{self.sim.date}"
