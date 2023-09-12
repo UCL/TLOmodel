@@ -643,6 +643,7 @@ class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
     this calls functions to assign new malaria infections
     and schedules rdt at a community level (non-symptom driven)
     """
+
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
 
@@ -1175,21 +1176,29 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
         # TREATED
-        # select people with malaria and treatment for at least 5 days
+        # select people with clinical malaria and treatment for at least 5 days
         # if treated, will clear symptoms and parasitaemia
         # this will also clear parasitaemia for asymptomatic cases picked up by routine rdt
-        infected_and_treated = df.index[df.is_alive &
+        clinical_and_treated = df.index[df.is_alive &
                                         (df.ma_date_tx < (self.sim.date - DateOffset(days=5))) &
-                                        (df.ma_inf_type != 'severe')]
+                                        (df.ma_inf_type == 'clinical')]
+
+        # select people with severe malaria and treatment for at least 7 days
+        severe_and_treated = df.index[df.is_alive &
+                                      (df.ma_date_tx < (self.sim.date - DateOffset(days=7))) &
+                                      (df.ma_inf_type == 'severe')]
+
+        # create list of all cases to be resolved through treatment
+        infections_to_clear = sorted(set(clinical_and_treated).union(severe_and_treated))
 
         self.sim.modules['SymptomManager'].clear_symptoms(
-            person_id=infected_and_treated, disease_module=self.module
+            person_id=infections_to_clear, disease_module=self.module
         )
 
         # change properties
-        df.loc[infected_and_treated, 'ma_tx'] = 'none'
-        df.loc[infected_and_treated, 'ma_is_infected'] = False
-        df.loc[infected_and_treated, 'ma_inf_type'] = 'none'
+        df.loc[infections_to_clear, 'ma_tx'] = 'none'
+        df.loc[infections_to_clear, 'ma_is_infected'] = False
+        df.loc[infections_to_clear, 'ma_inf_type'] = 'none'
 
         # UNTREATED
         # if not treated, self-cure occurs after 6 days of symptoms
