@@ -1049,7 +1049,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     plt.ylabel('Percentage of Total Births')
     plt.xlabel('Year')
     plt.ylim(0, 10)
-    plt.title('Percentage of total births delivered via caeasrean section (2010 & 2015)')
+    plt.title('Percentage of total births delivered via caesarean section (2010 & 2015)')
     plt.xticks(ind + width / 2, ['2010', '2015'])
     plt.legend()
     plt.savefig(f'{graph_location}/cs_rate_2010_2015.png', bbox_inches="tight")
