@@ -760,7 +760,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         hs = self.sim.modules['HealthSystem']
 
         # Ignore this event if the person is no longer alive or already on treatment
-        if not df.at[person_id, 'is_alive'] or not (df.at[person_id, 'ma_tx'] == 'none'):
+        if not df.at[person_id, 'is_alive'] or (df.at[person_id, 'ma_tx'] != 'none'):
             return hs.get_blank_appt_footprint()
 
         district = df.at[person_id, 'district_num_of_residence']
@@ -908,7 +908,8 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
 
-        if person['ma_tx'] != 'none':
+        # if not on treatment already - request treatment
+        if person['ma_tx'] == 'none':
 
             logger.debug(key='message',
                          data=f'HSI_Malaria_Treatment: requesting malaria treatment for {person_id}')
@@ -998,7 +999,9 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
-        if not df.at[person_id, 'ma_tx'] and df.at[person_id, 'is_alive']:
+
+        # if person is not on treatment and still alive
+        if (df.at[person_id, 'ma_tx'] == 'none') and df.at[person_id, 'is_alive']:
 
             logger.debug(key='message',
                          data=f'HSI_Malaria_Treatment_Complicated: requesting complicated malaria treatment for '

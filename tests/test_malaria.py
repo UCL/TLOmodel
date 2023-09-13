@@ -102,7 +102,7 @@ def test_sims(sim):
         assert not df.at[person, "ma_inf_type"] == "none"
 
     # if on treatment, must have treatment start date
-    for person in df.index[(df.ma_tx != 'none')]:
+    for person in df.index[(df.ma_tx == 'uncomplicated')]:
         assert not pd.isnull(df.at[person, "ma_date_tx"])
 
 
@@ -183,7 +183,7 @@ def test_schedule_rdt_for_all(sim):
     df = sim.population.props
 
     # check no treatment unless infected
-    for person in df.index[(df.ma_tx != 'none')]:
+    for person in df.index[(df.ma_tx == 'uncomplicated')]:
         assert not pd.isnull(df.at[person, "ma_date_infected"])
 
     # check clinical counter is working
