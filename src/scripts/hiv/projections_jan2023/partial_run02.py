@@ -90,8 +90,8 @@ class ImpactOfTbDaHx(BaseScenario):
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
-                     'first_line_test': 'sputum',
-                     'second_line_test': 'xpert',
+                     # 'first_line_test': 'sputum',
+                     # 'second_line_test': 'xpert',
                 },
             },
             "CXR scale_up": {
@@ -105,8 +105,8 @@ class ImpactOfTbDaHx(BaseScenario):
             "Outreach services": {
                 'Tb': {
                     'scenario': 0,
-                     'probability_community_chest_xray': 0.1,
-                     'scaling_factor_WHO': 3.1,
+                     'probability_community_chest_xray': 0.2,
+                     'scaling_factor_WHO': 2.1,
                 }
             },
         }
