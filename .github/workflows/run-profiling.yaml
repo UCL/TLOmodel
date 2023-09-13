@@ -50,7 +50,7 @@ jobs:
       - name: Push results to profiling repository
         uses: dmnemec/copy_file_to_another_repo_action@v1.1.1
         env:
-          API_TOKEN_GITHUB: ${{ secrets.PROFILING_ACCESS_TOKEN }}
+          API_TOKEN_GITHUB: ${{ secrets.PROFILING_REPO_ACCESS }}
         with:
           source_file: profiling_results/
           destination_repo: UCL/TLOmodel-profiling
@@ -62,6 +62,6 @@ jobs:
       - name: Trigger website rebuild
         uses: peter-evans/repository-dispatch@v2
         with:
-          token: ${{ secrets.PROFILING_ACCESS_TOKEN }}
+          token: ${{ secrets.PROFILING_REPO_ACCESS }}
           repository: UCL/TLOmodel-profiling
           event-type: new-profiling-results
