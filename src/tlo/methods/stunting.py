@@ -484,8 +484,7 @@ class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props
         rng = self.module.rng
 
-        annual_prob = model.predict(df.loc[mask]).clip(upper=0.99999)  # Prevents the np.log call below raising warning
-        #                                                                if it encounters np.log(0.0).
+        annual_prob = model.predict(df.loc[mask]).clip(upper=1.0)
         cum_prob_over_days_exposed = 1.0 - (1.0 - annual_prob) ** (days_exposed_to_risk / DAYS_IN_YEAR)
 
         assert pd.notnull(cum_prob_over_days_exposed).all()
