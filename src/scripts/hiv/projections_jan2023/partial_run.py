@@ -76,8 +76,6 @@ class ImpactOfTbDaHx(BaseScenario):
             "Baseline": {
                 'Tb': {
                     'scenario': 0,
-                   #'probability_community_chest_xray' : 0.0,
-                   #'probability_access_to_xray': 0.1,
                 },
             },
         # overrides availability of Xpert
