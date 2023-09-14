@@ -2,14 +2,15 @@ name: Trigger Profiling
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
   # Allow profiling to be triggered by comments on pull requests
   # Trigger is /run profiling
   issue_comment:
     types:
       - created
+  # Profile the model every Sunday at 00:00, 
+  # on the HEAD of master
+  schedule:
+    - cron: 0 0 * * 6
 
 jobs:
   not-comment-triggered:
@@ -74,11 +75,6 @@ jobs:
             pull_number: context.issue.number,
           });
           return pr.head.sha;
-    - name: Checkout SHA
-      uses: actions/checkout@v3
-      with:
-        lfs: true
-        ref: ${{ steps.sha.outputs.result }}
     - name: Trigger profiling workflow
       uses: ./.github/workflows/run-profiling.yaml
       with:

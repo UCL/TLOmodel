@@ -42,7 +42,7 @@ on:
 
 jobs:
   run-profiling:
-    name: Setup developer environment
+    name: Profile in developer env
     runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout repository
