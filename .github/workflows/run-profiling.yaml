@@ -8,27 +8,57 @@
 name: Run profiling
 
 on:
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: The type of machine to run job on
+        required: false
+        type: string
+        default: self-hosted
+      event-name:
+        description: |
+          The event name to attribute to the workflow run.
+          Should be passed the value of ${GITHUB_EVENT_NAME} from the triggering workflow.
+        type: string
+        required: false
+        default: workflow_dispatch
+      run-number:
+        description: |
+          The run number (${GITHUB_RUN_NUMBER}) of the triggering workflow.
+          Defaults to 0 if not provided.
+        type: string
+        required: false
+        default: 0
+      sha:
+        description: The SHA to checkout and run profiling on.
+        required: true
+        type: string
+    secrets:
+      profiling-access-token:
+        description: |
+          Access token providing write access to the TLOmodel-profiling repository, 
+          which will be used to commit profiling results on a successful profiling session.
+        required: true
 
 jobs:
   run-profiling:
     name: Setup developer environment
-    runs-on: self-hosted
+    runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          ref: ${{ inputs.sha }}
 
       ## The profile environment produces outputs in the /results directory
       - name: Run profiling in dev environment
-        run: |
-          UNIQUE_ID=${GITHUB_EVENT_NAME}_${GITHUB_RUN_NUMBER}_${GITHUB_SHA}
-          tox -vv -e profile -- --output_name ${UNIQUE_ID}
+        run: tox -vv -e profile -- --output_name ${{ inputs.event-name }}_${{ inputs.run-number }}_${{ inputs.sha }}
 
       ## Upload the output as an artifact so we can push it to the profiling repository
       - name: Save results as artifact
         uses: actions/upload-artifact@v3
         with:
-          name: profiling_${{ github.run-number }}
+          name: profiling_${{ inputs.run-number }}
           path: profiling_results/
           retention-days: 1
 
@@ -40,7 +70,7 @@ jobs:
       - name: Download the profiling results
         uses: actions/download-artifact@v3
         with:
-          name: profiling_${{ github.run-number }}
+          name: profiling_${{ inputs.run-number }}
           path: profiling_results
 
       ## The token provided needs contents and pages access to the target repo
@@ -50,7 +80,7 @@ jobs:
       - name: Push results to profiling repository
         uses: dmnemec/copy_file_to_another_repo_action@v1.1.1
         env:
-          API_TOKEN_GITHUB: ${{ secrets.PROFILING_REPO_ACCESS }}
+          API_TOKEN_GITHUB: ${{ secrets.profiling-access-token }}
         with:
           source_file: profiling_results/
           destination_repo: UCL/TLOmodel-profiling
@@ -62,6 +92,6 @@ jobs:
       - name: Trigger website rebuild
         uses: peter-evans/repository-dispatch@v2
         with:
-          token: ${{ secrets.PROFILING_REPO_ACCESS }}
+          token: ${{ secrets.profiling-access-token }}
           repository: UCL/TLOmodel-profiling
           event-type: new-profiling-results
