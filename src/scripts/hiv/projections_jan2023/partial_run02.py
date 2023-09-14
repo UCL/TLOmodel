@@ -36,7 +36,7 @@ class ImpactOfTbDaHx(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_scenarios_test_partial_run02_14',
+            'filename': 'Tb_DAH_scenarios_test_partial_run02_15',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -90,15 +90,15 @@ class ImpactOfTbDaHx(BaseScenario):
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
-                     'first_line_test': 'sputum',
-                     'second_line_test': 'xpert',
+                     # 'first_line_test': 'sputum',
+                     # 'second_line_test': 'xpert',
                 },
             },
             "CXR scale_up": {
                 'Tb': {
                     'scenario': 3,
-                     'first_line_test': 'sputum',
-                    'second_line_test': 'xpert',
+                    #  'first_line_test': 'sputum',
+                    # 'second_line_test': 'xpert',
                 }
             },
             # increases probability of community CXR 20%
@@ -106,7 +106,7 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                     'scenario': 0,
                      'probability_community_chest_xray': 0.1,
-                     'scaling_factor_WHO': 3.5,
+                     'scaling_factor_WHO': 1.9,
                 }
             },
         }
