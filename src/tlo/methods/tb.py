@@ -774,7 +774,7 @@ class Tb(Module):
             )
         )
 
-        # TB Chest x-ray
+        # TB Chest x-ray++++++++++++++++++++++++
         self.item_codes_for_consumables_required['chest_xray'] = {
             hs.get_item_code_from_item_name("X-ray"): 1}
 
