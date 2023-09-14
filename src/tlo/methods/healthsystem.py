@@ -871,10 +871,9 @@ class HealthSystem(Module):
             self.healthsystemscheduler = HealthSystemScheduler(self)
             sim.schedule_event(self.healthsystemscheduler, sim.date)
 
-        # Schedule priority policy change
-        if self.parameters["policy_name"] != self.parameters["policy_name_post_switch"]:
-            sim.schedule_event(HealthSystemChangePriorityPolicy(self),
-                               Date(self.parameters["year_policy_switch"], 1, 1))
+        # Schedule priority policy and mode_appt_constraints change
+        sim.schedule_event(HealthSystemChangePriorityPolicyAndMode(self),
+                           Date(self.parameters["year_policy_switch"], 1, 1))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -914,8 +913,7 @@ class HealthSystem(Module):
         # If adopting a policy, initialise here all other relevant variables.
         # Use of blank instead of None is not ideal, however couldn't seem to recover actual
         # None from parameter file.
-        if self.priority_policy != "":
-            self.load_priority_policy(self.priority_policy)
+        self.load_priority_policy(self.priority_policy)
 
         # Initialise the fast-tracking routes.
         # The attributes that can be looked up to determine whether a person might be eligible
@@ -1241,18 +1239,21 @@ class HealthSystem(Module):
 
     def load_priority_policy(self, policy):
 
-        # Select the chosen policy from dictionary of all possible policies
-        Policy_df = self.parameters['priority_rank'][policy]
+        if policy != "":
+            # Select the chosen policy from dictionary of all possible policies
+            Policy_df = self.parameters['priority_rank'][policy]
 
-        # If a policy is adopted, following variable *must* always be taken from policy.
-        # Over-write any other values here.
-        self.lowest_priority_considered = Policy_df.loc[Policy_df['Treatment'] == 'lowest_priority_considered',
-                                                        'Priority'].iloc[0]
+            # If a policy is adopted, following variable *must* always be taken from policy.
+            # Over-write any other values here.
+            self.lowest_priority_considered = Policy_df.loc[
+                Policy_df['Treatment'] == 'lowest_priority_considered',
+                'Priority'
+            ].iloc[0]
 
-        # Convert policy dataframe into dictionary to speed-up look-up process.
-        self.priority_rank_dict = \
-            Policy_df.set_index("Treatment", drop=True).to_dict(orient="index")
-        del self.priority_rank_dict["lowest_priority_considered"]
+            # Convert policy dataframe into dictionary to speed-up look-up process.
+            self.priority_rank_dict = \
+                Policy_df.set_index("Treatment", drop=True).to_dict(orient="index")
+            del self.priority_rank_dict["lowest_priority_considered"]
 
     def schedule_hsi_event(
         self,
@@ -2782,7 +2783,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             self.module.bed_days.availability = self._parameters['beds_availability']
 
 
-class HealthSystemChangePriorityPolicy(RegularEvent, PopulationScopeEventMixin):
+class HealthSystemChangePriorityPolicyAndMode(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to change the priority policy adopted by the
     HealthSystem at a given year.    """
 
@@ -2790,13 +2791,20 @@ class HealthSystemChangePriorityPolicy(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=100))
 
     def apply(self, population):
-        self.module.priority_policy = self.module.parameters["policy_name_post_switch"]
+
+        # Change mode_appt_constraints
         self.module.mode_appt_constraints = self.module.parameters["mode_appt_constraints_postSwitch"]
-        if self.module.priority_policy != "":
+
+        # If policy has changed, update it
+        if self.module.parameters["policy_name"] != self.module.parameters["policy_name_post_switch"]:
+            self.module.priority_policy = self.module.parameters["policy_name_post_switch"]
             self.module.load_priority_policy(self.module.priority_policy)
+
         logger.info(key="message",
                     data=f"Switched policy at sim date: "
-                         f"{self.service_availability}"
+                         f"{self.sim.date}"
                          f"Now using policy: "
                          f"{self.module.priority_policy}"
+                         f"and mode: "
+                         f"{self.module.mode_appt_constraints}"
                     )
