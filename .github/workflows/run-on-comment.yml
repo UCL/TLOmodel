@@ -31,6 +31,24 @@ on:
           with results of test is installed on if relevant.
         required: false
         type: string
+      artifact-dir:
+        description: |
+          Directory to upload as a workflow artifact if the workflow is successful. 
+          No artifact will be produced if this value is left unpopulated.
+        required: false
+        type: string
+      artifact-tag:
+        description: |
+          The tag or name to assign to any artifacts that are to uploaded.
+        required: false
+        type: string
+        default: comment-triggered-workflow-artifact
+      artifact-days:
+        description: |
+          Number of days to retain the artifact, if it is produced.
+        required: false
+        type: number
+        default: 1
     secrets:
       application-id:
         description: |
@@ -62,10 +80,12 @@ jobs:
           });
           const permission_level = response.data.permission;
           return (permission_level == 'admin') || (permission_level == 'write')
+  
     - name: Exit if insufficient permissions
       if: ${{ steps.has_permissions.outputs.result == 'false' }}
       run: |
         exit 1
+
     - name: React to comment
       uses: actions/github-script@v6
       with:
@@ -76,6 +96,7 @@ jobs:
             comment_id: context.payload.comment.id,
             content: "rocket",
           });
+
     - name: Get SHA of last commit on default branch if issue or pull-request branch
       id: sha
       uses: actions/github-script@v6
@@ -91,13 +112,16 @@ jobs:
             pull_number: context.issue.number,
           });
           return pr.head.sha;
+
     - name: Checkout SHA
       uses: actions/checkout@v3
       with:
         lfs: true
         ref: ${{ steps.sha.outputs.result }}
+
     - name: Run test command(s)
       run: ${{ inputs.commands }}
+
     - name: Get comment-bot token
       if: always() && steps.has_permissions.outputs.result == 'true'
       id: get_comment_bot_token
@@ -106,6 +130,7 @@ jobs:
         application_id: ${{ secrets.application-id }}
         application_private_key: ${{ secrets.application-private-key }}
         organization: ${{ inputs.application-organization }}
+
     - name: Create comment with test result and link to workflow run information
       if: always() && steps.has_permissions.outputs.result == 'true'
       uses: actions/github-script@v6
@@ -165,3 +190,11 @@ jobs:
             repo: context.repo.repo,  
             body: `## ${{inputs.description }} ${result}\n${details}`,
           });
+
+    - name: Upload artifact if requested
+      if: "${{ inputs.artifact-dir != '' }}"
+      uses: actions/upload-artifact@v3
+        with:
+          name: ${{ inputs.artifact-tag }}
+          path: ${{ inputs.artifact-dir }}
+          retention-days: ${{ inputs.artifact-days }}
