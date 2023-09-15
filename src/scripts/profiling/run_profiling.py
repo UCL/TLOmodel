@@ -53,8 +53,8 @@ def record_run_statistics(output_file: str, s: Simulation) -> None:
     stats_to_record["pop_df_mem_mb"] = (
         pops.props.memory_usage(index=True, deep=True).sum() / 1e6
     )
-    stats_to_record["pop_df_times_extended"] = np.ceil(
-        (pops.props.shape[0] - pops.initial_size) / pops.new_rows.shape[0]
+    stats_to_record["pop_df_times_extended"] = int(
+        np.ceil((pops.props.shape[0] - pops.initial_size) / pops.new_rows.shape[0])
     )
 
     # Having computed all statistics, save the file

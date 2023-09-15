@@ -119,3 +119,6 @@ tlo.conf
 # ignore all files in outputs directory, except README
 outputs/*
 !outputs/README
+
+# ignore all files in profiling_results directory
+profiling_results/
