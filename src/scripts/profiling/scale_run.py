@@ -14,7 +14,9 @@ from _paths import TLO_OUTPUT_DIR, TLO_ROOT
 from shared import print_checksum, schedule_profile_log
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file as parse_log_file_fn  # avoid name conflicts
+from tlo.analysis.utils import (
+    parse_log_file as parse_log_file_fn,
+)  # avoid name conflicts
 from tlo.methods.fullmodel import fullmodel
 
 HELP_STR = (
@@ -46,7 +48,7 @@ def scale_run(
     save_final_population: bool = False,
     record_hsi_event_details: bool = False,
     profiler: Optional[Type["Profiler"]] = None,
-) -> None:
+) -> Simulation:
     # Start profiler if one has been passed
     if profiler is not None:
         profiler.start()
@@ -117,7 +119,7 @@ def scale_run(
     # Stop profiling session
     if profiler is not None:
         profiler.stop()
-    return
+    return sim
 
 
 if __name__ == "__main__":
