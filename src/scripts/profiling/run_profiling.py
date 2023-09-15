@@ -4,6 +4,11 @@ import warnings
 from datetime import datetime
 from pathlib import Path
 
+import json
+import numpy as np
+
+from tlo import Simulation
+
 from _parameters import scale_run_parameters
 from _paths import PROFILING_RESULTS
 from pyinstrument import Profiler
@@ -22,13 +27,41 @@ def current_time(formatstr: str = "%Y-%m-%d_%H%M") -> str:
     return datetime.utcnow().strftime(formatstr)
 
 
-def record_run_statistics(f_name: str) -> None:
+def record_run_statistics(output_file: str, s: Simulation) -> None:
     """
     After concluding the profiling session, but before cleanup,
     record statistics from the simulation outputs that we wish
     to present alongside the profiler outputs.
+
+    Key / value pairs are:
+    pop_df_size: (rows, cols)
+        Number of rows and columns in the final population dataframe
+    pop_df_mem_mb: MBs
+        Size in MBs of the final population dataframe
+    pop_df_times_extended:
+        Number of times the population dataframe had to be expanded
     """
-    pass
+    # Initialise empty dict to add statistics to,
+    # then save in JSON format
+    stats_to_record = dict()
+
+    # Record statistics as [key, value] pairs
+
+    # Population dataframe statistics
+    population = s.population
+    stats_to_record["pop_df_size"] = population.props.shape
+    stats_to_record["pop_df_mem_mb"] = (
+        population.props.memory_usage(index=True, deep=True).sum() / 1e6
+    )
+    stats_to_record["pop_df_times_extended"] = np.ceil(
+        (population.props.shape[0] - population.initial_size)
+        / population.new_rows.shape[0]
+    )
+
+    # Having computed all statistics, save the file
+    with open(output_file, "w") as f:
+        json.dump(stats_to_record, f)
+    return
 
 
 def run_profiling(
@@ -41,7 +74,7 @@ def run_profiling(
     interval: float = 1e-1,
 ) -> None:
     """
-    Uses pyinstrumment to profil the scale_run simulation,
+    Uses pyinstrumment to profile the scale_run simulation,
     writing the output in the requested formats.
     """
     # Suppress "ignore" warnings
@@ -74,7 +107,7 @@ def run_profiling(
     print(f"[{current_time('%H:%M:%S')}:INFO] Starting profiling runs")
 
     # Profile scale_run
-    scale_run(**scale_run_parameters, profiler=p)
+    completed_simulation = scale_run(**scale_run_parameters, profiler=p)
 
     print(f"[{current_time('%H:%M:%S')}:INFO] Profiling runs complete")
 
@@ -104,8 +137,8 @@ def run_profiling(
             f.write(json_renderer.render(scale_run_session))
         print("done")
     if write_stats:
-        print(f"Writing additional statistics file...", end="", flush=True)
-        record_run_statistics(output_stat_file)
+        print(f"Writing {output_stat_file}", end="...", flush=True)
+        record_run_statistics(output_stat_file, completed_simulation)
         print("done")
 
     return
