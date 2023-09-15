@@ -19,6 +19,14 @@ on:
   schedule:
     - cron: 0 0 * * 6
 
+concurrency:
+  # Prevent multiple profiling runs from happening on the same
+  # commit simultaneously.
+  # This ensures we don't overwrite the artifact to be uploaded
+  # with another run that uses the same name, before the results
+  # can be processed. 
+  group: profiling-${{ github.workflow }}-${{ github.ref }}
+
 jobs:
   profile-on-comment:
     name: Comment triggered profiling
