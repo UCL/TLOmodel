@@ -49,7 +49,8 @@ def record_run_statistics(output_file: str, s: Simulation) -> None:
 
     # Population dataframe statistics
     pops = s.population
-    stats_to_record["pop_df_size"] = pops.props.shape
+    stats_to_record["pop_df_rows"] = pops.props.shape[0]
+    stats_to_record["pop_df_cols"] = pops.props.shape[1]
     stats_to_record["pop_df_mem_mb"] = (
         pops.props.memory_usage(index=True, deep=True).sum() / 1e6
     )
