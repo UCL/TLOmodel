@@ -22,14 +22,28 @@ def current_time(formatstr: str = "%Y-%m-%d_%H%M") -> str:
     return datetime.utcnow().strftime(formatstr)
 
 
+def record_run_statistics(f_name: str) -> None:
+    """
+    After concluding the profiling session, but before cleanup,
+    record statistics from the simulation outputs that we wish
+    to present alongside the profiler outputs.
+    """
+    pass
+
+
 def run_profiling(
     output_dir: Path = PROFILING_RESULTS,
     output_name: Path = None,
     write_pyis: bool = True,
     write_html: bool = False,
     write_json: bool = False,
+    write_stats: bool = False,
     interval: float = 1e-1,
 ) -> None:
+    """
+    Uses pyinstrumment to profil the scale_run simulation,
+    writing the output in the requested formats.
+    """
     # Suppress "ignore" warnings
     warnings.filterwarnings("ignore")
 
@@ -43,10 +57,12 @@ def run_profiling(
         output_pyis_file = output_dir / "output.pyisession"
         output_html_file = output_dir / "output.html"
         output_json_file = output_dir / "output.json"
+        output_stat_file = output_dir / "output.stats.json"
     else:
         output_pyis_file = output_dir / f"{output_name.stem}.pyisession"
         output_html_file = output_dir / f"{output_name.stem}.html"
         output_json_file = output_dir / f"{output_name.stem}.json"
+        output_stat_file = output_dir / f"{output_name.stem}.stats.json"
 
     # Create the profiler to record the stack
     # An instance of a Profiler can be start()-ed and stop()-ped multiple times,
@@ -87,6 +103,10 @@ def run_profiling(
         with open(output_json_file, "w") as f:
             f.write(json_renderer.render(scale_run_session))
         print("done")
+    if write_stats:
+        print(f"Writing additional statistics file...", end="", flush=True)
+        record_run_statistics(output_stat_file)
+        print("done")
 
     return
 
@@ -104,6 +124,12 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--json", action="store_true", help="Write JSON output.", dest="write_json"
+    )
+    parser.add_argument(
+        "--stats",
+        action="store_true",
+        help="Write additional statistics file as output",
+        dest="write_stats",
     )
     parser.add_argument(
         "--output_dir",
