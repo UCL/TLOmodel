@@ -6,7 +6,6 @@ from datetime import datetime
 from pathlib import Path
 
 import numpy as np
-
 from _parameters import scale_run_parameters
 from _paths import PROFILING_RESULTS
 from pyinstrument import Profiler
