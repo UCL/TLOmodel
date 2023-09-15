@@ -1,19 +1,19 @@
 import argparse
+import json
 import os
 import warnings
 from datetime import datetime
 from pathlib import Path
 
-import json
 import numpy as np
-
-from tlo import Simulation
 
 from _parameters import scale_run_parameters
 from _paths import PROFILING_RESULTS
 from pyinstrument import Profiler
 from pyinstrument.renderers import HTMLRenderer, JSONRenderer
 from scale_run import scale_run
+
+from tlo import Simulation
 
 HELP_STR = (
     "Produces profiling runs for a selection of models and parameters,\n"
@@ -38,7 +38,7 @@ def record_run_statistics(output_file: str, s: Simulation) -> None:
         Number of rows and columns in the final population dataframe
     pop_df_mem_mb: MBs
         Size in MBs of the final population dataframe
-    pop_df_times_extended:
+    pop_df_times_extended: n
         Number of times the population dataframe had to be expanded
     """
     # Initialise empty dict to add statistics to,
@@ -48,19 +48,18 @@ def record_run_statistics(output_file: str, s: Simulation) -> None:
     # Record statistics as [key, value] pairs
 
     # Population dataframe statistics
-    population = s.population
-    stats_to_record["pop_df_size"] = population.props.shape
+    pops = s.population
+    stats_to_record["pop_df_size"] = pops.props.shape
     stats_to_record["pop_df_mem_mb"] = (
-        population.props.memory_usage(index=True, deep=True).sum() / 1e6
+        pops.props.memory_usage(index=True, deep=True).sum() / 1e6
     )
     stats_to_record["pop_df_times_extended"] = np.ceil(
-        (population.props.shape[0] - population.initial_size)
-        / population.new_rows.shape[0]
+        (pops.props.shape[0] - pops.initial_size) / pops.new_rows.shape[0]
     )
 
     # Having computed all statistics, save the file
     with open(output_file, "w") as f:
-        json.dump(stats_to_record, f)
+        json.dump(stats_to_record, f, indent=2)
     return
 
 
