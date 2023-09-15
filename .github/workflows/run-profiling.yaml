@@ -1,3 +1,10 @@
+# Runs a pyinstrument profiling session on the scale_run profiling model,
+# capturing the profiling result and sending it to the TLOmodel-profiling
+# repository for processing and display.
+#
+# Profiling script executed is src/scripts/profiling/run-profiling.py.
+# Output is the .pyisession file from the profiler, placed into results/
+# results/ folder is then pushed to the TLOmodel-profiling repo, results branch.
 name: Run Profiling
 
 on:
