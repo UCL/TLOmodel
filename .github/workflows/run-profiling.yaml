@@ -23,7 +23,7 @@ jobs:
       commands: |
         UNIQUE_ID=${GITHUB_EVENT_NAME}_${GITHUB_RUN_NUMBER}_${GITHUB_SHA}
         tox -vv -e profile -- --output_name ${UNIQUE_ID}
-      descripton: Profiled run of the model
+      description: Profiled run of the model
       timeout-minutes: 8640
       application-organization: UCL
       artifact-dir: profiling_results/
