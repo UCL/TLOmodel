@@ -61,12 +61,13 @@ jobs:
     # because we need Docker for the workflow call below,
     # and because we're now just pushing results files to another repo
     runs-on: ubuntu-latest
+    needs: [profile-on-comment, profile-on-dispatch]
     # only run this step if exactly one of the previous two jobs ran successfully
     if: |
       always() &&
-      (jobs.profile-on-comment.result == 'success' || jobs.profile-on-comment.result == 'skipped') &&
-      (jobs.profile-on-dispatch.result == 'skipped' || jobs.profile-on-dispatch.result == 'success') &&
-      !(jobs.profile-on-comment.result == 'skipped' && jobs.profile-on-dispatch.result == 'skipped')
+      (needs.profile-on-comment.result == 'success' || needs.profile-on-comment.result == 'skipped') &&
+      (needs.profile-on-dispatch.result == 'skipped' || needs.profile-on-dispatch.result == 'success') &&
+      !(needs.profile-on-comment.result == 'skipped' && needs.profile-on-dispatch.result == 'skipped')
     steps:
       - name: Download the profiling results
         uses: actions/download-artifact@v3
