@@ -2,7 +2,7 @@
 # it runs the gha role multiple times using solution in 
 # currently not part of the vagrant/ansible provisioning, need to run after vagrant is up with
 ---
-- name: install gha runner 
+- name: install gha runner
   hosts: all
   user: gha
   become: yes
@@ -10,13 +10,11 @@
     - github_account: tamuri
     - github_repo: TLOmodel
     - runner_user: gha
-  roles:
-    - role: monolithprojects.github_actions_runner
+  tasks:
+    - name: run github actions runner role
+      with_sequence: count="{{ n_runners }}"
+      include_role:
+        name: monolithprojects.github_actions_runner
       vars:
-        runner_dir: /opt/actions-runner/1
-        runner_name: "tlo-ci-test-1"
-    - role: monolithprojects.github_actions_runner
-      vars:
-        runner_dir: /opt/actions-runner/2
-        runner_name: "tlo-ci-test-2"
-
+        runner_dir: "/opt/actions-runner/{{ item }}"
+        runner_name: "{{ ansible_hostname }}-{{ item }}"
