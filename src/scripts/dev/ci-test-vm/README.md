@@ -64,7 +64,7 @@ Then export the token before running Ansible playbook to install the runner:
 
 ```
 export PERSONAL_ACCESS_TOKEN=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
-ansible-playbook -i ./.vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory provisioning/gha-runner.yml
+ansible-playbook -i ./.vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory provisioning/gha-runner.yml --extra-vars "n_runners=2"
 ```
 
 Once GHA runners have been installed, check they are running:
