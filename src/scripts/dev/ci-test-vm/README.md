@@ -36,7 +36,7 @@ ansible-galaxy install monolithprojects.github_actions_runner
 To match the self-hosted running VMs deployed on Azure, we use the Ubuntu 20 LTS box:
 
 ```
-vagrant init ubuntu/focal64
+vagrant init ubuntu/jammy64
 vagrant up
 ```
 
