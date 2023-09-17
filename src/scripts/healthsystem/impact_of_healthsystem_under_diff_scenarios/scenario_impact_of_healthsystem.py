@@ -60,15 +60,15 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
         return {
-            "No Healthcare System":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {
-                        'HealthSystem': {
-                            'Service_Availability': []
-                        }
-                    },
-                ),
+            # "No Healthcare System":
+            #     mix_scenarios(
+            #         get_parameters_for_status_quo(),
+            #         {
+            #             'HealthSystem': {
+            #                 'Service_Availability': []
+            #             }
+            #         },
+            #     ),
 
             "With Hard Constraints":
                 # N.B. This is for Mode 2 on continuously from the beginning of the simulation.
@@ -85,29 +85,29 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
                     },
                 ),
 
-            "Status Quo":
-                mix_scenarios(
-                    get_parameters_for_status_quo()
-                ),
-
-            "Perfect Healthcare Seeking":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {'ScenarioSwitcher': {'max_healthsystem_function': False, 'max_healthcare_seeking': True}},
-                ),
-
-            "+ Perfect Clinical Practice":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
-                ),
-
-            "+ Perfect Consumables Availability":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {'ScenarioSwitcher': {'max_healthsystem_function': False, 'max_healthcare_seeking': True}},
-                    {'HealthSystem': {'cons_availability': 'all'}}
-                ),
+            # "Status Quo":
+            #     mix_scenarios(
+            #         get_parameters_for_status_quo()
+            #     ),
+            #
+            # "Perfect Healthcare Seeking":
+            #     mix_scenarios(
+            #         get_parameters_for_status_quo(),
+            #         {'ScenarioSwitcher': {'max_healthsystem_function': False, 'max_healthcare_seeking': True}},
+            #     ),
+            #
+            # "+ Perfect Clinical Practice":
+            #     mix_scenarios(
+            #         get_parameters_for_status_quo(),
+            #         {'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
+            #     ),
+            #
+            # "+ Perfect Consumables Availability":
+            #     mix_scenarios(
+            #         get_parameters_for_status_quo(),
+            #         {'ScenarioSwitcher': {'max_healthsystem_function': False, 'max_healthcare_seeking': True}},
+            #         {'HealthSystem': {'cons_availability': 'all'}}
+            #     ),
         }
 
 
