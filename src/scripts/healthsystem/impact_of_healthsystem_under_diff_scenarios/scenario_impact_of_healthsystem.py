@@ -79,8 +79,8 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
                      'HealthSystem': {
                         'mode_appt_constraints': 2,
                         "policy_name": "Naive",
-                        'tclose_overwrite': 1,
-                        'tclose_days_offset_overwrite': 1,
+                        # 'tclose_overwrite': 1,
+                        # 'tclose_days_offset_overwrite': 1,
                         }
                     },
                 ),
