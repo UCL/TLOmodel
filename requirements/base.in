@@ -6,9 +6,9 @@ matplotlib
 pyshp
 squarify
 numpy
-pandas~=2.1.0
+pandas~=2.0.0
 scipy
-openpyxl~=3.1.2  # avoid https://foss.heptapod.net/openpyxl/openpyxl/-/issues/1963
+openpyxl==3.1.0  # avoid https://foss.heptapod.net/openpyxl/openpyxl/-/issues/1963
 
 # To submit jobs to Azure Batch
 azure-batch
