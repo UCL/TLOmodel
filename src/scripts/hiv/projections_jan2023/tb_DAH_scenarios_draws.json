@@ -1,13 +1,13 @@
 {
   "scenario_script_path": "src/scripts/hiv/projections_jan2023/tb_DAH_scenarios.py",
   "scenario_seed": [
-    36788
+    49179
   ],
   "runs_per_draw": 4,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 2143686522,
+      "draw_seed": 2118156274,
       "parameters": {
         "Tb": {
           "scenario": 0
@@ -16,7 +16,7 @@
     },
     {
       "draw_number": 1,
-      "draw_seed": 138218319,
+      "draw_seed": 628551001,
       "parameters": {
         "Tb": {
           "scenario": 1,
@@ -27,7 +27,7 @@
     },
     {
       "draw_number": 2,
-      "draw_seed": 298162262,
+      "draw_seed": 912829030,
       "parameters": {
         "Tb": {
           "scenario": 2
@@ -36,7 +36,7 @@
     },
     {
       "draw_number": 3,
-      "draw_seed": 912001167,
+      "draw_seed": 1190036701,
       "parameters": {
         "Tb": {
           "scenario": 3
@@ -45,7 +45,7 @@
     },
     {
       "draw_number": 4,
-      "draw_seed": 1396442426,
+      "draw_seed": 1931206758,
       "parameters": {
         "Tb": {
           "scenario": 0,
@@ -55,6 +55,6 @@
       }
     }
   ],
-  "commit": "f2bd46e1887fb622600ed56c2c28e84e041d5ec5",
-  "github": "https://github.com/UCL/TLOmodel/tree/f2bd46e1887fb622600ed56c2c28e84e041d5ec5"
+  "commit": "486bb5269bea72d675b0db592e2524b89955d98b",
+  "github": "https://github.com/UCL/TLOmodel/tree/486bb5269bea72d675b0db592e2524b89955d98b"
 }
