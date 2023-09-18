@@ -90,6 +90,34 @@ jobs:
       application-id: ${{ secrets.COMMENT_BOT_APP_ID }}
       application-private-key: ${{ secrets.COMMENT_BOT_APP_PRIVATE_KEY }}
 
+      python311_pandas21_fast_tests:
+        uses: ./.github/workflows/run-on-comment.yml
+        with:
+          runs-on: self-hosted
+          keyword: python3.11-pandas2.1-fast-tests
+          commands: |
+            tox -v -e py311-pandas21,report -- pytest --skip-slow --cov --cov-report=term-missing -vv tests
+          description: Run of fast tests on Python v3.11 with Pandas v2.1
+          timeout-minutes: 8640
+          application-organization: UCL
+        secrets:
+          application-id: ${{ secrets.COMMENT_BOT_APP_ID }}
+          application-private-key: ${{ secrets.COMMENT_BOT_APP_PRIVATE_KEY }}
+    
+      python311_pandas21_all_tests:
+        uses: ./.github/workflows/run-on-comment.yml
+        with:
+          runs-on: self-hosted
+          keyword: python3.11-pandas2.1-all-tests
+          commands: |
+            tox -v -e py311-pandas21,report -- pytest --cov --cov-report=term-missing -vv tests
+          description: Run of all tests on Python v3.11 with Pandas v2.1
+          timeout-minutes: 8640
+          application-organization: UCL
+        secrets:
+          application-id: ${{ secrets.COMMENT_BOT_APP_ID }}
+          application-private-key: ${{ secrets.COMMENT_BOT_APP_PRIVATE_KEY }}
+
   dummy_job:
     uses: ./.github/workflows/run-on-comment.yml
     with:
