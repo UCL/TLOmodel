@@ -125,6 +125,8 @@ pluggy==0.13.1
     #   tox
 portalocker==1.7.1
     # via msal-extensions
+psutil==5.9.5
+    # via -r requirements/dev.in
 py==1.10.0
     # via
     #   pytest

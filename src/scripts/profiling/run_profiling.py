@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 from _parameters import scale_run_parameters
 from _paths import PROFILING_RESULTS
+from psutil import disk_io_counters
 from pyinstrument import Profiler
 from pyinstrument.renderers import HTMLRenderer, JSONRenderer
 from scale_run import scale_run
@@ -26,7 +27,7 @@ def current_time(formatstr: str = "%Y-%m-%d_%H%M") -> str:
     return datetime.utcnow().strftime(formatstr)
 
 
-def record_run_statistics(output_file: str, s: Simulation) -> None:
+def record_run_statistics(output_file: str, s: Simulation, disk_usage=None) -> None:
     """
     After concluding the profiling session, but before cleanup,
     record statistics from the simulation outputs that we wish
@@ -56,6 +57,8 @@ def record_run_statistics(output_file: str, s: Simulation) -> None:
     stats_to_record["pop_df_times_extended"] = int(
         np.ceil((pops.props.shape[0] - pops.initial_size) / pops.new_rows.shape[0])
     )
+
+    # Disk I/O statistics
 
     # Having computed all statistics, save the file
     with open(output_file, "w") as f:
@@ -106,7 +109,9 @@ def run_profiling(
     print(f"[{current_time('%H:%M:%S')}:INFO] Starting profiling runs")
 
     # Profile scale_run
+    disk_at_start = disk_io_counters()
     completed_simulation = scale_run(**scale_run_parameters, profiler=p)
+    disk_at_end = disk_io_counters()
 
     print(f"[{current_time('%H:%M:%S')}:INFO] Profiling runs complete")
 
@@ -114,6 +119,8 @@ def run_profiling(
     # this needs to be done after each model "run",
     # and p needs to be re-initialised before starting the next model run.
     scale_run_session = p.last_session
+    # surely this doesn't work?
+    d = disk_at_end - disk_at_start
 
     # Write outputs to files
     # Renderer initialisation options:
