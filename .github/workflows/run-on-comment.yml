@@ -31,19 +31,19 @@ on:
           with results of test is installed on if relevant.
         required: false
         type: string
-      artifact-dir:
+      artifact-path:
         description: |
-          Directory to upload as a workflow artifact if the workflow is successful. 
+          Path to upload as a workflow artifact if the workflow is successful. 
           No artifact will be produced if this value is left unpopulated.
         required: false
         type: string
-      artifact-tag:
+      artifact-name:
         description: |
-          The tag or name to assign to any artifacts that are to uploaded.
+          The name to assign to any artifacts that are to uploaded.
         required: false
         type: string
         default: comment-triggered-workflow-artifact
-      artifact-days:
+      artifact-retention-days:
         description: |
           Number of days to retain the artifact, if it is produced.
         required: false
@@ -192,9 +192,9 @@ jobs:
           });
 
     - name: Upload artifact if requested
-      if: "${{ inputs.artifact-dir != '' }}"
+      if: "${{ inputs.artifact-path != '' }}"
       uses: actions/upload-artifact@v3
       with:
         name: ${{ inputs.artifact-tag }}
-        path: ${{ inputs.artifact-dir }}
+        path: ${{ inputs.artifact-path }}
         retention-days: ${{ inputs.artifact-days }}
