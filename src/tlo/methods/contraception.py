@@ -712,7 +712,7 @@ class Contraception(Module):
             p_start_after_birth = p_start_after_birth.mul(self.parameters['Interventions_PPFP'].loc[0])
 
             # Add 'not_using' to initiation probabilities of contraception methods after birth
-            p_start_after_birth =pd.concat(
+            p_start_after_birth = pd.concat(
                 (
                     pd.Series((1.0 - p_start_after_birth.sum()), index=['not_using']),
                     p_start_after_birth
