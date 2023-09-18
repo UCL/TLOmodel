@@ -99,10 +99,10 @@ jobs:
     # NOTE: We need to explicitly depend on set-variables to access the artifact name
     needs: [set-variables, profile-on-comment, profile-on-dispatch]
     if: |
-      always() &&
-      (needs.profile-on-comment.result == 'success' || needs.profile-on-comment.result == 'skipped') &&
-      (needs.profile-on-dispatch.result == 'skipped' || needs.profile-on-dispatch.result == 'success') &&
-      !(needs.profile-on-comment.result == 'skipped' && needs.profile-on-dispatch.result == 'skipped')
+      always() && (
+        (needs.profile-on-comment.result == 'success' && needs.profile-on-dispatch.result == 'skipped') ||
+        (needs.profile-on-comment.result == 'skipped' || needs.profile-on-dispatch.result == 'success')
+      )
     steps:
       - name: Download the profiling results
         uses: actions/download-artifact@v3
