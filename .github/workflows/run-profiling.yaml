@@ -32,10 +32,10 @@ jobs:
     name: Create unique output file identifier and artifact name
     runs-on: ubuntu-latest
     outputs:
-      profiling-filename: ${{ steps.set-output-id.outputs.name }}
+      profiling-filename: ${{ steps.set-profiling-filename.outputs.name }}
       artifact-name: $${{ steps.set-artifact-name.outputs.name }}
     steps:
-      - id: set-output-id
+      - id: set-profiling-filename
         name: Set profiling output file name
         run: |
           echo "name=${GITHUB_EVENT_NAME}_${GITHUB_RUN_NUMBER}_${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"

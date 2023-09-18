@@ -195,6 +195,6 @@ jobs:
       if: "${{ inputs.artifact-path != '' }}"
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ inputs.artifact-tag }}
+        name: ${{ inputs.artifact-name }}
         path: ${{ inputs.artifact-path }}
-        retention-days: ${{ inputs.artifact-days }}
+        retention-days: ${{ inputs.artifact-retention-days }}
