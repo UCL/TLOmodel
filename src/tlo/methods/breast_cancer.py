@@ -648,7 +648,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         self.ACCEPTED_FACILITY_LEVEL = '3'  # Biopsy only available at level 3 and above.
         # TODO: but the appt footprints suggests mammography to be provided
         self.EQUIPMENT = {'Slice Master sample processing Unit', 'Paraffin Dispense', 'Whatever used with biopsy',
-                          'Mammography maybe?'}  # biopsy and ?mammography always performed with this HSI
+                          'Mammography maybe?'}  # biopsy always performed with this HSI, hence always used the same set of equipment
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
