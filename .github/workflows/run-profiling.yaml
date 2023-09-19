@@ -101,7 +101,7 @@ jobs:
     if: |
       always() && (
         (needs.profile-on-comment.result == 'success' && needs.profile-on-dispatch.result == 'skipped') ||
-        (needs.profile-on-comment.result == 'skipped' || needs.profile-on-dispatch.result == 'success')
+        (needs.profile-on-comment.result == 'skipped' && needs.profile-on-dispatch.result == 'success')
       )
     steps:
       - name: Download the profiling results
