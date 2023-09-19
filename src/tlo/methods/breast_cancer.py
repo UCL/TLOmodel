@@ -646,10 +646,9 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
 
         self.TREATMENT_ID = "BreastCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "Mammography": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '3'  # Mammography only available at level 3 and above.
-        # TODO: what this means, should be the mammography done within this event, or the biopsy, or both?
-        self.EQUIPMENT = {'Slice Master sample processing Unit', 'Paraffin Dispense', 'Whatever used with biopsy',
-                          'Mammography maybe?'}  # biopsy and ?mammography always performed with this HSI
+        self.ACCEPTED_FACILITY_LEVEL = '3'  # Biopsy only available at level 3 and above.
+        self.EQUIPMENT = {'Slice Master sample processing Unit', 'Paraffin Dispense', 'Whatever used with biopsy'}
+        # biopsy always performed with this HSI, hence always used the same set of equipment
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -764,7 +763,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, "brc_stage_at_which_treatment_given"] = df.at[person_id, "brc_status"]
 
         # Update equipment
-        self.EQUIPMENT.update({'Anything used for mastectomy as I guess this is about'})
+        self.EQUIPMENT.update({'Anything used for mastectomy'})
 
         # Schedule a post-treatment check for 12 months:
         hs.schedule_hsi_event(
