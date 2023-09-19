@@ -12,7 +12,9 @@ on:
 # the HEAD of the branch the workflow is currently running on.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # master branch will be allowed to have pending jobs
+  # https://stackoverflow.com/questions/68418857/how-to-cancel-existing-runs-when-a-new-push-happens-on-github-actions-but-only
+  cancel-in-progress: $${{ github.ref != 'refs/heads/master' }}
 
 env:
   LD_PRELOAD: /lib/x86_64-linux-gnu/libSegFault.so
