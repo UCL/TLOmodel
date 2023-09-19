@@ -42,7 +42,7 @@ def record_run_statistics(output_file: str, s: Simulation, disk_usage=None) -> N
         Size in MBs of the final population DataFrame
     pop_df_times_extended: int
         Number of times the population DataFrame had to be expanded
-    disk_reads: n
+    disk_reads: int
         Number of times the disk was read during the simulation
     disk_writes: int
         Number of times the disk was written to during the simulation
@@ -149,7 +149,8 @@ def run_profiling(
     scale_run_session = p.last_session
     # Infer disk usage statistics
     disk_usage = {
-        key: disk_at_end[key] - disk_at_start[key] for key in disk_at_start.keys()
+        key: getattr(disk_at_end, key) - getattr(disk_at_start, key)
+        for key in disk_at_start._fields
     }
 
     # Write outputs to files
@@ -174,7 +175,7 @@ def run_profiling(
         print("done")
     if write_stats:
         print(f"Writing {output_stat_file}", end="...", flush=True)
-        record_run_statistics(output_stat_file, completed_simulation)
+        record_run_statistics(output_stat_file, completed_simulation, disk_usage)
         print("done")
 
     return
