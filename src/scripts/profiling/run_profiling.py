@@ -34,22 +34,42 @@ def record_run_statistics(output_file: str, s: Simulation, disk_usage=None) -> N
     to present alongside the profiler outputs.
 
     Key / value pairs are:
-    pop_df_size: (rows, cols)
-        Number of rows and columns in the final population dataframe
-    pop_df_mem_mb: MBs
-        Size in MBs of the final population dataframe
-    pop_df_times_extended: n
-        Number of times the population dataframe had to be expanded
-    """
-    # Initialise empty dict to add statistics to,
-    # then save in JSON format
-    stats_to_record = dict()
+    pop_df_rows: int
+        Number of rows in the final population DataFrame
+    pop_df_cols: int
+        Number of cols in the final population DataFrame
+    pop_df_mem_mb: float
+        Size in MBs of the final population DataFrame
+    pop_df_times_extended: int
+        Number of times the population DataFrame had to be expanded
+    disk_reads: n
+        Number of times the disk was read during the simulation
+    disk_writes: int
+        Number of times the disk was written to during the simulation
+    disk_read_MB: float
+        Memory read in MBs from the disk during simulation
+    disk_write_MB: float
+        Memory written in MBs from the disk during simulation
+    disk_read_s: float
+        Time in seconds spent reading from disk during simulation
+    disk_write_s: float
+        Time in seconds spent writing to disk during simulation
 
+    :param output_file: File name to write to.
+    :param s: The completed simulation to read stats from.
+    :param disk_usage: Dictionary with keys corresponding to disk usage during the simulation;
+        - read_count:  number of reads
+        - write_count: number of writes
+        - read_bytes:  number of bytes read
+        - write_bytes: number of bytes written
+        - read_time:   time spent reading from disk (in ms)
+        - write_time:  time spent writing to disk (in ms)
+    """
     # Record statistics as [key, value] pairs
 
-    # Population dataframe statistics
+    # Population DataFrame statistics
     pops = s.population
-    stats_to_record = {
+    pop_stats = {
         "pop_df_rows": pops.props.shape[0],
         "pop_df_cols": pops.props.shape[1],
         "pop_df_mem_mb": pops.props.memory_usage(index=True, deep=True).sum() / 1e6,
@@ -59,10 +79,23 @@ def record_run_statistics(output_file: str, s: Simulation, disk_usage=None) -> N
     }
 
     # Disk I/O statistics
+    disk_stats = {
+        "disk_reads": disk_usage["read_count"],
+        "disk_writes": disk_usage["write_count"],
+        "disk_read_MB": disk_usage["read_bytes"] / 1e6,
+        "disk_write_MB": disk_usage["write_bytes"] / 1e6,
+        "disk_read_s": disk_usage["read_time"] / 1e3,
+        "disk_write_s": disk_usage["write_time"] / 1e3,
+    }
+
+    # Can combine dictionaries using either
+    # {**dict1, **dict2}, or
+    # dict1 | dict2 [python >=3.10 only]
+    stats_dict = {**pop_stats, **disk_stats}
 
     # Having computed all statistics, save the file
     with open(output_file, "w") as f:
-        json.dump(stats_to_record, f, indent=2)
+        json.dump(stats_dict, f, indent=2)
     return
 
 
@@ -114,8 +147,10 @@ def run_profiling(
     # this needs to be done after each model "run",
     # and p needs to be re-initialised before starting the next model run.
     scale_run_session = p.last_session
-    # surely this doesn't work?
-    d = disk_at_end - disk_at_start
+    # Infer disk usage statistics
+    disk_usage = {
+        key: disk_at_end[key] - disk_at_start[key] for key in disk_at_start.keys()
+    }
 
     # Write outputs to files
     # Renderer initialisation options:
