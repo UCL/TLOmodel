@@ -49,14 +49,14 @@ def record_run_statistics(output_file: str, s: Simulation, disk_usage=None) -> N
 
     # Population dataframe statistics
     pops = s.population
-    stats_to_record["pop_df_rows"] = pops.props.shape[0]
-    stats_to_record["pop_df_cols"] = pops.props.shape[1]
-    stats_to_record["pop_df_mem_mb"] = (
-        pops.props.memory_usage(index=True, deep=True).sum() / 1e6
-    )
-    stats_to_record["pop_df_times_extended"] = int(
-        np.ceil((pops.props.shape[0] - pops.initial_size) / pops.new_rows.shape[0])
-    )
+    stats_to_record = {
+        "pop_df_rows": pops.props.shape[0],
+        "pop_df_cols": pops.props.shape[1],
+        "pop_df_mem_mb": pops.props.memory_usage(index=True, deep=True).sum() / 1e6,
+        "pop_df_times_extended": int(
+            np.ceil((pops.props.shape[0] - pops.initial_size) / pops.new_rows.shape[0])
+        ),
+    }
 
     # Disk I/O statistics
 
@@ -88,16 +88,11 @@ def run_profiling(
         os.makedirs(output_dir)
 
     # Assign output filenames
-    if output_name is None:
-        output_pyis_file = output_dir / "output.pyisession"
-        output_html_file = output_dir / "output.html"
-        output_json_file = output_dir / "output.json"
-        output_stat_file = output_dir / "output.stats.json"
-    else:
-        output_pyis_file = output_dir / f"{output_name.stem}.pyisession"
-        output_html_file = output_dir / f"{output_name.stem}.html"
-        output_json_file = output_dir / f"{output_name.stem}.json"
-        output_stat_file = output_dir / f"{output_name.stem}.stats.json"
+    output_stem = "output" if output_name is None else output_name.stem
+    output_pyis_file = output_dir / f"{output_stem}.pyisession"
+    output_html_file = output_dir / f"{output_stem}.html"
+    output_json_file = output_dir / f"{output_stem}.json"
+    output_stat_file = output_dir / f"{output_stem}.stats.json"
 
     # Create the profiler to record the stack
     # An instance of a Profiler can be start()-ed and stop()-ped multiple times,
