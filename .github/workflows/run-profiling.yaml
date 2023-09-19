@@ -78,7 +78,7 @@ jobs:
 
       ## The profile environment produces outputs in the /results directory
       - name: Run profiling in dev environment
-        run: tox -vv -e profile -- ---output_name ${{ needs.set-variables.profiling-filename }}
+        run: tox -vv -e profile -- --output_name ${{ needs.set-variables.profiling-filename }}
 
       ## Upload the output as an artifact so we can push it to the profiling repository
       - name: Save results as artifact
