@@ -764,7 +764,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Update equipment used with treatment
         # NB. read only with HSI run and healthsystem.summary logger set at the level INFO or higher
-        self.EQUIPMENT.update({'Anything used for mastectomy as I guess this is about'})
+        self.EQUIPMENT.update({'Anything used for mastectomy'})
 
         # Schedule a post-treatment check for 12 months:
         hs.schedule_hsi_event(
