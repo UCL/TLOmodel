@@ -574,7 +574,7 @@ class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
-        # scheduled to run every month: do not change as this is hard-wired into the values of all the parameters.
+        # scheduled to run every 3 months: do not change as this is hard-wired into the values of all the parameters.
 
     def apply(self, population):
         df = population.props  # shortcut to dataframe
@@ -645,7 +645,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
 
         self.TREATMENT_ID = "BreastCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "Mammography": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '3'  # Biopsy only available at level 3 and above.
+        self.ACCEPTED_FACILITY_LEVEL = '3'  # Mammography only available at level 3 and above.
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
