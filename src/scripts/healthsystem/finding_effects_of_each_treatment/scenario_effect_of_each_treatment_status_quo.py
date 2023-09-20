@@ -13,13 +13,13 @@ This version of the scenario represents _actual_ healthcare capacity/performance
 Run on the batch system using:
 ```
 tlo batch-submit
- src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_defaults.py
+ src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_status_quo.py
 ```
 
 or locally using:
 ```
 tlo scenario-run
- src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_defaults.py
+ src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_status_quo.py
 ```
 
 """
@@ -49,7 +49,7 @@ class EffectOfEachTreatment(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'effect_of_each_treatment',
+            'filename': 'effect_of_each_treatment_status_quo',
             'directory': Path('./outputs'),  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
@@ -69,7 +69,6 @@ class EffectOfEachTreatment(BaseScenario):
             {
                 'HealthSystem': {
                     'Service_Availability': list(self._scenarios.values())[draw_number],
-                    'cons_availability': 'default',
                 },
             }
         )

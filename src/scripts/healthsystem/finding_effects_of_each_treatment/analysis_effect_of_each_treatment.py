@@ -12,7 +12,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from scripts.calibration_analyses.analysis_scripts import plot_legends
-from scripts.healthsystem.finding_effects_of_each_treatment import plot_org_chart_treatment_ids
+from scripts.healthsystem.org_chart_of_hsi import plot_org_chart_treatment_ids
 from tlo import Date
 from tlo.analysis.utils import (
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
@@ -31,13 +31,11 @@ from tlo.analysis.utils import (
 )
 
 
-def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, rtn_results=False):
+def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.
     - We estimate the epidemiological impact as the EXTRA deaths that would occur if that treatment did not occur.
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
     """
-
-    results = dict()  # <-- will be a store of results that can be returned if needed.
 
     TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 
@@ -52,7 +50,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def get_parameter_names_from_scenario_file() -> Tuple[str]:
         """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-        from scripts.healthsystem.finding_effects_of_each_treatment.scenario_effect_of_each_treatment_defaults import (
+        from scripts.healthsystem.finding_effects_of_each_treatment.scenario_effect_of_each_treatment_status_quo import (
             EffectOfEachTreatment,
         )
         e = EffectOfEachTreatment()
@@ -163,7 +161,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         extract_results(
             results_folder,
             module='tlo.methods.healthburden',
-            key='dalys_stacked',
+            key='dalys_stacked_by_age_and_time',
             custom_generate_series=get_num_dalys_by_cause_label,
             do_scaling=True
         ).pipe(set_param_names_as_column_index_level_0)[['Everything', '*']]
@@ -207,13 +205,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot)
     ax.set_xlabel('Cause of Death')
     ax.set_ylabel('Number of Deaths (/1000)')
-    ax.set_ylim(0, 400)
+    ax.set_ylim(0, 500)
     ax.grid(axis="y")
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     fig, ax = plt.subplots()
     name_of_plot = f'DALYS With None or All TREATMENT_IDs, {target_period()}'
@@ -221,14 +220,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot)
     ax.set_xlabel('Cause of Disability/Death')
     ax.set_ylabel('Number of DALYS Averted (1/1e6)')
-    ax.set_ylim(0, 15)
-    ax.set_yticks(range(0, 18, 3))
+    ax.set_ylim(0, 20)
+    ax.set_yticks(range(0, 25, 5))
     ax.grid(axis="y")
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     # %%  Quantify the health gains associated with each TREATMENT_ID (short) individually (i.e., the
     # difference in deaths and DALYS between each scenario and the 'Everything' scenario.)
@@ -271,7 +271,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         results_folder,
         module='tlo.methods.demography',
         key='death',
-        custom_generate_series=get_num_deaths_by_age_group,
+        custom_generate_series=get_num_deaths_by_cause_label,
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0).sum()  # (Summing across age-groups)
 
@@ -288,7 +288,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_dalys = extract_results(
         results_folder,
         module='tlo.methods.healthburden',
-        key='dalys_stacked',
+        key='dalys_stacked_by_age_and_time',
         custom_generate_series=get_num_dalys_by_cause_label,
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0).sum()  # (Summing across causes)
@@ -303,9 +303,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             find_difference_extra_relative_to_comparison(num_dalys, comparison='Everything', scaled=True)).T
     ).iloc[0].unstack().drop(['FirstAttendance*']).sort_values(by='mean', ascending=True)
 
-    results["num_dalys_averted"] = num_dalys_averted
-    results["pc_dalys_averted"] = pc_dalys_averted
-
     # PLOTS FOR EACH TREATMENT_ID (Short)
     fig, ax = plt.subplots()
     name_of_plot = f'Deaths Averted by Each TREATMENT_ID, {target_period()}'
@@ -313,7 +310,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot)
     ax.set_ylabel('TREATMENT_ID (Short)')
     ax.set_xlabel('Number of Deaths Averted (/1000)')
-    ax.set_xlim(0, 140)
+    ax.set_xlim(0, 300)
     do_label_barh_plot(pc_deaths_averted.drop(['*']), ax)
     ax.grid()
     ax.yaxis.set_tick_params(labelsize=7)
@@ -322,6 +319,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     fig, ax = plt.subplots()
     name_of_plot = f'DALYS Averted by Each TREATMENT_ID, {target_period()}'
@@ -329,7 +327,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title(name_of_plot)
     ax.set_ylabel('TREATMENT_ID (Short)')
     ax.set_xlabel('Number of DALYS Averted (/1e6)')
-    ax.set_xlim(0, 6)
+    ax.set_xlim(0, 12)
     do_label_barh_plot(pc_dalys_averted.drop(['*']), ax)
     ax.grid()
     ax.yaxis.set_tick_params(labelsize=7)
@@ -338,16 +336,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     # %% Quantify the health associated with each TREATMENT_ID (short) SPLIT BY AGE and WEALTH
 
     # -- DEATHS
     def get_total_num_death_by_agegrp_and_label(_df):
         """Return the total number of deaths in the TARGET_PERIOD by age-group and cause label."""
-        age_group = to_age_group(_df['age'])
-        return _df \
-            .loc[_df['date'].between(*TARGET_PERIOD)] \
-            .groupby([age_group, 'label'])['person_id'].size()
+        _df_limited_to_dates = _df.loc[_df['date'].between(*TARGET_PERIOD)]
+        age_group = to_age_group(_df_limited_to_dates['age'])
+        return _df_limited_to_dates.groupby([age_group, 'label'])['person_id'].size()
 
     total_num_death_by_agegrp_and_label = extract_results(
         results_folder,
@@ -384,21 +382,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.grid()
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.legend(ncol=3, fontsize=8, loc='upper right')
+        # ax.legend(ncol=3, fontsize=8, loc='upper right')
+        ax.legend().set_visible(False)
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
         fig.show()
+        plt.close(fig)
 
     def get_total_num_death_by_wealth_and_label(_df):
         """Return the total number of deaths in the TARGET_PERIOD by wealth and cause label."""
         wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
-        wealth_group = _df['li_wealth'] \
+        _df_limited_to_time = _df.loc[_df['date'].between(*TARGET_PERIOD)]
+        wealth_group = _df_limited_to_time['li_wealth'] \
             .map(wealth_cats) \
             .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
 
-        return _df \
-            .loc[_df['date'].between(*TARGET_PERIOD)] \
-            .groupby([wealth_group, 'label'])['person_id'].size()
+        return _df_limited_to_time.groupby([wealth_group, 'label'])['person_id'].size()
 
     total_num_death_by_wealth_and_label = extract_results(
         results_folder,
@@ -434,10 +433,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.grid()
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.legend(ncol=3, fontsize=8, loc='upper right')
+        # ax.legend(ncol=3, fontsize=8, loc='upper right')
+        ax.legend().set_visible(False)
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
         fig.show()
+        plt.close(fig)
 
     # -- DALYS
     def get_total_num_dalys_by_agegrp_and_label(_df):
@@ -480,7 +481,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.axhline(0.0, color='black')
         ax.set_title(name_of_plot)
         ax.set_ylabel('Number of DALYS Averted (/1e6)')
-        ax.set_ylim(-0.2, 12)
+        ax.set_ylim(-0.2, 20)
         ax.set_xlabel('Age-group')
         ax.grid()
         ax.spines['top'].set_visible(False)
@@ -490,6 +491,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
         fig.show()
+        plt.close(fig)
 
     def get_total_num_dalys_by_wealth_and_label(_df):
         """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
@@ -545,6 +547,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
         fig.show()
+        plt.close(fig)
 
     # %% Quantify the healthcare system resources used with each TREATMENT_ID (short) (The difference in the number of
     # appointments between each scenario and the 'Everything' scenario.)
@@ -590,6 +593,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
             fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
             fig.show()
+            plt.close(fig)
 
     # 2) Examine the Difference in the number/type of appointments occurring
 
@@ -628,6 +632,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
+    plt.close(fig)
 
     # VERSION WITH COARSE APPOINTMENTS, CONFORMING TO STANDARD ORDERING/COLORS AND ORDER
     fig, ax = plt.subplots()
@@ -655,10 +660,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
-
-    # Return results, if option `rtn_results` is True
-    if rtn_results:
-        return results
+    plt.close(fig)
 
 
 if __name__ == "__main__":
@@ -690,7 +692,7 @@ if __name__ == "__main__":
         type=Path,
         help=(
             "Directory containing results from running src/scripts/healthsystem/"
-            "finding_effects_of_each_treatment/scenario_effect_of_each_treatment_defaults.py "
+            "finding_effects_of_each_treatment/scenario_effect_of_each_treatment_status_quo.py "
             "script. If not specified (set to None) the last (sorting in alphabetical "
             "order) directory matching either of the glob patterns outputs/"
             "*effect_of_each_treatment* and outputs/*/*effect_of_each_treatment* will "
