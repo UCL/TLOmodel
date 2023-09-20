@@ -54,12 +54,12 @@ jobs:
       runs-on: self-hosted
       keyword: profiling
       commands: |
-        tox -vv -e profile -- --output_name ${{ needs.set-variables.profiling-filename }}
+        tox -vv -e profile -- --output_name ${{ needs.set-variables.outputs.profiling-filename }}
       description: Profiled run of the model
       timeout-minutes: 8640
       application-organization: UCL
       artifact-path: profiling_results/
-      artifact-name: ${{ needs.set-variables.artifact-name }}
+      artifact-name: ${{ needs.set-variables.outputs.artifact-name }}
       artifact-retention-days: 1
     secrets:
       application-id: ${{ secrets.COMMENT_BOT_APP_ID }}
@@ -78,13 +78,13 @@ jobs:
 
       ## The profile environment produces outputs in the /results directory
       - name: Run profiling in dev environment
-        run: tox -vv -e profile -- --output_name ${{ needs.set-variables.profiling-filename }}
+        run: tox -vv -e profile -- --output_name ${{ needs.set-variables.outputs.profiling-filename }}
 
       ## Upload the output as an artifact so we can push it to the profiling repository
       - name: Save results as artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ needs.set-variables.artifact-name }}
+          name: ${{ needs.set-variables.outputs.artifact-name }}
           path: profiling_results/
           retention-days: 1
   
@@ -107,7 +107,7 @@ jobs:
       - name: Download the profiling results
         uses: actions/download-artifact@v3
         with:
-          name: ${{ needs.set-variables.artifact-name }}
+          name: ${{ needs.set-variables.outputs.artifact-name }}
           path: .
 
       ## The token provided needs contents and pages access to the target repo
