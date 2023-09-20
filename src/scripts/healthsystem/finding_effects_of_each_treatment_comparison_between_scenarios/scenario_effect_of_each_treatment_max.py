@@ -4,7 +4,7 @@ This scenario runs the full model under a set of scenario in which each one TREA
 This version of the scenario represents maximum healthcare capacity/peformance and full healthcare seeking.
 
 * No spurious symptoms
-* Appts Contraints: Mode 0 (No Constraints - so can estimate total demand for appointments)
+* Appts Contraints: Mode 0
 * use_funded_or_actual_staffing = 'funded_plus'
 * Consumables Availability: All
 * Health care seeking forced to occur for every symptom
@@ -22,7 +22,11 @@ from pathlib import Path
 from typing import Dict, List
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_filtered_treatment_ids
+from tlo.analysis.utils import (
+    get_filtered_treatment_ids,
+    mix_scenarios,
+    get_parameters_for_status_quo,
+)
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
@@ -40,7 +44,7 @@ class EffectOfEachTreatment(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'effect_of_each_treatment',
+            'filename': 'effect_of_each_treatment_max',
             'directory': Path('./outputs'),  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
@@ -52,29 +56,24 @@ class EffectOfEachTreatment(BaseScenario):
         }
 
     def modules(self):
-        return fullmodel(
-            resourcefilepath=self.resources,
-            module_kwargs={
-                "HealthSystem": {
+        return fullmodel(resourcefilepath=self.resources)
+
+    def draw_parameters(self, draw_number, rng):
+        return mix_scenarios(
+            get_parameters_for_status_quo(),
+            {
+                'HealthSystem': {
+                    'Service_Availability': list(self._scenarios.values())[draw_number],
+                    'cons_availability': 'all',
                     "mode_appt_constraints": 0,
                     "use_funded_or_actual_staffing": "funded_plus",
                 },
-                "SymptomManager": {
-                    "spurious_symptoms": True
+                'HealthSeekingBehaviour': {
+                    'force_any_symptom_to_lead_to_healthcareseeking': True
                 },
             }
         )
 
-    def draw_parameters(self, draw_number, rng):
-        return {
-            'HealthSystem': {
-                'Service_Availability': list(self._scenarios.values())[draw_number],
-                'cons_availability': 'all',
-                },
-            'HealthSeekingBehaviour': {
-                'force_any_symptom_to_lead_to_healthcareseeking': True
-                },
-        }
 
     def _get_scenarios(self) -> Dict[str, List[str]]:
         """Return the Dict with values for the parameter `Service_Availability` keyed by a name for the scenario.
