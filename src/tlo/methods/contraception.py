@@ -1267,7 +1267,8 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         items_all = {**items_essential, **items_optional}
 
         # Determine whether the contraception is administrated (ie all essential items are available),
-        # if so do log the availability of all items, if not set the contraception to "not_using":
+        # if so do log the availability of all items and update used equipment if any, if not set the contraception to
+        # "not_using":
         co_administrated = all(v for k, v in cons_available.items() if k in items_essential)
 
         if co_administrated:
@@ -1291,6 +1292,14 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
                              )
 
             _new_contraceptive = self.new_contraceptive
+
+            # Update equipment when needed
+            # NB. read only with HSI run and healthsystem.summary logger set at the level of logger.INFO or higher
+            if _new_contraceptive == 'female_sterilization':
+                self.EQUIPMENT.update({'Smt used to sterilize a woman'})
+            elif _new_contraceptive == 'IUD':
+                self.EQUIPMENT.update({'Equipment used when performing IUD'})
+
         else:
             _new_contraceptive = "not_using"
 
