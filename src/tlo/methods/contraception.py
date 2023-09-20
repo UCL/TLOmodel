@@ -1277,7 +1277,6 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
                              )
 
             _new_contraceptive = self.new_contraceptive
-
         else:
             _new_contraceptive = "not_using"
 
