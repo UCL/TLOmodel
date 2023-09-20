@@ -13,13 +13,13 @@ This version of the scenario represents _actual_ healthcare capacity/performance
 Run on the batch system using:
 ```
 tlo batch-submit
- src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_status_quo.py
+ src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py
 ```
 
 or locally using:
 ```
 tlo scenario-run
- src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_status_quo.py
+ src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py
 ```
 
 """
@@ -36,7 +36,7 @@ from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
 
-class EffectOfEachTreatment(BaseScenario):
+class EffectOfEachTreatmentStatusQuo(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 0

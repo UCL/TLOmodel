@@ -12,7 +12,10 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from scripts.calibration_analyses.analysis_scripts import plot_legends
-from scripts.healthsystem.plot_of_hsi import plot_org_chart_treatment_ids
+from scripts.healthsystem.finding_effects_of_each_treatment_comparison_between_scenarios.scenario_effect_of_each_treatment_status_quo import \
+    EffectOfEachTreatmentStatusQuo
+
+from scripts.healthsystem.org_chart_of_hsi import plot_org_chart_treatment_ids
 from tlo import Date
 from tlo.analysis.utils import (
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
@@ -52,10 +55,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def get_parameter_names_from_scenario_file() -> Tuple[str]:
         """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-        from scripts.healthsystem.finding_effects_of_each_treatment.scenario_effect_of_each_treatment_status_quo import (
-            EffectOfEachTreatment,
-        )
-        e = EffectOfEachTreatment()
+        e = EffectOfEachTreatmentStatusQuo()
         return tuple(e._scenarios.keys())
 
     def format_scenario_name(_sn: str) -> str:
@@ -690,7 +690,7 @@ if __name__ == "__main__":
         type=Path,
         help=(
             "Directory containing results from running src/scripts/healthsystem/"
-            "finding_effects_of_each_treatment/scenario_effect_of_each_treatment_status_quo.py "
+            "finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py "
             "script. If not specified (set to None) the last (sorting in alphabetical "
             "order) directory matching either of the glob patterns outputs/"
             "*effect_of_each_treatment* and outputs/*/*effect_of_each_treatment* will "

@@ -24,14 +24,14 @@ from typing import Dict, List
 from tlo import Date, logging
 from tlo.analysis.utils import (
     get_filtered_treatment_ids,
-    mix_scenarios,
     get_parameters_for_status_quo,
+    mix_scenarios,
 )
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
 
-class EffectOfEachTreatment(BaseScenario):
+class EffectOfEachTreatmentMax(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 0
@@ -73,7 +73,6 @@ class EffectOfEachTreatment(BaseScenario):
                 },
             }
         )
-
 
     def _get_scenarios(self) -> Dict[str, List[str]]:
         """Return the Dict with values for the parameter `Service_Availability` keyed by a name for the scenario.
