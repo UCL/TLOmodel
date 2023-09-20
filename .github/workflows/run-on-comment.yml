@@ -103,7 +103,7 @@ jobs:
       with:
         result-encoding: string
         script: |
-          if (!context.payload.pull_request) {
+          if (!context.payload.issue.pull_request) {
             return context.sha;
           };
           const { data: pr } = await github.rest.pulls.get({
@@ -125,7 +125,7 @@ jobs:
     - name: Get comment-bot token
       if: always() && steps.has_permissions.outputs.result == 'true'
       id: get_comment_bot_token
-      uses: peter-murray/workflow-application-token-action@e8782d687a306fb13d733244d0f2a50e272d3752
+      uses: peter-murray/workflow-application-token-action@6a9741bf210c9a93370560585c908161170ecada
       with:
         application_id: ${{ secrets.application-id }}
         application_private_key: ${{ secrets.application-private-key }}
