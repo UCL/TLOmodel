@@ -11,7 +11,8 @@ from _parameters import scale_run_parameters
 from _paths import PROFILING_RESULTS
 from psutil import disk_io_counters
 from pyinstrument import Profiler
-from pyinstrument.renderers import HTMLRenderer
+from pyinstrument.renderers import HTMLRenderer, JSONRenderer
+from pyinstrument.session import Session
 from scale_run import scale_run
 
 from tlo import Simulation
@@ -121,9 +122,44 @@ def record_disk_statistics(
     return disk_stats
 
 
+def record_profiling_session_statistics(
+    session: Session,
+) -> Dict[str, Union[int, float]]:
+    """
+    Extract important profiling statistics from the session that was captured.
+    Statistics are returned as a dictionary.
+
+                "start_time": self.start_time,
+            "duration": self.duration,
+            "sample_count": self.sample_count,
+            "start_call_stack": self.start_call_stack,
+            "program": self.program,
+            "cpu_time": self.cpu_time,
+
+    Key / value pairs are:
+    start_time: float
+        Time (stored as a float representing the number of seconds from a reference time) the profiling session started.
+    duration: float
+        Number of seconds that the profiling session lasted for.
+    cpu_time: float
+        Number of seconds of CPU time that were used by the program during the profiling session.
+    """
+    if session is None:
+        return dict()
+
+    profiler_stats = {
+        "start_time": session.start_time,
+        "duration": session.duration,
+        "cpu_time": session.cpu_time,
+    }
+
+    return profiler_stats
+
+
 def record_run_statistics(
     output_file: str,
     html_output_file: str = None,
+    profiling_session: Session = None,
     completed_sim: Simulation = None,
     disk_usage: Dict[str, Union[int, float]] = None,
     **additional_stats: str,
@@ -134,6 +170,7 @@ def record_run_statistics(
 
     :param output_file: JSON file / path to write to.
     :param html_output_file: The name of the output HTML file from the profiling run, if it was produced.
+    :param profiled_session: The Session object representing the profiling session.
     :param completed_sim: The end-state of the simulation.
     :param disk_usage: Usage stats for the disk I/O operations during the profiling run.
     :param additional_stats: Dict of any additional information passed by the user that should be recorded.
@@ -155,6 +192,9 @@ def record_run_statistics(
                 f"\tReplaced by: {html_output_file}"
             )
         stats_dict["html_output"] = html_output_file
+
+    # Fetch statistics from the profiled session itself
+    stats_dict.update(record_profiling_session_statistics(profiling_session))
 
     # Fetch statistics from end end-state of the simulation
     stats_dict.update(record_simulation_statistics(completed_sim))
@@ -237,9 +277,9 @@ def run_profiling(
     record_run_statistics(
         output_stat_file,
         html_output_file=str(output_html_file.name),
+        profiling_session=scale_run_session,
         completed_sim=completed_simulation,
         disk_usage=disk_usage,
-        triggered_on=trigger_time,
         **additional_stats,
     )
     print("done")
