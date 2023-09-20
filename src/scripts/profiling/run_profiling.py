@@ -4,13 +4,14 @@ import os
 import warnings
 from datetime import datetime
 from pathlib import Path
+from typing import Any, Dict, List, Union
 
 import numpy as np
 from _parameters import scale_run_parameters
 from _paths import PROFILING_RESULTS
 from psutil import disk_io_counters
 from pyinstrument import Profiler
-from pyinstrument.renderers import HTMLRenderer, JSONRenderer
+from pyinstrument.renderers import HTMLRenderer
 from scale_run import scale_run
 
 from tlo import Simulation
@@ -27,11 +28,35 @@ def current_time(formatstr: str = "%Y-%m-%d_%H%M") -> str:
     return datetime.utcnow().strftime(formatstr)
 
 
-def record_run_statistics(output_file: str, s: Simulation, disk_usage=None) -> None:
+def parse_keyword_args(items: List[str] = None, sep: str = "=") -> Dict[str, str]:
+    """Parse a series of key-value pairs from the command-line into a dictionary.
+
+    Input is a list of strings of the format
+    KEY{sep}VALUE,
+    which will be parsed into a key-value pair as
+    "KEY" : "VALUE".
+
+    Note that keys and values are always interpreted as strings.
     """
-    After concluding the profiling session, but before cleanup,
-    record statistics from the simulation outputs that we wish
-    to present alongside the profiler outputs.
+    if items is None:
+        return dict()
+    else:
+        d = dict()
+        for item in items:
+            separated_string = item.split(sep)
+            key = separated_string[0].strip()
+            if len(separated_string) > 1:
+                # rejoin the remaining values provided
+                value = sep.join(separated_string[1:])
+            d[key] = value
+    return d
+
+
+def record_simulation_statistics(s: Simulation) -> Dict[str, Union[int, float]]:
+    """
+    Extract variables from the completed modelling simulation, to include in the
+    profiling run report.
+    Statistics are returned as a dictionary.
 
     Key / value pairs are:
     pop_df_rows: int
@@ -42,30 +67,9 @@ def record_run_statistics(output_file: str, s: Simulation, disk_usage=None) -> N
         Size in MBs of the final population DataFrame
     pop_df_times_extended: int
         Number of times the population DataFrame had to be expanded
-    disk_reads: int
-        Number of times the disk was read during the simulation
-    disk_writes: int
-        Number of times the disk was written to during the simulation
-    disk_read_MB: float
-        Memory read in MBs from the disk during simulation
-    disk_write_MB: float
-        Memory written in MBs from the disk during simulation
-    disk_read_s: float
-        Time in seconds spent reading from disk during simulation
-    disk_write_s: float
-        Time in seconds spent writing to disk during simulation
-
-    :param output_file: File name to write to.
-    :param s: The completed simulation to read stats from.
-    :param disk_usage: Dictionary with keys corresponding to disk usage during the simulation;
-        - read_count:  number of reads
-        - write_count: number of writes
-        - read_bytes:  number of bytes read
-        - write_bytes: number of bytes written
-        - read_time:   time spent reading from disk (in ms)
-        - write_time:  time spent writing to disk (in ms)
     """
-    # Record statistics as [key, value] pairs
+    if Simulation is None:
+        return dict()
 
     # Population DataFrame statistics
     pops = s.population
@@ -78,7 +82,33 @@ def record_run_statistics(output_file: str, s: Simulation, disk_usage=None) -> N
         ),
     }
 
-    # Disk I/O statistics
+    return pop_stats
+
+
+def record_disk_statistics(
+    disk_usage: Dict[str, Union[int, float]]
+) -> Dict[str, Union[int, float]]:
+    """
+    Extract disk I/O statistics from the profiled run.
+    Statistics are returned as a dictionary.
+
+    Key / value pairs are:
+    disk_reads: int
+        Number of times the disk was read during the simulation
+    disk_writes: int
+        Number of times the disk was written to during the simulation
+    disk_read_MB: float
+        Memory read in MBs from the disk during simulation
+    disk_write_MB: float
+        Memory written in MBs from the disk during simulation
+    disk_read_s: float
+        Time in seconds spent reading from disk during simulation
+    disk_write_s: float
+        Time in seconds spent writing to disk during simulation
+    """
+    if disk_usage is None:
+        return dict()
+
     disk_stats = {
         "disk_reads": disk_usage["read_count"],
         "disk_writes": disk_usage["write_count"],
@@ -88,10 +118,49 @@ def record_run_statistics(output_file: str, s: Simulation, disk_usage=None) -> N
         "disk_write_s": disk_usage["write_time"] / 1e3,
     }
 
-    # Can combine dictionaries using either
-    # {**dict1, **dict2}, or
-    # dict1 | dict2 [python >=3.10 only]
-    stats_dict = {**pop_stats, **disk_stats}
+    return disk_stats
+
+
+def record_run_statistics(
+    output_file: str,
+    html_output_file: str = None,
+    completed_sim: Simulation = None,
+    disk_usage: Dict[str, Union[int, float]] = None,
+    **additional_stats: str,
+) -> None:
+    """
+    Organise all statistics to be collected from the profiling run into a single dict,
+    which can then be dumped to a JSON file.
+
+    :param output_file: JSON file / path to write to.
+    :param html_output_file: The name of the output HTML file from the profiling run, if it was produced.
+    :param completed_sim: The end-state of the simulation.
+    :param disk_usage: Usage stats for the disk I/O operations during the profiling run.
+    :param additional_stats: Dict of any additional information passed by the user that should be recorded.
+    """
+    # Record statistics as [key, value] pairs
+    stats_dict = dict()
+    # Start with user-defined additional stats, if they exist
+    if additional_stats is not None:
+        stats_dict.update(additional_stats)
+
+    # If we wrote a HTML output, include this in the additional statistics to write.
+    # Warn the user if they have overwritten the reserved keyword,
+    # then overwrite the value provided anyway.
+    if html_output_file is not None:
+        if "html_output" in additional_stats.keys():
+            warnings.warn(
+                f"User-provided statistic for 'html_output' was provided: this is being overwritten with the path to the HTML output.\n"
+                f"\tWas        : {additional_stats['html_output']}"
+                f"\tReplaced by: {html_output_file}"
+            )
+        stats_dict["html_output"] = html_output_file
+
+    # Fetch statistics from end end-state of the simulation
+    stats_dict.update(record_simulation_statistics(completed_sim))
+
+    # Fetch disk I/O statistics
+    stats_dict.update(record_disk_statistics(disk_usage))
 
     # Having computed all statistics, save the file
     with open(output_file, "w") as f:
@@ -102,30 +171,19 @@ def record_run_statistics(output_file: str, s: Simulation, disk_usage=None) -> N
 def run_profiling(
     output_dir: Path = PROFILING_RESULTS,
     output_name: Path = None,
-    write_pyis: bool = True,
     write_html: bool = False,
-    write_json: bool = False,
-    write_stats: bool = False,
     interval: float = 1e-1,
+    **additional_stats: str,
 ) -> None:
     """
-    Uses pyinstrumment to profile the scale_run simulation,
+    Uses pyinstrument to profile the scale_run simulation,
     writing the output in the requested formats.
     """
     # Suppress "ignore" warnings
     warnings.filterwarnings("ignore")
 
-    # Create the directory that this profiling run will live in
-    output_dir = output_dir / current_time("%Y/%m/%d/%H%M")
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    # Assign output filenames
-    output_stem = "output" if output_name is None else output_name.stem
-    output_pyis_file = output_dir / f"{output_stem}.pyisession"
-    output_html_file = output_dir / f"{output_stem}.html"
-    output_json_file = output_dir / f"{output_stem}.json"
-    output_stat_file = output_dir / f"{output_stem}.stats.json"
+    # Capture the start time for later recording
+    trigger_time = current_time("%Y-%m-%d")
 
     # Create the profiler to record the stack
     # An instance of a Profiler can be start()-ed and stop()-ped multiple times,
@@ -153,30 +211,38 @@ def run_profiling(
         for key in disk_at_start._fields
     }
 
+    # Create the directory that this profiling run will live in
+    output_dir = output_dir / current_time("%Y/%m/%d/%H%M")
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # Assign output filenames
+    output_stem = "output" if output_name is None else output_name.stem
+    output_stat_file = output_dir / f"{output_stem}.stats.json"
+    output_html_file = output_dir / f"{output_stem}.html" if write_html else None
+
     # Write outputs to files
-    # Renderer initialisation options:
-    # show_all: removes library calls where identifiable
-    # timeline: if true, samples are left in chronological order rather than total time
-    if write_pyis:
-        print(f"Writing {output_html_file}", end="...", flush=True)
-        scale_run_session.save(output_pyis_file)
-        print("done")
+    # HTML (if requested)
     if write_html:
+        # Renderer initialisation options:
+        # show_all: removes library calls where identifiable
+        # timeline: if true, samples are left in chronological order rather than total time
         html_renderer = HTMLRenderer(show_all=False, timeline=False)
         print(f"Writing {output_html_file}", end="...", flush=True)
         with open(output_html_file, "w") as f:
             f.write(html_renderer.render(scale_run_session))
         print("done")
-    if write_json:
-        json_renderer = JSONRenderer(show_all=False, timeline=False)
-        print(f"Writing {output_json_file}", end="...", flush=True)
-        with open(output_json_file, "w") as f:
-            f.write(json_renderer.render(scale_run_session))
-        print("done")
-    if write_stats:
-        print(f"Writing {output_stat_file}", end="...", flush=True)
-        record_run_statistics(output_stat_file, completed_simulation, disk_usage)
-        print("done")
+    # Write the statistics file, main output
+    print(f"Writing {output_stat_file}", end="...", flush=True)
+    record_run_statistics(
+        output_stat_file,
+        html_output_file=str(output_html_file.name),
+        completed_sim=completed_simulation,
+        disk_usage=disk_usage,
+        triggered_on=trigger_time,
+        **additional_stats,
+    )
+    print("done")
 
     return
 
@@ -184,34 +250,22 @@ def run_profiling(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=HELP_STR)
     parser.add_argument(
-        "--pyis",
-        action="store_true",
-        help="Write .ipysession output.",
-        dest="write_pyis",
-    )
-    parser.add_argument(
-        "--html", action="store_true", help="Write HTML output.", dest="write_html"
-    )
-    parser.add_argument(
-        "--json", action="store_true", help="Write JSON output.", dest="write_json"
-    )
-    parser.add_argument(
-        "--stats",
-        action="store_true",
-        help="Write additional statistics file as output",
-        dest="write_stats",
-    )
-    parser.add_argument(
-        "--output_dir",
+        "--output-dir",
         type=Path,
         help="Redirect the output(s) to this directory.",
         default=PROFILING_RESULTS,
     )
     parser.add_argument(
-        "--output_name",
+        "--output-name",
         type=Path,
         help="Name to give to the output file(s). File extensions will automatically appended.",
         default=None,
+    )
+    parser.add_argument(
+        "--html",
+        action="store_true",
+        help="Write HTML output in addition to statistics output.",
+        dest="write_html",
     )
     parser.add_argument(
         "-i",
@@ -221,6 +275,27 @@ if __name__ == "__main__":
         help="Interval in seconds between capture frames for profiling.",
         default=1e-1,
     )
+    parser.add_argument(
+        "--additional-stats",
+        metavar="KEY=VALUE",
+        nargs="*",
+        help="Set a number of key-value pairs "
+        "(do not put spaces before or after the = sign). "
+        "If a value contains spaces, you should define "
+        "it with double quotes: "
+        'foo="this is a sentence". Note that '
+        "values are always treated as strings.",
+    )
 
     args = parser.parse_args()
-    run_profiling(**vars(args))
+    # Parse additional run statistics from the command line
+    command_line_stats = parse_keyword_args(args.additional_stats)
+
+    # Pass to the profiling "script"
+    run_profiling(
+        output_dir=args.output_dir,
+        output_name=args.output_name,
+        write_html=args.write_html,
+        interval=args.interval,
+        **command_line_stats,
+    )
