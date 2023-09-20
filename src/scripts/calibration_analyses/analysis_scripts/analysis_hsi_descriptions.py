@@ -642,14 +642,16 @@ def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcef
     # Add in short TREATMENT_ID
     squeeze_factor_by_hsi['TREATMENT_ID'] = squeeze_factor_by_hsi['_TREATMENT_ID'].map(lambda x: x.split('_')[0] + "*")
 
-    # Sort to collect the same TREATMENT_ID together
-    squeeze_factor_by_hsi = squeeze_factor_by_hsi.sort_values('TREATMENT_ID',
-                                                              key=order_of_short_treatment_ids,
-                                                              ascending=False).reset_index(drop=True)
+    # Could Sort to collect the same TREATMENT_ID together
+    # squeeze_factor_by_hsi = squeeze_factor_by_hsi.sort_values('TREATMENT_ID',
+    #                                                           key=order_of_short_treatment_ids,
+    #                                                           ascending=False).reset_index(drop=True)
+    # But, we sort by the value of squeeze_factor
+    sorted_squeeze_factors = squeeze_factor_by_hsi.sort_values(['squeeze_factor']).reset_index(drop=True)
 
     fig, ax = plt.subplots(figsize=(7.2, 10.5))
     name_of_plot = 'Average Squeeze Factors for each Health System Interaction Event'
-    for i, row in squeeze_factor_by_hsi.iterrows():
+    for i, row in sorted_squeeze_factors.iterrows():
         ax.plot(
             row['squeeze_factor'],
             i,
@@ -657,16 +659,15 @@ def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcef
             markersize=10,
             color=get_color_short_treatment_id(row['TREATMENT_ID'])
         )
-    ax.set_xscale('log')
-    ax.set_xlabel('Average Squeeze Factor (Log Scale)')
+    # ax.set_xscale('log')
+    ax.set_xlabel('Average Squeeze Factor')
     ax.set_ylabel('Health System Interaction Event')
-    ax.set_yticks(squeeze_factor_by_hsi.index)
-    ax.set_yticklabels(squeeze_factor_by_hsi['HSI'], fontsize=6)
+    ax.set_yticks(sorted_squeeze_factors.index)
+    ax.set_yticklabels(sorted_squeeze_factors['HSI'], fontsize=6)
     ax.grid(axis='x', which='both')
     ax.grid(axis='y')
-    ax.set_xticks([1.0, 10.0, 100.0])
-    ax.set_xticklabels(['1.0', 'x10', 'x100'])
-    ax.axvline(1.0, color='black', linewidth=2)
+    ax.set_xlim([0, 60])
+    ax.axvline(0.0, color='black', linewidth=2)
     fig.suptitle(name_of_plot, fontsize=12, weight='bold')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
@@ -677,29 +678,29 @@ def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcef
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
 
-    figure1_distribution_of_hsi_event_by_treatment_id(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
-
-    figure2_appointments_used(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
-
-    figure3_fraction_of_time_of_hcw_used_by_treatment(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
-
-    figure4_hr_use_overall(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
-
-    figure5_bed_use(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
-
-    figure6_cons_use(
-        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    )
+    # figure1_distribution_of_hsi_event_by_treatment_id(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    # )
+    #
+    # figure2_appointments_used(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    # )
+    #
+    # figure3_fraction_of_time_of_hcw_used_by_treatment(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    # )
+    #
+    # figure4_hr_use_overall(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    # )
+    #
+    # figure5_bed_use(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    # )
+    #
+    # figure6_cons_use(
+    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    # )
 
     figure7_squeeze_factors(
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
