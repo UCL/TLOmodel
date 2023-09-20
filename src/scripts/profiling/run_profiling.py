@@ -4,17 +4,16 @@ import os
 import warnings
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Dict, List, Union
 
 import numpy as np
 from _parameters import scale_run_parameters
 from _paths import PROFILING_RESULTS
 from psutil import disk_io_counters
 from pyinstrument import Profiler
-from pyinstrument.renderers import HTMLRenderer, JSONRenderer
+from pyinstrument.renderers import HTMLRenderer
 from pyinstrument.session import Session
 from scale_run import scale_run
-
 from tlo import Simulation
 
 HELP_STR = (
@@ -24,9 +23,9 @@ HELP_STR = (
 )
 
 
-def current_time(formatstr: str = "%Y-%m-%d_%H%M") -> str:
+def current_time(format_str: str = "%Y-%m-%d_%H%M") -> str:
     """Produces a string of the current time in the specified format."""
-    return datetime.utcnow().strftime(formatstr)
+    return datetime.utcnow().strftime(format_str)
 
 
 def parse_keyword_args(items: List[str] = None, sep: str = "=") -> Dict[str, str]:
@@ -221,9 +220,6 @@ def run_profiling(
     """
     # Suppress "ignore" warnings
     warnings.filterwarnings("ignore")
-
-    # Capture the start time for later recording
-    trigger_time = current_time("%Y-%m-%d")
 
     # Create the profiler to record the stack
     # An instance of a Profiler can be start()-ed and stop()-ped multiple times,
