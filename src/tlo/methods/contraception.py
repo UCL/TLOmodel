@@ -1255,7 +1255,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         items_all = {**items_essential, **items_optional}
 
         # Determine whether the contraception is administrated (ie all essential items are available),
-        # if so do log the availability of all items and record used equipment if any, if not set the contraception to
+        # if so do log the availability of all items and update used equipment if any, if not set the contraception to
         # "not_using":
         co_administrated = all(v for k, v in cons_available.items() if k in items_essential)
 
