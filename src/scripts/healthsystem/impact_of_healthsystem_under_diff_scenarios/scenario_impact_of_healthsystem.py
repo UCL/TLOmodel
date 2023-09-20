@@ -72,15 +72,13 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
 
             "With Hard Constraints":
                 # N.B. This is for Mode 2 on continuously from the beginning of the simulation.
-                # ... And with `tclose` such that there are no 'second-tries' for HSI that do not run.
+                # ... And with the "natural" (i.e., as coded in each disease module and not-overwritten) `tclose`
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
                      'HealthSystem': {
                         'mode_appt_constraints': 2,
                         "policy_name": "Naive",
-                        # 'tclose_overwrite': 1,
-                        # 'tclose_days_offset_overwrite': 1,
                         }
                     },
                 ),
