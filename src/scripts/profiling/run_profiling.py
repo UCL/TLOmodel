@@ -137,11 +137,13 @@ def record_profiling_session_statistics(
 
     Key / value pairs are:
     start_time: float
-        Time (stored as a float representing the number of seconds from a reference time) the profiling session started.
+        Time (stored as a float representing the number of seconds from a reference time)
+        the profiling session started.
     duration: float
         Number of seconds that the profiling session lasted for.
     cpu_time: float
-        Number of seconds of CPU time that were used by the program during the profiling session.
+        Number of seconds of CPU time that were used by the program during the profiling
+        session.
     """
     if session is None:
         return dict()
@@ -168,11 +170,13 @@ def record_run_statistics(
     which can then be dumped to a JSON file.
 
     :param output_file: JSON file / path to write to.
-    :param html_output_file: The name of the output HTML file from the profiling run, if it was produced.
+    :param html_output_file: The name of the output HTML file from the profiling run,
+     if it was produced.
     :param profiled_session: The Session object representing the profiling session.
     :param completed_sim: The end-state of the simulation.
     :param disk_usage: Usage stats for the disk I/O operations during the profiling run.
-    :param additional_stats: Dict of any additional information passed by the user that should be recorded.
+    :param additional_stats: Dict of any additional information passed by the user that
+     should be recorded.
     """
     # Record statistics as [key, value] pairs
     stats_dict = dict()
@@ -186,7 +190,8 @@ def record_run_statistics(
     if html_output_file is not None:
         if "html_output" in additional_stats.keys():
             warnings.warn(
-                f"User-provided statistic for 'html_output' was provided: this is being overwritten with the path to the HTML output.\n"
+                f"User-provided statistic for 'html_output' was provided: "
+                "this is being overwritten with the path to the HTML output.\n"
                 f"\tWas        : {additional_stats['html_output']}"
                 f"\tReplaced by: {html_output_file}"
             )
@@ -294,7 +299,8 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output-name",
         type=Path,
-        help="Name to give to the output file(s). File extensions will automatically appended.",
+        help="Name to give to the output file(s). "
+        "File extensions will automatically appended.",
         default=None,
     )
     parser.add_argument(
