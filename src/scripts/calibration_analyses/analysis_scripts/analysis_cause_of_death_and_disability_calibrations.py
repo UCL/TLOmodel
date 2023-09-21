@@ -319,6 +319,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         for cause in all_causes:
 
+            if (cause == 'Other') and (what == 'DALYs'):
+                # Skip 'Other' when plotting DALYS as it's misleading. We don't have "Other" (non-modelled) causes
+                # of disability.
+                continue
+
             vals = tot_outcomes_by_cause.loc[(slice(None), cause), ] / 1e3
 
             x = vals.at[('mean', cause), 'GBD']
