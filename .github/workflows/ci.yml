@@ -8,6 +8,14 @@ on:
   schedule:
     - cron: 0 0 * * *
 
+# Force cancellation of in-progress workflows if changes are made to
+# the HEAD of the branch the workflow is currently running on.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # master branch will be allowed to have pending jobs
+  # https://stackoverflow.com/a/70972844
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
 env:
   LD_PRELOAD: /lib/x86_64-linux-gnu/libSegFault.so
   SEGFAULT_SIGNALS: all
