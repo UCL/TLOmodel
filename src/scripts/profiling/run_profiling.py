@@ -14,6 +14,7 @@ from pyinstrument import Profiler
 from pyinstrument.renderers import HTMLRenderer
 from pyinstrument.session import Session
 from scale_run import scale_run
+
 from tlo import Simulation
 
 HELP_STR = (
