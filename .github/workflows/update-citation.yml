@@ -1,0 +1,39 @@
+name: Update CITATION.cff file when contributors.yaml changed
+
+on:
+  push:
+    branches: "master"
+    paths:
+      - contributors.yaml
+
+jobs:
+  update-citation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+          with:
+            lfs: false
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - name: Install tox
+        run: python -m pip install tox
+      - name: Update citation file
+        run: tox -e citation
+      - name: Check whether the citation metadata from CITATION.cff is valid
+        uses: citation-file-format/cffconvert-github-action@2.0.0
+        with:
+          args: "--validate"
+      - name: Push updated citation file back to repository
+        run:
+          git config --local user.name github-actions[bot]
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --exit-code; then
+            git add CITATION.cff
+            git commit -m "Updating CITATION.cff file"
+            git push -f origin master
+          fi
+            
+    
