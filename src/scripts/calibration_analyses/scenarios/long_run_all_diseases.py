@@ -3,7 +3,8 @@ This file defines a batch run of a large population for a long time with all dis
 It's used for calibrations (demographic patterns, health burdens and healthsystem usage)
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py```
+```tlo batch-submit src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py
+
 
 or locally using:
     ```tlo scenario-run src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py```
@@ -24,7 +25,7 @@ class LongRun(BaseScenario):
         self.end_date = Date(2030, 1, 1)
         self.pop_size = 20_000
         self.number_of_draws = 1
-        self.runs_per_draw = 10
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {
@@ -37,7 +38,8 @@ class LongRun(BaseScenario):
                 'tlo.methods.healthburden': logging.INFO,
                 'tlo.methods.healthsystem': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
-                "tlo.methods.contraception": logging.INFO,
+                # "tlo.methods.contraception": logging.INFO,
+                'tlo.methods.hiv': logging.INFO,
             }
         }
 
