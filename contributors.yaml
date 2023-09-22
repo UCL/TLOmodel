@@ -203,9 +203,9 @@
     - Software development
 - given-names: Alison
   family-names: Rodger
-  orcid: "https://orcid.org/0000-0001-8817-4651"  # to check
+  orcid: "https://orcid.org/0000-0001-8817-4651"
   affiliation: University College London
-  website: "https://profiles.ucl.ac.uk/954"  # to check
+  website: "https://profiles.ucl.ac.uk/954"
   contributions:
     - Clinical consultant 
 - given-names: Paul
@@ -249,12 +249,12 @@
     - Health economics
 - given-names: Nimalan
   family-names: Arinaminpathy
-  orcid: "https://orcid.org/0000-0001-9502-6876"  # to check
+  orcid: "https://orcid.org/0000-0001-9502-6876"
   affiliation: "Imperial College London"
   website: "https://www.imperial.ac.uk/people/nim.pathy"
 - given-names: Amelia
   family-names: Crampin
-  orcid: "https://orcid.org/0000-0002-1513-4330"  # to check
+  orcid: "https://orcid.org/0000-0002-1513-4330"
   affiliation: "London School of Hygiene and Tropical Medicine"
   website: "https://www.lshtm.ac.uk/aboutus/people/crampin.mia"
 - given-names: Jonathan
@@ -272,6 +272,5 @@
   website: "https://www.researchgate.net/profile/Juan-Vesga-3"
 - given-names: Leila
   family-names: Uwais
-  affiliation: "University of York / Imperial College London"  # to check
   website: "https://uk.linkedin.com/in/leila-uwais-597705142"
   github-username: Leila-Uwais
