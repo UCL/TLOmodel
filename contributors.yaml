@@ -158,7 +158,6 @@
   orcid: "https://orcid.org/0000-0002-3028-5292"
   affiliation: "University College London"
   website: "https://profiles.ucl.ac.uk/67238"
-
   github-username: stefpiatek
   contributions:
     - Software development
@@ -199,14 +198,6 @@
   orcid: "https://orcid.org/0000-0002-4104-0119"  # to check
   affiliation: "University College London"
   github-username: EvaJanouskova
-  contributions:
-    - Epidemiology and modelling
-    - Software development
-- given-names: Leila
-  family-names: Uwais
-  affiliation: "University of York / Imperial College London"  # to check
-  website: "https://uk.linkedin.com/in/leila-uwais-597705142"
-  github-username: Leila-Uwais
   contributions:
     - Epidemiology and modelling
     - Software development
@@ -279,4 +270,8 @@
   orcid: "https://orcid.org/0000-0003-1103-9587"
   affiliation: "London School of Hygiene and Tropical Medicine"
   website: "https://www.researchgate.net/profile/Juan-Vesga-3"
-  
+- given-names: Leila
+  family-names: Uwais
+  affiliation: "University of York / Imperial College London"  # to check
+  website: "https://uk.linkedin.com/in/leila-uwais-597705142"
+  github-username: Leila-Uwais
