@@ -7,7 +7,7 @@ Run on the batch system using:
 
 
 or locally using:
-    ```tlo scenario-run src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py```
+    ```tlo scenario-run src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py
 
 """
 

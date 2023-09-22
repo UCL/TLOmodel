@@ -23,9 +23,9 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2018, 1, 1)
+end_date = Date(2013, 1, 1)
 popsize = 5000
-scenario = 0
+# scenario = 0
 
 # set up the log config
 # add deviance measure logger if needed
@@ -55,12 +55,11 @@ sim.register(*fullmodel(
         "SymptomManager": {"spurious_symptoms": True},
         "HealthSystem": {"disable": False,
                          "service_availability": ["*"],
-                         "mode_appt_constraints": 0,  # no constraints, no squeeze factor
+                         "mode_appt_constraints": 1,  # no constraints, no squeeze factor
                          "cons_availability": "default",
                          "beds_availability": "all",
                          "ignore_priority": False,
-                         "use_funded_or_actual_staffing": "funded_plus",
-                         "capabilities_coefficient": 1.0},
+                         "use_funded_or_actual_staffing": "actual"},
     },
 ))
 
