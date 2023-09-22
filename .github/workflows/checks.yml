@@ -38,4 +38,4 @@ jobs:
       - name: Install tox
         run: python -m pip install tox
       - name: Run checks with tox
-        run: tox -v -e checks
+        run: tox -v -e check
