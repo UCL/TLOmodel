@@ -200,16 +200,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 lgd = dict()
                 for k, v in zip(labels, handles):
                     lgd.setdefault(k, v)
-                ax.legend(reversed(lgd.values()), reversed(lgd.keys()), loc="upper right", ncol=2, fontsize=8)
+                # ax.legend(reversed(lgd.values()), reversed(lgd.keys()), loc="upper right", ncol=2, fontsize=8)
+                # ax.text(
+                # 5.2, 11_000, 'GBD || Model', horizontalalignment='left',  verticalalignment='bottom', fontsize=8)
+                ax.legend().set_visible(False)  # Hide legend
 
                 fig.tight_layout()
                 fig.savefig(make_graph_file_name(
                     f"{what}_{period}_{sex}_StackedBars_ModelvsGBD_{'scaled' if scaled else ''}"))
-
-                # ax.text(
-                # 5.2, 11_000, 'GBD || Model', horizontalalignment='left',  verticalalignment='bottom', fontsize=8)
-                ax.legend().set_visible(False)
-
                 fig.show()
                 plt.close(fig)
 
@@ -412,7 +410,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # make_std_graphs(what='DALYs', period='2010-2014')
 
     make_std_graphs(what='DALYs', period='2015-2019')
-    make_std_graphs(what='Deaths', period='2015-2019')
+    # make_std_graphs(what='Deaths', period='2015-2019')
 
 
 if __name__ == "__main__":
