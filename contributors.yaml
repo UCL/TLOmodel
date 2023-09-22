@@ -72,8 +72,8 @@
     - Epidemiology and modelling
     - Software development
 - given-names: Ines
-  family-names: Lin
-  orcid: "https://orcid.org/0000-0002-5213-3281"  # to check
+  family-names: Li Lin
+  orcid: "https://orcid.org/0000-0002-1945-3208"
   affiliation: "University College London"
   github-username: inesll
   contributions:
@@ -195,7 +195,7 @@
     - Software development
 - given-names: Eva
   family-names: Janoušková
-  orcid: "https://orcid.org/0000-0002-4104-0119"  # to check
+  orcid: "https://orcid.org/0000-0002-4104-0119"
   affiliation: "University College London"
   github-username: EvaJanouskova
   contributions:
