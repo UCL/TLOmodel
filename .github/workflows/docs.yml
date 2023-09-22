@@ -6,7 +6,7 @@ on:
     tags: ["*"]
   pull_request:
     paths:
-      - .github/workflows/docs.yaml
+      - .github/workflows/docs.yml
       - docs/**
       - requirements/**
       - src/tlo/**
