@@ -429,7 +429,7 @@ bar5 = ax.bar(x[4], outreach_total, width, label='Outreach services', yerr=[[out
 # Adding labels and title
 ax.set_xlabel('Scenario')
 ax.set_ylabel('Total DALYs')
-ax.set_title('Cumulative TB DALYs 2010-2013')
+ax.set_title('Cumulative TB DALYs 2010-2033')
 ax.set_xticks(x)
 ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scale_up', 'Outreach services'])
 ax.legend()
@@ -475,7 +475,7 @@ bar5 = ax.bar(x[4], outreach_total, width, label='Outreach services', yerr=[[out
 # Adding labels and title
 ax.set_xlabel('Scenario')
 ax.set_ylabel('TB Mortality')
-ax.set_title('Cumulative TB Mortality 2010-2013')
+ax.set_title('Cumulative TB Mortality 2010-2033')
 ax.set_xticks(x)
 ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scale_up', 'Outreach services'])
 ax.legend()
