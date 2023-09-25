@@ -1467,22 +1467,22 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         logger.debug(
             key="message", data=f"ScenarioSetupEvent: scenario {scenario}"
         )
-        # baseline scenario 0: no change to parameters/functions
+        # baseline scenario--no change to parameters
         if scenario == 0:
             return
 
-        # sets availability of xpert
+        # sets availability of xpert to nil
         if scenario == 1:
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {187: 0.0})
-        # sets availability of xray
+        # sets availability of xray to nil
         if scenario == 2:
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {175: 0.0})
         #increases probability of accessing chest xray by 10%
         if scenario == 3:
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                 {175: 0.43})
+                 {175: 0.44})
 # ######################################################################
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
@@ -2528,7 +2528,7 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
 
     def apply(self, person_id, squeeze_factor):
 
-       # print(f'"STARTING COMMUNITY CHEST XRAY SCREENING"')
+        print(f'"STARTING COMMUNITY CHEST XRAY SCREENING"')
 
         logger.debug(key="message", data=f"Performing community chest X-ray screening for {person_id}")
         df = self.sim.population.props  # Shortcut to the dataframe
