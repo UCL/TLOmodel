@@ -35,13 +35,12 @@ params.to_excel(outputspath / "parameters.xlsx")
 
 number_runs = info["runs_per_draw"]
 number_draws = info['number_of_draws']
-
+print(log)
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
     from scripts.hiv.projections_jan2023.tb_DAH_scenarios import ImpactOfTbDaH
     e = ImpactOfTbDaH()
     return tuple(e._scenarios.keys())
-
 
 def set_param_names_as_column_index_level_0(_df):
     """Set the columns index (level 0) as the param_names."""
