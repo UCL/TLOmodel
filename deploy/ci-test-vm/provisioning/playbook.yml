@@ -62,7 +62,7 @@
        runner_dir: "/opt/actions-runner/{{ item }}"
        runner_name: "{{ ansible_hostname }}-{{ item }}"
        runner_extra_config_args: "--work /tmp/tlo/{{ item }}/_work"
-       reinstall_runner: yes
+       reinstall_runner: no
 
   roles:
     - role: diodonfrost.git_lfs
