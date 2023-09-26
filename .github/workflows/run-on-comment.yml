@@ -114,7 +114,7 @@ jobs:
           return pr.head.sha;
 
     - name: Checkout SHA
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         lfs: true
         ref: ${{ steps.sha.outputs.result }}
