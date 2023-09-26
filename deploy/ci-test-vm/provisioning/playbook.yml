@@ -62,5 +62,5 @@
      vars:
        runner_dir: "/opt/actions-runner/{{ item }}"
        runner_name: "{{ ansible_hostname }}-{{ item }}"
-       runner_extra_config_args: "--work /tmp/tlo/{{ item }}/_work"
+       runner_extra_config_args: "--work /mnt/tlo/{{ item }}/_work"
        reinstall_runner: no
