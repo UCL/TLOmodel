@@ -54,14 +54,12 @@
      args:
        creates: /usr/local/bin/virtualenv
 
-   - name: create GitHub Actions runners work directory
+   - name: make /mnt writable by everyone
      become: true
      ansible.builtin.file:
-       path: "{{ runner_workdir }}"
+       path: "/mnt"
        state: directory
-       mode: '0755'
-       owner: "{{ runner_user }}"
-       group: "{{ runner_user }}"
+       mode: '0777'
 
    - name: run github actions runner role
      with_sequence: count="{{ n_runners }}"
