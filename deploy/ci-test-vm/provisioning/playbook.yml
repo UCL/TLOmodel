@@ -3,6 +3,7 @@
     - github_account: UCL
     - github_repo: TLOmodel
     - runner_user: gha
+    - runner_workdir: /mnt/tlo
 
   tasks:
 
@@ -53,6 +54,15 @@
      args:
        creates: /usr/local/bin/virtualenv
 
+   - name: create GitHub Actions runners work directory
+     become: true
+     ansible.builtin.file:
+       path: "{{ runner_workdir }}"
+       state: directory
+       mode: '0755'
+       owner: "{{ runner_user }}"
+       group: "{{ runner_user }}"
+
    - name: run github actions runner role
      with_sequence: count="{{ n_runners }}"
      include_role:
@@ -62,5 +72,5 @@
      vars:
        runner_dir: "/opt/actions-runner/{{ item }}"
        runner_name: "{{ ansible_hostname }}-{{ item }}"
-       runner_extra_config_args: "--work /mnt/tlo/{{ item }}/_work"
+       runner_extra_config_args: "--work {{ runner_workdir }}/{{ item }}/_work"
        reinstall_runner: no
