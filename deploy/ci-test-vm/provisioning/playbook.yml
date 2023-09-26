@@ -30,6 +30,7 @@
          - python3.8-distutils
          - python3-pip
          - glibc-tools
+         - git-lfs
        state: present
 
    - name: update-alternative select python3.8 as default
@@ -63,7 +64,3 @@
        runner_name: "{{ ansible_hostname }}-{{ item }}"
        runner_extra_config_args: "--work /tmp/tlo/{{ item }}/_work"
        reinstall_runner: no
-
-  roles:
-    - role: diodonfrost.git_lfs
-      become: yes
