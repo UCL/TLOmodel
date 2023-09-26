@@ -1,6 +1,6 @@
 - hosts: all
   vars:
-    - github_account: tamuri
+    - github_account: UCL
     - github_repo: TLOmodel
     - runner_user: gha
 
@@ -67,4 +67,3 @@
   roles:
     - role: diodonfrost.git_lfs
       become: yes
-
