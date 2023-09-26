@@ -125,7 +125,7 @@ jobs:
     - name: Get comment-bot token
       if: always() && steps.has_permissions.outputs.result == 'true'
       id: get_comment_bot_token
-      uses: peter-murray/workflow-application-token-action@6a9741bf210c9a93370560585c908161170ecada
+      uses: peter-murray/workflow-application-token-action@b1ad34e28f4ef30582df1bd5f45df2044eb7a6b9
       with:
         application_id: ${{ secrets.application-id }}
         application_private_key: ${{ secrets.application-private-key }}
