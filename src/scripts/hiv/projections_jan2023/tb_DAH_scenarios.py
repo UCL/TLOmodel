@@ -35,8 +35,8 @@ class ImpactOfTbDaH(BaseScenario):
         # self.seed = 0
         self.seed = random.randint(0, 50000),
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2033, 12, 31)
-        self.pop_size = 90000
+        self.end_date = Date(2012, 12, 31)
+        self.pop_size = 600
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 4
@@ -98,7 +98,7 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 0,
                     'probability_community_chest_xray': 0.1,
-                    'scaling_factor_WHO': 1.9,
+                   # 'scaling_factor_WHO': 1.9,
                 }
             },
         }
