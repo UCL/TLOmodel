@@ -194,7 +194,9 @@ class Contraception(Module):
         ))
 
         # Temporary fix of loading the boolean  parameter 'use_interventions':
-        co_params = pd.read_csv('resources/ResourceFile_ContraceptionParams.csv')
+        co_params = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_ContraceptionParams.csv'
+        )
         self.parameters['use_interventions_loaded'] =\
             co_params['value'].loc[co_params['parameter_name'] == 'use_interventions'].values[0]
         self.parameters['use_interventions'] = self.parameters['use_interventions_loaded'] == 'On'
