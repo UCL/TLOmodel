@@ -2760,7 +2760,7 @@ class HealthSystemSummaryCounter:
             key="Equipment",
             description="Sets of used equipment for each facility level in this calendar year.",
             data={
-                "Equipment_By_Level": sorted(self._equip_by_level),
+                "Equipment_By_Level": self._equip_by_level,
             },
         )
 
