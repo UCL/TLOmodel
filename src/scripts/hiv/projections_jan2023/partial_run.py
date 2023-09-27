@@ -36,7 +36,7 @@ class ImpactOfTbDaHx(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_scenarios_test_run17_partial',
+            'filename': 'Tb_DAH_scenarios_test_run18_partial',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
