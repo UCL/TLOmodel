@@ -602,10 +602,10 @@ via HSI_NewbornOutcomes_ReceivesPostnatalCheck.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘CareOfWomenDuringPregnancy’, ‘PregnancySupervisor’, ‘Labour’, ‘PostnatalSupervisor’}</p>
-<p>CAUSES_OF_DEATH : {‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fd214c71d90&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fd214c71e20&gt;, ‘encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x7fd214c71e80&gt;, ‘neonatal_respiratory_depression’: &lt;tlo.methods.causes.Cause object at 0x7fd214c71ee0&gt;, ‘preterm_other’: &lt;tlo.methods.causes.Cause object at 0x7fd214c71f40&gt;, ‘respiratory_distress_syndrome’: &lt;tlo.methods.causes.Cause object at 0x7fd214c71fa0&gt;, ‘congenital_heart_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fd214cb1040&gt;, ‘limb_or_musculoskeletal_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fd214cb10a0&gt;, ‘urogenital_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fd214cb1100&gt;, ‘digestive_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fd214cb1160&gt;, ‘other_anomaly’: &lt;tlo.methods.causes.Cause object at 0x7fd214cb11c0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘Retinopathy of Prematurity’: &lt;tlo.methods.causes.Cause object at 0x7fd214cb1220&gt;, ‘Neonatal Encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x7fd214cb1280&gt;, ‘Neonatal Sepsis Long term Disability’: &lt;tlo.methods.causes.Cause object at 0x7fd214cb12e0&gt;, ‘Preterm Birth Disability’: &lt;tlo.methods.causes.Cause object at 0x7fd214cb1340&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Demography’}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘CareOfWomenDuringPregnancy’, ‘PostnatalSupervisor’, ‘PregnancySupervisor’, ‘Labour’}</p>
+<p>CAUSES_OF_DEATH : {‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x12fae5a30&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x12fae5ac0&gt;, ‘encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x12fae5b20&gt;, ‘neonatal_respiratory_depression’: &lt;tlo.methods.causes.Cause object at 0x12fae5b80&gt;, ‘preterm_other’: &lt;tlo.methods.causes.Cause object at 0x12fae5be0&gt;, ‘respiratory_distress_syndrome’: &lt;tlo.methods.causes.Cause object at 0x12fae5c40&gt;, ‘congenital_heart_anomaly’: &lt;tlo.methods.causes.Cause object at 0x12fae5ca0&gt;, ‘limb_or_musculoskeletal_anomaly’: &lt;tlo.methods.causes.Cause object at 0x12fae5d00&gt;, ‘urogenital_anomaly’: &lt;tlo.methods.causes.Cause object at 0x12fae5d60&gt;, ‘digestive_anomaly’: &lt;tlo.methods.causes.Cause object at 0x12fae5dc0&gt;, ‘other_anomaly’: &lt;tlo.methods.causes.Cause object at 0x12fae5e20&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘Retinopathy of Prematurity’: &lt;tlo.methods.causes.Cause object at 0x12fae5e80&gt;, ‘Neonatal Encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x12fae5ee0&gt;, ‘Neonatal Sepsis Long term Disability’: &lt;tlo.methods.causes.Cause object at 0x12fae5f40&gt;, ‘Preterm Birth Disability’: &lt;tlo.methods.causes.Cause object at 0x12fae5fa0&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’}</p>
 <p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class NewbornOutcomes):</strong></p>
@@ -630,7 +630,7 @@ generator.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>data_folder</strong> – path of a folder supplied to the Simulation containing data files.
-Typically modules would read a particular file within here.</p>
+Typically, modules would read a particular file within here.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -953,11 +953,6 @@ to allow the rescheduling. This is called each time that the event is tried to b
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck.not_available">
-<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#HSI_NewbornOutcomes_ReceivesPostnatalCheck.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck.not_available" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck._get_facility_level_for_pnc">
 <span class="sig-name descname"><span class="pre">_get_facility_level_for_pnc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#HSI_NewbornOutcomes_ReceivesPostnatalCheck._get_facility_level_for_pnc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck._get_facility_level_for_pnc" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -1001,11 +996,6 @@ constructor, but may also take further keyword arguments.</p>
 to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_NeonatalWardInpatientCare.not_available">
-<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#HSI_NewbornOutcomes_NeonatalWardInpatientCare.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_NeonatalWardInpatientCare.not_available" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
@@ -1037,11 +1027,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.BreastfeedingStatusUpdateEventSixMonths.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#BreastfeedingStatusUpdateEventSixMonths.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.BreastfeedingStatusUpdateEventSixMonths.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1076,11 +1066,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.BreastfeedingStatusUpdateEventTwoYears.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#BreastfeedingStatusUpdateEventTwoYears.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.BreastfeedingStatusUpdateEventTwoYears.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1104,7 +1094,7 @@ constructor, but may also take further keyword arguments.</p></li>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

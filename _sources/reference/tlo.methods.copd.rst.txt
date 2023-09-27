@@ -18,21 +18,66 @@ tlo.methods.copd module
         * - Item
           - Type
           - Description
+        * - prob_mod_exacerb
+          - LIST
+          - probability of moderate exacerbation given lung function, for each lung function category. 
+        * - prob_sev_exacerb
+          - LIST
+          - probability of severe exacerbation given lung function, for each lung function category.
         * - prob_progress_to_next_cat
           - REAL
           - probability of changing from a lower lung function category to a higher lung function category
-        * - prob_mod_exacerb
-          - LIST
-          - probability of moderate exacerbation given lung function, for each lungfunction category. 
-        * - prob_sev_exacerb
-          - LIST
-          - probability of severe exacerbation given lung function, for each lungfunction category.
-        * - prob_will_die_sev_exacerbation
+        * - prob_will_die_sev_exacerbation_ge80
           - REAL
-          - probability that a person will die of severe exacerbation 
-        * - prob_will_survive_given_oxygen
+          - probability that a person equal to or greater than 80 years will die of severe exacerbation 
+        * - prob_will_die_sev_exacerbation_7079
           - REAL
-          - probability that an individual with severe copd will not die when given oxygen 
+          - probability that a person between 70 to 79 years will die of severe exacerbation 
+        * - prob_will_die_sev_exacerbation_6069
+          - REAL
+          - probability that a person between 60 to 99 years will die of severe exacerbation 
+        * - prob_will_die_sev_exacerbation_5059
+          - REAL
+          - probability that a person between 50 to 59 years will die of severe exacerbation 
+        * - prob_will_die_sev_exacerbation_4049
+          - REAL
+          - probability that a person between 40 to 49 years will die of severe exacerbation 
+        * - prob_will_die_sev_exacerbation_3039
+          - REAL
+          - probability that a person between 30 to 39 years will die of severe exacerbation 
+        * - prob_will_die_sev_exacerbation_lt30
+          - REAL
+          - probability that a person less than 30 years will die of severe exacerbation 
+        * - eff_oxygen
+          - REAL
+          - the effect of oxygen on individuals with severe exacerbation 
+        * - rel_risk_progress_per_higher_cat
+          - REAL
+          - relative risk of progression to the next higher level of lung function for each higher level 
+        * - rel_risk_tob
+          - REAL
+          - relative effect of tobacco on the rate of lung function progression
+        * - rel_risk_wood_burn_stove
+          - REAL
+          - relative risk of wood burn stove on the rate of lung function progression
+        * - prob_not_tob_lung_func_15_39
+          - LIST
+          - probability of lung function categories in individuals aged 15-39 and do not smoke tobacco
+        * - prob_not_tob_lung_func_40_59
+          - LIST
+          - probability of lung function categories in individuals aged 40-59 and do not smoke tobacco
+        * - prob_not_tob_lung_func_gr59
+          - LIST
+          - probability of lung function categories in individuals aged 60+ and do not smoke tobacco
+        * - prob_tob_lung_func_15_39
+          - LIST
+          - probability of lung function categories in individuals aged 15-39 who smoke tobacco
+        * - prob_tob_lung_func_40_59
+          - LIST
+          - probability of lung function categories in individuals aged 40-59 who smoke tobacco
+        * - prob_tob_lung_func_gr59
+          - LIST
+          - probability of lung function categories in individuals aged 60+ who smoke tobacco
 
 
      **PROPERTIES:**
@@ -46,7 +91,7 @@ tlo.methods.copd module
           - Description
         * - ch_lungfunction
           - CATEGORICAL
-          - Lung function of the person.NaN for those under 15; on a 7-point scale for others, from 0 (Perfect) to 6 (End-Stage COPD)..  Possible values are: [0, 1, 2, 3, 4, 5, 6, ]
+          - Lung function of the person.0 for those under 15; on a 7-point scale for others, from 0 (Perfect) to 6 (End-Stage COPD)..  Possible values are: [0, 1, 2, 3, 4, 5, 6, ]
         * - ch_will_die_this_episode
           - BOOL
           - Whether this person will die during a current severe exacerbation
@@ -60,15 +105,13 @@ tlo.methods.copd module
 
      ADDITIONAL_DEPENDENCIES : set()
 
-     CAUSES_OF_DEATH : {'COPD': <tlo.methods.causes.Cause object at 0x7fd214b9e8b0>}
+     CAUSES_OF_DEATH : {'COPD_cat0': <tlo.methods.causes.Cause object at 0x123ab2dc0>, 'COPD_cat1': <tlo.methods.causes.Cause object at 0x123ab2e20>, 'COPD_cat2': <tlo.methods.causes.Cause object at 0x123ab2e80>, 'COPD_cat3': <tlo.methods.causes.Cause object at 0x123ab2ee0>, 'COPD_cat4': <tlo.methods.causes.Cause object at 0x123ab2f40>, 'COPD_cat5': <tlo.methods.causes.Cause object at 0x123ab2fa0>, 'COPD_cat6': <tlo.methods.causes.Cause object at 0x123ae6040>}
 
-     CAUSES_OF_DISABILITY : {'COPD': <tlo.methods.causes.Cause object at 0x7fd214b9e910>}
+     CAUSES_OF_DISABILITY : {'COPD': <tlo.methods.causes.Cause object at 0x123ab2d90>}
 
-     INIT_DEPENDENCIES : {'SymptomManager'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'Lifestyle'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
-
-     gbd_causes_of_copd_represented_in_this_module : {'Other chronic respiratory diseases'}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      **Functions (defined or overridden in class Copd):**
 

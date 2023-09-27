@@ -438,7 +438,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">draws</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_draws</span><span class="p">()</span>
 
 <div class="viewcode-block" id="DrawGenerator.setup_draws"><a class="viewcode-back" href="../../reference/tlo.scenario.html#tlo.scenario.DrawGenerator.setup_draws">[docs]</a>    <span class="k">def</span> <span class="nf">setup_draws</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">number_of_draws</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Number of draws must be greater than one&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">number_of_draws</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Number of draws must be greater than 0&quot;</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">runs_per_draw</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Number of samples/draw must be greater than 0&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">draw_parameters</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenario</span><span class="o">.</span><span class="n">number_of_draws</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;Number of draws should equal one if no variable parameters&quot;</span>
@@ -669,7 +669,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

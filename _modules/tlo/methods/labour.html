@@ -2452,7 +2452,12 @@
 <span class="sd">        :param hsi_event: HSI event in which the function has been called:</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
+        <span class="n">mni</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mother_and_newborn_info</span>
+
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;HSI_Labour_ReceivesPostnatalCheck will not run for </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">person_id</span> <span class="ow">in</span> <span class="n">mni</span><span class="p">:</span>
+            <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">apply_risk_of_early_postpartum_death</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="Labour.run_if_receives_comprehensive_emergency_obstetric_care_cant_run"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.Labour.run_if_receives_comprehensive_emergency_obstetric_care_cant_run">[docs]</a>    <span class="k">def</span> <span class="nf">run_if_receives_comprehensive_emergency_obstetric_care_cant_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
@@ -2464,12 +2469,17 @@
 <span class="sd">        :param hsi_event: HSI event in which the function has been called:</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">person_id</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
+        <span class="n">mni</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mother_and_newborn_info</span>
+
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare will not run for&#39;</span>
                                          <span class="sa">f</span><span class="s1">&#39; </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
 
         <span class="c1"># For women referred to this event after the postnatal SBA HSI we apply risk of death (as if should have been</span>
         <span class="c1"># applied in this event if it ran)</span>
         <span class="k">if</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">timing</span> <span class="o">==</span> <span class="s1">&#39;postpartum&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">person_id</span> <span class="ow">in</span> <span class="n">mni</span><span class="p">:</span>
+                <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
+
             <span class="bp">self</span><span class="o">.</span><span class="n">apply_risk_of_early_postpartum_death</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span></div></div>
 
 
@@ -2972,6 +2982,7 @@
 
                 <span class="k">if</span> <span class="n">timing</span> <span class="o">==</span> <span class="s1">&#39;&lt;48&#39;</span> <span class="ow">or</span> <span class="n">has_comps</span><span class="p">:</span>
                     <span class="n">mni</span><span class="p">[</span><span class="n">mother_id</span><span class="p">][</span><span class="s1">&#39;will_receive_pnc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;early&#39;</span>
+                    <span class="n">mni</span><span class="p">[</span><span class="n">mother_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
 
                     <span class="n">early_event</span> <span class="o">=</span> <span class="n">HSI_Labour_ReceivesPostnatalCheck</span><span class="p">(</span>
                         <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">mother_id</span><span class="p">)</span>
@@ -3029,6 +3040,10 @@
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">current_parameters</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
+            <span class="k">return</span>
+
+        <span class="c1"># If more than 2 days have passed, keep expected footprint but assume no effect</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_due_date_current_pregnancy&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">days</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">return</span>
 
         <span class="c1"># First we capture women who have presented to this event during labour at home. Currently we just set these</span>
@@ -3175,11 +3190,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">run_if_receives_skilled_birth_attendance_cant_run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">run_if_receives_skilled_birth_attendance_cant_run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">False</span></div>
-
-<div class="viewcode-block" id="HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.not_available"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.not_available">[docs]</a>    <span class="k">def</span> <span class="nf">not_available</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">run_if_receives_skilled_birth_attendance_cant_run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div></div>
+        <span class="k">pass</span></div></div>
 
 
 <div class="viewcode-block" id="HSI_Labour_ReceivesPostnatalCheck"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck">[docs]</a><span class="k">class</span> <span class="nc">HSI_Labour_ReceivesPostnatalCheck</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
@@ -3206,10 +3217,20 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_date_most_recent_delivery&#39;</span><span class="p">]):</span>
             <span class="k">return</span> <span class="kc">None</span>
 
+        <span class="k">if</span> <span class="n">person_id</span> <span class="ow">in</span> <span class="n">mni</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">]):</span>
+                <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">days</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">apply_risk_of_early_postpartum_death</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
+            <span class="k">return</span>
+
         <span class="c1"># Ensure that women who were scheduled to receive early PNC have received care prior to passing through</span>
-        <span class="c1"># PostnatalWeekOneMaternalEvent</span>
+            <span class="c1"># PostnatalWeekOneMaternalEvent</span>
+
         <span class="k">if</span> <span class="p">(</span><span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;will_receive_pnc&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;early&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;passed_through_week_one&#39;</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_date_most_recent_delivery&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">2</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_date_most_recent_delivery&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">2</span><span class="p">)):</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Mother </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1"> attended early PNC too late&#39;</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_pn_checks_maternal&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -3221,6 +3242,9 @@
 
             <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_pn_checks_maternal&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Mother </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1"> attended late PNC twice&#39;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">])</span> <span class="ow">and</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_pn_checks_maternal&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;Individual at PNC HSI without topen&#39;</span><span class="p">)</span>
 
         <span class="c1"># Run checks</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">postpartum_characteristics_checker</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
@@ -3283,6 +3307,7 @@
 
         <span class="c1"># ====================================== APPLY RISK OF DEATH===================================================</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_surgery&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;referred_for_blood&#39;</span><span class="p">]:</span>
+            <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">apply_risk_of_early_postpartum_death</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span></div>
@@ -3291,11 +3316,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">run_if_receives_postnatal_check_cant_run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HSI_Labour_ReceivesPostnatalCheck.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">run_if_receives_postnatal_check_cant_run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">False</span></div>
-
-<div class="viewcode-block" id="HSI_Labour_ReceivesPostnatalCheck.not_available"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.not_available">[docs]</a>    <span class="k">def</span> <span class="nf">not_available</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">run_if_receives_postnatal_check_cant_run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+        <span class="k">pass</span></div>
 
 <div class="viewcode-block" id="HSI_Labour_ReceivesPostnatalCheck._get_facility_level_for_pnc"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck._get_facility_level_for_pnc">[docs]</a>    <span class="k">def</span> <span class="nf">_get_facility_level_for_pnc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="n">mni</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mother_and_newborn_info</span>
@@ -3328,6 +3349,20 @@
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">mni</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mother_and_newborn_info</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">current_parameters</span>
+
+        <span class="c1"># If more than 2 days have passed, keep expected footprint but assume no effect</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">timing</span> <span class="o">==</span> <span class="s1">&#39;intrapartum&#39;</span><span class="p">)</span> <span class="ow">and</span> \
+           <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_due_date_current_pregnancy&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">days</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">timing</span> <span class="o">==</span> <span class="s1">&#39;postpartum&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">])</span> <span class="ow">and</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;la_pn_checks_maternal&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;Individual at PNC HSI (comp) without topen&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">days</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">apply_risk_of_early_postpartum_death</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
+                <span class="k">return</span>
 
         <span class="c1"># If the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk</span>
         <span class="c1"># of death if complications occur)</span>
@@ -3406,6 +3441,7 @@
         <span class="c1"># Women who have passed through the postpartum SBA HSI have not yet had their risk of death calculated because</span>
         <span class="c1"># they required interventions delivered via this event. We now determine if these women will survive</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">timing</span> <span class="o">==</span> <span class="s1">&#39;postpartum&#39;</span><span class="p">:</span>
+            <span class="n">mni</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">apply_risk_of_early_postpartum_death</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
 
         <span class="c1"># Schedule HSI that captures inpatient days</span>
@@ -3431,11 +3467,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">run_if_receives_comprehensive_emergency_obstetric_care_cant_run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">run_if_receives_comprehensive_emergency_obstetric_care_cant_run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">False</span></div>
-
-<div class="viewcode-block" id="HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.not_available"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.not_available">[docs]</a>    <span class="k">def</span> <span class="nf">not_available</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">run_if_receives_comprehensive_emergency_obstetric_care_cant_run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div></div>
+        <span class="k">pass</span></div></div>
 
 
 <div class="viewcode-block" id="HSI_Labour_PostnatalWardInpatientCare"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare">[docs]</a><span class="k">class</span> <span class="nc">HSI_Labour_PostnatalWardInpatientCare</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
@@ -3459,12 +3491,7 @@
                                          <span class="s1">&#39;inpatient time for an unwell postnatal woman&#39;</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HSI_Labour_PostnatalWardInpatientCare.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;HSI_Labour_PostnatalWardInpatientCare: did not run&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">False</span></div>
-
-<div class="viewcode-block" id="HSI_Labour_PostnatalWardInpatientCare.not_available"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.not_available">[docs]</a>    <span class="k">def</span> <span class="nf">not_available</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;HSI_Labour_PostnatalWardInpatientCare: cannot not run with &#39;</span>
-                                         <span class="s1">&#39;this configuration&#39;</span><span class="p">)</span></div></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;HSI_Labour_PostnatalWardInpatientCare: did not run&#39;</span><span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="LabourAndPostnatalCareAnalysisEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.labour.html#tlo.methods.labour.LabourAndPostnatalCareAnalysisEvent">[docs]</a><span class="k">class</span> <span class="nc">LabourAndPostnatalCareAnalysisEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
@@ -3584,7 +3611,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

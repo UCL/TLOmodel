@@ -242,7 +242,7 @@ generator.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>data_folder</strong> – path of a folder supplied to the Simulation containing data files.
-Typically modules would read a particular file within here.</p>
+Typically, modules would read a particular file within here.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -271,7 +271,8 @@ simulation knows what order to initialise modules in!</p>
 1) Prepare data storage structures
 2) Collect the module that will use this HealthBurden module
 3) Process the declarations of causes of disability made by the disease modules
-4) Launch the DALY Logger to run every month, starting with the end of the first month of simulation</p>
+4) Launch the DALY Logger to run every month, starting with the end of the first month of simulation
+5) Schedule <cite>Healthburden_WriteToLog</cite> that will write to log annually (end of each year)</p>
 </dd></dl>
 
 <dl class="py method">
@@ -305,8 +306,8 @@ the disease modules in this sim.)
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mother</strong> – the mother for this child (can be -1 if the mother is not identified).</p></li>
-<li><p><strong>child</strong> – the new child</p></li>
+<li><p><strong>mother_id</strong> – the person id for the mother of this child (can be -1 if the mother is not identified).</p></li>
+<li><p><strong>child_id</strong> – the person id of new child</p></li>
 </ul>
 </dd>
 </dl>
@@ -315,18 +316,16 @@ the disease modules in this sim.)
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthburden.HealthBurden.on_simulation_end">
 <span class="sig-name descname"><span class="pre">on_simulation_end</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthburden.html#HealthBurden.on_simulation_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthburden.HealthBurden.on_simulation_end" title="Permalink to this definition">¶</a></dt>
-<dd><p>Log records of:
-1) The Years Lived With Disability (YLD) (by the ‘causes of disability’ declared by the disease modules)
-2) The Years Life Lost (YLL) (by the ‘causes of death’ declared by the disease module)
-3) The total DALYS recorded (YLD + YLL) (by the labels that are declared for ‘causes of death’ and ‘causes of
-disability’).</p>
+<dd><p>Write to the log anything that has not already been logged (i.e., if simulation terminating mid-way through
+a year when the WriteToLog event has not run.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.healthburden.HealthBurden.compute_dalys">
-<span class="sig-name descname"><span class="pre">compute_dalys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthburden.html#HealthBurden.compute_dalys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthburden.HealthBurden.compute_dalys" title="Permalink to this definition">¶</a></dt>
-<dd><p>Compute total DALYS (by label), by age, sex and year. Do this by summing the YLD and LYL with respect to the
-label of the corresponding cause of each, and give output by label.</p>
+<dt class="sig sig-object py" id="tlo.methods.healthburden.HealthBurden.get_dalys">
+<span class="sig-name descname"><span class="pre">get_dalys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yld</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yll</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="../_modules/tlo/methods/healthburden.html#HealthBurden.get_dalys"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthburden.HealthBurden.get_dalys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns pd.DataFrame of DALYS that is the sum of the ‘Years Lived with Disability’ (<cite>yld</cite>) and the ‘Years
+of Life Lost’ (<cite>yll</cite>), under their common ‘labels’. (i.e. multiple causes of yld and of yll may occur on the
+same labels, and these labels unite the causes across yll and yld.)</p>
 </dd></dl>
 
 <dl class="py method">
@@ -358,6 +357,20 @@ calendar year
 :return: a dataframe (X) of the person-time (in years) spent by age-group and time-period</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthburden.HealthBurden.write_to_log">
+<span class="sig-name descname"><span class="pre">write_to_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthburden.html#HealthBurden.write_to_log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthburden.HealthBurden.write_to_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write to the log the YLL, YLD and DALYS for a specific year.
+N.B. This is called at the end of the simulation as well as at the end of each year, so we need to check that
+the year is not being written to the log more than once.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthburden.HealthBurden.check_multi_index">
+<span class="sig-name descname"><span class="pre">check_multi_index</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthburden.html#HealthBurden.check_multi_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthburden.HealthBurden.check_multi_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that the multi-index of the dataframes are as expected</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -387,11 +400,47 @@ A known (small) limitation of this is that persons who died during the previous 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthburden.Get_Current_DALYS.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthburden.html#Get_Current_DALYS.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthburden.Get_Current_DALYS.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.healthburden.Healthburden_WriteToLog">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Healthburden_WriteToLog</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthburden.html#Healthburden_WriteToLog"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthburden.Healthburden_WriteToLog" title="Permalink to this definition">¶</a></dt>
+<dd><p>This event runs every year, as the last event on the last day of the year, and writes to the log the YLD, YLL
+and DALYS accrued in that year.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class Healthburden_WriteToLog):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthburden.Healthburden_WriteToLog.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthburden.html#Healthburden_WriteToLog.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthburden.Healthburden_WriteToLog.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthburden.Healthburden_WriteToLog.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthburden.html#Healthburden_WriteToLog.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthburden.Healthburden_WriteToLog.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -415,7 +464,7 @@ A known (small) limitation of this is that persons who died during the previous 
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

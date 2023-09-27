@@ -11,7 +11,7 @@ tlo.methods.healthsystem module
 
      **Class attributes:**
 
-     bed_days_allocated_to_this_event : <property object at 0x7fd213e04ae0>
+     bed_days_allocated_to_this_event : <property object at 0x11ee88360>
 
      **Functions (defined or overridden in class HSI_Event):**
 
@@ -125,12 +125,30 @@ tlo.methods.healthsystem module
         * - Service_Availability
           - LIST
           - List of services to be available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.
-        * - PriorityRank
-          - DATA_FRAME
-          - Data on the priority ranking of each of the Treatment_IDs to be adopted by  the queueing system, where the lower the number the higher the priority, and on which categories of individuals classify for fast-tracking for specific treatments
+        * - policy_name
+          - STRING
+          - Name of priority policy assumed to have been adopted until policy switch
+        * - policy_name_post_switch
+          - STRING
+          - Name of priority policy to be adopted from policy switch year onwards
+        * - year_policy_switch
+          - INT
+          - Year in which priority policy switch in enforced
+        * - priority_rank
+          - DICT
+          - Data on the priority ranking of each of the Treatment_IDs to be adopted by  the queueing system under different policies, where the lower the number the higher the priority, and on which categories of individuals classify for fast-tracking  for specific treatments
+        * - tclose_overwrite
+          - INT
+          - Decide whether to overwrite tclose variables assigned by disease modules
+        * - tclose_days_offset_overwrite
+          - INT
+          - Offset in days from topen at which tclose will be set by the healthsystem for all HSIsif tclose_overwrite is set to True.
         * - mode_appt_constraints
           - INT
           - Integer code in `{0, 1, 2}` determining mode of constraints with regards to officer numbers and time - 0: no constraints, all HSI events run with no squeeze factor, 1: elastic constraints, all HSI events run with squeeze factor, 2: hard constraints, only HSI events with no squeeze factor run. N.B. This parameter is over-ridden if an argument is provided to the module initialiser.
+        * - mode_appt_constraints_postSwitch
+          - INT
+          - If considering a mode switch alongside priority policy switch, specify in this parameter. The switch occcurs in the year given in `year_policy_switch`.
 
 
      **PROPERTIES:**
@@ -152,9 +170,11 @@ tlo.methods.healthsystem module
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     capabilities_today : <property object at 0x7fd213e04bd0>
+     capabilities_today : <property object at 0x11e9c9b30>
 
-     hsi_event_counts : <property object at 0x7fd213e04c20>
+     hsi_event_counts : <property object at 0x11ee88450>
+
+     never_ran_hsi_event_counts : <property object at 0x11ee884a0>
 
      **Functions (defined or overridden in class HealthSystem):**
 
@@ -171,6 +191,8 @@ tlo.methods.healthsystem module
      .. automethod:: on_birth
 
      .. automethod:: on_simulation_end
+
+     .. automethod:: setup_priority_policy
 
      .. automethod:: process_human_resources_files
 
@@ -189,6 +211,10 @@ tlo.methods.healthsystem module
      .. automethod:: get_mode_appt_constraints
 
      .. automethod:: get_use_funded_or_actual_staffing
+
+     .. automethod:: get_priority_policy_initial
+
+     .. automethod:: load_priority_policy
 
      .. automethod:: schedule_hsi_event
 
@@ -216,6 +242,10 @@ tlo.methods.healthsystem module
 
      .. automethod:: write_to_hsi_log
 
+     .. automethod:: call_and_record_never_ran_hsi_event
+
+     .. automethod:: write_to_never_ran_hsi_log
+
      .. automethod:: log_current_capabilities_and_usage
 
      .. automethod:: remove_beddays_footprint
@@ -232,6 +262,8 @@ tlo.methods.healthsystem module
 
      .. automethod:: _write_hsi_event_counts_to_log_and_reset
 
+     .. automethod:: _write_never_ran_hsi_event_counts_to_log_and_reset
+
      .. automethod:: on_end_of_day
 
      .. automethod:: on_end_of_month
@@ -240,7 +272,7 @@ tlo.methods.healthsystem module
 
      .. automethod:: run_population_level_events
 
-     .. automethod:: run_individual_level_events
+     .. automethod:: run_individual_level_events_in_mode_0_or_1
 
 
 
@@ -264,6 +296,10 @@ tlo.methods.healthsystem module
 
      .. automethod:: _get_events_due_today
 
+     .. automethod:: process_events_mode_0_and_1
+
+     .. automethod:: process_events_mode_2
+
      .. automethod:: apply
 
 
@@ -279,6 +315,24 @@ tlo.methods.healthsystem module
 
 
      **Functions (defined or overridden in class HealthSystemChangeParameters):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: HealthSystemChangePriorityPolicyAndMode
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HealthSystemChangePriorityPolicyAndMode):**
 
      .. automethod:: __init__
 

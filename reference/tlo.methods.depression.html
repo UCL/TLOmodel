@@ -407,10 +407,10 @@
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘Suicide’: &lt;tlo.methods.causes.Cause object at 0x7fd214e0c850&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘SevereDepression’: &lt;tlo.methods.causes.Cause object at 0x7fd214e0c8e0&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘Contraception’, ‘Lifestyle’, ‘HealthSystem’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘Suicide’: &lt;tlo.methods.causes.Cause object at 0x12fc8aa00&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘SevereDepression’: &lt;tlo.methods.causes.Cause object at 0x12fc8aa90&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Lifestyle’, ‘HealthSystem’, ‘Contraception’, ‘SymptomManager’, ‘Demography’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class Depression):</strong></p>
 <dl class="py method">
@@ -533,11 +533,11 @@ all persons. Individual level events (HSI, self-harm/suicide events) may occur a
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.depression.DepressionPollingEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#DepressionPollingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.DepressionPollingEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -572,11 +572,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.depression.DepressionSelfHarmEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#DepressionSelfHarmEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.DepressionSelfHarmEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -611,11 +611,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.depression.DepressionSuicideEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#DepressionSuicideEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.DepressionSuicideEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -648,11 +648,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.depression.DepressionLoggingEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/depression.html#DepressionLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.depression.DepressionLoggingEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -780,7 +780,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

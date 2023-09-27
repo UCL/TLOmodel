@@ -205,7 +205,7 @@ with independent state.</p>
 <dt class="sig sig-object py" id="tlo.simulation.Simulation.configure_logging">
 <span class="sig-name descname"><span class="pre">configure_logging</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">Path</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./outputs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_levels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">suppress_stdout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/simulation.html#Simulation.configure_logging"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.Simulation.configure_logging" title="Permalink to this definition">¶</a></dt>
 <dd><p>Configure logging, can write logging to a logfile in addition the default of stdout.</p>
-<p>Minimum custom levels for each loggers can be specified for filtering out messages</p>
+<p>Minimum custom levels for each logger can be specified for filtering out messages</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -226,7 +226,8 @@ e.g. <code class="docutils literal notranslate"><span class="pre">{'*':</span> <
 <dl class="py property">
 <dt class="sig sig-object py" id="tlo.simulation.Simulation.log_filepath">
 <em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">log_filepath</span></span><a class="headerlink" href="#tlo.simulation.Simulation.log_filepath" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>The path to the log file, if one has been set.</p>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.simulation.Simulation.register">
@@ -245,7 +246,7 @@ initialisation dependencies or circular initialisation dependencies between
 modules that cannot be resolved. If this flag is set to <code class="docutils literal notranslate"><span class="pre">True</span></code> there is
 also a requirement that at most one instance of each module is registered
 and <code class="docutils literal notranslate"><span class="pre">MultipleModuleInstanceError</span></code> will be raised if this is not the case.</p></li>
-<li><p><strong>check_all_dependencies</strong> – Whether to check if all of each modules declared
+<li><p><strong>check_all_dependencies</strong> – Whether to check if all of each module’s declared
 dependencies (that is, the union of the <code class="docutils literal notranslate"><span class="pre">INIT_DEPENDENCIES</span></code> and
 <code class="docutils literal notranslate"><span class="pre">ADDITIONAL_DEPENDENCIES</span></code> attributes) have been included in the set of
 modules to be registered. A <code class="docutils literal notranslate"><span class="pre">ModuleDependencyError</span></code> exception will
@@ -340,8 +341,7 @@ all modules to initialise the child’s properties.</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">EventQueue</span></span><a class="reference internal" href="../_modules/tlo/simulation.html#EventQueue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.EventQueue" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A simple priority queue for events.</p>
-<p>This doesn’t really care what events and dates are, provided dates are comparable
-so we can tell which is least, i.e. earliest.</p>
+<p>This doesn’t really care what events and dates are, provided dates are comparable.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.simulation.EventQueue.schedule">
 <span class="sig-name descname"><span class="pre">schedule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">date</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/simulation.html#EventQueue.schedule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.simulation.EventQueue.schedule" title="Permalink to this definition">¶</a></dt>
@@ -386,7 +386,7 @@ so we can tell which is least, i.e. earliest.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

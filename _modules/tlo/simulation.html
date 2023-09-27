@@ -178,7 +178,7 @@
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 <span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
@@ -232,12 +232,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">event_queue</span> <span class="o">=</span> <span class="n">EventQueue</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">output_file</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Population</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">show_progress_bar</span> <span class="o">=</span> <span class="n">show_progress_bar</span>
 
         <span class="c1"># logging</span>
         <span class="k">if</span> <span class="n">log_config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">log_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+            <span class="n">log_config</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_custom_log_levels</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_log_filepath</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">configure_logging</span><span class="p">(</span><span class="o">**</span><span class="n">log_config</span><span class="p">)</span>
@@ -256,7 +257,7 @@
                           <span class="n">custom_levels</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">suppress_stdout</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Configure logging, can write logging to a logfile in addition the default of stdout.</span>
 
-<span class="sd">        Minimum custom levels for each loggers can be specified for filtering out messages</span>
+<span class="sd">        Minimum custom levels for each logger can be specified for filtering out messages</span>
 
 <span class="sd">        :param filename: Prefix for logfile name, final logfile will have a datetime appended</span>
 <span class="sd">        :param directory: Path to output directory, default value is the outputs folder.</span>
@@ -287,10 +288,13 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">output_file</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">set_output_file</span><span class="p">(</span><span class="n">log_path</span><span class="p">)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;info&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Log output: </span><span class="si">{</span><span class="n">log_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_log_filepath</span> <span class="o">=</span> <span class="n">log_path</span>
-            <span class="k">return</span> <span class="n">log_path</span></div>
+            <span class="k">return</span> <span class="n">log_path</span>
+
+        <span class="k">return</span> <span class="kc">None</span></div>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">log_filepath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;The path to the log file, if one has been set.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log_filepath</span>
 
 <div class="viewcode-block" id="Simulation.register"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.register">[docs]</a>    <span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">modules</span><span class="p">,</span> <span class="n">sort_modules</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check_all_dependencies</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -306,7 +310,7 @@
 <span class="sd">            modules that cannot be resolved. If this flag is set to ``True`` there is</span>
 <span class="sd">            also a requirement that at most one instance of each module is registered</span>
 <span class="sd">            and ``MultipleModuleInstanceError`` will be raised if this is not the case.</span>
-<span class="sd">        :param check_all_dependencies: Whether to check if all of each modules declared</span>
+<span class="sd">        :param check_all_dependencies: Whether to check if all of each module&#39;s declared</span>
 <span class="sd">            dependencies (that is, the union of the ``INIT_DEPENDENCIES`` and</span>
 <span class="sd">            ``ADDITIONAL_DEPENDENCIES`` attributes) have been included in the set of</span>
 <span class="sd">            modules to be registered. A ``ModuleDependencyError`` exception will</span>
@@ -319,8 +323,7 @@
         <span class="c1"># Iterate over modules and per-module seed sequences spawned from simulation</span>
         <span class="c1"># level seed sequence</span>
         <span class="k">for</span> <span class="n">module</span><span class="p">,</span> <span class="n">seed_seq</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">modules</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_seed_seq</span><span class="o">.</span><span class="n">spawn</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">modules</span><span class="p">))):</span>
-            <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">,</span> <span class="p">(</span>
-                <span class="s1">&#39;A module named </span><span class="si">{}</span><span class="s1"> has already been registered&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">module</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+            <span class="k">assert</span> <span class="n">module</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;A module named </span><span class="si">{</span><span class="n">module</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> has already been registered&#39;</span>
 
             <span class="c1"># Seed the RNG for the registered module using spawned seed sequence</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
@@ -374,9 +377,9 @@
         <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="n">module</span><span class="o">.</span><span class="n">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
+        <span class="n">progress_bar</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_progress_bar</span><span class="p">:</span>
-            <span class="n">start_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">date</span>
-            <span class="n">num_simulated_days</span> <span class="o">=</span> <span class="p">(</span><span class="n">end_date</span> <span class="o">-</span> <span class="n">start_date</span><span class="p">)</span><span class="o">.</span><span class="n">days</span>
+            <span class="n">num_simulated_days</span> <span class="o">=</span> <span class="p">(</span><span class="n">end_date</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span><span class="p">)</span><span class="o">.</span><span class="n">days</span>
             <span class="n">progress_bar</span> <span class="o">=</span> <span class="n">ProgressBar</span><span class="p">(</span>
                 <span class="n">num_simulated_days</span><span class="p">,</span> <span class="s2">&quot;Simulation progress&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;day&quot;</span><span class="p">)</span>
             <span class="n">progress_bar</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
@@ -385,7 +388,7 @@
             <span class="n">event</span><span class="p">,</span> <span class="n">date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_queue</span><span class="o">.</span><span class="n">next_event</span><span class="p">()</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_progress_bar</span><span class="p">:</span>
-                <span class="n">simulation_day</span> <span class="o">=</span> <span class="p">(</span><span class="n">date</span> <span class="o">-</span> <span class="n">start_date</span><span class="p">)</span><span class="o">.</span><span class="n">days</span>
+                <span class="n">simulation_day</span> <span class="o">=</span> <span class="p">(</span><span class="n">date</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span><span class="p">)</span><span class="o">.</span><span class="n">days</span>
                 <span class="n">stats_dict</span> <span class="o">=</span> <span class="p">{</span>
                     <span class="s2">&quot;date&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">date</span><span class="p">()),</span>
                     <span class="s2">&quot;dataframe size&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="p">)),</span>
@@ -402,11 +405,10 @@
                 <span class="k">break</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">fire_single_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">date</span><span class="p">)</span>
 
-        <span class="c1"># The simulation has ended. Call &#39;on_simulation_end&#39; method at the end of simulation</span>
+        <span class="c1"># The simulation has ended.</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_progress_bar</span><span class="p">:</span>
             <span class="n">progress_bar</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
 
-        <span class="c1"># The simulation has ended. Call &#39;on_simulation_end&#39; method at the end of simulation (if a module has it)</span>
         <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="n">module</span><span class="o">.</span><span class="n">on_simulation_end</span><span class="p">()</span>
 
@@ -469,7 +471,7 @@
 
 <span class="sd">        NB. This is for debugging and testing only - not for use in real simulations as it is slow</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">person_events</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="n">person_events</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_queue</span><span class="o">.</span><span class="n">queue</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
@@ -482,8 +484,7 @@
 <div class="viewcode-block" id="EventQueue"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.EventQueue">[docs]</a><span class="k">class</span> <span class="nc">EventQueue</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A simple priority queue for events.</span>
 
-<span class="sd">    This doesn&#39;t really care what events and dates are, provided dates are comparable</span>
-<span class="sd">    so we can tell which is least, i.e. earliest.</span>
+<span class="sd">    This doesn&#39;t really care what events and dates are, provided dates are comparable.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -523,7 +524,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

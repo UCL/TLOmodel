@@ -222,7 +222,7 @@ Calibration is done in two stages:
 </tr>
 <tr class="row-odd"><td><p>Failure_ByMethod</p></td>
 <td><p>DATA_FRAME</p></td>
-<td><p>Probability per month of a women on a contraceptive becoming pregnant, by method</p></td>
+<td><p>Probability per month of a women on a contraceptive becoming pregnant, by method.</p></td>
 </tr>
 <tr class="row-even"><td><p>rr_fail_under25</p></td>
 <td><p>REAL</p></td>
@@ -231,6 +231,14 @@ Calibration is done in two stages:
 <tr class="row-odd"><td><p>Initiation_ByMethod</p></td>
 <td><p>DATA_FRAME</p></td>
 <td><p>Probability per month of a women who is not using any contraceptive method of starting use of a method, by method.</p></td>
+</tr>
+<tr class="row-even"><td><p>Interventions_Pop</p></td>
+<td><p>DATA_FRAME</p></td>
+<td><p>Pop (population scale contraception intervention) intervention multiplier.</p></td>
+</tr>
+<tr class="row-odd"><td><p>Interventions_PPFP</p></td>
+<td><p>DATA_FRAME</p></td>
+<td><p>PPFP (post-partum family planning) intervention multiplier.</p></td>
 </tr>
 <tr class="row-even"><td><p>Initiation_ByAge</p></td>
 <td><p>DATA_FRAME</p></td>
@@ -262,7 +270,7 @@ Calibration is done in two stages:
 </tr>
 <tr class="row-odd"><td><p>age_specific_fertility_rates</p></td>
 <td><p>DATA_FRAME</p></td>
-<td><p>Data table from official source (WPP) for age-specific fertility rates and calendar period</p></td>
+<td><p>Data table from official source (WPP) for age-specific fertility rates and calendar period.</p></td>
 </tr>
 <tr class="row-even"><td><p>scaling_factor_on_monthly_risk_of_pregnancy</p></td>
 <td><p>LIST</p></td>
@@ -270,11 +278,19 @@ Calibration is done in two stages:
 </tr>
 <tr class="row-odd"><td><p>max_number_of_runs_of_hsi_if_consumable_not_available</p></td>
 <td><p>INT</p></td>
-<td><p>The maximum number of time an HSI can run (repeats occur if the consumables are not available</p></td>
+<td><p>The maximum number of time an HSI can run (repeats occur if the consumables are not available).</p></td>
 </tr>
 <tr class="row-even"><td><p>max_days_delay_between_decision_to_change_method_and_hsi_scheduled</p></td>
 <td><p>INT</p></td>
-<td><p>The maximum delay (in days) between the decision for a contraceptive to change and the <a href="#id1"><span class="problematic" id="id2">`</span></a>topen`date of the HSI that is scheduled to effect the change (when using the healthsystem),</p></td>
+<td><p>The maximum delay (in days) between the decision for a contraceptive to change and the <cite>topen</cite> date of the HSI that is scheduled to effect the change (when using the healthsystem).</p></td>
+</tr>
+<tr class="row-odd"><td><p>use_interventions</p></td>
+<td><p>STRING</p></td>
+<td><p>if ‘On’: FP interventions (pop &amp; ppfp) are simulated since ‘interventions_start_date’, if ‘Off’: FP interventions (pop &amp; ppfp) are not simulated.</p></td>
+</tr>
+<tr class="row-even"><td><p>interventions_start_date</p></td>
+<td><p>DATE</p></td>
+<td><p>The date since which the FP interventions (pop &amp; ppfp) are implemented, if at all (ie, if use_interventions==True</p></td>
 </tr>
 </tbody>
 </table>
@@ -315,11 +331,12 @@ Calibration is done in two stages:
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Labour’, ‘Hiv’}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Hiv’, ‘Labour’}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p>METADATA : {}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthSystem’}</p>
-<p>all_contraception_states : {‘male_condom’, ‘female_sterilization’, ‘periodic_abstinence’, ‘IUD’, ‘other_modern’, ‘other_traditional’, ‘implant’, ‘withdrawal’, ‘pill’, ‘not_using’, ‘injections’}</p>
+<p>all_contraception_states : {‘periodic_abstinence’, ‘other_modern’, ‘injections’, ‘pill’, ‘not_using’, ‘implant’, ‘male_condom’, ‘IUD’, ‘female_sterilization’, ‘withdrawal’, ‘other_traditional’}</p>
+<p>contraceptives_initiated_with_additional_items : {‘injections’, ‘pill’, ‘implant’, ‘female_sterilization’, ‘IUD’}</p>
 <p><strong>Functions (defined or overridden in class Contraception):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.contraception.Contraception.__init__">
@@ -337,7 +354,8 @@ generator.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.contraception.Contraception.read_parameters">
 <span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#Contraception.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.Contraception.read_parameters" title="Permalink to this definition">¶</a></dt>
-<dd><p>Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters.</p>
+<dd><p>Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters
+(CSV ResourceFile).</p>
 </dd></dl>
 
 <dl class="py method">
@@ -393,15 +411,21 @@ birth.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.contraception.Contraception.update_params_for_interventions">
+<span class="sig-name descname"><span class="pre">update_params_for_interventions</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#Contraception.update_params_for_interventions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.Contraception.update_params_for_interventions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates process parameters to enable FP interventions.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.contraception.Contraception.select_contraceptive_following_birth">
-<span class="sig-name descname"><span class="pre">select_contraceptive_following_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#Contraception.select_contraceptive_following_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.Contraception.select_contraceptive_following_birth" title="Permalink to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">select_contraceptive_following_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mother_age</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#Contraception.select_contraceptive_following_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.Contraception.select_contraceptive_following_birth" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initiation of mother’s contraception after birth.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.contraception.Contraception.get_item_code_for_each_contraceptive">
 <span class="sig-name descname"><span class="pre">get_item_code_for_each_contraceptive</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#Contraception.get_item_code_for_each_contraceptive"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.Contraception.get_item_code_for_each_contraceptive" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the item_code for each contraceptive</p>
+<dd><p>Get the item_code for each contraceptive and for contraceptive initiation.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -428,10 +452,17 @@ require the use of HSI (these are not in <cite>states_that_may_require_HSI_to_sw
 no women are pregnant, so the first births generated endogenously (through pregnancy -&gt; gestation -&gt; labour)
 occur after 9 months of simulation time. This method examines age-specific fertility rate data and causes there
 to be the appropriate number of births, scattered uniformly over the first 9 months of the simulation. These are
-“direct live births” that are not subjected to any of the processes (e.g.  isk of loss of pregnancy, or risk of
+“direct live births” that are not subjected to any of the processes (e.g. risk of loss of pregnancy, or risk of
 death to mother) represented in the <cite>PregnancySupervisor</cite>, <cite>CareOfWomenDuringPregnancy</cite> or <cite>Labour</cite>.
 When initialising population ensured person_id=0 is a man, so can safely exclude person_id=0 from choice of
 direct birth mothers without loss of generality.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.contraception.Contraception.on_simulation_end">
+<span class="sig-name descname"><span class="pre">on_simulation_end</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#Contraception.on_simulation_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.Contraception.on_simulation_end" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do tasks at the end of the simulation: Raise warning and enter to log about women_ids who are sterilized
+when under 30 years old.</p>
 </dd></dl>
 
 </dd></dl>
@@ -463,11 +494,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.contraception.DirectBirth.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#DirectBirth.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.DirectBirth.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -513,7 +544,7 @@ constructor, but may also take further keyword arguments.</p></li>
 <dt class="sig sig-object py" id="tlo.methods.contraception.ContraceptionPoll.initiate">
 <span class="sig-name descname"><span class="pre">initiate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individuals_not_using</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#ContraceptionPoll.initiate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.ContraceptionPoll.initiate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Check all females not using contraception to determine if contraception starts
-(i.e. category should change from ‘not_using’ to something else) with reference to  initiation_rate1 (irate_1).</p>
+(i.e. category change from ‘not_using’ to something else).</p>
 </dd></dl>
 
 <dl class="py method">
@@ -564,11 +595,11 @@ method fails).</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.contraception.ContraceptionLoggingEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#ContraceptionLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.ContraceptionLoggingEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -582,7 +613,7 @@ method fails).</p>
 between contraceptives.</p>
 <p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
-<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x7fd214d49360&gt;</p>
+<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x12fbc5130&gt;</p>
 <p><strong>Functions (defined or overridden in class HSI_Contraception_FamilyPlanningAppt):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.__init__">
@@ -621,6 +652,45 @@ constructor, but may also take further keyword arguments.</p>
 <dt class="sig sig-object py" id="tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.never_ran">
 <span class="sig-name descname"><span class="pre">never_ran</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#HSI_Contraception_FamilyPlanningAppt.never_ran"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.never_ran" title="Permalink to this definition">¶</a></dt>
 <dd><p>If this HSI never ran, the person defaults to “not_using” a contraceptive.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.contraception.StartInterventions">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StartInterventions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#StartInterventions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.StartInterventions" title="Permalink to this definition">¶</a></dt>
+<dd><p>This event is run by Contraception module exactly once when interventions are introduced, or never if interventions
+are not used. If run, it updates parameters changed to reflect the FP interventions to be used from now on.</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class StartInterventions):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.contraception.StartInterventions.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#StartInterventions.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.StartInterventions.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.contraception.StartInterventions.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/contraception.html#StartInterventions.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.contraception.StartInterventions.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply this event to the given target.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
+</dd>
+</dl>
 </dd></dl>
 
 </dd></dl>
@@ -711,7 +781,7 @@ generator.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>data_folder</strong> – path of a folder supplied to the Simulation containing data files.
-Typically modules would read a particular file within here.</p>
+Typically, modules would read a particular file within here.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -752,8 +822,8 @@ It is a good place to add initial events to the event queue.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mother</strong> – the mother for this child (can be -1 if the mother is not identified).</p></li>
-<li><p><strong>child</strong> – the new child</p></li>
+<li><p><strong>mother_id</strong> – the person id for the mother of this child (can be -1 if the mother is not identified).</p></li>
+<li><p><strong>child_id</strong> – the person id of new child</p></li>
 </ul>
 </dd>
 </dl>
@@ -817,7 +887,7 @@ constructor, but may also take further keyword arguments.</p></li>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

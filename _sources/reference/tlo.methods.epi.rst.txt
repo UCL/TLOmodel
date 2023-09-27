@@ -109,7 +109,7 @@ tlo.methods.epi module
 
      **Class attributes:**
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Demography'}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 
@@ -161,6 +161,11 @@ tlo.methods.epi module
      Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x11efd4bd0>
+
      **Functions (defined or overridden in class HsiBaseVaccine):**
 
      .. automethod:: __init__
@@ -168,8 +173,6 @@ tlo.methods.epi module
      .. automethod:: treatment_id
 
      .. automethod:: apply
-
-     .. automethod:: did_not_run
 
 
 

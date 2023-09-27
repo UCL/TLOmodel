@@ -1054,9 +1054,9 @@ PostnatalWeekOneMaternalEvent which represents the start of a womans postnatal p
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘NewbornOutcomes’, ‘CareOfWomenDuringPregnancy’, ‘PostnatalSupervisor’, ‘PregnancySupervisor’, ‘Contraception’, ‘Lifestyle’, ‘HealthSystem’}</p>
-<p>CAUSES_OF_DEATH : {‘uterine_rupture’: &lt;tlo.methods.causes.Cause object at 0x7fd2149a6160&gt;, ‘intrapartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fd2149ae280&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x7fd2149ae2e0&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fd2149ae340&gt;, ‘postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x7fd2149ae3a0&gt;, ‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x7fd2149ae400&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7fd2149ae460&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7fd2149ae4c0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x7fd2149ae520&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’, ‘HealthSystem’, ‘Contraception’, ‘CareOfWomenDuringPregnancy’, ‘NewbornOutcomes’, ‘PregnancySupervisor’, ‘PostnatalSupervisor’}</p>
+<p>CAUSES_OF_DEATH : {‘uterine_rupture’: &lt;tlo.methods.causes.Cause object at 0x1238e0460&gt;, ‘intrapartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x1238ec580&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x1238ec5e0&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x1238ec640&gt;, ‘postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x1238ec6a0&gt;, ‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x1238ec700&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x1238ec760&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x1238ec7c0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x1238ec820&gt;}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘Stunting’}</p>
@@ -1082,7 +1082,7 @@ generator.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>data_folder</strong> – path of a folder supplied to the Simulation containing data files.
-Typically modules would read a particular file within here.</p>
+Typically, modules would read a particular file within here.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1130,8 +1130,8 @@ It is a good place to add initial events to the event queue.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mother</strong> – the mother for this child (can be -1 if the mother is not identified).</p></li>
-<li><p><strong>child</strong> – the new child</p></li>
+<li><p><strong>mother_id</strong> – the person id for the mother of this child (can be -1 if the mother is not identified).</p></li>
+<li><p><strong>child_id</strong> – the person id of new child</p></li>
 </ul>
 </dd>
 </dl>
@@ -1559,11 +1559,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourOnsetEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourOnsetEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourOnsetEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1603,11 +1603,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourAtHomeEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourAtHomeEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourAtHomeEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1644,11 +1644,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourDeathAndStillBirthEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourDeathAndStillBirthEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourDeathAndStillBirthEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1685,11 +1685,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.BirthAndPostnatalOutcomesEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#BirthAndPostnatalOutcomesEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.BirthAndPostnatalOutcomesEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1754,11 +1754,6 @@ constructor, but may also take further keyword arguments.</p>
 to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.not_available">
-<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour.not_available" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
@@ -1804,11 +1799,6 @@ constructor, but may also take further keyword arguments.</p>
 <dd><p>Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
 to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
 </dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.not_available">
-<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesPostnatalCheck.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck.not_available" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesPostnatalCheck._get_facility_level_for_pnc">
@@ -1861,11 +1851,6 @@ constructor, but may also take further keyword arguments.</p>
 to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.not_available">
-<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare.not_available" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
@@ -1905,11 +1890,6 @@ constructor, but may also take further keyword arguments.</p>
 to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</p>
 </dd></dl>
 
-<dl class="py method">
-<dt class="sig sig-object py" id="tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.not_available">
-<span class="sig-name descname"><span class="pre">not_available</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#HSI_Labour_PostnatalWardInpatientCare.not_available"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.HSI_Labour_PostnatalWardInpatientCare.not_available" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
@@ -1944,11 +1924,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourAndPostnatalCareAnalysisEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourAndPostnatalCareAnalysisEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourAndPostnatalCareAnalysisEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1980,11 +1960,11 @@ are processed and presented by different analysis scripts</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.labour.LabourLoggingEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/labour.html#LabourLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.labour.LabourLoggingEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2008,7 +1988,7 @@ are processed and presented by different analysis scripts</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

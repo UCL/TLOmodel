@@ -191,7 +191,7 @@ for a given set of parameters using outputs from the demography (deaths), HIV an
 a deviance measure is calculated and returned on simulation end</p>
 <p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
-<p>INIT_DEPENDENCIES : {‘Tb’, ‘Hiv’, ‘Demography’}</p>
+<p>INIT_DEPENDENCIES : {‘Hiv’, ‘Tb’, ‘Demography’}</p>
 <p>METADATA : {}</p>
 <p><strong>Functions (defined or overridden in class Deviance):</strong></p>
 <dl class="py method">
@@ -215,7 +215,7 @@ generator.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>data_folder</strong> – path of a folder supplied to the Simulation containing data files.
-Typically modules would read a particular file within here.</p>
+Typically, modules would read a particular file within here.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -256,8 +256,8 @@ It is a good place to add initial events to the event queue.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mother</strong> – the mother for this child (can be -1 if the mother is not identified).</p></li>
-<li><p><strong>child</strong> – the new child</p></li>
+<li><p><strong>mother_id</strong> – the person id for the mother of this child (can be -1 if the mother is not identified).</p></li>
+<li><p><strong>child_id</strong> – the person id of new child</p></li>
 </ul>
 </dd>
 </dl>
@@ -311,7 +311,7 @@ Modules do not need to declare this.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

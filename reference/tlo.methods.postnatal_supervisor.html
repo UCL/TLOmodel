@@ -493,10 +493,10 @@ day 28.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’, ‘Labour’, ‘NewbornOutcomes’, ‘PregnancySupervisor’}</p>
-<p>CAUSES_OF_DEATH : {‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x7fd2149a6340&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fd2149a6790&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7fd2149a67f0&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7fd2149a6850&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x7fd2149a68b0&gt;, ‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fd2149a6910&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fd2149a6970&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x7fd2149a69d0&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Demography’}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘NewbornOutcomes’, ‘PregnancySupervisor’, ‘Lifestyle’, ‘Labour’}</p>
+<p>CAUSES_OF_DEATH : {‘secondary_postpartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x1238e0640&gt;, ‘postpartum_sepsis’: &lt;tlo.methods.causes.Cause object at 0x1238e0a90&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x1238e0af0&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x1238e0b50&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x1238e0bb0&gt;, ‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x1238e0c10&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x1238e0c70&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x1238e0cd0&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘Demography’, ‘HealthSystem’}</p>
 <p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p><strong>Functions (defined or overridden in class PostnatalSupervisor):</strong></p>
 <dl class="py method">
@@ -520,7 +520,7 @@ generator.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>data_folder</strong> – path of a folder supplied to the Simulation containing data files.
-Typically modules would read a particular file within here.</p>
+Typically, modules would read a particular file within here.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -561,8 +561,8 @@ It is a good place to add initial events to the event queue.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mother</strong> – the mother for this child (can be -1 if the mother is not identified).</p></li>
-<li><p><strong>child</strong> – the new child</p></li>
+<li><p><strong>mother_id</strong> – the person id for the mother of this child (can be -1 if the mother is not identified).</p></li>
+<li><p><strong>child_id</strong> – the person id of new child</p></li>
 </ul>
 </dd>
 </dl>
@@ -675,11 +675,11 @@ the relevant postnatal/neonatal variables are reset for those who survive.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalSupervisorEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalSupervisorEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalSupervisorEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -716,11 +716,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalWeekOneMaternalEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalWeekOneMaternalEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalWeekOneMaternalEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -757,11 +757,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.postnatal_supervisor.PostnatalWeekOneNeonatalEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/postnatal_supervisor.html#PostnatalWeekOneNeonatalEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.postnatal_supervisor.PostnatalWeekOneNeonatalEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -819,7 +819,7 @@ constructor, but may also take further keyword arguments.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

@@ -568,7 +568,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">suppress_footprint</span> <span class="o">=</span> <span class="n">suppress_footprint</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">treatment_id</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({}</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">suppress_footprint</span> <span class="k">else</span> <span class="p">{</span><span class="s2">&quot;EPI&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="n">facility_level_of_this_hsi</span></div>
 
 <div class="viewcode-block" id="HsiBaseVaccine.treatment_id"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HsiBaseVaccine.treatment_id">[docs]</a>    <span class="k">def</span> <span class="nf">treatment_id</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -579,8 +578,31 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;must be implemented by subclasses&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
-<div class="viewcode-block" id="HsiBaseVaccine.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HsiBaseVaccine.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;debug&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: did not run&quot;</span><span class="p">)</span></div></div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">EXPECTED_APPT_FOOTPRINT</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the EPI appointment footprint for this person according to the vaccine:</span>
+<span class="sd">        * tetanus/diphtheria for pregnant women uses 1 EPI appt</span>
+<span class="sd">        * childhood vaccines can occur in bundles at birth, weeks 6, 10 and 14</span>
+<span class="sd">        * measles/rubella always given in one appt (`HSI_MeaslesRubellaVaccine`) in months 9, 15</span>
+<span class="sd">        * hpv given for adolescents uses 1 EPI appt</span>
+<span class="sd">        * if a vaccine is given at the same time as other vaccines, decrease the EPI footprint to 0.5</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">suppress_footprint</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
+
+        <span class="c1"># these vaccines are always given jointly with other childhood vaccines.</span>
+        <span class="c1"># NB. If p[&quot;vaccine_schedule&quot;] changes, this would need to be updated.</span>
+        <span class="n">vaccine_bundle</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Epi_Childhood_Bcg&#39;</span><span class="p">,</span> <span class="s1">&#39;Epi_Childhood_Opv&#39;</span><span class="p">,</span> <span class="s1">&#39;Epi_Childhood_DtpHibHep&#39;</span><span class="p">,</span> <span class="s1">&#39;Epi_Childhood_Rota&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;Epi_Childhood_Pneumo&#39;</span><span class="p">]</span>
+
+        <span class="c1"># determine whether this HSI gives a vaccine as part of a vaccine bundle</span>
+        <span class="c1"># if vaccine is in list of vaccine bundles, return EPI footprint 0.5</span>
+        <span class="c1"># all other vaccines use 1 full EPI appt</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">treatment_id</span><span class="p">()</span> <span class="ow">in</span> <span class="n">vaccine_bundle</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;EPI&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">})</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;EPI&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span></div>
 
 
 <div class="viewcode-block" id="HSI_BcgVaccine"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_BcgVaccine">[docs]</a><span class="k">class</span> <span class="nc">HSI_BcgVaccine</span><span class="p">(</span><span class="n">HsiBaseVaccine</span><span class="p">):</span>
@@ -698,7 +720,6 @@
         <span class="k">return</span> <span class="s2">&quot;Epi_Pregnancy_Td&quot;</span></div>
 
 <div class="viewcode-block" id="HSI_TdVaccine.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epi.html#tlo.methods.epi.HSI_TdVaccine.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
-
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;td&quot;</span><span class="p">],</span>
                                 <span class="n">optional_item_codes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s2">&quot;syringes&quot;</span><span class="p">]):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">increment_dose</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;td&quot;</span><span class="p">)</span></div></div>
@@ -784,7 +805,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

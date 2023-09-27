@@ -201,25 +201,85 @@ and initialises parameters and properties associated with COPD plus functions an
 </tr>
 </thead>
 <tbody>
+<tr class="row-even"><td><p>prob_mod_exacerb</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of moderate exacerbation given lung function, for each lung function category.</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_sev_exacerb</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of severe exacerbation given lung function, for each lung function category.</p></td>
+</tr>
 <tr class="row-even"><td><p>prob_progress_to_next_cat</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of changing from a lower lung function category to a higher lung function category</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_mod_exacerb</p></td>
-<td><p>LIST</p></td>
-<td><p>probability of moderate exacerbation given lung function, for each lungfunction category.</p></td>
-</tr>
-<tr class="row-even"><td><p>prob_sev_exacerb</p></td>
-<td><p>LIST</p></td>
-<td><p>probability of severe exacerbation given lung function, for each lungfunction category.</p></td>
-</tr>
-<tr class="row-odd"><td><p>prob_will_die_sev_exacerbation</p></td>
+<tr class="row-odd"><td><p>prob_will_die_sev_exacerbation_ge80</p></td>
 <td><p>REAL</p></td>
-<td><p>probability that a person will die of severe exacerbation</p></td>
+<td><p>probability that a person equal to or greater than 80 years will die of severe exacerbation</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_will_survive_given_oxygen</p></td>
+<tr class="row-even"><td><p>prob_will_die_sev_exacerbation_7079</p></td>
 <td><p>REAL</p></td>
-<td><p>probability that an individual with severe copd will not die when given oxygen</p></td>
+<td><p>probability that a person between 70 to 79 years will die of severe exacerbation</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_will_die_sev_exacerbation_6069</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that a person between 60 to 99 years will die of severe exacerbation</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_will_die_sev_exacerbation_5059</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that a person between 50 to 59 years will die of severe exacerbation</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_will_die_sev_exacerbation_4049</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that a person between 40 to 49 years will die of severe exacerbation</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_will_die_sev_exacerbation_3039</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that a person between 30 to 39 years will die of severe exacerbation</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_will_die_sev_exacerbation_lt30</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that a person less than 30 years will die of severe exacerbation</p></td>
+</tr>
+<tr class="row-even"><td><p>eff_oxygen</p></td>
+<td><p>REAL</p></td>
+<td><p>the effect of oxygen on individuals with severe exacerbation</p></td>
+</tr>
+<tr class="row-odd"><td><p>rel_risk_progress_per_higher_cat</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of progression to the next higher level of lung function for each higher level</p></td>
+</tr>
+<tr class="row-even"><td><p>rel_risk_tob</p></td>
+<td><p>REAL</p></td>
+<td><p>relative effect of tobacco on the rate of lung function progression</p></td>
+</tr>
+<tr class="row-odd"><td><p>rel_risk_wood_burn_stove</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of wood burn stove on the rate of lung function progression</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_not_tob_lung_func_15_39</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of lung function categories in individuals aged 15-39 and do not smoke tobacco</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_not_tob_lung_func_40_59</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of lung function categories in individuals aged 40-59 and do not smoke tobacco</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_not_tob_lung_func_gr59</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of lung function categories in individuals aged 60+ and do not smoke tobacco</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_tob_lung_func_15_39</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of lung function categories in individuals aged 15-39 who smoke tobacco</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_tob_lung_func_40_59</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of lung function categories in individuals aged 40-59 who smoke tobacco</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_tob_lung_func_gr59</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of lung function categories in individuals aged 60+ who smoke tobacco</p></td>
 </tr>
 </tbody>
 </table>
@@ -239,7 +299,7 @@ and initialises parameters and properties associated with COPD plus functions an
 <tbody>
 <tr class="row-even"><td><p>ch_lungfunction</p></td>
 <td><p>CATEGORICAL</p></td>
-<td><p>Lung function of the person.NaN for those under 15; on a 7-point scale for others, from 0 (Perfect) to 6 (End-Stage COPD)..  Possible values are: [0, 1, 2, 3, 4, 5, 6, ]</p></td>
+<td><p>Lung function of the person.0 for those under 15; on a 7-point scale for others, from 0 (Perfect) to 6 (End-Stage COPD)..  Possible values are: [0, 1, 2, 3, 4, 5, 6, ]</p></td>
 </tr>
 <tr class="row-odd"><td><p>ch_will_die_this_episode</p></td>
 <td><p>BOOL</p></td>
@@ -253,11 +313,10 @@ and initialises parameters and properties associated with COPD plus functions an
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>ADDITIONAL_DEPENDENCIES : set()</p>
-<p>CAUSES_OF_DEATH : {‘COPD’: &lt;tlo.methods.causes.Cause object at 0x7fd214b9e8b0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘COPD’: &lt;tlo.methods.causes.Cause object at 0x7fd214b9e910&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘SymptomManager’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
-<p>gbd_causes_of_copd_represented_in_this_module : {‘Other chronic respiratory diseases’}</p>
+<p>CAUSES_OF_DEATH : {‘COPD_cat0’: &lt;tlo.methods.causes.Cause object at 0x123ab2dc0&gt;, ‘COPD_cat1’: &lt;tlo.methods.causes.Cause object at 0x123ab2e20&gt;, ‘COPD_cat2’: &lt;tlo.methods.causes.Cause object at 0x123ab2e80&gt;, ‘COPD_cat3’: &lt;tlo.methods.causes.Cause object at 0x123ab2ee0&gt;, ‘COPD_cat4’: &lt;tlo.methods.causes.Cause object at 0x123ab2f40&gt;, ‘COPD_cat5’: &lt;tlo.methods.causes.Cause object at 0x123ab2fa0&gt;, ‘COPD_cat6’: &lt;tlo.methods.causes.Cause object at 0x123ae6040&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘COPD’: &lt;tlo.methods.causes.Cause object at 0x123ab2d90&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘Lifestyle’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p><strong>Functions (defined or overridden in class Copd):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.copd.Copd.__init__">
@@ -426,11 +485,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.copd.CopdExacerbationEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/copd.html#CopdExacerbationEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.copd.CopdExacerbationEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -465,11 +524,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.copd.CopdDeath.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/copd.html#CopdDeath.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.copd.CopdDeath.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -479,7 +538,10 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.copd.HSI_Copd_TreatmentOnSevereExacerbation">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Copd_TreatmentOnSevereExacerbation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/copd.html#HSI_Copd_TreatmentOnSevereExacerbation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.copd.HSI_Copd_TreatmentOnSevereExacerbation" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<dd><p>HSI event for issuing treatment to all individuals with severe exacerbation. We first check the availability of
+oxygen at the default facility(1a). If no oxygen is found we refer individuals to the next higher level facility
+until either we find oxygen or we are at the highest facility level. Here facility levels are [“1a”, “1b”, “2”]</p>
+<p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class HSI_Copd_TreatmentOnSevereExacerbation):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.copd.HSI_Copd_TreatmentOnSevereExacerbation.__init__">
@@ -522,7 +584,7 @@ constructor, but may also take further keyword arguments.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

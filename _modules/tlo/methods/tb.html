@@ -1072,7 +1072,9 @@
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;sy_aids_symptoms&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;hv_art&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;not&quot;</span>
 
-        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="nb">abs</span><span class="p">(</span><span class="n">mother_id</span><span class="p">),</span> <span class="s2">&quot;tb_diagnosed&quot;</span><span class="p">]:</span>  <span class="c1"># Not interested in whether true or direct birth</span>
+        <span class="c1"># Not interested in whether true or direct birth</span>
+        <span class="c1"># give IPT to child of TB diagnosed mother if 2014 or later</span>
+        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="nb">abs</span><span class="p">(</span><span class="n">mother_id</span><span class="p">),</span> <span class="s2">&quot;tb_diagnosed&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="p">(</span><span class="n">now</span><span class="o">.</span><span class="n">year</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;ipt_start_date&quot;</span><span class="p">]):</span>
             <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_Tb_Start_or_Continue_Ipt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">child_id</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
                 <span class="n">event</span><span class="p">,</span>
@@ -2107,6 +2109,76 @@
             <span class="k">return</span> <span class="n">ACTUAL_APPT_FOOTPRINT</span></div></div>
 
 
+<div class="viewcode-block" id="HSI_Tb_ClinicalDiagnosis"><a class="viewcode-back" href="../../../reference/tlo.methods.tb.html#tlo.methods.tb.HSI_Tb_ClinicalDiagnosis">[docs]</a><span class="k">class</span> <span class="nc">HSI_Tb_ClinicalDiagnosis</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This is a clinical diagnosis appt which is called when other tests have not been</span>
+<span class="sd">    available and only a clinical diagnosis is required</span>
+
+<span class="sd">    * it does not include any of the routine tests for TB or HIV</span>
+<span class="sd">    therefore property tb_date_tested is not updated</span>
+<span class="sd">    * It only requires 0.5 footprint of Under5OPD since it will almost exclusively</span>
+<span class="sd">    be used for children unable to get xrays following initial diagnostic consultations</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="HSI_Tb_ClinicalDiagnosis.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.tb.html#tlo.methods.tb.HSI_Tb_ClinicalDiagnosis.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">suppress_footprint</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Tb</span><span class="p">)</span>
+
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">suppress_footprint</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">suppress_footprint</span> <span class="o">=</span> <span class="n">suppress_footprint</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;Tb_Test_Clinical&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;Under5OPD&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span></div>
+
+<div class="viewcode-block" id="HSI_Tb_ClinicalDiagnosis.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.tb.html#tlo.methods.tb.HSI_Tb_ClinicalDiagnosis.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Do the screening and referring process &quot;&quot;&quot;</span>
+
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+        <span class="n">person</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">]</span>
+        <span class="n">test_result</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="c1"># If the person is dead or already diagnosed, do nothing do not occupy any resources</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">person</span><span class="p">[</span><span class="s2">&quot;is_alive&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">person</span><span class="p">[</span><span class="s2">&quot;tb_diagnosed&quot;</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get_blank_appt_footprint</span><span class="p">()</span>
+
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+            <span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;HSI_Tb_ClinicalDiagnosis: person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+        <span class="c1"># check if patient has: cough, fever, night sweat, weight loss</span>
+        <span class="n">set_of_symptoms_that_indicate_tb</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">symptom_list</span><span class="p">)</span>
+        <span class="n">persons_symptoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;SymptomManager&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">has_what</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">set_of_symptoms_that_indicate_tb</span><span class="o">.</span><span class="n">intersection</span><span class="p">(</span><span class="n">persons_symptoms</span><span class="p">):</span>
+            <span class="c1"># if none of the above conditions are present, no further action</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
+
+        <span class="k">elif</span> <span class="n">set_of_symptoms_that_indicate_tb</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">persons_symptoms</span><span class="p">):</span>
+            <span class="c1"># All symptoms present (clinical diagnosis)</span>
+            <span class="n">test_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
+                <span class="n">dx_tests_to_run</span><span class="o">=</span><span class="s2">&quot;tb_clinical&quot;</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span>
+            <span class="p">)</span>
+
+            <span class="c1"># if clinical diagnosis returns positive result, refer for appropriate treatment</span>
+            <span class="k">if</span> <span class="n">test_result</span><span class="p">:</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;tb_diagnosed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;tb_date_diagnosed&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">now</span>
+
+                <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
+                    <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;schedule HSI_Tb_StartTreatment for person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                    <span class="n">HSI_Tb_StartTreatment</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">),</span>
+                    <span class="n">topen</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="p">)</span></div></div>
+
+
 <div class="viewcode-block" id="HSI_Tb_Xray_level1b"><a class="viewcode-back" href="../../../reference/tlo.methods.tb.html#tlo.methods.tb.HSI_Tb_Xray_level1b">[docs]</a><span class="k">class</span> <span class="nc">HSI_Tb_Xray_level1b</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The is the x-ray HSI</span>
@@ -2147,27 +2219,18 @@
                 <span class="n">dx_tests_to_run</span><span class="o">=</span><span class="s2">&quot;tb_xray_smear_negative&quot;</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span>
             <span class="p">)</span>
 
-        <span class="c1"># if consumables not available, either refer to level 2 or use clinical diagnosis</span>
+        <span class="c1"># if consumables not available, refer to level 2</span>
+        <span class="c1"># return blank footprint as xray did not occur</span>
         <span class="k">if</span> <span class="n">test_result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
 
-            <span class="c1"># if smear-positive, assume symptoms strongly predictive of TB</span>
-            <span class="k">if</span> <span class="n">smear_status</span><span class="p">:</span>
-                <span class="n">test_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
-                    <span class="n">dx_tests_to_run</span><span class="o">=</span><span class="s2">&quot;tb_clinical&quot;</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span>
-                <span class="p">)</span>
-                <span class="c1"># add another clinic appointment</span>
-                <span class="n">ACTUAL_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">(</span>
-                    <span class="p">{</span><span class="s2">&quot;Under5OPD&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;DiagRadio&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
-                <span class="p">)</span>
+            <span class="n">ACTUAL_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
 
-            <span class="c1"># if smear-negative, assume still some uncertainty around dx, refer for another x-ray</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
-                    <span class="n">HSI_Tb_Xray_level2</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">),</span>
-                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">weeks</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
-                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                <span class="n">HSI_Tb_Xray_level2</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">),</span>
+                <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">weeks</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="p">)</span>
 
         <span class="c1"># if test returns positive result, refer for appropriate treatment</span>
         <span class="k">if</span> <span class="n">test_result</span><span class="p">:</span>
@@ -2228,13 +2291,16 @@
             <span class="p">)</span>
 
         <span class="c1"># if consumables not available, rely on clinical diagnosis</span>
+        <span class="c1"># return blank footprint as xray was not available</span>
         <span class="k">if</span> <span class="n">test_result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">test_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dx_manager</span><span class="o">.</span><span class="n">run_dx_test</span><span class="p">(</span>
-                <span class="n">dx_tests_to_run</span><span class="o">=</span><span class="s2">&quot;tb_clinical&quot;</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span>
-            <span class="p">)</span>
-            <span class="c1"># add another clinic appointment</span>
-            <span class="n">ACTUAL_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">(</span>
-                <span class="p">{</span><span class="s2">&quot;Under5OPD&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;DiagRadio&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+
+            <span class="n">ACTUAL_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
+                <span class="n">HSI_Tb_ClinicalDiagnosis</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">),</span>
+                <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
+                <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="c1"># if test returns positive result, refer for appropriate treatment</span>
@@ -3064,7 +3130,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

@@ -60,11 +60,11 @@ tlo.methods.schisto module
 
      CAUSES_OF_DEATH : {}
 
-     CAUSES_OF_DISABILITY : {'Schistosomiasis': <tlo.methods.causes.Cause object at 0x7fd213f2d8b0>}
+     CAUSES_OF_DISABILITY : {'Schistosomiasis': <tlo.methods.causes.Cause object at 0x11efecdc0>}
 
      INIT_DEPENDENCIES : {'SymptomManager', 'Demography'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'HealthSystem'}
 

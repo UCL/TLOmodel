@@ -872,6 +872,7 @@
         <span class="c1"># Schedule the HSI event</span>
         <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">care_seekers</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">care_seekers</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
             <span class="kn">from</span> <span class="nn">tlo.methods.labour</span> <span class="kn">import</span> <span class="n">HSI_Labour_ReceivesPostnatalCheck</span>
+            <span class="n">mni</span><span class="p">[</span><span class="n">person</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
 
             <span class="c1"># check if care seeking is delayed</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Labour&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">current_parameters</span><span class="p">[</span><span class="s1">&#39;prob_delay_one_two_fd&#39;</span><span class="p">]:</span>
@@ -971,6 +972,7 @@
 
         <span class="c1"># We schedule the HSI according</span>
         <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">care_seeking</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">care_seeking</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+            <span class="n">nci</span><span class="p">[</span><span class="n">person</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
 
             <span class="kn">from</span> <span class="nn">tlo.methods.newborn_outcomes</span> <span class="kn">import</span> <span class="n">HSI_NewbornOutcomes_ReceivesPostnatalCheck</span>
             <span class="n">postnatal_check</span> <span class="o">=</span> <span class="n">HSI_NewbornOutcomes_ReceivesPostnatalCheck</span><span class="p">(</span>
@@ -1359,6 +1361,8 @@
             <span class="k">if</span> <span class="p">(</span><span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;will_receive_pnc&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;late&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span>
                                                                       <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_care_seeking_postnatal_emergency&#39;</span><span class="p">]):</span>
 
+                <span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
+
                 <span class="c1"># If care will be sought, check if they experience delay seeking care</span>
                 <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">check_if_delayed_careseeking</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">)</span>
 
@@ -1373,6 +1377,7 @@
             <span class="c1"># Women without complications in week one are scheduled to attend PNC in the future</span>
             <span class="k">if</span> <span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;will_receive_pnc&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;late&#39;</span><span class="p">:</span>
                 <span class="n">appt_date</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">35</span><span class="p">))</span>
+                <span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">appt_date</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
                     <span class="n">pnc_one_maternal</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="n">appt_date</span><span class="p">,</span> <span class="n">tclose</span><span class="o">=</span><span class="n">appt_date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span></div></div>
 
@@ -1417,9 +1422,11 @@
 
         <span class="c1"># Neonates with sepsis are more likely to receive PNC that those without</span>
         <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;pn_sepsis_early_neonatal&#39;</span><span class="p">]:</span>
+
             <span class="k">if</span> <span class="p">((</span><span class="n">nci</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;will_receive_pnc&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;late&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span>
                                                                        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_care_seeking_postnatal_&#39;</span>
                                                                               <span class="s1">&#39;emergency_neonate&#39;</span><span class="p">])):</span>
+                <span class="n">nci</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">pnc_one_neonatal</span><span class="p">,</span>
                                                                     <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
@@ -1434,6 +1441,7 @@
         <span class="k">elif</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;pn_sepsis_early_neonatal&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="p">(</span><span class="n">nci</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;will_&#39;</span>
                                                                                           <span class="s1">&#39;receive_pnc&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;late&#39;</span><span class="p">):</span>
             <span class="n">days_till_day_7</span> <span class="o">=</span> <span class="mi">7</span> <span class="o">-</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;age_days&#39;</span><span class="p">]</span>
+            <span class="n">nci</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
                 <span class="n">pnc_one_neonatal</span><span class="p">,</span>
@@ -1481,7 +1489,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

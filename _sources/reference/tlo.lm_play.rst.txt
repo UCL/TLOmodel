@@ -1,7 +1,0 @@
-tlo.lm\_play module
-===================
-
-.. automodule:: tlo.lm_play
-   :members:
-   :undoc-members:
-   :show-inheritance:

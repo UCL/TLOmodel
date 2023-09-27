@@ -1234,6 +1234,7 @@
         <span class="c1"># will automatically attend early</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">timing</span> <span class="o">==</span> <span class="s1">&#39;&lt;48&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s1">&#39;pnc_twin_one&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;early&#39;</span><span class="p">):</span>
             <span class="n">nci</span><span class="p">[</span><span class="n">child_id</span><span class="p">][</span><span class="s1">&#39;will_receive_pnc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;early&#39;</span>
+            <span class="n">nci</span><span class="p">[</span><span class="n">child_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
 
             <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;ps_multiple_pregnancy&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="p">(</span><span class="n">m</span><span class="p">[</span><span class="s1">&#39;twin_count&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">):</span>
                 <span class="n">m</span><span class="p">[</span><span class="s1">&#39;pnc_twin_one&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;early&#39;</span>
@@ -1386,7 +1387,8 @@
                              <span class="s1">&#39;sepsis_postnatal&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                              <span class="s1">&#39;passed_through_week_one&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
                              <span class="s1">&#39;will_receive_pnc&#39;</span><span class="p">:</span> <span class="s1">&#39;none&#39;</span><span class="p">,</span>
-                             <span class="s1">&#39;third_delay&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+                             <span class="s1">&#39;third_delay&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                             <span class="s1">&#39;pnc_date&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span><span class="p">}</span>
 
             <span class="k">if</span> <span class="n">mni</span><span class="p">[</span><span class="n">mother_id</span><span class="p">][</span><span class="s1">&#39;clean_birth_practices&#39;</span><span class="p">]:</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;nb_clean_birth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -1536,6 +1538,7 @@
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;HSI_NewbornOutcomes_ReceivesPostnatalCheck did not run for &#39;</span>
                                          <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">person_id</span> <span class="ow">in</span> <span class="n">nci</span><span class="p">:</span>
+            <span class="n">nci</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;date_pnc_check&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">set_death_status</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span></div></div>
 
 
@@ -1563,8 +1566,17 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;nb_death_after_birth&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="p">(</span><span class="n">person_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nci</span><span class="p">):</span>
             <span class="k">return</span>
 
+        <span class="k">if</span> <span class="n">person_id</span> <span class="ow">in</span> <span class="n">nci</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">nci</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">]):</span>
+                <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">nci</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">days</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">nci</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;date_pnc_check&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">set_death_status</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
+            <span class="k">return</span>
+
         <span class="k">if</span> <span class="p">(</span><span class="n">nci</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;will_receive_pnc&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;early&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">nci</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;passed_through_week_one&#39;</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">&lt;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;date_of_birth&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">2</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;date_of_birth&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">2</span><span class="p">)):</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Child </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1"> arrived at early PNC too late&#39;</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;nb_pnc_check&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -1577,6 +1589,9 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;nb_pnc_check&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Child </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s1"> arrived at late PNC twice&#39;</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">nci</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;pnc_date&#39;</span><span class="p">]):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;Individual at neonatal PNC HSI without topen&#39;</span><span class="p">)</span>
+
         <span class="c1"># Log the PNC check</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;postnatal_check&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;person_id&#39;</span><span class="p">:</span> <span class="n">person_id</span><span class="p">,</span>
                                                  <span class="s1">&#39;delivery_setting&#39;</span><span class="p">:</span> <span class="n">nci</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;delivery_setting&#39;</span><span class="p">],</span>
@@ -1584,6 +1599,7 @@
                                                  <span class="s1">&#39;timing&#39;</span><span class="p">:</span> <span class="n">nci</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;will_receive_pnc&#39;</span><span class="p">]})</span>
 
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;nb_pnc_check&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">nci</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;date_pnc_check&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
 
         <span class="k">if</span> <span class="n">squeeze_factor</span> <span class="o">&gt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;squeeze_threshold_for_delay_three_nb_care&#39;</span><span class="p">]:</span>
             <span class="n">nci</span><span class="p">[</span><span class="n">person_id</span><span class="p">][</span><span class="s1">&#39;third_delay&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
@@ -1617,11 +1633,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">run_if_care_of_the_receives_postnatal_check_cant_run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="HSI_NewbornOutcomes_ReceivesPostnatalCheck.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.newborn_outcomes.html#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">run_if_care_of_the_receives_postnatal_check_cant_run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">False</span></div>
-
-<div class="viewcode-block" id="HSI_NewbornOutcomes_ReceivesPostnatalCheck.not_available"><a class="viewcode-back" href="../../../reference/tlo.methods.newborn_outcomes.html#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck.not_available">[docs]</a>    <span class="k">def</span> <span class="nf">not_available</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">run_if_care_of_the_receives_postnatal_check_cant_run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+        <span class="k">pass</span></div>
 
 <div class="viewcode-block" id="HSI_NewbornOutcomes_ReceivesPostnatalCheck._get_facility_level_for_pnc"><a class="viewcode-back" href="../../../reference/tlo.methods.newborn_outcomes.html#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck._get_facility_level_for_pnc">[docs]</a>    <span class="k">def</span> <span class="nf">_get_facility_level_for_pnc</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="n">nci</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">newborn_care_info</span>
@@ -1653,11 +1665,7 @@
 
 <div class="viewcode-block" id="HSI_NewbornOutcomes_NeonatalWardInpatientCare.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.newborn_outcomes.html#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_NeonatalWardInpatientCare.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;HSI_PostnatalSupervisor_NeonatalWardInpatientCare: did not run&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="HSI_NewbornOutcomes_NeonatalWardInpatientCare.not_available"><a class="viewcode-back" href="../../../reference/tlo.methods.newborn_outcomes.html#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_NeonatalWardInpatientCare.not_available">[docs]</a>    <span class="k">def</span> <span class="nf">not_available</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;HSI_PostnatalSupervisor_NeonatalWardInpatientCare: cannot not run with &#39;</span>
-                                         <span class="s1">&#39;this configuration&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">False</span></div></div>
 
 
@@ -1721,7 +1729,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

@@ -243,10 +243,10 @@ framework:</p>
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>ADDITIONAL_DEPENDENCIES : {‘HealthSystem’}</p>
-<p>CAUSES_OF_DEATH : {‘tlo_name_of_a_cause_of_death_in_this_module’: &lt;tlo.methods.causes.Cause object at 0x7fd214b57ac0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘tlo_name_of_a_cause_of_disability_in_this_module’: &lt;tlo.methods.causes.Cause object at 0x7fd214b57b20&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘tlo_name_of_a_cause_of_death_in_this_module’: &lt;tlo.methods.causes.Cause object at 0x123ab2040&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘tlo_name_of_a_cause_of_disability_in_this_module’: &lt;tlo.methods.causes.Cause object at 0x123ab20a0&gt;}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p>SYMPTOMS : {}</p>
 <p><strong>Functions (defined or overridden in class Skeleton):</strong></p>
@@ -380,11 +380,11 @@ This is a regular event that can output current states of people or cumulative e
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.skeleton.Skeleton_LoggingEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/skeleton.html#Skeleton_LoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.skeleton.Skeleton_LoggingEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -468,7 +468,7 @@ Do not return anything.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

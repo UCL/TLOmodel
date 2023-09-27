@@ -29,13 +29,19 @@ tlo.methods.contraception module
           - Relative probability of becoming pregnant whilst not using a a contraceptive for HIV-positive women compared to HIV-negative women.
         * - Failure_ByMethod
           - DATA_FRAME
-          - Probability per month of a women on a contraceptive becoming pregnant, by method
+          - Probability per month of a women on a contraceptive becoming pregnant, by method.
         * - rr_fail_under25
           - REAL
           - The relative risk of becoming pregnant whilst using a contraceptive for woman younger than 25 years compared to older women.
         * - Initiation_ByMethod
           - DATA_FRAME
           - Probability per month of a women who is not using any contraceptive method of starting use of a method, by method.
+        * - Interventions_Pop
+          - DATA_FRAME
+          - Pop (population scale contraception intervention) intervention multiplier.
+        * - Interventions_PPFP
+          - DATA_FRAME
+          - PPFP (post-partum family planning) intervention multiplier.
         * - Initiation_ByAge
           - DATA_FRAME
           - The effect of age on the probability of starting use of contraceptive (add one for multiplicative effect).
@@ -59,16 +65,22 @@ tlo.methods.contraception module
           - The number of days between successive family planning appointments for women that are maintaining the use of a method (for each method insorted(self.states_that_may_require_HSI_to_maintain_on), i.e.[IUD, implant, injections, other_modern, pill]).
         * - age_specific_fertility_rates
           - DATA_FRAME
-          - Data table from official source (WPP) for age-specific fertility rates and calendar period
+          - Data table from official source (WPP) for age-specific fertility rates and calendar period.
         * - scaling_factor_on_monthly_risk_of_pregnancy
           - LIST
           - Scaling factor (by age-group: 15-19, 20-24, ..., 45-49) on the monthly risk of pregnancy and contraceptive failure rate. This value is found through calibration so that, at the beginning of the simulation, the age-specific monthly probability of a woman having a live birth matches the WPP age-specific fertility rate value for the same year.
         * - max_number_of_runs_of_hsi_if_consumable_not_available
           - INT
-          - The maximum number of time an HSI can run (repeats occur if the consumables are not available
+          - The maximum number of time an HSI can run (repeats occur if the consumables are not available).
         * - max_days_delay_between_decision_to_change_method_and_hsi_scheduled
           - INT
-          - The maximum delay (in days) between the decision for a contraceptive to change and the `topen`date of the HSI that is scheduled to effect the change (when using the healthsystem),
+          - The maximum delay (in days) between the decision for a contraceptive to change and the `topen` date of the HSI that is scheduled to effect the change (when using the healthsystem).
+        * - use_interventions
+          - STRING
+          - if 'On': FP interventions (pop & ppfp) are simulated since 'interventions_start_date', if 'Off': FP interventions (pop & ppfp) are not simulated.
+        * - interventions_start_date
+          - DATE
+          - The date since which the FP interventions (pop & ppfp) are implemented, if at all (ie, if use_interventions==True
 
 
      **PROPERTIES:**
@@ -100,7 +112,7 @@ tlo.methods.contraception module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Labour', 'Hiv'}
+     ADDITIONAL_DEPENDENCIES : {'Hiv', 'Labour'}
 
      INIT_DEPENDENCIES : {'Demography'}
 
@@ -108,7 +120,9 @@ tlo.methods.contraception module
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthSystem'}
 
-     all_contraception_states : {'male_condom', 'female_sterilization', 'periodic_abstinence', 'IUD', 'other_modern', 'other_traditional', 'implant', 'withdrawal', 'pill', 'not_using', 'injections'}
+     all_contraception_states : {'periodic_abstinence', 'other_modern', 'injections', 'pill', 'not_using', 'implant', 'male_condom', 'IUD', 'female_sterilization', 'withdrawal', 'other_traditional'}
+
+     contraceptives_initiated_with_additional_items : {'injections', 'pill', 'implant', 'female_sterilization', 'IUD'}
 
      **Functions (defined or overridden in class Contraception):**
 
@@ -128,6 +142,8 @@ tlo.methods.contraception module
 
      .. automethod:: process_params
 
+     .. automethod:: update_params_for_interventions
+
      .. automethod:: select_contraceptive_following_birth
 
      .. automethod:: get_item_code_for_each_contraceptive
@@ -137,6 +153,8 @@ tlo.methods.contraception module
      .. automethod:: do_and_log_individual_contraception_change
 
      .. automethod:: schedule_births_for_first_9_months
+
+     .. automethod:: on_simulation_end
 
 
 
@@ -221,7 +239,7 @@ tlo.methods.contraception module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x7fd214d49360>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x12fbc5130>
 
      **Functions (defined or overridden in class HSI_Contraception_FamilyPlanningAppt):**
 
@@ -234,6 +252,24 @@ tlo.methods.contraception module
      .. automethod:: reschedule
 
      .. automethod:: never_ran
+
+
+
+
+
+
+
+
+.. autoclass:: StartInterventions
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class StartInterventions):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
 
 
 

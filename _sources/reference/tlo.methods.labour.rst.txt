@@ -649,11 +649,11 @@ tlo.methods.labour module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes', 'CareOfWomenDuringPregnancy', 'PostnatalSupervisor', 'PregnancySupervisor', 'Contraception', 'Lifestyle', 'HealthSystem'}
+     ADDITIONAL_DEPENDENCIES : {'Lifestyle', 'HealthSystem', 'Contraception', 'CareOfWomenDuringPregnancy', 'NewbornOutcomes', 'PregnancySupervisor', 'PostnatalSupervisor'}
 
-     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x7fd2149a6160>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x7fd2149ae280>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7fd2149ae2e0>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x7fd2149ae340>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7fd2149ae3a0>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7fd2149ae400>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x7fd2149ae460>, 'eclampsia': <tlo.methods.causes.Cause object at 0x7fd2149ae4c0>}
+     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x1238e0460>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x1238ec580>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x1238ec5e0>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x1238ec640>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x1238ec6a0>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x1238ec700>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x1238ec760>, 'eclampsia': <tlo.methods.causes.Cause object at 0x1238ec7c0>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x7fd2149ae520>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x1238ec820>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
@@ -835,8 +835,6 @@ tlo.methods.labour module
 
      .. automethod:: did_not_run
 
-     .. automethod:: not_available
-
 
 
 
@@ -858,8 +856,6 @@ tlo.methods.labour module
      .. automethod:: never_ran
 
      .. automethod:: did_not_run
-
-     .. automethod:: not_available
 
      .. automethod:: _get_facility_level_for_pnc
 
@@ -885,8 +881,6 @@ tlo.methods.labour module
 
      .. automethod:: did_not_run
 
-     .. automethod:: not_available
-
 
 
 
@@ -906,8 +900,6 @@ tlo.methods.labour module
      .. automethod:: apply
 
      .. automethod:: did_not_run
-
-     .. automethod:: not_available
 
 
 

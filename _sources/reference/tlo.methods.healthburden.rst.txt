@@ -56,13 +56,17 @@ tlo.methods.healthburden module
 
      .. automethod:: on_simulation_end
 
-     .. automethod:: compute_dalys
+     .. automethod:: get_dalys
 
      .. automethod:: get_daly_weight
 
      .. automethod:: report_live_years_lost
 
      .. automethod:: decompose_yll_by_age_and_time
+
+     .. automethod:: write_to_log
+
+     .. automethod:: check_multi_index
 
 
 
@@ -77,6 +81,24 @@ tlo.methods.healthburden module
 
 
      **Functions (defined or overridden in class Get_Current_DALYS):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: Healthburden_WriteToLog
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+     **Functions (defined or overridden in class Healthburden_WriteToLog):**
 
      .. automethod:: __init__
 

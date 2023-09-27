@@ -555,10 +555,10 @@ demographic/lifestyle risk factors.</p>
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>ADDITIONAL_DEPENDENCIES : {‘Depression’}</p>
-<p>CAUSES_OF_DEATH : {‘diabetes’: &lt;tlo.methods.causes.Cause object at 0x7fd214e54220&gt;, ‘chronic_ischemic_hd’: &lt;tlo.methods.causes.Cause object at 0x7fd214e54280&gt;, ‘ever_heart_attack’: &lt;tlo.methods.causes.Cause object at 0x7fd214e542e0&gt;, ‘ever_stroke’: &lt;tlo.methods.causes.Cause object at 0x7fd214e54340&gt;, ‘chronic_kidney_disease’: &lt;tlo.methods.causes.Cause object at 0x7fd214e543a0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘diabetes’: &lt;tlo.methods.causes.Cause object at 0x7fd214e54400&gt;, ‘chronic_ischemic_hd’: &lt;tlo.methods.causes.Cause object at 0x7fd214e54460&gt;, ‘heart_attack’: &lt;tlo.methods.causes.Cause object at 0x7fd214e544c0&gt;, ‘stroke’: &lt;tlo.methods.causes.Cause object at 0x7fd214e54520&gt;, ‘chronic_kidney_disease’: &lt;tlo.methods.causes.Cause object at 0x7fd214e54580&gt;, ‘lower_back_pain’: &lt;tlo.methods.causes.Cause object at 0x7fd214e545e0&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘Lifestyle’, ‘HealthSystem’, ‘SymptomManager’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘diabetes’: &lt;tlo.methods.causes.Cause object at 0x12fccd3d0&gt;, ‘chronic_ischemic_hd’: &lt;tlo.methods.causes.Cause object at 0x12fccd430&gt;, ‘ever_heart_attack’: &lt;tlo.methods.causes.Cause object at 0x12fccd490&gt;, ‘ever_stroke’: &lt;tlo.methods.causes.Cause object at 0x12fccd4f0&gt;, ‘chronic_kidney_disease’: &lt;tlo.methods.causes.Cause object at 0x12fccd550&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘diabetes’: &lt;tlo.methods.causes.Cause object at 0x12fccd5b0&gt;, ‘chronic_ischemic_hd’: &lt;tlo.methods.causes.Cause object at 0x12fccd610&gt;, ‘heart_attack’: &lt;tlo.methods.causes.Cause object at 0x12fccd670&gt;, ‘stroke’: &lt;tlo.methods.causes.Cause object at 0x12fccd6d0&gt;, ‘chronic_kidney_disease’: &lt;tlo.methods.causes.Cause object at 0x12fccd730&gt;, ‘lower_back_pain’: &lt;tlo.methods.causes.Cause object at 0x12fccd790&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘Demography’, ‘Lifestyle’, ‘HealthSystem’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p>condition_date_diagnosis_list : {‘nc_diabetes_date_diagnosis’: DATE === When someone has been diagnosed with diabetes, ‘nc_hypertension_date_diagnosis’: DATE === When someone has been diagnosed with hypertension, ‘nc_chronic_kidney_disease_date_diagnosis’: DATE === When someone has been diagnosed with chronic_kidney_disease, ‘nc_chronic_lower_back_pain_date_diagnosis’: DATE === When someone has been diagnosed with chronic_lower_back_pain, ‘nc_chronic_ischemic_hd_date_diagnosis’: DATE === When someone has been diagnosed with chronic_ischemic_hd}</p>
 <p>condition_date_of_last_test_list : {‘nc_diabetes_date_last_test’: DATE === When someone has last been tested for diabetes, ‘nc_hypertension_date_last_test’: DATE === When someone has last been tested for hypertension, ‘nc_chronic_kidney_disease_date_last_test’: DATE === When someone has last been tested for chronic_kidney_disease, ‘nc_chronic_lower_back_pain_date_last_test’: DATE === When someone has last been tested for chronic_lower_back_pain, ‘nc_chronic_ischemic_hd_date_last_test’: DATE === When someone has last been tested for chronic_ischemic_hd}</p>
@@ -760,11 +760,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/cardio_metabolic_disorders.html#CardioMetabolicDisordersEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -799,11 +799,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersDeathEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/cardio_metabolic_disorders.html#CardioMetabolicDisordersDeathEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersDeathEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -846,11 +846,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersWeightLossEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/cardio_metabolic_disorders.html#CardioMetabolicDisordersWeightLossEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisordersWeightLossEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -871,11 +871,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_LoggingEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/cardio_metabolic_disorders.html#CardioMetabolicDisorders_LoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.cardio_metabolic_disorders.CardioMetabolicDisorders_LoggingEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1093,7 +1093,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

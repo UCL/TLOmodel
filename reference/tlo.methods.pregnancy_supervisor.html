@@ -773,12 +773,12 @@ for routine antenatal care and emergency obstetric care in the event of severe c
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘CareOfWomenDuringPregnancy’, ‘Labour’, ‘Contraception’, ‘Lifestyle’, ‘HealthSystem’}</p>
-<p>CAUSES_OF_DEATH : {‘ectopic_pregnancy’: &lt;tlo.methods.causes.Cause object at 0x7fd214be1c70&gt;, ‘spontaneous_abortion’: &lt;tlo.methods.causes.Cause object at 0x7fd214c0b190&gt;, ‘induced_abortion’: &lt;tlo.methods.causes.Cause object at 0x7fd214c0b1f0&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x7fd214c0b250&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x7fd214c0b2b0&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7fd214c0b310&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x7fd214c0b370&gt;, ‘antenatal_sepsis’: &lt;tlo.methods.causes.Cause object at 0x7fd214c0b3d0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x7fd214c0b430&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Lifestyle’, ‘HealthSystem’, ‘Contraception’, ‘Labour’, ‘CareOfWomenDuringPregnancy’}</p>
+<p>CAUSES_OF_DEATH : {‘ectopic_pregnancy’: &lt;tlo.methods.causes.Cause object at 0x12fa64940&gt;, ‘spontaneous_abortion’: &lt;tlo.methods.causes.Cause object at 0x12fa64e20&gt;, ‘induced_abortion’: &lt;tlo.methods.causes.Cause object at 0x12fa64e80&gt;, ‘antepartum_haemorrhage’: &lt;tlo.methods.causes.Cause object at 0x12fa64ee0&gt;, ‘severe_gestational_hypertension’: &lt;tlo.methods.causes.Cause object at 0x12fa64f40&gt;, ‘severe_pre_eclampsia’: &lt;tlo.methods.causes.Cause object at 0x12fa64fa0&gt;, ‘eclampsia’: &lt;tlo.methods.causes.Cause object at 0x12fa7f040&gt;, ‘antenatal_sepsis’: &lt;tlo.methods.causes.Cause object at 0x12fa7f0a0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘maternal’: &lt;tlo.methods.causes.Cause object at 0x12fa7f100&gt;}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
-<p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’, ‘CardioMetabolicDisorders’, ‘Malaria’, ‘Hiv’}</p>
+<p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’, ‘Hiv’, ‘Malaria’, ‘CardioMetabolicDisorders’}</p>
 <p><strong>Functions (defined or overridden in class PregnancySupervisor):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisor.__init__">
@@ -801,7 +801,7 @@ generator.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>data_folder</strong> – path of a folder supplied to the Simulation containing data files.
-Typically modules would read a particular file within here.</p>
+Typically, modules would read a particular file within here.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -842,8 +842,8 @@ It is a good place to add initial events to the event queue.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>mother</strong> – the mother for this child (can be -1 if the mother is not identified).</p></li>
-<li><p><strong>child</strong> – the new child</p></li>
+<li><p><strong>mother_id</strong> – the person id for the mother of this child (can be -1 if the mother is not identified).</p></li>
+<li><p><strong>child_id</strong> – the person id of new child</p></li>
 </ul>
 </dd>
 </dl>
@@ -1109,11 +1109,11 @@ EmergencyAssessment if care cant be delivered .
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancySupervisorEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancySupervisorEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancySupervisorEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1150,11 +1150,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.EctopicPregnancyEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#EctopicPregnancyEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.EctopicPregnancyEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1190,11 +1190,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.EctopicPregnancyRuptureEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#EctopicPregnancyRuptureEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.EctopicPregnancyRuptureEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1229,11 +1229,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.EarlyPregnancyLossDeathEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#EarlyPregnancyLossDeathEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.EarlyPregnancyLossDeathEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1269,11 +1269,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.GestationalDiabetesGlycaemicControlEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#GestationalDiabetesGlycaemicControlEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.GestationalDiabetesGlycaemicControlEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1309,11 +1309,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.SyphilisInPregnancyEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#SyphilisInPregnancyEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.SyphilisInPregnancyEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the given person.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>person_id</strong> – the person the event happens to</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1348,11 +1348,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.ParameterUpdateEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#ParameterUpdateEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.ParameterUpdateEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1388,11 +1388,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancyAnalysisEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancyAnalysisEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancyAnalysisEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
+<dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1423,11 +1423,11 @@ constructor, but may also take further keyword arguments.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.pregnancy_supervisor.PregnancyLoggingEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/pregnancy_supervisor.html#PregnancyLoggingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.pregnancy_supervisor.PregnancyLoggingEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1451,7 +1451,7 @@ constructor, but may also take further keyword arguments.</p></li>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

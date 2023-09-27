@@ -298,13 +298,13 @@ tlo.methods.tb module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'TB': <tlo.methods.causes.Cause object at 0x7fd2149e6b80>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x7fd2149fa3a0>}
+     CAUSES_OF_DEATH : {'TB': <tlo.methods.causes.Cause object at 0x123915f40>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x12392f730>}
 
-     CAUSES_OF_DISABILITY : {'TB': <tlo.methods.causes.Cause object at 0x7fd2149fa490>}
+     CAUSES_OF_DISABILITY : {'TB': <tlo.methods.causes.Cause object at 0x12392f820>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'Epi', 'Lifestyle', 'HealthSystem', 'Demography'}
+     INIT_DEPENDENCIES : {'Lifestyle', 'Epi', 'HealthSystem', 'SymptomManager', 'Demography'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
 
@@ -459,6 +459,24 @@ tlo.methods.tb module
 
 
 
+.. autoclass:: HSI_Tb_ClinicalDiagnosis
+
+     Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class HSI_Tb_ClinicalDiagnosis):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
 .. autoclass:: HSI_Tb_Xray_level1b
 
      Bases: :class:`tlo.methods.healthsystem.HSI_Event`, :class:`tlo.events.IndividualScopeEventMixin`
@@ -503,7 +521,7 @@ tlo.methods.tb module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x7fd214a0d950>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x123951cc0>
 
      **Functions (defined or overridden in class HSI_Tb_StartTreatment):**
 

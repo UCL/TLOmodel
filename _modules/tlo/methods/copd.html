@@ -175,7 +175,6 @@
 <span></span><span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 <span class="kn">from</span> <span class="nn">tlo</span> <span class="kn">import</span> <span class="n">Module</span><span class="p">,</span> <span class="n">Parameter</span><span class="p">,</span> <span class="n">Property</span><span class="p">,</span> <span class="n">Types</span><span class="p">,</span> <span class="n">logging</span>
@@ -193,12 +192,16 @@
 
 <span class="n">ch_lungfunction_cats</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">7</span><span class="p">))</span>
 
+<span class="n">gbd_causes_of_copd_represented_in_this_module</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;Chronic obstructive pulmonary disease&#39;</span><span class="p">,</span>
+<span class="p">}</span>
+
 
 <div class="viewcode-block" id="Copd"><a class="viewcode-back" href="../../../reference/tlo.methods.copd.html#tlo.methods.copd.Copd">[docs]</a><span class="k">class</span> <span class="nc">Copd</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The module responsible for determining Chronic Obstructive Pulmonary Diseases (COPD) status and outcomes.</span>
 <span class="sd">     and initialises parameters and properties associated with COPD plus functions and events related to COPD.&quot;&quot;&quot;</span>
 
-    <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">,</span> <span class="p">}</span>
+    <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">,</span> <span class="s1">&#39;Lifestyle&#39;</span><span class="p">}</span>
     <span class="n">ADDITIONAL_DEPENDENCIES</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
 
     <span class="n">METADATA</span> <span class="o">=</span> <span class="p">{</span>
@@ -208,14 +211,10 @@
         <span class="n">Metadata</span><span class="o">.</span><span class="n">USES_HEALTHBURDEN</span><span class="p">,</span>
     <span class="p">}</span>
 
-    <span class="n">gbd_causes_of_copd_represented_in_this_module</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;Other chronic respiratory diseases&#39;</span><span class="p">,</span>
-    <span class="p">}</span>
-
     <span class="n">CAUSES_OF_DEATH</span> <span class="o">=</span> <span class="p">{</span>
         <span class="c1"># Chronic Obstructive Pulmonary Diseases</span>
-        <span class="s1">&#39;COPD&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span><span class="n">gbd_causes</span><span class="o">=</span><span class="nb">sorted</span><span class="p">(</span><span class="n">gbd_causes_of_copd_represented_in_this_module</span><span class="p">),</span>
-                      <span class="n">label</span><span class="o">=</span><span class="s1">&#39;COPD&#39;</span><span class="p">)</span>
+        <span class="sa">f</span><span class="s1">&#39;COPD_cat</span><span class="si">{</span><span class="n">lung_f_category</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span><span class="n">gbd_causes</span><span class="o">=</span><span class="nb">sorted</span><span class="p">(</span><span class="n">gbd_causes_of_copd_represented_in_this_module</span><span class="p">),</span>
+                                            <span class="n">label</span><span class="o">=</span><span class="s1">&#39;COPD&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">lung_f_category</span> <span class="ow">in</span> <span class="n">ch_lungfunction_cats</span>
     <span class="p">}</span>
 
     <span class="n">CAUSES_OF_DISABILITY</span> <span class="o">=</span> <span class="p">{</span>
@@ -225,27 +224,75 @@
     <span class="p">}</span>
 
     <span class="n">PARAMETERS</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;prob_mod_exacerb&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;probability of moderate exacerbation given lung function, for each lung function category. &#39;</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;prob_sev_exacerb&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;probability of severe exacerbation given lung function, for each lung function category.&#39;</span>
+        <span class="p">),</span>
         <span class="s1">&#39;prob_progress_to_next_cat&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;probability of changing from a lower lung function category to a higher lung function category&#39;</span>
         <span class="p">),</span>
-        <span class="s1">&#39;prob_mod_exacerb&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;probability of moderate exacerbation given lung function, for each lungfunction category. &#39;</span>
+
+        <span class="s1">&#39;prob_will_die_sev_exacerbation_ge80&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;probability that a person equal to or greater than 80 years will die of severe exacerbation &#39;</span>
         <span class="p">),</span>
-        <span class="s1">&#39;prob_sev_exacerb&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;probability of severe exacerbation given lung function, for each lungfunction category.&#39;</span>
+        <span class="s1">&#39;prob_will_die_sev_exacerbation_7079&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;probability that a person between 70 to 79 years will die of severe exacerbation &#39;</span>
         <span class="p">),</span>
-        <span class="s1">&#39;prob_will_die_sev_exacerbation&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;probability that a person will die of severe exacerbation &#39;</span>
+        <span class="s1">&#39;prob_will_die_sev_exacerbation_6069&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;probability that a person between 60 to 99 years will die of severe exacerbation &#39;</span>
         <span class="p">),</span>
-        <span class="s1">&#39;prob_will_survive_given_oxygen&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;probability that an individual with severe copd will not die when given oxygen &#39;</span>
+        <span class="s1">&#39;prob_will_die_sev_exacerbation_5059&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;probability that a person between 50 to 59 years will die of severe exacerbation &#39;</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;prob_will_die_sev_exacerbation_4049&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;probability that a person between 40 to 49 years will die of severe exacerbation &#39;</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;prob_will_die_sev_exacerbation_3039&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;probability that a person between 30 to 39 years will die of severe exacerbation &#39;</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;prob_will_die_sev_exacerbation_lt30&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;probability that a person less than 30 years will die of severe exacerbation &#39;</span>
+        <span class="p">),</span>
+
+        <span class="s1">&#39;eff_oxygen&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;the effect of oxygen on individuals with severe exacerbation &#39;</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;rel_risk_progress_per_higher_cat&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;relative risk of progression to the next higher level of lung function for each higher level &#39;</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;rel_risk_tob&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;relative effect of tobacco on the rate of lung function progression&#39;</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;rel_risk_wood_burn_stove&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;relative risk of wood burn stove on the rate of lung function progression&#39;</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;prob_not_tob_lung_func_15_39&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;probability of lung function categories in individuals aged 15-39 and do not smoke tobacco&#39;</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;prob_not_tob_lung_func_40_59&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;probability of lung function categories in individuals aged 40-59 and do not smoke tobacco&#39;</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;prob_not_tob_lung_func_gr59&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;probability of lung function categories in individuals aged 60+ and do not smoke tobacco&#39;</span>
+        <span class="p">),</span>
+
+        <span class="s1">&#39;prob_tob_lung_func_15_39&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;probability of lung function categories in individuals aged 15-39 who smoke tobacco&#39;</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;prob_tob_lung_func_40_59&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;probability of lung function categories in individuals aged 40-59 who smoke tobacco&#39;</span>
+        <span class="p">),</span>
+        <span class="s1">&#39;prob_tob_lung_func_gr59&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;probability of lung function categories in individuals aged 60+ who smoke tobacco&#39;</span>
         <span class="p">)</span>
     <span class="p">}</span>
 
     <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;ch_lungfunction&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span> <span class="s1">&#39;Lung function of the person.&#39;</span>
-                               <span class="s1">&#39;NaN for those under 15; on a 7-point scale for others, from 0 (Perfect) to 6 (End-Stage&#39;</span>
+                               <span class="s1">&#39;0 for those under 15; on a 7-point scale for others, from 0 (Perfect) to 6 (End-Stage&#39;</span>
                                <span class="s1">&#39; COPD).&#39;</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="n">ch_lungfunction_cats</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">),</span>
         <span class="s1">&#39;ch_will_die_this_episode&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span>
@@ -315,7 +362,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s1">&#39;bronchodilater_inhaler&#39;</span><span class="p">:</span> <span class="mi">293</span><span class="p">,</span>
             <span class="s1">&#39;steroid_inhaler&#39;</span><span class="p">:</span> <span class="mi">294</span><span class="p">,</span>
-            <span class="s1">&#39;oxygen&#39;</span><span class="p">:</span> <span class="mi">301</span><span class="p">,</span>
+            <span class="s1">&#39;oxygen&#39;</span><span class="p">:</span> <span class="mi">127</span><span class="p">,</span>
             <span class="s1">&#39;aminophylline&#39;</span><span class="p">:</span> <span class="mi">292</span><span class="p">,</span>
             <span class="s1">&#39;amoxycillin&#39;</span><span class="p">:</span> <span class="mi">125</span><span class="p">,</span>
             <span class="s1">&#39;prednisolone&#39;</span><span class="p">:</span> <span class="mi">291</span>
@@ -324,8 +371,7 @@
 <div class="viewcode-block" id="Copd.do_logging"><a class="viewcode-back" href="../../../reference/tlo.methods.copd.html#tlo.methods.copd.Copd.do_logging">[docs]</a>    <span class="k">def</span> <span class="nf">do_logging</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Log current states.&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
-        <span class="n">counts</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">,</span> <span class="s1">&#39;ch_lungfunction&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
-        <span class="c1"># proportions = counts.unstack().apply(lambda row: row / row.sum(), axis=1).stack()</span>
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">,</span> <span class="s1">&#39;li_tob&#39;</span><span class="p">,</span> <span class="s1">&#39;ch_lungfunction&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="n">key</span><span class="o">=</span><span class="s1">&#39;copd_prevalence&#39;</span><span class="p">,</span>
             <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Proportion of alive persons in each COPD category currently (by age and sex)&#39;</span><span class="p">,</span>
@@ -367,78 +413,137 @@
         <span class="c1"># The chance (in a 3-month period) of progressing to the next (greater) category of ch_lungfunction</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__Prob_Progress_LungFunction__</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
             <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_progress_to_next_cat&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_progress_to_next_cat&#39;</span><span class="p">],</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;ch_lungfunction&#39;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;rel_risk_progress_per_higher_cat&#39;</span><span class="p">]</span> <span class="o">**</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;rel_risk_progress_per_higher_cat&#39;</span><span class="p">]</span> <span class="o">**</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;rel_risk_progress_per_higher_cat&#39;</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;rel_risk_progress_per_higher_cat&#39;</span><span class="p">]</span> <span class="o">**</span> <span class="mi">3</span><span class="p">))</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;rel_risk_progress_per_higher_cat&#39;</span><span class="p">]</span> <span class="o">**</span> <span class="mi">4</span><span class="p">))</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;rel_risk_progress_per_higher_cat&#39;</span><span class="p">]</span> <span class="o">**</span> <span class="mi">5</span><span class="p">)),</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;li_tob&#39;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;rel_risk_tob&#39;</span><span class="p">]),</span>
+            <span class="n">Predictor</span><span class="p">(</span><span class="s1">&#39;li_wood_burn_stove&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;rel_risk_wood_burn_stove&#39;</span><span class="p">])</span>
         <span class="p">)</span>
-
         <span class="c1"># The probability (in a 3-month period) of having a Moderate Exacerbation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__Prob_ModerateExacerbation__</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
             <span class="n">Predictor</span><span class="p">(</span>
-                <span class="s1">&#39;ch_lungfunction&#39;</span><span class="p">,</span>
-                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span>
+                <span class="s1">&#39;ch_lungfunction&#39;</span>
             <span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_mod_exacerb&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_mod_exacerb&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_mod_exacerb&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
-             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_mod_exacerb&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">])</span>
-             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_mod_exacerb&#39;</span><span class="p">][</span><span class="mi">4</span><span class="p">])</span>
-             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_mod_exacerb&#39;</span><span class="p">][</span><span class="mi">5</span><span class="p">])</span>
-             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_mod_exacerb&#39;</span><span class="p">][</span><span class="mi">6</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_mod_exacerb&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_mod_exacerb&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_mod_exacerb&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_mod_exacerb&#39;</span><span class="p">][</span><span class="mi">4</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_mod_exacerb&#39;</span><span class="p">][</span><span class="mi">5</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_mod_exacerb&#39;</span><span class="p">][</span><span class="mi">6</span><span class="p">])</span>
         <span class="p">)</span>
 
         <span class="c1"># The probability (in a 3-month period) of having a Severe Exacerbation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__Prob_SevereExacerbation__</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
             <span class="n">Predictor</span><span class="p">(</span>
-                <span class="s1">&#39;ch_lungfunction&#39;</span><span class="p">,</span>
-                <span class="n">conditions_are_exhaustive</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                <span class="n">conditions_are_mutually_exclusive</span><span class="o">=</span><span class="kc">True</span>
+                <span class="s1">&#39;ch_lungfunction&#39;</span>
             <span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_sev_exacerb&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_sev_exacerb&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_sev_exacerb&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
-             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_sev_exacerb&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">])</span>
-             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_sev_exacerb&#39;</span><span class="p">][</span><span class="mi">4</span><span class="p">])</span>
-             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_sev_exacerb&#39;</span><span class="p">][</span><span class="mi">5</span><span class="p">])</span>
-             <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_sev_exacerb&#39;</span><span class="p">][</span><span class="mi">6</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_sev_exacerb&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_sev_exacerb&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_sev_exacerb&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_sev_exacerb&#39;</span><span class="p">][</span><span class="mi">4</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_sev_exacerb&#39;</span><span class="p">][</span><span class="mi">5</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_sev_exacerb&#39;</span><span class="p">][</span><span class="mi">6</span><span class="p">])</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">__Prob_Will_Die_SevereExacerbation__</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="o">.</span><span class="n">multiplicative</span><span class="p">(</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;age_years&#39;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&gt;=80&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_will_die_sev_exacerbation_ge80&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(70, 79)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_will_die_sev_exacerbation_7079&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(60, 69)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_will_die_sev_exacerbation_6069&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(50, 59)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_will_die_sev_exacerbation_5059&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(40, 49)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_will_die_sev_exacerbation_4049&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(30, 39)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_will_die_sev_exacerbation_3039&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&lt;30&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_will_die_sev_exacerbation_lt30&#39;</span><span class="p">])</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">__Prob_OxygenEffect_On_Mortality__</span> <span class="o">=</span> <span class="n">LinearModel</span><span class="p">(</span>
+            <span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;eff_oxygen&#39;</span><span class="p">],</span>
+            <span class="n">Predictor</span><span class="p">(</span>
+                <span class="s1">&#39;age_years&#39;</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&gt;=80&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_will_die_sev_exacerbation_ge80&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(70, 79)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_will_die_sev_exacerbation_7079&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(60, 69)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_will_die_sev_exacerbation_6069&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(50, 59)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_will_die_sev_exacerbation_5059&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(40, 49)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_will_die_sev_exacerbation_4049&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;.between(30, 39)&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_will_die_sev_exacerbation_3039&#39;</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">when</span><span class="p">(</span><span class="s1">&#39;&lt;30&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_will_die_sev_exacerbation_lt30&#39;</span><span class="p">])</span>
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">init_lung_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the values for ch_lungfunction for an initial population described in `df`.&quot;&quot;&quot;</span>
-        <span class="c1"># For over-15s, random selection of ch_lungfunction</span>
-        <span class="n">idx_over15</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;=</span> <span class="mi">15</span><span class="p">]</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the values for ch_lungfunction for an initial population described in `df`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># store lung function categories</span>
         <span class="n">cats</span> <span class="o">=</span> <span class="n">ch_lungfunction_cats</span>
-        <span class="n">probs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">cats</span><span class="p">))</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">cats</span><span class="p">)</span>
-        <span class="n">cats_for_over15s</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">idx_over15</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">cats</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">probs</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">idx_over15</span><span class="p">))))</span>
+
+        <span class="c1"># lung function categories for non-smokers</span>
+        <span class="n">idx_15_39_not_tob</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">39</span><span class="p">))</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">li_tob</span><span class="p">]</span>
+        <span class="n">cats_15_39_not_tob</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="nb">zip</span><span class="p">(</span><span class="n">idx_15_39_not_tob</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">cats</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_not_tob_lung_func_15_39&#39;</span><span class="p">],</span>
+                                                   <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">idx_15_39_not_tob</span><span class="p">))))</span>
+
+        <span class="n">idx_40_59_not_tob</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="mi">59</span><span class="p">))</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">li_tob</span><span class="p">]</span>
+        <span class="n">cats_40_59_not_tob</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="nb">zip</span><span class="p">(</span><span class="n">idx_40_59_not_tob</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">cats</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_not_tob_lung_func_40_59&#39;</span><span class="p">],</span>
+                                                   <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">idx_40_59_not_tob</span><span class="p">))))</span>
+
+        <span class="n">idx_gr59_not_tob</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;=</span> <span class="mi">60</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">li_tob</span><span class="p">]</span>
+        <span class="n">cats_gr59_not_tob</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="nb">zip</span><span class="p">(</span><span class="n">idx_gr59_not_tob</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">cats</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_not_tob_lung_func_gr59&#39;</span><span class="p">],</span>
+                                                  <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">idx_gr59_not_tob</span><span class="p">))))</span>
+
+        <span class="c1"># lung function categories for smokers</span>
+        <span class="n">idx_15_39_tob</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">39</span><span class="p">))</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">li_tob</span><span class="p">]</span>
+        <span class="n">cats_15_39_tob</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">idx_15_39_tob</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">cats</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_tob_lung_func_15_39&#39;</span><span class="p">],</span>
+                                                                 <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">idx_15_39_tob</span><span class="p">))))</span>
+
+        <span class="n">idx_40_59_tob</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="mi">59</span><span class="p">))</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">li_tob</span><span class="p">]</span>
+        <span class="n">cats_40_59_tob</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">idx_40_59_tob</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">cats</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_tob_lung_func_40_59&#39;</span><span class="p">],</span>
+                                                                 <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">idx_40_59_tob</span><span class="p">))))</span>
+
+        <span class="n">idx_gr59_tob</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[(</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&gt;=</span> <span class="mi">60</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">li_tob</span><span class="p">]</span>
+        <span class="n">cats_gr59_tob</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">idx_gr59_tob</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">cats</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_tob_lung_func_gr59&#39;</span><span class="p">],</span>
+                                                               <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">idx_gr59_tob</span><span class="p">))))</span>
 
         <span class="c1"># For under-15s, assign the category that would be given at birth</span>
         <span class="n">idx_notover15</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">age_years</span> <span class="o">&lt;</span> <span class="mi">15</span><span class="p">]</span>
         <span class="n">cats_for_under15s</span> <span class="o">=</span> <span class="p">{</span><span class="n">idx</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">at_birth_lungfunction</span><span class="p">(</span><span class="n">idx</span><span class="p">)</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">idx_notover15</span><span class="p">}</span>
 
-        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">cats_for_over15s</span><span class="p">,</span> <span class="o">**</span><span class="n">cats_for_under15s</span><span class="p">})</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">cats_for_under15s</span><span class="p">,</span> <span class="o">**</span><span class="n">cats_15_39_not_tob</span><span class="p">,</span> <span class="o">**</span><span class="n">cats_40_59_not_tob</span><span class="p">,</span>
+                                               <span class="o">**</span><span class="n">cats_gr59_not_tob</span><span class="p">,</span> <span class="o">**</span><span class="n">cats_15_39_tob</span><span class="p">,</span> <span class="o">**</span><span class="n">cats_40_59_tob</span><span class="p">,</span> <span class="o">**</span><span class="n">cats_gr59_tob</span>
+                                               <span class="p">})</span>
 
     <span class="k">def</span> <span class="nf">at_birth_lungfunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns value for ch_lungfunction for the person at birth.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Returns value for ch_lungfunction for the person at birth.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="mi">0</span>
 
-    <span class="k">def</span> <span class="nf">prob_livesaved_given_treatment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">oxygen</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">amino_phylline</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the probability that a treatment prevents death during an exacerbation, according to the treatment</span>
-<span class="sd">        provided (oxygen and/or amino_phylline)&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">oxygen</span> <span class="ow">and</span> <span class="n">amino_phylline</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_will_survive_given_oxygen&#39;</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="n">oxygen</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_will_survive_given_oxygen&#39;</span><span class="p">]</span>
+    <span class="k">def</span> <span class="nf">prob_livesaved_given_treatment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">oxygen</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">aminophylline</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Returns the probability that a treatment prevents death during an exacerbation, according to the treatment</span>
+<span class="sd">        provided (we&#39;re considering oxygen only as there is no evidence of a mortality benefits on aminophylline) &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">oxygen</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__Prob_OxygenEffect_On_Mortality__</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="mf">0.0</span>
+            <span class="k">return</span> <span class="kc">False</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">disability_weight_given_lungfunction</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns `dict` with the mapping between a lung_function and a disability weight&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot; Returns `dict` with the mapping between a lung_function and a disability weight &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="mi">0</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
             <span class="mi">1</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
             <span class="mi">2</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
-            <span class="mi">3</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
-            <span class="mi">4</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span>
-            <span class="mi">5</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span>
-            <span class="mi">6</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span>
+            <span class="mi">3</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="mi">4</span><span class="p">:</span> <span class="mf">0.02</span><span class="p">,</span>
+            <span class="mi">5</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+            <span class="mi">6</span><span class="p">:</span> <span class="mf">0.4</span><span class="p">,</span>
         <span class="p">}</span>
 
     <span class="k">def</span> <span class="nf">will_progres_to_next_cat_of_lungfunction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
@@ -460,10 +565,10 @@
         <span class="n">will_get_ex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__Prob_SevereExacerbation__</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">,</span> <span class="n">squeeze_single_row_output</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">will_get_ex</span><span class="p">[</span><span class="n">will_get_ex</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">will_die_given_severe_exacerbation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return bool indicating if a person will die due to a severe exacerbation.&quot;&quot;&quot;</span>
-        <span class="n">death_rate_prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_will_die_sev_exacerbation&#39;</span><span class="p">]</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">death_rate_prob</span>
+    <span class="k">def</span> <span class="nf">will_die_given_severe_exacerbation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return bool indicating if a person will die due to a severe exacerbation.</span>
+<span class="sd">        :param df: pandas dataframe &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__Prob_Will_Die_SevereExacerbation__</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
 
 
 <span class="k">def</span> <span class="nf">eligible_to_progress_to_next_lung_function</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
@@ -520,7 +625,6 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; make individuals progress to a next higher lung function &quot;&quot;&quot;</span>
         <span class="n">idx_will_progress_to_next_category</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">will_progres_to_next_cat_of_lungfunction</span><span class="p">(</span>
             <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">eligible_to_progress_to_next_lung_function</span><span class="p">(</span><span class="n">df</span><span class="p">)])</span>
-
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx_will_progress_to_next_category</span><span class="p">,</span> <span class="s1">&#39;ch_lungfunction&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">increment_category</span><span class="p">(</span>
             <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx_will_progress_to_next_category</span><span class="p">,</span> <span class="s1">&#39;ch_lungfunction&#39;</span><span class="p">])</span></div></div>
 
@@ -536,8 +640,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">severe</span> <span class="o">=</span> <span class="n">severe</span></div>
 
 <div class="viewcode-block" id="CopdExacerbationEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.copd.html#tlo.methods.copd.CopdExacerbationEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span>
 
         <span class="c1"># Onset symptom (that will auto-resolve in two days)</span>
@@ -551,8 +655,8 @@
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">severe</span><span class="p">:</span>
             <span class="c1"># Work out if the person will die of this exacerbation (if not treated). If they die, they die the next day.</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">will_die_given_severe_exacerbation</span><span class="p">():</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ch_will_die_this_episode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">will_die_given_severe_exacerbation</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[[</span><span class="n">person_id</span><span class="p">]]):</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;ch_will_die_this_episode&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">CopdDeath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div></div>
 
 
@@ -565,23 +669,30 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="CopdDeath.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.copd.html#tlo.methods.copd.CopdDeath.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
-        <span class="n">person</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;is_alive&#39;</span><span class="p">,</span> <span class="s1">&#39;ch_will_die_this_episode&#39;</span><span class="p">]]</span>
-        <span class="c1"># Check if they should still die and, if so, cause the death</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="n">person</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;is_alive&#39;</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">,</span> <span class="s1">&#39;ch_will_die_this_episode&#39;</span><span class="p">,</span> <span class="s1">&#39;ch_lungfunction&#39;</span><span class="p">]]</span>
+        <span class="c1"># Check if an individual should still die and, if so, cause the death</span>
         <span class="k">if</span> <span class="n">person</span><span class="o">.</span><span class="n">is_alive</span> <span class="ow">and</span> <span class="n">person</span><span class="o">.</span><span class="n">ch_will_die_this_episode</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_death</span><span class="p">(</span>
                 <span class="n">individual_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
-                <span class="n">cause</span><span class="o">=</span><span class="s1">&#39;COPD&#39;</span><span class="p">,</span>
+                <span class="n">cause</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;COPD_cat</span><span class="si">{</span><span class="n">person</span><span class="o">.</span><span class="n">ch_lungfunction</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
                 <span class="n">originating_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
             <span class="p">)</span></div></div>
 
 
 <div class="viewcode-block" id="HSI_Copd_TreatmentOnSevereExacerbation"><a class="viewcode-back" href="../../../reference/tlo.methods.copd.html#tlo.methods.copd.HSI_Copd_TreatmentOnSevereExacerbation">[docs]</a><span class="k">class</span> <span class="nc">HSI_Copd_TreatmentOnSevereExacerbation</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot; HSI event for issuing treatment to all individuals with severe exacerbation. We first check the availability of</span>
+<span class="sd">    oxygen at the default facility(1a). If no oxygen is found we refer individuals to the next higher level facility</span>
+<span class="sd">    until either we find oxygen or we are at the highest facility level. Here facility levels are [&quot;1a&quot;, &quot;1b&quot;, &quot;2&quot;]&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="HSI_Copd_TreatmentOnSevereExacerbation.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.copd.html#tlo.methods.copd.HSI_Copd_TreatmentOnSevereExacerbation.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">facility_levels_index</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># an index to facility levels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">all_facility_levels</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;1a&quot;</span><span class="p">,</span> <span class="s2">&quot;1b&quot;</span><span class="p">,</span> <span class="s2">&quot;2&quot;</span><span class="p">]</span>  <span class="c1"># available facility levels</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;Copd_Treatment&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_facility_levels</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">facility_levels_index</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s2">&quot;Over5OPD&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({</span><span class="s1">&#39;general_bed&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">})</span></div>
 
@@ -590,14 +701,24 @@
 <span class="sd">         * Provide treatment: whatever is available at this facility at this time (no referral).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;oxygen&#39;</span><span class="p">]):</span>
+            <span class="c1"># refer to the next higher facility if the current facility has no oxygen</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">facility_levels_index</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">facility_levels_index</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_facility_levels</span><span class="p">):</span>
+                <span class="k">return</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_facility_levels</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">facility_levels_index</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-        <span class="c1"># Give oxygen and AminoPhylline, if possible, ... and cancel death if the treatment is successful.</span>
-        <span class="n">prob_treatment_success</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">prob_livesaved_given_treatment</span><span class="p">(</span>
-            <span class="n">oxygen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;oxygen&#39;</span><span class="p">]),</span>
-            <span class="n">amino_phylline</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;aminophylline&#39;</span><span class="p">])</span>
-        <span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">prob_treatment_success</span><span class="p">:</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ch_will_die_this_episode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div></div>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Give oxygen and AminoPhylline, if possible, ... and cancel death if the treatment is successful.</span>
+            <span class="n">prob_treatment_success</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">prob_livesaved_given_treatment</span><span class="p">(</span>
+                <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[[</span><span class="n">person_id</span><span class="p">]],</span>
+                <span class="n">oxygen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;oxygen&#39;</span><span class="p">]),</span>
+                <span class="n">aminophylline</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;aminophylline&#39;</span><span class="p">])</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">prob_treatment_success</span><span class="p">:</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ch_will_die_this_episode&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div></div>
 </pre></div>
 
            </div>
@@ -610,7 +731,7 @@
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

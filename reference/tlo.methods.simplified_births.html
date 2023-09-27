@@ -271,7 +271,7 @@ is that every pregnancy results in a birth.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ALTERNATIVE_TO : {‘NewbornOutcomes’, ‘Labour’, ‘PostnatalSupervisor’, ‘PregnancySupervisor’, ‘Contraception’}</p>
+<p>ALTERNATIVE_TO : {‘Contraception’, ‘Labour’, ‘NewbornOutcomes’, ‘PregnancySupervisor’, ‘PostnatalSupervisor’}</p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
 <p>METADATA : {}</p>
 <p><strong>Functions (defined or overridden in class SimplifiedBirths):</strong></p>
@@ -337,11 +337,11 @@ generator.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.simplified_births.SimplifiedBirthsPoll.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/simplified_births.html#SimplifiedBirthsPoll.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.simplified_births.SimplifiedBirthsPoll.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -385,7 +385,7 @@ appropriate.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

@@ -376,10 +376,10 @@
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘OesophagealCancer’: &lt;tlo.methods.causes.Cause object at 0x7fd214a567f0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘OesophagealCancer’: &lt;tlo.methods.causes.Cause object at 0x7fd214a56880&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘Lifestyle’, ‘HealthSystem’, ‘SymptomManager’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;}</p>
+<p>CAUSES_OF_DEATH : {‘OesophagealCancer’: &lt;tlo.methods.causes.Cause object at 0x12398ebb0&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘OesophagealCancer’: &lt;tlo.methods.causes.Cause object at 0x12398ec40&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘Demography’, ‘Lifestyle’, ‘HealthSystem’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class OesophagealCancer):</strong></p>
 <dl class="py method">
@@ -467,11 +467,11 @@ generator.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.oesophagealcancer.OesCancerMainPollingEvent.apply">
 <span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/oesophagealcancer.html#OesCancerMainPollingEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.oesophagealcancer.OesCancerMainPollingEvent.apply" title="Permalink to this definition">¶</a></dt>
-<dd><p>Apply this event to the population.</p>
-<p>Must be implemented by subclasses.</p>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>population</strong> – the current population</p>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
 </dd>
 </dl>
 </dd></dl>
@@ -652,7 +652,7 @@ constructor, but may also take further keyword arguments.</p>
   <div role="contentinfo">
     <p>
       <span class="lastupdated">
-        Last updated on Aug 11, 2023.
+        Last updated on Sep 27, 2023.
       </span>
 
     </p>

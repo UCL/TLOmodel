@@ -195,6 +195,7 @@ Tb
 **
 
 * ``Prevention_Ipt`` at facility level 1a with appointment footprint: ``Over5OPD``.
+* ``Test_Clinical`` at facility level 1a with appointment footprint: ``Under5OPD``.
 * ``Test_FollowUp`` at facility level 1a with appointment footprint: ``TBFollowUp``.
 * ``Test_Screening`` at facility level 1a with appointment footprint: ``Over5OPD``.
 * ``Test_Xray`` at facility level 1b with appointment footprint: ``DiagRadio``.
