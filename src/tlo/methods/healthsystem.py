@@ -2769,6 +2769,9 @@ class HealthSystemSummaryCounter:
             },
         )
 
+        # Sort equipment within levels, and log them
+        for key in self._equip_by_level:
+            self._equip_by_level[key] = sorted(self._equip_by_level[key])
         logger_summary.info(
             key="Equipment",
             description="Sets of used equipment for each facility level in this calendar year.",
