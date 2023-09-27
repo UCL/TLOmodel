@@ -76,6 +76,8 @@ class ImpactOfTbDaHx(BaseScenario):
             "Baseline": {
                 'Tb': {
                     'scenario': 0,
+                    'first_line_test': 'sputum',
+                    'second_line_test': 'xpert',
                 },
             },
         # overrides availability of Xpert
@@ -90,16 +92,22 @@ class ImpactOfTbDaHx(BaseScenario):
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
+                    'first_line_test': 'sputum',
+                    'second_line_test': 'xpert',
                 },
             },
             "CXR scale_up": {
                 'Tb': {
                     'scenario': 3,
+                    'first_line_test': 'sputum',
+                    'second_line_test': 'xpert',
                 }
             },
             "Outreach services": {
                 'Tb': {
                      'scenario': 0,
+                    'first_line_test': 'sputum',
+                    'second_line_test': 'xpert',
                      'probability_community_chest_xray': 0.1,
                      'scaling_factor_WHO': 1.9,
                 }
