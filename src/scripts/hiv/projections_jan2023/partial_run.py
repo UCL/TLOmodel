@@ -36,7 +36,7 @@ class ImpactOfTbDaHx(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_scenarios_test_run18_partial',
+            'filename': 'Tb_DAH_scenarios_test_run19_partial',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -48,7 +48,6 @@ class ImpactOfTbDaHx(BaseScenario):
                 'tlo.methods.hiv': logging.INFO,
             }
         }
-
     def modules(self):
         return [
             demography.Demography(resourcefilepath=self.resources),
@@ -97,15 +96,11 @@ class ImpactOfTbDaHx(BaseScenario):
             "CXR scale_up": {
                 'Tb': {
                     'scenario': 3,
-                    'first_line_test': 'sputum',
-                    'second_line_test': 'xpert',
                 }
             },
             "Outreach services": {
                 'Tb': {
                      'scenario': 0,
-                     'first_line_test': 'sputum',
-                     'second_line_test': 'xpert',
                      'probability_community_chest_xray': 0.1,
                      'scaling_factor_WHO': 1.9,
                 }
