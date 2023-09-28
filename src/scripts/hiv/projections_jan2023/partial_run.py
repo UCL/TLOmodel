@@ -33,7 +33,6 @@ class ImpactOfTbDaHx(BaseScenario):
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 5
-      #{'number_of_draws': 5, 'runs_per_draw': 4}
     def log_configuration(self):
         return {
             'filename': 'Tb_DAH_scenarios_test_run21_partial',
@@ -81,8 +80,8 @@ class ImpactOfTbDaHx(BaseScenario):
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                    'first_line_test': 'sputum',
-                    'second_line_test': 'sputum',
+                    #'first_line_test': 'sputum',
+                   # 'second_line_test': 'sputum',
                 },
             },
         # overrides availability of CXR
