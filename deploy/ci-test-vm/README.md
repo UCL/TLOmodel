@@ -11,15 +11,14 @@ We will deploy the runners on Azure virtual machines, but you can also use Vagra
 ### Using Vagrant for local testing
 
 - Fork TLOmodel to your personal account - this is where you'll install the runner.
-- Install Vagrant (requires VirtualBox)
+- Install Vagrant (requires VirtualBox). If installing on Windows Subsystem for Linux under Windows you will also need to [follow the instructions here](https://developer.hashicorp.com/vagrant/docs/other/wsl) for enabling Windows access.
 - Install Ansible
  
 You can use conda environment for Ansible:
 
 ```sh
-conda create -n ansible python=3.8
+conda create -n ansible -c conda-forge ansible
 conda activate ansible
-conda install -c conda-forge ansible
 ```
 
 Ansible logs in to the virtual machine using SSH. As you might make/destroy the VM many times, the guest fingerprint changes and then Ansible errors. To prevent this, set:
