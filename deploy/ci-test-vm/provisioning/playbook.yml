@@ -1,9 +1,9 @@
 - hosts: all
   vars:
-    - github_account: UCL
-    - github_repo: TLOmodel
-    - runner_user: gha
-    - runner_workdir: /mnt/tlo
+    github_account: UCL
+    github_repo: TLOmodel
+    runner_user: gha
+    runner_workdir: /mnt/tlo
 
   tasks:
 
