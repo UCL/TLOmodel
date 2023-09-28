@@ -26,10 +26,10 @@ warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 class ImpactOfTbDaHx(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 2030 #random.randint(0, 50000)
+        self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2012, 12, 31)
-        self.pop_size = 800
+        self.pop_size = 600
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 4
