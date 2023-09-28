@@ -3032,11 +3032,6 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive'] or pd.isnull(df.at[person_id, 'la_date_most_recent_delivery']):
             return None
 
-        if (self.sim.date - mni[person_id]['pnc_date']).days > 2:
-            mni[person_id]['pnc_date'] = pd.NaT
-            self.module.apply_risk_of_early_postpartum_death(person_id)
-            return
-
         # Ensure that women who were scheduled to receive early PNC have received care prior to passing through
             # PostnatalWeekOneMaternalEvent
 
