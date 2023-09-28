@@ -1278,8 +1278,8 @@ class HealthSystem(Module):
         # If there is no specified tclose time then set this to a week after topen.
         # This should be a boolean, not int! Still struggling to get a boolean variable from resource file
 
-        print("Hsi module ", hsi_event.module)
-        if hsi_event.module is 'PregnancySupervisor' or 'Labour' or 'PostnatalSupervisor' or 'NewbornOutcomes': 
+        # Clinical time-constraints are embedded in tclose for these modules, do not overwrite their tclose
+        if hsi_event.module == ('PregnancySupervisor' or 'Labour' or 'PostnatalSupervisor' or 'NewbornOutcomes'):
             if tclose is None:
                 tclose = topen + DateOffset(days=7)
         else:
