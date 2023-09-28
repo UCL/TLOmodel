@@ -59,7 +59,7 @@
      ansible.builtin.file:
        path: "/mnt"
        state: directory
-       mode: '0777'
+       mode: '1777'
 
    - name: run github actions runner role
      with_sequence: count="{{ n_runners }}"
