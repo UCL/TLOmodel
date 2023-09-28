@@ -115,10 +115,10 @@ sim.register(
 # print(f'the putout is{healthburden3}')
 # healthburden3.to_excel( "_tb_dalys3.xlsx")
 
-output = parse_log_file(Path("./outputs/sample3/Tb_DAH_impact_scenarios__2023-09-18T132400.log"))
-healthburden4=output["tlo.methods.healthburden"]['dalys_stacked']
-print(f'the putout is{healthburden4}')
-healthburden4.to_excel( "_tb_dalys4.xlsx")
+output = parse_log_file(Path("./outputs/sample1/Tb_DAH_scenarios_test_run09_partial__2023-09-14T135620.log"))
+healthburden1=output["tlo.methods.healthburden"]['dalys_stacked']
+print(f'the putout is{healthburden1}')
+healthburden1.to_excel( "_tb_dalys_partial.xlsx")
 
 
 # # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
