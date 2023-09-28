@@ -33,7 +33,7 @@ class ImpactOfTbDaHx(BaseScenario):
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 4
-
+      #{'number_of_draws': 5, 'runs_per_draw': 4}
     def log_configuration(self):
         return {
             'filename': 'Tb_DAH_scenarios_test_run20_partial',
