@@ -107,7 +107,7 @@ class ImpactOfTbDaHx(BaseScenario):
                      'probability_community_chest_xray': 0.1,
                      'scaling_factor_WHO': 2.1,
                 }
-            },
+            }
         }
 if __name__ == '__main__':
     from tlo.cli import scenario_run

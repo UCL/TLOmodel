@@ -55,7 +55,7 @@ class ImpactOfTbDaHx(BaseScenario):
             hiv.Hiv(resourcefilepath=self.resources),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
-            #simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
+            simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
             healthsystem.HealthSystem(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
