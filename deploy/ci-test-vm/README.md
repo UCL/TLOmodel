@@ -10,6 +10,8 @@ We will deploy the runners on Azure virtual machines, but you can also use Vagra
 
 ### Using Vagrant for local testing
 
+You can use Vagrant to create a virtual machine on your own machine for quick testing.
+
 - Fork TLOmodel to your personal account - this is where you'll install the runner.
 - Install Vagrant (requires VirtualBox). If installing on Windows Subsystem for Linux under Windows you will also need to [follow the instructions here](https://developer.hashicorp.com/vagrant/docs/other/wsl) for enabling Windows access.
 - Install Ansible
@@ -33,13 +35,12 @@ To match the self-hosted running VMs deployed on Azure, we use the Ubuntu 22.04 
 vagrant up
 ```
 
-Finally, provision the VM (uses Ansible):
+The Vagrant VM will automatically get provisioned the first time you set it up.
+If yu need to reprovision the VM after editing the Ansible playbook you can run the command
 
 ```sh
 vagrant provision
 ```
-
-(can also be rerun if you change playbook)
 
 `vagrant provision` will use the playbook defined in the Vagrantfile. 
 
@@ -65,11 +66,12 @@ Then export the token before running Ansible playbook to install the runner:
 
 ```sh
 export PERSONAL_ACCESS_TOKEN=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
-ansible-playbook -i ./.vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory provisioning/gha-runner.yml --extra-vars "n_runners=2"
+ansible-playbook -i tlo, -u azureuser provisioning/gha-runner.yml --extra-vars "n_runners=2"
 ```
 
 where `n_runners` has to be set to the number of runners you want to install.
-The argument to `-i` is the path to the Ansible inventory you need to access the virtual machine, either a local one or the remote Azure one.
+The argument to `-i` can be either a comma-separated list of hosts where to run the playbook on (this list has to end with a command if you want to run the playbook on a single host, hosts can be specified by IP addresses or hosts names defined in your local SSH or network configurations) or the path to the Ansible inventory you need to access the virtual machine, either a local one or the remote Azure one.
+The argument to `-u` is the user of the machine where to run the playbook on, it can be empty if it is the same as the current user.
 
 Once GHA runners have been installed, check they are running:
 
@@ -98,7 +100,9 @@ then halt/up the vm to refresh.
 
 * Vagrant creates a file for the Ansible inventory. Path is:
 
+```
 .vagrant/provisioners/ansible/inventory/vagrant_ansible_inventory
+```
 
 e.g.
 
