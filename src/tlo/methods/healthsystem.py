@@ -1277,10 +1277,16 @@ class HealthSystem(Module):
         """
         # If there is no specified tclose time then set this to a week after topen.
         # This should be a boolean, not int! Still struggling to get a boolean variable from resource file
-        if self.tclose_overwrite == 1:
-            tclose = topen + pd.to_timedelta(self.tclose_days_offset_overwrite, unit='D')
-        elif tclose is None:
-            tclose = topen + DateOffset(days=7)
+
+        print("Hsi module ", hsi_event.module)
+        if hsi_event.module is 'PregnancySupervisor' or 'Labour' or 'PostnatalSupervisor' or 'NewbornOutcomes': 
+            if tclose is None:
+                tclose = topen + DateOffset(days=7)
+        else:
+            if self.tclose_overwrite == 1:
+                tclose = topen + pd.to_timedelta(self.tclose_days_offset_overwrite, unit='D')
+            elif tclose is None:
+                tclose = topen + DateOffset(days=7)
 
         # Check topen is not in the past
         assert topen >= self.sim.date
