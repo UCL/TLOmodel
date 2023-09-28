@@ -1,6 +1,6 @@
 """Analyse scenarios for impact of TB-related development assistance for health."""
 
-# python src/scripts/hiv/projections_jan2023/analysis_tb_DAH_scenarios.py --scenario-outputs-folder outputs\nic503@york.ac.uk
+# python src/scripts/hiv/projections_jan2023/analysis_tb_DAH_scenarios.py --scenario-outputs-folder outputs\newton.chagoma@york.ac.uk
 import argparse
 from typing import Optional, Iterable, List
 import datetime
@@ -20,12 +20,12 @@ from tlo.analysis.utils import (
 )
 
 resourcefilepath = Path("./resources")
-outputspath = Path("./outputs/nic503@york.ac.uk")
+outputspath = Path("./outputs/newton.chagoma@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
 #Tb_DAH_scenarios_test_run12_partial-2023-09-25T185022Z
-results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_run12_partial-2023-09-25T185022Z", outputspath)[-1]
+results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_run09_partial-2023-09-25T081023Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
