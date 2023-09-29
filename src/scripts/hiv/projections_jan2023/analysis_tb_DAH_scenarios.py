@@ -20,13 +20,13 @@ from tlo.analysis.utils import (
 )
 
 resourcefilepath = Path("./resources")
-outputspath = Path("./outputs/nic503@york.ac.uk")
+outputspath = Path("./outputs/newton.chagoma@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
 #Tb_DAH_scenarios_test_run09_partial-2023-09-14T125620Z
 #tb_DAH_scenarios-2023-09-18T132119Z
-results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_run09_partial-2023-09-14T125620Z", outputspath)[-1]
+results_folder = get_scenario_outputs("impact_analysis_tb_DAH-2023-09-20T100910Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)

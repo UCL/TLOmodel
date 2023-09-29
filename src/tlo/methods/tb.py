@@ -1461,7 +1461,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         super().__init__(module, frequency=DateOffset(years=100))
 
     def apply(self, population):
-
         p = self.module.parameters
         scenario = p["scenario"]
 
@@ -1471,7 +1470,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         # baseline scenario--no change to parameters
         if scenario == 0:
             return
-
         # sets availability of xpert to nil
         if scenario == 1:
             self.sim.modules['HealthSystem'].override_availability_of_consumables(

@@ -92,33 +92,32 @@ sim.register(
 #sim.simulate(end_date=end_date)
 
 # parse the results
-#output = parse_log_file(sim.log_filepath)
-# output = parse_log_file(Path("./outputs/sampleo/Tb_DAH_impact_scenarios__2023-09-18T132403.log"))
-# #tb=output["tlo.methods.tb"]
-# healthburden=output["tlo.methods.healthburden"]['dalys_stacked']
-# #healthburden.to_excel( "_tb_dalys.xlsx")
-# print(f'the putout is{healthburden}')
+output = parse_log_file(sim.log_filepath)
+output = parse_log_file(Path("./outputs/sampleo/Tb_DAH_impact_scenarios__2023-09-18T132403.log"))
+tb=output["tlo.methods.tb"]
+healthburden=output["tlo.methods.healthburden"]['dalys_stacked']
+healthburden.to_excel( "_tb_dalys.xlsx")
+print(f'the putout is{healthburden}')
 #
-# output = parse_log_file(Path("./outputs/sample1/Tb_DAH_impact_scenarios__2023-09-18T132403.log"))
-#
-# healthburden1=output["tlo.methods.healthburden"]['dalys_stacked']
-# print(f'the putout is{healthburden1}')
-# healthburden1.to_excel( "_tb_dalys1.xlsx")
-
-# output = parse_log_file(Path("./outputs/sample2/Tb_DAH_impact_scenarios__2023-09-18T132354.log"))
-# healthburden2=output["tlo.methods.healthburden"]['dalys_stacked']
-# print(f'the putout is{healthburden2}')
-# healthburden2.to_excel( "_tb_dalys2.xlsx")
-
-# output = parse_log_file(Path("./outputs/sample3/Tb_DAH_impact_scenarios__2023-09-18T132400.log"))
-# healthburden3=output["tlo.methods.healthburden"]['dalys_stacked']
-# print(f'the putout is{healthburden3}')
-# healthburden3.to_excel( "_tb_dalys3.xlsx")
-
-output = parse_log_file(Path("./outputs/sample1/Tb_DAH_scenarios_test_run09_partial__2023-09-14T135620.log"))
+output = parse_log_file(Path("./outputs/sample1/Tb_DAH_impact_scenarios__2023-09-27T014450.log"))
 healthburden1=output["tlo.methods.healthburden"]['dalys_stacked']
 print(f'the putout is{healthburden1}')
-healthburden1.to_excel( "_tb_dalys_partial.xlsx")
+healthburden1.to_excel( "_tb_dalys1.xlsx")
+
+output = parse_log_file(Path("./outputs/sample2/Tb_DAH_impact_scenarios__2023-09-18T132354.log"))
+healthburden2=output["tlo.methods.healthburden"]['dalys_stacked']
+print(f'the putout is{healthburden2}')
+healthburden2.to_excel( "_tb_dalys2.xlsx")
+
+output = parse_log_file(Path("./outputs/sample3/Tb_DAH_impact_scenarios__2023-09-18T132400.log"))
+healthburden3=output["tlo.methods.healthburden"]['dalys_stacked']
+print(f'the putout is{healthburden3}')
+healthburden3.to_excel( "_tb_dalys3.xlsx")
+
+output = parse_log_file(Path("./outputs/sample4/Tb_DAH_impact_scenarios__2023-09-18T132400.log"))
+healthburden4=output["tlo.methods.healthburden"]['dalys_stacked']
+print(f'the putout is{healthburden4}')
+healthburden4.to_excel( "_tb_dalys_4.xlsx")
 
 
 # # save the results, argument 'wb' means write using binary mode. use 'rb' for reading file
