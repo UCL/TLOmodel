@@ -751,6 +751,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
             'Under5OPD' if person_age_years < 5 else 'Over5OPD': 1}
         )
         self.ACCEPTED_FACILITY_LEVEL = '1a' if (self.facility_level == '1a') else '1b'
+        self.EQUIPMENT = {}  # no specific equipment required
 
     def apply(self, person_id, squeeze_factor):
 
@@ -848,6 +849,7 @@ class HSI_Malaria_rdt_community(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Malaria_Test'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
         self.ACCEPTED_FACILITY_LEVEL = '0'
+        self.EQUIPMENT = {}  # no specific equipment required
 
     def apply(self, person_id, squeeze_factor):
 
@@ -900,6 +902,7 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
             ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.EQUIPMENT = {}  # no specific equipment required
 
     def apply(self, person_id, squeeze_factor):
 
@@ -992,6 +995,7 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
             ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
+        self.EQUIPMENT = {'Drip stand', 'Haemoglobinometer', 'Analyser, Combined Chemistry and Electrolytes'}
 
     def apply(self, person_id, squeeze_factor):
 
@@ -1045,6 +1049,7 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Malaria_Prevention_Iptp'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.EQUIPMENT = {}  # no specific equipment required
 
     def apply(self, person_id, squeeze_factor):
 
