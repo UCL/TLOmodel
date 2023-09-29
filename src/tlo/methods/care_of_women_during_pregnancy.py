@@ -728,6 +728,7 @@ class CareOfWomenDuringPregnancy(Module):
                 # We use a temporary variable to store if proteinuria is detected
                 proteinuria_diagnosed = True
                 logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'dipstick'})
+                hsi_event.EQUIPMENT.update({'Urine dip Stick'})
 
         # The process is repeated for blood pressure monitoring
         if self.rng.random_sample() < params['prob_intervention_delivered_bp']:
@@ -736,6 +737,7 @@ class CareOfWomenDuringPregnancy(Module):
                                                                        hsi_event=hsi_event):
                 hypertension_diagnosed = True
                 logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'bp_measurement'})
+                hsi_event.EQUIPMENT.update({'Sphygmomanometer'})
 
                 if not df.at[person_id, 'ac_gest_htn_on_treatment'] and\
                     (df.at[person_id, 'ps_htn_disorders'] != 'none') and pd.isnull(mni[person_id]['hypertension'
@@ -901,6 +903,7 @@ class CareOfWomenDuringPregnancy(Module):
             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hb_screen'})
 
             hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_test_equipment'])
+            hsi_event.EQUIPMENT.update({'Haemoglobinometer'})
 
             # We run the test through the dx_manager and if a woman has anaemia and its detected she will be admitted
             # for further care
@@ -1054,20 +1057,25 @@ class CareOfWomenDuringPregnancy(Module):
 
                 # If the test accurately detects a woman has gestational diabetes the consumables are recorded and
                 # she is referred for treatment
-                if avail and self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
+                if avail:
+
+                    # TODO: this actually might be a fasting blood glucose test (not using glucometer)
+                    hsi_event.EQUIPMENT.update({'Glucometer'})
+
+                    if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                              dx_tests_to_run='blood_test_glucose', hsi_event=hsi_event):
 
-                    logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'gdm_screen'})
-                    mni[person_id]['anc_ints'].append('gdm_screen')
+                        logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'gdm_screen'})
+                        mni[person_id]['anc_ints'].append('gdm_screen')
 
-                    # We assume women with a positive GDM screen will be admitted (if they are not already receiving
-                    # outpatient care)
-                    if df.at[person_id, 'ac_gest_diab_on_treatment'] == 'none':
+                        # We assume women with a positive GDM screen will be admitted (if they are not already receiving
+                        # outpatient care)
+                        if df.at[person_id, 'ac_gest_diab_on_treatment'] == 'none':
 
-                        # Store onset after diagnosis as daly weight is tied to diagnosis
-                        pregnancy_helper_functions.store_dalys_in_mni(person_id, mni, 'gest_diab_onset',
-                                                                      self.sim.date)
-                        df.at[person_id, 'ac_to_be_admitted'] = True
+                            # Store onset after diagnosis as daly weight is tied to diagnosis
+                            pregnancy_helper_functions.store_dalys_in_mni(person_id, mni, 'gest_diab_onset',
+                                                                          self.sim.date)
+                            df.at[person_id, 'ac_to_be_admitted'] = True
 
     def interventions_delivered_each_visit_from_anc2(self, hsi_event):
         """This function contains a collection of interventions that are delivered to women every time they attend ANC
@@ -1454,6 +1462,11 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             #  =================================== INTERVENTIONS ====================================================
+            # Update equipment used during first ANC visit not directly related to interventions
+            self.EQUIPMENT.update(
+                {'Weighing scale', 'Height Pole (Stadiometer)', 'MUAC tape', 'Measuring tapes',
+                 'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ'})
+
             # First all women, regardless of ANC contact or gestation, undergo urine and blood pressure measurement
             # and depression screening
             self.module.screening_interventions_delivered_at_every_contact(hsi_event=self)
@@ -1472,6 +1485,8 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
 
             # If the woman presents after 20 weeks she is provided interventions she has missed by presenting late
             if mother.ps_gestational_age_in_weeks > 19:
+                self.EQUIPMENT.update({'Stethoscope, foetal, monaural, Pinard, plastic'})
+
                 self.module.point_of_care_hb_testing(hsi_event=self)
                 self.module.albendazole_administration(hsi_event=self)
                 self.module.iptp_administration(hsi_event=self)
@@ -1536,7 +1551,12 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             #  =================================== INTERVENTIONS ====================================================
-            # First we administer the administer the interventions all women will receive at this contact regardless of
+            # Update equipment used during  ANC visit not directly related to interventions
+            self.EQUIPMENT.update(
+                {'Weighing scale', 'Measuring tapes',
+                 'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ'})
+
+            # First we administer the interventions all women will receive at this contact regardless of
             # gestational age
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
             self.module.tetanus_vaccination(hsi_event=self)
@@ -1620,6 +1640,8 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             #  =================================== INTERVENTIONS ====================================================
+            self.EQUIPMENT.update({'Weighing scale', 'Measuring tapes', 'Stethoscope, foetal, monaural, Pinard, plastic'})
+
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
 
@@ -1692,6 +1714,9 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             #  =================================== INTERVENTIONS ====================================================
+            self.EQUIPMENT.update({'Weighing scale', 'Measuring tapes',
+                                   'Stethoscope, foetal, monaural, Pinard, plastic'})
+
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
 
@@ -1760,6 +1785,10 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             #  =================================== INTERVENTIONS ====================================================
+            self.EQUIPMENT.update(
+                {'Weighing scale', 'Measuring tapes', 'Stethoscope, foetal, monaural, Pinard, plastic'
+                 'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ'})
+
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
 
@@ -1827,6 +1856,9 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
 
             #  =================================== INTERVENTIONS ====================================================
+            self.EQUIPMENT.update({'Weighing scale', 'Measuring tapes',
+                                   'Stethoscope, foetal, monaural, Pinard, plastic'})
+
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
 
             if mother.ps_gestational_age_in_weeks < 40:
@@ -1886,6 +1918,9 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             #  =================================== INTERVENTIONS ====================================================
+            self.EQUIPMENT.update({'Weighing scale', 'Measuring tapes',
+                                   'Stethoscope, foetal, monaural, Pinard, plastic'})
+
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
 
@@ -1938,6 +1973,9 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
         if can_anc_run:
             self.module.anc_counter[8] += 1
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
+
+            self.EQUIPMENT.update({'Weighing scale', 'Measuring tapes',
+                                   'Stethoscope, foetal, monaural, Pinard, plastic'})
 
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
 
