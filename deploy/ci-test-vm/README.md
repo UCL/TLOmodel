@@ -29,6 +29,13 @@ Ansible logs in to the virtual machine using SSH. As you might make/destroy the 
 export ANSIBLE_HOST_KEY_CHECKING=False
 ```
 
+We need a collection of third-party roles for Ansible.
+These should be installed before provisioning by running:
+
+```
+ansible-galaxy collection install devsec.hardening
+```
+
 To match the self-hosted running VMs deployed on Azure, we use the Ubuntu 22.04 LTS box:
 
 ```sh

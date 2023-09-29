@@ -1,9 +1,12 @@
 - hosts: all
+  collections:
+    - devsec.hardening
   vars:
     github_account: UCL
     github_repo: TLOmodel
     runner_user: gha
     runner_workdir: /mnt/tlo
+    ssh_deny_users: "{{ runner_user }}"
 
   tasks:
 
@@ -72,3 +75,6 @@
        runner_name: "{{ ansible_hostname }}-{{ item }}"
        runner_extra_config_args: "--work {{ runner_workdir }}/{{ item }}/_work"
        reinstall_runner: no
+
+  roles:
+    - ssh_hardening
