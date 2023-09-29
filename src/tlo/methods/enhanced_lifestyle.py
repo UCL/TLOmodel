@@ -2,7 +2,6 @@
 Lifestyle module
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
-import time
 from pathlib import Path
 from typing import Dict, List
 
