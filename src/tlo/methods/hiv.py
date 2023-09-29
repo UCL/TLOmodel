@@ -2237,7 +2237,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.number_of_occurrences = 0
         self.EQUIPMENT = {'Drip stand', 'Stool, adjustable height', 'Autoclave', 'Bipolar Diathermy Machine',
-                          'Bed, adult'}
+                          'Bed, adult', 'Trolley, patient'}
         # todo operating table
 
     def apply(self, person_id, squeeze_factor):
