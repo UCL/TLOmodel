@@ -1721,6 +1721,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Screening"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.EQUIPMENT = {}  # no specific equipment required
 
     def apply(self, person_id, squeeze_factor):
         """Do the screening and referring to next tests"""
@@ -1794,9 +1795,11 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             assert test in ["sputum", "xpert"]
 
             if test == "sputum":
+
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
                     {"Over5OPD": 1, "LabTBMicro": 1}
                 )
+                self.EQUIPMENT = {'Sputum Collection box', 'Ordinary Microscope'}
 
                 # relevant test depends on smear status (changes parameters on sensitivity/specificity
                 if smear_status:
@@ -1816,9 +1819,12 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         )
 
             elif test == "xpert":
+
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
                     {"Over5OPD": 1}
                 )
+                self.EQUIPMENT = {'Sputum Collection box', 'Gene Expert (16 Module)'}
+
                 # relevant test depends on smear status (changes parameters on sensitivity/specificity
                 if smear_status:
                     test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
@@ -1835,6 +1841,8 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         # if none of the tests are available, try again for sputum
         # requires another appointment - added in ACTUAL_APPT_FOOTPRINT
         if test_result is None:
+            self.EQUIPMENT = {}  # no specific equipment required
+
             if smear_status:
                 test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                     dx_tests_to_run="tb_sputum_test_smear_positive", hsi_event=self
@@ -1847,9 +1855,12 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
                 {"Over5OPD": 2, "LabTBMicro": 1}
             )
+            self.EQUIPMENT = {'Sputum Collection box', 'Ordinary Microscope'}
 
         # if still no result available, rely on clinical diagnosis
         if test_result is None:
+            self.EQUIPMENT = {}  # no specific equipment required
+
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="tb_clinical", hsi_event=self
             )
@@ -1956,6 +1967,7 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Clinical"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 0.5})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.EQUIPMENT = {}  # no specific equipment required
 
     def apply(self, person_id, squeeze_factor):
         """ Do the screening and referring process """
@@ -2023,6 +2035,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = {'X-ray machine', 'X-ray viewer'}  # no specific equipment required
 
     def apply(self, person_id, squeeze_factor):
 
@@ -2050,6 +2063,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         if test_result is None:
 
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.EQUIPMENT = {}  # no specific equipment required
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_Xray_level2(person_id=person_id, module=self.module),
@@ -2094,6 +2108,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
+        self.EQUIPMENT = {'X-ray machine', 'X-ray viewer'}  # no specific equipment required
 
     def apply(self, person_id, squeeze_factor):
 
@@ -2121,6 +2136,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         if test_result is None:
 
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
+            self.EQUIPMENT = {}  # no specific equipment required
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_ClinicalDiagnosis(person_id=person_id, module=self.module),
@@ -2162,6 +2178,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "Tb_Treatment"
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.EQUIPMENT = {}  # no specific equipment required
         self.number_of_occurrences = 0
 
     @property
@@ -2310,6 +2327,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_FollowUp"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"TBFollowUp": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.EQUIPMENT = {}  # no specific equipment required
 
     def apply(self, person_id, squeeze_factor):
         p = self.module.parameters
@@ -2363,6 +2381,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
                 {"TBFollowUp": 1, "LabTBMicro": 1}
             )
+            self.EQUIPMENT = {'Sputum Collection box', 'Ordinary Microscope'}
 
             # choose test parameters based on smear status
             if person["tb_smear"]:
@@ -2379,6 +2398,11 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
                     {"TBFollowUp": 1, "LabTBMicro": 1, "LabMolec": 1}
                 )
+
+                self.EQUIPMENT = {'Sputum Collection box', 'Ordinary Microscope'}
+                self.EQUIPMENT = {'Sputum Collection box', 'Gene Expert (16 Module)'}
+
+
                 if person["tb_smear"]:
                     xperttest_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                         dx_tests_to_run="tb_xpert_test_smear_positive", hsi_event=self
@@ -2441,6 +2465,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Prevention_Ipt"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.EQUIPMENT = {}  # no equipment required
         self.number_of_occurrences = 0
 
     def apply(self, person_id, squeeze_factor):
