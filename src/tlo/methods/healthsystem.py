@@ -1279,7 +1279,7 @@ class HealthSystem(Module):
         # This should be a boolean, not int! Still struggling to get a boolean variable from resource file
 
         # Clinical time-constraints are embedded in tclose for these modules, do not overwrite their tclose
-        if hsi_event.module == ('PregnancySupervisor' or 'Labour' or 'PostnatalSupervisor' or 'NewbornOutcomes'):
+        if hsi_event.module == ('CareOfWomenDuringPregnancy' or 'Labour' or 'PostnatalSupervisor' or 'NewbornOutcomes'):
             if tclose is None:
                 tclose = topen + DateOffset(days=7)
         else:
