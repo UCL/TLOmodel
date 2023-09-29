@@ -830,6 +830,11 @@ class HealthSystem(Module):
         self.tclose_overwrite = self.parameters['tclose_overwrite']
         self.tclose_days_offset_overwrite = self.parameters['tclose_days_offset_overwrite']
 
+        # Ensure name of policy we want to consider before/after switch is among the policies loaded
+        # in the self.parameters['priority_rank']
+        assert self.parameters['policy_name'] in self.parameters['priority_rank'].keys()
+        assert self.parameters['policy_name_post_switch'] in self.parameters['priority_rank'].keys()
+
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
 
