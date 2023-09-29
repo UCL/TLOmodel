@@ -574,7 +574,7 @@ class CareOfWomenDuringPregnancy(Module):
 
     def antenatal_care_scheduler(self, individual_id, visit_to_be_scheduled, recommended_gestation_next_anc):
         """
-        This function is responsible for scheduling a woman's next ANC contact in the schedule if she chooses to seek
+        This function is responsible for scheduling a womans next ANC contact in the schedule if she chooses to seek
         care again.  It is called by each of the ANC HSIs.
         :param individual_id: individual_id
         :param visit_to_be_scheduled: Number if next visit in the schedule (2-8)
@@ -1572,8 +1572,8 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=3,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            # Then we administer interventions that are due to be delivered at this woman's gestational age, which may
-            # be in addition to intervention delivered in ANC2
+            # Then we administer interventions that are due to be delivered at this womans gestational age, which may be
+            # in addition to intervention delivered in ANC2
             if mother.ps_gestational_age_in_weeks < 26:
                 self.module.albendazole_administration(hsi_event=self)
                 self.module.iptp_administration(hsi_event=self)
@@ -1621,7 +1621,7 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
     antenatal care contact (ANC3). It is scheduled by the HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact for
     women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 26
     weeks gestation. This event delivers the interventions to women which are part of ANC3. Additionally interventions
-    that should be delivered according to a woman's gestational age and position in her ANC schedule are delivered.
+    that should be delivered according to a womans gestational age and position in her ANC schedule are delivered.
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
