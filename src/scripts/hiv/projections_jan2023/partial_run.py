@@ -90,11 +90,11 @@ class ImpactOfTbDaHx(BaseScenario):
                     'scenario': 2,
                 },
             },
-            "CXR scale_up": {
-                'Tb': {
-                    'scenario': 3,
-                }
-            },
+            # "CXR scale_up": {
+            #     'Tb': {
+            #         'scenario': 3,
+            #     }
+            #},
             "Outreach services": {
                 'Tb': {
                      'scenario': 0,
