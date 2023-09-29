@@ -1646,7 +1646,8 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             #  =================================== INTERVENTIONS ====================================================
-            self.EQUIPMENT.update({'Weighing scale', 'Measuring tapes', 'Stethoscope, foetal, monaural, Pinard, plastic'})
+            self.EQUIPMENT.update({'Weighing scale', 'Measuring tapes',
+                                   'Stethoscope, foetal, monaural, Pinard, plastic'})
 
             gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
             self.module.interventions_delivered_each_visit_from_anc2(hsi_event=self)
