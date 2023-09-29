@@ -1553,7 +1553,7 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
             #  =================================== INTERVENTIONS ====================================================
             # Update equipment used during  ANC visit not directly related to interventions
             self.EQUIPMENT.update(
-                {'Weighing scale', 'Measuring tapes',
+                {'Weighing scale', 'Measuring tapes', 'Stethoscope, foetal, monaural, Pinard, plastic'
                  'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ'})
 
             # First we administer the interventions all women will receive at this contact regardless of
