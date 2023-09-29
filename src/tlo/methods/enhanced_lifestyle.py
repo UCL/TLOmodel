@@ -2,6 +2,7 @@
 Lifestyle module
 Documentation: 04 - Methods Repository/Method_Lifestyle.xlsx
 """
+import time
 from pathlib import Path
 from typing import Dict, List
 
@@ -1944,58 +1945,53 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # these properties are applicable to individuals 15+ years
         log_by_age_15up = ['li_low_ex', 'li_mar_stat', 'li_ex_alc', 'li_bmi', 'li_tob']
 
+        log_dict = dict()
         for _property in all_lm_keys:
+            prop_log_start_time = time.time()
             if _property in log_by_age_15up:
                 if _property in cat_by_rural_urban_props:
                     data = df.loc[df.is_alive & (df.age_years >= 15)].groupby(by=[
-                        df.loc[df.is_alive & (df.age_years >= 15), 'li_urban'],
-                        df.loc[df.is_alive & (df.age_years >= 15), 'sex'],
-                        df.loc[df.is_alive & (df.age_years >= 15), _property],
-                        df.loc[df.is_alive & (df.age_years >= 15), 'age_range'],
-                    ]).size()
+                        'li_urban', 'sex', _property, 'age_range']).size()
                 else:
                     data = df.loc[df.is_alive & (df.age_years >= 15)].groupby(by=[
-                        df.loc[df.is_alive & (df.age_years >= 15), 'sex'],
-                        df.loc[df.is_alive & (df.age_years >= 15), _property],
-                        df.loc[df.is_alive & (df.age_years >= 15), 'age_range'],
-                    ]).size()
+                        'sex', _property, 'age_range']).size()
 
             elif _property == 'li_in_ed':
                 data = df.loc[df.is_alive & df.age_years.between(5, 19)].groupby(by=[
-                    df.loc[df.is_alive & df.age_years.between(5, 19), 'sex'],
-                    df.loc[df.is_alive & df.age_years.between(5, 19), 'li_wealth'],
-                    df.loc[df.is_alive & df.age_years.between(5, 19), _property],
-                    df.loc[df.is_alive & df.age_years.between(5, 19), 'age_years']]).size()
+                    'sex', 'li_wealth', _property, 'age_years']).size()
 
             elif _property == 'li_ed_lev':
                 data = df.loc[df.is_alive & df.age_years.between(15, 49)].groupby(by=[
-                    df.loc[df.is_alive & df.age_years.between(15, 49), 'sex'],
-                    df.loc[df.is_alive & df.age_years.between(15, 49), 'li_wealth'],
-                    df.loc[df.is_alive & df.age_years.between(15, 49), _property],
-                    df.loc[df.is_alive & df.age_years.between(15, 49), 'age_years']]).size()
+                    'sex', 'li_wealth', _property, 'age_years']).size()
 
             elif _property == 'li_is_sexworker':
                 data = df.loc[df.is_alive & (df.age_years.between(15, 49))].groupby(by=[
-                    df.loc[df.is_alive & (df.age_years.between(15, 49)), 'sex'],
-                    df.loc[df.is_alive & (df.age_years.between(15, 49)), _property],
-                    df.loc[df.is_alive & (df.age_years.between(15, 49)), 'age_range'],
-                ]).size()
+                    'sex', _property, 'age_range']).size()
 
             elif _property in cat_by_rural_urban_props:
                 # log all properties that are also categorised by rural or urban in addition to ex and age groups
                 data = df.loc[df.is_alive].groupby(by=[
-                    df.loc[df.is_alive, 'li_urban'],
-                    df.loc[df.is_alive, 'sex'],
-                    df.loc[df.is_alive, _property],
-                    df.loc[df.is_alive, 'age_range'],
-                ]).size()
+                    'li_urban', 'sex', _property, 'age_range']).size()
 
             else:
                 # log all other remaining properties
                 data = df.loc[df.is_alive].groupby(by=['sex', _property, 'age_range']).size()
+            prop_log_end_time = time.time()
+            prop_time = prop_log_end_time - prop_log_start_time
 
+            log_dict['property_time'] = prop_time
+
+            logger_time = time.time()
             # log data
             logger.info(
                 key=_property,
                 data=flatten_multi_index_series_into_dict_for_logging(data)
+            )
+            log_time = time.time()
+            log_time = log_time - logger_time
+            log_dict['logger_time'] = log_time
+
+            logger.info(
+                key='logger_timing',
+                data=log_dict
             )
