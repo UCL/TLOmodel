@@ -1198,6 +1198,7 @@ class CareOfWomenDuringPregnancy(Module):
         # If a woman is not truly anaemic but the FBC returns a result of anaemia, due to tests specificity, we
         # assume the reported anaemia is mild
         hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_test_equipment'])
+        hsi_event.EQUIPMENT.update({'Analyser, Haematology'})
 
         test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                 dx_tests_to_run='full_blood_count_hb', hsi_event=hsi_event)
@@ -1237,6 +1238,8 @@ class CareOfWomenDuringPregnancy(Module):
         # If the blood is available we assume the intervention can be delivered
         if avail and sf_check:
             pregnancy_helper_functions.log_met_need(self, 'blood_tran', hsi_event)
+
+            hsi_event.EQUIPMENT.update({'Drip stand', 'Infusion pump'})
 
             # If the woman is receiving blood due to anaemia we apply a probability that a transfusion of 2 units
             # RBCs will correct this woman's severe anaemia
@@ -1282,6 +1285,7 @@ class CareOfWomenDuringPregnancy(Module):
         # If they are available then the woman is started on treatment
         if avail:
             pregnancy_helper_functions.log_met_need(self, 'iv_htns', hsi_event)
+            hsi_event.EQUIPMENT.update({'Drip stand', 'Infusion pump'})
 
             # We assume women treated with antihypertensives would no longer be severely hypertensive- meaning they
             # are not at risk of death from severe gestational hypertension in the PregnancySupervisor event
@@ -1319,6 +1323,7 @@ class CareOfWomenDuringPregnancy(Module):
         if avail and sf_check:
             df.at[individual_id, 'ac_mag_sulph_treatment'] = True
             pregnancy_helper_functions.log_met_need(self, 'mag_sulph', hsi_event)
+            hsi_event.EQUIPMENT.update({'Drip stand', 'Infusion pump'})
 
     def antibiotics_for_prom(self, individual_id, hsi_event):
         """
@@ -1340,6 +1345,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         if avail and sf_check:
             df.at[individual_id, 'ac_received_abx_for_prom'] = True
+            hsi_event.EQUIPMENT.update({'Drip stand', 'Infusion pump'})
 
     def ectopic_pregnancy_treatment_doesnt_run(self, hsi_event):
         """
@@ -2012,6 +2018,9 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def apply(self, person_id, squeeze_factor):
+
+        # TODO: n.b. equipment not added for this HSI but i think it will be deleted with the next PR
+
         df = self.sim.population.props
         mother = df.loc[person_id]
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -2593,6 +2602,9 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
             self.module, self, self.module.item_codes_preg_consumables, core='post_abortion_care_core',
             optional='post_abortion_care_optional')
 
+        # TODO: equipment set for dilation and cutterage? oxygen?
+        self.EQUIPMENT.update({'Manual Vacuum aspiration Set', 'Drip stand', 'Infusion pump'})
+
         # Check HCW availability to deliver surgical removal of retained products
         sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
                                                                                    sf='retained_prod',
@@ -2684,6 +2696,7 @@ class HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(HSI_Event, Ind
         if avail:
             self.sim.modules['PregnancySupervisor'].mother_and_newborn_info[person_id]['delete_mni'] = True
             pregnancy_helper_functions.log_met_need(self.module, 'ep_case_mang', self)
+            self.EQUIPMENT.update({'Laparotomy Set'})
 
             # For women who have sought care after they have experienced rupture we use this treatment variable to
             # reduce risk of death (women who present prior to rupture do not pass through the death event as we assume
