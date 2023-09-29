@@ -1945,9 +1945,7 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # these properties are applicable to individuals 15+ years
         log_by_age_15up = ['li_low_ex', 'li_mar_stat', 'li_ex_alc', 'li_bmi', 'li_tob']
 
-        log_dict = dict()
         for _property in all_lm_keys:
-            prop_log_start_time = time.time()
             if _property in log_by_age_15up:
                 if _property in cat_by_rural_urban_props:
                     data = df.loc[df.is_alive & (df.age_years >= 15)].groupby(by=[
@@ -1976,22 +1974,9 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             else:
                 # log all other remaining properties
                 data = df.loc[df.is_alive].groupby(by=['sex', _property, 'age_range']).size()
-            prop_log_end_time = time.time()
-            prop_time = prop_log_end_time - prop_log_start_time
 
-            log_dict['property_time'] = prop_time
-
-            logger_time = time.time()
             # log data
             logger.info(
                 key=_property,
                 data=flatten_multi_index_series_into_dict_for_logging(data)
-            )
-            log_time = time.time()
-            log_time = log_time - logger_time
-            log_dict['logger_time'] = log_time
-
-            logger.info(
-                key='logger_timing',
-                data=log_dict
             )
