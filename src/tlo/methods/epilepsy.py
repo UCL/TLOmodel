@@ -591,6 +591,8 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
+        # no equipment needed
+
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
@@ -622,6 +624,7 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
                                                                        tclose=None,
                                                                        priority=0)
 
+        # todo: may need to consider iv diazepam as another hsi
 
 class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
 
@@ -636,6 +639,8 @@ class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self._DEFAULT_APPT_FOOTPRINT
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self._counter_of_failed_attempts_due_to_unavailable_medicines = 0
+
+        # no equipment needed
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
