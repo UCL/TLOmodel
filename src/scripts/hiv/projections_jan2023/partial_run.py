@@ -32,10 +32,10 @@ class ImpactOfTbDaHx(BaseScenario):
         self.pop_size = 10000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 2
+        self.runs_per_draw = 3
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_scenarios_test_run04_partial',
+            'filename': 'Tb_DAH_scenarios_test_run06_partial',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -80,8 +80,8 @@ class ImpactOfTbDaHx(BaseScenario):
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                   # 'first_line_test': 'sputum',
-                   #'second_line_test': 'sputum',
+                   'first_line_test': 'sputum',
+                   'second_line_test': 'sputum',
                 },
             },
         # overrides availability of CXR
