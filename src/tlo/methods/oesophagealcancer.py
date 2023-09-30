@@ -644,6 +644,9 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
+        # I think this will need endoscope and biopsy needle.  Also lab equipment needed to perform histology.
+        # I can't see endoscope in equipment list but it may be given a slightly different name
+
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
@@ -713,6 +716,8 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
 
+        # equipment need here will be surgery
+
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
@@ -771,6 +776,8 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
 
+        # equipment: I assume endoscope needed for this
+
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
@@ -826,6 +833,10 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
+
+        # when radiology available then palliative radiology may be performed but suggest we don't need to include yet
+        # not sure what equipment needed for Endoscopic stent placement or Feeding tube which are done as palliative
+        # measures
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
