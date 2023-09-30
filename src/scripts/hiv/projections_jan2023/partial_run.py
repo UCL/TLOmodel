@@ -80,8 +80,8 @@ class ImpactOfTbDaHx(BaseScenario):
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                    'first_line_test': 'sputum',
-                    'second_line_test': 'sputum',
+                   # 'first_line_test': 'sputum',
+                   #'second_line_test': 'sputum',
                 },
             },
         # overrides availability of CXR
@@ -98,8 +98,8 @@ class ImpactOfTbDaHx(BaseScenario):
             "Outreach services": {
                 'Tb': {
                      'scenario': 0,
-                     'probability_community_chest_xray': 0.01,
-                    #'scaling_factor_WHO': 1.9,
+                     'probability_community_chest_xray': 0.1,
+                     'scaling_factor_WHO': 1.9,
                 }
             },
         }
