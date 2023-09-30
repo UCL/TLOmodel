@@ -28,14 +28,14 @@ class ImpactOfTbDaHx(BaseScenario):
         super().__init__()
         self.seed = 0 #random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2012, 12, 31)
-        self.pop_size = 600
+        self.end_date = Date(2013, 12, 31)
+        self.pop_size = 10000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 2
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_scenarios_test_run03_partial',
+            'filename': 'Tb_DAH_scenarios_test_run04_partial',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -74,6 +74,8 @@ class ImpactOfTbDaHx(BaseScenario):
             "Baseline": {
                 'Tb': {
                     'scenario': 0,
+                    'first_line_test': 'sputum',
+                    'second_line_test': 'xpert',
                 },
             },
         # overrides availability of Xpert
@@ -99,6 +101,8 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                      'scenario': 0,
                      'probability_community_chest_xray': 0.1,
+                    'first_line_test': 'sputum',
+                    'second_line_test': 'xpert',
                      #'scaling_factor_WHO': 1.9,
                 }
             },
