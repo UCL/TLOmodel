@@ -103,7 +103,7 @@ class ImpactOfTbDaHx(BaseScenario):
                      'probability_community_chest_xray': 0.1,
                     'first_line_test': 'sputum',
                     'second_line_test': 'xpert',
-                     #'scaling_factor_WHO': 1.9,
+                    'scaling_factor_WHO': 1.9,
                 }
             },
         }
