@@ -179,13 +179,17 @@ class SymptomManager(Module):
 
     PARAMETERS = {
         'generic_symptoms_spurious_occurrence': Parameter(
-            Types.DATA_FRAME, 'probability and duration of spurious occureneces of generic symptoms')
+            Types.DATA_FRAME, 'probability and duration of spurious occureneces of generic symptoms'),
+        'spurious_symptoms': Parameter(
+            Types.BOOL, 'whether or not there will be the spontaneous occurrence of generic symptoms. '
+                        'NB. This is over-ridden if a module key-word argument is provided.'),
     }
 
-    def __init__(self, name=None, resourcefilepath=None, spurious_symptoms=False):
+    def __init__(self, name=None, resourcefilepath=None, spurious_symptoms=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.spurious_symptoms = spurious_symptoms
+        self.spurious_symptoms = None
+        self.arg_spurious_symptoms = spurious_symptoms
         self._persons_with_newly_onset_symptoms = set()
 
         self.generic_symptoms = {
@@ -219,6 +223,8 @@ class SymptomManager(Module):
         """Read in the generic symptoms and register them"""
         self.parameters['generic_symptoms_spurious_occurrence'] = \
             pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_GenericSymptoms_and_HealthSeeking.csv')
+        self.load_parameters_from_dataframe(
+            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_SymptomManager.csv'))
 
     def register_symptom(self, *symptoms_to_register: Symptom):
         """
@@ -291,6 +297,10 @@ class SymptomManager(Module):
         #     assert set(u.columns) == set(modules_that_can_impose_symptoms)
         #     assert not u.any().any()
 
+        # Determine whether there will be spurious symptoms. Use parameter value, unless a module kwarg provided.
+        self.spurious_symptoms = self.parameters['spurious_symptoms'] \
+            if self.arg_spurious_symptoms is None else self.arg_spurious_symptoms
+
     def initialise_simulation(self, sim):
         """Schedule SpuriousSymptomsOnset/Resolve if the parameter 'spurious_symptoms' is True"""
         if self.spurious_symptoms:
@@ -357,7 +367,7 @@ class SymptomManager(Module):
 
         # Check that a sensible or no date_of_onset is provided
         assert (date_of_onset is None) or (
-            (type(date_of_onset) == pd.Timestamp)
+            (isinstance(date_of_onset, pd.Timestamp))
             and (date_of_onset >= self.sim.date)
         )
 
@@ -438,7 +448,7 @@ class SymptomManager(Module):
         df = self.sim.population.props
 
         # Check that symptom string is OK
-        assert type(symptom_string) == str
+        assert isinstance(symptom_string, str)
         assert symptom_string in self.symptom_names, 'Symptom not registered'
 
         # Does not have symptom:

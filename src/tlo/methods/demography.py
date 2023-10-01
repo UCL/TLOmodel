@@ -30,6 +30,7 @@ from tlo.methods.causes import (
     Cause,
     collect_causes_from_disease_modules,
     create_mappers_from_causes_to_label,
+    get_gbd_causes_not_represented_in_disease_modules,
 )
 from tlo.util import DEFAULT_MOTHER_ID, create_age_range_lookup, get_person_id_to_inherit_from
 
@@ -40,6 +41,10 @@ logger.setLevel(logging.INFO)
 # Detailed logger
 logger_detail = logging.getLogger(f"{__name__}.detail")
 logger_detail.setLevel(logging.INFO)
+
+# Population scale factor logger
+logger_scale_factor = logging.getLogger('tlo.methods.population')
+logger_scale_factor.setLevel(logging.INFO)
 
 # Limits for setting up age range categories
 MIN_AGE_FOR_RANGE = 0
@@ -79,6 +84,9 @@ class Demography(Module):
         #  will store causes of death in GBD not represented in the simulation
         self.other_death_poll = None    # will hold pointer to the OtherDeathPoll object
         self.districts = None  # will store all the districts in a list
+
+    OPTIONAL_INIT_DEPENDENCIES = {'ScenarioSwitcher'}  # <-- Forces the 'ScenarioSwitcher' to be the first registered
+    #                                                        module, if it's registered.
 
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
         min_age=MIN_AGE_FOR_RANGE,
@@ -298,8 +306,8 @@ class Demography(Module):
         sim.schedule_event(self.other_death_poll, sim.date)
 
         # Log the initial population scaling-factor (to the logger of this module and that of `tlo.methods.population`)
-        for _logger in (logger,  logging.getLogger('tlo.methods.population')):
-            _logger.info(
+        for _logger in (logger, logger_scale_factor):
+            _logger.warning(
                 key='scaling_factor',
                 data={'scaling_factor': 1.0 / self.initial_model_to_data_popsize_ratio},
                 description='The data-to-model scaling factor (based on the initial population size, used to '
@@ -388,7 +396,8 @@ class Demography(Module):
 
         # 2) Define the "Other" tlo_cause of death (that is managed in this module by the OtherDeathPoll)
         self.gbd_causes_of_death_not_represented_in_disease_modules = \
-            self.get_gbd_causes_of_death_not_represented_in_disease_modules(self.causes_of_death)
+            get_gbd_causes_not_represented_in_disease_modules(causes=self.causes_of_death,
+                                                              gbd_causes=self.gbd_causes_of_death)
         self.causes_of_death['Other'] = Cause(
             label='Other',
             gbd_causes=self.gbd_causes_of_death_not_represented_in_disease_modules
@@ -473,18 +482,6 @@ class Demography(Module):
         if 'HealthSystem' in self.sim.modules:
             if person.hs_is_inpatient:
                 self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
-
-    def get_gbd_causes_of_death_not_represented_in_disease_modules(self, causes_of_death):
-        """
-        Find the causes of death in the GBD datasets that are not represented within the causes of death defined in the
-        modules registered in this simulation.
-        :return: set of gbd_causes of death that are not represented in disease modules
-        """
-        all_gbd_causes_in_sim = set()
-        for c in causes_of_death.values():
-            all_gbd_causes_in_sim.update(c.gbd_causes)
-
-        return self.gbd_causes_of_death - all_gbd_causes_in_sim
 
     def create_mappers_from_causes_of_death_to_label(self):
         """Use a helper function to create mappers for causes of death to label."""

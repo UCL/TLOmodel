@@ -9,6 +9,7 @@ from tlo.methods import (
     cardio_metabolic_disorders,
     care_of_women_during_pregnancy,
     contraception,
+    copd,
     demography,
     depression,
     diarrhoea,
@@ -41,7 +42,7 @@ from tlo.methods import (
 def fullmodel(
     resourcefilepath: Path,
     use_simplified_births: bool = False,
-    module_kwargs: Optional[Dict[str, Dict]] = None,
+    module_kwargs: Optional[Dict[str, Dict]] = {},
 ) -> List[Module]:
     """Return a list of modules that should be registered in a run of the full model.
 
@@ -68,11 +69,7 @@ def fullmodel(
     >>>     module_kwargs={"HealthSystem": {"disable": True}},
     >>> )
     """
-    if module_kwargs is None:
-        module_kwargs = {
-            "SymptomManager": {"spurious_symptoms": True},
-            "HealthSystem": {"mode_appt_constraints": 1},
-        }
+
     module_classes = [
         # Standard modules
         demography.Demography,
@@ -118,6 +115,7 @@ def fullmodel(
         #  - Injuries
         rti.RTI,
         #  - Other Non-Communicable Conditions
+        copd.Copd,
         depression.Depression,
         epilepsy.Epilepsy,
     ]

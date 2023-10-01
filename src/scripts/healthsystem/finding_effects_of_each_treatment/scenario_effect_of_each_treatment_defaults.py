@@ -1,17 +1,26 @@
 """
 This scenario runs the full model under a set of scenario in which each one TREATMENT_ID is excluded.
 
+This version of the scenario represents _actual_ healthcare capacity/performance and normal healthcare seeking.
+
+
 * No spurious symptoms
-* Appts Contraints: Mode 0 (No Constraints)
-* Consumables Availability: All
-* Health care seeking forced to occur for every symptom
+* Appts Constraints: Mode 0 (No Constraints - so can estimate total demand for appointments)
+* use_funded_or_actual_staffing = 'funded_plus' (so can estimate total demand for appointments)
+* Consumables Availability: Default
+* Health care seeking as per defaults
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_force_healthcare_seeking.py```
+```
+tlo batch-submit
+ src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_defaults.py
+```
 
 or locally using:
-    ```tlo scenario-run src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_force_healthcare_seeking.py
-    ```
+```
+tlo scenario-run
+ src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment_defaults.py
+```
 
 """
 from pathlib import Path
@@ -28,11 +37,11 @@ class EffectOfEachTreatment(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2014, 12, 31)
-        self.pop_size = 50_000
+        self.end_date = Date(2020, 1, 1)
+        self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 3  # <- repeated this many times (per draw)
+        self.runs_per_draw = 5
 
     def log_configuration(self):
         return {
@@ -50,24 +59,28 @@ class EffectOfEachTreatment(BaseScenario):
     def modules(self):
         return fullmodel(
             resourcefilepath=self.resources,
-            module_kwargs={"HealthSystem": {"mode_appt_constraints": 0}}
+            module_kwargs={
+                "HealthSystem": {
+                    "mode_appt_constraints": 1,
+                    "use_funded_or_actual_staffing": "actual",
+                },
+                "SymptomManager": {
+                    "spurious_symptoms": True
+                },
+            }
         )
 
     def draw_parameters(self, draw_number, rng):
         return {
             'HealthSystem': {
                 'Service_Availability': list(self._scenarios.values())[draw_number],
-                'cons_availability': 'all',
-                },
-            'HealthSeekingBehaviour': {
-                'force_any_symptom_to_lead_to_healthcareseeking': True
+                'cons_availability': 'default',
                 },
         }
 
     def _get_scenarios(self) -> Dict[str, List[str]]:
         """Return the Dict with values for the parameter `Service_Availability` keyed by a name for the scenario.
-        The sequences of scenarios systematically omits one of the TREATMENT_ID's that is defined in the model. The
-        complete list of TREATMENT_ID's is found by running `tlo_hsi_events.py`."""
+        The sequences of scenarios systematically omits one of the TREATMENT_ID's that is defined in the model."""
 
         # Generate list of TREATMENT_IDs and filter to the resolution needed
         treatments = get_filtered_treatment_ids(depth=1)
@@ -76,7 +89,7 @@ class EffectOfEachTreatment(BaseScenario):
         # treatment is omitted
         service_availability = dict({"Everything": ["*"], "Nothing": []})
         service_availability.update(
-            {f"No {t}": [x for x in treatments if x != t] for t in treatments}
+            {f"No {t.replace('_*', '*')}": [x for x in treatments if x != t] for t in treatments}
         )
 
         return service_availability
