@@ -1,19 +1,22 @@
 ## Overview
 
-A test/staging environment for Github Actions TLOmodel workflows.
+We use Github Actions self-hosted runners to run TLOmodel tests. 
+We have many end-to-end tests which take a long time to complete. 
+Using self-hosted runners means we do not use enterprise account credits and are able to manage the capacity ourselves. 
 
-The VM has two cores, and we setup two runners for each core to reflect how runners are deployed in live environment.
+We've written Ansible playbooks, targeting Ubuntu 22.04 LTS (the latest LTS, at time of writing), to install the runners and set up the Python environment. 
+The playbooks are used to install runners on Azure virtual machines.
+
+You'll also find a Vagrantfile allowing you to use [Vagrant](https://www.vagrantup.com/) to run a self-hosted runner on your own machine, which can be use for testing. The VM has two cores, and we setup two runners for each core to reflect how runners are deployed in live environment.
 
 ## Setup
 
-We will deploy the runners on Azure virtual machines, but you can also use Vagrant to create virtual machines on your own computer for local testing.
-
 ### Using Vagrant for local testing
 
-You can use Vagrant to create a virtual machine on your own machine for quick testing.
+You can use Vagrant to create a virtual machine on your own machine for quick testing. We have tested on Linux and MacOS. Windows is not supported.
 
-- Fork TLOmodel to your personal account - this is where you'll install the runner.
-- Install Vagrant (requires VirtualBox). If installing on Windows Subsystem for Linux under Windows you will also need to [follow the instructions here](https://developer.hashicorp.com/vagrant/docs/other/wsl) for enabling Windows access.
+- Fork TLOmodel to your personal account - this is where you'll register the runner.
+- Install Vagrant (requires VirtualBox).
 - Install Ansible
  
 You can use conda environment for Ansible:
@@ -29,11 +32,10 @@ Ansible logs in to the virtual machine using SSH. As you might make/destroy the 
 export ANSIBLE_HOST_KEY_CHECKING=False
 ```
 
-We need a collection of third-party roles for Ansible.
-These should be installed before provisioning by running:
+We need a collection of third-party roles for Ansible. These should be installed before provisioning by running:
 
 ```
-ansible-galaxy collection install devsec.hardening
+ansible-galaxy install -r provisioning/requirements.yml
 ```
 
 To match the self-hosted running VMs deployed on Azure, we use the Ubuntu 22.04 LTS box:
@@ -43,13 +45,11 @@ vagrant up
 ```
 
 The Vagrant VM will automatically get provisioned the first time you set it up.
-If yu need to reprovision the VM after editing the Ansible playbook you can run the command
+If you need to reprovision the VM after editing the Ansible playbook you can run the command:
 
 ```sh
 vagrant provision
 ```
-
-`vagrant provision` will use the playbook defined in the Vagrantfile. 
 
 ### Using an Azure virtual machine
 
@@ -73,7 +73,7 @@ Then export the token before running Ansible playbook to install the runner:
 
 ```sh
 export PERSONAL_ACCESS_TOKEN=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
-ansible-playbook -i tlo, -u azureuser provisioning/gha-runner.yml --extra-vars "n_runners=2"
+ansible-playbook -i <hostname-or-ip-address>, -u azureuser provisioning/gha-runner.yml --extra-vars "n_runners=2"
 ```
 
 where `n_runners` has to be set to the number of runners you want to install.
