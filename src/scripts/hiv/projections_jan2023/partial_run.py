@@ -89,7 +89,7 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                     'scenario': 2,
                     'first_line_test': 'sputum',
-                    'second_line_test': 'sputum',
+                    'second_line_test': 'xpert',
                 },
             },
             # "CXR scale_up": {
