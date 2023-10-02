@@ -51,12 +51,6 @@
      args:
        creates: /usr/local/bin/tox
 
-   - name: install virtualenv
-     become: true
-     ansible.builtin.shell: python3.8 -m pip install virtualenv
-     args:
-       creates: /usr/local/bin/virtualenv
-
    - name: make /mnt writable by everyone
      become: true
      ansible.builtin.file:
