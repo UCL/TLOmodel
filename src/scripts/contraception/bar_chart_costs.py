@@ -12,7 +12,7 @@ import numpy as np
 
 def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_costs_with,
                in_pop_interv_costs_with, in_ppfp_interv_costs_with, in_mwk_to_usd_exchange_rate,
-               in_reduce_magnitude=1e3):
+               in_plot_costs_by_periods__incl_totals_bool, in_reduce_magnitude=1e3):
     def rgb_perc(nmb_r, nmb_g, nmb_b):
         return nmb_r / 255, nmb_g / 255, nmb_b / 255
         """
@@ -22,7 +22,12 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
     # Where will output fig go - by default, wherever this script is run
     outputpath = Path("./outputs")  # folder for convenience of storing outputs
     # output file name
-    output_filename = str('Consumables and Interventions Costs ' + in_id[0] + "_" + in_id[1] + in_suffix + '.png')
+    if in_plot_costs_by_periods__incl_totals_bool:
+        output_filename =\
+            str('Consumables and Interventions Costs with totals ' + in_id[0] + "_" + in_id[1] + in_suffix + '.png')
+    else:
+        output_filename =\
+            str('Consumables and Interventions Costs without totals ' + in_id[0] + "_" + in_id[1] + in_suffix + '.png')
 
     # width of the bars
     width = 0.3
@@ -50,18 +55,32 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
     def reduce_magnitude(in_list, in_in_reduce_magnitude):
         return [x / in_in_reduce_magnitude for x in in_list]
 
-    cons_costs_without = reduce_magnitude(in_cons_costs_without, in_reduce_magnitude)
+    if in_plot_costs_by_periods__incl_totals_bool:
+        cons_costs_without = reduce_magnitude(in_cons_costs_without, in_reduce_magnitude)
+        cons_costs_with = reduce_magnitude(in_cons_costs_with, in_reduce_magnitude)
+        pop_interv_costs_with = reduce_magnitude(in_pop_interv_costs_with, in_reduce_magnitude)
+        ppfp_interv_costs_with = reduce_magnitude(in_ppfp_interv_costs_with, in_reduce_magnitude)
+    else:
+        cons_costs_without =\
+            reduce_magnitude(in_cons_costs_without[0:len(in_cons_costs_without)-1], in_reduce_magnitude)
+        cons_costs_with =\
+            reduce_magnitude(in_cons_costs_with[0:len(in_cons_costs_with)-1], in_reduce_magnitude)
+        pop_interv_costs_with =\
+            reduce_magnitude(in_pop_interv_costs_with[0:len(in_pop_interv_costs_with)-1], in_reduce_magnitude)
+        ppfp_interv_costs_with =\
+            reduce_magnitude(in_ppfp_interv_costs_with[0:len(in_ppfp_interv_costs_with)-1], in_reduce_magnitude)
     #
-    cons_costs_with = reduce_magnitude(in_cons_costs_with, in_reduce_magnitude)
-    pop_interv_costs_with = reduce_magnitude(in_pop_interv_costs_with, in_reduce_magnitude)
-    ppfp_interv_costs_with = reduce_magnitude(in_ppfp_interv_costs_with, in_reduce_magnitude)
     ppfp_bottom = [x + y for x, y in zip(cons_costs_with, pop_interv_costs_with)]
 
-    # %%% Plot all time periods + total ................................................................................
+    # %%% Plot all time periods (+ total) ..............................................................................
+    # TODO: for the fig including total, add a vertical line to separate more visibly the figs by periods & TOTAL
     fig, ax = plt.subplots()
     # custom x-axis tick labels
     x_labels_tp = in_x_labels.copy()
-    x_labels_tp[-1] = "TOTAL (" + x_labels_tp[-1] + ")"
+    if in_plot_costs_by_periods__incl_totals_bool:
+        x_labels_tp[-1] = "TOTAL (" + x_labels_tp[-1] + ")"
+    else:
+        x_labels_tp = x_labels_tp[0:len(x_labels_tp)-1]
     # x labels position: i = 1st bar, i+w/2 = year, i+w = 2nd bar
     x_i = np.arange(len(x_labels_tp))  # the x_label locations
     x = list()
@@ -154,6 +173,8 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
 
     fig2.tight_layout()
 
-    plt.savefig(outputpath / (str('Total ' + output_filename)), format='png')
+    plt.savefig(outputpath /
+                (str('Total Consumables and Interventions Costs ' + in_id[0] + "_" + in_id[1] + in_suffix + '.png')),
+                format='png')
 
     print("Fig: Consumables and Interventions Costs Over time saved.")
