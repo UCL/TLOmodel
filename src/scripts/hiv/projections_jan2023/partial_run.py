@@ -35,7 +35,7 @@ class ImpactOfTbDaHx(BaseScenario):
         self.runs_per_draw = 3
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_scenarios_test_run12_partial',
+            'filename': 'Tb_DAH_scenarios_test_run13_partial',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -92,16 +92,16 @@ class ImpactOfTbDaHx(BaseScenario):
                    # 'second_line_test': 'xpert',
                 },
             },
-            # "CXR scale_up": {
-            #     'Tb': {
-            #         'scenario': 3,
-            #     }
-            #},
+            "CXR scale_up": {
+                 'Tb': {
+                     'scenario': 3,
+                 }
+            },
             "Outreach services": {
                 'Tb': {
                      'scenario': 0,
                      'probability_community_chest_xray': 0.1,
-                     'scaling_factor_WHO': 2.6,
+                     'scaling_factor_WHO': 1.9,
                 }
             },
         }
