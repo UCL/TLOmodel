@@ -41,8 +41,8 @@ number_draws = info['number_of_draws']
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-    from scripts.hiv.projections_jan2023.tb_DAH_scenarios import ImpactOfTbDaH
-    e = ImpactOfTbDaH()
+    from scripts.hiv.projections_jan2023.partial_run import ImpactOfTbDaHx
+    e = ImpactOfTbDaHx()
     return tuple(e._scenarios.keys())
 
 def set_param_names_as_column_index_level_0(_df):
@@ -418,7 +418,7 @@ outreach_lower = dalys_summary.loc[:, ('Outreach services', 'lower')].sum()
 outreach_upper = dalys_summary.loc[:, ('Outreach services', 'upper')].sum()
 
 # Plotting bar graph
-x = np.arange(55)
+x = np.arange(5)
 width = 0.35
 
 fig, ax = plt.subplots(figsize=(8, 6))
