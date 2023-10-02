@@ -776,7 +776,7 @@ class Tb(Module):
 
         # TB Chest x-ray++++++++++++++++++++++++
         self.item_codes_for_consumables_required['chest_xray'] = {
-            hs.get_item_code_from_item_name("X-ray"): 1}
+            hs.get_item_code_from_item_name("X-ray"): 0}
 
         # sensitivity/specificity set for smear status of cases
         self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
@@ -1482,7 +1482,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {175: 0.0})
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {187: 1.0})
+                {187: 0.31})
         #increases probability of accessing chest xray by 10%
         # if scenario == 3:
         #     self.sim.modules['HealthSystem'].override_availability_of_consumables(

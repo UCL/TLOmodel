@@ -29,13 +29,13 @@ class ImpactOfTbDaHx(BaseScenario):
         self.seed = 0 #random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2013, 12, 31)
-        self.pop_size = 5000
+        self.pop_size = 1000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 3
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_scenarios_test_run09_partial',
+            'filename': 'Tb_DAH_scenarios_test_run11_partial',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -88,8 +88,8 @@ class ImpactOfTbDaHx(BaseScenario):
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
-                    'first_line_test': 'sputum',
-                    'second_line_test': 'xpert',
+                   # 'first_line_test': 'sputum',
+                   # 'second_line_test': 'xpert',
                 },
             },
             # "CXR scale_up": {
@@ -101,7 +101,7 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                      'scenario': 0,
                      'probability_community_chest_xray': 0.1,
-                     'scaling_factor_WHO': 2.1,
+                     'scaling_factor_WHO': 2.6,
                 }
             },
         }
