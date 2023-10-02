@@ -433,7 +433,7 @@ ax.set_xlabel('Scenario')
 ax.set_ylabel('Total DALYs')
 ax.set_title('Cumulative TB DALYs 2010-2033')
 ax.set_xticks(x)
-ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'Outreach services'])
+ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scale_up', 'Outreach services'])
 ax.legend()
 
 # Displaying graph
@@ -464,7 +464,7 @@ outreach_lower = tb_mortality.loc[:, ('Outreach services', 'lower')].sum()
 outreach_upper = tb_mortality.loc[:, ('Outreach services', 'upper')].sum()
 
 # Plotting bar graph
-x = np.arange(4)
+x = np.arange(5)
 width = 0.35
 
 fig, ax = plt.subplots(figsize=(8, 6))
@@ -479,7 +479,7 @@ ax.set_xlabel('Scenario')
 ax.set_ylabel('TB Mortality')
 ax.set_title('Cumulative TB Mortality 2010-2033')
 ax.set_xticks(x)
-ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'Outreach services'])
+ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scale_up', 'Outreach services'])
 ax.legend()
 
 # Displaying graph
