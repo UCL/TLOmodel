@@ -832,8 +832,8 @@ class HealthSystem(Module):
 
         # Ensure name of policy we want to consider before/after switch is among the policies loaded
         # in the self.parameters['priority_rank']
-        assert self.parameters['policy_name'] in self.parameters['priority_rank'].keys()
-        assert self.parameters['policy_name_post_switch'] in self.parameters['priority_rank'].keys()
+        assert self.parameters['policy_name'] in self.parameters['priority_rank']
+        assert self.parameters['policy_name_post_switch'] in self.parameters['priority_rank']
 
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
