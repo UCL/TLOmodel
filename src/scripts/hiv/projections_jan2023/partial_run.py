@@ -28,8 +28,8 @@ class ImpactOfTbDaHx(BaseScenario):
         super().__init__()
         self.seed = 0 #random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2013, 12, 31)
-        self.pop_size = 2000
+        self.end_date = Date(2012, 12, 31)
+        self.pop_size = 1000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 3
@@ -88,20 +88,23 @@ class ImpactOfTbDaHx(BaseScenario):
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
-                   # 'first_line_test': 'sputum',
-                   # 'second_line_test': 'xpert',
+                    'first_line_test': 'sputum',
+                    'second_line_test': 'xpert',
                 },
             },
             "CXR scale_up": {
                  'Tb': {
                      'scenario': 3,
+                     'first_line_test': 'sputum',
+                     'second_line_test': 'xpert',
+
                  }
             },
             "Outreach services": {
                 'Tb': {
                      'scenario': 0,
                      'probability_community_chest_xray': 0.1,
-                     'scaling_factor_WHO': 1.9,
+                     'scaling_factor_WHO': 2.9,
                 }
             },
         }
