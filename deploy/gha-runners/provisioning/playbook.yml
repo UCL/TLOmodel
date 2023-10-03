@@ -7,6 +7,7 @@
     runner_user: gha
     runner_workdir: /mnt/tlo
     ssh_deny_users: "{{ runner_user }}"
+    python_version: "3.8"
 
   tasks:
 
@@ -30,24 +31,25 @@
      apt:
        name:
          - acl  # https://github.com/georchestra/ansible/issues/55#issuecomment-651043423
-         - python3.8
-         - python3.8-distutils
+         - "python{{ python_version }}"
+         - "python{{ python_version }}-distutils"
+         - "python{{ python_version }}-venv"
          - python3-pip
          - glibc-tools
          - git-lfs
        state: present
 
-   - name: update-alternative select python3.8 as default
+   - name: "update-alternative select python{{ python_version }} as default"
      become: true
      community.general.alternatives:
        name: python
-       path: /usr/bin/python3.8
+       path: "/usr/bin/python{{ python_version }}"
        link: /usr/bin/python
        state: selected
 
    - name: install tox
      become: true
-     ansible.builtin.shell: python3.8 -m pip install tox
+     ansible.builtin.shell: "python{{ python_version }} -m pip install tox"
      args:
        creates: /usr/local/bin/tox
 
