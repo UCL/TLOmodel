@@ -39,13 +39,12 @@
          - git-lfs
        state: present
 
-   - name: "update-alternative select python{{ python_version }} as default"
+   - name: "Point python3 to python{{ python_version }}"
      become: true
-     community.general.alternatives:
-       name: python
-       path: "/usr/bin/python{{ python_version }}"
-       link: /usr/bin/python
-       state: selected
+     ansible.builtin.file:
+       src: "python{{ python_version }}"
+       dest: /usr/bin/python3
+       state: link
 
    - name: install tox
      become: true
