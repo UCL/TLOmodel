@@ -792,11 +792,16 @@ class Alri(Module):
                       '<90% (current policy) or 90-92% (potential policy)',
                       categories=['<90%', '<93%']
                       ),
-        'allow_use_oximetry_for_non_severe_classifications':
+        'use_static_simulation_run':
             Parameter(Types.BOOL,
-                      'Turn on/off the use of pulse oximetry on non-severe classifications in assigning treatment '
-                      'to determine the SpO2 level for oxygen indication. The default is False (0)'
+                      'Turn on/off the parameter to determine the use of static simulation run for analysis'
+                      'The default is True (1)'
                       ),
+        # 'allow_use_oximetry_for_non_severe_classifications':
+        #     Parameter(Types.BOOL,
+        #               'Turn on/off the use of pulse oximetry on non-severe classifications in assigning treatment '
+        #               'to determine the SpO2 level for oxygen indication. The default is False (0)'
+        #               ),
         'prob_hw_decision_for_oxygen_provision_when_po_unavailable':
             Parameter(Types.REAL,
                       'sensitivity of health worker decision in oxygen provision for danger signs penumonia '
@@ -1521,20 +1526,53 @@ class Alri(Module):
         else:
             return 'failure'
 
-    def on_presentation(self, person_id, hsi_event):
+    def seek_care_level(self, symptoms) -> str:
+        """Care seeking at facility levels, based on symptom severity"""
+
+        prop_seek_level = {'2': 0.15, '1b': 0.15, '1a': 0.6, '0': 0.1}
+
+        # Increase seeking at higher levels if severe symptoms
+        if any(sev_symptom in ['danger_signs', 'respiratory_distress'] for sev_symptom in symptoms):
+            for symptom_name in ('danger_signs', 'respiratory_distress'):
+                if symptom_name in symptoms:
+                    prop_seek_level.update({'2': to_prob(to_odds(prop_seek_level['2']) * self.parameters['or_care_seeking_perceived_severe_illness']),
+                                            '1b': to_prob(to_odds(prop_seek_level['1b']) * self.parameters['or_care_seeking_perceived_severe_illness']),
+                                            '1a': to_prob(to_odds(prop_seek_level['1a']) * (1 / self.parameters['or_care_seeking_perceived_severe_illness'])),
+                                            '0': to_prob(to_odds(prop_seek_level['0']) * (1 / self.parameters['or_care_seeking_perceived_severe_illness']))})
+            sum_of_probs = prop_seek_level['2'] + prop_seek_level['1b'] + prop_seek_level['1a'] + prop_seek_level['0']
+            prop_seek_level.update({'2': prop_seek_level['2']/sum_of_probs,
+                                    '1b': prop_seek_level['1b']/sum_of_probs,
+                                    '1a': prop_seek_level['1a']/sum_of_probs,
+                                    '0': prop_seek_level['0']/sum_of_probs})
+
+        seek_level = self.rng.choice(list(prop_seek_level.keys()), p=list(prop_seek_level.values()))
+
+        return seek_level
+
+    def on_presentation(self, person_id, symptoms, hsi_event):
         """Action taken when a child (under 5 years old) presents at a generic appointment (emergency or non-emergency)
          with symptoms of `cough` or `difficult_breathing`."""
 
         self.record_sought_care_for_alri()
 
-        # All persons have an initial out-patient appointment at the current facility level.
-        self.sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_Alri_Treatment(person_id=person_id, module=self,
-                                         facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL),
-            topen=self.sim.date,
-            tclose=self.sim.date + pd.DateOffset(days=1),
-            priority=1
-        )
+        if self.parameters['use_static_simulation_run']:
+            seek_level = self.seek_care_level(symptoms)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_Alri_Treatment(person_id=person_id, module=self,
+                                             facility_level=seek_level),
+                topen=self.sim.date,
+                tclose=self.sim.date + pd.DateOffset(days=1),
+                priority=1
+            )
+        else:
+            # All persons have an initial out-patient appointment at the current facility level.
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                hsi_event=HSI_Alri_Treatment(person_id=person_id, module=self,
+                                             facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL),
+                topen=self.sim.date,
+                tclose=self.sim.date + pd.DateOffset(days=1),
+                priority=1
+            )
 
     def record_sought_care_for_alri(self):
         """Count that the person is seeking care"""
@@ -1599,7 +1637,7 @@ class Alri(Module):
 
     # @staticmethod
     def _ultimate_treatment_indicated_for_patient(self, classification_for_treatment_decision, age_exact_years,
-                                                  use_oximeter, oxygen_saturation) -> Dict:
+                                                  facility_level, oxygen_saturation) -> Dict:
         """Return a Dict of the form {'antibiotic_indicated': Tuple[str], 'oxygen_indicated': <>} which expresses what
          the treatment is that the patient _should_ be provided with ultimately (i.e., if consumables are available and
          following an admission to in-patient, if required).
@@ -1607,6 +1645,7 @@ class Alri(Module):
          the second is assumed to be a drop-in replacement with the same effectiveness etc., and is used only when the
          first is found to be not available."""
         p = self.parameters
+        referral = True  # assume 100% referrals
 
         # Change this variable when looking into the benefit of using SpO2 <93% as indication for oxygen
         oxygen_indicated = oxygen_saturation == '<90%' if p['apply_oxygen_indication_to_SpO2_measurement'] == '<90%' \
@@ -1614,8 +1653,8 @@ class Alri(Module):
             (not oxygen_saturation == '>=93%') if p['apply_oxygen_indication_to_SpO2_measurement'] == '<93%' else False)
 
         # if no oximeter available, oxygen indication is determined by the heath worker's decision (ds-pneumonia)
-        oxygen_indicated_without_po = \
-            p['prob_hw_decision_for_oxygen_provision_when_po_unavailable'] > self.rng.random_sample()
+        # oxygen_indicated_without_po = \
+        #     p['prob_hw_decision_for_oxygen_provision_when_po_unavailable'] > self.rng.random_sample()
 
         # treatment for cough or cold classification
         if classification_for_treatment_decision == "cough_or_cold":
@@ -1638,17 +1677,26 @@ class Alri(Module):
 
         # treatment for chest-indrawing pneumonia classification
         elif classification_for_treatment_decision == 'chest_indrawing_pneumonia':
-            return {
-                'antibiotic_indicated': (
-                    'Amoxicillin_tablet_or_suspension_5days',  # <-- # <-- First choice antibiotic
-                ),
-                'oxygen_indicated': False
-            }
+            if (referral and facility_level == '0') or (facility_level in ('2', '1b', '1a')):
+                return {
+                    'antibiotic_indicated': (
+                        'Amoxicillin_tablet_or_suspension_5days',  # <-- # <-- First choice antibiotic
+                    ),
+                    'oxygen_indicated': False
+                }
+            else:
+                return {
+                    'antibiotic_indicated': (
+                        'Amoxicillin_tablet_or_suspension_7days' if age_exact_years < 2.0 / 12.0
+                        else 'Amoxicillin_tablet_or_suspension_3days',  # <-- # <-- First choice antibiotic
+                    ),
+                    'oxygen_indicated': False
+                }
 
         # treatment for danger signs pneumonia classification
         elif classification_for_treatment_decision == 'danger_signs_pneumonia':
-            if use_oximeter:
-                oxygen_indicated = oxygen_indicated
+            # assume that PO at inpatient care is available if oxygen systems are implemented
+            if (referral and facility_level in ('0', '1a')) or (facility_level in ('2', '1b')):
                 return {
                     'antibiotic_indicated': (
                         '1st_line_IV_ampicillin_gentamicin',  # <-- # <-- First choice antibiotic
@@ -1658,13 +1706,11 @@ class Alri(Module):
                     'oxygen_indicated': oxygen_indicated
                 }
             else:
-                # if no oximeter available, oxygen indication is determined by the heath worker's decision
                 return {
                     'antibiotic_indicated': (
-                        '1st_line_IV_ampicillin_gentamicin',  # <-- # <-- First choice antibiotic
-                        '1st_line_IV_benzylpenicillin_gentamicin',  # <-- If the first choice not available
+                        'Amoxicillin_tablet_or_suspension_5days',  # <-- # <-- First choice antibiotic
                     ),
-                    'oxygen_indicated': oxygen_indicated_without_po
+                    'oxygen_indicated': False
                 }
 
         else:
@@ -3211,6 +3257,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         else:
             # For in-patients, provide treatments as though classification_for_treatment_decision =
             # 'danger_signs_pneumonia', as this is the reasonable clinical presumption for in-patients.
+
             self._do_action_given_classification(
                 classification_for_treatment_decision='danger_signs_pneumonia',  # assumed for sbi for < 2 months
                 age_exact_years=age_exact_years,
@@ -3494,7 +3541,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 **self.module._ultimate_treatment_indicated_for_patient(
                     classification_for_treatment_decision='fast_breathing_pneumonia',
                     age_exact_years=age_exact_years,
-                    use_oximeter=use_oximeter,
+                    facility_level=facility_level,
                     oxygen_saturation=oxygen_saturation,
                 )
             )
@@ -3508,7 +3555,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     **self.module._ultimate_treatment_indicated_for_patient(
                         classification_for_treatment_decision='chest_indrawing_pneumonia',
                         age_exact_years=age_exact_years,
-                        use_oximeter=use_oximeter,
+                        facility_level=facility_level,
                         oxygen_saturation=oxygen_saturation,
                     )
                 )
@@ -3528,7 +3575,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                         **self.module._ultimate_treatment_indicated_for_patient(
                             classification_for_treatment_decision='danger_signs_pneumonia',
                             age_exact_years=age_exact_years,
-                            use_oximeter=use_oximeter,
+                            facility_level=facility_level,
                             oxygen_saturation=oxygen_saturation,
                         )
                     )
@@ -3539,7 +3586,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                 **self.module._ultimate_treatment_indicated_for_patient(
                     classification_for_treatment_decision='cough_or_cold',
                     age_exact_years=age_exact_years,
-                    use_oximeter=use_oximeter,
+                    facility_level=facility_level,
                     oxygen_saturation=oxygen_saturation,
                 )
             )
@@ -3988,7 +4035,7 @@ def _set_current_policy(alri_module):
     p = alri_module.parameters
 
     p['apply_oxygen_indication_to_SpO2_measurement'] = '<90%'
-    p['allow_use_oximetry_for_non_severe_classifications'] = False
+    # p['allow_use_oximetry_for_non_severe_classifications'] = False
 
 
 def _set_new_policy(alri_module):
@@ -3997,7 +4044,7 @@ def _set_new_policy(alri_module):
     p = alri_module.parameters
 
     p['apply_oxygen_indication_to_SpO2_measurement'] = '<93%'
-    p['allow_use_oximetry_for_non_severe_classifications'] = True
+    # p['allow_use_oximetry_for_non_severe_classifications'] = True
 
 
 def _make_treatment_perfect(alri_module):

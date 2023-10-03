@@ -7,7 +7,7 @@ from typing import List
 import datetime
 
 # from tlo.util import random_date, sample_outcome
-
+import numpy.random
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
@@ -266,6 +266,68 @@ def generate_case_mix() -> pd.DataFrame:
     return pd.DataFrame(overall_case_mix)
 
 
+# def care_seeking_facility_level(alri_module, symptoms):
+#     """Return the facility level where care was first sought"""
+#
+#     seek_level = alri_module.seek_care_level(symptoms)
+#     return seek_level
+
+
+# def module_and_hsi_configuration(treatment_perfect, hw_dx_perfect, new_policy,
+#                                  oximeter_available, oxygen_available):
+#
+#     # Decide which hsi configuration to use:
+#     if treatment_perfect:
+#         if not new_policy:
+#             hsi = hsi_with_perfect_diagnosis_and_perfect_treatment_current_policy
+#             alri_module = alri_module_with_perfect_diagnosis_and_perfect_treatment_current_policy
+#         else:
+#             hsi = hsi_with_perfect_diagnosis_and_perfect_treatment_new_policy
+#             alri_module = alri_module_with_perfect_diagnosis_and_perfect_treatment_new_policy
+#     else:
+#         if hw_dx_perfect:
+#             if not new_policy:
+#                 hsi = hsi_with_perfect_diagnosis_current_policy
+#                 alri_module = alri_module_with_perfect_diagnosis_current_policy
+#             else:
+#                 hsi = hsi_with_perfect_diagnosis_new_policy
+#                 alri_module = alri_module_with_perfect_diagnosis_new_policy
+#         else:
+#             if not new_policy:
+#                 if not oxygen_available and not oximeter_available:
+#                     hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ant
+#                     alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ant
+#                 elif oxygen_available and oximeter_available:
+#                     hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po_ox
+#                     alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po_ox
+#                 elif oxygen_available and not oximeter_available:
+#                     hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ox
+#                     alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ox
+#                 elif oximeter_available and not oxygen_available:
+#                     hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po
+#                     alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po
+#                 else:
+#                     raise ValueError('not using a sim above new pol')
+#
+#             else:
+#                 if not oxygen_available and not oximeter_available:
+#                     hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ant
+#                     alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ant
+#                 elif oxygen_available and oximeter_available:
+#                     hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po_ox
+#                     alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po_ox
+#                 elif oxygen_available and not oximeter_available:
+#                     hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ox
+#                     alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ox
+#                 elif oximeter_available and not oxygen_available:
+#                     hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po
+#                     alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po
+#                 else:
+#                     raise ValueError('not using a sim above new pol')
+#
+#     return alri_module, hsi
+
+
 def treatment_efficacy(
     age_exact_years,
     symptoms,
@@ -281,6 +343,8 @@ def treatment_efficacy(
     return_efficacy
 ):
     """Return the percentage by which the treatment reduce the risk of death"""
+
+    # Decide which hsi configuration to use:
 
     # Decide which hsi configuration to use:
     if treatment_perfect:
@@ -331,16 +395,23 @@ def treatment_efficacy(
                 else:
                     raise ValueError('not using a sim above new pol')
 
+    # alri_module = module_and_hsi_configuration(treatment_perfect, hw_dx_perfect, new_policy,
+    #                                            oximeter_available, oxygen_available)[0]
+    # hsi = module_and_hsi_configuration(treatment_perfect, hw_dx_perfect, new_policy,
+    #                                    oximeter_available, oxygen_available)[1]
+
     # community level cannot have oxygen implementation
     # if _facility_level == '0':
     #     oxygen_available = False
+
+    # seek_level = alri_module.seek_care_level(symptoms)
 
     # Get Treatment classification
     classification_for_treatment_decision = hsi._get_disease_classification_for_treatment_decision(
         age_exact_years=age_exact_years,
         symptoms=symptoms,
         oxygen_saturation=oxygen_saturation,
-        facility_level=_facility_level,
+        facility_level=facility_level,
         use_oximeter=oximeter_available,
     )
 
@@ -353,7 +424,7 @@ def treatment_efficacy(
     ultimate_treatment = alri_module._ultimate_treatment_indicated_for_patient(
         classification_for_treatment_decision=classification_for_treatment_decision,
         age_exact_years=age_exact_years,
-        facility_level=_facility_level,
+        facility_level=facility_level,
         oxygen_saturation=oxygen_saturation,
     )
 
@@ -388,7 +459,7 @@ def treatment_efficacy(
 
     if return_efficacy:
         # Return percentage probability of treatment success
-        return 100.0 * (1.0 - treatment_fails), classification_for_treatment_decision
+        return 100.0 * (1.0 - treatment_fails)
 
     else:
         return classification_for_treatment_decision
@@ -403,6 +474,13 @@ def generate_table():
 
     # Get Case Mix
     df = generate_case_mix()
+    seek_level = list()
+    for x in df.itertuples():
+        seek_level.append({
+            'seek_level': alri_module_with_perfect_diagnosis_current_policy.seek_care_level(
+                symptoms=x.symptoms
+            )})
+    df = df.join(pd.DataFrame(seek_level))
 
     # Consider risk of death for this person, intrinsically and under different conditions of treatments
     risk_of_death = list()
@@ -434,7 +512,7 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=True,
                     hw_dx_perfect=True,
-                    facility_level=_facility_level,
+                    facility_level=x.seek_level,
                     new_policy=False,
                     return_efficacy=True
                 ),
@@ -454,7 +532,7 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-                    facility_level=_facility_level,
+                    facility_level=x.seek_level,
                     new_policy=False,
                     return_efficacy=True
                 ),
@@ -473,7 +551,7 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-                    facility_level=_facility_level,
+                    facility_level=x.seek_level,
                     new_policy=False,
                     return_efficacy=True
                 ),
@@ -492,7 +570,7 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-                    facility_level=_facility_level,
+                    facility_level=x.seek_level,
                     new_policy=False,
                     return_efficacy=True
                 ),
@@ -511,7 +589,7 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-                    facility_level=_facility_level,
+                    facility_level=x.seek_level,
                     new_policy=False,
                     return_efficacy=True
                 ),
@@ -531,7 +609,7 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-                    facility_level=_facility_level,
+                    facility_level=x.seek_level,
                     new_policy=False,
                     return_efficacy=True
                 ),
@@ -550,7 +628,7 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-                    facility_level=_facility_level,
+                    facility_level=x.seek_level,
                     new_policy=False,
                     return_efficacy=True
                 ),
@@ -569,7 +647,7 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-                    facility_level=_facility_level,
+                    facility_level=x.seek_level,
                     new_policy=False,
                     return_efficacy=True
                 ),
@@ -588,7 +666,7 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-                    facility_level=_facility_level,
+                    facility_level=x.seek_level,
                     new_policy=False,
                     return_efficacy=True
                 ),
@@ -609,7 +687,7 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=True,
                     hw_dx_perfect=True,
-                    facility_level=_facility_level,
+                    facility_level=x.seek_level,
                     new_policy=True,
                     return_efficacy=True
                 ),
@@ -629,7 +707,7 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-                    facility_level=_facility_level,
+                    facility_level=x.seek_level,
                     new_policy=True,
                     return_efficacy=True
                 ),
@@ -648,7 +726,7 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-                    facility_level=_facility_level,
+                    facility_level=x.seek_level,
                     new_policy=True,
                     return_efficacy=True
                 ),
@@ -667,7 +745,7 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-                    facility_level=_facility_level,
+                    facility_level=x.seek_level,
                     new_policy=True,
                     return_efficacy=True
                 ),
@@ -686,7 +764,7 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-                    facility_level=_facility_level,
+                    facility_level=x.seek_level,
                     new_policy=True,
                     return_efficacy=True
                 ),
@@ -706,7 +784,7 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-                    facility_level=_facility_level,
+                    facility_level=x.seek_level,
                     new_policy=True,
                     return_efficacy=True
                 ),
@@ -725,7 +803,7 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-                    facility_level=_facility_level,
+                    facility_level=x.seek_level,
                     new_policy=True,
                     return_efficacy=True
                 ),
@@ -744,7 +822,7 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-                    facility_level=_facility_level,
+                    facility_level=x.seek_level,
                     new_policy=True,
                     return_efficacy=True
                 ),
@@ -763,7 +841,7 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-                    facility_level=_facility_level,
+                    facility_level=x.seek_level,
                     new_policy=True,
                     return_efficacy=True
                 ),
@@ -788,98 +866,119 @@ def generate_table():
                     use_oximeter=False,
                 ),
 
-            'imperfect_accuracy_hw_classification_with_oximeter_cp':
-                treatment_efficacy(
-                    # Information about the patient:
+            # * CLASSIFICATION BY LEVEL 1a *
+            'classification_for_treatment_decision_with_oximeter_perfect_accuracy_level1a':
+                hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
                     age_exact_years=x.age_exact_years,
                     symptoms=x.symptoms,
                     oxygen_saturation=x.oxygen_saturation,
-                    disease_type=x.disease_type,
-                    complications=x.complications,
-
-                    # Information about the care that can be provided:
-                    oximeter_available=True,
-                    oxygen_available=True,
-                    treatment_perfect=False,
-                    hw_dx_perfect=False,
-                    facility_level=_facility_level,
-                    new_policy=False,
-                    return_efficacy=False
+                    facility_level='1a',
+                    use_oximeter=True,
                 ),
-            'imperfect_accuracy_hw_classification_without_oximeter_cp':
-                treatment_efficacy(
-                    # Information about the patient:
+
+            'classification_for_treatment_decision_without_oximeter_perfect_accuracy_level1a':
+                hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
                     age_exact_years=x.age_exact_years,
                     symptoms=x.symptoms,
                     oxygen_saturation=x.oxygen_saturation,
-                    disease_type=x.disease_type,
-                    complications=x.complications,
-
-                    # Information about the care that can be provided:
-                    oximeter_available=False,
-                    oxygen_available=True,
-                    treatment_perfect=False,
-                    hw_dx_perfect=False,
-                    facility_level=_facility_level,
-                    new_policy=False,
-                    return_efficacy=False
+                    facility_level='1a',
+                    use_oximeter=False,
                 ),
 
-            'imperfect_accuracy_hw_classification_with_oximeter_np':
-                treatment_efficacy(
-                    # Information about the patient:
+            # * CLASSIFICATION BY LEVEL THEY SOUGHT CARE *
+            'classification_for_treatment_decision_with_oximeter_perfect_accuracy_sought_level':
+                hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
                     age_exact_years=x.age_exact_years,
                     symptoms=x.symptoms,
                     oxygen_saturation=x.oxygen_saturation,
-                    disease_type=x.disease_type,
-                    complications=x.complications,
-
-                    # Information about the care that can be provided:
-                    oximeter_available=True,
-                    oxygen_available=True,
-                    treatment_perfect=False,
-                    hw_dx_perfect=False,
-                    facility_level=_facility_level,
-                    new_policy=True,
-                    return_efficacy=False
+                    facility_level=x.seek_level,
+                    use_oximeter=True,
                 ),
-            'imperfect_accuracy_hw_classification_without_oximeter_np':
-                treatment_efficacy(
-                    # Information about the patient:
+
+            'classification_for_treatment_decision_without_oximeter_perfect_accuracy_sought_level':
+                hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
                     age_exact_years=x.age_exact_years,
                     symptoms=x.symptoms,
                     oxygen_saturation=x.oxygen_saturation,
-                    disease_type=x.disease_type,
-                    complications=x.complications,
-
-                    # Information about the care that can be provided:
-                    oximeter_available=False,
-                    oxygen_available=True,
-                    treatment_perfect=False,
-                    hw_dx_perfect=False,
-                    facility_level=_facility_level,
-                    new_policy=True,
-                    return_efficacy=False
+                    facility_level=x.seek_level,
+                    use_oximeter=False,
                 ),
 
-            # # * CLASSIFICATION BY LEVEL 1a *
-            # 'classification_for_treatment_decision_with_oximeter_perfect_accuracy_level1a':
-            #     hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
+            # 'imperfect_accuracy_hw_classification_with_oximeter_cp':
+            #     treatment_efficacy(
+            #         # Information about the patient:
             #         age_exact_years=x.age_exact_years,
             #         symptoms=x.symptoms,
             #         oxygen_saturation=x.oxygen_saturation,
-            #         facility_level='1a',
-            #         use_oximeter=True,
+            #         disease_type=x.disease_type,
+            #         complications=x.complications,
+            #
+            #         # Information about the care that can be provided:
+            #         oximeter_available=True,
+            #         oxygen_available=True,
+            #         treatment_perfect=False,
+            #         hw_dx_perfect=False,
+            #         facility_level=x.seek_level,
+            #         new_policy=False,
+            #         return_efficacy=False
+            #     ),
+            # 'imperfect_accuracy_hw_classification_without_oximeter_cp':
+            #     treatment_efficacy(
+            #         # Information about the patient:
+            #         age_exact_years=x.age_exact_years,
+            #         symptoms=x.symptoms,
+            #         oxygen_saturation=x.oxygen_saturation,
+            #         disease_type=x.disease_type,
+            #         complications=x.complications,
+            #
+            #         # Information about the care that can be provided:
+            #         oximeter_available=False,
+            #         oxygen_available=True,
+            #         treatment_perfect=False,
+            #         hw_dx_perfect=False,
+            #         facility_level=x.seek_level,
+            #         new_policy=False,
+            #         return_efficacy=False
             #     ),
             #
-            # 'classification_for_treatment_decision_without_oximeter_perfect_accuracy_level1a':
-            #     hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
+            # 'imperfect_accuracy_hw_classification_with_oximeter_np':
+            #     treatment_efficacy(
+            #         # Information about the patient:
             #         age_exact_years=x.age_exact_years,
             #         symptoms=x.symptoms,
             #         oxygen_saturation=x.oxygen_saturation,
-            #         facility_level='1a',
-            #         use_oximeter=False,
+            #         disease_type=x.disease_type,
+            #         complications=x.complications,
+            #
+            #         # Information about the care that can be provided:
+            #         oximeter_available=True,
+            #         oxygen_available=True,
+            #         treatment_perfect=False,
+            #         hw_dx_perfect=False,
+            #         facility_level=x.seek_level,
+            #         new_policy=True,
+            #         return_efficacy=False
             #     ),
+            # 'imperfect_accuracy_hw_classification_without_oximeter_np':
+            #     treatment_efficacy(
+            #         # Information about the patient:
+            #         age_exact_years=x.age_exact_years,
+            #         symptoms=x.symptoms,
+            #         oxygen_saturation=x.oxygen_saturation,
+            #         disease_type=x.disease_type,
+            #         complications=x.complications,
+            #
+            #         # Information about the care that can be provided:
+            #         oximeter_available=False,
+            #         oxygen_available=True,
+            #         treatment_perfect=False,
+            #         hw_dx_perfect=False,
+            #         facility_level=x.seek_level,
+            #         new_policy=True,
+            #         return_efficacy=False
+            #     ),
+
+
 
             # 'classification_for_treatment_decision_with_oximeter_imperfect_accuracy_level1a':
             #     hsi_with_imperfect_diagnosis_and_imperfect_treatment._get_disease_classification_for_treatment_decision(
@@ -910,21 +1009,19 @@ if __name__ == "__main__":
         needs_oxygen=lambda df: df['oxygen_saturation'] == "<90%",
     )
 
-    table1 = generate_table()
-    table1 = table.assign(
-        has_danger_signs=lambda df: df['symptoms'].apply(lambda x: True if 'danger_signs' in x or 'respiratory_distress' in x else False),
-        complicated=lambda df: df['complications'].apply(lambda x: True if len(x) > 0 else False),
-        bacterial=lambda df: df[['pathogen', 'bacterial_coinfection']].apply(lambda x: True if (
-            (x[0] in sim0.modules['Alri'].pathogens['bacterial']) or pd.notnull(x[1])) else False, axis=1)
-    )
-
+    # table1 = generate_table()
+    # table1 = table.assign(
+    #     has_danger_signs=lambda df: df['symptoms'].apply(lambda x: True if 'danger_signs' in x or 'respiratory_distress' in x else False),
+    #     complicated=lambda df: df['complications'].apply(lambda x: True if len(x) > 0 else False),
+    #     bacterial=lambda df: df[['pathogen', 'bacterial_coinfection']].apply(lambda x: True if (
+    #         (x[0] in sim0.modules['Alri'].pathogens['bacterial']) or pd.notnull(x[1])) else False, axis=1)
+    # )
 
     def summarize_by(df: pd.DataFrame, by: List[str], columns: [List[str]]) -> pd.DataFrame:
         """Helper function returns dataframe that summarizes the dataframe provided using groupby, with by arguements,
         and provides columns as follows: [size-of-the-group, mean-of-column-1, mean-of-column-2, ...]"""
         return pd.DataFrame({'fraction': df.groupby(by=by).size()}).apply(lambda x: x / x.sum(), axis=0) \
             .join(df.groupby(by=by)[columns].mean())
-
 
     # Examine case mix
     case_mix_by_disease_and_pathogen = summarize_by(table,
@@ -979,18 +1076,18 @@ if __name__ == "__main__":
     )
     print(f"{risk_of_death=}")
 
-    risk_of_death1 = summarize_by(
-        df=table1,
-        by=['complicated', 'disease_type', 'has_danger_signs', 'bacterial'],
-        columns=[
-            'prob_die_if_no_treatment',
-        ]
-    ).assign(
-        fraction_of_deaths=lambda df: (
-            (df.fraction * df.prob_die_if_no_treatment) / (df.fraction * df.prob_die_if_no_treatment).sum()
-        )
-    )
-    print(f"{risk_of_death1=}")
+    # risk_of_death1 = summarize_by(
+    #     df=table1,
+    #     by=['complicated', 'disease_type', 'has_danger_signs', 'bacterial'],
+    #     columns=[
+    #         'prob_die_if_no_treatment',
+    #     ]
+    # ).assign(
+    #     fraction_of_deaths=lambda df: (
+    #         (df.fraction * df.prob_die_if_no_treatment) / (df.fraction * df.prob_die_if_no_treatment).sum()
+    #     )
+    # )
+    # print(f"{risk_of_death1=}")
 
     # # risk of deaths if no treatment
     # (risk_of_death.fraction * risk_of_death.prob_die_if_no_treatment).sum()  # 0.0342 -- 3.42%
@@ -1032,12 +1129,522 @@ if __name__ == "__main__":
     # accuracy
 
     disease_classification2 = table["classification_for_treatment_decision_without_oximeter_perfect_accuracy_level2"]
-    # disease_classification1a = table["classification_for_treatment_decision_without_oximeter_perfect_accuracy_level1a"]
+    disease_classification1a = table["classification_for_treatment_decision_without_oximeter_perfect_accuracy_level1a"]
+    classification_by_seek_level = table["classification_for_treatment_decision_without_oximeter_perfect_accuracy_sought_level"]
 
     low_oxygen = (table["oxygen_saturation"])
-    fraction = risk_of_death['fraction']
+    # fraction = risk_of_death['fraction']
     number_cases = table.groupby(by=[disease_classification2, low_oxygen]).size()
     dx_accuracy = 'perfect'
+
+    def cea_df_by_scenario(scenario, dx_accuracy):
+
+        # create the series for the CEA dataframe
+        facility_seeking = table['seek_level']
+        number_cases_by_seek_level = table.groupby(by=[classification_by_seek_level, low_oxygen, facility_seeking]).size()
+        cases_per_facility = table.groupby(by=[facility_seeking]).size()
+        deaths_per_facility = (table['prob_die_if_no_treatment'] * (1.0 - table[
+            f'treatment_efficacy_if_normal_treatment_{scenario}_{dx_accuracy}_hw_dx_current_pol'] /
+                                                                        100.0)).groupby(by=[facility_seeking]).sum()
+
+        # create the dataframe
+        df_by_seek_level = pd.DataFrame([cases_per_facility, deaths_per_facility], index=['cases', 'deaths'])
+
+        # number of cases needing inpatient care by severe signs (ds_pneumonia classification)
+        n_inpatient_without_PO_level_0 = number_cases_by_seek_level.sum(level=[0, 1, 2]).reindex(
+            pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '0'), ('danger_signs_pneumonia', '90-92%', '0'),
+                                       ('danger_signs_pneumonia', '>=93%', '0')],
+                                      names=number_cases_by_seek_level.index.names), fill_value=0).sum()
+
+        n_inpatient_without_PO_level_1a = number_cases_by_seek_level.sum(level=[0, 1, 2]).reindex(
+            pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1a'), ('danger_signs_pneumonia', '90-92%', '1a'),
+                                       ('danger_signs_pneumonia', '>=93%', '1a')],
+                                      names=number_cases_by_seek_level.index.names), fill_value=0).sum()
+        n_inpatient_without_PO_level_1b = number_cases_by_seek_level.sum(level=[0, 1, 2]).reindex(
+            pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1b'), ('danger_signs_pneumonia', '90-92%', '1b'),
+                                       ('danger_signs_pneumonia', '>=93%', '1b')],
+                                      names=number_cases_by_seek_level.index.names), fill_value=0).sum()
+        n_inpatient_without_PO_level_2 = number_cases_by_seek_level.sum(level=[0, 1, 2]).reindex(
+            pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '2'), ('danger_signs_pneumonia', '90-92%', '2'),
+                                       ('danger_signs_pneumonia', '>=93%', '2')],
+                                      names=number_cases_by_seek_level.index.names), fill_value=0).sum()
+
+        # Add to dataframe - Need inpatient care based on severe signs
+        df_by_seek_level = df_by_seek_level.append(
+            pd.Series({'0': n_inpatient_without_PO_level_0, '1a': n_inpatient_without_PO_level_1a,
+                       '1b': n_inpatient_without_PO_level_1b, '2': n_inpatient_without_PO_level_2},
+                      name='Need inpatient care based on severe signs'))
+
+        # number of cases needing inpatient care by severe signs + SpO2 level
+        n_inpatient_ds_and_PO_level_0 = number_cases_by_seek_level.sum(level=[0, 1, 2]).reindex(
+            pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '0'), ('danger_signs_pneumonia', '90-92%', '0'),
+                                       ('danger_signs_pneumonia', '>=93%', '0'), ('chest_indrawing_pneumonia', '<90%', '0'),
+                                       ('fast_breathing_pneumonia', '<90%', '0'), ('cough_or_cold', '<90%', '0')],
+                                      names=number_cases_by_seek_level.index.names), fill_value=0).sum()
+
+        n_inpatient_ds_and_PO_level_1a = number_cases_by_seek_level.sum(level=[0, 1, 2]).reindex(
+            pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1a'), ('danger_signs_pneumonia', '90-92%', '1a'),
+                                       ('danger_signs_pneumonia', '>=93%', '1a'),
+                                       ('chest_indrawing_pneumonia', '<90%', '1a'),
+                                       ('fast_breathing_pneumonia', '<90%', '1a'), ('cough_or_cold', '<90%', '1a')],
+                                      names=number_cases_by_seek_level.index.names), fill_value=0).sum()
+
+        n_inpatient_ds_and_PO_level_1b = number_cases_by_seek_level.sum(level=[0, 1, 2]).reindex(
+            pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1b'), ('danger_signs_pneumonia', '90-92%', '1b'),
+                                       ('danger_signs_pneumonia', '>=93%', '1b'),
+                                       ('chest_indrawing_pneumonia', '<90%', '1b'),
+                                       ('fast_breathing_pneumonia', '<90%', '1b'), ('cough_or_cold', '<90%', '1b')],
+                                      names=number_cases_by_seek_level.index.names), fill_value=0).sum()
+
+        n_inpatient_ds_and_PO_level_2 = number_cases_by_seek_level.sum(level=[0, 1, 2]).reindex(
+            pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '2'), ('danger_signs_pneumonia', '90-92%', '2'),
+                                       ('danger_signs_pneumonia', '>=93%', '2'),
+                                       ('chest_indrawing_pneumonia', '<90%', '2'),
+                                       ('fast_breathing_pneumonia', '<90%', '2'), ('cough_or_cold', '<90%', '2')],
+                                      names=number_cases_by_seek_level.index.names), fill_value=0).sum()
+
+        # update the dataframe - Need inpatient care based on severe signs and SpO2 <90%
+        df_by_seek_level = df_by_seek_level.append(
+            pd.Series({'0': n_inpatient_ds_and_PO_level_0, '1a': n_inpatient_ds_and_PO_level_1a,
+                       '1b': n_inpatient_ds_and_PO_level_1b, '2': n_inpatient_ds_and_PO_level_2},
+                      name='Need inpatient care based on severe signs and SpO2<90%'))
+
+        # number of cases needing Oxygen based on severe pneumonia (ds) classification with SpO2 < 90% - Ox only scenario
+        need_oxygen_ds_with_SpO2lt90_level_0 = number_cases_by_seek_level.sum(level=[0, 1, 2]).reindex(
+            pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '0')],
+                                      names=number_cases_by_seek_level.index.names), fill_value=0).sum()
+        need_oxygen_ds_with_SpO2lt90_level_1a = number_cases_by_seek_level.sum(level=[0, 1, 2]).reindex(
+            pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1a')],
+                                      names=number_cases_by_seek_level.index.names), fill_value=0).sum()
+        need_oxygen_ds_with_SpO2lt90_level_1b = number_cases_by_seek_level.sum(level=[0, 1, 2]).reindex(
+            pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1b')],
+                                      names=number_cases_by_seek_level.index.names), fill_value=0).sum()
+        need_oxygen_ds_with_SpO2lt90_level_2 = number_cases_by_seek_level.sum(level=[0, 1, 2]).reindex(
+            pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '2')],
+                                      names=number_cases_by_seek_level.index.names), fill_value=0).sum()
+
+        # update the dataframe - Need inpatient care based on severe signs and SpO2 <90%
+        df_by_seek_level = df_by_seek_level.append(
+            pd.Series({'0': need_oxygen_ds_with_SpO2lt90_level_0, '1a': need_oxygen_ds_with_SpO2lt90_level_1a,
+                       '1b': need_oxygen_ds_with_SpO2lt90_level_1b, '2': need_oxygen_ds_with_SpO2lt90_level_2},
+                      name='Need Oxygen - severe classification with SpO2<90%'))
+
+        # number of cases needing Oxygen based on SpO2 < 90% - PO (+/- Ox) scenario
+        need_oxygen_SpO2lt90_level_0 = number_cases_by_seek_level.sum(level=[0, 1, 2]).reindex(
+            pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '0'),
+                                       ('chest_indrawing_pneumonia', '<90%', '0'),
+                                       ('fast_breathing_pneumonia', '<90%', '0'),
+                                       ('cough_or_cold', '<90%', '0')],
+                                      names=number_cases_by_seek_level.index.names), fill_value=0).sum()
+        need_oxygen_SpO2lt90_level_1a = number_cases_by_seek_level.sum(level=[0, 1, 2]).reindex(
+            pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1a'),
+                                       ('chest_indrawing_pneumonia', '<90%', '1a'),
+                                       ('fast_breathing_pneumonia', '<90%', '1a'),
+                                       ('cough_or_cold', '<90%', '1a')],
+                                      names=number_cases_by_seek_level.index.names), fill_value=0).sum()
+        need_oxygen_SpO2lt90_level_1b = number_cases_by_seek_level.sum(level=[0, 1, 2]).reindex(
+            pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1b'),
+                                       ('chest_indrawing_pneumonia', '<90%', '1b'),
+                                       ('fast_breathing_pneumonia', '<90%', '1b'),
+                                       ('cough_or_cold', '<90%', '1b')],
+                                      names=number_cases_by_seek_level.index.names), fill_value=0).sum()
+        need_oxygen_SpO2lt90_level_2 = number_cases_by_seek_level.sum(level=[0, 1, 2]).reindex(
+            pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '2'),
+                                       ('chest_indrawing_pneumonia', '<90%', '2'),
+                                       ('fast_breathing_pneumonia', '<90%', '2'),
+                                       ('cough_or_cold', '<90%', '2')],
+                                      names=number_cases_by_seek_level.index.names), fill_value=0).sum()
+
+        # update the dataframe - Need inpatient care based on SpO2 <90%
+        df_by_seek_level = df_by_seek_level.append(
+            pd.Series({'0': need_oxygen_SpO2lt90_level_0, '1a': need_oxygen_SpO2lt90_level_1a,
+                       '1b': need_oxygen_SpO2lt90_level_1b, '2': need_oxygen_SpO2lt90_level_2},
+                      name='Need Oxygen - any SpO2<90%'))
+
+        return df_by_seek_level
+
+    cea_df_ant = cea_df_by_scenario(scenario='but_without_oximeter_or_oxygen', dx_accuracy=dx_accuracy)
+    cea_df_ox = cea_df_by_scenario(scenario='and_with_oxygen_but_without_oximeter', dx_accuracy=dx_accuracy)
+    cea_df_po = cea_df_by_scenario(scenario='and_with_oximeter_but_without_oxygen', dx_accuracy=dx_accuracy)
+    cea_df_po_ox = cea_df_by_scenario(scenario='and_with_oximeter_and_oxygen', dx_accuracy=dx_accuracy)
+
+
+    # Antibiotics only scenario ----------------------------------------------------------------------
+    facility_seeking_ant = table['seek_level']
+    number_cases_by_level_ant = table.groupby(by=[disease_classification2, low_oxygen, facility_seeking_ant]).size()
+    cases_per_facility_ant = table.groupby(by=[facility_seeking_ant]).size()
+    deaths_per_facility_ant = (table['prob_die_if_no_treatment'] * (1.0 - table[
+        f'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_{dx_accuracy}_hw_dx_current_pol'] /
+                                                                    100.0)).groupby(by=[facility_seeking_ant]).sum()
+    # create the dataframe
+    df_ant = pd.DataFrame([cases_per_facility_ant, deaths_per_facility_ant], index=['cases', 'deaths'])
+
+    # number of cases needing inpatient care by severe signs
+    n_inpatient_without_PO_level_0 = number_cases_by_level_ant.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '0'), ('danger_signs_pneumonia', '90-92%', '0'),
+                                   ('danger_signs_pneumonia', '>=93%', '0')],
+                                  names=number_cases_by_level_ant.index.names), fill_value=0).sum()
+
+    n_inpatient_without_PO_level_1a = number_cases_by_level_ant.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1a'), ('danger_signs_pneumonia', '90-92%', '1a'),
+                                   ('danger_signs_pneumonia', '>=93%', '1a')],
+                                  names=number_cases_by_level_ant.index.names), fill_value=0).sum()
+    n_inpatient_without_PO_level_1b = number_cases_by_level_ant.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1b'), ('danger_signs_pneumonia', '90-92%', '1b'),
+                                   ('danger_signs_pneumonia', '>=93%', '1b')],
+                                  names=number_cases_by_level_ant.index.names), fill_value=0).sum()
+    n_inpatient_without_PO_level_2 = number_cases_by_level_ant.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '2'), ('danger_signs_pneumonia', '90-92%', '2'),
+                                   ('danger_signs_pneumonia', '>=93%', '2')],
+                                  names=number_cases_by_level_ant.index.names), fill_value=0).sum()
+
+    # Add to dataframe - Need inpatient care based on severe signs
+    df_ant = df_ant.append(pd.Series({'0': n_inpatient_without_PO_level_0, '1a': n_inpatient_without_PO_level_1a,
+                                      '1b': n_inpatient_without_PO_level_1b, '2': n_inpatient_without_PO_level_2},
+                                     name='Need inpatient care based on severe signs'))
+
+    # number of cases needing inpatient care by severe signs + SpO2 level
+    n_inpatient_ds_and_PO_level_0 = number_cases_by_level_ant.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '0'), ('danger_signs_pneumonia', '90-92%', '0'),
+                                   ('danger_signs_pneumonia', '>=93%', '0'),
+                                   ('chest_indrawing_pneumonia', '<90%', '0'), ('fast_breathing_pneumonia', '<90%', '0'),
+                                   ('cough_or_cold', '<90%', '0')],
+                                  names=number_cases_by_level_ant.index.names), fill_value=0).sum()
+
+    n_inpatient_ds_and_PO_level_1a = number_cases_by_level_ant.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1a'), ('danger_signs_pneumonia', '90-92%', '1a'),
+                                   ('danger_signs_pneumonia', '>=93%', '1a'),
+                                   ('chest_indrawing_pneumonia', '<90%', '1a'), ('fast_breathing_pneumonia', '<90%', '1a'),
+                                   ('cough_or_cold', '<90%', '1a')],
+                                  names=number_cases_by_level_ant.index.names), fill_value=0).sum()
+
+    n_inpatient_ds_and_PO_level_1b = number_cases_by_level_ant.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1b'), ('danger_signs_pneumonia', '90-92%', '1b'),
+                                   ('danger_signs_pneumonia', '>=93%', '1b'),
+                                   ('chest_indrawing_pneumonia', '<90%', '1b'), ('fast_breathing_pneumonia', '<90%', '1b'),
+                                   ('cough_or_cold', '<90%', '1b')],
+                                  names=number_cases_by_level_ant.index.names), fill_value=0).sum()
+
+    n_inpatient_ds_and_PO_level_2 = number_cases_by_level_ant.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '2'), ('danger_signs_pneumonia', '90-92%', '2'),
+                                   ('danger_signs_pneumonia', '>=93%', '2'),
+                                   ('chest_indrawing_pneumonia', '<90%', '2'), ('fast_breathing_pneumonia', '<90%', '2'),
+                                   ('cough_or_cold', '<90%', '2')],
+                                  names=number_cases_by_level_ant.index.names), fill_value=0).sum()
+
+    # update the dataframe - Need inpatient care based on severe signs and SpO2 <90%
+    df_ant = df_ant.append(pd.Series({'0': n_inpatient_ds_and_PO_level_0, '1a': n_inpatient_ds_and_PO_level_1a,
+                                      '1b': n_inpatient_ds_and_PO_level_1b, '2': n_inpatient_ds_and_PO_level_2},
+                                     name='Need inpatient care based on severe signs and SpO2<90%'))
+
+    # number of cases needing Oxygen based on severe pneumonia (ds) classification with SpO2 < 90% - Ox only scenario
+    need_oxygen_ds_with_SpO2lt90_level_0 = number_cases_by_level_ant.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '0')],
+                                  names=number_cases_by_level_ant.index.names), fill_value=0).sum()
+    need_oxygen_ds_with_SpO2lt90_level_1a = number_cases_by_level_ant.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1a')],
+                                  names=number_cases_by_level_ant.index.names), fill_value=0).sum()
+    need_oxygen_ds_with_SpO2lt90_level_1b = number_cases_by_level_ant.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1b')],
+                                  names=number_cases_by_level_ant.index.names), fill_value=0).sum()
+    need_oxygen_ds_with_SpO2lt90_level_2 = number_cases_by_level_ant.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '2')],
+                                  names=number_cases_by_level_ant.index.names), fill_value=0).sum()
+
+    # update the dataframe - Need inpatient care based on severe signs and SpO2 <90%
+    df_ant = df_ant.append(pd.Series({'0': need_oxygen_ds_with_SpO2lt90_level_0,
+                                      '1a': need_oxygen_ds_with_SpO2lt90_level_1a,
+                                      '1b': need_oxygen_ds_with_SpO2lt90_level_1b,
+                                      '2': need_oxygen_ds_with_SpO2lt90_level_2},
+                                     name='Need Oxygen - severe classification with SpO2<90%'))
+
+    # number of cases needing Oxygen based on SpO2 < 90% - PO (+/- Ox) scenario
+    need_oxygen_SpO2lt90_level_0 = number_cases_by_level_ant.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '0'),
+                                   ('chest_indrawing_pneumonia', '<90%', '0'),
+                                   ('fast_breathing_pneumonia', '<90%', '0'),
+                                   ('cough_or_cold', '<90%', '0')],
+                                  names=number_cases_by_level_ant.index.names), fill_value=0).sum()
+    need_oxygen_SpO2lt90_level_1a = number_cases_by_level_ant.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1a'),
+                                   ('chest_indrawing_pneumonia', '<90%', '1a'),
+                                   ('fast_breathing_pneumonia', '<90%', '1a'),
+                                   ('cough_or_cold', '<90%', '1a')],
+                                  names=number_cases_by_level_ant.index.names), fill_value=0).sum()
+    need_oxygen_SpO2lt90_level_1b = number_cases_by_level_ant.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1b'),
+                                   ('chest_indrawing_pneumonia', '<90%', '1b'),
+                                   ('fast_breathing_pneumonia', '<90%', '1b'),
+                                   ('cough_or_cold', '<90%', '1b')],
+                                  names=number_cases_by_level_ant.index.names), fill_value=0).sum()
+    need_oxygen_SpO2lt90_level_2 = number_cases_by_level_ant.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '2'),
+                                   ('chest_indrawing_pneumonia', '<90%', '2'),
+                                   ('fast_breathing_pneumonia', '<90%', '2'),
+                                   ('cough_or_cold', '<90%', '2')],
+                                  names=number_cases_by_level_ant.index.names), fill_value=0).sum()
+
+    # update the dataframe - Need inpatient care based on SpO2 <90%
+    df_ant = df_ant.append(pd.Series({'0': need_oxygen_SpO2lt90_level_0,
+                                      '1a': need_oxygen_SpO2lt90_level_1a,
+                                      '1b': need_oxygen_SpO2lt90_level_1b,
+                                      '2': need_oxygen_SpO2lt90_level_2},
+                                     name='Need Oxygen - any SpO2<90%'))
+
+    # Oxygen only scenario ---------------------------------------------------------------------------------------
+    facility_seeking_ox = table['seek_level']
+    number_cases_by_level_ox = table.groupby(by=[disease_classification2, low_oxygen, facility_seeking_ox]).size()
+    cases_per_facility_ox = table.groupby(by=[facility_seeking_ox]).size()
+    deaths_per_facility_ox = (table['prob_die_if_no_treatment'] * (1.0 - table[
+        f'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_{dx_accuracy}_hw_dx_current_pol'] /
+                                                                    100.0)).groupby(by=[facility_seeking_ox]).sum()
+    # create the dataframe
+    df_ox = pd.DataFrame([cases_per_facility_ox, deaths_per_facility_ox], index=['cases', 'deaths'])
+
+    # number of cases needing inpatient care by severe signs
+    n_inpatient_without_PO_level_0 = number_cases_by_level_ox.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '0'), ('danger_signs_pneumonia', '90-92%', '0'),
+                                   ('danger_signs_pneumonia', '>=93%', '0')],
+                                  names=number_cases_by_level_ox.index.names), fill_value=0).sum()
+
+    n_inpatient_without_PO_level_1a = number_cases_by_level_ox.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1a'), ('danger_signs_pneumonia', '90-92%', '1a'),
+                                   ('danger_signs_pneumonia', '>=93%', '1a')],
+                                  names=number_cases_by_level_ox.index.names), fill_value=0).sum()
+    n_inpatient_without_PO_level_1b = number_cases_by_level_ox.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1b'), ('danger_signs_pneumonia', '90-92%', '1b'),
+                                   ('danger_signs_pneumonia', '>=93%', '1b')],
+                                  names=number_cases_by_level_ox.index.names), fill_value=0).sum()
+    n_inpatient_without_PO_level_2 = number_cases_by_level_ox.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '2'), ('danger_signs_pneumonia', '90-92%', '2'),
+                                   ('danger_signs_pneumonia', '>=93%', '2')],
+                                  names=number_cases_by_level_ox.index.names), fill_value=0).sum()
+
+    # Add to dataframe - Need inpatient care based on severe signs
+    df_ox = df_ox.append(pd.Series({'0': n_inpatient_without_PO_level_0, '1a': n_inpatient_without_PO_level_1a,
+                                    '1b': n_inpatient_without_PO_level_1b, '2': n_inpatient_without_PO_level_2},
+                                   name='Need inpatient care based on severe signs'))
+
+    # number of cases needing inpatient care by severe signs + SpO2 level
+    n_inpatient_ds_and_PO_level_0 = number_cases_by_level_ox.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '0'), ('danger_signs_pneumonia', '90-92%', '0'),
+                                   ('danger_signs_pneumonia', '>=93%', '0'),
+                                   ('chest_indrawing_pneumonia', '<90%', '0'), ('fast_breathing_pneumonia', '<90%', '0'),
+                                   ('cough_or_cold', '<90%', '0')],
+                                  names=number_cases_by_level_ox.index.names), fill_value=0).sum()
+
+    n_inpatient_ds_and_PO_level_1a = number_cases_by_level_ox.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1a'), ('danger_signs_pneumonia', '90-92%', '1a'),
+                                   ('danger_signs_pneumonia', '>=93%', '1a'),
+                                   ('chest_indrawing_pneumonia', '<90%', '1a'), ('fast_breathing_pneumonia', '<90%', '1a'),
+                                   ('cough_or_cold', '<90%', '1a')],
+                                  names=number_cases_by_level_ox.index.names), fill_value=0).sum()
+
+    n_inpatient_ds_and_PO_level_1b = number_cases_by_level_ox.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1b'), ('danger_signs_pneumonia', '90-92%', '1b'),
+                                   ('danger_signs_pneumonia', '>=93%', '1b'),
+                                   ('chest_indrawing_pneumonia', '<90%', '1b'), ('fast_breathing_pneumonia', '<90%', '1b'),
+                                   ('cough_or_cold', '<90%', '1b')],
+                                  names=number_cases_by_level_ox.index.names), fill_value=0).sum()
+
+    n_inpatient_ds_and_PO_level_2 = number_cases_by_level_ox.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '2'), ('danger_signs_pneumonia', '90-92%', '2'),
+                                   ('danger_signs_pneumonia', '>=93%', '2'),
+                                   ('chest_indrawing_pneumonia', '<90%', '2'), ('fast_breathing_pneumonia', '<90%', '2'),
+                                   ('cough_or_cold', '<90%', '2')],
+                                  names=number_cases_by_level_ox.index.names), fill_value=0).sum()
+
+    # update the dataframe - Need inpatient care based on severe signs and SpO2 <90%
+    df_ox = df_ox.append(pd.Series({'0': n_inpatient_ds_and_PO_level_0, '1a': n_inpatient_ds_and_PO_level_1a,
+                                    '1b': n_inpatient_ds_and_PO_level_1b, '2': n_inpatient_ds_and_PO_level_2},
+                                   name='Need inpatient care based on severe signs and SpO2<90%'))
+
+    # number of cases needing Oxygen based on severe pneumonia (ds) classification with SpO2 < 90% - Ox only scenario
+    need_oxygen_ds_with_SpO2lt90_level_0 = number_cases_by_level_ox.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '0')],
+                                  names=number_cases_by_level_ox.index.names), fill_value=0).sum()
+    need_oxygen_ds_with_SpO2lt90_level_1a = number_cases_by_level_ox.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1a')],
+                                  names=number_cases_by_level_ox.index.names), fill_value=0).sum()
+    need_oxygen_ds_with_SpO2lt90_level_1b = number_cases_by_level_ox.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1b')],
+                                  names=number_cases_by_level_ox.index.names), fill_value=0).sum()
+    need_oxygen_ds_with_SpO2lt90_level_2 = number_cases_by_level_ox.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '2')],
+                                  names=number_cases_by_level_ox.index.names), fill_value=0).sum()
+
+    # update the dataframe - Need inpatient care based on severe signs and SpO2 <90%
+    df_ox = df_ox.append(pd.Series({'0': need_oxygen_ds_with_SpO2lt90_level_0,
+                                    '1a': need_oxygen_ds_with_SpO2lt90_level_1a,
+                                    '1b': need_oxygen_ds_with_SpO2lt90_level_1b,
+                                    '2': need_oxygen_ds_with_SpO2lt90_level_2},
+                                   name='Need Oxygen - severe classification with SpO2<90%'))
+
+    # number of cases needing Oxygen based on SpO2 < 90% - PO (+/- Ox) scenario
+    need_oxygen_SpO2lt90_level_0 = number_cases_by_level_ox.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '0'),
+                                   ('chest_indrawing_pneumonia', '<90%', '0'),
+                                   ('fast_breathing_pneumonia', '<90%', '0'),
+                                   ('cough_or_cold', '<90%', '0')],
+                                  names=number_cases_by_level_ox.index.names), fill_value=0).sum()
+    need_oxygen_SpO2lt90_level_1a = number_cases_by_level_ox.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1a'),
+                                   ('chest_indrawing_pneumonia', '<90%', '1a'),
+                                   ('fast_breathing_pneumonia', '<90%', '1a'),
+                                   ('cough_or_cold', '<90%', '1a')],
+                                  names=number_cases_by_level_ox.index.names), fill_value=0).sum()
+    need_oxygen_SpO2lt90_level_1b = number_cases_by_level_ox.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1b'),
+                                   ('chest_indrawing_pneumonia', '<90%', '1b'),
+                                   ('fast_breathing_pneumonia', '<90%', '1b'),
+                                   ('cough_or_cold', '<90%', '1b')],
+                                  names=number_cases_by_level_ox.index.names), fill_value=0).sum()
+    need_oxygen_SpO2lt90_level_2 = number_cases_by_level_ox.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '2'),
+                                   ('chest_indrawing_pneumonia', '<90%', '2'),
+                                   ('fast_breathing_pneumonia', '<90%', '2'),
+                                   ('cough_or_cold', '<90%', '2')],
+                                  names=number_cases_by_level_ox.index.names), fill_value=0).sum()
+
+    # update the dataframe - Need inpatient care based on severe signs and SpO2 <90%
+    df_ox = df_ox.append(pd.Series({'0': need_oxygen_SpO2lt90_level_0,
+                                      '1a': need_oxygen_SpO2lt90_level_1a,
+                                      '1b': need_oxygen_SpO2lt90_level_1b,
+                                      '2': need_oxygen_SpO2lt90_level_2},
+                                   name='Need Oxygen - any SpO2<90%'))
+
+    # Pulse Oximeter only scenario --------------------------------------------------------------------------
+    facility_seeking_po = table['seek_level']
+    number_cases_by_level_po = table.groupby(by=[disease_classification2, low_oxygen, facility_seeking_po]).size()
+    cases_per_facility_po = table.groupby(by=[facility_seeking_po]).size()
+    deaths_per_facility_po = (table['prob_die_if_no_treatment'] * (1.0 - table[
+        f'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_{dx_accuracy}_hw_dx_current_pol'] /
+                                                                    100.0)).groupby(by=[facility_seeking_po]).sum()
+
+    # create the dataframe
+    df_po = pd.DataFrame([cases_per_facility_po, deaths_per_facility_po], index=['cases', 'deaths'])
+
+    # number of cases needing inpatient care by severe signs
+    n_inpatient_without_PO_level_0 = number_cases_by_level_po.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '0'), ('danger_signs_pneumonia', '90-92%', '0'),
+                                   ('danger_signs_pneumonia', '>=93%', '0')],
+                                  names=number_cases_by_level_po.index.names), fill_value=0).sum()
+
+    n_inpatient_without_PO_level_1a = number_cases_by_level_po.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1a'), ('danger_signs_pneumonia', '90-92%', '1a'),
+                                   ('danger_signs_pneumonia', '>=93%', '1a')],
+                                  names=number_cases_by_level_po.index.names), fill_value=0).sum()
+    n_inpatient_without_PO_level_1b = number_cases_by_level_po.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1b'), ('danger_signs_pneumonia', '90-92%', '1b'),
+                                   ('danger_signs_pneumonia', '>=93%', '1b')],
+                                  names=number_cases_by_level_po.index.names), fill_value=0).sum()
+    n_inpatient_without_PO_level_2 = number_cases_by_level_po.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '2'), ('danger_signs_pneumonia', '90-92%', '2'),
+                                   ('danger_signs_pneumonia', '>=93%', '2')],
+                                  names=number_cases_by_level_po.index.names), fill_value=0).sum()
+
+    # Add to dataframe - Need inpatient care based on severe signs
+    df_po = df_po.append(pd.Series({'0': n_inpatient_without_PO_level_0, '1a': n_inpatient_without_PO_level_1a,
+                                    '1b': n_inpatient_without_PO_level_1b, '2': n_inpatient_without_PO_level_2},
+                                   name='Need inpatient care based on severe signs'))
+
+    # number of cases needing inpatient care by severe signs + SpO2 level
+    n_inpatient_ds_and_PO_level_0 = number_cases_by_level_po.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '0'), ('danger_signs_pneumonia', '90-92%', '0'),
+                                   ('danger_signs_pneumonia', '>=93%', '0'),
+                                   ('chest_indrawing_pneumonia', '<90%', '0'), ('fast_breathing_pneumonia', '<90%', '0'),
+                                   ('cough_or_cold', '<90%', '0')],
+                                  names=number_cases_by_level_po.index.names), fill_value=0).sum()
+
+    n_inpatient_ds_and_PO_level_1a = number_cases_by_level_po.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1a'), ('danger_signs_pneumonia', '90-92%', '1a'),
+                                   ('danger_signs_pneumonia', '>=93%', '1a'),
+                                   ('chest_indrawing_pneumonia', '<90%', '1a'), ('fast_breathing_pneumonia', '<90%', '1a'),
+                                   ('cough_or_cold', '<90%', '1a')],
+                                  names=number_cases_by_level_po.index.names), fill_value=0).sum()
+
+    n_inpatient_ds_and_PO_level_1b = number_cases_by_level_po.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1b'), ('danger_signs_pneumonia', '90-92%', '1b'),
+                                   ('danger_signs_pneumonia', '>=93%', '1b'),
+                                   ('chest_indrawing_pneumonia', '<90%', '1b'), ('fast_breathing_pneumonia', '<90%', '1b'),
+                                   ('cough_or_cold', '<90%', '1b')],
+                                  names=number_cases_by_level_po.index.names), fill_value=0).sum()
+
+    n_inpatient_ds_and_PO_level_2 = number_cases_by_level_po.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '2'), ('danger_signs_pneumonia', '90-92%', '2'),
+                                   ('danger_signs_pneumonia', '>=93%', '2'),
+                                   ('chest_indrawing_pneumonia', '<90%', '2'), ('fast_breathing_pneumonia', '<90%', '2'),
+                                   ('cough_or_cold', '<90%', '2')],
+                                  names=number_cases_by_level_po.index.names), fill_value=0).sum()
+
+    # update the dataframe - Need inpatient care based on severe signs and SpO2 <90%
+    df_po = df_po.append(pd.Series({'0': n_inpatient_ds_and_PO_level_0, '1a': n_inpatient_ds_and_PO_level_1a,
+                                    '1b': n_inpatient_ds_and_PO_level_1b, '2': n_inpatient_ds_and_PO_level_2},
+                                   name='Need inpatient care based on severe signs and SpO2<90%'))
+
+    # number of cases needing Oxygen based on severe pneumonia (ds) classification with SpO2 < 90% - Ox only scenario
+    need_oxygen_ds_with_SpO2lt90_level_0 = number_cases_by_level_po.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '0')],
+                                  names=number_cases_by_level_po.index.names), fill_value=0).sum()
+    need_oxygen_ds_with_SpO2lt90_level_1a = number_cases_by_level_po.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1a')],
+                                  names=number_cases_by_level_po.index.names), fill_value=0).sum()
+    need_oxygen_ds_with_SpO2lt90_level_1b = number_cases_by_level_po.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1b')],
+                                  names=number_cases_by_level_po.index.names), fill_value=0).sum()
+    need_oxygen_ds_with_SpO2lt90_level_2 = number_cases_by_level_po.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '2')],
+                                  names=number_cases_by_level_po.index.names), fill_value=0).sum()
+
+    # update the dataframe - Need inpatient care based on severe signs and SpO2 <90%
+    df_po = df_po.append(pd.Series({'0': need_oxygen_ds_with_SpO2lt90_level_0,
+                                    '1a': need_oxygen_ds_with_SpO2lt90_level_1a,
+                                    '1b': need_oxygen_ds_with_SpO2lt90_level_1b,
+                                    '2': need_oxygen_ds_with_SpO2lt90_level_2},
+                                   name='Need Oxygen - severe classification with SpO2<90%'))
+
+    # number of cases needing Oxygen based on SpO2 < 90% - PO (+/- Ox) scenario
+    need_oxygen_SpO2lt90_level_0 = number_cases_by_level_po.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '0'),
+                                   ('chest_indrawing_pneumonia', '<90%', '0'),
+                                   ('fast_breathing_pneumonia', '<90%', '0'),
+                                   ('cough_or_cold', '<90%', '0')],
+                                  names=number_cases_by_level_po.index.names), fill_value=0).sum()
+    need_oxygen_SpO2lt90_level_1a = number_cases_by_level_po.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1a'),
+                                   ('chest_indrawing_pneumonia', '<90%', '1a'),
+                                   ('fast_breathing_pneumonia', '<90%', '1a'),
+                                   ('cough_or_cold', '<90%', '1a')],
+                                  names=number_cases_by_level_po.index.names), fill_value=0).sum()
+    need_oxygen_SpO2lt90_level_1b = number_cases_by_level_po.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '1b'),
+                                   ('chest_indrawing_pneumonia', '<90%', '1b'),
+                                   ('fast_breathing_pneumonia', '<90%', '1b'),
+                                   ('cough_or_cold', '<90%', '1b')],
+                                  names=number_cases_by_level_po.index.names), fill_value=0).sum()
+    need_oxygen_SpO2lt90_level_2 = number_cases_by_level_po.sum(level=[0, 1, 2]).reindex(
+        pd.MultiIndex.from_tuples([('danger_signs_pneumonia', '<90%', '2'),
+                                   ('chest_indrawing_pneumonia', '<90%', '2'),
+                                   ('fast_breathing_pneumonia', '<90%', '2'),
+                                   ('cough_or_cold', '<90%', '2')],
+                                  names=number_cases_by_level_po.index.names), fill_value=0).sum()
+
+    # update the dataframe - Need inpatient care based on severe signs and SpO2 <90%
+    df_po = df_po.append(pd.Series({'0': need_oxygen_SpO2lt90_level_0,
+                                    '1a': need_oxygen_SpO2lt90_level_1a,
+                                    '1b': need_oxygen_SpO2lt90_level_1b,
+                                    '2': need_oxygen_SpO2lt90_level_2},
+                                   name='Need Oxygen - any SpO2<90%'))
+
+    # Ox and PO scenario
+    facility_seeking_po_ox = table['seek_level']
+    number_cases_by_level_po_ox = table.groupby(by=[disease_classification2, low_oxygen, facility_seeking_po_ox]).size()
+    cases_per_facility_po_ox = table.groupby(by=[facility_seeking_po_ox]).size()
+    deaths_per_facility_po_ox = (table['prob_die_if_no_treatment'] * (1.0 - table[
+        f'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_{dx_accuracy}_hw_dx_current_pol'] /
+                                                                    100.0)).groupby(by=[facility_seeking_po_ox]).sum()
+
+    df_po_ox = pd.DataFrame([cases_per_facility_ant, deaths_per_facility_ant], index=['cases', 'deaths'])
 
     res = {
         "Current policy": {
@@ -1378,14 +1985,14 @@ if __name__ == "__main__":
     deaths_ox_only_new_pol = (table['prob_die_if_no_treatment'] * (
         1.0 - table[
         f'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_{dx_accuracy}_hw_dx_new_pol'] / 100.0)
-                                  ).groupby(by=[disease_classification2, low_oxygen]).sum()
+                              ).groupby(by=[disease_classification2, low_oxygen]).sum()
     sum_deaths_ox_only_new_pol = deaths_ox_only_new_pol.sum()
 
     # antibiotics only under *current* policy --- CFR SAME FOR EITHER POLICY
     deaths_antibiotics_only_new_pol = (table['prob_die_if_no_treatment'] * (
         1.0 - table[
         f'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_{dx_accuracy}_hw_dx_new_pol'] / 100.0)
-                                           ).groupby(by=[disease_classification2, low_oxygen]).sum()
+                                       ).groupby(by=[disease_classification2, low_oxygen]).sum()
     sum_deaths_antibiotics_only_new_pol = deaths_antibiotics_only_new_pol.sum()
 
     # -------------- current policy ---------------------------
@@ -1445,13 +2052,13 @@ if __name__ == "__main__":
                               (deaths_po_only_current_pol.sum() / number_cases.sum()) * 100,
                               (deaths_po_only_new_pol.sum() / number_cases.sum()) * 100,
                               (1 - ((deaths_po_only_new_pol.sum() / number_cases.sum()) / (
-                                      deaths_po_only_current_pol.sum() / number_cases.sum()))) * 100,
+                                  deaths_po_only_current_pol.sum() / number_cases.sum()))) * 100,
                               (deaths_antibiotics_only_new_pol.sum() / number_cases.sum()) * 100,
                               (deaths_ox_only_new_pol.sum() / number_cases.sum()) * 100,
                               (deaths_po_and_ox_current_pol.sum() / number_cases.sum()) * 100,
                               (deaths_po_and_ox_new_pol.sum() / number_cases.sum()) * 100,
                               (1 - ((deaths_po_and_ox_new_pol.sum() / number_cases.sum()) / (
-                                      deaths_po_and_ox_current_pol.sum() / number_cases.sum()))) * 100
+                                  deaths_po_and_ox_current_pol.sum() / number_cases.sum()))) * 100
                               ]
 
     # reorder the index:
@@ -1571,4 +2178,3 @@ def f_DALY(K, C=0.16243, r=None, beta=None, a_death=None, a_disability=None, YLL
 
     Amount = [YLL_discounted, YLD, DALY_total]
     return Amount
-

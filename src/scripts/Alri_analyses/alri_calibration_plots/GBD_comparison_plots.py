@@ -30,8 +30,8 @@ resourcefilepath = Path("./resources")
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-log_filename = 'none'
-# log_filename = outputpath / 'GBD_lri_comparison_50k_pop__2022-03-15T111444.log'
+# log_filename = 'none'
+log_filename = outputpath / 'GBD_lri_comparison_15k_pop__2023-09-11T163954.log'
 # <-- insert name of log file to avoid re-running the simulation
 
 if not os.path.exists(log_filename):
@@ -78,7 +78,7 @@ if not os.path.exists(log_filename):
 
     # display filename
     log_filename = sim.log_filepath
-    print(f"log_filename: {log_filename}")
+    print(f"log_filename: {log_filename}")  # outputs\GBD_lri_comparison_15k_pop__2023-09-11T163954.log
 
 output = parse_log_file(log_filename)
 

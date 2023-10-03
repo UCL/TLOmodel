@@ -31,6 +31,8 @@ from tlo.methods.alri import (
     HSI_Alri_Treatment,
     _make_hw_diagnosis_perfect,
     _make_treatment_and_diagnosis_perfect,
+    _set_current_policy,
+    _set_new_policy
 )
 from tlo.util import sample_outcome
 
@@ -79,11 +81,106 @@ def get_sim(popsize):
 # Create simulation (This is needed to generate a population with representative characteristics and to initialise the
 # Alri module.)
 
-# Alri module with default values
+# Alri module with default values (imperfect diagnosis/ imperfect treatment)
 sim0 = get_sim(popsize=MODEL_POPSIZE)
 alri_module_with_imperfect_diagnosis_and_imperfect_treatment = sim0.modules['Alri']
 hsi_with_imperfect_diagnosis_and_imperfect_treatment = HSI_Alri_Treatment(
     module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment, person_id=None)
+
+# Alri module with perfect diagnosis and perfect treatment
+sim2 = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_perfect_treatment_and_diagnosis = sim2.modules['Alri']
+_make_treatment_and_diagnosis_perfect(alri_module_with_perfect_treatment_and_diagnosis)
+
+# current policy - perfect diagnosis (and imperfect treatment)
+sim_cp = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_perfect_diagnosis_current_policy = sim_cp.modules['Alri']
+_make_hw_diagnosis_perfect(alri_module_with_perfect_diagnosis_current_policy)
+_set_current_policy(alri_module_with_perfect_diagnosis_current_policy)
+hsi_with_perfect_diagnosis_current_policy = HSI_Alri_Treatment(module=alri_module_with_perfect_diagnosis_current_policy,
+                                                               person_id=None)
+
+# current policy - perfect diagnosis and perfect treatment
+sim_cp_perfect = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_perfect_diagnosis_and_perfect_treatment_current_policy = sim_cp_perfect.modules['Alri']
+_make_treatment_and_diagnosis_perfect(alri_module_with_perfect_diagnosis_and_perfect_treatment_current_policy)
+_set_current_policy(alri_module_with_perfect_diagnosis_and_perfect_treatment_current_policy)
+hsi_with_perfect_diagnosis_and_perfect_treatment_current_policy = HSI_Alri_Treatment(
+    module=alri_module_with_perfect_diagnosis_and_perfect_treatment_current_policy, person_id=None)
+
+# new policy - perfect diagnosis (and imperfect treatment)
+sim_np = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_perfect_diagnosis_new_policy = sim_np.modules['Alri']
+_make_hw_diagnosis_perfect(alri_module_with_perfect_diagnosis_new_policy)
+_set_new_policy(alri_module_with_perfect_diagnosis_new_policy)
+hsi_with_perfect_diagnosis_new_policy = HSI_Alri_Treatment(module=alri_module_with_perfect_diagnosis_new_policy,
+                                                           person_id=None)
+
+# new policy - imperfect diagnosis (and imperfect treatment)
+sim_np = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_new_policy = sim_np.modules['Alri']
+_set_new_policy(alri_module_with_imperfect_diagnosis_new_policy)
+hsi_with_imperfect_diagnosis_new_policy = HSI_Alri_Treatment(module=alri_module_with_imperfect_diagnosis_new_policy,
+                                                             person_id=None)
+
+# current policy - perfect diagnosis and perfect treatment
+sim_np_perfect = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_perfect_diagnosis_and_perfect_treatment_new_policy = sim_np_perfect.modules['Alri']
+_make_treatment_and_diagnosis_perfect(alri_module_with_perfect_diagnosis_and_perfect_treatment_new_policy)
+_set_new_policy(alri_module_with_perfect_diagnosis_and_perfect_treatment_new_policy)
+hsi_with_perfect_diagnosis_and_perfect_treatment_new_policy = HSI_Alri_Treatment(
+    module=alri_module_with_perfect_diagnosis_and_perfect_treatment_new_policy, person_id=None)
+
+# current policy -----------------
+sim0_cp_ant = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ant = sim0_cp_ant.modules['Alri']
+_set_current_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ant)
+hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ant = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ant, person_id=None)
+
+sim0_cp_po = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po = sim0_cp_po.modules['Alri']
+_set_current_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po)
+hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po, person_id=None)
+
+sim0_cp_ox = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ox = sim0_cp_ox.modules['Alri']
+_set_current_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ox)
+hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ox = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ox, person_id=None)
+
+sim0_cp_po_ox = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po_ox = sim0_cp_po_ox.modules['Alri']
+_set_current_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po_ox)
+hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po_ox = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po_ox, person_id=None)
+
+# new policy -----------------
+sim0_np_ant = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ant = sim0_np_ant.modules['Alri']
+_set_new_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ant)
+hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ant = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ant, person_id=None)
+
+sim0_np_po = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po = sim0_np_po.modules['Alri']
+_set_new_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po)
+hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po, person_id=None)
+
+sim0_np_ox = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ox = sim0_np_ox.modules['Alri']
+_set_new_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ox)
+hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ox = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ox, person_id=None)
+
+sim0_np_po_ox = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po_ox = sim0_np_po_ox.modules['Alri']
+_set_new_policy(alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po_ox)
+hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po_ox = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po_ox, person_id=None)
+
 
 # Alri module with perfect diagnosis (and imperfect treatment)
 sim1 = get_sim(popsize=MODEL_POPSIZE)
@@ -91,10 +188,7 @@ alri_module_with_perfect_diagnosis = sim1.modules['Alri']
 _make_hw_diagnosis_perfect(alri_module_with_perfect_diagnosis)
 hsi_with_perfect_diagnosis = HSI_Alri_Treatment(module=alri_module_with_perfect_diagnosis, person_id=None)
 
-# Alri module with perfect diagnosis and perfect treatment
-sim2 = get_sim(popsize=MODEL_POPSIZE)
-alri_module_with_perfect_treatment_and_diagnosis = sim2.modules['Alri']
-_make_treatment_and_diagnosis_perfect(alri_module_with_perfect_treatment_and_diagnosis)
+
 
 
 def generate_case_mix() -> pd.DataFrame:
@@ -179,16 +273,58 @@ def treatment_efficacy(
     oxygen_available,
     treatment_perfect,
     hw_dx_perfect,
-    facility_level
+    facility_level,
+    new_policy,
 ):
     """Return the percentage by which the treatment reduce the risk of death"""
     # Decide which hsi configuration to use:
-    if hw_dx_perfect:
-        hsi = hsi_with_perfect_diagnosis
-        alri_module = alri_module_with_perfect_diagnosis
+    if treatment_perfect:
+        if not new_policy:
+            hsi = hsi_with_perfect_diagnosis_and_perfect_treatment_current_policy
+            alri_module = alri_module_with_perfect_diagnosis_and_perfect_treatment_current_policy
+        else:
+            hsi = hsi_with_perfect_diagnosis_and_perfect_treatment_new_policy
+            alri_module = alri_module_with_perfect_diagnosis_and_perfect_treatment_new_policy
     else:
-        hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment
-        alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment
+        if hw_dx_perfect:
+            if not new_policy:
+                hsi = hsi_with_perfect_diagnosis_current_policy
+                alri_module = alri_module_with_perfect_diagnosis_current_policy
+            else:
+                hsi = hsi_with_perfect_diagnosis_new_policy
+                alri_module = alri_module_with_perfect_diagnosis_new_policy
+        else:
+            if not new_policy:
+                if not oxygen_available and not oximeter_available:
+                    hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ant
+                    alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ant
+                elif oxygen_available and oximeter_available:
+                    hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po_ox
+                    alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po_ox
+                elif oxygen_available and not oximeter_available:
+                    hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ox
+                    alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_ox
+                elif oximeter_available and not oxygen_available:
+                    hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po
+                    alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_current_policy_po
+                else:
+                    raise ValueError('not using a sim above new pol')
+
+            else:
+                if not oxygen_available and not oximeter_available:
+                    hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ant
+                    alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ant
+                elif oxygen_available and oximeter_available:
+                    hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po_ox
+                    alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po_ox
+                elif oxygen_available and not oximeter_available:
+                    hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ox
+                    alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_ox
+                elif oximeter_available and not oxygen_available:
+                    hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po
+                    alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment_new_policy_po
+                else:
+                    raise ValueError('not using a sim above new pol')
 
     # Get Treatment classification
     classification_for_treatment_decision = hsi._get_disease_classification_for_treatment_decision(
@@ -257,6 +393,7 @@ def generate_table():
 
     # Get Case Mix
     df = generate_case_mix()
+    new_policy = False
 
     # Consider risk of death for this person, intrinsically and under different conditions of treatments
     risk_of_death = list()
@@ -288,7 +425,8 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=True,
                     hw_dx_perfect=True,
-                    facility_level='2'
+                    facility_level='2',
+                    new_policy=new_policy
                 ),
 
             f'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx_level2':
@@ -305,7 +443,8 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-                    facility_level='2'
+                    facility_level='2',
+                    new_policy=new_policy,
                 ),
 
             f'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx_level2':
@@ -322,7 +461,8 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-                    facility_level='2'
+                    facility_level='2',
+                    new_policy=new_policy
                 ),
 
             f'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx_level2':
@@ -339,7 +479,8 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-                    facility_level='2'
+                    facility_level='2',
+                    new_policy=new_policy
                 ),
 
             f'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx_level2':
@@ -356,7 +497,8 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-                    facility_level='2'
+                    facility_level='2',
+                    new_policy=new_policy
                 ),
 
             # Treatment Efficacy with * IMPERFECT HW Diangosis * LEVEL 2 *
@@ -374,7 +516,8 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-                    facility_level='2'
+                    facility_level='2',
+                    new_policy=new_policy
                 ),
 
             f'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_imperfect_hw_dx_level2':
@@ -391,7 +534,8 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-                    facility_level='2'
+                    facility_level='2',
+                    new_policy=new_policy
                 ),
 
             f'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_imperfect_hw_dx_level2':
@@ -408,7 +552,8 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-                    facility_level='2'
+                    facility_level='2',
+                    new_policy=new_policy
                 ),
 
             f'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_imperfect_hw_dx_level2':
@@ -425,7 +570,8 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-                    facility_level='2'
+                    facility_level='2',
+                    new_policy=new_policy
                 ),
 
             # # # # # APPLY FOR LEVEL 1A # # # # #
@@ -444,7 +590,8 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=True,
                     hw_dx_perfect=True,
-                    facility_level='1a'
+                    facility_level='1a',
+                    new_policy=new_policy
                 ),
 
             f'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx_level1a':
@@ -461,7 +608,8 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-                    facility_level='1a'
+                    facility_level='1a',
+                    new_policy=new_policy
                 ),
 
             f'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx_level1a':
@@ -478,7 +626,8 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-                    facility_level='1a'
+                    facility_level='1a',
+                    new_policy=new_policy
                 ),
 
             f'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx_level1a':
@@ -495,7 +644,8 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-                    facility_level='1a'
+                    facility_level='1a',
+                    new_policy=new_policy
                 ),
 
             f'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx_level1a':
@@ -512,7 +662,8 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-                    facility_level='1a'
+                    facility_level='1a',
+                    new_policy=new_policy
                 ),
 
             # Treatment Efficacy with * IMPERFECT HW Diangosis * LEVEL 1A *
@@ -530,7 +681,8 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-                    facility_level='1a'
+                    facility_level='1a',
+                    new_policy=new_policy
                 ),
 
             f'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_imperfect_hw_dx_level1a':
@@ -547,7 +699,8 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-                    facility_level='1a'
+                    facility_level='1a',
+                    new_policy=new_policy
                 ),
 
             f'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_imperfect_hw_dx_level1a':
@@ -564,7 +717,8 @@ def generate_table():
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-                    facility_level='1a'
+                    facility_level='1a',
+                    new_policy=new_policy
                 ),
 
             f'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_imperfect_hw_dx_level1a':
@@ -581,7 +735,8 @@ def generate_table():
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-                    facility_level='1a'
+                    facility_level='1a',
+                    new_policy=new_policy
                 ),
 
             # # # # # # * Classifications * # # # # # #

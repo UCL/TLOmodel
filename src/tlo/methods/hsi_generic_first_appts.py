@@ -172,7 +172,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
         if 'Alri' in sim.modules:
             if ('cough' in symptoms) or ('difficult_breathing' in symptoms):
-                sim.modules['Alri'].on_presentation(person_id=person_id, hsi_event=hsi_event)
+                sim.modules['Alri'].on_presentation(person_id=person_id, symptoms=symptoms, hsi_event=hsi_event)
 
         if "Malaria" in sim.modules:
             if 'fever' in symptoms:
@@ -460,7 +460,7 @@ def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
 
     if 'Alri' in sim.modules:
         if (age <= 5) and (('cough' in symptoms) or ('difficult_breathing' in symptoms)):
-            sim.modules['Alri'].on_presentation(person_id=person_id, hsi_event=hsi_event)
+            sim.modules['Alri'].on_presentation(person_id=person_id, symptoms=symptoms, hsi_event=hsi_event)
 
     # ----- spurious emergency symptom -----
     if 'spurious_emergency_symptom' in symptoms:
