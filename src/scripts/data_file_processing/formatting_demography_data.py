@@ -355,6 +355,10 @@ def process_data_sex(file_sex, sex_indicator):
     ests_sex['Sex'] = sex_indicator
     ests_sex['Year'] = ests_sex['Year'].astype(int)
 
+    # Remove duplicates (all variants of WPP 2019, including estimates, provide the same value for year 2020)
+    ests_sex = \
+        ests_sex[(ests_sex['Year'] != 2020) | ((ests_sex['Year'] == 2020) & (ests_sex['Variant'] == 'Estimates'))]
+
     return ests_sex
 
 
