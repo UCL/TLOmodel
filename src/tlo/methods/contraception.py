@@ -197,7 +197,7 @@ class Contraception(Module):
 
         # Import the Age-specific fertility rate data from WPP
         self.parameters['age_specific_fertility_rates'] = \
-            pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+            pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP19.csv')
 
         # Import 2010 pop and count numbs of women 15-49 & 30-49
         self.parameters['pop_2010'] = \
@@ -1262,7 +1262,7 @@ class EndOfPregnancyEvent(Event, IndividualScopeEventMixin):
 def get_medium_variant_asfr_from_wpp_resourcefile(dat: pd.DataFrame, months_exposure: int) -> dict:
     """Process the data on age-specific fertility rates into a form that can be used to quickly map
     age-ranges to an age-specific fertility rate (for the "Medium Variant" in the WPP data source).
-    :param dat: Raw form of the data in `ResourceFile_ASFR_WPP.csv`
+    :param dat: Raw form of the data in `ResourceFile_ASFR_WPP19.csv`
     :param months_exposure: The time (in integer number of months) over which the risk of pregnancy should be
     computed.
     :returns: a dict, keyed by year, giving a dataframe of risk of pregnancy over a period, by age """

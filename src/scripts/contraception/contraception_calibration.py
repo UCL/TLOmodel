@@ -53,7 +53,7 @@ adult_age_groups = ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49
 _, period_lookup = make_calendar_period_lookup()
 
 # Load WPP data on live births (age-specific fertility rates)
-wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP19.csv')
 
 
 def format_usage_results(_df):

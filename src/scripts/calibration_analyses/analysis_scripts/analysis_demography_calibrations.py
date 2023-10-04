@@ -86,7 +86,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     pop_model.index = pop_model.index.year
 
     # Load Data: WPP_Annual
-    wpp_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_WPP.csv")
+    wpp_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_age_sex_WPP19.csv")
     wpp_ann['Age_Grp'] = wpp_ann['Age_Grp'].astype(make_age_grp_types())
     wpp_ann_total = wpp_ann.groupby(['Year']).sum().sum(axis=1)
 
@@ -322,7 +322,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     births_model.columns = ['Model_' + col for col in births_model.columns]
 
     # Births over time (WPP)
-    wpp_births = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalBirths_WPP.csv")
+    wpp_births = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalBirths_WPP19.csv")
     wpp_births = wpp_births.groupby(['Period', 'Variant'])['Total_Births'].sum().unstack()
     wpp_births.index = wpp_births.index.astype(make_calendar_period_type())
     wpp_births.columns = 'WPP_' + wpp_births.columns
@@ -511,7 +511,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     asfr = summarize(births_by_mother_age_at_pregnancy.div(num_adult_women)).sort_index()
 
     # Get the age-specific fertility rates of the WPP source
-    wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+    wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP19.csv')
 
     def expand_by_year(periods, vals, years=range(2010, 2050)):
         _ser = dict()
@@ -595,7 +595,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     results_deaths = results_deaths.drop(columns=['age', 'year']).groupby(['Period', 'Sex', 'Age_Grp']).sum()
 
     # Load WPP data
-    wpp_deaths = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalDeaths_WPP.csv")
+    wpp_deaths = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalDeaths_WPP19.csv")
     wpp_deaths['Period'] = wpp_deaths['Period'].astype(make_calendar_period_type())
     wpp_deaths['Age_Grp'] = wpp_deaths['Age_Grp'].astype(make_age_grp_types())
 

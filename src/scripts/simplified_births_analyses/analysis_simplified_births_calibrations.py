@@ -97,7 +97,7 @@ births_model = births_model.groupby(by='Period')['total_births'].sum()
 births_model.index = births_model.index.astype(make_calendar_period_type())
 
 # Births over time (WPP)
-wpp = pd.read_csv(Path(resourcefilepath) / 'demography' / "ResourceFile_TotalBirths_WPP.csv")
+wpp = pd.read_csv(Path(resourcefilepath) / 'demography' / "ResourceFile_TotalBirths_WPP19.csv")
 wpp = wpp.groupby(['Period', 'Variant'])['Total_Births'].sum().unstack()
 wpp.index = wpp.index.astype(make_calendar_period_type())
 wpp.columns = 'WPP_' + wpp.columns

@@ -182,7 +182,7 @@ class Demography(Module):
 
         # All-Cause Mortality schedule:
         self.parameters['all_cause_mortality_schedule'] = pd.read_csv(
-            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv'
+            Path(self.resourcefilepath) / 'demography' / 'ResourceFile_Pop_DeathRates_Expanded_WPP19.csv'
         )
 
         # GBD Dataset for Causes of Death
