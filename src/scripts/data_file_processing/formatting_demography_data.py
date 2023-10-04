@@ -338,37 +338,28 @@ wpp_tot_pop_males_file = workingfolder + '/WPP_2019/WPP2019_POP_F01_2_TOTAL_POPU
 
 wpp_tot_pop_females_file = workingfolder + '/WPP_2019/WPP2019_POP_F01_3_TOTAL_POPULATION_FEMALE.xlsx'
 
-# Males
-dat = pd.concat([
-    pd.read_excel(wpp_tot_pop_males_file, sheet_name='ESTIMATES', header=16),
-    pd.read_excel(wpp_tot_pop_males_file, sheet_name='LOW VARIANT', header=16),
-    pd.read_excel(wpp_tot_pop_males_file, sheet_name='MEDIUM VARIANT', header=16),
-    pd.read_excel(wpp_tot_pop_males_file, sheet_name='HIGH VARIANT', header=16)
-], sort=False)
 
-ests_males = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
-ests_males = ests_males.drop(ests_males.columns[[0, 2, 3, 4, 5, 6]], axis='columns')
+def process_data_sex(file_sex, sex_indicator):
+    dat = pd.concat([
+        pd.read_excel(file_sex, sheet_name='ESTIMATES', header=16),
+        pd.read_excel(file_sex, sheet_name='LOW VARIANT', header=16),
+        pd.read_excel(file_sex, sheet_name='MEDIUM VARIANT', header=16),
+        pd.read_excel(file_sex, sheet_name='HIGH VARIANT', header=16)
+    ], sort=False)
 
-ests_males = ests_males.melt(id_vars=['Variant'], var_name='Year', value_name='Count').dropna()
-ests_males['Count'] = 1000 * ests_males['Count']  # given numbers are in 1000's, so multiply by 1000 to give actual
-ests_males['Sex'] = 'M'
-ests_males['Year'] = ests_males['Year'].astype(int)
+    ests_sex = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
+    ests_sex = ests_sex.drop(ests_sex.columns[[0, 2, 3, 4, 5, 6]], axis='columns')
 
-# Females
-dat = pd.concat([
-    pd.read_excel(wpp_tot_pop_females_file, sheet_name='ESTIMATES', header=16),
-    pd.read_excel(wpp_tot_pop_females_file, sheet_name='LOW VARIANT', header=16),
-    pd.read_excel(wpp_tot_pop_females_file, sheet_name='MEDIUM VARIANT', header=16),
-    pd.read_excel(wpp_tot_pop_females_file, sheet_name='HIGH VARIANT', header=16),
-])
+    ests_sex = ests_sex.melt(id_vars=['Variant'], var_name='Year', value_name='Count').dropna()
+    ests_sex['Count'] = 1000 * ests_sex['Count']  # given numbers are in 1000's, so multiply by 1000 to give actual
+    ests_sex['Sex'] = sex_indicator
+    ests_sex['Year'] = ests_sex['Year'].astype(int)
 
-ests_females = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
-ests_females = ests_females.drop(ests_females.columns[[0, 2, 3, 4, 5, 6]], axis='columns')
+    return ests_sex
 
-ests_females = ests_females.melt(id_vars=['Variant'], var_name='Year', value_name='Count').dropna()
-ests_females['Count'] = 1000 * ests_females['Count']  # given numbers are in 1000's, so multiply by 1000 to give actual
-ests_females['Sex'] = 'F'
-ests_females['Year'] = ests_females['Year'].astype(int)
+
+ests_males = process_data_sex(wpp_tot_pop_males_file, 'M')
+ests_females = process_data_sex(wpp_tot_pop_females_file, 'F')
 
 # Join and tidy up
 ests = pd.concat([ests_males, ests_females], sort=False)
