@@ -1,5 +1,5 @@
 """  This script partially run the tb code as running the full model might take longer
- tlo scenario-run src/scripts/hiv/projections_jan2023/partial_run02.py
+ tlo scenario-run src/scripts/hiv/projections_jan2023/partial_run.py
   execute a single run:"""
 import warnings
 from typing import Dict
@@ -25,17 +25,17 @@ warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 
 class ImpactOfTbDaHx(BaseScenario):
     def __init__(self):
-        super().__init__(
-            seed=0,
-            start_date=Date(2010, 1, 1),
-            end_date=Date(2012, 1, 1),
-            initial_population_size=1_000,
-            number_of_draws=5,
-            runs_per_draw=1,
-        )
+        super().__init__()
+        self.seed = 0 #random.randint(0, 50000)
+        self.start_date = Date(2010, 1, 1)
+        self.end_date = Date(2012, 12, 31)
+        self.pop_size = 3000
+        self._scenarios = self._get_scenarios()
+        self.number_of_draws = len(self._scenarios)
+        self.runs_per_draw = 3
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_scenarios_test_partial_run02_16',
+            'filename': 'Tb_DAH_scenarios_test_run31_partial',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -47,7 +47,6 @@ class ImpactOfTbDaHx(BaseScenario):
                 'tlo.methods.hiv': logging.INFO,
             }
         }
-
     def modules(self):
         return [
             demography.Demography(resourcefilepath=self.resources),
@@ -81,33 +80,29 @@ class ImpactOfTbDaHx(BaseScenario):
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                    'first_line_test': 'sputum',
-                    'second_line_test': 'sputum',
-        },
+                   # 'scaling_factor_WHO': 1.95,
+                },
             },
-            # overrides availability of CXR
+        # overrides availability of CXR
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
-                     # 'first_line_test': 'sputum',
-                     # 'second_line_test': 'xpert',
+                    'scaling_factor_WHO': 1.9,
                 },
             },
             "CXR scale_up": {
-                'Tb': {
-                    'scenario': 3,
-                    #  'first_line_test': 'sputum',
-                    # 'second_line_test': 'xpert',
-                }
+                 'Tb': {
+                     'scenario': 3,
+                     'scaling_factor_WHO': 1.25,
+                 }
             },
-            # increases probability of community CXR 20%
             "Outreach services": {
                 'Tb': {
-                    'scenario': 0,
+                     'scenario': 0,
                      'probability_community_chest_xray': 0.1,
-                     'scaling_factor_WHO': 2.1,
+                     'scaling_factor_WHO': 0.89,
                 }
-            }
+            },
         }
 if __name__ == '__main__':
     from tlo.cli import scenario_run

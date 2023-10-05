@@ -87,20 +87,20 @@ class ImpactOfTbDaHx(BaseScenario):
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
-                    'scaling_factor_WHO': 1.95,
+                    'scaling_factor_WHO': 1.9,
                 },
             },
             "CXR scale_up": {
                  'Tb': {
                      'scenario': 3,
-                     'scaling_factor_WHO': 1.25,
+                     'scaling_factor_WHO': 1.24,
                  }
             },
             "Outreach services": {
                 'Tb': {
                      'scenario': 0,
                      'probability_community_chest_xray': 0.1,
-                     'scaling_factor_WHO': 0.89,
+                     'scaling_factor_WHO': 0.9,
                 }
             },
         }
