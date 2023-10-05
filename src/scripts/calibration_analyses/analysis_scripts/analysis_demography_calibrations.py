@@ -102,7 +102,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Plot population size over time
     fig, ax = plt.subplots()
     ax.plot(wpp_ann_total.index, wpp_ann_total['WPP_continuous'] / 1e6,
-            label='WPP', color=colors['WPP'])
+            label='WPP (2019)', color=colors['WPP'])
     ax.fill_between(wpp_ann_total.index,
                     wpp_ann_total['WPP_Low variant'] / 1e6,
                     wpp_ann_total['WPP_High variant'] / 1e6,
@@ -110,7 +110,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.plot(2018.5, cens_2018.sum() / 1e6,
             marker='o', markersize=10, linestyle='none', label='Census', zorder=10, color=colors['Census'])
     ax.plot(pop_model.index, pop_model['mean'] / 1e6,
-            label='Model (mean)', color=colors['Model'])
+            label='Model', color=colors['Model'], ls='--')
     ax.fill_between(pop_model.index,
                     pop_model['lower'] / 1e6,
                     pop_model['upper'] / 1e6,
@@ -118,15 +118,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     alpha=0.2,
                     zorder=5
                     )
-    ax.set_title("Population Size 2010-2030")
+    plt.axvline(x=2023, ls=':', color='gray')
+    ax.set_title("Population Size 2010-2100")
     ax.set_xlabel("Year")
     ax.set_ylabel("Population Size (millions)")
-    ax.set_xlim(2010, 2030)
+    ax.set_xlim(2010, 2100)
     ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
-    ax.set_ylim(0, 30)
+    ax.set_ylim(0, 80)
     ax.legend()
     fig.tight_layout()
-    plt.savefig(make_graph_file_name("Pop_Over_Time"))
+    plt.savefig(make_graph_file_name("Pop_Over_Time_2010-2100"))
     plt.show()
     plt.close(fig)
 
