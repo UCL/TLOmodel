@@ -1,6 +1,7 @@
 import datetime
 import warnings
 from collections import defaultdict
+from itertools import repeat
 from typing import Dict, List, Optional
 
 import numpy as np
@@ -9,6 +10,7 @@ import pandas as pd
 from tlo import logging
 
 logger = logging.getLogger('tlo.methods.healthsystem')
+logger_summary = logging.getLogger('tlo.methods.healthsystem.summary')
 
 
 class Consumables:
@@ -30,7 +32,7 @@ class Consumables:
 
     def __init__(self, data: pd.DataFrame = None, rng: np.random = None, availability: str = 'default') -> None:
 
-        assert availability in ['none', 'default', 'all'], "Argument `availability` is not recognised."
+        assert availability in ('none', 'default', 'all'), "Argument `availability` is not recognised."
         self.cons_availability = availability  # Governs availability  - none/default/all
         self.item_codes = set()  # All item_codes that are recognised.
 
@@ -43,7 +45,10 @@ class Consumables:
 
         self._process_consumables_df(data)
 
-    def processing_at_start_of_new_day(self, date: datetime.datetime) -> None:
+        # Create pointer to the `HealthSystemSummaryCounter` helper class
+        self._summary_counter = ConsumablesSummaryCounter()
+
+    def on_start_of_day(self, date: datetime.datetime) -> None:
         """Do the jobs at the start of each new day.
         * Update the availability of the consumables
         """
@@ -54,12 +59,19 @@ class Consumables:
         the HealthSystem.
         * Saves the data as `self._prob_item_codes_available`
         * Saves the set of all recognised item_codes to `self.item_codes`
+        * Over-rides the availability of all items to be always or never available according the specification of the
+         argument `cons_availability`.
         """
         self.item_codes = set(df.item_code)  # Record all consumables identified
         self._prob_item_codes_available = df.set_index(['month', 'Facility_ID', 'item_code'])['available_prop']
 
+        if self.cons_availability == 'all':
+            self.override_availability(dict(zip(self.item_codes, repeat(1.0))))
+        elif self.cons_availability == 'none':
+            self.override_availability(dict(zip(self.item_codes, repeat(0.0))))
+
     def _refresh_availability_of_consumables(self, date: datetime.datetime):
-        """Update the availability of all items based on the data for the probability of availability, givem the current
+        """Update the availability of all items based on the data for the probability of availability, given the current
         date."""
         # Work out which items are available in which facilities for this date.
         month = date.month
@@ -128,28 +140,25 @@ class Consumables:
         if not self.item_codes.issuperset(item_codes.keys()):
             self._not_recognised_item_codes.add((treatment_id, tuple(set(item_codes.keys()) - self.item_codes)))
 
-        # Determine availability of consumables:
-        if self.cons_availability == 'all':
-            # All item_codes available available if all consumables should be considered available by default.
-            available = {k: True for k in item_codes}
-        elif self.cons_availability == 'none':
-            # All item_codes not available if consumables should be considered not available by default.
-            available = {k: False for k in item_codes.keys()}
-        else:
-            available = self._lookup_availability_of_consumables(item_codes=item_codes,
-                                                                 facility_info=facility_info)
+        # Look-up whether each of these items is available in this facility currently:
+        available = self._lookup_availability_of_consumables(item_codes=item_codes, facility_info=facility_info)
 
         # Log the request and the outcome:
         if to_log:
+            items_available = {k: v for k, v in item_codes.items() if available[k]}
+            items_not_available = {k: v for k, v in item_codes.items() if not available[k]}
             logger.info(key='Consumables',
                         data={
                             'TREATMENT_ID': (treatment_id if treatment_id is not None else ""),
-                            'Item_Available': str({k: v for k, v in item_codes.items() if available[k]}),
-                            'Item_NotAvailable': str({k: v for k, v in item_codes.items() if not available[k]}),
+                            'Item_Available': str(items_available),
+                            'Item_NotAvailable': str(items_not_available),
                         },
                         # NB. Casting the data to strings because logger complains with dict of varying sizes/keys
                         description="Record of each consumable item that is requested."
                         )
+
+            self._summary_counter.record_availability(items_available=items_available,
+                                                      items_not_available=items_not_available)
 
         # Return the result of the check on availability
         return available
@@ -164,8 +173,12 @@ class Consumables:
 
         if facility_info is None:
             # If `facility_info` is None, it implies that the HSI has not been initialised because the HealthSystem
-            #  is running with `disable=True`.
-            return {_i: True for _i in item_codes}
+            #  is running with `disable=True`. Therefore, accept the default behaviour indicated by the argument saved
+            #  in `self.cons_availability`. If the behaviour is `default`, then let the consumable be available.
+            if self.cons_availability in ('all', 'default'):
+                return {_i: True for _i in item_codes}
+            else:
+                return {_i: False for _i in item_codes}
 
         for _i in item_codes.keys():
             if _i in self.item_codes:
@@ -185,13 +198,16 @@ class Consumables:
                     data={_treatment_id if _treatment_id is not None else "": list(_item_codes)}
                 )
 
+    def on_end_of_year(self):
+        self._summary_counter.write_to_log_and_reset_counters()
+
 
 def get_item_codes_from_package_name(lookup_df: pd.DataFrame, package: str) -> dict:
     """Helper function to provide the item codes and quantities in a dict of the form {<item_code>:<quantity>} for
      a given package name."""
     ser = lookup_df.loc[
         lookup_df['Intervention_Pkg'] == package, ['Item_Code', 'Expected_Units_Per_Case']].set_index(
-        'Item_Code')['Expected_Units_Per_Case'].apply(np.ceil).astype(int)
+        'Item_Code')['Expected_Units_Per_Case'].astype(float)
     return ser.groupby(ser.index).sum().to_dict()  # de-duplicate index before converting to dict
 
 
@@ -247,3 +263,44 @@ def check_format_of_consumables_file(df, fac_ids):
     # Check that every entry for a probability is a float on [0,1]
     assert (df.available_prop <= 1.0).all() and (df.available_prop >= 0.0).all()
     assert not pd.isnull(df.available_prop).any()
+
+
+class ConsumablesSummaryCounter:
+    """Helper class to keep running counts of consumable."""
+
+    def __init__(self):
+        self._reset_internal_stores()
+
+    def _reset_internal_stores(self) -> None:
+        """Create empty versions of the data structures used to store a running records."""
+
+        self._items = {
+            'Available': defaultdict(int),
+            'NotAvailable': defaultdict(int)
+        }
+
+    def record_availability(self, items_available: dict, items_not_available: dict) -> None:
+        """Add information about the availability of requested items to the running summaries."""
+
+        # Record items that were available
+        for _item, _num in items_available.items():
+            self._items['Available'][_item] += _num
+
+        # Record items that were not available
+        for _item, _num in items_not_available.items():
+            self._items['NotAvailable'][_item] += _num
+
+    def write_to_log_and_reset_counters(self):
+        """Log summary statistics and reset the data structures."""
+
+        logger_summary.info(
+            key="Consumables",
+            description="Counts of the items that were requested in this calendar year, which were available and"
+                        "not available.",
+            data={
+                "Item_Available": self._items['Available'],
+                "Item_NotAvailable": self._items['NotAvailable'],
+            },
+        )
+
+        self._reset_internal_stores()

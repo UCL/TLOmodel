@@ -4,12 +4,14 @@ import datetime
 import json
 import math
 import os
+import tempfile
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict
 
 import click
 import dateutil.parser
+import pandas as pd
 from azure import batch
 from azure.batch import batch_auth
 from azure.batch import models as batch_models
@@ -26,7 +28,7 @@ JOB_LABEL_PADDING = len("State transition time")
 
 
 @click.group()
-@click.option("--config-file", type=click.Path(exists=True), default="tlo.conf", hidden=True)
+@click.option("--config-file", type=click.Path(exists=False), default="tlo.conf", hidden=True)
 @click.option("--verbose", "-v", is_flag=True, default=False)
 @click.pass_context
 def cli(ctx, config_file, verbose):
@@ -46,30 +48,47 @@ def cli(ctx, config_file, verbose):
 @click.argument("scenario_file", type=click.Path(exists=True))
 @click.option("--draw-only", is_flag=True, help="Only generate draws; do not run the simulation")
 @click.option("--draw", "-d", nargs=2, type=int)
-def scenario_run(scenario_file, draw_only, draw: tuple):
+@click.option("--output-dir", type=str)
+def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None):
     """Run the specified scenario locally.
 
     SCENARIO_FILE is path to file containing a scenario class
     """
     scenario = load_scenario(scenario_file)
-    run_json = scenario.save_draws()
+    config = scenario.save_draws(return_config=True)
+    json_string = json.dumps(config, indent=2)
+
     if draw_only:
-        with open(run_json) as f:
-            print(f.read())
+        # pretty-print json
+        print(json_string)
         return
 
-    runner = SampleRunner(run_json)
+    # Write the JSON config to a temporary file (to prevent clobbering by multiple processes running same scenario)
+    # We set delete=False on the file, otherwise Windows does not allow the opening of the file multiple times
+    tmp = tempfile.NamedTemporaryFile(delete=False, mode='w')
+    tmp.write(json_string)
+    tmp.flush()
+
+    # SampleRunner loads the scenario information from the JSON config file
+    filename = tmp.name
+    runner = SampleRunner(filename)
+
+    # Runner has been created - clean up (we have to do this ourselves because we set delete=False)
+    tmp.close()
+    os.unlink(filename)
+
     if draw:
-        runner.run_sample_by_number(output_directory=None, draw_number=draw[0], sample_number=draw[1])
+        runner.run_sample_by_number(output_directory=output_dir, draw_number=draw[0], sample_number=draw[1])
     else:
         runner.run()
 
 
 @cli.command()
 @click.argument("scenario_file", type=click.Path(exists=True))
+@click.option("--asserts-on", type=bool, default=False, is_flag=True, help="Enable assertions in simulation run.")
 @click.option("--keep-pool-alive", type=bool, default=False, is_flag=True, hidden=True)
 @click.pass_context
-def batch_submit(ctx, scenario_file, keep_pool_alive):
+def batch_submit(ctx, scenario_file, asserts_on, keep_pool_alive):
     """Submit a scenario to the batch system.
 
     SCENARIO_FILE is path to file containing scenario class.
@@ -85,8 +104,11 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
         return
 
     scenario = load_scenario(scenario_file)
+
+    # get the commit we're going to submit to run on batch, and save the run config for that commit
+    # it's the most recent commit on current branch
     repo = Repo(".")
-    commit = next(repo.iter_commits(max_count=1, paths=scenario_file))
+    commit = next(repo.iter_commits(max_count=1))
     run_json = scenario.save_draws(commit=commit.hexsha)
 
     print(">Setting up batch\r", end="")
@@ -95,7 +117,7 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
 
     # ID of the Batch job.
     timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
-    job_id = Path(scenario_file).stem + "-" + timestamp
+    job_id = scenario.get_log_config()["filename"] + "-" + timestamp
 
     # Path in Azure storage where to store the files for this job
     azure_directory = f"{config['DEFAULT']['USERNAME']}/{job_id}"
@@ -181,6 +203,11 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
         azure_file_share_configuration=azure_file_share_configuration,
     )
 
+    # we turn off assertions by default
+    py_opt = "PYTHONOPTIMIZE=1"
+    if asserts_on:
+        py_opt = ""
+
     azure_directory = "${{AZ_BATCH_NODE_MOUNTS_DIR}}/" + \
         f"{file_share_mount_point}/{azure_directory}"
     azure_run_json = f"{azure_directory}/{os.path.basename(run_json)}"
@@ -188,11 +215,10 @@ def batch_submit(ctx, scenario_file, keep_pool_alive):
     task_dir = "${{AZ_BATCH_TASK_DIR}}"
     gzip_pattern_match = "{{txt,log}}"
     command = f"""
-    git fetch --all
-    git checkout -b {current_branch} origin/{current_branch}
-    git pull
+    git fetch origin {commit.hexsha}
+    git checkout {commit.hexsha}
     pip install -r requirements/base.txt
-    tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
+    {py_opt} tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
     cp {task_dir}/std*.txt {working_dir}/{{draw_number}}/{{run_number}}/.
     gzip {working_dir}/{{draw_number}}/{{run_number}}/*.{gzip_pattern_match}
     cp -r {working_dir}/* {azure_directory}/.
@@ -226,6 +252,52 @@ def batch_run(path_to_json, work_directory, draw, sample):
     output_directory = Path(work_directory) / f"{draw}/{sample}"
     output_directory.mkdir(parents=True, exist_ok=True)
     runner.run_sample_by_number(output_directory, draw, sample)
+
+
+@cli.command()
+@click.argument("job_id", type=str)
+@click.pass_context
+def batch_terminate(ctx, job_id):
+    """Terminate running job having the specified JOB_ID.
+    Note, you can only terminate your own jobs (user configured in tlo.conf)"""
+
+    # we check that directory has been created for this job in the user's folder
+    # (set up when the job is submitted)
+    config = load_config(ctx.obj["config_file"])
+    username = config["DEFAULT"]["USERNAME"]
+    directory = f"{username}/{job_id}"
+    share_client = ShareClient.from_connection_string(config['STORAGE']['CONNECTION_STRING'],
+                                                      config['STORAGE']['FILESHARE'])
+
+    try:
+        directories = share_client.list_directories_and_files(directory)
+        assert len(list(directories)) > 0
+    except ResourceNotFoundError:
+        print("ERROR: directory ", directory, "not found.")
+        return
+
+    batch_client = get_batch_client(
+        config["BATCH"]["NAME"],
+        config["BATCH"]["KEY"],
+        config["BATCH"]["URL"]
+    )
+
+    # check the job is running
+    try:
+        job = batch_client.job.get(job_id=job_id)
+    except BatchErrorException:
+        print("ERROR: job ", job_id, "not found.")
+        return
+
+    if job.state == "completed":
+        print("ERROR: Job already finished.")
+        return
+
+    # job is running & not finished - terminate the job
+    batch_client.job.terminate(job_id=job_id)
+    print(f"Job {job_id} terminated.")
+    print("To download output run:")
+    print(f"\ttlo batch-download {job_id}")
 
 
 @cli.command()
@@ -294,50 +366,82 @@ def batch_job(ctx, job_id, raw, show_tasks):
 
 @cli.command()
 @click.option("--find", "-f", type=str, default=None, help="Show jobs where identifier contains supplied string")
-@click.option("--completed", "status", flag_value="completed", default=False, multiple=True,
-              help="Only display completed jobs")
-@click.option("--active", "status", flag_value="active", default=False, multiple=True,
-              help="Only display active jobs")
+@click.option("--completed", "status", flag_value="completed", default=False, help="Only display completed jobs")
+@click.option("--active", "status", flag_value="active", default=False, help="Only display active jobs")
 @click.option("-n", default=5, type=int, help="Maximum number of jobs to list (default is 5)")
+@click.option("--username", type=str, hidden=True)
 @click.pass_context
-def batch_list(ctx, status, n, find):
-    """List and find running and completed jobs."""
-    print(">Querying batch system\r", end="")
+def batch_list(ctx, status, n, find, username):
+    """List and find running and completed jobs.
+    By default, the 5 most recent jobs are displayed for the current user.
+    """
+    print("Querying Batch...")
     config = load_config(ctx.obj["config_file"])
+
+    if username is None:
+        username = config["DEFAULT"]["USERNAME"]
+
     batch_client = get_batch_client(
         config["BATCH"]["NAME"],
         config["BATCH"]["KEY"],
         config["BATCH"]["URL"]
     )
 
-    # get list of all batch jobs
-    jobs = batch_client.job.list(
+    # create client to connect to file share
+    share_client = ShareClient.from_connection_string(config['STORAGE']['CONNECTION_STRING'],
+                                                      config['STORAGE']['FILESHARE'])
+
+    # get list of all directories in user_directory
+    directories = list(share_client.list_directories_and_files(f"{username}/"))
+
+    if len(directories) == 0:
+        print("No jobs found.")
+        return
+
+    # convert directories to set
+    directories = set([directory["name"] for directory in directories])
+
+    # get all jobs in batch system
+    jobs_list = list(batch_client.job.list(
         job_list_options=batch_models.JobListOptions(
             expand='stats'
         )
-    )
-    count = 0
-    for job in jobs:
-        jad = job.as_dict()
-        print_job = False
-        if (status is None or
-                ("completed" in status and jad["state"] == "completed") or
-                ("active" in status and jad["state"] == "active")):
-            if find is not None:
-                if find in jad["id"]:
-                    print_job = True
-            else:
-                print_job = True
+    ))
 
-        if print_job:
-            print_basic_job_details(jad)
-            if "stats" in jad:
-                print(f"{'Succeeded tasks'.ljust(JOB_LABEL_PADDING)}: {jad['stats']['num_succeeded_tasks']}")
-                print(f"{'Failed tasks'.ljust(JOB_LABEL_PADDING)}: {jad['stats']['num_failed_tasks']}")
-            print()
-            count += 1
-            if count == n:
-                break
+    # create a dataframe of the jobs, using the job.as_dict() record
+    # filter the list of jobs by those ids in the directories
+    jobs_list = [job.as_dict() for job in jobs_list if job.id in directories]
+    jobs: pd.DataFrame = pd.DataFrame(jobs_list)
+    jobs = jobs[["id", "creation_time", "state"]]
+
+    # get subset where id contains the find string
+    if find is not None:
+        jobs = jobs[jobs["id"].str.contains(find)]
+
+    # filter by status
+    if status is not None:
+        jobs = jobs[jobs["state"] == status]
+
+    if len(jobs) == 0:
+        print("No jobs found.")
+        return
+
+    # sort by creation time
+    jobs = jobs.sort_values("creation_time", ascending=False)
+
+    # split datetime into date and time
+    jobs["creation_time"] = pd.to_datetime(jobs.creation_time)
+    jobs["creation_date"] = jobs.creation_time.dt.date
+    jobs["creation_time"] = jobs.creation_time.dt.floor("S").dt.time
+
+    # reorder columns
+    jobs = jobs[["id", "creation_date", "creation_time", "state"]]
+
+    # get the first n rows
+    jobs = jobs.head(n)
+
+    # print the dataframe
+    print(jobs.to_string(index=False))
 
 
 def print_basic_job_details(job: dict):
@@ -430,7 +534,7 @@ def load_config(config_file):
 
 
 def load_server_config(kv_uri, tenant_id) -> Dict[str, Dict]:
-    """Retrieve the server configuration for running Batch using the user"s Azure credentials
+    """Retrieve the server configuration for running Batch using the user's Azure credentials
 
     Allows user to login using credentials from Azure CLI or interactive browser.
 

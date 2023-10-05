@@ -4,9 +4,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from pandas.tseries.offsets import DateOffset
 
-from tlo import Date, Simulation
+from tlo import DAYS_IN_MONTH, DAYS_IN_YEAR, Date, Simulation
 from tlo.analysis.utils import parse_log_file
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
@@ -31,6 +30,7 @@ from tlo.methods import (
     pregnancy_supervisor,
     stunting,
     symptommanager,
+    tb,
     wasting,
 )
 
@@ -59,6 +59,7 @@ def set_all_women_as_pregnant_and_reset_baseline_parity(sim):
     women_repro = df.loc[df.is_alive & (df.sex == 'F') & (df.age_years > 14) & (df.age_years < 50)]
     df.loc[women_repro.index, 'is_pregnant'] = True
     df.loc[women_repro.index, 'date_of_last_pregnancy'] = sim.start_date
+    df.loc[women_repro.index, 'co_contraception'] = "not_using"
     for person in women_repro.index:
         sim.modules['Labour'].set_date_of_labour(person)
 
@@ -206,8 +207,9 @@ def test_run_with_all_referenced_modules_registered(seed, tmpdir):
                  stunting.Stunting(resourcefilepath=resourcefilepath),
                  wasting.Wasting(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
-                 epi.Epi(resourcefilepath=resourcefilepath)
-                 )  # todo: add TB once in master
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 tb.Tb(resourcefilepath=resourcefilepath),
+                 )
 
     sim.make_initial_population(n=5000)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)  # keep high volume of pregnancy to increase risk of error
@@ -290,7 +292,7 @@ def test_store_dalys_in_mni_function_and_daly_calculations(seed):
 
     # This woman has had this complication for the entire month (01/01/2010 - 01/02/2010) and it has not resolved,
     # therefore we expect her to have accrued 1 months weight
-    sev_anemia_weight = round((params['ps_daly_weights']['severe_anaemia'] / 365.25) * (365.25 / 12), 2)
+    sev_anemia_weight = round((params['ps_daly_weights']['severe_anaemia'] / DAYS_IN_YEAR) * DAYS_IN_MONTH, 2)
     reported_weight = round(dalys_from_pregnancy.loc[mother_id], 2)
     assert sev_anemia_weight == reported_weight
 
@@ -310,7 +312,7 @@ def test_store_dalys_in_mni_function_and_daly_calculations(seed):
     assert pd.isnull(mni[mother_id]['severe_anaemia_resolution'])
 
     # We know she has experience 15 days of complication this month, check the function returns the correct daly weight
-    sev_anemia_weight = round((params['ps_daly_weights']['severe_anaemia'] / 365.25) * 15, 3)
+    sev_anemia_weight = round((params['ps_daly_weights']['severe_anaemia'] / DAYS_IN_YEAR) * 15, 3)
     reported_weight = round(dalys_from_pregnancy.loc[mother_id], 3)
 
     assert sev_anemia_weight == reported_weight
@@ -324,10 +326,10 @@ def test_calculation_of_gestational_age(seed):
 
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
-    turn_off_antenatal_pregnancy_loss(sim)
 
     # Run the sim for 0 days
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    turn_off_antenatal_pregnancy_loss(sim)
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
     sim.event_queue.queue.clear()
     df = sim.population.props
@@ -509,6 +511,11 @@ def test_abortion_complications(seed):
         params['prob_ectopic_pregnancy'] = 0.0
         params['treatment_effect_post_abortion_care'] = 0.0
 
+        lab_params = sim.modules['Labour'].current_parameters
+        lab_params['mean_hcw_competence_hc'] = [1, 1]
+        lab_params['mean_hcw_competence_hp'] = [1, 1]
+        lab_params['prob_hcw_avail_retained_prod'] = 1
+
         df = sim.population.props
         pregnant_women = df.loc[df.is_alive & df.is_pregnant]
         for woman in pregnant_women.index:
@@ -544,13 +551,11 @@ def test_abortion_complications(seed):
         health_system = sim.modules['HealthSystem']
         hsi_events = health_system.find_events_for_person(person_id=mother_id)
         hsi_events = [e.__class__ for d, e in hsi_events]
-        from tlo.methods.hsi_generic_first_appts import (
-            HSI_GenericEmergencyFirstApptAtFacilityLevel1,
-        )
-        assert HSI_GenericEmergencyFirstApptAtFacilityLevel1 in hsi_events
+        from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
+        assert HSI_GenericEmergencyFirstAppt in hsi_events
 
-        emergency_appt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=mother_id,
-                                                                       module=sim.modules['PregnancySupervisor'])
+        emergency_appt = HSI_GenericEmergencyFirstAppt(person_id=mother_id,
+                                                       module=sim.modules['PregnancySupervisor'])
         emergency_appt.apply(person_id=mother_id, squeeze_factor=0.0)
         hsi_events = health_system.find_events_for_person(person_id=mother_id)
         hsi_events = [e.__class__ for d, e in hsi_events]
@@ -560,6 +565,8 @@ def test_abortion_complications(seed):
         pac = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
             person_id=mother_id, module=sim.modules['CareOfWomenDuringPregnancy'])
         pac.apply(person_id=mother_id, squeeze_factor=0.0)
+
+        assert sim.population.props.at[mother_id, 'ac_received_post_abortion_care']
 
         # Define and run event, check woman has correctly died
         death_event = pregnancy_supervisor.EarlyPregnancyLossDeathEvent(module=sim.modules['PregnancySupervisor'],
@@ -922,7 +929,7 @@ def test_pregnancy_supervisor_placental_conditions_and_antepartum_haemorrhage(se
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=mother_id)
     hsi_events = [e.__class__ for d, e in hsi_events]
-    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare in hsi_events
 
     # Now clear the event queue and reset haemorrhage variables
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
@@ -995,7 +1002,7 @@ def test_pregnancy_supervisor_pre_eclampsia_and_progression(seed):
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=mother_id)
     hsi_events = [e.__class__ for d, e in hsi_events]
-    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare in hsi_events
 
     # Now clear the event queue
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
@@ -1148,7 +1155,7 @@ def test_pregnancy_supervisor_chorio_and_prom(seed):
     health_system = sim.modules['HealthSystem']
     hsi_events = health_system.find_events_for_person(person_id=mother_id)
     hsi_events = [e.__class__ for d, e in hsi_events]
-    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment in hsi_events
+    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare in hsi_events
 
     # Now clear the event queue
     df.loc[pregnant_women.index, 'ps_gestational_age_in_weeks'] = \
@@ -1163,11 +1170,8 @@ def test_pregnancy_supervisor_chorio_and_prom(seed):
     params['prob_seek_care_pregnancy_complication'] = 0.0
     params['prob_antenatal_sepsis_death'] = 1.0
 
-    # If any pregnancies due on current simulation date push back one day so individuals
-    # will still seek care
-    df.loc[
-        df.la_due_date_current_pregnancy == sim.date, 'la_due_date_current_pregnancy'
-    ] += DateOffset(days=1)
+    # prevent preterm birth which can effect care seeking by updating la_due_date_current_pregnancy
+    params['baseline_prob_early_labour_onset'] = [0.0, 0.0, 0.0, 0.0]
 
     pregnancy_sup.apply(sim.population)
 
@@ -1185,8 +1189,8 @@ def test_induction_of_labour_logic(seed):
     register_modules(sim)
     sim.make_initial_population(n=100)
     set_all_women_as_pregnant_and_reset_baseline_parity(sim)
-    turn_off_antenatal_pregnancy_loss(sim)
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+    turn_off_antenatal_pregnancy_loss(sim)
 
     params = sim.modules['PregnancySupervisor'].current_parameters
     params['prob_seek_care_induction'] = 1.0

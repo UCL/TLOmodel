@@ -8,19 +8,13 @@ import matplotlib.pyplot as plt
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
 from tlo.methods import (
-    antenatal_care,
-    contraception,
     demography,
     enhanced_lifestyle,
     epi,
-    healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
     measles,
-    newborn_outcomes,
-    postnatal_supervisor,
-    pregnancy_supervisor,
+    simplified_births,
     symptommanager,
 )
 
@@ -58,30 +52,15 @@ resources = Path('./resources')
 # Used to configure health system behaviour
 service_availability = ["*"]
 
-# We register all modules in a single call to the register method, calling once with multiple
-# objects. This is preferred to registering each module in multiple calls because we will be
-# able to handle dependencies if modules are registered together
 sim.register(
     demography.Demography(resourcefilepath=resources),
-    healthsystem.HealthSystem(
-        resourcefilepath=resources,
-        service_availability=service_availability,
-        mode_appt_constraints=0,
-        ignore_cons_constraints=True,
-        ignore_priority=True,
-        capabilities_coefficient=1.0,
-        disable=True,
-    ),
-    symptommanager.SymptomManager(resourcefilepath=resources),
-    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-    healthburden.HealthBurden(resourcefilepath=resources),
-    contraception.Contraception(resourcefilepath=resources),
+    simplified_births.SimplifiedBirths(resourcefilepath=resources),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
-    labour.Labour(resourcefilepath=resources),
-    antenatal_care.CareOfWomenDuringPregnancy(resourcefilepath=resources),
-    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
-    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
-    newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
+    symptommanager.SymptomManager(resourcefilepath=resources),
+
+    healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
+
     epi.Epi(resourcefilepath=resources),
     measles.Measles(resourcefilepath=resources),
 )
@@ -109,5 +88,5 @@ plt.xlabel("Date")
 plt.ylabel("Incidence per 1000py")
 plt.xticks(rotation=90)
 plt.legend(["Model"], bbox_to_anchor=(1.04, 1), loc="upper left")
-
+plt.tight_layout()
 plt.show()

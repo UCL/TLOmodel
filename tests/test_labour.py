@@ -103,6 +103,8 @@ def test_run_no_constraints(tmpdir, seed):
     sim.simulate(end_date=Date(2015, 1, 1))
     check_dtypes(sim)
 
+    # TODO: THE LOGGER NEEDS TO BE SET TO DEBUG FOR LABOUR OTHERWISE ITS NOT GOING TO PICK UP ANY ERRORS
+    #  (im also not sure that parse_log_file is extracting it properly)
     # check that no errors have been logged during the simulation run
     output = parse_log_file(sim.log_filepath)
     assert 'error' not in output['tlo.methods.labour']
@@ -206,13 +208,13 @@ def test_event_scheduling_for_care_seeking_during_home_birth(seed):
     assert (mni[mother_id]['sought_care_labour_phase'] == 'intrapartum')
 
     # Check that the woman will correctly seek care through HSI_GenericEmergencyFirstApptAtFacilityLevel1
-    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
-    assert HSI_GenericEmergencyFirstApptAtFacilityLevel1 in hsi_events
+    assert HSI_GenericEmergencyFirstAppt in hsi_events
 
     # Now run the event
-    emergency_appt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=mother_id,
-                                                                   module=sim.modules['Labour'])
+    emergency_appt = HSI_GenericEmergencyFirstAppt(person_id=mother_id,
+                                                   module=sim.modules['Labour'])
     emergency_appt.apply(person_id=mother_id, squeeze_factor=0.0)
 
     # Check she has been correctly identified as being in labour and is sent to the labour ward
@@ -294,8 +296,8 @@ def test_event_scheduling_for_admissions_from_antenatal_inpatient_ward_for_caesa
 
     # set key parameters
     params = sim.modules['Labour'].current_parameters
-    params['mean_hcw_competence_hc'] = 1.0
-    params['mean_hcw_competence_hp'] = 1.0
+    params['mean_hcw_competence_hc'] = [1.0, 1.0]
+    params['mean_hcw_competence_hp'] = [1.0, 1.0]
     params['prob_hcw_avail_surg'] = 1.0
 
     # Run the labour onset, check she will correctly deliver at a hospital level facility
@@ -511,8 +513,8 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
 
     # set key parameters
     params = sim.modules['Labour'].current_parameters
-    params['mean_hcw_competence_hc'] = 1.0
-    params['mean_hcw_competence_hp'] = 1.0
+    params['mean_hcw_competence_hc'] = [1.0, 1.0]
+    params['mean_hcw_competence_hp'] = [1.0, 1.0]
     params['prob_hcw_avail_iv_abx'] = 1.0
     params['prob_hcw_avail_uterotonic'] = 1.0
     params['prob_hcw_avail_anticonvulsant'] = 1.0
@@ -546,7 +548,7 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     assert df.at[mother_id, 'la_severe_pre_eclampsia_treatment']
 
     # Now check she also would receive antihypertensives
-    sim.modules['Labour'].assessment_and_treatment_of_hypertension(hsi_event=hsi_event)
+    sim.modules['Labour'].assessment_and_treatment_of_hypertension(hsi_event=hsi_event, labour_stage='ip')
     assert df.at[mother_id, 'la_maternal_hypertension_treatment']
 
     # Set disease status to eclampsia and run the appropriate intervention function, check treatment delivered
@@ -560,14 +562,14 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['cpd'] = True
 
     # Run the event and check she has correctly been referred for caesarean
-    sim.modules['Labour'].assessment_for_assisted_vaginal_delivery(hsi_event=hsi_event, for_spe=False)
+    sim.modules['Labour'].assessment_for_assisted_vaginal_delivery(hsi_event=hsi_event, indication='ol')
     assert mni[mother_id]['referred_for_cs']
 
     # Remove CPD as a cause and set probability of AVD being successful to 1, call the function and check she has
     # undergone instrumental delivery
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id]['cpd'] = False
     params['prob_successful_assisted_vaginal_delivery'] = 1.0
-    sim.modules['Labour'].assessment_for_assisted_vaginal_delivery(hsi_event=hsi_event, for_spe=False)
+    sim.modules['Labour'].assessment_for_assisted_vaginal_delivery(hsi_event=hsi_event, indication='ol')
     assert (mni[mother_id]['mode_of_delivery'] == 'instrumental')
 
     # Next set the women to have sepsis and check she is treated
@@ -656,8 +658,8 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
 
     # set key parameters
     params = sim.modules['Labour'].current_parameters
-    params['mean_hcw_competence_hc'] = 1.0
-    params['mean_hcw_competence_hp'] = 1.0
+    params['mean_hcw_competence_hc'] = [1.0, 1.0]
+    params['mean_hcw_competence_hp'] = [1.0, 1.0]
     params['prob_hcw_avail_surg'] = 1.0
     params['prob_hcw_avail_blood_tran'] = 1.0
 
@@ -674,6 +676,7 @@ def test_cemonc_event_and_treatments_are_delivered_correct_with_no_cons_or_quali
     # Test uterine rupture surgery
     # Set variables showing woman has been referred to surgery due to uterine rupture
     mni[mother_id]['referred_for_surgery'] = True
+    mni[mother_id]['referred_for_cs'] = True
     df.at[mother_id, 'la_uterine_rupture'] = True
 
     # Force success rate of surgery to 1

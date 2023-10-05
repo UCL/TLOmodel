@@ -19,7 +19,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
-from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
 
 # create simulation parameters
 start_date = Date(2010, 1, 1)
@@ -73,11 +73,11 @@ def test_all_injuries_run(seed):
     constraints
     """
     # create sim object
-    sim = create_basic_rti_sim(popsize, seed)
+    sim = create_basic_rti_sim(97, seed)
     # create a list of injuries to assign the individuals in the population
     injuries_to_assign = sim.modules['RTI'].INJURY_CODES
     # assign injuries to the population at random
-    sim.population.props['rt_injury_1'] = sim.rng.choice(injuries_to_assign, popsize)
+    sim.population.props['rt_injury_1'] = injuries_to_assign
     # change the datatype back to a category
     sim.population.props['rt_injury_1'] = sim.population.props['rt_injury_1'].astype("category")
     # Check that each injury appears at least once in the population, ensuring that as the simulation runs no new
@@ -114,7 +114,7 @@ def test_all_injuries_run(seed):
     # Schedule the generic emergency appointment
     for person_id in sim.population.props.index:
         sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_GenericEmergencyFirstApptAtFacilityLevel1(module=sim.modules['RTI'], person_id=person_id),
+            hsi_event=HSI_GenericEmergencyFirstAppt(module=sim.modules['RTI'], person_id=person_id),
             priority=0,
             topen=sim.date
         )
@@ -142,12 +142,11 @@ def test_all_injuries_run_no_healthsystem(seed):
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
                  )
-    sim.make_initial_population(n=popsize)
-
+    sim.make_initial_population(n=97)
     # create a list of injuries to assign the individuals in the population
     injuries_to_assign = sim.modules['RTI'].INJURY_CODES
     # assign injuries to the population at random
-    sim.population.props['rt_injury_1'] = sim.rng.choice(injuries_to_assign, popsize)
+    sim.population.props['rt_injury_1'] = injuries_to_assign
     # change the datatype back to a category
     sim.population.props['rt_injury_1'] = sim.population.props['rt_injury_1'].astype("category")
     # Check that each injury appears at least once in the population, ensuring that as the simulation runs no new
@@ -184,7 +183,7 @@ def test_all_injuries_run_no_healthsystem(seed):
     # Schedule the generic emergency appointment
     for person_id in sim.population.props.index:
         sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_GenericEmergencyFirstApptAtFacilityLevel1(module=sim.modules['RTI'], person_id=person_id),
+            hsi_event=HSI_GenericEmergencyFirstAppt(module=sim.modules['RTI'], person_id=person_id),
             priority=0,
             topen=sim.date
         )
@@ -245,13 +244,25 @@ def test_module_properties(seed):
     those_injured_index = df.loc[df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death].index
     the_result_of_test = []
     for person in those_injured_index:
-        the_result_of_test.append([df.loc[person, 'rt_date_inj'] < date for date in
-                                   df.loc[person, 'rt_date_to_remove_daly'] if date is not pd.NaT])
+        the_result_of_test.append(
+            [
+                df.loc[person, 'rt_date_inj'] < date
+                for date in df.loc[person, rti.RTI.DATE_TO_REMOVE_DALY_COLUMNS]
+                if date is not pd.NaT
+            ]
+        )
     did_all_pass_test = [True if all(test_list) else False for test_list in the_result_of_test]
     assert all(did_all_pass_test)
 
-    assert (df.loc[df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death, 'rt_date_inj'] < date for date in
-            df.loc[df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death, 'rt_date_to_remove_daly'])
+    assert (
+        df.loc[
+            df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death, 'rt_date_inj'
+        ] < date
+        for date in df.loc[
+            df.is_alive & df.rt_road_traffic_inc & ~df.rt_imm_death,
+            rti.RTI.DATE_TO_REMOVE_DALY_COLUMNS
+        ]
+    )
     check_dtypes(sim)
 
 

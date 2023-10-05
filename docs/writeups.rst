@@ -30,7 +30,7 @@ Representation of the Healthcare System
 ========================================
 * **HealthSystem**: Tracks the availability and usage of the resources of the healthcare system with respect to healthcare worker time, consumables and equipment for in-patient care. :download:`.docx <./write-ups/HealthSystem.docx>`
 
-* **Routine Immunization**: The services that deliver a set of immunizations to children. (Forthcoming)
+* **Routine Immunization**: The services that deliver a set of immunizations to children. :download:`.docx <./write-ups/EPI.docx>`
 
 
 Contraception, Pregnancy and Labour
@@ -63,9 +63,9 @@ Communicable Diseases
 
 * **TB**: Tuberculosis and associated prevention and treatment programmes. :download:`.docx <./write-ups/TB.docx>`
 
-* **Measles**: Measles-related disease and associated prevention and treatment programmes. (Forthcoming)
-
 * **Malaria**: Malaria disease and associated prevention and treatment programmes. :download:`.docx <./write-ups/Malaria.docx>`
+
+* **Measles**: Measles-related disease and associated prevention and treatment programmes. :download:`.docx <./write-ups/Measles.docx>`
 
 * **Schistosomiasis**: Schistosomiasis disease and associated prevention and treatment programmes. :download:`.docx <./write-ups/Schistosomiasis.docx>`
 
@@ -93,6 +93,8 @@ Non-Communicable Conditions
     * **Chronic Lower Back Pain**: Summary representation of chronic lower back pain as part of a set of common non-communicable conditions. :download:`.docx <./write-ups/CardioMetabolicDisorders.docx>`
 
     * **Chronic Kidney Disease**: Summary representation of chronic kidney disease as part of a set of common non-communicable conditions. :download:`.docx <./write-ups/CardioMetabolicDisorders.docx>`
+
+    * **Chronic Obstructive Pulmonary Disease**: Summary representation of COPD as a cause of death/disability and as a risk factor for other conditions. :download:`.docx <./write-ups/Copd.docx>`
 
     * **Depression**: Depression, self-harm and suicide, and the treatment of depression. :download:`.docx <./write-ups/Depression.docx>`
 

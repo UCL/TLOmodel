@@ -23,6 +23,8 @@ from tlo.methods import (
 )
 
 # %%
+
+
 resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -63,13 +65,23 @@ for label, service_avail in scenarios.items():
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                            disable=_disable,
-                                           disable_and_reject_all=_disable_and_reject_all),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                                           disable_and_reject_all=_disable_and_reject_all,
+                                           mode_appt_constraints=0,
+                                           cons_availability='all',
+                                           ),
+                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
+                                                               force_any_symptom_to_lead_to_healthcareseeking=True),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
                  diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
                  )
+
+    # ---------------------------------------------------------------
+    # Make treatment perfect
+    # from tlo.methods.diarrhoea import make_treatment_perfect
+    # make_treatment_perfect(sim.modules['Diarrhoea'])
+    # ---------------------------------------------------------------
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)

@@ -23,6 +23,7 @@ from tlo.methods import (
     pregnancy_helper_functions,
     pregnancy_supervisor,
     symptommanager,
+    tb,
 )
 
 # The resource files
@@ -137,11 +138,12 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
                  depression.Depression(resourcefilepath=resourcefilepath),
                  malaria.Malaria(resourcefilepath=resourcefilepath),
                  epi.Epi(resourcefilepath=resourcefilepath),
+                 tb.Tb(resourcefilepath=resourcefilepath),
                  hiv.Hiv(resourcefilepath=resourcefilepath))
 
     sim.make_initial_population(n=100)
 
-    params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
+    params = sim.modules['CareOfWomenDuringPregnancy'].parameters
     params_dep = sim.modules['Depression'].parameters
 
     # Set sensitivity/specificity of dx_tests to one
@@ -156,6 +158,9 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     params['specificity_fbc_hb_test'] = 1.0
     params['sensitivity_blood_test_glucose'] = 1.0
     params['specificity_blood_test_glucose'] = 1.0
+
+    # Set prob of depression screening for perinatal female to one
+    params_dep['pr_assessed_for_depression_for_perinatal_female'] = 1.0
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
 
@@ -205,9 +210,6 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     params['prob_intervention_delivered_tt'] = 1.0
     params['sensitivity_blood_test_glucose'] = 1.0
     params['specificity_blood_test_glucose'] = 1.0
-
-    # set coverage of tetatnus for her district to 1
-    sim.modules['Epi'].parameters['district_vaccine_coverage']['TT2+'] = 1.0
 
     # Register the anc HSIs
     first_anc = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
@@ -473,19 +475,10 @@ def test_anc_contacts_that_should_not_run_wont_run(seed):
     assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 0)
     assert pd.isnull(df.at[mother_id, 'ac_date_next_contact'])
 
-    # Reset the gestational age and set the squeeze factor of the HSI as very high. Woman will leave and HSI should not
-    # run
+    # Reset the gestational age
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 10
 
-    first_anc.apply(person_id=updated_mother_id, squeeze_factor=1001)  # todo: replace
-    assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 0)
-    assert pd.isnull(df.at[mother_id, 'ac_date_next_contact'])
-
-    # check that she will return for this event
-    hsi_events = find_and_return_hsi_events_list(sim, mother_id)
-    assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact in hsi_events
-
-    # Finally set woman as inpatient when she is due for her first ANC appointment
+    # Set woman as inpatient when she is due for her first ANC appointment
     df.at[mother_id, 'hs_is_inpatient'] = True
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
 
@@ -583,7 +576,7 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
     sim.make_initial_population(n=100)
 
     # Set DxTest parameters to 1 to ensure anaemia is detected correctly
-    params = sim.modules['CareOfWomenDuringPregnancy'].current_parameters
+    params = sim.modules['CareOfWomenDuringPregnancy'].parameters
     params['sensitivity_fbc_hb_test'] = 1.0
     params['specificity_fbc_hb_test'] = 1.0
 
@@ -606,6 +599,11 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
     sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'severe_anaemia_resolution': pd.NaT,
                                                                              'delay_one_two': False,
                                                                              'delay_three': False}
+
+    # and over ride quality parameters
+    lparams = sim.modules['Labour'].current_parameters
+    lparams['prob_hcw_avail_blood_tran'] = 1.0
+    lparams['mean_hcw_competence_hp'] = [1.0, 1.0]
 
     # Set anaemia status
     df.at[mother_id, 'ps_anaemia_in_pregnancy'] = 'severe'
@@ -665,8 +663,8 @@ def test_initiation_of_treatment_for_hypertensive_disorder_during_antenatal_inpa
 
     # set key parameters
     params = sim.modules['Labour'].current_parameters
-    params['mean_hcw_competence_hc'] = 1
-    params['mean_hcw_competence_hp'] = 1
+    params['mean_hcw_competence_hc'] = [1, 1]
+    params['mean_hcw_competence_hp'] = [1, 1]
     params['prob_hcw_avail_anticonvulsant'] = 1
 
     # set key pregnancy characteristics
@@ -801,8 +799,8 @@ def test_initiation_of_treatment_for_prom_with_or_without_chorioamnionitis_durin
 
     # set key parameters
     params = sim.modules['Labour'].current_parameters
-    params['mean_hcw_competence_hc'] = 1
-    params['mean_hcw_competence_hp'] = 1
+    params['mean_hcw_competence_hc'] = [1, 1]
+    params['mean_hcw_competence_hp'] = [1, 1]
     params['prob_hcw_avail_iv_abx'] = 1
 
     # set key pregnancy characteristics
@@ -942,8 +940,8 @@ def test_scheduling_and_treatment_effect_of_post_abortion_care(seed):
 
     # set key parameters
     params = sim.modules['Labour'].current_parameters
-    params['mean_hcw_competence_hc'] = 1
-    params['mean_hcw_competence_hp'] = 1
+    params['mean_hcw_competence_hc'] = [1, 1]
+    params['mean_hcw_competence_hp'] = [1, 1]
     params['prob_hcw_avail_retained_prod'] = 1
 
     # set complications
@@ -953,11 +951,11 @@ def test_scheduling_and_treatment_effect_of_post_abortion_care(seed):
 
     # Import and run HSI_GenericEmergencyFirstApptAtFacilityLevel1, where women with abortion complications are
     # scheduled to present via Pregnancy Supervisor
-    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
 
     # Run the event
-    emergency_appt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=updated_mother_id,
-                                                                   module=sim.modules['PregnancySupervisor'])
+    emergency_appt = HSI_GenericEmergencyFirstAppt(person_id=updated_mother_id,
+                                                   module=sim.modules['PregnancySupervisor'])
     emergency_appt.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
     # Check that this event correctly identified abortion complications and scheduled the correct HSI
@@ -1017,13 +1015,13 @@ def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management(se
     ectopic_event.apply(mother_id)
 
     # Check the woman has correctly sought care via HSI_GenericEmergencyFirstApptAtFacilityLevel1
-    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
     hsi_list = find_and_return_hsi_events_list(sim, mother_id)
-    assert HSI_GenericEmergencyFirstApptAtFacilityLevel1 in hsi_list
+    assert HSI_GenericEmergencyFirstAppt in hsi_list
 
     # Run the event
-    emergency_appt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=updated_mother_id,
-                                                                   module=sim.modules['PregnancySupervisor'])
+    emergency_appt = HSI_GenericEmergencyFirstAppt(person_id=updated_mother_id,
+                                                   module=sim.modules['PregnancySupervisor'])
     emergency_appt.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
     # Check she has correctly been scheduled treatment for ectopic pregnancy
@@ -1044,9 +1042,9 @@ def test_scheduling_and_treatment_effect_of_ectopic_pregnancy_case_management(se
     df.at[mother_id, 'ps_ectopic_pregnancy'] = 'ruptured'
 
     # Check sheduling through generic HSI event (as above)
-    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
-    emergency_appt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=updated_mother_id,
-                                                                   module=sim.modules['PregnancySupervisor'])
+    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
+    emergency_appt = HSI_GenericEmergencyFirstAppt(person_id=updated_mother_id,
+                                                   module=sim.modules['PregnancySupervisor'])
     emergency_appt.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
     # Check that this event correctly identified ectopic complications and scheduled the correct HSI
