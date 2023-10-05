@@ -35,7 +35,7 @@ class ImpactOfTbDaHx(BaseScenario):
         self.runs_per_draw = 3
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_scenarios_test_run31_partial',
+            'filename': 'Tb_DAH_scenarios_test_run32_partial',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -80,14 +80,14 @@ class ImpactOfTbDaHx(BaseScenario):
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                   # 'scaling_factor_WHO': 1.95,
+                   # 'scaling_factor_WHO': 1.85,
                 },
             },
         # overrides availability of CXR
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
-                    'scaling_factor_WHO': 1.9,
+                    'scaling_factor_WHO': 1.74,
                 },
             },
             "CXR scale_up": {
@@ -100,7 +100,7 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                      'scenario': 0,
                      'probability_community_chest_xray': 0.1,
-                     'scaling_factor_WHO': 0.9,
+                     'scaling_factor_WHO': 1.0,
                 }
             },
         }
