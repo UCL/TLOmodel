@@ -85,10 +85,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                           )
     pop_model.index = pop_model.index.year
 
-    # Load Data: WPP_Annual
+    # Load Data: WPP_Annual including age groups (but only WPP medium variant)
     wpp_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_age_sex_WPP19.csv")
     wpp_ann['Age_Grp'] = wpp_ann['Age_Grp'].astype(make_age_grp_types())
-    wpp_ann_total = wpp_ann.groupby(['Year']).sum().sum(axis=1)
+
+    # Load Data: WPP_Annual incl. all WPP varints (but without age groups)
+    wpp_ann_total_by_sex = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_sex_WPP19.csv")
+    wpp_ann_total = wpp_ann_total_by_sex.groupby(['Year', 'Variant'])['Count'].sum().unstack()
+    wpp_ann_total['WPP_continuous'] = wpp_ann_total['WPP_Estimates'].combine_first(wpp_ann_total['WPP_Medium variant'])
 
     # Load Data: Census
     cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
@@ -97,8 +101,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Plot population size over time
     fig, ax = plt.subplots()
-    ax.plot(wpp_ann_total.index, wpp_ann_total / 1e6,
+    ax.plot(wpp_ann_total.index, wpp_ann_total['WPP_continuous'] / 1e6,
             label='WPP', color=colors['WPP'])
+    ax.fill_between(wpp_ann_total.index,
+                    wpp_ann_total['WPP_Low variant'] / 1e6,
+                    wpp_ann_total['WPP_High variant'] / 1e6,
+                    facecolor=colors['WPP'], alpha=0.2)
     ax.plot(2018.5, cens_2018.sum() / 1e6,
             marker='o', markersize=10, linestyle='none', label='Census', zorder=10, color=colors['Census'])
     ax.plot(pop_model.index, pop_model['mean'] / 1e6,
