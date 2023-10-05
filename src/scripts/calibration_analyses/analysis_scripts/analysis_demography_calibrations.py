@@ -368,17 +368,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             births_loc.index,
             births_loc['Model_mean'] / 1e6,
             label='Model',
-            color=colors['Model']
+            color=colors['Model'],
+            ls='--'
         )
         ax.fill_between(births_loc.index,
                         births_loc['Model_lower'] / 1e6,
                         births_loc['Model_upper'] / 1e6,
                         facecolor=colors['Model'], alpha=0.2)
+        plt.axvline(x='2020-2024', ls=':', color='gray')
         ax.plot(
             births_loc.index,
             births_loc['WPP_continuous'] / 1e6,
             color=colors['WPP'],
-            label='WPP'
+            label='WPP (2019)'
         )
         ax.fill_between(births_loc.index,
                         births_loc['WPP_Low variant'] / 1e6,
