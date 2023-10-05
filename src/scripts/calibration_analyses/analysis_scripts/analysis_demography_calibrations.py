@@ -194,7 +194,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # %% Population Pyramid
     # Population Pyramid at two time points
 
-    def plot_population_pyramid(data, fig):
+    def plot_population_pyramid(data, fig, in_year):
         """Plot a population pyramid on the specified figure. Data is of the form:
         {
            'F': {
@@ -232,11 +232,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_ylabel('Age Groups')
         ax.set_xlabel('Population (1000s)')
 
-        ax.text(x=1e3, y=10, s="Males", fontdict={'size': 15}, ha='right')
-        ax.text(x=-1e3, y=10, s="Females", fontdict={'size': 15}, ha='left')
+        if in_year == 2050:
+            ax.text(x=2e3, y=10, s="Males", fontdict={'size': 15}, ha='right')
+            ax.text(x=-2e3, y=10, s="Females", fontdict={'size': 15}, ha='left')
+        else:
+            ax.text(x=1e3, y=10, s="Males", fontdict={'size': 15}, ha='right')
+            ax.text(x=-1e3, y=10, s="Females", fontdict={'size': 15}, ha='left')
 
         # reverse order of legend
         handles, labels = ax.get_legend_handles_labels()
+        labels = ['WPP (2019)' if label == 'WPP' else label for label in labels]
         ax.legend(handles[::-1], labels[::-1], loc='upper right')
 
         locs = np.array([-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]) * 1e3
@@ -276,7 +281,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
         return num_by_age
 
-    for year in [2010, 2015, 2018, 2029, 2049]:
+    for year in [2010, 2015, 2018, 2029, 2049, 2050]:
         try:
             # Get WPP data:
             wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
@@ -298,7 +303,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             # Simple plot of population pyramid
             fig = plt.figure()
-            ax = plot_population_pyramid(data=pops, fig=fig)
+            ax = plot_population_pyramid(data=pops, fig=fig, in_year=year)
             ax.set_title(f'Population Pyramid in {year}')
             fig.savefig(make_graph_file_name(f"Pop_Size_{year}"))
             fig.show()
