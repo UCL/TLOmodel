@@ -34,8 +34,8 @@ class Wasting(Module):
     This module applies the prevalence of wasting at the population-level,
     based on the Malawi DHS Survey 2015-2016.
     The definitions:
-    - moderate wasting: height-for-age Z-score (WHZ) <-2 SD from the reference mean
-    - severe wasting: height-for-age Z-score (WHZ) <-3 SD from the reference mean
+    - moderate wasting: weight_for_height Z-score (WHZ) <-2 SD from the reference mean
+    - severe wasting: weight_for_height Z-score (WHZ) <-3 SD from the reference mean
 
     """
 
@@ -57,8 +57,6 @@ class Wasting(Module):
     CAUSES_OF_DISABILITY = {
         'SAM': Cause(gbd_causes='Protein-energy malnutrition', label='Childhood Wasting')
     }
-
-    wasting_states = ['WHZ<-3', '-3<=WHZ<-2', 'WHZ>=-2']
 
     PARAMETERS = {
         # prevalence of wasting by age group
@@ -180,9 +178,9 @@ class Wasting(Module):
     PROPERTIES = {
         # Properties related to wasting
         'un_ever_wasted': Property(Types.BOOL, 'had wasting before WHZ <-2'),
-        'un_WHZ_category': Property(Types.CATEGORICAL, 'height-for-age z-score group',
+        'un_WHZ_category': Property(Types.CATEGORICAL, 'weight-for-height z-score group',
                                     categories=['WHZ<-3', '-3<=WHZ<-2', 'WHZ>=-2']),
-        'un_last_wasting_date_of_onset': Property(Types.DATE, 'date of onset of lastest wasting episode'),
+        'un_last_wasting_date_of_onset': Property(Types.DATE, 'date of onset of latest wasting episode'),
 
         # Properties related to clinical acute malnutrition
         'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'clinical acute malnutrition state based on WHZ',
@@ -199,6 +197,8 @@ class Wasting(Module):
                                          categories=['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care'] +
                                                     ['none', 'not_applicable']),
     }
+
+    wasting_states = ['WHZ<-3', '-3<=WHZ<-2', 'WHZ>=-2']
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
@@ -264,7 +264,7 @@ class Wasting(Module):
         # Update parameters from the resource dataframe
         # Read parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Undernutrition.xlsx',
+            pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Wasting.xlsx',
                           sheet_name='Parameter_values_AM'))
         p = self.parameters
 
@@ -1366,7 +1366,7 @@ class HSI_supplementary_feeding_programme_for_MAM(HSI_Event, IndividualScopeEven
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'supplementary_feeding_programme_for_MAM'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1380,7 +1380,7 @@ class HSI_supplementary_feeding_programme_for_MAM(HSI_Event, IndividualScopeEven
         # Do here whatever happens to an individual during this health system interaction event
         # ~~~~~~~~~~~~~~~~~~~~~~
         # Make request for some consumables
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        consumables = self.sim.modules['HealthSystem'].parameters['item_and_package_code_lookups']
         # whole package of interventions
         pkg_code_mam = pd.unique(
             consumables.loc[consumables['Intervention_Pkg'] == 'Management of moderate acute malnutrition (children)',
@@ -1392,11 +1392,11 @@ class HSI_supplementary_feeding_programme_for_MAM(HSI_Event, IndividualScopeEven
         consumables_needed = {'Intervention_Package_Code': {pkg_code_mam: 1}, 'Item_Code': {item_code1: 1}}
 
         # check availability of consumables
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed)
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=self, cons_req_as_footprint=consumables_needed)
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_mam]:
-            logger.debug(key='debug', data='PkgCode1 is available, so use it.')
+        if self.get_consumables([item_code1]):
+            logger.debug(key='debug', data='consumables are available')
             # Log that the treatment is provided:
             df.at[person_id, 'un_acute_malnutrition_tx_start_date'] = self.sim.date
             df.at[person_id, 'un_am_discharge_date'] = self.sim.date + DateOffset(weeks=3)
@@ -1438,7 +1438,7 @@ class HSI_outpatient_therapeutic_programme_for_SAM(HSI_Event, IndividualScopeEve
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'outpatient_therapeutic_programme_for_SAM'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 1
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
 
     def apply(self, person_id, squeeze_factor):
@@ -1452,7 +1452,7 @@ class HSI_outpatient_therapeutic_programme_for_SAM(HSI_Event, IndividualScopeEve
         # Do here whatever happens to an individual during this health system interaction event
         # ~~~~~~~~~~~~~~~~~~~~~~
         # Make request for some consumables
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        consumables = self.sim.modules['HealthSystem'].parameters['item_and_package_code_lookups']
         # whole package of interventions
         pkg_code_sam = pd.unique(
             consumables.loc[consumables['Intervention_Pkg'] == 'Management of severe malnutrition (children)',
@@ -1467,18 +1467,18 @@ class HSI_outpatient_therapeutic_programme_for_SAM(HSI_Event, IndividualScopeEve
                                                                                             item_code2: 1}}
 
         # check availability of consumables
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed)
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=self, cons_req_as_footprint=consumables_needed)
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_sam]:
-            logger.debug(key='debug', data='PkgCode1 is available, so use it.')
+        if self.get_consumables(item_code1) and self.get_consumables(item_code2):
+            logger.debug(key='debug', data='consumables are available.')
             # Log that the treatment is provided:
             df.at[person_id, 'un_acute_malnutrition_tx_start_date'] = self.sim.date
             df.at[person_id, 'un_am_discharge_date'] = self.sim.date + DateOffset(weeks=3)
             df.at[person_id, 'un_am_treatment_type'] = 'standard_RUTF'
             self.module.do_when_am_treatment(person_id, intervention='OTC')
         else:
-            logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
+            logger.debug(key='debug', data="consumables not available, so can't use it.")
         # --------------------------------------------------------------------------------------------------
         # # check to see if all consumables returned (for demonstration purposes):
         # all_available = (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_sam]) and \
@@ -1513,7 +1513,7 @@ class HSI_inpatient_care_for_complicated_SAM(HSI_Event, IndividualScopeEventMixi
         # Define the necessary information for an HSI
         self.TREATMENT_ID = 'inpatient_care_for_complicated_SAM'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-        self.ACCEPTED_FACILITY_LEVEL = 2
+        self.ACCEPTED_FACILITY_LEVEL = '2'
         self.ALERT_OTHER_DISEASES = []
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 7})
 
@@ -1528,7 +1528,7 @@ class HSI_inpatient_care_for_complicated_SAM(HSI_Event, IndividualScopeEventMixi
         # Do here whatever happens to an individual during this health system interaction event
         # ~~~~~~~~~~~~~~~~~~~~~~
         # Make request for some consumables
-        consumables = self.sim.modules['HealthSystem'].parameters['Consumables']
+        consumables = self.sim.modules['HealthSystem'].parameters['item_and_package_code_lookups']
         # whole package of interventions
         pkg_code_sam = pd.unique(
             consumables.loc[consumables['Intervention_Pkg'] == 'Management of severe malnutrition (children)',
@@ -1539,22 +1539,25 @@ class HSI_inpatient_care_for_complicated_SAM(HSI_Event, IndividualScopeEventMixi
         item_code2 = pd.unique(
             consumables.loc[consumables['Items'] == 'SAM medicines', 'Item_Code'])[0]
 
+        pkg_codes = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+        pkg_codes_num = pkg_codes('Management of severe malnutrition (children)')
+
         consumables_needed = {'Intervention_Package_Code': {pkg_code_sam: 1}, 'Item_Code': {item_code1: 1,
                                                                                             item_code2: 1}}
 
-        # check availability of consumables
-        outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-            hsi_event=self, cons_req_as_footprint=consumables_needed)
+        # # check availability of consumables
+        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
+        #     hsi_event=self, cons_req_as_footprint=consumables_needed)
         # answer comes back in the same format, but with quantities replaced with bools indicating availability
-        if outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_sam]:
-            logger.debug(key='debug', data='PkgCode1 is available, so use it.')
+        if self.get_consumables(item_code1) and self.get_consumables(item_code2):
+            logger.debug(key='debug', data='consumables available, so use it.')
             # Log that the treatment is provided:
             df.at[person_id, 'un_acute_malnutrition_tx_start_date'] = self.sim.date
             df.at[person_id, 'un_am_discharge_date'] = self.sim.date + DateOffset(weeks=4)
             df.at[person_id, 'un_am_treatment_type'] = 'inpatient_care'
             self.module.do_when_am_treatment(person_id, intervention='ITC')
         else:
-            logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
+            logger.debug(key='debug', data="consumables not available, so can't use it.")
         # --------------------------------------------------------------------------------------------------
         # # check to see if all consumables returned (for demonstration purposes):
         # all_available = (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_sam]) and \
@@ -1625,50 +1628,3 @@ class WastingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                             '48_59mo': currently_wasted_age_48_59mo}
 
         logger.info(key='wasting_prevalence_count', data=currently_wasted)
-
-
-class PropertiesOfOtherModules(Module):
-    """For the purpose of the testing, this module generates the properties upon which the Wasting module relies"""
-
-    PROPERTIES = {
-        'hv_inf': Property(Types.BOOL, 'temporary property'),
-        'nb_low_birth_weight_status': Property(Types.CATEGORICAL, 'temporary property',
-                                               categories=['extremely_low_birth_weight', 'very_low_birth_weight',
-                                                           'low_birth_weight', 'normal_birth_weight']),
-        'nb_size_for_gestational_age': Property(Types.CATEGORICAL, 'temporary property',
-                                                categories=['small_for_gestational_age',
-                                                            'average_for_gestational_age']),
-        'nb_late_preterm': Property(Types.BOOL, 'temporary property'),
-        'nb_early_preterm': Property(Types.BOOL, 'temporary property'),
-
-        'nb_breastfeeding_status': Property(Types.CATEGORICAL, 'temporary property',
-                                            categories=['none', 'non_exclusive', 'exclusive']),
-
-    }
-
-    def __init__(self, name=None):
-        super().__init__(name)
-
-    def read_parameters(self, data_folder):
-        pass
-
-    def initialise_population(self, population):
-        df = population.props
-        df.loc[df.is_alive, 'hv_inf'] = False
-        df.loc[df.is_alive, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
-        df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'exclusive'
-        df.loc[df.is_alive, 'nb_size_for_gestational_age'] = 'average_for_gestational_age'
-        df.loc[df.is_alive, 'nb_late_preterm'] = False
-        df.loc[df.is_alive, 'nb_early_preterm'] = False
-
-    def initialise_simulation(self, sim):
-        pass
-
-    def on_birth(self, mother, child):
-        df = self.sim.population.props
-        df.at[child, 'hv_inf'] = False
-        df.at[child, 'nb_low_birth_weight_status'] = 'normal_birth_weight'
-        df.at[child, 'nb_breastfeeding_status'] = 'exclusive'
-        df.at[child, 'nb_size_for_gestational_age'] = 'average_for_gestational_age'
-        df.at[child, 'nb_late_preterm'] = False
-        df.at[child, 'nb_early_preterm'] = False
