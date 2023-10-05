@@ -231,7 +231,9 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             plt.title("Contraception Use By Method")
             plt.xlabel("Year")
             plt.ylabel("Number of women using method")
-            plt.legend(contraceptives_order_all_meths)
+            # Remove the underscores from the names of contraception methods
+            labels_without_underscore = [s.replace("_", " ") for s in contraceptives_order_all_meths]
+            plt.legend(labels_without_underscore)
             plt.savefig(outputpath / ('Contraception Use By Method ' + in_id +
                                       "_UpTo" + str(plot_months.year[-1]) + in_suffix + '.png'), format='png')
 
@@ -302,6 +304,8 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             plt.ylabel('Proportion')
             # Move the fig title, so it fits with others in the panel
             handles, labels = ax.get_legend_handles_labels()
+            # Remove the underscores from the names of contraception methods
+            labels = [s.replace("_", " ") for s in labels]
             fig.legend(handles[::-1], labels[::-1], title='Contraception Method', loc=7)
             fig.subplots_adjust(right=0.65)
             plt.savefig(outputpath / ('Prop Fem1549 Using Method ' + in_id +
