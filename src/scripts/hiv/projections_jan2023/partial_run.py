@@ -29,13 +29,13 @@ class ImpactOfTbDaHx(BaseScenario):
         self.seed = 0 #random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2012, 12, 31)
-        self.pop_size = 1000
+        self.pop_size = 10000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 3
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_scenarios_test_run29_partial',
+            'filename': 'Tb_DAH_scenarios_test_run31_partial',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -93,7 +93,7 @@ class ImpactOfTbDaHx(BaseScenario):
             "CXR scale_up": {
                  'Tb': {
                      'scenario': 3,
-                     'scaling_factor_WHO': 1.79,
+                     'scaling_factor_WHO': 1.25,
                  }
             },
             "Outreach services": {
