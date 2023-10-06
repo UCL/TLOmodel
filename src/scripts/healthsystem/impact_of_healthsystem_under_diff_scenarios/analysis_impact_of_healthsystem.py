@@ -129,8 +129,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ).pipe(set_param_names_as_column_index_level_0)
 
     # %% Charts of total numbers of deaths / DALYS
-    num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names)
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names)
+    num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names)
+
+    # Update naming of scenarios
+    scenario_renaming = {
+        '+ Perfect Clinical Practice': '+ Perfect Healthcare System Function'
+    }
+
+    num_deaths_summarized.index = pd.Series(num_deaths_summarized.index).replace(scenario_renaming)
+    num_dalys_summarized.index = pd.Series(num_dalys_summarized.index).replace(scenario_renaming)
 
     name_of_plot = f'Deaths, {target_period()}'
     fig, ax = do_bar_plot_with_ci(num_deaths_summarized / 1e6)
