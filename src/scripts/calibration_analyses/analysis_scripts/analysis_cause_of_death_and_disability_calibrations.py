@@ -379,19 +379,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ])
 
         outcomes = outcome_by_age_pt['GBD'][("mean")]
-        fraction_causes_modelled = (1.0 - outcomes['Other'] / outcomes.sum(axis=1))
+        fraction_causes_modelled_overall = (1.0 - outcomes['Other'].sum() / outcomes.sum().sum())
+        fraction_causes_modelled_by_sex_and_age = (1.0 - outcomes['Other'] / outcomes.sum(axis=1))
         fig, ax = plt.subplots()
         for sex in sexes:
-            fraction_causes_modelled.loc[(sex, slice(None))].plot(
+            fraction_causes_modelled_by_sex_and_age.loc[(sex, slice(None))].plot(
                 ax=ax,
                 color=get_color_cause_of_death_or_daly_label('Other'),
                 linestyle=':' if sex == 'F' else '-',
                 label=sexname(sex),
                 lw=5,
             )
+        ax.axhline(fraction_causes_modelled_overall, color='b',
+                   label=f'Overall: {round(100 * fraction_causes_modelled_overall)}%')
         ax.legend()
         ax.set_ylim(0, 1.0)
-        xticks = fraction_causes_modelled.index.levels[1]
+        xticks = fraction_causes_modelled_by_sex_and_age.index.levels[1]
         ax.set_xticks(range(len(xticks)))
         ax.set_xticklabels(xticks, rotation=90)
         ax.grid(axis='y')
