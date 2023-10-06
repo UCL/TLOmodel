@@ -10,28 +10,25 @@ from tlo import Date, Simulation, logging
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import (
     demography,
-    wasting,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
     simplified_births,
     symptommanager,
+    wasting,
 )
-
-from tlo.methods.healthsystem import HSI_Event
-
 from tlo.methods.wasting import (
     AcuteMalnutritionDeathPollingEvent,
-    SevereAcuteMalnutritionDeathEvent,
-    ProgressionSevereWastingEvent,
-    WastingNaturalRecoveryEvent,
     ClinicalAcuteMalnutritionRecoveryEvent,
-    WastingPollingEvent,
-    UpdateToMAM,
-    HSI_supplementary_feeding_programme_for_MAM,
-    HSI_outpatient_therapeutic_programme_for_SAM,
     HSI_inpatient_care_for_complicated_SAM,
+    HSI_outpatient_therapeutic_programme_for_SAM,
+    HSI_supplementary_feeding_programme_for_MAM,
+    ProgressionSevereWastingEvent,
+    SevereAcuteMalnutritionDeathEvent,
+    UpdateToMAM,
+    WastingNaturalRecoveryEvent,
+    WastingPollingEvent,
 )
 
 # Path to the resource files used by the disease and intervention methods
@@ -184,14 +181,14 @@ def test_wasting_polling(tmpdir):
     # Run polling event: check that a severe incident case is produced:
     polling = WastingPollingEvent(sim.modules['Wasting'])
     polling.apply(sim.population)
-    assert len([q for q in sim.event_queue.queue if isinstance(q[2], ProgressionSevereWastingEvent)]) > 0
+    assert len([q for q in sim.event_queue.queue if isinstance(q[3], ProgressionSevereWastingEvent)]) > 0
 
     # Check properties of this individual: should now be moderately wasted
     df = sim.population.props
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
     person_id = under5s.index[0]
     person = df.loc[person_id]
-    assert person['un_ever_wasted'] == True
+    assert person['un_ever_wasted']
     assert person['un_WHZ_category'] == '-3<=WHZ<-2'
     assert person['un_last_wasting_date_of_onset'] == sim.date
 
