@@ -678,29 +678,29 @@ def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcef
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
 
-    # figure1_distribution_of_hsi_event_by_treatment_id(
-    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    # )
-    #
-    # figure2_appointments_used(
-    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    # )
-    #
-    # figure3_fraction_of_time_of_hcw_used_by_treatment(
-    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    # )
-    #
-    # figure4_hr_use_overall(
-    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    # )
-    #
-    # figure5_bed_use(
-    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    # )
-    #
-    # figure6_cons_use(
-    #     results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
-    # )
+    figure1_distribution_of_hsi_event_by_treatment_id(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    figure2_appointments_used(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    figure3_fraction_of_time_of_hcw_used_by_treatment(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    figure4_hr_use_overall(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    figure5_bed_use(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
+
+    figure6_cons_use(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
 
     figure7_squeeze_factors(
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath

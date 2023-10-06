@@ -410,7 +410,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # make_std_graphs(what='DALYs', period='2010-2014')
 
     make_std_graphs(what='DALYs', period='2015-2019')
-    # make_std_graphs(what='Deaths', period='2015-2019')
+    make_std_graphs(what='Deaths', period='2015-2019')
 
 
 if __name__ == "__main__":
