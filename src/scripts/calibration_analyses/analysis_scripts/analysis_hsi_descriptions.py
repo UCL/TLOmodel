@@ -663,7 +663,7 @@ def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcef
     ax.set_xlabel('Average Squeeze Factor')
     ax.set_ylabel('Health System Interaction Event')
     ax.set_yticks(sorted_squeeze_factors.index)
-    ax.set_yticklabels(sorted_squeeze_factors['HSI'], fontsize=6)
+    ax.set_yticklabels(sorted_squeeze_factors['HSI'].str.replace('HSI_', ''), fontsize=6)
     ax.grid(axis='x', which='both')
     ax.grid(axis='y')
     ax.set_xlim([0, 60])
