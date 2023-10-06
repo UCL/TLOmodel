@@ -30,7 +30,7 @@ from tlo.methods import (
 
 
 class WastingAnalyses:
-    """This class looks at plotting all import outputs from the wasting module """
+    """This class looks at plotting all important outputs from the wasting module """
 
     def __init__(self, log_file_path):
         self.__log_file_path = log_file_path
