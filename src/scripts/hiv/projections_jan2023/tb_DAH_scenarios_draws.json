@@ -1,13 +1,13 @@
 {
   "scenario_script_path": "src/scripts/hiv/projections_jan2023/tb_DAH_scenarios.py",
   "scenario_seed": [
-    49179
+    4129
   ],
-  "runs_per_draw": 4,
+  "runs_per_draw": 3,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 2118156274,
+      "draw_seed": 1440875582,
       "parameters": {
         "Tb": {
           "scenario": 0
@@ -16,45 +16,46 @@
     },
     {
       "draw_number": 1,
-      "draw_seed": 628551001,
+      "draw_seed": 1589777886,
       "parameters": {
         "Tb": {
           "scenario": 1,
-          "first_line_test": "sputum",
-          "second_line_test": "sputum"
+          "scaling_factor_WHO": 1.95
         }
       }
     },
     {
       "draw_number": 2,
-      "draw_seed": 912829030,
+      "draw_seed": 1662633842,
       "parameters": {
         "Tb": {
-          "scenario": 2
+          "scenario": 2,
+          "scaling_factor_WHO": 1.89
         }
       }
     },
     {
       "draw_number": 3,
-      "draw_seed": 1190036701,
+      "draw_seed": 1652706751,
       "parameters": {
         "Tb": {
-          "scenario": 3
+          "scenario": 3,
+          "scaling_factor_WHO": 1.15
         }
       }
     },
     {
       "draw_number": 4,
-      "draw_seed": 1931206758,
+      "draw_seed": 1431968326,
       "parameters": {
         "Tb": {
           "scenario": 0,
           "probability_community_chest_xray": 0.1,
-          "scaling_factor_WHO": 1.9
+          "scaling_factor_WHO": 0.89
         }
       }
     }
   ],
-  "commit": "486bb5269bea72d675b0db592e2524b89955d98b",
-  "github": "https://github.com/UCL/TLOmodel/tree/486bb5269bea72d675b0db592e2524b89955d98b"
+  "commit": "4ad42c3537cee5a4c1a64ce47083aee48c93b1f9",
+  "github": "https://github.com/UCL/TLOmodel/tree/4ad42c3537cee5a4c1a64ce47083aee48c93b1f9"
 }
