@@ -93,10 +93,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             alpha=0.5,
             ecolor='black',
             capsize=10,
+            label=xticks.values()
         )
         if annotations:
-            for xpos, ypos, text in zip(xticks.keys(), _df['mean'].values, annotations):
-                ax.text(xpos, ypos, text, horizontalalignment='center')
+            for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
+                ax.text(xpos, ypos*1.05, text, horizontalalignment='center')
         ax.set_xticks(list(xticks.keys()))
         ax.set_xticklabels(list(xticks.values()), rotation=90)
         ax.grid(axis="y")
@@ -231,6 +232,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ]
     )
     ax.set_title(name_of_plot)
+    ax.set_ylim(0, 12)
     ax.set_ylabel('Additional DALYS Averted (Millions)')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
