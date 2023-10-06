@@ -22,6 +22,7 @@ from tlo.analysis.utils import (
     squarify_neat,
     summarize,
     unflatten_flattened_multi_index_in_logging,
+    load_pickled_dataframes,
 )
 
 PREFIX_ON_FILENAME = '3'
@@ -50,6 +51,39 @@ def formatting_hsi_df(_df):
     _df['TREATMENT_ID_SHORT'] = _df['TREATMENT_ID'].str.split('_').apply(lambda x: x[0])
 
     return _df
+
+def table1_description_of_hsi_events(results_folder: Path, output_folder: Path,
+                                                      resourcefilepath: Path):
+    """ `Table 1`: A summary table of all the HSI Events seen in the simulation.
+    This is similar to that created by `hsi_events.py` but records all the different forms (levels/appt-type) that
+    an HSI Event can take."""
+
+    # Pick the first draw/run only -- assume that it is indicative of all the HSI Events seen in a simulation
+    log = load_pickled_dataframes(results_folder, 0, 0)
+    h = pd.DataFrame(
+        log['tlo.methods.healthsystem.summary']['hsi_event_details'].iloc[0]['hsi_event_key_to_event_details']
+    ).T
+
+    # Re-order columns & sort; Remove 'HSI_' prefix from event name
+    h = h[['module_name', 'treatment_id', 'event_name', 'facility_level', 'appt_footprint', 'beddays_footprint']]
+    h = h.sort_values(['module_name', 'treatment_id', 'event_name', 'facility_level']).reset_index(drop=True)
+    h['event_name'] = h['event_name'].str.replace('HSI_', '')
+
+    # Rename columns
+    h = h.rename(columns={
+        "module_name": 'Module',
+        "treatment_id": 'TREATMENT_ID',
+        "event_name": 'HSI Event',
+        "facility_level": 'Facility Level',
+        "appt_footprint": 'Appointment Types',
+        "beddays_footprint": 'Bed-Days',
+    })
+
+    # Save table as csv
+    h.to_csv(
+        output_folder / f"{PREFIX_ON_FILENAME}_Table1.csv",
+        index=False
+    )
 
 
 def figure1_distribution_of_hsi_event_by_treatment_id(results_folder: Path, output_folder: Path,
@@ -678,6 +712,10 @@ def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcef
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
+
+    table1_description_of_hsi_events(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
 
     figure1_distribution_of_hsi_event_by_treatment_id(
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
