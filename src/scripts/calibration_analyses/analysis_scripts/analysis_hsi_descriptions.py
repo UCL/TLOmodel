@@ -199,7 +199,7 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
     plot_stacked_bar_chart(
         ax,
         counts_by_coarse_appt_type_and_treatment_id,
-        # SHORT_TREATMENT_ID_TO_COLOR_MAP,
+        SHORT_TREATMENT_ID_TO_COLOR_MAP,
         count_scale=1e-6
     )
     ax.spines['top'].set_visible(False)
@@ -209,7 +209,8 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
     ax.legend().set_visible(False)  # suppress legend
     ax.set_ylabel('Number of appointments (millions)')
     ax.set_xlabel('Appointment Types')
-    ax.set_ylim(0, 600)
+    ax.set_ylim(0, 150)
+    ax.set_yticks(np.arange(0, 151, 50))
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     fig.tight_layout()
     fig.savefig(
