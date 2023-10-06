@@ -382,7 +382,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fraction_causes_modelled = (1.0 - outcomes['Other'] / outcomes.sum(axis=1))
         fig, ax = plt.subplots()
         for sex in sexes:
-            fraction_causes_modelled.loc[(sex, slice(None))].droplevel(0).plot(
+            fraction_causes_modelled.loc[(sex, slice(None))].plot(
                 ax=ax,
                 color=get_color_cause_of_death_or_daly_label('Other'),
                 linestyle=':' if sex == 'F' else '-',

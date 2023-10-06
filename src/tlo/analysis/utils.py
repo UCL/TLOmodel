@@ -1035,7 +1035,8 @@ def plot_clustered_stacked(dfall, ax, color_for_column_map=None, scaled=False, l
 
     for i, df in enumerate(dfall.values()):  # for each data frame
         if scaled:
-            df = df.apply(lambda row: (row / row.sum()).fillna(0.0), axis=1)
+            df = df.apply(lambda row: (row.astype(float) / row.sum()).fillna(0.0), axis=1)
+            # Note the 'astype(float)' is to avoid 0's leading to integer division, for which division by 0.0 errors.
 
         ax = df.plot.bar(
             stacked=True,
