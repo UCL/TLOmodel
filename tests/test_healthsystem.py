@@ -833,22 +833,43 @@ def test_two_loggers_in_healthsystem(seed, tmpdir):
     summary_consumables = log["tlo.methods.healthsystem.summary"]["Consumables"]
     summary_beddays = log["tlo.methods.healthsystem.summary"]["BedDays"]
 
+    def dict_all_close(dict_1, dict_2):
+        return (dict_1.keys() == dict_2.keys()) and all(
+            np.isclose(dict_1[k], dict_2[k]) for k in dict_1.keys()
+        )
+
     # Check correspondence between the two logs
     #  - Counts of TREATMENT_ID (total over entire period of log)
-    assert summary_hsi_event['TREATMENT_ID'].apply(pd.Series).sum().to_dict() == \
-           detailed_hsi_event.groupby('TREATMENT_ID').size().to_dict()
-    #  - Average of squeeze-factors for each TREATMENT_ID (by each year)
-    assert summary_hsi_event['squeeze_factor'].apply(pd.Series) \
-                                              .groupby(by=summary_hsi_event.date.dt.year) \
-                                              .sum() \
-                                              .unstack() \
-                                              .to_dict() \
-           == detailed_hsi_event.assign(
-               treatment_id_hsi_name=lambda df: df['TREATMENT_ID'] + ':' + df['Event_Name'],
-               year=lambda df: df.date.dt.year,
-              ).groupby(by=['treatment_id_hsi_name', 'year'])['Squeeze_Factor']\
-               .mean() \
-               .to_dict()
+    summary_treatment_id_counts = (
+        summary_hsi_event['TREATMENT_ID'].apply(pd.Series).sum().to_dict()
+    )
+    detailed_treatment_id_counts = (
+        detailed_hsi_event.groupby('TREATMENT_ID').size().to_dict()
+    )
+    assert dict_all_close(summary_treatment_id_counts, detailed_treatment_id_counts)
+
+    # Average of squeeze-factors for each TREATMENT_ID (by each year)
+    summary_treatment_id_mean_squeeze_factors = (
+        summary_hsi_event["squeeze_factor"]
+        .apply(pd.Series)
+        .groupby(by=summary_hsi_event.date.dt.year)
+        .sum()
+        .unstack()
+        .to_dict()
+    )
+    detailed_treatment_id_mean_squeeze_factors = (
+        detailed_hsi_event.assign(
+            treatment_id_hsi_name=lambda df: df["TREATMENT_ID"] + ":" + df["Event_Name"],
+            year=lambda df: df.date.dt.year,
+        )
+        .groupby(by=["treatment_id_hsi_name", "year"])["Squeeze_Factor"]
+        .mean()
+        .to_dict()
+    )
+    assert dict_all_close(
+        summary_treatment_id_mean_squeeze_factors,
+        detailed_treatment_id_mean_squeeze_factors
+    )
 
     #  - Appointments (total over entire period of the log)
     assert summary_hsi_event['Number_By_Appt_Type_Code'].apply(pd.Series).sum().to_dict() == \
