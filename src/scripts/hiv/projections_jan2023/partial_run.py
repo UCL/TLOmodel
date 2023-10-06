@@ -80,7 +80,7 @@ class ImpactOfTbDaHx(BaseScenario):
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                   #'scaling_factor_WHO': 1.87,
+                   'scaling_factor_WHO': 1.95,   ##added this to see the eventual impact,
                 },
             },
         # overrides availability of CXR

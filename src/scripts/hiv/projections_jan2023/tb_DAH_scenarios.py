@@ -78,6 +78,7 @@ class ImpactOfTbDaH(BaseScenario):
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
+                    'scaling_factor_WHO': 1.95,
 
                 },
             },
@@ -85,13 +86,13 @@ class ImpactOfTbDaH(BaseScenario):
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
-                    'scaling_factor_WHO': 1.85,
+                    'scaling_factor_WHO': 1.89,
                 },
             },
              "CXR scale_up": {
                  'Tb': {
                      'scenario': 3,
-                     'scaling_factor_WHO': 1.2,
+                     'scaling_factor_WHO': 1.15,
                  }
              },
             "Outreach services": {
