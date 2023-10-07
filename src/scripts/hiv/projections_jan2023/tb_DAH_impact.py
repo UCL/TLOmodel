@@ -4,7 +4,6 @@ This file run scenarios for assesing unavailability of TB-related Development As
 
 It can be submitted on Azure Batch by running:
 
- tlo batch-submit src/scripts/hiv/projections_jan2023/tb_DAH_impact.py
 or locally using:
 
  tlo scenario-run src/scripts/hiv/projections_jan2023/tb_DAH_impact.py
