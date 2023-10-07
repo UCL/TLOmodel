@@ -20,7 +20,7 @@ from tlo.analysis.utils import (
 )
 
 resourcefilepath = Path("./resources")
-outputspath = Path("./outputs/nic503@york.ac.uk")
+outputspath = Path("./outputs/newton.chagoma@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
@@ -42,7 +42,7 @@ number_draws = info['number_of_draws']
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-    from scripts.hiv.projections_jan2023.partial_run import ImpactOfTbDaH
+    from scripts.hiv.projections_jan2023.tb_DAH_scenarios import ImpactOfTbDaH
     e = ImpactOfTbDaH()
     return tuple(e._scenarios.keys())
 
