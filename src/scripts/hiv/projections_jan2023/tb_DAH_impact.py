@@ -4,16 +4,16 @@ This file run scenarios for assesing unavailability of TB-related Development As
 
 It can be submitted on Azure Batch by running:
 
- tlo batch-submit src/scripts/hiv/projections_jan2023/tb_DAH_scenarios.py
+ tlo batch-submit src/scripts/hiv/projections_jan2023/tb_DAH_impact.py
 or locally using:
 
- tlo scenario-run src/scripts/hiv/projections_jan2023/tb_DAH_scenarios.py
+ tlo scenario-run src/scripts/hiv/projections_jan2023/tb_DAH_impact.py
   execute a single run:
 
- tlo scenario-run src/scripts/hiv/projections_jan2023/tb_DAH_scenarios.py --draw 1 0
+ tlo scenario-run src/scripts/hiv/projections_jan2023/tb_DAH_impact.py --draw 1 0
 
  check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/tb_DAH_scenarios.py
+tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/tb_DAH_impact.py
 
  """
 import warnings
