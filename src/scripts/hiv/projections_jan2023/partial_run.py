@@ -93,7 +93,7 @@ class ImpactOfTbDaHx(BaseScenario):
             "CXR scale_up": {
                  'Tb': {
                      'scenario': 3,
-                     'scaling_factor_WHO': 1.15,
+                     'scaling_factor_WHO': 1.0,
                  }
             },
             "Outreach services": {
