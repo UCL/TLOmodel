@@ -86,13 +86,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     pop_model.index = pop_model.index.year
 
     # Load Data: WPP_Annual including age groups (but only WPP medium variant)
-    wpp_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_age_sex_WPP19.csv")
+    wpp_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_age_sex_WPP2019.csv")
     wpp_ann['Age_Grp'] = wpp_ann['Age_Grp'].astype(make_age_grp_types())
 
     # Load Data: WPP_Annual incl. all WPP varints (but without age groups)
-    wpp_ann_total_by_sex = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_sex_WPP19.csv")
+    wpp_ann_total_by_sex = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_sex_WPP2019.csv")
     wpp_ann_total = wpp_ann_total_by_sex.groupby(['Year', 'Variant'])['Count'].sum().unstack()
-    wpp_ann_total['WPP_continuous'] = wpp_ann_total['WPP_Estimates'].combine_first(wpp_ann_total['WPP_Medium variant'])
+    wpp_ann_total['WPP2019_continuous'] = \
+        wpp_ann_total['WPP2019_Estimates'].combine_first(wpp_ann_total['WPP2019_Medium variant'])
 
     # Load Data: Census
     cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
@@ -101,11 +102,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Plot population size over time
     fig, ax = plt.subplots()
-    ax.plot(wpp_ann_total.index, wpp_ann_total['WPP_continuous'] / 1e6,
+    ax.plot(wpp_ann_total.index, wpp_ann_total['WPP2019_continuous'] / 1e6,
             label='WPP (2019)', color=colors['WPP'])
     ax.fill_between(wpp_ann_total.index,
-                    wpp_ann_total['WPP_Low variant'] / 1e6,
-                    wpp_ann_total['WPP_High variant'] / 1e6,
+                    wpp_ann_total['WPP2019_Low variant'] / 1e6,
+                    wpp_ann_total['WPP2019_High variant'] / 1e6,
                     facecolor=colors['WPP'], alpha=0.2)
     ax.plot(2018.5, cens_2018.sum() / 1e6,
             marker='o', markersize=10, linestyle='none', label='Census', zorder=10, color=colors['Census'])
@@ -336,13 +337,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     births_model.columns = ['Model_' + col for col in births_model.columns]
 
     # Births over time (WPP)
-    wpp_births = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalBirths_WPP19.csv")
+    wpp_births = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalBirths_WPP2019.csv")
     wpp_births = wpp_births.groupby(['Period', 'Variant'])['Total_Births'].sum().unstack()
     wpp_births.index = wpp_births.index.astype(make_calendar_period_type())
-    wpp_births.columns = 'WPP_' + wpp_births.columns
+    wpp_births.columns = 'WPP2019_' + wpp_births.columns
 
     # Make the WPP line connect to the 'medium variant' to make the lines look like they join up
-    wpp_births['WPP_continuous'] = wpp_births['WPP_Estimates'].combine_first(wpp_births['WPP_Medium variant'])
+    wpp_births['WPP2019_continuous'] = wpp_births['WPP2019_Estimates'].combine_first(wpp_births['WPP2019_Medium variant'])
 
     # Births in 2018 Census
     cens_births = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Births_2018Census.csv")
@@ -383,13 +384,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.axvline(x='2020-2024', ls=':', color='gray')
         ax.plot(
             births_loc.index,
-            births_loc['WPP_continuous'] / 1e6,
+            births_loc['WPP2019_continuous'] / 1e6,
             color=colors['WPP'],
             label='WPP (2019)'
         )
         ax.fill_between(births_loc.index,
-                        births_loc['WPP_Low variant'] / 1e6,
-                        births_loc['WPP_High variant'] / 1e6,
+                        births_loc['WPP2019_Low variant'] / 1e6,
+                        births_loc['WPP2019_High variant'] / 1e6,
                         facecolor=colors['WPP'], alpha=0.2)
         ax.legend(loc='upper left')
         plt.xticks(rotation=90)
@@ -527,7 +528,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     asfr = summarize(births_by_mother_age_at_pregnancy.div(num_adult_women)).sort_index()
 
     # Get the age-specific fertility rates of the WPP source
-    wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP19.csv')
+    wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP2019.csv')
 
     def expand_by_year(periods, vals, years=range(2010, 2050)):
         _ser = dict()
@@ -541,7 +542,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     for i, _agegrp in enumerate(adult_age_groups):
         model = asfr.loc[(slice(2011, years[-1]), _agegrp), :].unstack()
         data = wpp.loc[
-            (wpp.Age_Grp == _agegrp) & wpp.Variant.isin(['WPP_Estimates', 'WPP_Medium variant']), ['Period', 'asfr']
+            (wpp.Age_Grp == _agegrp) & wpp.Variant.isin(['WPP2019_Estimates', 'WPP2019_Medium variant']), ['Period', 'asfr']
         ]
         data_year, data_asfr = expand_by_year(data.Period, data.asfr, years)
 
@@ -570,7 +571,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                      .stack()
 
     data_asfr = wpp.loc[
-        wpp.Variant.isin(['WPP_Estimates', 'WPP_Medium variant']), ['Age_Grp', 'Period', 'asfr']
+        wpp.Variant.isin(['WPP2019_Estimates', 'WPP2019_Medium variant']), ['Age_Grp', 'Period', 'asfr']
     ].groupby(by=['Age_Grp', 'Period'])['asfr'].mean().unstack().T
 
     fig, axs = plt.subplots(nrows=2, sharex=True, sharey=True)
@@ -611,7 +612,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     results_deaths = results_deaths.drop(columns=['age', 'year']).groupby(['Period', 'Sex', 'Age_Grp']).sum()
 
     # Load WPP data
-    wpp_deaths = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalDeaths_WPP19.csv")
+    wpp_deaths = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalDeaths_WPP2019.csv")
     wpp_deaths['Period'] = wpp_deaths['Period'].astype(make_calendar_period_type())
     wpp_deaths['Age_Grp'] = wpp_deaths['Age_Grp'].astype(make_age_grp_types())
 
@@ -651,20 +652,20 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     deaths_by_period = deaths_by_period.replace(0, np.nan)
 
     # Make the WPP line connect to the 'medium variant' to make the lines look like they join up
-    deaths_by_period['WPP_continuous'] = deaths_by_period['WPP_Estimates'].combine_first(
-        deaths_by_period['WPP_Medium variant'])
+    deaths_by_period['WPP2019_continuous'] = deaths_by_period['WPP2019_Estimates'].combine_first(
+        deaths_by_period['WPP2019_Medium variant'])
 
     # Plot:
     fig, ax = plt.subplots()
     ax.plot(
         deaths_by_period.index,
-        deaths_by_period['WPP_continuous'] / 1e6,
+        deaths_by_period['WPP2019_continuous'] / 1e6,
         label='WPP',
         color=colors['WPP'])
     ax.fill_between(
         deaths_by_period.index,
-        deaths_by_period['WPP_Low variant'] / 1e6,
-        deaths_by_period['WPP_High variant'] / 1e6,
+        deaths_by_period['WPP2019_Low variant'] / 1e6,
+        deaths_by_period['WPP2019_High variant'] / 1e6,
         facecolor=colors['WPP'], alpha=0.2)
     ax.plot(
         deaths_by_period.index,
@@ -736,21 +737,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             tot_deaths_byage.columns = pd.Index([label[1] for label in tot_deaths_byage.columns.tolist()])
             tot_deaths_byage = tot_deaths_byage.transpose()
 
-            if 'WPP_Medium variant' in tot_deaths_byage.columns:
+            if 'WPP2019_Medium variant' in tot_deaths_byage.columns:
                 ax[i].plot(
                     tot_deaths_byage.index,
-                    tot_deaths_byage['WPP_Medium variant'] / 1e3,
+                    tot_deaths_byage['WPP2019_Medium variant'] / 1e3,
                     label='WPP',
                     color=colors['WPP'])
                 ax[i].fill_between(
                     tot_deaths_byage.index,
-                    tot_deaths_byage['WPP_Low variant'] / 1e3,
-                    tot_deaths_byage['WPP_High variant'] / 1e3,
+                    tot_deaths_byage['WPP2019_Low variant'] / 1e3,
+                    tot_deaths_byage['WPP2019_High variant'] / 1e3,
                     facecolor=colors['WPP'], alpha=0.2)
             else:
                 ax[i].plot(
                     tot_deaths_byage.index,
-                    tot_deaths_byage['WPP_Estimates'] / 1e3,
+                    tot_deaths_byage['WPP2019_Estimates'] / 1e3,
                     label='WPP',
                     color=colors['WPP'])
 
