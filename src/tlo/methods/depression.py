@@ -740,17 +740,21 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         def zero_out_nan(x):
             return x if not np.isnan(x) else 0
 
+        def safe_divide(x, y):
+            return x / y if y > 0.0 else 0.0
+
         dict_for_output = {
-            'prop_ge15_depr': zero_out_nan(n_ge15_depr / n_ge15),
-            'prop_ge15_m_depr': zero_out_nan(n_ge15_m_depr / n_ge15_m),
-            'prop_ge15_f_depr': zero_out_nan(n_ge15_f_depr / n_ge15_f),
-            'prop_ever_depr': zero_out_nan(n_ever_depr / n_ge15),
-            'prop_age_50_ever_depr': zero_out_nan(n_age_50_ever_depr / n_age_50),
-            'p_ever_diagnosed_depression_if_ever_depressed': zero_out_nan(n_ever_diagnosed_depression / n_ever_depr),
-            'prop_antidepr_if_curr_depr': zero_out_nan(n_antidepr_depr / n_ge15_depr),
-            'prop_antidepr_if_ever_depr': zero_out_nan(n_antidepr_ever_depr / n_ever_depr),
-            'prop_ever_talk_ther_if_ever_depr': zero_out_nan(n_ever_talk_ther / n_ever_depr),
-            'prop_ever_self_harmed': zero_out_nan(n_ever_self_harmed / n_ever_depr),
+            'prop_ge15_depr': zero_out_nan(safe_divide(n_ge15_depr, n_ge15)),
+            'prop_ge15_m_depr': zero_out_nan(safe_divide(n_ge15_m_depr, n_ge15_m)),
+            'prop_ge15_f_depr': zero_out_nan(safe_divide(n_ge15_f_depr, n_ge15_f)),
+            'prop_ever_depr': zero_out_nan(safe_divide(n_ever_depr, n_ge15)),
+            'prop_age_50_ever_depr': zero_out_nan(safe_divide(n_age_50_ever_depr, n_age_50)),
+            'p_ever_diagnosed_depression_if_ever_depressed':
+                zero_out_nan(safe_divide(n_ever_diagnosed_depression, n_ever_depr)),
+            'prop_antidepr_if_curr_depr': zero_out_nan(safe_divide(n_antidepr_depr, n_ge15_depr)),
+            'prop_antidepr_if_ever_depr': zero_out_nan(safe_divide(n_antidepr_ever_depr, n_ever_depr)),
+            'prop_ever_talk_ther_if_ever_depr': zero_out_nan(safe_divide(n_ever_talk_ther, n_ever_depr)),
+            'prop_ever_self_harmed': zero_out_nan(safe_divide(n_ever_self_harmed, n_ever_depr)),
         }
 
         logger.info(key='summary_stats', data=dict_for_output)
