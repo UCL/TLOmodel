@@ -187,7 +187,7 @@ class HealthBurden(Module):
                         # If label is already included, merge the gbd_causes into the cause defined.
                         tlo_cause_name_to_merge_into = labels_seen[_cause.label]
                         merged_causes[tlo_cause_name_to_merge_into].gbd_causes = \
-                            merged_causes[tlo_cause_name_to_merge_into].gbd_causes.union(_cause.gbd_causes)  # M0
+                            merged_causes[tlo_cause_name_to_merge_into].gbd_causes.union(_cause.gbd_causes)
             return merged_causes
 
         causes_of_death = collect_causes_from_disease_modules(
