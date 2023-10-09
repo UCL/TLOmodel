@@ -708,7 +708,7 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
 
-        # equipment:  a proportion of these cancers will require surgery - also radiotherapy in some cases when available
+        # equipment: a proportion of these cancers will require surgery - also radiotherapy in some cases when available
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props

@@ -626,6 +626,7 @@ class HSI_Epilepsy_Start_Anti_Epileptic(HSI_Event, IndividualScopeEventMixin):
 
         # todo: may need to consider iv diazepam as another hsi
 
+
 class HSI_Epilepsy_Follow_Up(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
