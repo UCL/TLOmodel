@@ -327,6 +327,7 @@ def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: 
         # Remove other metrics and simplify if 'only_mean' across runs for each draw is required:
         om: pd.DataFrame = summary.loc[:, (slice(None), "mean")]
         om.columns = [c[0] for c in om.columns.to_flat_index()]
+        om.columns.name = 'draw'
         return om
 
     elif collapse_columns and (len(summary.columns.levels[0]) == 1):
