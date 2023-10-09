@@ -64,8 +64,7 @@
     - Software development
 - given-names: Britta
   family-names: Jewell
-  orcid: "https://orcid.org/0000-0003-4275-8509"  # to check
-  affiliation: "Imperial College London" # to check
+  orcid: "https://orcid.org/0000-0003-4275-8509"
   website: https://www.imperial.ac.uk/people/b.jewell
   github-username: brittajewell
   contributions:
@@ -111,7 +110,7 @@
   orcid: "https://orcid.org/0000-0003-3967-905X"
   affiliation: "Kamuzu University of Health Sciences"
   website: "https://www.linkedin.com/in/wingston-ng-ambi-7950707b"
-  github-username: winnga # to check
+  github-username: winnga
   contributions:
     - Epidemiology and modelling
     - Software development
