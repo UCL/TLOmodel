@@ -319,8 +319,9 @@ def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: 
         },
         axis=1
     )
-    summary.columns = summary.columns.swaplevel(1, 0).sort_index(axis=1)
+    summary.columns = summary.columns.swaplevel(1, 0)
     summary.columns.names = ['draw', 'stat']
+    summary = summary.sort_index(axis=1)
 
     if only_mean and (not collapse_columns):
         # Remove other metrics and simplify if 'only_mean' across runs for each draw is required:
