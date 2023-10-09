@@ -311,14 +311,15 @@ def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: 
     Finds mean value and 95% interval across the runs for each draw.
     """
 
-    summary = pd.concat({
-        'mean': results.groupby(axis=1, by='draw', sort=False).mean(),
-        'lower': results.groupby(axis=1, by='draw', sort=False).quantile(0.025),
-        'upper': results.groupby(axis=1, by='draw', sort=False).quantile(0.975),
-    },
+    summary = pd.concat(
+        {
+            'mean': results.groupby(axis=1, by='draw', sort=False).mean(),
+            'lower': results.groupby(axis=1, by='draw', sort=False).quantile(0.025),
+            'upper': results.groupby(axis=1, by='draw', sort=False).quantile(0.975),
+        },
         axis=1
     )
-    summary.columns = summary.columns.swaplevel(1, 0)
+    summary.columns = summary.columns.swaplevel(1, 0).sort_index(axis=1)
     summary.columns.names = ['draw', 'stat']
 
     if only_mean and (not collapse_columns):
