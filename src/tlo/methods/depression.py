@@ -49,7 +49,7 @@ class Depression(Module):
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        'SevereDepression': Cause(gbd_causes='Self-harm', label='Depression / Self-harm')
+        'SevereDepression': Cause(gbd_causes='Depressive disorders', label='Depression / Self-harm')
     }
 
     # Module parameters
