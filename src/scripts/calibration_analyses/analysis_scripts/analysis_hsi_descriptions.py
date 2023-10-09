@@ -574,13 +574,18 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
         resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Items_and_Packages.csv'
     )[['Item_Code', 'Items']].set_index('Item_Code').drop_duplicates()
     cons = cons.merge(cons_names, left_index=True, right_index=True, how='left').set_index('Items').astype(int)
-    cons = cons.assign(total=cons.sum(1)).sort_values('total').drop(columns='total')
+    cons = cons.assign(total=cons.sum(1)).sort_values('total', ascending=False).drop(columns='total')
+
+    # Find top 30 most requested items
+    top30 = (cons / 1e6).head(30)
+    top30.index = top30.index.str.replace("(country-specific)", '')  # remove confusing suffix
+    top30.index = pd.Series(top30.index).apply(lambda x: x if len(x) < 30 else x[0:30] + '...') # shorten the names for plotting
 
     fig, ax = plt.subplots()
     name_of_plot = 'Demand For Consumables'
-    (cons / 1e6).head(20).plot.barh(ax=ax, stacked=True)
+    top30.plot.barh(ax=ax, stacked=True)
     ax.set_title(name_of_plot)
-    ax.set_ylabel('Item (20 most requested)')
+    ax.set_ylabel('Item (30 most requested)')
     ax.set_xlabel('Number of requests (Millions)')
     ax.yaxis.set_tick_params(labelsize=7)
     ax.spines['top'].set_visible(False)
