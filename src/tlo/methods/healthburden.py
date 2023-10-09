@@ -2,6 +2,7 @@
 This Module runs the counting of Life-years Lost, Life-years Lived with Disability,
 and Disability-Adjusted Life-years (DALYS).
 """
+from copy import copy
 from pathlib import Path
 from typing import Dict
 
@@ -179,13 +180,14 @@ class HealthBurden(Module):
                 for _tlo_cause_name, _cause in d.items():
                     if _cause.label not in labels_seen:
                         # If label is not already included, add this cause to the merged dict
-                        merged_causes[_tlo_cause_name] = _cause
+                        merged_causes[_tlo_cause_name] = copy(_cause)  # Use copy to avoid the merged dict being linked
+                        #                                                to the passed argument
                         labels_seen[_cause.label] = _tlo_cause_name
                     else:
                         # If label is already included, merge the gbd_causes into the cause defined.
                         tlo_cause_name_to_merge_into = labels_seen[_cause.label]
                         merged_causes[tlo_cause_name_to_merge_into].gbd_causes = \
-                            merged_causes[tlo_cause_name_to_merge_into].gbd_causes.union(_cause.gbd_causes)
+                            merged_causes[tlo_cause_name_to_merge_into].gbd_causes.union(_cause.gbd_causes)  # M0
             return merged_causes
 
         causes_of_death = collect_causes_from_disease_modules(
