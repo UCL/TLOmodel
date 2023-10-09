@@ -2,23 +2,21 @@
 
 import copy
 from pathlib import Path
-from scipy.stats import norm
 
 import numpy as np
 import pandas as pd
+from scipy.stats import norm
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata, demography
+from tlo.methods import Metadata
+from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.methods.causes import Cause
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-from tlo import Module, Property, Types, logging
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -299,9 +297,10 @@ class Wasting(Module):
         if whz == 'WHZ<-3':
             # apply probability of MUAC<115mm in severe wasting
             low_muac_in_severe_wasting = self.rng.random_sample(size=len(idx)) < p['proportion_WHZ<-3_with_MUAC<115mm']
+
             df.loc[idx[low_muac_in_severe_wasting], 'un_am_MUAC_category'] = '<115mm'
             # other severe wasting will have MUAC between 115-<125mm
-            df.loc[idx[low_muac_in_severe_wasting == False], 'un_am_MUAC_category'] = '115-<125mm'
+            df.loc[idx[~low_muac_in_severe_wasting], 'un_am_MUAC_category'] = '115-<125mm'
 
         if whz == '-3<=WHZ<-2':
             # apply probability of MUAC<115mm in moderate wasting
@@ -310,11 +309,11 @@ class Wasting(Module):
             df.loc[idx[low_muac_in_moderate_wasting], 'un_am_MUAC_category'] = '<115mm'
             # apply probability of MUAC between 115-<125mm in moderate wasting
             moderate_low_muac_in_moderate_wasting = self.rng.random_sample(size=len(
-                idx[low_muac_in_moderate_wasting == False])) < p['proportion_-3<=WHZ<-2_with_MUAC_115-<125mm']
-            df.loc[idx[low_muac_in_moderate_wasting == False][moderate_low_muac_in_moderate_wasting],
+                idx[~low_muac_in_moderate_wasting])) < p['proportion_-3<=WHZ<-2_with_MUAC_115-<125mm']
+            df.loc[idx[~low_muac_in_moderate_wasting][moderate_low_muac_in_moderate_wasting],
                    'un_am_MUAC_category'] = '115-<125mm'
             # other moderate wasting will have normal MUAC
-            df.loc[idx[low_muac_in_moderate_wasting == False][moderate_low_muac_in_moderate_wasting == False],
+            df.loc[idx[~low_muac_in_moderate_wasting][~moderate_low_muac_in_moderate_wasting],
                    'un_am_MUAC_category'] = '>=125mm'
 
         if whz == 'WHZ>=-2':
@@ -351,13 +350,13 @@ class Wasting(Module):
         oedema_in_wasted_children = self.rng.random_sample(size=len(
             children_with_wasting)) < p['prevalence_nutritional_oedema'] * p['proportion_oedema_with_WHZ<-2']
         df.loc[children_with_wasting[oedema_in_wasted_children], 'un_am_bilateral_oedema'] = True
-        df.loc[children_with_wasting[oedema_in_wasted_children == False], 'un_am_bilateral_oedema'] = False
+        df.loc[children_with_wasting[~oedema_in_wasted_children], 'un_am_bilateral_oedema'] = False
 
         # oedema among non-wasted children
         oedema_in_non_wasted = self.rng.random_sample(size=len(
             children_without_wasting)) < p['prevalence_nutritional_oedema'] * (1 - p['proportion_oedema_with_WHZ<-2'])
         df.loc[children_without_wasting[oedema_in_non_wasted], 'un_am_bilateral_oedema'] = True
-        df.loc[children_without_wasting[oedema_in_non_wasted == False], 'un_am_bilateral_oedema'] = False
+        df.loc[children_without_wasting[~oedema_in_non_wasted], 'un_am_bilateral_oedema'] = False
 
     def clinical_acute_malnutrition_state(self, person_id):
         """
@@ -375,7 +374,7 @@ class Wasting(Module):
         if (
             (df.at[person_id, 'un_WHZ_category'] == 'WHZ>=-2') &
             (df.at[person_id, 'un_am_MUAC_category'] == '>=125mm') &
-            (df.at[person_id, 'un_am_bilateral_oedema'] == False)
+            (~df.at[person_id, 'un_am_bilateral_oedema'])
         ):
             df.at[person_id, 'un_clinical_acute_malnutrition'] = 'well'
 
@@ -513,10 +512,10 @@ class Wasting(Module):
                     LinearModelType.LOGISTIC,
                     intercept,  # baseline odds: get_odds_wasting(agegp=agegp)
                     Predictor('li_wealth').when(2, p['or_wasting_hhwealth_Q2'])
-                        .when(3, p['or_wasting_hhwealth_Q3'])
-                        .when(4, p['or_wasting_hhwealth_Q4'])
-                        .when(5, p['or_wasting_hhwealth_Q5'])
-                        .otherwise(1.0),
+                                          .when(3, p['or_wasting_hhwealth_Q3'])
+                                          .when(4, p['or_wasting_hhwealth_Q4'])
+                                          .when(5, p['or_wasting_hhwealth_Q5'])
+                                          .otherwise(1.0),
                     Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
                                      '& (nb_late_preterm == False) & (nb_early_preterm == False)',
                                      p['or_wasting_SGA_and_term']),
@@ -597,7 +596,7 @@ class Wasting(Module):
                 # update clinical symptoms for severe wasting
                 self.wasting_clinical_symptoms(person_id=id)
 
-            df.loc[wasted[wasted == False].index, 'un_WHZ_category'] = 'WHZ>=-2'
+            df.loc[wasted[~wasted].index, 'un_WHZ_category'] = 'WHZ>=-2'
 
         # -----------------------------------------------------------------------------------------------------
         # # # # # # Give MUAC category, presence of oedema, and determine acute malnutrition state # # # # #
@@ -616,35 +615,35 @@ class Wasting(Module):
                 event=ClinicalAcuteMalnutritionRecoveryEvent(module=self, person_id=person),
                 date=self.sim.date + DateOffset(days=self.rng.randint(0, 90)))  # in the next 3 months
 
-        for person in sam_requiring_inpatient_care[recovered_complic_sam == False]:
+        for person in sam_requiring_inpatient_care[~recovered_complic_sam]:
             self.sim.schedule_event(
                 event=SevereAcuteMalnutritionDeathEvent(module=self, person_id=person),
                 date=self.sim.date + DateOffset(days=self.rng.randint(0, 90)))  # in the next 3 months
 
         # outpatient care
         uncomplicated_sam = df.index[df.is_alive & (df.age_exact_years < 5) & (
-            df.un_clinical_acute_malnutrition == 'SAM') & df.un_sam_with_complications == False]
+            df.un_clinical_acute_malnutrition == 'SAM') & ~df.un_sam_with_complications]
         recovered_uncompl_sam = self.rng.random_sample(len(uncomplicated_sam)) > (
             p['coverage_outpatient_therapeutic_care'] * p['recovery_rate_with_standard_RUTF'])
         for person in uncomplicated_sam[recovered_uncompl_sam]:
             self.sim.schedule_event(
                 event=ClinicalAcuteMalnutritionRecoveryEvent(module=self, person_id=person),
                 date=self.sim.date + DateOffset(days=self.rng.randint(0, 90)))  # in the next 3 months
-        for person in uncomplicated_sam[recovered_uncompl_sam == False]:
+        for person in uncomplicated_sam[~recovered_uncompl_sam]:
             self.sim.schedule_event(
                 event=SevereAcuteMalnutritionDeathEvent(module=self, person_id=person),
                 date=self.sim.date + DateOffset(days=self.rng.randint(0, 90)))  # in the next 3 months
 
         # supplementary feeding for MAM
         children_with_mam = df.index[df.is_alive & (df.age_exact_years < 5) & (
-            df.un_clinical_acute_malnutrition == 'MAM') & df.un_sam_with_complications == False]
+            df.un_clinical_acute_malnutrition == 'MAM') & ~df.un_sam_with_complications]
         recovered_mam = self.rng.random_sample(len(children_with_mam)) > (
             p['coverage_supplementary_feeding_program'] * p['recovery_rate_with_CSB++'])
         for person in children_with_mam[recovered_mam]:
             self.sim.schedule_event(
                 event=ClinicalAcuteMalnutritionRecoveryEvent(module=self, person_id=person),
                 date=self.sim.date + DateOffset(days=self.rng.randint(0, 90)))  # in the next 3 months
-        for person in children_with_mam[recovered_mam == False]:
+        for person in children_with_mam[~recovered_mam]:
             self.sim.schedule_event(
                 event=SevereAcuteMalnutritionDeathEvent(module=self, person_id=person),
                 date=self.sim.date + DateOffset(days=self.rng.randint(0, 90)))  # in the next 3 months
@@ -688,12 +687,12 @@ class Wasting(Module):
                     LinearModelType.MULTIPLICATIVE,
                     intercept,
                     Predictor('age_exact_years').when('<0.5', p['base_inc_rate_wasting_by_agegp'][0])
-                        .when('<1.0', p['base_inc_rate_wasting_by_agegp'][1])
-                        .when('.between(1,1.9999)', p['base_inc_rate_wasting_by_agegp'][2])
-                        .when('.between(2,2.9999)', p['base_inc_rate_wasting_by_agegp'][3])
-                        .when('.between(3,3.9999)', p['base_inc_rate_wasting_by_agegp'][4])
-                        .when('.between(4,4.9999)', p['base_inc_rate_wasting_by_agegp'][5])
-                        .otherwise(0.0),
+                                                .when('<1.0', p['base_inc_rate_wasting_by_agegp'][1])
+                                                .when('.between(1,1.9999)', p['base_inc_rate_wasting_by_agegp'][2])
+                                                .when('.between(2,2.9999)', p['base_inc_rate_wasting_by_agegp'][3])
+                                                .when('.between(3,3.9999)', p['base_inc_rate_wasting_by_agegp'][4])
+                                                .when('.between(4,4.9999)', p['base_inc_rate_wasting_by_agegp'][5])
+                                                .otherwise(0.0),
                     Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
                                      '& (nb_late_preterm == False) & (nb_early_preterm == False)',
                                      p['rr_wasting_SGA_and_term']),
@@ -707,7 +706,7 @@ class Wasting(Module):
                 )
 
             unscaled_lm = make_lm_wasting_incidence()
-            target_mean = p[f'base_inc_rate_wasting_by_agegp'][2]
+            target_mean = p['base_inc_rate_wasting_by_agegp'][2]
             actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1) &
                                                      (df.un_WHZ_category == 'WHZ>=-2')]).mean()
             scaled_intercept = 1.0 * (target_mean / actual_mean) \
@@ -791,7 +790,7 @@ class Wasting(Module):
                 )
 
             unscaled_lm = make_lm_sam_death()
-            target_mean = p[f'base_death_rate_untreated_SAM']
+            target_mean = p['base_death_rate_untreated_SAM']
             actual_mean = unscaled_lm.predict(
                 df.loc[df.is_alive & ((df.age_exact_years > 0.5) & (df.age_exact_years < 5)) &
                        (df.un_clinical_acute_malnutrition == 'SAM')]).mean()
@@ -833,7 +832,7 @@ class Wasting(Module):
         total_daly_values.loc[df.is_alive & (df.un_clinical_acute_malnutrition == 'SAM') &
                               df.un_am_bilateral_oedema] = self.daly_wts['SAM_with_oedema']
         total_daly_values.loc[df.is_alive & (df.un_clinical_acute_malnutrition == 'SAM') &
-                              (df.un_am_bilateral_oedema == False)] = self.daly_wts['SAM_w/o_oedema']
+                              (~df.un_am_bilateral_oedema)] = self.daly_wts['SAM_w/o_oedema']
         total_daly_values.loc[df.is_alive & (
             ((df.un_WHZ_category == '-3<=WHZ<-2') & (df.un_am_MUAC_category != "<115mm")) |
             ((df.un_WHZ_category != 'WHZ<-3') & (df.un_am_MUAC_category != "115-<125mm"))
@@ -1063,7 +1062,7 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # # # # # # # # # # # # # # # # # MODERATE WASTING NATURAL RECOVERY # # # # # # # # # # # # # # # # #
 
         # moderate wasting not progressed to severe, schedule recovery
-        for person in will_be_severely_wasted[will_be_severely_wasted == False].index:
+        for person in will_be_severely_wasted[~will_be_severely_wasted].index:
             outcome_date = self.module.date_of_outcome_for_untreated_am(person_id=person, duration_am='MAM')
             if outcome_date <= self.sim.date:
                 # schedule recovery for today
@@ -1187,7 +1186,7 @@ class AcuteMalnutritionDeathPollingEvent(RegularEvent, PopulationScopeEventMixin
         # Those not scheduled to die, will have improved WHZ status by 1sd (-3<=WHZ<-2)
 
         # schedule improvement to MAM for those not scheduled to die
-        for person in will_die[will_die == False].index:
+        for person in will_die[~will_die].index:
             outcome_date = self.module.date_of_outcome_for_untreated_am(person_id=person, duration_am='SAM')
             if outcome_date <= self.sim.date:
                 # schedule improvement to moderate wasting date for today
@@ -1382,14 +1381,14 @@ class HSI_supplementary_feeding_programme_for_MAM(HSI_Event, IndividualScopeEven
         # Make request for some consumables
         consumables = self.sim.modules['HealthSystem'].parameters['item_and_package_code_lookups']
         # whole package of interventions
-        pkg_code_mam = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Management of moderate acute malnutrition (children)',
-                            'Intervention_Pkg_Code'])[0]  # This package includes only CSB(or supercereal or CSB++)
+        # pkg_code_mam = pd.unique(
+        #     consumables.loc[consumables['Intervention_Pkg'] == 'Management of moderate acute malnutrition (children)',
+        #                     'Intervention_Pkg_Code'])[0]  # This package includes only CSB(or supercereal or CSB++)
         # individual items
         item_code1 = pd.unique(
             consumables.loc[consumables['Items'] == 'Corn Soya Blend (or Supercereal - CSB++)', 'Item_Code'])[0]
 
-        consumables_needed = {'Intervention_Package_Code': {pkg_code_mam: 1}, 'Item_Code': {item_code1: 1}}
+        # consumables_needed = {'Intervention_Package_Code': {pkg_code_mam: 1}, 'Item_Code': {item_code1: 1}}
 
         # check availability of consumables
         # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
@@ -1454,17 +1453,17 @@ class HSI_outpatient_therapeutic_programme_for_SAM(HSI_Event, IndividualScopeEve
         # Make request for some consumables
         consumables = self.sim.modules['HealthSystem'].parameters['item_and_package_code_lookups']
         # whole package of interventions
-        pkg_code_sam = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Management of severe malnutrition (children)',
-                            'Intervention_Pkg_Code'])[0]
+        # pkg_code_sam = pd.unique(
+        #     consumables.loc[consumables['Intervention_Pkg'] == 'Management of severe malnutrition (children)',
+        #                     'Intervention_Pkg_Code'])[0]
         # individual items
         item_code1 = pd.unique(
             consumables.loc[consumables['Items'] == 'SAM theraputic foods', 'Item_Code'])[0]
         item_code2 = pd.unique(
             consumables.loc[consumables['Items'] == 'SAM medicines', 'Item_Code'])[0]
 
-        consumables_needed = {'Intervention_Package_Code': {pkg_code_sam: 1}, 'Item_Code': {item_code1: 1,
-                                                                                            item_code2: 1}}
+        # consumables_needed = {'Intervention_Package_Code': {pkg_code_sam: 1}, 'Item_Code': {item_code1: 1,
+        #                                                                   item_code2: 1}}
 
         # check availability of consumables
         # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
@@ -1530,20 +1529,20 @@ class HSI_inpatient_care_for_complicated_SAM(HSI_Event, IndividualScopeEventMixi
         # Make request for some consumables
         consumables = self.sim.modules['HealthSystem'].parameters['item_and_package_code_lookups']
         # whole package of interventions
-        pkg_code_sam = pd.unique(
-            consumables.loc[consumables['Intervention_Pkg'] == 'Management of severe malnutrition (children)',
-                            'Intervention_Pkg_Code'])[0]
+        # pkg_code_sam = pd.unique(
+        #     consumables.loc[consumables['Intervention_Pkg'] == 'Management of severe malnutrition (children)',
+        #                     'Intervention_Pkg_Code'])[0]
         # individual items
         item_code1 = pd.unique(
             consumables.loc[consumables['Items'] == 'SAM theraputic foods', 'Item_Code'])[0]
         item_code2 = pd.unique(
             consumables.loc[consumables['Items'] == 'SAM medicines', 'Item_Code'])[0]
 
-        pkg_codes = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
-        pkg_codes_num = pkg_codes('Management of severe malnutrition (children)')
-
-        consumables_needed = {'Intervention_Package_Code': {pkg_code_sam: 1}, 'Item_Code': {item_code1: 1,
-                                                                                            item_code2: 1}}
+        # pkg_codes = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+        # pkg_codes_num = pkg_codes('Management of severe malnutrition (children)')
+        #
+        # consumables_needed = {'Intervention_Package_Code': {pkg_code_sam: 1}, 'Item_Code': {item_code1: 1,
+        #                                                                                     item_code2: 1}}
 
         # # check availability of consumables
         # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
