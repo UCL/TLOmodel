@@ -804,7 +804,6 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
         # ap_oct23 - Eva, I'm not aware of any equipment needed here.  Clinical guidelines do not specify what
         # checks or monitoring are indicated
 
-
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
@@ -862,7 +861,6 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
 
     # not sure there is any need for equipment here
-
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
