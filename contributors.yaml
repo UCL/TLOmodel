@@ -81,8 +81,8 @@
     - Software development
 - given-names: Tara
   family-names: Mangal
-  orcid: "https://orcid.org/0000-0001-9222-8632"  # to check
-  affiliation: "Imperial College London / University of York"  # to check
+  orcid: "https://orcid.org/0000-0001-9222-8632"
+  affiliation: "Imperial College London"
   website: "https://www.imperial.ac.uk/people/t.mangal"
   github-username: tdm32
   contributions:
