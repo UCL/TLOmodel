@@ -6,7 +6,7 @@ results (change 'scenario_filename').
 """
 import argparse
 from pathlib import Path
-
+from tlo import Date
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -23,6 +23,7 @@ from tlo.analysis.utils import (
     order_of_cause_of_death_or_daly_label,
     plot_clustered_stacked,
     summarize,
+    CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
 )
 
 PREFIX_ON_FILENAME = '2'
@@ -408,6 +409,64 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.savefig(make_graph_file_name(f"C_{what}_{period}_coverage"))
         plt.show()
         plt.close(fig)
+
+
+        # Describe the burden with respect to wealth quintile:
+        TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
+        def get_total_num_dalys_by_wealth_and_label(_df):
+            """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
+            wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
+
+            return _df \
+                .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
+                .drop(columns=['date', 'year']) \
+                .assign(
+                li_wealth=lambda x: x['li_wealth'].map(wealth_cats)
+                .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
+            ) \
+                .melt(id_vars=['li_wealth'], var_name='label') \
+                .groupby(by=['li_wealth', 'label'])['value'] \
+                .sum()
+
+        total_num_dalys_by_wealth_and_label = summarize(
+            extract_results(
+                results_folder,
+                module="tlo.methods.healthburden",
+                key="dalys_by_wealth_stacked_by_age_and_time",
+                custom_generate_series=get_total_num_dalys_by_wealth_and_label,
+                do_scaling=True,
+            ),
+            collapse_columns=True,
+            only_mean=True,
+        ).unstack()
+
+        format_to_plot = total_num_dalys_by_wealth_and_label \
+            .sort_index(axis=0) \
+            .reindex(columns=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), fill_value=0.0) \
+            .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
+
+        fig, ax = plt.subplots()
+        name_of_plot = f'DALYS by Wealth and Cause, 2015-2019'
+        (
+            format_to_plot / 1e6
+        ).plot.bar(stacked=True, ax=ax,
+                   color=[get_color_cause_of_death_or_daly_label(_label) for _label in format_to_plot.columns],
+                   )
+        ax.axhline(0.0, color='black')
+        ax.set_title(name_of_plot)
+        ax.set_ylabel('Number of DALYs Averted (/1e6)')
+        ax.set_ylim(0, 10)
+        ax.set_xlabel('Wealth Percentile')
+        ax.grid()
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.legend(ncol=3, fontsize=8, loc='upper right')
+        ax.legend().set_visible(False)
+        fig.tight_layout()
+        fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+        fig.show()
+        plt.close(fig)
+
 
     # %% Make graphs for each of Deaths and DALYS for a specific period
     # make_std_graphs(what='Deaths', period='2010-2014')
