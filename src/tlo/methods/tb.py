@@ -1721,7 +1721,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Screening"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.EQUIPMENT = set()  # no specific equipment required
+        self.EQUIPMENT = set()  # no specific equipment required unless updated later
 
     def apply(self, person_id, squeeze_factor):
         """Do the screening and referring to next tests"""
@@ -2327,7 +2327,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_FollowUp"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"TBFollowUp": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.EQUIPMENT = set()  # no specific equipment required
+        self.EQUIPMENT = set()  # no specific equipment required unless updated later
 
     def apply(self, person_id, squeeze_factor):
         p = self.module.parameters
