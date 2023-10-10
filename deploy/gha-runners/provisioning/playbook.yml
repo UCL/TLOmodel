@@ -2,12 +2,17 @@
   collections:
     - devsec.hardening
   vars:
+    ## GitHub Actions runner setup
     github_account: UCL
     github_repo: TLOmodel
     runner_user: gha
     runner_workdir: /mnt/tlo
-    ssh_deny_users: "{{ runner_user }}"
     python_version: "3.8"
+    ## SSH hardening
+    ssh_deny_users: "{{ runner_user }}"
+    # In Azure VMs connection times out after every ~4.5 minutes, sending this
+    # signal every 2 minutes keeps the connection alive.
+    ssh_client_alive_interval: "120"
 
   tasks:
 
