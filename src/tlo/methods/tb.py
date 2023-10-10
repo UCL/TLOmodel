@@ -2035,7 +2035,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.EQUIPMENT = {'X-ray machine', 'X-ray viewer'}  # TODO: make an x-ray pkg with these items
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
 
@@ -2045,6 +2045,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+        self.EQUIPMENT = {'X-ray machine', 'X-ray viewer'}  # TODO: make an x-ray pkg with these items
 
         smear_status = df.at[person_id, "tb_smear"]
 
@@ -2108,7 +2109,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.EQUIPMENT = {'X-ray machine', 'X-ray viewer'}
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
 
@@ -2118,6 +2119,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         ACTUAL_APPT_FOOTPRINT = self.EXPECTED_APPT_FOOTPRINT
+        self.EQUIPMENT = {'X-ray machine', 'X-ray viewer'}  # TODO: make an x-ray pkg with these items
 
         smear_status = df.at[person_id, "tb_smear"]
 
@@ -2399,7 +2401,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
                     {"TBFollowUp": 1, "LabTBMicro": 1, "LabMolec": 1}
                 )
 
-                self.EQUIPMENT = {'Sputum Collection box', 'Ordinary Microscope', 'Gene Expert (16 Module)'}
+                self.EQUIPMENT.update({'Gene Expert (16 Module)'})
 
                 if person["tb_smear"]:
                     xperttest_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
