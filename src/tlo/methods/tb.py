@@ -2400,7 +2400,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
                 )
 
                 self.EQUIPMENT = {'Sputum Collection box', 'Ordinary Microscope'}
-                self.EQUIPMENT = {'Sputum Collection box', 'Gene Expert (16 Module)'}
+                self.EQUIPMENT.update({'Sputum Collection box', 'Gene Expert (16 Module)'})
 
                 if person["tb_smear"]:
                     xperttest_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
