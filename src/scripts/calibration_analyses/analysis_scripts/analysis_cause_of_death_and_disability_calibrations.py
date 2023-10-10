@@ -303,9 +303,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 dat: outcome_by_age_pt[dat].sum(axis=0) for dat in outcome_by_age_pt.keys()
             }, axis=1
         )
-        # todo N.B. For GBD, should really use all ages and all sex numbers from GBD to get correct uncertainty bounds
-        #  (the addition of the bounds for the sub-categories - as done here - is not strictly correct.)
-        #  ... OR use formula to make my own explicit assumption about correlation of uncertainty in different age-grps.
+        # todo N.B. For GBD, would ideally use all ages and all sex numbers from GBD to get correct uncertainty bounds
+        #  (the addition of the bounds for the sub-categories - as done here - might over-state the uncertainty.) This
+        #  plot should be taken as indicative only.
 
         select_labels = []
 
