@@ -70,7 +70,7 @@ def collect_causes_from_disease_modules(all_modules, collect, acceptable_causes:
 
                 # If ok, update these causes to the master dict of all causes of death  (copies to prevent any
                 # accidental editing of the modules' declarations).
-                collected_causes.update({copy(tlo_cause): copy(cause)})
+                collected_causes[tlo_cause] = copy(cause)
 
     # Check that each gbd_cause is not defined in respect of more than one label
     gbd_causes = dict()  # dict(<gbd_cause: label>)

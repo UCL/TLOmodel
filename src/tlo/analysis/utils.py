@@ -311,24 +311,23 @@ def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: 
     Finds mean value and 95% interval across the runs for each draw.
     """
 
-    summary = pd.DataFrame(
-        columns=pd.MultiIndex.from_product(
-            [
-                results.columns.unique(level='draw'),
-                ["mean", "lower", "upper"]
-            ],
-            names=['draw', 'stat']),
-        index=results.index
+    summary = pd.concat(
+        {
+            'mean': results.groupby(axis=1, by='draw', sort=False).mean(),
+            'lower': results.groupby(axis=1, by='draw', sort=False).quantile(0.025),
+            'upper': results.groupby(axis=1, by='draw', sort=False).quantile(0.975),
+        },
+        axis=1
     )
-
-    summary.loc[:, (slice(None), "mean")] = results.groupby(axis=1, by='draw').mean().values
-    summary.loc[:, (slice(None), "lower")] = results.groupby(axis=1, by='draw').quantile(0.025).values
-    summary.loc[:, (slice(None), "upper")] = results.groupby(axis=1, by='draw').quantile(0.975).values
+    summary.columns = summary.columns.swaplevel(1, 0)
+    summary.columns.names = ['draw', 'stat']
+    summary = summary.sort_index(axis=1)
 
     if only_mean and (not collapse_columns):
         # Remove other metrics and simplify if 'only_mean' across runs for each draw is required:
         om: pd.DataFrame = summary.loc[:, (slice(None), "mean")]
         om.columns = [c[0] for c in om.columns.to_flat_index()]
+        om.columns.name = 'draw'
         return om
 
     elif collapse_columns and (len(summary.columns.levels[0]) == 1):
