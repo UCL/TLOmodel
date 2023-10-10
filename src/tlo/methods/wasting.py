@@ -1363,7 +1363,7 @@ class HSI_supplementary_feeding_programme_for_MAM(HSI_Event, IndividualScopeEven
         the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'supplementary_feeding_programme_for_MAM'
+        self.TREATMENT_ID = 'Supplementary_feeding_programme_for_MAM'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
@@ -1435,7 +1435,7 @@ class HSI_outpatient_therapeutic_programme_for_SAM(HSI_Event, IndividualScopeEve
         the_appt_footprint['U5Malnutr'] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'outpatient_therapeutic_programme_for_SAM'
+        self.TREATMENT_ID = 'Outpatient_therapeutic_programme_for_SAM'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
@@ -1510,7 +1510,7 @@ class HSI_inpatient_care_for_complicated_SAM(HSI_Event, IndividualScopeEventMixi
         the_appt_footprint['U5Malnutr'] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'inpatient_care_for_complicated_SAM'
+        self.TREATMENT_ID = 'Inpatient_care_for_complicated_SAM'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.ALERT_OTHER_DISEASES = []
