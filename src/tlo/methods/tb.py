@@ -2035,7 +2035,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.EQUIPMENT = {'X-ray machine', 'X-ray viewer'}  # no specific equipment required
+        self.EQUIPMENT = {'X-ray machine', 'X-ray viewer'}
 
     def apply(self, person_id, squeeze_factor):
 
@@ -2063,7 +2063,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         if test_result is None:
 
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
-            self.EQUIPMENT = {}  # no specific equipment required
+            self.EQUIPMENT = {}  # over-ride equipment declaration
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_Xray_level2(person_id=person_id, module=self.module),
@@ -2108,7 +2108,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.EQUIPMENT = {'X-ray machine', 'X-ray viewer'}  # no specific equipment required
+        self.EQUIPMENT = {'X-ray machine', 'X-ray viewer'}
 
     def apply(self, person_id, squeeze_factor):
 
@@ -2136,7 +2136,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         if test_result is None:
 
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
-            self.EQUIPMENT = {}  # no specific equipment required
+            self.EQUIPMENT = {}  # over-ride equipment declaration
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_ClinicalDiagnosis(person_id=person_id, module=self.module),

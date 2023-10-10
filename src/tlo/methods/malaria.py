@@ -1032,6 +1032,10 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
                 }
                 logger.info(key='rdt_log', data=person_details_for_test)
 
+        # if not alive or already on treatment, over-ride equipment declaration
+        else:
+            self.EQUIPMENT = {}
+
     def did_not_run(self):
         logger.debug(key='message',
                      data='HSI_Malaria_Treatment_Complicated: did not run')

@@ -2246,12 +2246,8 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
 
         person = df.loc[person_id]
 
-        # Do not run if the person is not alive
-        if not person["is_alive"]:
-            return
-
-        # if person not circumcised, perform the procedure
-        if not person["li_is_circ"]:
+        # if person alive and not circumcised, perform the procedure
+        if person["is_alive"] and not person["li_is_circ"]:
             # Check/log use of consumables, if materials available, do circumcision and schedule follow-up appts
             # If materials not available, repeat the HSI, i.e., first appt.
             if self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['circ']):
@@ -2283,6 +2279,10 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
                         priority=0,
                     )
                 self.EQUIPMENT = {}  # overwrite equipment required
+
+        # if not alive or already circumcised, over-ride equipment declaration
+        else:
+            self.EQUIPMENT = {}  # overwrite equipment required
 
 
 class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
@@ -2547,7 +2547,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         if drugs_available:
             # Assign person to be have suppressed or un-suppressed viral load
             # (If person is VL suppressed This will prevent the Onset of AIDS, or an AIDS death if AIDS has already
-            # onset,)
+            # onset)
             vl_status = self.determine_vl_status(
                 age_of_person=person["age_years"]
             )
