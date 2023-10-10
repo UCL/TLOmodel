@@ -46,12 +46,12 @@ class BreastCancer(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'BreastCancer': Cause(gbd_causes='Breast cancer', label='Cancer'),
+        'BreastCancer': Cause(gbd_causes='Breast cancer', label='Cancer (Breast)'),
     }
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        'BreastCancer': Cause(gbd_causes='Breast cancer', label='Cancer'),
+        'BreastCancer': Cause(gbd_causes='Breast cancer', label='Cancer (Breast)'),
     }
 
     PARAMETERS = {

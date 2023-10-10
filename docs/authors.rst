@@ -14,6 +14,7 @@ Epidemiologists/Modellers
 * `Tim Colbourn <https://orcid.org/0000-0002-6917-6552>`_
 * `Joseph Collins <https://www.ucl.ac.uk/global-health/study/postgraduate-research/theses/joseph-collins>`_
 * `Iwona Hawryluk <https://www.imperial.ac.uk/people/i.hawryluk19>`_
+* `Eva Janoušková <https://iris.ucl.ac.uk/iris/browse/profile?upi=EJANO75>`_
 * `Britta Jewell <https://www.imperial.ac.uk/people/b.jewell>`_
 * `Ines Lin <https://www.ucl.ac.uk/global-health/people>`_
 * `Tara Mangal <https://www.imperial.ac.uk/people/t.mangal>`_

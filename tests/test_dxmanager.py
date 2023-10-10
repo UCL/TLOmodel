@@ -306,6 +306,48 @@ def test_create_dx_tests_with_consumable_useage_given_by_item_code_only(bundle):
                                               )
 
 
+def test_dx_tests_with_optional_consumable(bundle):
+    """Check that DxTest can be specified with optional consumables, the non-availability of which does not block
+     getting the result."""
+    sim = bundle.simulation
+    hsi_event = bundle.hsi_event
+    item_code_for_consumable_that_is_not_available = bundle.item_code_for_consumable_that_is_not_available
+
+    # Define the DxTests
+    my_test_with_item_code_not_available_and_mandatory = DxTest(
+        item_codes=item_code_for_consumable_that_is_not_available,
+        property='mi_status'
+    )
+
+    my_test_with_item_code_not_available_and_optional = DxTest(
+        optional_item_codes=item_code_for_consumable_that_is_not_available,
+        property='mi_status'
+    )
+
+    # Create new DxManager
+    dx_manager = DxManager(sim.modules['HealthSystem'])
+
+    # Register the single and the compound tests with DxManager:
+    dx_manager.register_dx_test(
+        my_test_with_item_code_not_available_and_mandatory=my_test_with_item_code_not_available_and_mandatory,
+        my_test_with_item_code_not_available_and_optional=my_test_with_item_code_not_available_and_optional,
+    )
+
+    # pick a person
+    person_id = 0
+    hsi_event.target = person_id
+
+    # Confirm the my_test_with_item_code_not_available_and_mandatory does not give result
+    assert None is dx_manager.run_dx_test(dx_tests_to_run='my_test_with_item_code_not_available_and_mandatory',
+                                          hsi_event=hsi_event,
+                                          )
+
+    # Confirm that my_test_with_item_code_not_available_and_optional does give result
+    assert None is not dx_manager.run_dx_test(dx_tests_to_run='my_test_with_item_code_not_available_and_optional',
+                                              hsi_event=hsi_event,
+                                              )
+
+
 def test_run_batch_of_dx_test_in_one_call(bundle):
     sim = bundle.simulation
     item_code_for_consumable_that_is_available = bundle.item_code_for_consumable_that_is_available

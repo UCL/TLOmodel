@@ -71,7 +71,7 @@ class Consumables:
             self.override_availability(dict(zip(self.item_codes, repeat(0.0))))
 
     def _refresh_availability_of_consumables(self, date: datetime.datetime):
-        """Update the availability of all items based on the data for the probability of availability, givem the current
+        """Update the availability of all items based on the data for the probability of availability, given the current
         date."""
         # Work out which items are available in which facilities for this date.
         month = date.month
@@ -207,7 +207,7 @@ def get_item_codes_from_package_name(lookup_df: pd.DataFrame, package: str) -> d
      a given package name."""
     ser = lookup_df.loc[
         lookup_df['Intervention_Pkg'] == package, ['Item_Code', 'Expected_Units_Per_Case']].set_index(
-        'Item_Code')['Expected_Units_Per_Case'].apply(np.ceil).astype(int)
+        'Item_Code')['Expected_Units_Per_Case'].astype(float)
     return ser.groupby(ser.index).sum().to_dict()  # de-duplicate index before converting to dict
 
 

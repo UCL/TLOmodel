@@ -5,7 +5,7 @@ It maintains a current record of the availability and usage of beds in the healt
 
 """
 from collections import defaultdict
-from typing import Dict
+from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
@@ -26,7 +26,11 @@ IN_PATIENT_ADMISSION = {'IPAdmission': 2}
 # in-patient require discharging). The limitation is that the discharge appointment occurs on the same day as the
 # admission. See: https://github.com/UCL/TLOmodel/issues/530
 
-IN_PATIENT_DAY = {'InpatientDays': 1}
+IN_PATIENT_DAY_FIRST_DAY = {'InpatientDays': 0}
+# There is no in-patient appointment day needed on the first day, as the care is covered under the admission.
+
+IN_PATIENT_DAY_SUBSEQUENT_DAYS = {'InpatientDays': 1}
+# Care required on days after the day of admission (including the day of discharge).
 
 
 class BedDays:
@@ -197,10 +201,13 @@ class BedDays:
                 description=f'Use of bed_type {bed_type}, by day and facility'
             )
 
-        # 2) Record the total usage of each bed type (across all facilities)
+        # 2) Record the total usage of each bed type today (across all facilities)
         self._summary_counter.record_usage_of_beds(
-            {bed_type: (self._scaled_capacity[bed_type] - tracker.iloc[0]).sum()
-             for bed_type, tracker in self.bed_tracker.items()}
+            {
+                bed_type:
+                    (self._scaled_capacity[bed_type].sum(), tracker.iloc[0].sum())  # (Total, Number-available-now)
+                for bed_type, tracker in self.bed_tracker.items()
+             }
         )
 
     def get_blank_beddays_footprint(self):
@@ -264,7 +271,7 @@ class BedDays:
             if not available.all():
                 # If the bed is not available on all days, assume it cannot be used after the first day
                 # that it is not available.
-                available.loc[available.idxmin(~available):] = False
+                available.loc[available[~available].index[0]:] = False
 
                 # Add any days for which a bed of this type is not available to the footprint for next bed-type:
                 hold_over_dates_for_next_bed_type = list(available.loc[~available].index)
@@ -446,7 +453,7 @@ class BedDays:
     def add_first_day_inpatient_appts_to_footprint(appt_footprint):
         """Return an APPT_FOOTPRINT with the addition (if not already present) of the in-patient admission appointment
         and the in-patient day appointment type (for the first day of the in-patient stay)."""
-        return {**appt_footprint, **IN_PATIENT_ADMISSION, **IN_PATIENT_DAY}
+        return {**appt_footprint, **IN_PATIENT_ADMISSION, **IN_PATIENT_DAY_FIRST_DAY}
 
     def get_inpatient_appts(self) -> dict:
         """Return a dict of the form {<facility_id>: APPT_FOOTPRINT} giving the total APPT_FOOTPRINT required for the
@@ -462,7 +469,7 @@ class BedDays:
             return {appt_type: num_needed * _num for appt_type, num_needed in _footprint.items()}
 
         return {
-            fac_id: multiply_footprint(IN_PATIENT_DAY, num_inpatients)
+            fac_id: multiply_footprint(IN_PATIENT_DAY_SUBSEQUENT_DAYS, num_inpatients)
             for fac_id, num_inpatients in total_inpatients[total_inpatients > 0].to_dict().items()
         }
         # NB. As we haven't got a record of which person is in which bed, we cannot associate a person with a particular
@@ -486,21 +493,32 @@ class BedDaysSummaryCounter:
         {<bed_type>: <number_of_beddays>}."""
 
         self._bed_days_used = defaultdict(int)
+        self._bed_days_available = defaultdict(int)
 
-    def record_usage_of_beds(self, bed_days_used: Dict[str, int]) -> None:
+    def record_usage_of_beds(self, bed_days_used: Dict[str, Tuple[int, int]]) -> None:
         """Add record of usage of beds. `bed_days_used` is a dict of the form
-        {<bed_type>: <total_number_used_in_one_day>}."""
+        {<bed_type>: tuple(total_numbers_of_bed_available, total_number_available_now)}."""
 
-        for _bed_type, _num_used in bed_days_used.items():
-            self._bed_days_used[_bed_type] += _num_used
+        for _bed_type, (_total, _num_available) in bed_days_used.items():
+            self._bed_days_used[_bed_type] += (_total - _num_available)
+            self._bed_days_available[_bed_type] += _total
 
     def write_to_log_and_reset_counters(self):
         """Log summary statistics and reset the data structures."""
 
         logger_summary.info(
             key="BedDays",
-            description="Counts of the bed-days that have been used.",
+            description="Counts of the bed-days that have been used (by type).",
             data=self._bed_days_used,
+        )
+
+        logger_summary.info(
+            key="FractionOfBedDaysUsed",
+            description="Fraction of the bed-days available in the last year that were used (by type).",
+            data={
+                _bed_type: self._bed_days_used[_bed_type] / _total
+                for _bed_type, _total in self._bed_days_available.items()
+            }
         )
 
         self._reset_internal_stores()

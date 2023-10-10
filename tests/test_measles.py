@@ -57,9 +57,8 @@ def sim(seed):
         healthburden.HealthBurden(resourcefilepath=resources),
         healthsystem.HealthSystem(
             resourcefilepath=resources,
-            disable=True,
+            disable=True,  # disables the health system constraints so all HSI events run
         ),
-        # disables the health system constraints so all HSI events run
         epi.Epi(resourcefilepath=resources),
         measles.Measles(resourcefilepath=resources),
     )
@@ -111,7 +110,9 @@ def test_measles_cases_and_hsi_occurring(sim):
     # set high transmission probability
     sim.modules['Measles'].parameters['beta_baseline'] = 1.0
 
-    # set high death rate - change all symptom probabilities to 1
+    # set high death rate and change all symptom probabilities to 1
+    cfr = sim.modules['Measles'].parameters["case_fatality_rate"]
+    sim.modules['Measles'].parameters["case_fatality_rate"] = {k: 1.0 for k, v in cfr.items()}
     sim.modules['Measles'].parameters["symptom_prob"]["probability"] = 1
 
     # Make the population
@@ -156,10 +157,11 @@ def test_measles_cases_and_hsi_occurring(sim):
 def test_measles_zero_death_rate(sim):
 
     end_date = Date(2010, 12, 31)
-    popsize = 100
+    popsize = 10_000
 
-    # set zero death rate - change all symptom probabilities to 0
-    sim.modules['Measles'].parameters["symptom_prob"]["probability"] = 0
+    # set zero death rate
+    cfr = sim.modules['Measles'].parameters["case_fatality_rate"]
+    sim.modules['Measles'].parameters["case_fatality_rate"] = {k: 0.0 for k, v in cfr.items()}
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
@@ -169,4 +171,4 @@ def test_measles_zero_death_rate(sim):
     assert not (df.loc[df.is_alive, 'me_on_treatment']).all()
 
     # check that there have been no deaths caused by measles
-    assert not df.cause_of_death.loc[~df.is_alive].str.startswith('measles').any()
+    assert not df.cause_of_death.loc[~df.is_alive].str.startswith('Measles').any()

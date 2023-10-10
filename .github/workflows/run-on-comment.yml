@@ -1,0 +1,200 @@
+name: Reusable workflow for triggering tests with an issue or pull-request comment
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: The type of machine to run job on
+        required: false
+        type: string
+        default: ubuntu-latest
+      keyword:
+        description: The keyword to appear after /run in comment to trigger workflow
+        required: true
+        type: string
+      description:
+        description: A description of test to use in comment generated to indicate result
+        required: true
+        type: string
+      commands:
+        description: The shell command(s) to run to execute test
+        required: true
+        type: string
+      timeout-minutes:
+        description: The timeout in minutes to halt job after
+        required: false
+        type: number
+        default: 360
+      application-organization:
+        description: |
+          Organization GitHub App to use to issue API token used to create comment with
+          with results of test is installed on if relevant.
+        required: false
+        type: string
+      artifact-path:
+        description: |
+          Path to upload as a workflow artifact if the workflow is successful. 
+          No artifact will be produced if this value is left unpopulated.
+        required: false
+        type: string
+      artifact-name:
+        description: |
+          The name to assign to any artifacts that are to uploaded.
+        required: false
+        type: string
+        default: comment-triggered-workflow-artifact
+      artifact-retention-days:
+        description: |
+          Number of days to retain the artifact, if it is produced.
+        required: false
+        type: number
+        default: 1
+    secrets:
+      application-id:
+        description: |
+          Application ID for GitHub App to use to issue API token used to create comment
+          with results of test. App needs to have Actions (read) and Pull Requests
+          (read and write) permissions at the repository level.
+        required: true
+      application-private-key:
+        description: |
+          Private key for GitHub App to use to issue API token used to create comment
+          with results of test. App needs to have Actions (read) and Pull Requests
+          (read and write) permissions at the repository level.
+        required: true
+jobs:
+  run_test_on_keyword_and_reply_with_result:
+    runs-on: ${{ inputs.runs-on }}
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    if: github.event.comment.body == format('/run {0}', inputs.keyword)
+    steps:
+    - name: Check permissions of commenting user
+      id: has_permissions
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const response = await github.rest.repos.getCollaboratorPermissionLevel({
+            owner: context.repo.owner,
+            repo: context.repo.repo,  
+            username: context.payload.comment.user.login,
+          });
+          const permission_level = response.data.permission;
+          return (permission_level == 'admin') || (permission_level == 'write')
+  
+    - name: Exit if insufficient permissions
+      if: ${{ steps.has_permissions.outputs.result == 'false' }}
+      run: |
+        exit 1
+
+    - name: React to comment
+      uses: actions/github-script@v6
+      with:
+        script: |
+          github.rest.reactions.createForIssueComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            comment_id: context.payload.comment.id,
+            content: "rocket",
+          });
+
+    - name: Get SHA of last commit on default branch if issue or pull-request branch
+      id: sha
+      uses: actions/github-script@v6
+      with:
+        result-encoding: string
+        script: |
+          if (!context.payload.issue.pull_request) {
+            return context.sha;
+          };
+          const { data: pr } = await github.rest.pulls.get({
+            owner: context.issue.owner,
+            repo: context.issue.repo,
+            pull_number: context.issue.number,
+          });
+          return pr.head.sha;
+
+    - name: Checkout SHA
+      uses: actions/checkout@v4
+      with:
+        lfs: true
+        ref: ${{ steps.sha.outputs.result }}
+
+    - name: Run test command(s)
+      run: ${{ inputs.commands }}
+
+    - name: Get comment-bot token
+      if: always() && steps.has_permissions.outputs.result == 'true'
+      id: get_comment_bot_token
+      uses: peter-murray/workflow-application-token-action@b1ad34e28f4ef30582df1bd5f45df2044eb7a6b9
+      with:
+        application_id: ${{ secrets.application-id }}
+        application_private_key: ${{ secrets.application-private-key }}
+        organization: ${{ inputs.application-organization }}
+
+    - name: Create comment with test result and link to workflow run information
+      if: always() && steps.has_permissions.outputs.result == 'true'
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ steps.get_comment_bot_token.outputs.token }}
+        script: |
+          // There can be a delay between steps completing and this being reflected
+          // in information queried from REST API, therefore we poll for the list of
+          // jobs associated with workflow run at interval of 1 second until the
+          // status of the previous "Run test command(s)" step indicates completed or
+          // a maximum number of attempts have been reached
+          const maximum_attempts = 5;
+          let got_completed_step_info = false;
+          let attempts = 0;
+          let job, step;
+          while (!got_completed_step_info & attempts < maximum_attempts) {
+            await new Promise(r => setTimeout(r, 1000));  // Wait for 1 second
+            const { data: run_jobs } = await github.rest.actions.listJobsForWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId,
+            });
+            const in_progress_jobs = run_jobs.jobs.filter(
+              job => job.status == "in_progress"
+            );  
+            // There should only be only one job in progress
+            if (in_progress_jobs.length > 1) {
+              throw "Multiple jobs triggered by same keyword";
+            }
+            job = in_progress_jobs[0];
+            const run_test_commands_steps = job.steps.filter(
+              step => step.name == "Run test command(s)"
+            );
+            // There should only be one step with name "Run test command(s)"
+            if (run_test_commands_steps.length > 1) {
+              throw "Multiple steps with name 'Run test command(s)'";
+            }
+            step = run_test_commands_steps[0];
+            got_completed_step_info = (step.status == "completed");
+            attempts += 1;
+          }
+          if (!got_completed_step_info) {
+            throw `Could not get completed step data in ${maximum_attempts} attempts`;
+          }
+          const result = step.conclusion == 'success' ? 'succeeded ✅' : 'failed ❌';
+          const started_date = new Date(step.started_at);
+          const completed_date = new Date(step.completed_at);
+          const time_minutes = ((completed_date - started_date) / 60000).toPrecision(3);
+          const details = [
+            `🆔 [${job.id}](${job.html_url})`,
+            `⏲️ ${time_minutes} minutes`,
+            `#️⃣ ${{ steps.sha.outputs.result }}`
+          ].join('\n');
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,  
+            body: `## ${{inputs.description }} ${result}\n${details}`,
+          });
+
+    - name: Upload artifact if requested
+      if: "${{ inputs.artifact-path != '' }}"
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ inputs.artifact-path }}
+        retention-days: ${{ inputs.artifact-retention-days }}

@@ -70,7 +70,7 @@ def check_property_integrity(sim):
     # Check that all women identified as a mother by a newborn have been pregnant and delivered and were alive and >15yo
     # at the time of delivery/birth of that child.
     df = sim.population.props
-    mothers = set(df.loc[~df.date_of_birth.isna() & (df.mother_id >= 0)].mother_id)
+    mothers = df.loc[~df.date_of_birth.isna() & (df.mother_id >= 0)].mother_id.unique()
 
     if len(mothers) > 0:
         assert not df.loc[
@@ -246,8 +246,13 @@ def test_other_modules_running_with_simplified_births_module():
             }
         }
     )
-
-    sim.register(*fullmodel(resourcefilepath=resourcefilepath, use_simplified_births=True, healthsystem_disable=True))
+    sim.register(
+        *fullmodel(
+            resourcefilepath=resourcefilepath,
+            use_simplified_births=True,
+            module_kwargs={"HealthSystem": {"disable": True}},
+        )
+    )
     sim.make_initial_population(n=1_000)
     sim.simulate(end_date=Date(2011, 12, 31))
     check_property_integrity(sim)

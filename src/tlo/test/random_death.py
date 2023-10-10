@@ -36,7 +36,7 @@ class RandomDeath(Module):
     PROPERTIES = {
         'is_alive': Property(Types.BOOL, 'Whether each individual is currently alive'),
         'date_of_death': Property(
-            Types.DATE, 'When the individual died (if they have)', optional=True),
+            Types.DATE, 'When the individual died (if they have)'),
     }
 
     def __init__(self, *args, **kwargs):

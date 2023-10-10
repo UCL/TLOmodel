@@ -116,10 +116,7 @@ class ChronicSyndrome(Module):
                 name='inappropriate_jokes',
                 odds_ratio_health_seeking_in_adults=3.0
             ),
-            Symptom(
-                name='craving_sandwiches',
-                emergency_in_adults=True,
-            )
+            Symptom.emergency('craving_sandwiches', which='adults')
         )
 
     def initialise_population(self, population):
@@ -425,27 +422,22 @@ class HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(HSI_Event, Individu
                   f'The squeeze-factor is {squeeze_factor}.'),
         )
 
-        if squeeze_factor < 0.5:
-            # If squeeze factor is not too large:
-            logger.debug(key='debug', data='Treatment will be provided.')
-            df = self.sim.population.props
-            treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
+        logger.debug(key='debug', data='Treatment will be provided.')
+        df = self.sim.population.props
+        treatmentworks = self.module.rng.rand() < self.module.parameters['p_cure']
 
-            if treatmentworks:
-                df.at[person_id, 'cs_has_cs'] = False
-                df.at[person_id, 'cs_status'] = 'P'
+        if treatmentworks:
+            df.at[person_id, 'cs_has_cs'] = False
+            df.at[person_id, 'cs_status'] = 'P'
 
-                # (in this we nullify the death event that has been scheduled.)
-                df.at[person_id, 'cs_scheduled_date_death'] = pd.NaT
-                df.at[person_id, 'cs_date_cure'] = self.sim.date
+            # (in this we nullify the death event that has been scheduled.)
+            df.at[person_id, 'cs_scheduled_date_death'] = pd.NaT
+            df.at[person_id, 'cs_date_cure'] = self.sim.date
 
-                # remove all symptoms instantly
-                self.sim.modules['SymptomManager'].clear_symptoms(
-                    person_id=person_id,
-                    disease_module=self.module)
-        else:
-            # Squeeze factor is too large
-            logger.debug(key='debug', data='Treatment will not be provided due to squeeze factor.')
+            # remove all symptoms instantly
+            self.sim.modules['SymptomManager'].clear_symptoms(
+                person_id=person_id,
+                disease_module=self.module)
 
     def did_not_run(self):
         logger.debug(key='debug', data='HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment: did not run')

@@ -8,18 +8,31 @@ The core demography module and its associated events.
 import math
 from collections import defaultdict
 from pathlib import Path
+from types import MappingProxyType
+from typing import Union
 
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import (
+    DAYS_IN_MONTH,
+    DAYS_IN_YEAR,
+    Date,
+    DateOffset,
+    Module,
+    Parameter,
+    Property,
+    Types,
+    logging,
+)
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods.causes import (
     Cause,
     collect_causes_from_disease_modules,
     create_mappers_from_causes_to_label,
+    get_gbd_causes_not_represented_in_disease_modules,
 )
-from tlo.util import create_age_range_lookup
+from tlo.util import DEFAULT_MOTHER_ID, create_age_range_lookup, get_person_id_to_inherit_from
 
 # Standard logger
 logger = logging.getLogger(__name__)
@@ -29,11 +42,30 @@ logger.setLevel(logging.INFO)
 logger_detail = logging.getLogger(f"{__name__}.detail")
 logger_detail.setLevel(logging.INFO)
 
+# Population scale factor logger
+logger_scale_factor = logging.getLogger('tlo.methods.population')
+logger_scale_factor.setLevel(logging.INFO)
+
 # Limits for setting up age range categories
 MIN_AGE_FOR_RANGE = 0
 MAX_AGE_FOR_RANGE = 100
 AGE_RANGE_SIZE = 5
 MAX_AGE = 120
+
+
+# Fnc to swap the contents of row1 and row2 in dataframe df, leaving all other rows unaffected.
+def swap_rows(df, row1, row2):
+    df.iloc[row1], df.iloc[row2] = df.iloc[row2].copy(), df.iloc[row1].copy()
+    return df
+
+
+def age_at_date(
+    date: Union[Date, pd.DatetimeIndex, pd.Series],
+    date_of_birth: Union[Date, pd.DatetimeIndex, pd.Series]
+) -> float:
+    """Compute exact age in years given a date of birth `dob` and date `date`."""
+    # Assume a fixed number of days in all years, ignoring variations due to leap years
+    return (date - date_of_birth) / pd.Timedelta(days=DAYS_IN_YEAR)
 
 
 class Demography(Module):
@@ -53,10 +85,16 @@ class Demography(Module):
         self.other_death_poll = None    # will hold pointer to the OtherDeathPoll object
         self.districts = None  # will store all the districts in a list
 
+    OPTIONAL_INIT_DEPENDENCIES = {'ScenarioSwitcher'}  # <-- Forces the 'ScenarioSwitcher' to be the first registered
+    #                                                        module, if it's registered.
+
     AGE_RANGE_CATEGORIES, AGE_RANGE_LOOKUP = create_age_range_lookup(
         min_age=MIN_AGE_FOR_RANGE,
         max_age=MAX_AGE_FOR_RANGE,
         range_size=AGE_RANGE_SIZE)
+
+    # Convert AGE_RANGE_LOOKUP to read-only mapping to avoid accidental updates
+    AGE_RANGE_LOOKUP = MappingProxyType(dict(AGE_RANGE_LOOKUP))
 
     # We should have 21 age range categories
     assert len(AGE_RANGE_CATEGORIES) == 21
@@ -223,7 +261,6 @@ class Demography(Module):
             self.sim.date - DateOffset(years=int(demog_char_to_assign['Age'][i]),
                                        days=int(demog_char_to_assign['days_since_last_birthday'][i]))
             for i in demog_char_to_assign.index]
-        demog_char_to_assign['age_in_days'] = self.sim.date - demog_char_to_assign['date_of_birth']
 
         # Assign the characteristics
         df.is_alive.values[:] = True
@@ -231,15 +268,27 @@ class Demography(Module):
         df.loc[df.is_alive, 'date_of_death'] = pd.NaT
         df.loc[df.is_alive, 'cause_of_death'] = np.nan
         df.loc[df.is_alive, 'sex'] = demog_char_to_assign['Sex']
-        df.loc[df.is_alive, 'mother_id'] = -1
+        df.loc[df.is_alive, 'mother_id'] = DEFAULT_MOTHER_ID  # Motherless, and their characterists are not inherited
         df.loc[df.is_alive, 'district_num_of_residence'] = demog_char_to_assign['District_Num'].values[:]
         df.loc[df.is_alive, 'district_of_residence'] = demog_char_to_assign['District'].values[:]
         df.loc[df.is_alive, 'region_of_residence'] = demog_char_to_assign['Region'].values[:]
 
-        df.loc[df.is_alive, 'age_exact_years'] = demog_char_to_assign['age_in_days'] / np.timedelta64(1, 'Y')
+        df.loc[df.is_alive, 'age_exact_years'] = age_at_date(self.sim.date, demog_char_to_assign['date_of_birth'])
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
         df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.AGE_RANGE_LOOKUP)
-        df.loc[df.is_alive, 'age_days'] = demog_char_to_assign['age_in_days'].dt.days
+        df.loc[df.is_alive, 'age_days'] = (
+            self.sim.date - demog_char_to_assign['date_of_birth']
+        ).dt.days
+
+        # Ensure first individual in df is a man, to safely exclude person_id=0 from selection of direct birth mothers.
+        # If no men are found in df, issue a warning and proceed with female individual at person_id = 0.
+        if df.loc[0].sex == 'F':
+            diff_id = (df.sex.values != 'F').argmax()
+            if diff_id != 0:
+                swap_rows(df, 0, diff_id)
+            else:
+                logger.warning(key="warning",
+                               data="No men found. Direct birth mothers search will exclude woman at person_id=0.")
 
     def initialise_simulation(self, sim):
         """
@@ -257,8 +306,8 @@ class Demography(Module):
         sim.schedule_event(self.other_death_poll, sim.date)
 
         # Log the initial population scaling-factor (to the logger of this module and that of `tlo.methods.population`)
-        for _logger in (logger,  logging.getLogger('tlo.methods.population')):
-            _logger.info(
+        for _logger in (logger, logger_scale_factor):
+            _logger.warning(
                 key='scaling_factor',
                 data={'scaling_factor': 1.0 / self.initial_model_to_data_popsize_ratio},
                 description='The data-to-model scaling factor (based on the initial population size, used to '
@@ -280,8 +329,9 @@ class Demography(Module):
 
         fraction_of_births_male = self.parameters['fraction_of_births_male'][self.sim.date.year]
 
-        # Determine characteristics that are inherited from mother (and if no mother, from a randomly selected person)
-        _id_inherit_from = mother_id if mother_id != -1 else rng.choice(df.index[df.is_alive])
+        # Determine characteristics that are inherited from mother (and if no mother,
+        # from a randomly selected person)
+        _id_inherit_from = get_person_id_to_inherit_from(child_id, mother_id, df, rng)
         _district_num_of_residence = df.at[_id_inherit_from, 'district_num_of_residence']
         _district_of_residence = df.at[_id_inherit_from, 'district_of_residence']
         _region_of_residence = df.at[_id_inherit_from, 'region_of_residence']
@@ -303,14 +353,17 @@ class Demography(Module):
         df.loc[child_id, child.keys()] = child.values()
 
         # Log the birth:
-        _mother_age_at_birth = df.at[mother_id, 'age_years'] if mother_id != -1 else -1
+        _mother_age_at_birth = df.at[abs(mother_id), 'age_years']  # Log age of mother whether true or direct birth
         _mother_age_at_pregnancy = int(
-            (df.at[mother_id, 'date_of_last_pregnancy'] - df.at[mother_id, 'date_of_birth'])
-            / np.timedelta64(1, 'Y')) if mother_id != -1 else -1
+            age_at_date(
+                df.at[mother_id, 'date_of_last_pregnancy'],
+                df.at[mother_id, 'date_of_birth']
+            )
+        ) if mother_id >= 0 else -1  # No pregnancy for direct birth
 
         logger.info(
             key='on_birth',
-            data={'mother': mother_id,
+            data={'mother': mother_id,  # Keep track of whether true or direct birth by using mother_id
                   'child': child_id,
                   'mother_age': _mother_age_at_birth,
                   'mother_age_at_pregnancy': _mother_age_at_pregnancy}
@@ -343,7 +396,8 @@ class Demography(Module):
 
         # 2) Define the "Other" tlo_cause of death (that is managed in this module by the OtherDeathPoll)
         self.gbd_causes_of_death_not_represented_in_disease_modules = \
-            self.get_gbd_causes_of_death_not_represented_in_disease_modules(self.causes_of_death)
+            get_gbd_causes_not_represented_in_disease_modules(causes=self.causes_of_death,
+                                                              gbd_causes=self.gbd_causes_of_death)
         self.causes_of_death['Other'] = Cause(
             label='Other',
             gbd_causes=self.gbd_causes_of_death_not_represented_in_disease_modules
@@ -392,7 +446,8 @@ class Demography(Module):
             'sex': person['sex'],
             'cause': cause,
             'label': self.causes_of_death[cause].label,
-            'person_id': individual_id
+            'person_id': individual_id,
+            'li_wealth': person['li_wealth'] if 'li_wealth' in person else -99,
         }
 
         if ('Contraception' in self.sim.modules) or ('SimplifiedBirths' in self.sim.modules):
@@ -408,29 +463,25 @@ class Demography(Module):
                            data=person.to_dict(),
                            description='values of all properties at the time of death for deceased persons')
 
+        # - log the death in the Deviance module (if it is registered)
+        if 'Deviance' in self.sim.modules:
+            self.sim.modules['Deviance'].record_death(
+                year=self.sim.date.year, age_years=person['age_years'], sex=person['sex'], cause=cause)
+
         # Report the deaths to the healthburden module (if present) so that it tracks the live years lost
         if 'HealthBurden' in self.sim.modules.keys():
             # report the death so that a computation of lost life-years due to this cause to be recorded
             self.sim.modules['HealthBurden'].report_live_years_lost(sex=person['sex'],
+                                                                    wealth=person['li_wealth'],
                                                                     date_of_birth=person['date_of_birth'],
-                                                                    cause_of_death=cause)
+                                                                    age_range=person['age_range'],
+                                                                    cause_of_death=cause,
+                                                                    )
 
         # Release any beds-days that would be used by this person:
         if 'HealthSystem' in self.sim.modules:
             if person.hs_is_inpatient:
                 self.sim.modules['HealthSystem'].remove_beddays_footprint(person_id=individual_id)
-
-    def get_gbd_causes_of_death_not_represented_in_disease_modules(self, causes_of_death):
-        """
-        Find the causes of death in the GBD datasets that are not represented within the causes of death defined in the
-        modules registered in this simulation.
-        :return: set of gbd_causes of death that are not represented in disease modules
-        """
-        all_gbd_causes_in_sim = set()
-        for c in causes_of_death.values():
-            all_gbd_causes_in_sim.update(c.gbd_causes)
-
-        return self.gbd_causes_of_death - all_gbd_causes_in_sim
 
     def create_mappers_from_causes_of_death_to_label(self):
         """Use a helper function to create mappers for causes of death to label."""
@@ -460,7 +511,7 @@ class Demography(Module):
         df_py = df_py.rename({'age_exact_years': 'age_exact_end', 'age_years': 'age_years_end'}, axis=1)
 
         # exact age at the start
-        df_py['age_exact_start'] = (one_year_ago - df_py.date_of_birth) / np.timedelta64(1, 'Y')
+        df_py['age_exact_start'] = age_at_date(one_year_ago, df_py.date_of_birth)
         df_py['age_years_start'] = np.floor(df_py.age_exact_start).astype(np.int64)  # int age at start of the period
         df_py['years_in_age_start'] = df_py.age_years_end - df_py.age_exact_start  # time spent in age at start
         df_py['years_in_age_end'] = df_py.age_exact_end - df_py.age_years_end  # time spent in age at end
@@ -528,12 +579,13 @@ class AgeUpdateEvent(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         df = population.props
-        age_in_days = population.sim.date - df.loc[df.is_alive, 'date_of_birth']
-
-        df.loc[df.is_alive, 'age_exact_years'] = age_in_days / np.timedelta64(1, 'Y')
+        dates_of_birth = df.loc[df.is_alive, 'date_of_birth']
+        df.loc[df.is_alive, 'age_exact_years'] = age_at_date(
+            population.sim.date, dates_of_birth
+        )
         df.loc[df.is_alive, 'age_years'] = df.loc[df.is_alive, 'age_exact_years'].astype('int64')
         df.loc[df.is_alive, 'age_range'] = df.loc[df.is_alive, 'age_years'].map(self.age_range_lookup)
-        df.loc[df.is_alive, 'age_days'] = age_in_days.dt.days
+        df.loc[df.is_alive, 'age_days'] = (population.sim.date - dates_of_birth).dt.days
 
 
 class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
@@ -580,7 +632,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
     def get_all_cause_mort_risk_per_poll(self):
         """Compute the all-cause risk of death per poll"""
         # Get time elapsed between each poll:
-        dur_in_years_between_polls = np.timedelta64(self.frequency.months, 'M') / np.timedelta64(1, 'Y')
+        dur_in_years_between_polls = self.frequency.months * DAYS_IN_MONTH / DAYS_IN_YEAR
 
         # Compute all-cause mortality risk per poll
         return self.module.parameters['all_cause_mortality_schedule'].assign(
@@ -593,7 +645,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         gbd_deaths = self.module.parameters['gbd_causes_of_death_data']
 
         # Find the proportion of deaths to be represented by the OtherDeathPoll
-        return gbd_deaths[self.causes_to_represent].sum(axis=1)
+        return gbd_deaths[sorted(self.causes_to_represent)].sum(axis=1)
 
     def apply(self, population):
         """Randomly select some persons to die of the 'Other' tlo cause (the causes of death that are not represented
@@ -601,14 +653,12 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
         # Get shortcut to main dataframe
         df = population.props
 
-        # Cause the death immediately for anyone that is older than the maximum age
-        over_max_age = df.index[df.is_alive & (df.age_years > MAX_AGE)]
-        for individual_id in over_max_age:
+        # Cause the death immediately for anyone that the maximum age or older
+        max_age_or_older = df.index[df.is_alive & (df.age_years >= MAX_AGE)]
+        for individual_id in max_age_or_older:
             self.module.do_death(individual_id=individual_id, cause='Other', originating_module=self.module)
 
-        # Get the mortality schedule for now...
-        # - get the subset of mortality rates for this year.
-        # confirms that we go to the five year period that we are in, not the exact year.
+        # Get the mortality schedule for the five-year calendar period we are currently in.
         fallbackyear = int(math.floor(self.sim.date.year / 5) * 5)
 
         mort_risk = self.mort_risk_per_poll.loc[
@@ -616,7 +666,7 @@ class OtherDeathPoll(RegularEvent, PopulationScopeEventMixin):
                 'age_years', 'sex', 'prob_of_dying_before_next_poll']].copy()
 
         # get the population
-        alive = df.loc[df.is_alive & (df.age_years <= MAX_AGE), ['sex', 'age_years']].copy()
+        alive = df.loc[df.is_alive & (df.age_years < MAX_AGE), ['sex', 'age_years']].copy()
 
         # merge the population dataframe with the parameter dataframe to pick-up the death_rate for each person
         length_before_merge = len(alive)

@@ -47,12 +47,12 @@ class ProstateCancer(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'ProstateCancer': Cause(gbd_causes='Prostate cancer', label='Cancer'),
+        'ProstateCancer': Cause(gbd_causes='Prostate cancer', label='Cancer (Prostate)'),
     }
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        'ProstateCancer': Cause(gbd_causes='Prostate cancer', label='Cancer'),
+        'ProstateCancer': Cause(gbd_causes='Prostate cancer', label='Cancer (Prostate)'),
     }
 
     PARAMETERS = {

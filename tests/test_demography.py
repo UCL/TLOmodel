@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 from pytest import approx
 
-from tlo import Date, Module, Simulation, logging
+from tlo import DAYS_IN_MONTH, DAYS_IN_YEAR, Date, Module, Simulation, logging
 from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import Metadata, demography
 from tlo.methods.causes import Cause
@@ -71,7 +71,7 @@ def test_storage_of_cause_of_death(seed):
     sim.make_initial_population(n=20)
     df = sim.population.props
     orig = df.dtypes
-    assert type(orig['cause_of_death']) == pd.CategoricalDtype
+    assert isinstance(orig['cause_of_death'], pd.CategoricalDtype)
     assert set(['Other', 'a_cause']) == set(df['cause_of_death'].cat.categories)
 
     # Cause a person to die by the DummyModule
@@ -105,7 +105,12 @@ def test_cause_of_death_being_registered(tmpdir, seed):
         }
     })
 
-    sim.register(*fullmodel(resourcefilepath=rfp, healthsystem_disable=True))
+    sim.register(
+        *fullmodel(
+            resourcefilepath=rfp,
+            module_kwargs={"HealthSystem": {"disable": True}},
+        )
+    )
 
     # Increase risk of death of Diarrhoea to ensure that are at least some deaths
     increase_risk_of_death(sim.modules['Diarrhoea'])
@@ -189,9 +194,8 @@ def test_py_calc(simulation):
     simulation.date += pd.DateOffset(days=1)
     age_update = AgeUpdateEvent(simulation.modules['Demography'], simulation.modules['Demography'].AGE_RANGE_LOOKUP)
     now = simulation.date
-    one_year = np.timedelta64(1, 'Y')
-    one_month = np.timedelta64(1, 'M')
-
+    one_year = pd.Timedelta(days=DAYS_IN_YEAR)
+    one_month = pd.Timedelta(days=DAYS_IN_MONTH)
     calc_py_lived_in_last_year = simulation.modules['Demography'].calc_py_lived_in_last_year
 
     # calc py: person is born and died before sim.date
@@ -233,21 +237,21 @@ def test_py_calc(simulation):
     df.is_alive = True
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year)
-    np.testing.assert_almost_equal(0.5, df_py['M'][19])
-    np.testing.assert_almost_equal(0.5, df_py['M'][20])
+    np.testing.assert_allclose(0.5, df_py['M'][19])
+    np.testing.assert_allclose(0.5, df_py['M'][20])
 
     # calc person who is alive and aged 19, has birthday mid-way through the last year, and died 3 months ago
     df.date_of_birth = now - (one_year * 20) - (one_month * 6)
-    df.date_of_death = now - np.timedelta64(3, 'M')
+    df.date_of_death = now - (one_month * 3)
     # we have to set the age at time of death - usually this would have been set by the AgeUpdateEvent
     df.age_exact_years = (df.date_of_death - df.date_of_birth) / one_year
     df.age_years = df.age_exact_years.astype('int64')
     df.is_alive = False
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year)
-    assert 0.75 == df_py['M'].sum()
-    assert 0.5 == df_py['M'][19]
-    assert 0.25 == df_py['M'][20]
+    np.testing.assert_allclose(0.75, df_py['M'].sum())
+    np.testing.assert_allclose(0.5, df_py['M'][19])
+    np.testing.assert_allclose(0.25, df_py['M'][20])
 
     # 0/1 year-old with first birthday during the last year
     df.date_of_birth = now - (one_month * 15)
@@ -255,8 +259,8 @@ def test_py_calc(simulation):
     df.is_alive = True
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year)
-    assert 0.75 == df_py['M'][0]
-    assert 0.25 == df_py['M'][1]
+    np.testing.assert_allclose(0.75, df_py['M'][0])
+    np.testing.assert_allclose(0.25, df_py['M'][1])
 
     # 0 year born in the last year
     df.date_of_birth = now - (one_month * 9)
@@ -264,8 +268,8 @@ def test_py_calc(simulation):
     df.is_alive = True
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year)
-    assert 0.75 == df_py['M'][0]
-    assert (0 == df_py['M'][1:]).all()
+    np.testing.assert_allclose(0.75, df_py['M'][0])
+    np.testing.assert_allclose(0, df_py['M'][1:])
 
     # 99 years-old turning 100 in the last year
     df.date_of_birth = now - (one_year * 100) - (one_month * 6)
@@ -273,8 +277,8 @@ def test_py_calc(simulation):
     df.is_alive = True
     age_update.apply(simulation.population)
     df_py = calc_py_lived_in_last_year(delta=one_year)
-    assert 0.5 == df_py['M'][99]
-    assert 1 == df_py['M'].sum()
+    np.testing.assert_allclose(0.5, df_py['M'][99])
+    np.testing.assert_allclose(1, df_py['M'].sum())
 
 
 def test_py_calc_w_mask(simulation):
@@ -288,7 +292,7 @@ def test_py_calc_w_mask(simulation):
     simulation.date += pd.DateOffset(days=1)
     age_update = AgeUpdateEvent(simulation.modules['Demography'], simulation.modules['Demography'].AGE_RANGE_LOOKUP)
     now = simulation.date
-    one_year = np.timedelta64(1, 'Y')
+    one_year = pd.Timedelta(days=DAYS_IN_YEAR)
 
     calc_py_lived_in_last_year = simulation.modules['Demography'].calc_py_lived_in_last_year
 
@@ -352,81 +356,21 @@ def test_max_age_initial(seed):
         max_age_in_sim_with_max_age_initial_argument(MAX_AGE + 1)
 
 
-def test_can_turn_off_the_detailed_logger_when_using_custom_log_after_registering(seed, tmpdir):
-    """Check that the simulation can be set-up to get only the usual demography logger and not the detailed logger,
-    when the custom_log information is given after the models are registered."""
+def test_ageing_of_old_people_up_to_max_age(simulation):
+    """Check persons can age naturally up to MAX_AGE and are then assumed to die with cause 'Other'."""
 
-    log_config = {
-        'filename': 'temp',
-        'directory': tmpdir,
-        'custom_levels': {
-            "*": logging.WARNING,
-            'tlo.methods.demography.detail': logging.WARNING,  # <-- Explicitly turning off the detailed logger
-            'tlo.methods.demography': logging.INFO,  # <-- Turning on the normal logger
-        }
-    }
+    # Populate the model with persons aged 90 years
+    simulation.make_initial_population(n=1000)
+    df = simulation.population.props
+    df.loc[df.is_alive, 'date_of_birth'] = simulation.start_date - pd.DateOffset(years=90)
+    ever_alive = df.loc[df.is_alive].index
 
-    rfp = Path(os.path.dirname(__file__)) / '../resources'
+    # Make the intrinsic risk of death zero (to enable ageing up to MAX_AGE)
+    simulation.modules['Demography'].parameters['all_cause_mortality_schedule']['death_rate'] = 0.0
 
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
-    sim.register(demography.Demography(resourcefilepath=rfp))
-    sim.configure_logging(**log_config)
-    sim.make_initial_population(n=100)
-    sim.simulate(end_date=sim.start_date)
+    # Simulate the model for 40 years (such that the persons would be 130 years old, greater than MAX_AGE)
+    simulation.simulate(end_date=simulation.start_date + pd.DateOffset(years=40))
 
-    # Cause one death to occur
-    sim.modules['Demography'].do_death(
-        individual_id=0,
-        originating_module=sim.modules['Demography'],
-        cause='Other'
-    )
-
-    log = parse_log_file(sim.log_filepath)
-
-    # Check the usual `tlo.methods.demography' log is created and that check persons have died (which would be when the
-    # detailed logger would be used).
-    assert 'tlo.methods.demography' in log.keys()
-    assert 1 == len(log['tlo.methods.demography']['death'])
-
-    # Check that the detailed logger is not created.
-    assert 'tlo.methods.demography.detail' not in log.keys()
-
-
-def test_can_turn_off_the_detailed_logger_when_using_custom_log_when_registering(seed, tmpdir):
-    """Check that the simulation can be set-up to get only the usual demography logger and not the detailed logger,
-    when providing the config_log information when the simulation is initialised."""
-
-    log_config = {
-        'filename': 'temp',
-        'directory': tmpdir,
-        'custom_levels': {
-            "*": logging.WARNING,
-            'tlo.methods.demography.detail': logging.WARNING,  # <-- Explicitly turning off the detailed logger
-            'tlo.methods.demography': logging.INFO,  # <-- Turning on the normal logger
-        }
-    }
-
-    rfp = Path(os.path.dirname(__file__)) / '../resources'
-
-    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
-
-    sim.register(demography.Demography(resourcefilepath=rfp))
-    sim.make_initial_population(n=100)
-    sim.simulate(end_date=sim.start_date)
-
-    # Cause one death to occur
-    sim.modules['Demography'].do_death(
-        individual_id=0,
-        originating_module=sim.modules['Demography'],
-        cause='Other'
-    )
-
-    log = parse_log_file(sim.log_filepath)
-
-    # Check the usual `tlo.methods.demography' log is created and that check persons have died (which would be when the
-    # detailed logger would be used).
-    assert 'tlo.methods.demography' in log.keys()
-    assert 1 == len(log['tlo.methods.demography']['death'])
-
-    # Check that the detailed logger is not created.
-    assert 'tlo.methods.demography.detail' not in log.keys()
+    # All persons should have died, with a cause of 'Other'
+    assert not df.loc[ever_alive].is_alive.any()
+    assert (df.loc[ever_alive, 'cause_of_death'] == 'Other').all()

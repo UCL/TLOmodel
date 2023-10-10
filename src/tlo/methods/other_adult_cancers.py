@@ -72,12 +72,12 @@ class OtherAdultCancer(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'OtherAdultCancer': Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label='Cancer')
+        'OtherAdultCancer': Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label='Cancer (Other)')
     }
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        'OtherAdultCancer': Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label='Cancer')
+        'OtherAdultCancer': Cause(gbd_causes=gbd_causes_of_cancer_represented_in_this_module, label='Cancer (Other)')
     }
 
     PARAMETERS = {

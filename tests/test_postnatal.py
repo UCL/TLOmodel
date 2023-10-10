@@ -143,13 +143,13 @@ def test_application_of_maternal_complications_and_care_seeking_postnatal_week_o
     sim.make_initial_population(n=100)
 
     # set risk of maternal complications (occuring in week one) to one to insure risk applied as expected
-    params = sim.modules['PostnatalSupervisor'].current_parameters
+    params = sim.modules['PostnatalSupervisor'].parameters
     params['prob_secondary_pph'] = 1.0
     params['prob_late_sepsis_endometritis'] = 1.0
     params['prob_late_sepsis_urinary_tract'] = 1.0
     params['prob_late_sepsis_skin_soft_tissue'] = 1.0
     params['baseline_prob_anaemia_per_week'] = 1.0
-    params['prob_type_of_anaemia_pn'] = [1, 0, 0]
+    params['prob_type_of_anaemia_pn'] = [[1, 0, 0], [1, 0, 0]]
     params['weekly_prob_gest_htn_pn'] = 1.0
     params['prob_care_seeking_postnatal_emergency'] = 1.0
 
@@ -201,7 +201,7 @@ def test_application_of_neonatal_complications_and_care_seeking_postnatal_week_o
     sim.make_initial_population(n=100)
 
     # set risk of newborn complications (occuring in week one) to one to insure risk applied as expected
-    params = sim.modules['PostnatalSupervisor'].current_parameters
+    params = sim.modules['PostnatalSupervisor'].parameters
     params['prob_early_onset_neonatal_sepsis_week_1'] = 1.0
     params['prob_care_seeking_postnatal_emergency_neonate'] = 1.0
 
@@ -254,7 +254,7 @@ def test_application_of_risk_of_death_to_mothers_postnatal_week_one_event(seed):
     sim.make_initial_population(n=100)
 
     # set risk of complications at 1 so woman is at risk of death
-    params = sim.modules['PostnatalSupervisor'].current_parameters
+    params = sim.modules['PostnatalSupervisor'].parameters
     params['prob_secondary_pph'] = 1.0
     params['prob_late_sepsis_endometritis'] = 1.0
     params['prob_late_sepsis_urinary_tract_inf'] = 1.0
@@ -290,7 +290,7 @@ def test_application_of_risk_of_death_to_neonates_postnatal_week_one_event(seed)
     sim.make_initial_population(n=100)
 
     # set risk of complications at 1 so woman is at risk of death
-    params = sim.modules['PostnatalSupervisor'].current_parameters
+    params = sim.modules['PostnatalSupervisor'].parameters
     params['prob_early_onset_neonatal_sepsis_week_1'] = 1.0
 
     # Prevent care seeking and set risk of death due to comps as 1
@@ -323,7 +323,7 @@ def test_application_of_risk_of_infection_and_sepsis_postnatal_supervisor_event(
     sim.make_initial_population(n=100)
 
     # set risk of infection and sepsis to 1
-    params = sim.modules['PostnatalSupervisor'].current_parameters
+    params = sim.modules['PostnatalSupervisor'].parameters
     params['prob_late_sepsis_endometritis'] = 1.0
     params['prob_late_sepsis_urinary_tract_inf'] = 1.0
     params['prob_late_sepsis_skin_soft_tissue_inf'] = 1.0
@@ -364,6 +364,7 @@ def test_application_of_risk_of_infection_and_sepsis_postnatal_supervisor_event(
     sim.population.props.at[mother_id, 'pn_sepsis_late_postpartum'] = False
 
     # set risk of care seeking to 0, risk of death to 1
+    params = sim.modules['PostnatalSupervisor'].current_parameters
     params['prob_care_seeking_postnatal_emergency'] = 0.0
     params['cfr_postpartum_sepsis'] = 1.0
 
@@ -381,7 +382,7 @@ def test_application_of_risk_of_spph_postnatal_supervisor_event(seed):
     register_core_modules(sim)
     sim.make_initial_population(n=100)
 
-    params = sim.modules['PostnatalSupervisor'].current_parameters
+    params = sim.modules['PostnatalSupervisor'].parameters
     params['prob_secondary_pph'] = 1.0
     params['prob_care_seeking_postnatal_emergency'] = 1.0
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -415,6 +416,7 @@ def test_application_of_risk_of_spph_postnatal_supervisor_event(seed):
     sim.population.props.at[mother_id, 'pn_postpartum_haem_secondary'] = False
 
     # set risk of care seeking to 0, risk of death to 1
+    params = sim.modules['PostnatalSupervisor'].current_parameters
     params['prob_care_seeking_postnatal_emergency'] = 0.0
     params['cfr_secondary_postpartum_haemorrhage'] = 1.0
 
@@ -458,7 +460,7 @@ def test_application_of_risk_of_hypertensive_disorders_postnatal_supervisor_even
     sim.make_initial_population(n=100)
 
     # Set parameters to force resolution and onset of disease
-    params = sim.modules['PostnatalSupervisor'].current_parameters
+    params = sim.modules['PostnatalSupervisor'].parameters
     params['prob_htn_resolves'] = 1.0
     params['weekly_prob_pre_eclampsia_pn'] = 1.0
 
@@ -491,6 +493,7 @@ def test_application_of_risk_of_hypertensive_disorders_postnatal_supervisor_even
     sim.date = sim.date + pd.DateOffset(weeks=1)
 
     # now force woman with new disease to progress to severe disease (block resolution and force care seeking)
+    params = sim.modules['PostnatalSupervisor'].current_parameters
     params['probs_for_mpe_matrix_pn'] = [0, 0, 0, 0, 1]
     params['prob_care_seeking_postnatal_emergency'] = 1.0
     params['prob_htn_resolves'] = 0.0
@@ -529,7 +532,7 @@ def test_application_of_risk_of_late_onset_neonatal_sepsis(seed):
     sim.make_initial_population(n=100)
 
     # Set parameters to force onset of disease
-    params = sim.modules['PostnatalSupervisor'].current_parameters
+    params = sim.modules['PostnatalSupervisor'].parameters
     params['prob_late_onset_neonatal_sepsis'] = 1.0
     params['prob_care_seeking_postnatal_emergency_neonate'] = 1.0
     params['treatment_effect_early_init_bf'] = 1.0
@@ -565,6 +568,7 @@ def test_application_of_risk_of_late_onset_neonatal_sepsis(seed):
     assert date_event == sim.date
 
     # reset the property and set care seeking to 0, risk of death to 1
+    params = sim.modules['PostnatalSupervisor'].current_parameters
     sim.population.props.at[child_id, 'pn_sepsis_late_neonatal'] = False
     params['prob_care_seeking_postnatal_emergency_neonate'] = 0.0
     params['cfr_late_neonatal_sepsis'] = 1.0

@@ -88,7 +88,7 @@ def predict_sepsis_chorioamnionitis_ip(self, df, rng=None, **externals):
 
     if person['ps_premature_rupture_of_membranes']:
         result *= params['rr_sepsis_chorio_prom']
-    if person['ac_received_abx_for_prom']:
+    if person['ac_received_abx_for_prom'] or externals['received_abx_for_prom']:
         result *= params['treatment_effect_maternal_chorio_abx_prom']
     if externals['received_clean_delivery']:
         result *= params['treatment_effect_maternal_infection_clean_delivery']

@@ -6,13 +6,13 @@ import itertools
 import time
 from collections import OrderedDict
 from pathlib import Path
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 import numpy as np
 
 from tlo import Date, Population, logging
 from tlo.dependencies import check_dependencies_present, topologically_sort_modules
-from tlo.events import IndividualScopeEventMixin
+from tlo.events import Event, IndividualScopeEventMixin
 from tlo.progressbar import ProgressBar
 
 logger = logging.getLogger(__name__)
@@ -60,12 +60,13 @@ class Simulation:
         self.event_queue = EventQueue()
         self.end_date = None
         self.output_file = None
+        self.population: Optional[Population] = None
 
         self.show_progress_bar = show_progress_bar
 
         # logging
         if log_config is None:
-            log_config = dict()
+            log_config = {}
         self._custom_log_levels = None
         self._log_filepath = None
         self.configure_logging(**log_config)
@@ -84,7 +85,7 @@ class Simulation:
                           custom_levels: Dict[str, int] = None, suppress_stdout: bool = False):
         """Configure logging, can write logging to a logfile in addition the default of stdout.
 
-        Minimum custom levels for each loggers can be specified for filtering out messages
+        Minimum custom levels for each logger can be specified for filtering out messages
 
         :param filename: Prefix for logfile name, final logfile will have a datetime appended
         :param directory: Path to output directory, default value is the outputs folder.
@@ -104,13 +105,12 @@ class Simulation:
         if custom_levels:
             # if modules have already been registered
             if self.modules:
-                module_paths = (module.__module__ for module in self.modules.values())
-                logging.set_logging_levels(custom_levels, module_paths)
+                logging.set_logging_levels(custom_levels)
             else:
                 # save the configuration and apply in the `register` phase
                 self._custom_log_levels = custom_levels
 
-        if filename:
+        if filename and directory:
             timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H%M%S')
             log_path = Path(directory) / f"{filename}__{timestamp}.log"
             self.output_file = logging.set_output_file(log_path)
@@ -118,12 +118,12 @@ class Simulation:
             self._log_filepath = log_path
             return log_path
 
+        return None
+
     @property
     def log_filepath(self):
+        """The path to the log file, if one has been set."""
         return self._log_filepath
-
-    def _set_module_log_level(self, module_path, level):
-        logging.set_logging_levels({module_path: level}, [module_path])
 
     def register(self, *modules, sort_modules=True, check_all_dependencies=True):
         """Register one or more disease modules with the simulation.
@@ -138,7 +138,7 @@ class Simulation:
             modules that cannot be resolved. If this flag is set to ``True`` there is
             also a requirement that at most one instance of each module is registered
             and ``MultipleModuleInstanceError`` will be raised if this is not the case.
-        :param check_all_dependencies: Whether to check if all of each modules declared
+        :param check_all_dependencies: Whether to check if all of each module's declared
             dependencies (that is, the union of the ``INIT_DEPENDENCIES`` and
             ``ADDITIONAL_DEPENDENCIES`` attributes) have been included in the set of
             modules to be registered. A ``ModuleDependencyError`` exception will
@@ -151,8 +151,7 @@ class Simulation:
         # Iterate over modules and per-module seed sequences spawned from simulation
         # level seed sequence
         for module, seed_seq in zip(modules, self._seed_seq.spawn(len(modules))):
-            assert module.name not in self.modules, (
-                'A module named {} has already been registered'.format(module.name))
+            assert module.name not in self.modules, f'A module named {module.name} has already been registered'
 
             # Seed the RNG for the registered module using spawned seed sequence
             logger.info(
@@ -164,18 +163,12 @@ class Simulation:
             )
             module.rng = np.random.RandomState(np.random.MT19937(seed_seq))
 
-            # if user provided custom log levels
-            if self._custom_log_levels is not None:
-                # get the log level of this module
-                path = module.__module__
-                if path in self._custom_log_levels:
-                    self._set_module_log_level(path, self._custom_log_levels[path])
-                elif '*' in self._custom_log_levels:
-                    self._set_module_log_level(path, self._custom_log_levels['*'])
-
             self.modules[module.name] = module
             module.sim = self
             module.read_parameters('')
+
+        if self._custom_log_levels:
+            logging.set_logging_levels(self._custom_log_levels)
 
     def make_initial_population(self, *, n):
         """Create the initial population to simulate.
@@ -212,9 +205,9 @@ class Simulation:
         for module in self.modules.values():
             module.initialise_simulation(self)
 
+        progress_bar = None
         if self.show_progress_bar:
-            start_date = self.date
-            num_simulated_days = (end_date - start_date).days
+            num_simulated_days = (end_date - self.start_date).days
             progress_bar = ProgressBar(
                 num_simulated_days, "Simulation progress", unit="day")
             progress_bar.start()
@@ -223,38 +216,48 @@ class Simulation:
             event, date = self.event_queue.next_event()
 
             if self.show_progress_bar:
-                simulation_day = (date - start_date).days
-                progress_bar.update(
-                    simulation_day,
-                    stats_dict={"date": str(date.date())}
-                )
+                simulation_day = (date - self.start_date).days
+                stats_dict = {
+                    "date": str(date.date()),
+                    "dataframe size": str(len(self.population.props)),
+                    "queued events": str(len(self.event_queue)),
+                }
+                if "HealthSystem" in self.modules:
+                    stats_dict["queued HSI events"] = str(
+                        len(self.modules["HealthSystem"].HSI_EVENT_QUEUE)
+                    )
+                progress_bar.update(simulation_day, stats_dict=stats_dict)
 
             if date >= end_date:
                 self.date = end_date
                 break
             self.fire_single_event(event, date)
 
-        # The simulation has ended. Call 'on_simulation_end' method at the end of simulation
+        # The simulation has ended.
         if self.show_progress_bar:
             progress_bar.stop()
 
-        # The simulation has ended. Call 'on_simulation_end' method at the end of simulation (if a module has it)
         for module in self.modules.values():
             module.on_simulation_end()
 
-        # complete logging
-        if self.output_file:
-            self.output_file.flush()
-            self.output_file.close()
-
         logger.info(key='info', data=f'simulate() {time.time() - start} s')
+
+        # From Python logging.shutdown
+        if self.output_file:
+            try:
+                self.output_file.acquire()
+                self.output_file.flush()
+                self.output_file.close()
+            except (OSError, ValueError):
+                pass
+            finally:
+                self.output_file.release()
 
     def schedule_event(self, event, date):
         """Schedule an event to happen on the given future date.
 
         :param event: the Event to schedule
         :param date: when the event should happen
-        :param force_over_from_healthsystem: allows an HSI event to enter the scheduler
         """
         assert date >= self.date, 'Cannot schedule events in the past'
 
@@ -262,8 +265,9 @@ class Simulation:
             'This looks like an HSI event. It should be handed to the healthsystem scheduler'
         assert (event.__str__().find('HSI_') < 0), \
             'This looks like an HSI event. It should be handed to the healthsystem scheduler'
+        assert isinstance(event, Event)
 
-        self.event_queue.schedule(event, date)
+        self.event_queue.schedule(event=event, date=date)
 
     def fire_single_event(self, event, date):
         """Fires the event once for the given date
@@ -295,9 +299,9 @@ class Simulation:
 
         NB. This is for debugging and testing only - not for use in real simulations as it is slow
         """
-        person_events = list()
+        person_events = []
 
-        for date, counter, event in self.event_queue.queue:
+        for date, _, _, event in self.event_queue.queue:
             if isinstance(event, IndividualScopeEventMixin):
                 if event.target == person_id:
                     person_events.append((date, event))
@@ -308,8 +312,7 @@ class Simulation:
 class EventQueue:
     """A simple priority queue for events.
 
-    This doesn't really care what events and dates are, provided dates are comparable
-    so we can tell which is least, i.e. earliest.
+    This doesn't really care what events and dates are, provided dates are comparable.
     """
 
     def __init__(self):
@@ -323,8 +326,7 @@ class EventQueue:
         :param event: the event to schedule
         :param date: when it should happen
         """
-
-        entry = (date, next(self.counter), event)
+        entry = (date, event.priority, next(self.counter), event)
         heapq.heappush(self.queue, entry)
 
     def next_event(self):
@@ -332,7 +334,7 @@ class EventQueue:
 
         :returns: an (event, date) pair
         """
-        date, count, event = heapq.heappop(self.queue)
+        date, _, _, event = heapq.heappop(self.queue)
         return event, date
 
     def __len__(self):

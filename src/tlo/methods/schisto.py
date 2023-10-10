@@ -258,19 +258,19 @@ class Schisto(Module):
                             'prob_sent_to_lab_test_adults',
                             'PZQ_efficacy',
                             ):
-            parameters[_param_name] = param_list[_param_name]
+            parameters[_param_name] = float(param_list[_param_name])
 
         # MDA coverage - historic
         historical_mda = workbook['MDA_historical_Coverage'].set_index(['District', 'Year'])[
             ['Coverage PSAC', 'Coverage SAC', 'Coverage Adults']]
         historical_mda.columns = historical_mda.columns.str.replace('Coverage ', '')
-        parameters['MDA_coverage_historical'] = historical_mda
+        parameters['MDA_coverage_historical'] = historical_mda.astype(float)
 
         # MDA coverage - prognosed
         prognosed_mda = workbook['MDA_prognosed_Coverage'].set_index(['District', 'Frequency'])[
             ['Coverage PSAC', 'Coverage SAC', 'Coverage Adults']]
         prognosed_mda.columns = prognosed_mda.columns.str.replace('Coverage ', '')
-        parameters['MDA_coverage_prognosed'] = prognosed_mda
+        parameters['MDA_coverage_prognosed'] = prognosed_mda.astype(float)
 
         return parameters
 
@@ -518,18 +518,21 @@ class SchistoSpecies:
         if not len(idx) > 0:
             return
 
-        def _inf_status(age: int, agg_wb: int) -> str:
-            if age < 5:
-                if agg_wb >= params['high_intensity_threshold_PSAC']:
-                    return 'High-infection'
-
-            if agg_wb >= params['high_intensity_threshold']:
-                return 'High-infection'
-
-            if agg_wb >= params['low_intensity_threshold']:
-                return 'Low-infection'
-
-            return 'Non-infected'
+        def _get_infection_status(population: pd.DataFrame) -> pd.Series:
+            age = population["age_years"]
+            agg_wb = population[prop("aggregate_worm_burden")]
+            status = pd.Series(
+                "Non-infected",
+                index=population.index,
+                dtype=population[prop("infection_status")].dtype
+            )
+            high_group = (
+                (age < 5) & (agg_wb >= params["high_intensity_threshold_PSAC"])
+            ) | (agg_wb >= params["high_intensity_threshold"])
+            low_group = ~high_group & (agg_wb >= params["low_intensity_threshold"])
+            status[high_group] = "High-infection"
+            status[low_group] = "Low-infection"
+            return status
 
         def _impose_symptoms_of_high_intensity_infection(idx: pd.Index) -> None:
             """Assign symptoms to the person with high intensity infection.
@@ -547,11 +550,7 @@ class SchistoSpecies:
                         disease_module=schisto_module
                     )
 
-        correct_status = df.loc[idx].apply(
-            lambda x: _inf_status(x['age_years'], x[prop('aggregate_worm_burden')]),
-            axis=1
-        )
-
+        correct_status = _get_infection_status(df.loc[idx])
         original_status = df.loc[idx, prop('infection_status')]
 
         # Impose symptoms for those newly having 'High-infection' status
@@ -568,7 +567,9 @@ class SchistoSpecies:
         #  person has two infections causing 'High-infection' and one is reduced below 'High-infection', symptoms will
         #  persist as if the person still had two causes of 'High-infection'. The symptoms would not be removed until
         #  both the aggregate worm burden of both species is reduced.
-        cols_of_infection_status_for_other_species = set(cols_of_infection_status) - {prop('infection_status')}
+        cols_of_infection_status_for_other_species = [
+            col for col in cols_of_infection_status if col != prop('infection_status')
+        ]
         high_infection_any_other_species = (
             df.loc[idx, cols_of_infection_status_for_other_species] == 'High-infection').any(axis=1)
         no_longer_high_infection = idx[

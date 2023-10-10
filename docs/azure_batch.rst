@@ -9,23 +9,21 @@ Azure Batch.
 Setup
 =====
 
-1. Install Azure CLI `<https://docs.microsoft.com/en-us/cli/azure/install-azure-cli>`_
-2. Checkout & pull TLOmodel master branch
+1. `Install the Azure command line interface <https://docs.microsoft.com/en-us/cli/azure/install-azure-cli>`_
+2. If you have not already done so ensure you have followed the instructions to set up a ``tlo`` `Conda <https://docs.conda.io/en/latest/>`_ environment in :doc:`readme`.
 3. Open Terminal (MacOS) or Anaconda Prompt (Windows)
-4. Change directory to the TLOmodel repository
-5. Activate the Conda environment: ``conda activate tlo38``
-6. ``pip install -r requirements\base.txt``
-7. ``pip install -e .``
-8. Extra steps on Windows
-    * Run the following command, changing the path to where the Conda environment is installed::
+4. Activate the ``tlo`` environment by running ``conda activate tlo``
+5. *Extra step for Windows only*
+    * Run the following command::
 
-        python C:\Users\Public\miniconda3\envs\tlo\Scripts\pywin32_postinstall.py -install
+        python %CONDA_PREFIX%\Scripts\pywin32_postinstall.py -install
 
-    * There will be some output, ending with *"The pywin32 extensions were successfully installed."*
-9. Copy the file ``tlo.example.com`` to ``tlo.conf``, and fill in the fields as required (you will need to ask the team for the details here).
-10. In Terminal/Anaconda Prompt check the following command runs: ``tlo``
-11. Login to Azure with ``az login --tenant 1faf88fe-a998-4c5b-93c9-210a11d9a5c2``
-12. In Terminal/Anaconda Prompt run: ``tlo batch-list``
+    * If successful, there will be some output, ending with *"The pywin32 extensions were successfully installed."*
+6. Change the working directory to the root directory of the ``TLOmodel`` repository
+7. Copy the file ``tlo.example.conf`` to ``tlo.conf``, and fill in the fields as required (you will need to ask the team for the details here).
+8. In the terminal check the following command runs: ``tlo``
+9. Login to Azure with ``az login --tenant 1faf88fe-a998-4c5b-93c9-210a11d9a5c2``
+10. In the terminal run: ``tlo batch-list``
 
 
 
