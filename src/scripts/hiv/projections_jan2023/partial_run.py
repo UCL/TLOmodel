@@ -96,11 +96,24 @@ class ImpactOfTbDaHx(BaseScenario):
                      'scaling_factor_WHO': 1.2, # /previously was 1.0
                  }
             },
+            "CXR scale_up20": {
+                'Tb': {
+                    'scenario': 4,
+                    'scaling_factor_WHO': 1.2,  # /previously was 1.0
+                }
+            },
             "Outreach services": {
                 'Tb': {
                      'scenario': 0,
-                     'probability_community_chest_xray': 0.2,
+                     'probability_community_chest_xray': 0.1,
                      'scaling_factor_WHO': 0.9,
+                }
+            },
+            "Outreach services20": {
+                'Tb': {
+                    'scenario': 0,
+                    'probability_community_chest_xray': 0.2,
+                    'scaling_factor_WHO': 0.9,
                 }
             },
         }
