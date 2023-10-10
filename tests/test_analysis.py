@@ -517,6 +517,7 @@ def test_summarize():
         summarize(results_one_draw, collapse_columns=True)
     )
 
+
 def test_can_turn_off_the_detailed_logger_when_using_custom_log_after_registering(seed, tmpdir):
     """Check that the simulation can be set-up to get only the usual demography logger and not the detailed logger,
     when the custom_log information is given after the models are registered."""
@@ -557,9 +558,11 @@ def test_can_turn_off_the_detailed_logger_when_using_custom_log_after_registerin
     assert 'tlo.methods.demography.detail' not in log.keys()
 
 
-def test_can_turn_off_the_detailed_logger_when_using_custom_log_when_registering(seed, tmpdir):
-    """Check that the simulation can be set-up to get only the usual demography logger and not the detailed logger,
-    when providing the config_log information when the simulation is initialised."""
+def test_control_loggers_from_same_module_independently(seed, tmpdir):
+    """Check that detailed/summary loggers can be turned on/off independently."""
+
+    # Check that the simulation can be set-up to get only the usual demography logger and not the detailed
+    #  logger, when providing the config_log information when the simulation is initialised."""
 
     log_config = {
         'filename': 'temp',
@@ -571,27 +574,33 @@ def test_can_turn_off_the_detailed_logger_when_using_custom_log_when_registering
         }
     }
 
-    rfp = Path(os.path.dirname(__file__)) / '../resources'
+    def run_simulation_and_cause_one_death(sim):
+        """Register demography in the simulations, runs it and causes one death; return the resulting log."""
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+        sim.make_initial_population(n=100)
+        sim.simulate(end_date=sim.start_date)
+        # Cause one death to occur
+        sim.modules['Demography'].do_death(
+            individual_id=0,
+            originating_module=sim.modules['Demography'],
+            cause='Other'
+        )
+        return parse_log_file(sim.log_filepath)
 
+    def check_log(log):
+        """Check the usual `tlo.methods.demography' log is created and that check persons have died (which would be
+        when the detailed logger would be used)."""
+        assert 'tlo.methods.demography' in log.keys()
+        assert 1 == len(log['tlo.methods.demography']['death'])
+
+        # Check that the detailed logger is not created.
+        assert 'tlo.methods.demography.detail' not in log.keys()
+
+    # 1) Provide custom_logs argument when creating Simulation object
     sim = Simulation(start_date=Date(2010, 1, 1), seed=seed, log_config=log_config)
+    check_log(run_simulation_and_cause_one_death(sim))
 
-    sim.register(demography.Demography(resourcefilepath=rfp))
-    sim.make_initial_population(n=100)
-    sim.simulate(end_date=sim.start_date)
-
-    # Cause one death to occur
-    sim.modules['Demography'].do_death(
-        individual_id=0,
-        originating_module=sim.modules['Demography'],
-        cause='Other'
-    )
-
-    log = parse_log_file(sim.log_filepath)
-
-    # Check the usual `tlo.methods.demography' log is created and that check persons have died (which would be when the
-    # detailed logger would be used).
-    assert 'tlo.methods.demography' in log.keys()
-    assert 1 == len(log['tlo.methods.demography']['death'])
-
-    # Check that the detailed logger is not created.
-    assert 'tlo.methods.demography.detail' not in log.keys()
+    # 2) Set-up custom-logs after the Simulation object is created
+    sim = Simulation(start_date=Date(2010, 1, 1), seed=seed)
+    sim.configure_logging(**log_config)
+    check_log(run_simulation_and_cause_one_death(sim))
