@@ -10,10 +10,17 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date
-from tlo.analysis.utils import extract_results, make_age_grp_lookup, summarize
+from tlo.analysis.utils import (
+    extract_results,
+    make_age_grp_lookup,
+    summarize,
+    CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
+    order_of_cause_of_death_or_daly_label,
+    get_color_cause_of_death_or_daly_label,
+)
 
 
-def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, ):
+def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, dalys_averted_by_wealth_and_label=None):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.
     - We estimate the epidemiological impact as the EXTRA deaths that would occur if that treatment did not occur.
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
@@ -238,6 +245,96 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
     plt.close(fig)
+
+    # Plot DALYS incurred wrt wealth under selected scenarios (No HealthSystem, SQ, Perfect Healthcare seeking)
+    #  in order to understand the root causes of the observation that more DALYS are averted under SQ in higher
+    #  wealth quantiles.
+
+    def get_total_num_dalys_by_wealth_and_label(_df):
+        """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
+        wealth_cats = {5: "0-19%", 4: "20-39%", 3: "40-59%", 2: "60-79%", 1: "80-100%"}
+
+        return (
+            _df.loc[_df["year"].between(*[d.year for d in TARGET_PERIOD])]
+            .drop(columns=["date", "year"])
+            .assign(
+                li_wealth=lambda x: x["li_wealth"]
+                .map(wealth_cats)
+                .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
+            )
+            .melt(id_vars=["li_wealth"], var_name="label")
+            .groupby(by=["li_wealth", "label"])["value"]
+            .sum()
+        )
+
+    total_num_dalys_by_wealth_and_label = summarize(
+        extract_results(
+            results_folder,
+            module="tlo.methods.healthburden",
+            key="dalys_by_wealth_stacked_by_age_and_time",
+            custom_generate_series=get_total_num_dalys_by_wealth_and_label,
+            do_scaling=True,
+        ),
+    ).pipe(set_param_names_as_column_index_level_0)[
+        ['No Healthcare System', 'Status Quo', 'Perfect Healthcare Seeking']
+    ].loc[:, (slice(None), 'mean')].droplevel(axis=1, level=1)
+
+    fig, ax = plt.subplots(nrows=3, ncols=1, sharex=True)
+    name_of_plot = f'DALYS Incurred by Wealth and Cause {target_period()}'
+    for _ax, _scenario_name, in zip(ax, total_num_dalys_by_wealth_and_label.columns):
+        format_to_plot = total_num_dalys_by_wealth_and_label[_scenario_name].unstack()
+        format_to_plot = format_to_plot \
+            .sort_index(axis=0) \
+            .reindex(columns=CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys(), fill_value=0.0) \
+            .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
+        (
+            format_to_plot / 1e6
+        ).plot.bar(stacked=True,
+                   ax=_ax,
+                   color=[get_color_cause_of_death_or_daly_label(_label) for _label in format_to_plot.columns],
+                   )
+        _ax.axhline(0.0, color='black')
+        _ax.set_title(f'{_scenario_name}')
+        _ax.set_ylabel('Number of DALYs Averted (/1e6)')
+        _ax.set_ylim(0, 20)
+        _ax.set_xlabel('Wealth Percentile')
+        _ax.grid()
+        _ax.spines['top'].set_visible(False)
+        _ax.spines['right'].set_visible(False)
+        _ax.legend(ncol=3, fontsize=8, loc='upper right')
+        _ax.legend().set_visible(False)
+    fig.suptitle(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    fig.show()
+    plt.close(fig)
+
+    # Normalised Total DALYS (where DALYS in the highest wealth class are 100)
+    # todo - copy the color coding from the bar plots above
+    tots = total_num_dalys_by_wealth_and_label.groupby(axis=0, level=0).sum()
+    normalised_tots = tots.div(tots.loc['80-100%'])
+
+    fig, ax = plt.subplots(nrows=1, ncols=2, sharey=False)
+    name_of_plot = f'DALYS Incurred by Wealth {target_period()}'
+    (tots / 1e6).plot(ax=ax[0])
+    ax[0].set_ylabel('Total DALYS (/million)')
+    ax[0].set_xlabel('Wealth Percentile')
+    ax[0].set_xticklabels(ax[0].get_xticklabels(), rotation=90)
+    ax[0].set_ylim(0, 15)
+    ax[0].legend(fontsize=8)
+    (normalised_tots * 100.0).plot(ax=ax[1])
+    ax[1].set_ylabel('Normalised DALYS\n100 = Highest Wealth quantile')
+    ax[1].set_xlabel('Wealth Percentile')
+    ax[1].set_xticklabels(ax[1].get_xticklabels(), rotation=90)
+    ax[1].axhline(100.0, color='k')
+    ax[1].legend().set_visible(False)
+    fig.suptitle(name_of_plot)
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    fig.show()
+    plt.close(fig)
+
+    #todo: Which disease are over-represented in No Healthcare System scenario...?
 
 
 if __name__ == "__main__":
