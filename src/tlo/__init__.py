@@ -12,7 +12,13 @@ from .core import Module, Parameter, Property, Types  # noqa
 from .population import Population  # noqa
 from .simulation import Simulation  # noqa
 
-__version__ = '0.1.0'
+try:
+    from ._version import version as __version__
+    from ._version import version_tuple
+except ImportError:
+    __version__ = "unknown version"
+    version_tuple = (0, 0, "unknown version")
+
 
 DAYS_IN_YEAR = 365.25
 DAYS_IN_MONTH = DAYS_IN_YEAR / 12

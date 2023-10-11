@@ -14,6 +14,8 @@ sys.path.insert(0, os.path.abspath('../..')), os.path.abspath('../src')
 
 sys.path.append(os.path.abspath("./_ext"))
 
+import tlo
+
 
 extensions = [
     'sphinx.ext.autodoc',
@@ -39,7 +41,7 @@ project = 'TLOmodel'
 year = '2021'
 author = 'The TLOmodel Team'
 copyright = '{0}, {1}'.format(year, author)
-version = release = '0.1.0'
+version = release = tlo.__version__
 
 pygments_style = 'trac'
 templates_path = ['.']

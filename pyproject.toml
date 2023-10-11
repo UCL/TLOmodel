@@ -1,0 +1,119 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools", "setuptools-scm"]
+
+[project]
+name = "tlo"
+authors = [
+    {name = "Thanzi La Onse Model Development Team", email="a.tamuri@ucl.ac.uk"},
+]
+classifiers = [
+    'Development Status :: 3 - Alpha',
+    'Intended Audience :: Science/Research',
+    'License :: MIT',
+    'Operating System :: OS Independent',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+]
+dependencies = [
+    "GitPython",
+    "click",
+    "matplotlib",
+    "pyshp",
+    "squarify",
+    "numpy",
+    "pandas~=2.0.0",
+    "scipy",
+     # Avoid https://foss.heptapod.net/openpyxl/openpyxl/-/issues/1963
+    "openpyxl==3.1.0",
+    # To submit jobs to Azure Batch
+    "azure-batch",
+    "azure-identity",
+    "azure-keyvault",
+    "azure-storage-file-share",
+]
+description = "Thanzi la Onse Epidemiology Model"
+dynamic = ["version"]
+license = {file = "LICENSE.txt"}
+readme = "README.rst"
+requires-python = ">=3.8"
+
+[project.optional-dependencies]
+dev = [
+    # Running tests
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+    "virtualenv",
+    "tox",
+    # Linting
+    "isort",
+    "pylint",
+    "ruff",
+    # Profiling
+    "pyinstrument>=4.3",
+    # Building requirements files
+    "pip-tools",
+]
+
+[project.scripts]
+tlo = "tlo.cli:cli"
+
+[project.urls]
+repository = "https://github.com/UCL/TLOmodel"
+documentation = "https://tlomodel.org"
+
+[tool.coverage]
+report = {show_missing = true, precision = 2, omit = ["*migrations*"]}
+run = {branch = true, parallel = true, source = [
+    "tlo",
+    "tests"
+]}
+paths.source = [
+    "src",
+    "*/site-packages",
+]
+
+[tool.isort]
+force_single_line = false
+multi_line_output = 3
+include_trailing_comma = true
+line_length = 100
+known_first_party = "tlo"
+default_section = "THIRDPARTY"
+skip = "migrations"
+
+[tool.pytest.ini_options]
+testpaths = "tests"
+norecursedirs = "migrations"
+python_files = [
+    "test_*.py",
+    "*_test.py",
+    "tests.py",
+]
+addopts = "-ra --strict-markers --doctest-modules --doctest-glob=*.rst --tb=short"
+markers = ["group2", "slow"]
+
+[tool.ruff]
+target-version = "py38"
+line-length = 120
+ignore = [
+    "E712", # comparison to False
+    "E713", # use `not in`
+    "E714", # use `is not`
+    "E721", # do not compare types
+    "E731", # do not assign a lambda expression
+    "E741", # ambiguous variable name
+    "F601", # dictionary literal key repeated
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools_scm]
+version_file  = "src/tlo/_version.py"
