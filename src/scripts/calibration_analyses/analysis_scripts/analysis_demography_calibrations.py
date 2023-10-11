@@ -87,7 +87,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Load Data: WPP_Annual
     wpp_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_WPP.csv")
     wpp_ann['Age_Grp'] = wpp_ann['Age_Grp'].astype(make_age_grp_types())
-    wpp_ann_total = wpp_ann.groupby(['Year']).sum().sum(axis=1)
+    wpp_ann_total = wpp_ann.groupby(['Year'])['Count'].sum()
 
     # Load Data: Census
     cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
@@ -267,7 +267,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return num_by_age
 
     for year in [2010, 2015, 2018, 2029, 2049]:
-        try:
+        if year in wpp_ann['Year']:
             # Get WPP data:
             wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
 
@@ -293,9 +293,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             fig.savefig(make_graph_file_name(f"Pop_Size_{year}"))
             fig.show()
             plt.close(fig)
-
-        except pd.core.base.DataError:
-            pass
 
     # %% Births: Number over time
 
