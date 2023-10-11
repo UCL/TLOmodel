@@ -37,7 +37,8 @@ class Wasting(Module):
 
     """
 
-    INIT_DEPENDENCIES = {'Demography'}
+    INIT_DEPENDENCIES = {'Demography', 'SymptomManager'}
+
 
     METADATA = {
         Metadata.DISEASE_MODULE,
