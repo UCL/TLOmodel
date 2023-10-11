@@ -5,7 +5,7 @@ We import our key classes so they're available in the main namespace.
 
 Pandas' Timestamp is used as our main date type (even though it has nanosecond resolution...)
 """
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import PackageNotFoundError, version
 
 from pandas import Timestamp as Date  # noqa
 from pandas.tseries.offsets import DateOffset  # noqa
