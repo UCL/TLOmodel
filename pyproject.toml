@@ -88,6 +88,33 @@ known_first_party = "tlo"
 default_section = "THIRDPARTY"
 skip = "migrations"
 
+[tool.pylint.main]
+extension-pkg-whitelist = ["numpy"]
+disable = [
+    "R",
+    "C",
+    "W",
+    "E0110", # abstract class instantiated
+    "E0611", # no-name-in-module
+    "E0702", # raising NoneType
+    "E1136", # unsubscriptable type
+    "E1137", # doesn't support item assignment
+    "E1101", # no-member
+    "E1120", # no-value-for-parameter
+    "E1130", # bad operand type for unary ~
+]
+
+
+[tool.pylint.typecheck]
+signature-mutators = [
+    "click.decorators.option",
+    "click.decorators.argument",
+    "click.decorators.version_option",
+    "click.decorators.help_option",
+    "click.decorators.pass_context",
+    "click.decorators.confirmation_option",
+]
+
 [tool.pytest.ini_options]
 testpaths = "tests"
 norecursedirs = "migrations"
