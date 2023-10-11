@@ -9,12 +9,11 @@
 
 import os
 import sys
+from importlib.metadata import version as get_version
 
 sys.path.insert(0, os.path.abspath('../..')), os.path.abspath('../src')
 
 sys.path.append(os.path.abspath("./_ext"))
-
-import tlo
 
 
 extensions = [
@@ -41,7 +40,8 @@ project = 'TLOmodel'
 year = '2021'
 author = 'The TLOmodel Team'
 copyright = '{0}, {1}'.format(year, author)
-version = release = tlo.__version__
+release = get_version('setuptools_scm')
+version = ".".join(release.split('.')[:2])
 
 pygments_style = 'trac'
 templates_path = ['.']

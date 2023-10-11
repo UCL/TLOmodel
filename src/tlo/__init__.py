@@ -5,6 +5,8 @@ We import our key classes so they're available in the main namespace.
 
 Pandas' Timestamp is used as our main date type (even though it has nanosecond resolution...)
 """
+from importlib.metadata import version, PackageNotFoundError
+
 from pandas import Timestamp as Date  # noqa
 from pandas.tseries.offsets import DateOffset  # noqa
 
@@ -13,11 +15,10 @@ from .population import Population  # noqa
 from .simulation import Simulation  # noqa
 
 try:
-    from ._version import version as __version__
-    from ._version import version_tuple
-except ImportError:
-    __version__ = "unknown version"
-    version_tuple = (0, 0, "unknown version")
+    __version__ = version("package-name")
+except PackageNotFoundError:
+    # package is not installed
+    pass
 
 
 DAYS_IN_YEAR = 365.25
