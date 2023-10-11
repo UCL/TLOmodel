@@ -109,7 +109,7 @@ tlo.methods.epi module
 
      **Class attributes:**
 
-     INIT_DEPENDENCIES : {'Demography', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 
@@ -164,7 +164,7 @@ tlo.methods.epi module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x11efd4bd0>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x7fe1f4e302c0>
 
      **Functions (defined or overridden in class HsiBaseVaccine):**
 

@@ -171,7 +171,7 @@ tlo.methods.care_of_women_during_pregnancy module
 
      ADDITIONAL_DEPENDENCIES : {'Contraception', 'Lifestyle', 'Labour'}
 
-     INIT_DEPENDENCIES : {'Demography', 'PregnancySupervisor', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'PregnancySupervisor', 'HealthSystem', 'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 
@@ -202,6 +202,8 @@ tlo.methods.care_of_women_during_pregnancy module
      .. automethod:: antenatal_care_scheduler
 
      .. automethod:: schedule_admission
+
+     .. automethod:: call_if_maternal_emergency_assessment_cant_run
 
      .. automethod:: check_intervention_should_run_and_update_mni
 
@@ -253,8 +255,6 @@ tlo.methods.care_of_women_during_pregnancy module
 
      .. automethod:: ectopic_pregnancy_treatment_doesnt_run
 
-     .. automethod:: inpatient_care_doesnt_run
-
      .. automethod:: calculate_beddays
 
 
@@ -277,6 +277,8 @@ tlo.methods.care_of_women_during_pregnancy module
 
      .. automethod:: did_not_run
 
+     .. automethod:: not_available
+
 
 
 
@@ -296,6 +298,8 @@ tlo.methods.care_of_women_during_pregnancy module
      .. automethod:: apply
 
      .. automethod:: did_not_run
+
+     .. automethod:: not_available
 
 
 
@@ -317,6 +321,8 @@ tlo.methods.care_of_women_during_pregnancy module
 
      .. automethod:: did_not_run
 
+     .. automethod:: not_available
+
 
 
 
@@ -336,6 +342,8 @@ tlo.methods.care_of_women_during_pregnancy module
      .. automethod:: apply
 
      .. automethod:: did_not_run
+
+     .. automethod:: not_available
 
 
 
@@ -357,6 +365,8 @@ tlo.methods.care_of_women_during_pregnancy module
 
      .. automethod:: did_not_run
 
+     .. automethod:: not_available
+
 
 
 
@@ -376,6 +386,8 @@ tlo.methods.care_of_women_during_pregnancy module
      .. automethod:: apply
 
      .. automethod:: did_not_run
+
+     .. automethod:: not_available
 
 
 
@@ -397,6 +409,8 @@ tlo.methods.care_of_women_during_pregnancy module
 
      .. automethod:: did_not_run
 
+     .. automethod:: not_available
+
 
 
 
@@ -416,6 +430,8 @@ tlo.methods.care_of_women_during_pregnancy module
      .. automethod:: apply
 
      .. automethod:: did_not_run
+
+     .. automethod:: not_available
 
 
 
@@ -471,9 +487,9 @@ tlo.methods.care_of_women_during_pregnancy module
 
      .. automethod:: apply
 
-     .. automethod:: never_ran
-
      .. automethod:: did_not_run
+
+     .. automethod:: not_available
 
 
 
@@ -495,6 +511,8 @@ tlo.methods.care_of_women_during_pregnancy module
 
      .. automethod:: did_not_run
 
+     .. automethod:: not_available
+
 
 
 
@@ -515,6 +533,8 @@ tlo.methods.care_of_women_during_pregnancy module
 
      .. automethod:: did_not_run
 
+     .. automethod:: not_available
+
 
 
 
@@ -534,6 +554,8 @@ tlo.methods.care_of_women_during_pregnancy module
      .. automethod:: apply
 
      .. automethod:: did_not_run
+
+     .. automethod:: not_available
 
 
 
@@ -556,6 +578,8 @@ tlo.methods.care_of_women_during_pregnancy module
      .. automethod:: never_ran
 
      .. automethod:: did_not_run
+
+     .. automethod:: not_available
 
 
 

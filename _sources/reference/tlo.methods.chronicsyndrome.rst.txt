@@ -70,13 +70,13 @@ tlo.methods.chronicsyndrome module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'ChronicSyndrome': <tlo.methods.causes.Cause object at 0x11efb3130>}
+     CAUSES_OF_DEATH : {'ChronicSyndrome': <tlo.methods.causes.Cause object at 0x7fe1f4d98b50>}
 
-     CAUSES_OF_DISABILITY : {'ChronicSyndrome': <tlo.methods.causes.Cause object at 0x11efb3940>}
+     CAUSES_OF_DISABILITY : {'ChronicSyndrome': <tlo.methods.causes.Cause object at 0x7fe1f4e12430>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'Demography', 'HealthSystem'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Demography'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 

@@ -298,17 +298,17 @@ tlo.methods.tb module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'TB': <tlo.methods.causes.Cause object at 0x123915f40>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x12392f730>}
+     CAUSES_OF_DEATH : {'TB': <tlo.methods.causes.Cause object at 0x7fe1f6038760>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x7fe1f6038f10>}
 
-     CAUSES_OF_DISABILITY : {'TB': <tlo.methods.causes.Cause object at 0x12392f820>}
+     CAUSES_OF_DISABILITY : {'TB': <tlo.methods.causes.Cause object at 0x7fe1f6052040>}
 
-     INIT_DEPENDENCIES : {'Lifestyle', 'Epi', 'HealthSystem', 'SymptomManager', 'Demography'}
+     INIT_DEPENDENCIES : {'Lifestyle', 'Demography', 'HealthSystem', 'Epi', 'SymptomManager'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
+     OPTIONAL_INIT_DEPENDENCIES : {'Hiv', 'HealthBurden'}
 
-     SYMPTOMS : {'night_sweats', 'fatigue'}
+     SYMPTOMS : {'fatigue', 'night_sweats'}
 
      **Functions (defined or overridden in class Tb):**
 
@@ -521,7 +521,7 @@ tlo.methods.tb module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x123951cc0>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x7fe1f60639f0>
 
      **Functions (defined or overridden in class HSI_Tb_StartTreatment):**
 
