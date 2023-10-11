@@ -80,7 +80,7 @@ class ImpactOfTbDaHx(BaseScenario):
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                   'scaling_factor_WHO': 1.95,   ##added this to see the eventual impact,
+                   'scaling_factor_WHO': 2.1,   #previously 1.95
                 },
             },
         # overrides availability of CXR
@@ -93,7 +93,7 @@ class ImpactOfTbDaHx(BaseScenario):
             "CXR scale_up": {
                  'Tb': {
                      'scenario': 3,
-                     'scaling_factor_WHO': 1.2, # /previously was 1.0
+                     'scaling_factor_WHO': 1.2, # previously was 1.0
                  }
             },
             "CXR scale_up20": {
@@ -113,7 +113,7 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                     'scenario': 0,
                     'probability_community_chest_xray': 0.2,
-                    'scaling_factor_WHO': 0.9,
+                    'scaling_factor_WHO': 0.8,
                 }
             },
         }

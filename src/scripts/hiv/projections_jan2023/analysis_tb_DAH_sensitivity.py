@@ -435,7 +435,7 @@ bar1 = ax.bar(x[0], baseline_total, width, label='Baseline', yerr=[[baseline_tot
 bar2 = ax.bar(x[1], No_Xpert_total, width, label='No Xpert Available', yerr=[[No_Xpert_total - No_Xpert_lower], [No_Xpert_upper - No_Xpert_total]])
 bar3 = ax.bar(x[2], No_CXR_total, width, label='No CXR Available', yerr=[[No_CXR_total - No_CXR_lower], [No_CXR_upper - No_CXR_total]])
 bar4 = ax.bar(x[3], CXR_scaleup_total, width, label='CXR Scale_up', yerr=[[CXR_scaleup_total - CXR_scaleup_lower], [CXR_scaleup_upper - CXR_scaleup_total]])
-bar5 = ax.bar(x[4], CXR_scaleup20, width, label='CXR Scale_up', yerr=[[CXR_scaleup20 - CXR_scaleup20_lower], [CXR_scaleup20_upper - CXR_scaleup20]])
+bar5 = ax.bar(x[4], CXR_scaleup20, width, label='CXR Scale_up20', yerr=[[CXR_scaleup20 - CXR_scaleup20_lower], [CXR_scaleup20_upper - CXR_scaleup20]])
 bar6 = ax.bar(x[5], outreach_total, width, label='Outreach services', yerr=[[outreach_total - outreach_lower], [outreach_upper - outreach_total]])
 bar7 = ax.bar(x[6], outreach_services20, width, label='Outreach_services20', yerr=[[outreach_services20 - outreach20_lower], [outreach20_upper - outreach_services20]])
 
@@ -491,7 +491,7 @@ bar1 = ax.bar(x[0], baseline_total, width, label='Baseline', yerr=[[baseline_tot
 bar2 = ax.bar(x[1], No_Xpert_total, width, label='No Xpert Available', yerr=[[No_Xpert_total - No_Xpert_lower], [No_Xpert_upper - No_Xpert_total]])
 bar3 = ax.bar(x[2], No_CXR_total, width, label='No CXR Available', yerr=[[No_CXR_total - No_CXR_lower], [No_CXR_upper - No_CXR_total]])
 bar4 = ax.bar(x[3], CXR_scaleup_total, width, label='CXR Scale_up', yerr=[[CXR_scaleup_total - CXR_scaleup_lower], [CXR_scaleup_upper - CXR_scaleup_total]])
-bar5 = ax.bar(x[4], CXR_scaleup20, width, label='CXR Scale_up', yerr=[[CXR_scaleup20 - CXR_scaleup20_lower], [CXR_scaleup20_upper - CXR_scaleup20]])
+bar5 = ax.bar(x[4], CXR_scaleup20, width, label='CXR Scale_up20', yerr=[[CXR_scaleup20 - CXR_scaleup20_lower], [CXR_scaleup20_upper - CXR_scaleup20]])
 bar6 = ax.bar(x[5], outreach_total, width, label='Outreach services', yerr=[[outreach_total - outreach_lower], [outreach_upper - outreach_total]])
 bar7 = ax.bar(x[6], outreach_services20, width, label='Outreach_services20', yerr=[[outreach_services20 - outreach20_lower], [outreach20_upper - outreach_services20]])
 
@@ -501,7 +501,7 @@ ax.set_xlabel('Scenario')
 ax.set_ylabel('TB Mortality')
 ax.set_title('Cumulative TB Mortality 2010-2033')
 ax.set_xticks(x)
-ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scale_up', 'CXR Scale_up', 'Outreach services', 'Outreach services20'])
+ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scale_up', 'CXR Scale_up20', 'Outreach services', 'Outreach services20'])
 ax.legend()
 
 # Displaying graph
