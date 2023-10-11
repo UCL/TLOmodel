@@ -751,7 +751,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
             'Under5OPD' if person_age_years < 5 else 'Over5OPD': 1}
         )
         self.ACCEPTED_FACILITY_LEVEL = '1a' if (self.facility_level == '1a') else '1b'
-        self.EQUIPMENT = set()  # no specific equipment required
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
 
@@ -849,7 +849,7 @@ class HSI_Malaria_rdt_community(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Malaria_Test'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'ConWithDCSA': 1})
         self.ACCEPTED_FACILITY_LEVEL = '0'
-        self.EQUIPMENT = set()  # no specific equipment required
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
 
@@ -902,7 +902,7 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
             ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.EQUIPMENT = set()  # no specific equipment required
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
 
@@ -995,7 +995,7 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
             ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
-        self.EQUIPMENT = {'Drip stand', 'Haemoglobinometer', 'Analyser, Combined Chemistry and Electrolytes'}
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
 
@@ -1019,6 +1019,10 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
                 df.at[person_id, 'ma_date_tx'] = self.sim.date
                 df.at[person_id, 'ma_tx_counter'] += 1
 
+                # Update equipment
+                self.EQUIPMENT.update({'Drip stand', 'Haemoglobinometer',
+                                       'Analyser, Combined Chemistry and Electrolytes'})
+
                 # rdt is offered as part of the treatment package
                 # Log the test: line-list of summary information about each test
                 fever_present = 'fever' in self.sim.modules["SymptomManager"].has_what(person_id)
@@ -1031,13 +1035,6 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
                     'called_by': self.TREATMENT_ID
                 }
                 logger.info(key='rdt_log', data=person_details_for_test)
-
-            else:
-                self.EQUIPMENT = set()  # over-ride equipment declaration
-
-        # if not alive or already on treatment, over-ride equipment declaration
-        else:
-            self.EQUIPMENT = set()
 
     def did_not_run(self):
         logger.debug(key='message',
@@ -1056,7 +1053,7 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Malaria_Prevention_Iptp'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.EQUIPMENT = set()  # no specific equipment required
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
 
