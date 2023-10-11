@@ -1837,8 +1837,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         dx_tests_to_run="tb_xpert_test_smear_negative", hsi_event=self
                     )
                 if test_result is not None:
-                    # Update equipment
-                    self.EQUIPMENT.udpdate({'Sputum Collection box', 'Gene Expert (16 Module)'})
+                    self.EQUIPMENT.update({'Sputum Collection box', 'Gene Expert (16 Module)'})
 
         # ------------------------- testing referrals ------------------------- #
 
