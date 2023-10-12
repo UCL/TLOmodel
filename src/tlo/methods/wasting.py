@@ -37,8 +37,7 @@ class Wasting(Module):
 
     """
 
-    INIT_DEPENDENCIES = {'Demography', 'SymptomManager'}
-
+    INIT_DEPENDENCIES = {'Demography', 'SymptomManager', 'NewbornOutcomes', 'HealthBurden'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -311,11 +310,11 @@ class Wasting(Module):
             # apply probability of MUAC between 115-<125mm in moderate wasting
             moderate_low_muac_in_moderate_wasting = self.rng.random_sample(size=len(
                 idx[~low_muac_in_moderate_wasting])) < p['proportion_-3<=WHZ<-2_with_MUAC_115-<125mm']
-            df.loc[idx[~low_muac_in_moderate_wasting][moderate_low_muac_in_moderate_wasting],
-                   'un_am_MUAC_category'] = '115-<125mm'
+            df.loc[idx[~low_muac_in_moderate_wasting][moderate_low_muac_in_moderate_wasting], 'un_am_MUAC_category'] = \
+                '115-<125mm'
             # other moderate wasting will have normal MUAC
-            df.loc[idx[~low_muac_in_moderate_wasting][~moderate_low_muac_in_moderate_wasting],
-                   'un_am_MUAC_category'] = '>=125mm'
+            df.loc[idx[~low_muac_in_moderate_wasting][~moderate_low_muac_in_moderate_wasting], 'un_am_MUAC_category'] \
+                = '>=125mm'
 
         if whz == 'WHZ>=-2':
             # Give MUAC distribution for WHZ>=-2 ('well' group) ---------
@@ -513,10 +512,10 @@ class Wasting(Module):
                     LinearModelType.LOGISTIC,
                     intercept,  # baseline odds: get_odds_wasting(agegp=agegp)
                     Predictor('li_wealth').when(2, p['or_wasting_hhwealth_Q2'])
-                                          .when(3, p['or_wasting_hhwealth_Q3'])
-                                          .when(4, p['or_wasting_hhwealth_Q4'])
-                                          .when(5, p['or_wasting_hhwealth_Q5'])
-                                          .otherwise(1.0),
+                    .when(3, p['or_wasting_hhwealth_Q3'])
+                    .when(4, p['or_wasting_hhwealth_Q4'])
+                    .when(5, p['or_wasting_hhwealth_Q5'])
+                    .otherwise(1.0),
                     Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
                                      '& (nb_late_preterm == False) & (nb_early_preterm == False)',
                                      p['or_wasting_SGA_and_term']),
@@ -688,12 +687,12 @@ class Wasting(Module):
                     LinearModelType.MULTIPLICATIVE,
                     intercept,
                     Predictor('age_exact_years').when('<0.5', p['base_inc_rate_wasting_by_agegp'][0])
-                                                .when('<1.0', p['base_inc_rate_wasting_by_agegp'][1])
-                                                .when('.between(1,1.9999)', p['base_inc_rate_wasting_by_agegp'][2])
-                                                .when('.between(2,2.9999)', p['base_inc_rate_wasting_by_agegp'][3])
-                                                .when('.between(3,3.9999)', p['base_inc_rate_wasting_by_agegp'][4])
-                                                .when('.between(4,4.9999)', p['base_inc_rate_wasting_by_agegp'][5])
-                                                .otherwise(0.0),
+                    .when('<1.0', p['base_inc_rate_wasting_by_agegp'][1])
+                    .when('.between(1,1.9999)', p['base_inc_rate_wasting_by_agegp'][2])
+                    .when('.between(2,2.9999)', p['base_inc_rate_wasting_by_agegp'][3])
+                    .when('.between(3,3.9999)', p['base_inc_rate_wasting_by_agegp'][4])
+                    .when('.between(4,4.9999)', p['base_inc_rate_wasting_by_agegp'][5])
+                    .otherwise(0.0),
                     Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
                                      '& (nb_late_preterm == False) & (nb_early_preterm == False)',
                                      p['rr_wasting_SGA_and_term']),
@@ -1108,9 +1107,8 @@ class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
         m = self.module
 
         # before progression to severe wasting, check those who started supplementary feeding programme before today
-        if df.at[person_id,
-                 'un_last_wasting_date_of_onset'] < df.at[person_id,
-                                                          'un_acute_malnutrition_tx_start_date'] < self.sim.date:
+        if df.at[person_id, 'un_last_wasting_date_of_onset'] < df.at[person_id, 'un_acute_malnutrition_tx_start_date'] \
+                < self.sim.date:
             return
 
         # continue with progression to severe if not treated/recovered

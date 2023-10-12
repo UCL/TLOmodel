@@ -807,6 +807,7 @@ CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP = MappingProxyType({
 
     'Lower respiratory infections': 'darkorange',
     'Childhood Diarrhoea': 'tan',
+    'Childhood Wasting': 'darkslategrey',
 
     'AIDS': 'deepskyblue',
     'Malaria': 'lightsteelblue',

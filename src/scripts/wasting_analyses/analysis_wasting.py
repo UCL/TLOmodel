@@ -9,12 +9,13 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import parse_log_file, compare_number_of_deaths
+from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import (
     care_of_women_during_pregnancy,
     contraception,
     demography,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
@@ -24,8 +25,8 @@ from tlo.methods import (
     postnatal_supervisor,
     pregnancy_supervisor,
     symptommanager,
+    tb,
     wasting,
-    tb, epi
 )
 
 
