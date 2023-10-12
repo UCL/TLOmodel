@@ -28,7 +28,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #tb_DAH_scenarios-2023-09-18T132119Z
 # Tb_DAH_scenarios_test_run09_partial-2023-10-01T133822Z -looks to work fine
 #Tb_DAH_scenarios_test_run13_partial-2023-10-02T144642Z xcept for CXR scaleup and outreach
-results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_run43_partial-2023-10-11T052820Z", outputspath)[-1]
+results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_run43_partial-2023-10-11T202513Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
