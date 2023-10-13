@@ -529,7 +529,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--results-path",
         type=Path,
-        help="Directory containing results from running src/scripts/hiv/projections_jan2023/tb_DAH_scenario.py",
+        help="Directory containing results from running src/scripts/hiv/projections_jan2023/tb_partial_run.py",
         default=None,
         required=False
     )
