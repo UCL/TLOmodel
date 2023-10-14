@@ -28,7 +28,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #tb_DAH_scenarios-2023-09-18T132119Z
 # Tb_DAH_scenarios_test_run09_partial-2023-10-01T133822Z -looks to work fine
 #Tb_DAH_scenarios_test_run13_partial-2023-10-02T144642Z xcept for CXR scaleup and outreach
-#tb_DAH_impact-2023-10-07T150348Z
+
 results_folder = get_scenario_outputs("tb_DAH_impact-2023-10-07T150348Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
@@ -43,8 +43,8 @@ number_draws = info['number_of_draws']
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-    from scripts.hiv.projections_jan2023.partial_run import ImpactOfTbDaHx
-    e = ImpactOfTbDaHx()
+    from scripts.hiv.projections_jan2023.tb_DAH_impact import ImpactOfTbDaH
+    e = ImpactOfTbDaH()
     return tuple(e._scenarios.keys())
 
 def set_param_names_as_column_index_level_0(_df):
