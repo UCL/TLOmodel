@@ -279,7 +279,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ['No Healthcare System', 'Status Quo', 'Perfect Healthcare Seeking']
     ].loc[:, (slice(None), 'mean')].droplevel(axis=1, level=1)
 
-    fig, ax = plt.subplots(nrows=3, ncols=1, sharex=True)
+    fig, ax = plt.subplots(nrows=3, ncols=1, sharex=True, sharey=True)
     name_of_plot = f'DALYS Incurred by Wealth and Cause {target_period()}'
     for _ax, _scenario_name, in zip(ax, total_num_dalys_by_wealth_and_label.columns):
         format_to_plot = total_num_dalys_by_wealth_and_label[_scenario_name].unstack()
@@ -295,7 +295,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                    )
         _ax.axhline(0.0, color='black')
         _ax.set_title(f'{_scenario_name}')
-        _ax.set_ylabel('Number of DALYs Averted (/1e6)')
+        if _scenario_name == 'Status Quo':
+            _ax.set_ylabel('Number of DALYs Averted (/1e6)')
         _ax.set_ylim(0, 20)
         _ax.set_xlabel('Wealth Percentile')
         _ax.grid()
