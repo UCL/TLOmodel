@@ -310,23 +310,28 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     # Normalised Total DALYS (where DALYS in the highest wealth class are 100)
-    # todo - copy the color coding from the bar plots above
     tots = total_num_dalys_by_wealth_and_label.groupby(axis=0, level=0).sum()
     normalised_tots = tots.div(tots.loc['80-100%'])
 
     fig, ax = plt.subplots(nrows=1, ncols=2, sharey=False)
-    name_of_plot = f'DALYS Incurred by Wealth {target_period()}'
-    (tots / 1e6).plot(ax=ax[0])
+    name_of_plot = f'DALYS Incurred by Wealth Normalises {target_period()}'
+    (tots / 1e6).plot(
+        ax=ax[0],
+        color=('black', 'green', (0.12156862745098039, 0.4666666666666667, 0.7058823529411765)),
+        alpha=0.5)
     ax[0].set_ylabel('Total DALYS (/million)')
     ax[0].set_xlabel('Wealth Percentile')
     ax[0].set_xticklabels(ax[0].get_xticklabels(), rotation=90)
     ax[0].set_ylim(0, 15)
     ax[0].legend(fontsize=8)
-    (normalised_tots * 100.0).plot(ax=ax[1])
+    (normalised_tots * 100.0).plot(
+        ax=ax[1],
+        color=('black', 'green', (0.12156862745098039, 0.4666666666666667, 0.7058823529411765)),
+        alpha=0.5)
     ax[1].set_ylabel('Normalised DALYS\n100 = Highest Wealth quantile')
     ax[1].set_xlabel('Wealth Percentile')
     ax[1].set_xticklabels(ax[1].get_xticklabels(), rotation=90)
-    ax[1].axhline(100.0, color='k')
+    ax[1].axhline(100.0, color='k', linestyle='--')
     ax[1].legend().set_visible(False)
     fig.suptitle(name_of_plot)
     fig.tight_layout()
