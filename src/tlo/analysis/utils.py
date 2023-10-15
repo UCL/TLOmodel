@@ -311,20 +311,23 @@ def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: 
     Finds mean value and 95% interval across the runs for each draw.
     """
 
-    summary = pd.concat({
-        'mean': results.groupby(axis=1, by='draw', sort=False).mean(),
-        'lower': results.groupby(axis=1, by='draw', sort=False).quantile(0.025),
-        'upper': results.groupby(axis=1, by='draw', sort=False).quantile(0.975),
-    },
+    summary = pd.concat(
+        {
+            'mean': results.groupby(axis=1, by='draw', sort=False).mean(),
+            'lower': results.groupby(axis=1, by='draw', sort=False).quantile(0.025),
+            'upper': results.groupby(axis=1, by='draw', sort=False).quantile(0.975),
+        },
         axis=1
     )
     summary.columns = summary.columns.swaplevel(1, 0)
     summary.columns.names = ['draw', 'stat']
+    summary = summary.sort_index(axis=1)
 
     if only_mean and (not collapse_columns):
         # Remove other metrics and simplify if 'only_mean' across runs for each draw is required:
         om: pd.DataFrame = summary.loc[:, (slice(None), "mean")]
         om.columns = [c[0] for c in om.columns.to_flat_index()]
+        om.columns.name = 'draw'
         return om
 
     elif collapse_columns and (len(summary.columns.levels[0]) == 1):
@@ -1031,8 +1034,7 @@ def plot_clustered_stacked(dfall, ax, color_for_column_map=None, scaled=False, l
 
     for i, df in enumerate(dfall.values()):  # for each data frame
         if scaled:
-            df = df.apply(lambda row: (row.astype(float) / row.sum()).fillna(0.0), axis=1)
-            # Note the 'astype(float)' is to avoid 0's leading to integer division, for which division by 0.0 errors.
+            df = df.apply(lambda row: (row / row.sum()).fillna(0.0), axis=1)
 
         ax = df.plot.bar(
             stacked=True,
