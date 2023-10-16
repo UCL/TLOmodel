@@ -92,67 +92,35 @@ class CervicalCancer(Module):
         "rr_progress_cc_hiv": Parameter(
             Types.REAL, "rate ratio for progressing through cin and cervical cancer stages if have unsuppressed hiv9"
         ),
-        "rr_stage1_none_agege50": Parameter(
-            Types.REAL, "rate ratio for stage1 breast cancer for age 50+"
-        ),
-        "r_stage2_stage1": Parameter(
-            Types.REAL, "probabilty per 3 months of stage 2 breast cancer amongst people with stage 1"
-        ),
-        "rr_stage2_undergone_curative_treatment": Parameter(
+         "rr_progression_cc_undergone_curative_treatment": Parameter(
             Types.REAL,
-            "rate ratio for stage 2 breast cancer for people with stage 1 "
-            "breast cancer if had curative treatment at stage 1",
+            "rate ratio for progression to next cervical cancer stage if had curative treatment at current stage",
         ),
-        "r_stage3_stage2": Parameter(
-            Types.REAL, "probabilty per 3 months of stage 3 breast cancer amongst people with stage 2"
-        ),
-        "rr_stage3_undergone_curative_treatment": Parameter(
+         "r_death_cervical_cancer": Parameter(
             Types.REAL,
-            "rate ratio for stage 3 breast cancer for people with stage 2 "
-            "breast cancer if had curative treatment at stage 2",
+            "probabilty per 3 months of death from cervical cancer amongst people with stage 4 cervical cancer",
         ),
-        "r_stage4_stage3": Parameter(
-            Types.REAL, "probabilty per 3 months of stage 4 breast cancer amongst people with stage 3"
+        "r_vaginal_bleeding_cc_stage1": Parameter(
+            Types.REAL, "rate of vaginal bleeding if have stage 1 cervical cancer"
         ),
-        "rr_stage4_undergone_curative_treatment": Parameter(
-            Types.REAL,
-            "rate ratio for stage 4 breast cancer for people with stage 3 "
-            "breast cancer if had curative treatment at stage 3",
+        "rr_vaginal_bleeding_cc_stage2": Parameter(
+            Types.REAL, "rate ratio for vaginal bleeding if have stage 2 breast cancer"
         ),
-        "r_death_breast_cancer": Parameter(
-            Types.REAL,
-            "probabilty per 3 months of death from breast cancer amongst people with stage 4 breast cancer",
+        "rr_vaginal_bleeding_cc_stage3": Parameter(
+            Types.REAL, "rate ratio for vaginal bleeding if have stage 3 breast cancer"
         ),
-        "r_breast_lump_discernible_stage1": Parameter(
-            Types.REAL, "rate ratio for breast_lump_discernible if have stage 1 breast cancer"
+        "rr_vaginal_bleeding_cc_stage4": Parameter(
+            Types.REAL, "rate ratio for vaginal bleeding if have stage 4 breast cancer"
         ),
-        "rr_breast_lump_discernible_stage2": Parameter(
-            Types.REAL, "rate ratio for breast_lump_discernible if have stage 2 breast cancer"
+        "sensitivity_of_biopsy_for_cervical_cancer": Parameter(
+            Types.REAL, "sensitivity of biopsy for diagnosis of cervical cancer"
         ),
-        "rr_breast_lump_discernible_stage3": Parameter(
-            Types.REAL, "rate ratio for breast_lump_discernible if have stage 3 breast cancer"
+        "sensitivity_of_genexpert_for_hpv": Parameter(
+            Types.REAL, "sensitivity of genexpert for diagnosis of cervical cancer"
         ),
-        "rr_breast_lump_discernible_stage4": Parameter(
-            Types.REAL, "rate ratio for breast_lump_discernible if have stage 4 breast cancer"
-        ),
-        "rp_breast_cancer_age3049": Parameter(
-            Types.REAL, "relative prevalence at baseline of breast cancer if age3049"
-        ),
-        "rp_breast_cancer_agege50": Parameter(
-            Types.REAL, "relative prevalence at baseline of breast cancer if agege50"
-        ),
-        "sensitivity_of_biopsy_for_stage1_breast_cancer": Parameter(
-            Types.REAL, "sensitivity of biopsy_for diagnosis of stage 1 breast cancer"
-        ),
-        "sensitivity_of_biopsy_for_stage2_breast_cancer": Parameter(
-            Types.REAL, "sensitivity of biopsy_for diagnosis of stage 2 breast cancer"
-        ),
-        "sensitivity_of_biopsy_for_stage3_breast_cancer": Parameter(
-            Types.REAL, "sensitivity of biopsy_for diagnosis of stage 3 breast cancer"
-        ),
-        "sensitivity_of_biopsy_for_stage4_breast_cancer": Parameter(
-            Types.REAL, "sensitivity of biopsy_for diagnosis of stage 4 breast cancer"
-        ),
+        "sensitivity_of_via_for_cin_cc_by_stage": Parameter(
+            Types.LIST, "sensitivity of via for cin and cervical cancer bu stage"
+        )
     }
 
 
