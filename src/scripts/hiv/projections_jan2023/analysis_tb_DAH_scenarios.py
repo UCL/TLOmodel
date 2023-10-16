@@ -410,10 +410,12 @@ tb_screening= summarize(
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
+#filtered_#tb_screening = tb_screening[tb_screening.index.get_level_values('Tb_Test_Screening') == "Tb_Test_Screening"]
+filtered_tb_screening = summarize(tb_screening[tb_screening.index.get_level_values('Tb_Test_Screening').isin(["Tb_Test_Screening", "Tb_Test_ScreeningOutreach"])]).sort_index()
 
-tb_test_screening = tb_screening[tb_screening['TREATMENT_ID'] == 'Tb_Test_Screening']
-tb_screening.index = tb_screening.index.year
-tb_screening.to_excel(outputspath / "tb_screening.xlsx")
+#tb_test_screening = tb_screening[tb_screening['TREATMENT_ID'] == 'Tb_Test_Screening']
+filtered_tb_screening.index = tb_screening.index.year
+filtered_tb_screening.to_excel(outputspath / "tb_screening.xlsx")
 ###### PLOTS##################################################
 
 # Calculate the sum of DALYs across years for each scenario
