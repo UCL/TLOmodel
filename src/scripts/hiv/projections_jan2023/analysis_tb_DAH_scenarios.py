@@ -304,7 +304,7 @@ pyears_summary = pyears_summary.reset_index(drop=True)
 print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
 mdr = log["tlo.methods.tb"]["tb_mdr"]
 mdr = mdr.set_index("date")
-mdr.to_excel(outputspath / "mdr_sample.xlsx")
+mdr.to_excel(outputspath / "mdr_summary.xlsx")
 
 #Active Tb prevalence
 Tb_prevalence= summarize(
@@ -388,8 +388,8 @@ print("Health system events as follows",hsi_event_counts)
 hsi_event_counts.to_excel(outputspath / "hsi_event_counts")
 print(hsi_event_counts)
 
-#print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
-print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
+print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
+#print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
 # print(f"Keys of log['tlo.methods.healthburden']: {log['tlo.methods.healthburden'].keys()}")
 # print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography.detail'].keys()}")
 #
@@ -397,21 +397,23 @@ print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
 # properties_of_deceased_persons = log["tlo.methods.demography.detail"]["properties_of_deceased_persons"]
 # properties_of_deceased_persons= properties_of_deceased_persons.set_index("date")
 # properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_persons.xlsx")
+
 ## extracts number of people screen for TB by scenario
-tb_test_screening= summarize(
+tb_screening= summarize(
     extract_results(
         results_folder,
         module="tlo.methods.healthsystem.summary",
         key="HSI_Event",
-        column="Tb_Test_Screening",
+        column="TREATMENT_ID",
         index="date",
         do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
 
-tb_test_screening.index = tb_test_screening.index.year
-tb_test_screening.to_excel(outputspath / "tb_screening.xlsx")
+tb_test_screening = tb_screening[tb_screening['TREATMENT_ID'] == 'Tb_Test_Screening']
+tb_screening.index = tb_screening.index.year
+tb_screening.to_excel(outputspath / "tb_screening.xlsx")
 ###### PLOTS##################################################
 
 # Calculate the sum of DALYs across years for each scenario
