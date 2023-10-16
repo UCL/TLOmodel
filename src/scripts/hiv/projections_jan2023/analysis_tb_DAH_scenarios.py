@@ -20,7 +20,7 @@ from tlo.analysis.utils import (
 )
 
 resourcefilepath = Path("./resources")
-outputspath = Path("./outputs/nic503@york.ac.uk")
+outputspath = Path("./outputs/newton.chagoma@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
@@ -235,7 +235,7 @@ tb_hiv_prop = summarize(
         key="tb_incidence",
         column="prop_active_tb_in_plhiv",
         index="date",
-        do_scaling=False,
+        do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
@@ -251,7 +251,7 @@ mdr_tb_cases = summarize(
         key="tb_mdr",
         column="tbNewActiveMdrCases",
         index="date",
-        do_scaling=False,
+        do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
@@ -268,7 +268,7 @@ tb_treatment = summarize(
             key="tb_treatment",
             column="tbTreatmentCoverage",
             index="date",
-            do_scaling=False,
+            do_scaling=True,
         ),
         collapse_columns=True,
     ).pipe(set_param_names_as_column_index_level_0)
@@ -285,7 +285,7 @@ tb_inc = summarize(
         key="tb_incidence",
         column="num_new_active_tb",
         index="date",
-        do_scaling=False,
+        do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
@@ -314,7 +314,7 @@ Tb_prevalence= summarize(
         key="tb_prevalence",
         column="tbPrevActive",
         index="date",
-        do_scaling=False,
+        do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
@@ -329,7 +329,7 @@ adult_Tb_prevalence= summarize(
         key="tb_prevalence",
         column="tbPrevActiveAdult",
         index="date",
-        do_scaling=False,
+        do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
@@ -344,25 +344,12 @@ child_Tb_prevalence= summarize(
         key="tb_prevalence",
         column="tbPrevActiveChild",
         index="date",
-        do_scaling=False,
+        do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
 
-# Tb_test_screening= summarize(
-#     extract_results(
-#         results_folder,
-#         module="tlo.methods.tb",
-#         key="tb_Test_Screnning",
-#         column="tbPrevActiveChild",
-#         index="date",
-#         do_scaling=False,
-#     ),
-#     collapse_columns=True,
-# ).pipe(set_param_names_as_column_index_level_0)
 
-child_Tb_prevalence.index = child_Tb_prevalence.index.year
-child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence_sample.xlsx")
 
 #properties of deceased
 properties_of_deceased_persons = log["tlo.methods.demography.detail"]["properties_of_deceased_persons"]
@@ -382,12 +369,15 @@ properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_pe
 # wealth_quintile.index = wealth_quintile.index.year
 # wealth_quintile.to_excel(outputspath / "wealth_quintiles.xlsx")
 
-HSE = log["tlo.methods.healthsystem.summary"]["hsi_event_details"]["Tb_Test_Screening"]
+#HSE = log["tlo.methods.healthsystem.summary"]["hsi_event_details"]["Tb_Test_Screening"]
+
+HSE = log["tlo.methods.healthsystem.summary"]["hsi_event_details"]
 HSE = HSE.set_index("date")
 print("Health system events as follows",HSE)
 HSE.to_excel(outputspath / "HSE.xlsx")
 
-HSEvents = log["tlo.methods.healthsystem.summary"]["HSI_Event"]["Tb_Test_Screening"]
+#HSEvents = log["tlo.methods.healthsystem.summary"]["HSI_Event"]["Tb_Test_Screening"]
+HSEvents = log["tlo.methods.healthsystem.summary"]["HSI_Event"]
 HSEvents = HSEvents.set_index("date")
 print("Health system events as follows",HSEvents)
 HSEvents.to_excel(outputspath / "HSEvents.xlsx")
@@ -407,7 +397,21 @@ print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
 # properties_of_deceased_persons = log["tlo.methods.demography.detail"]["properties_of_deceased_persons"]
 # properties_of_deceased_persons= properties_of_deceased_persons.set_index("date")
 # properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_persons.xlsx")
+## extracts number of people screen for TB by scenario
+tb_test_screening= summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.healthsystem.summary",
+        key="HSI_Event",
+        column="Tb_Test_Screening",
+        index="date",
+        do_scaling=True,
+    ),
+    collapse_columns=True,
+).pipe(set_param_names_as_column_index_level_0)
 
+tb_test_screening.index = tb_test_screening.index.year
+tb_test_screening.to_excel(outputspath / "tb_screening.xlsx")
 ###### PLOTS##################################################
 
 # Calculate the sum of DALYs across years for each scenario
