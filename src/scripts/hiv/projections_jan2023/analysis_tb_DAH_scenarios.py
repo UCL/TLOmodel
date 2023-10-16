@@ -319,7 +319,7 @@ Tb_prevalence= summarize(
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
 Tb_prevalence.index = Tb_prevalence.index.year
-Tb_prevalence.to_excel(outputspath / "Tb_prevalence_sample.xlsx")
+Tb_prevalence.to_excel(outputspath / "Tb_prevalence.xlsx")
 
 #Active Tb prevalence in adults
 adult_Tb_prevalence= summarize(
@@ -334,7 +334,7 @@ adult_Tb_prevalence= summarize(
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
 adult_Tb_prevalence.index = adult_Tb_prevalence.index.year
-adult_Tb_prevalence.to_excel(outputspath / "adult_Tb_prevalence_sample.xlsx")
+adult_Tb_prevalence.to_excel(outputspath / "adult_Tb_prevalence.xlsx")
 
 #Active Tb prevalence in children
 child_Tb_prevalence= summarize(
@@ -410,12 +410,16 @@ tb_screening= summarize(
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
-#filtered_#tb_screening = tb_screening[tb_screening.index.get_level_values('Tb_Test_Screening') == "Tb_Test_Screening"]
-filtered_tb_screening = summarize(tb_screening[tb_screening.index.get_level_values('Tb_Test_Screening').isin(["Tb_Test_Screening", "Tb_Test_ScreeningOutreach"])]).sort_index()
 
-#tb_test_screening = tb_screening[tb_screening['TREATMENT_ID'] == 'Tb_Test_Screening']
-filtered_tb_screening.index = tb_screening.index.year
-filtered_tb_screening.to_excel(outputspath / "tb_screening.xlsx")
+tb_screening = tb_screening.reset_index()
+# summarise across runs
+tb_screening = tb_screening.loc[tb_screening.TREATMENT_ID == "Tb_Test_Screening"]
+tb_screening.index = tb_screening.index.year
+tb_screening.to_excel(outputspath / "tb_screening.xlsx")
+#
+# tb_screeningOutreach = tb_screening.loc[tb_screening == "Tb_Test_ScreeningOutreach"]
+# tb_screeningOutreach.index = tb_screeningOutreach.index.year
+# tb_screeningOutreach.to_excel(outputspath / "tb_screeningOutreach.xlsx")
 ###### PLOTS##################################################
 
 # Calculate the sum of DALYs across years for each scenario

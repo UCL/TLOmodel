@@ -80,28 +80,28 @@ class ImpactOfTbDaHx(BaseScenario):
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                   #'scaling_factor_WHO': 2.1,   #previously 1.95
+                   'scaling_factor_WHO': 2.0,   #previously 1.95
                 },
             },
         # overrides availability of CXR
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
-                   # 'scaling_factor_WHO': 1.89,
+                   'scaling_factor_WHO': 1.89,
                 },
             },
             "CXR scale_up": {
                  'Tb': {
                      'scenario': 3,
-                   #  'scaling_factor_WHO': 1.2, # previously was 1.0
+                     'scaling_factor_WHO': 0.9,
                  }
             },
-            "CXR scale_up20": {
-                'Tb': {
-                    'scenario': 4,
-                 #   'scaling_factor_WHO': 0.9,  # /previously was 1.0
-                }
-            },
+            # "CXR scale_up20": {
+            #     'Tb': {
+            #         'scenario': 4,
+            #      #   'scaling_factor_WHO': 0.9,  # /previously was 1.0
+            #     }
+            # },
             "Outreach services": {
                 'Tb': {
                      'scenario': 0,
@@ -109,13 +109,13 @@ class ImpactOfTbDaHx(BaseScenario):
                      'scaling_factor_WHO': 0.9,
                 }
             },
-            "Outreach services20": {
-                'Tb': {
-                    'scenario': 0,
-                    'probability_community_chest_xray': 0.4,
-                    'scaling_factor_WHO': 0.9,
-                }
-            },
+            # "Outreach services20": {
+            #     'Tb': {
+            #         'scenario': 0,
+            #         'probability_community_chest_xray': 0.4,
+            #         'scaling_factor_WHO': 0.9,
+            #     }
+            # },
         }
 if __name__ == '__main__':
     from tlo.cli import scenario_run
