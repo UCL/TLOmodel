@@ -116,7 +116,6 @@ signature-mutators = [
 
 [tool.pytest.ini_options]
 testpaths = "tests"
-norecursedirs = "migrations"
 python_files = [
     "test_*.py",
     "*_test.py",
