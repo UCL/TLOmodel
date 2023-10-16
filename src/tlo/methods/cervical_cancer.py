@@ -259,48 +259,49 @@ class CervicalCancer(Module):
         # ensure that persons who have not ever had the symptom vaginal bleeding are not diagnosed:
         ever_diagnosed_cc.loc[~has_vaginal_bleeding_at_init] = False
 
-
-
-
-
         # For those that have been diagnosed, set data of diagnosis to today's date
-        df.loc[ever_diagnosed, "brc_date_diagnosis"] = self.sim.date
+        df.loc[ever_diagnosedcc, "ce_date_diagnosis"] = self.sim.date
 
-        # -------------------- brc_date_treatment -----------
-        # create short hand variable for the predicting the initial occurence of various breast
-        # cancer stages in the population
-        bc_inital_treament_status = p['init_prop_treatment_status_breast_cancer']
+        # -------------------- ce_date_treatment -----------
+
+        ce_inital_treament_status = p['init_prop_prev_treatment_cervical_cancer']
         lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
             Predictor(
-                'brc_status',
+                'ce_hpv_cc_status',
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True,
             )
             .when("none", 0.0)
-            .when("stage1", bc_inital_treament_status[0])
-            .when("stage2", bc_inital_treament_status[1])
-            .when("stage3", bc_inital_treament_status[2])
-            .when("stage4", bc_inital_treament_status[3])
+            .when("hpv", 0.0)
+            .when("stage1", ce_inital_treament_status[0])
+            .when("stage2A", ce_inital_treament_status[1])
+            .when("stage2B", ce_inital_treament_status[2])
+            .when("stage3", ce_inital_treament_status[3])
+            .when("stage4", ce_inital_treament_status[4])
         )
         treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
         # prevent treatment having been initiated for anyone who is not yet diagnosed
-        treatment_initiated.loc[pd.isnull(df.brc_date_diagnosis)] = False
+        treatment_initiated.loc[pd.isnull(df.ce_date_diagnosis)] = False
 
         # assume that the stage at which treatment is begun is the stage the person is in now;
-        df.loc[treatment_initiated, "brc_stage_at_which_treatment_given"] = df.loc[treatment_initiated, "brc_status"]
+        df.loc[treatment_initiated, "ce_stage_at_which_treatment_given"] = df.loc[treatment_initiated, "ce_hpv_cc_status"]
 
         # set date at which treatment began: same as diagnosis (NB. no HSI is established for this)
-        df.loc[treatment_initiated, "brc_date_treatment"] = df.loc[treatment_initiated, "brc_date_diagnosis"]
+        df.loc[treatment_initiated, "ce_date_treatment"] = df.loc[treatment_initiated, "ce_date_diagnosis"]
 
         # -------------------- brc_date_palliative_care -----------
-        in_stage4_diagnosed = df.index[df.is_alive & (df.brc_status == 'stage4') & ~pd.isnull(df.brc_date_diagnosis)]
+        in_stage4_diagnosed = df.index[df.is_alive & (df.ce_hpv_cc_status == 'stage4') & ~pd.isnull(df.ce_date_diagnosis)]
 
         select_for_care = self.rng.random_sample(size=len(in_stage4_diagnosed)) < p['init_prob_palliative_care']
         select_for_care = in_stage4_diagnosed[select_for_care]
 
         # set date of palliative care being initiated: same as diagnosis (NB. future HSI will be scheduled for this)
-        df.loc[select_for_care, "brc_date_palliative_care"] = df.loc[select_for_care, "brc_date_diagnosis"]
+        df.loc[select_for_care, "ce_date_palliative_care"] = df.loc[select_for_care, "ce_date_diagnosis"]
+
+
+# todo: from here ....................................................
+
 
     def initialise_simulation(self, sim):
         """
