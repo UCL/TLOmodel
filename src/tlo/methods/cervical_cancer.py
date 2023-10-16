@@ -59,11 +59,11 @@ class CervicalCancer(Module):
     PARAMETERS = {
         "init_prop_hpv_cc_stage_age1524": Parameter(
             Types.LIST,
-            "initial proportions in cancer categories for woman aged 15-24"
+            "initial proportions in cancer categories for women aged 15-24"
         ),
-        "init_prop_hpv_cc_stage_age25+": Parameter(
+        "init_prop_hpv_cc_stage_age2549": Parameter(
             Types.LIST,
-            "initial proportions in cancer categories for woman aged 25+"
+            "initial proportions in cancer categories for women aged 25-49"
         ),
         "init_prop_vaginal_bleeding_by_stage": Parameter(
             Types.LIST, "initial proportions of those with cervical cancer that have the symptom vaginal_bleeding"
@@ -125,40 +125,40 @@ class CervicalCancer(Module):
 
 
     PROPERTIES = {
-        "brc_status": Property(
+        "ce_hpv_cc_status": Property(
             Types.CATEGORICAL,
-            "Current status of the health condition, breast cancer",
-            categories=["none", "stage1", "stage2", "stage3", "stage4"],
+            "Current hpv / cervical cancer status",
+            categories=["none", "stage1", "stage2A", "stage2B", "stage3", "stage4"],
         ),
 
-        "brc_date_diagnosis": Property(
+        "ce_date_diagnosis": Property(
             Types.DATE,
-            "the date of diagnosis of the breast_cancer (pd.NaT if never diagnosed)"
+            "the date of diagnosis of cervical cancer (pd.NaT if never diagnosed)"
         ),
 
-        "brc_date_treatment": Property(
+        "ce_date_treatment": Property(
             Types.DATE,
             "date of first receiving attempted curative treatment (pd.NaT if never started treatment)"
         ),
-        "brc_breast_lump_discernible_investigated": Property(
+        "ce_vaginal_bleeding_investigated": Property(
             Types.BOOL,
-            "whether a breast_lump_discernible has been investigated, and cancer missed"
+            "whether vaginal bleeding has been investigated, and cancer missed"
         ),
-        "brc_stage_at_which_treatment_given": Property(
+        "ce_stage_at_which_treatment_given": Property(
             Types.CATEGORICAL,
-            "the cancer stage at which treatment is given (because the treatment only has an effect during the stage"
+            "the cancer stage at which treatment was given (because the treatment only has an effect during the stage"
             "at which it is given).",
-            categories=["none", "stage1", "stage2", "stage3", "stage4"],
+            categories=["none", "stage1", "stage2A", "stage2B", "stage3", "stage4"],
         ),
-        "brc_date_palliative_care": Property(
+        "ce_date_palliative_care": Property(
             Types.DATE,
             "date of first receiving palliative care (pd.NaT is never had palliative care)"
         ),
-        "brc_date_death": Property(
+        "ce_date_death": Property(
             Types.DATE,
-            "date of brc death"
+            "date of cervical cancer death"
         ),
-        "brc_new_stage_this_month": Property(
+        "ce_new_stage_this_month": Property(
             Types.BOOL,
             "new_stage_this month"
         )
@@ -166,16 +166,18 @@ class CervicalCancer(Module):
 
     def read_parameters(self, data_folder):
         """Setup parameters used by the module, now including disability weights"""
+        # todo: add disability weights to resource file
 
         # Update parameters from the resourcefile
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Breast_Cancer.xlsx",
+            pd.read_excel(Path(self.resourcefilepath) / "ResourceFile_Cervical_Cancer.xlsx",
                           sheet_name="parameter_values")
         )
 
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(name='breast_lump_discernible',
+            Symptom(name='vaginal_bleeding',
+        # todo: define odds ratio below - ? not sure about this as odds of health seeking if no symptoms is zero ?
                     odds_ratio_health_seeking_in_adults=4.00)
         )
 
@@ -185,44 +187,27 @@ class CervicalCancer(Module):
         p = self.parameters
 
         # defaults
-        df.loc[df.is_alive, "brc_status"] = "none"
-        df.loc[df.is_alive, "brc_date_diagnosis"] = pd.NaT
-        df.loc[df.is_alive, "brc_date_treatment"] = pd.NaT
-        df.loc[df.is_alive, "brc_stage_at_which_treatment_given"] = "none"
-        df.loc[df.is_alive, "brc_date_palliative_care"] = pd.NaT
-        df.loc[df.is_alive, "brc_date_death"] = pd.NaT
-        df.loc[df.is_alive, "brc_breast_lump_discernible_investigated"] = False
-        df.loc[df.is_alive, "brc_new_stage_this_month"] = False
+        df.loc[df.is_alive, "ce_hpv_cc_status"] = "none"
+        df.loc[df.is_alive, "ce_date_diagnosis"] = pd.NaT
+        df.loc[df.is_alive, "ce_date_treatment"] = pd.NaT
+        df.loc[df.is_alive, "ce_stage_at_which_treatment_given"] = "none"
+        df.loc[df.is_alive, "ce_date_palliative_care"] = pd.NaT
+        df.loc[df.is_alive, "ce_date_death"] = pd.NaT
+        df.loc[df.is_alive, "ce_vaginal_bleeding_investigated"] = False
+        df.loc[df.is_alive, "ce_new_stage_this_month"] = False
 
-        # -------------------- brc_status -----------
+        # -------------------- ce_hpv_cc_status -----------
         # Determine who has cancer at ANY cancer stage:
         # check parameters are sensible: probability of having any cancer stage cannot exceed 1.0
-        assert sum(p['init_prop_breast_cancer_stage']) <= 1.0
+        assert sum(p['init_prop_hpv_cc_stage_age1524']) <= 1.0
+        assert sum(p['init_prop_hpv_cc_stage_age2549']) <= 1.0
 
-        lm_init_brc_status_any_stage = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            sum(p['init_prop_breast_cancer_stage']),
-            Predictor('sex').when('F', 1.0).otherwise(0.0),
-            Predictor('age_years', conditions_are_mutually_exclusive=True)
-            .when('.between(30,49)', p['rp_breast_cancer_age3049'])
-            .when('.between(0,14)', 0.0)
-            .when('.between(50,120)', p['rp_breast_cancer_agege50']),
-        )
+    # todo: create ce_hpv_cc_status for all at baseline using init_prop_hpv_cc_stage_age1524
+    #       and init_prop_hpv_cc_stage_age2549
 
-        brc_status_any_stage = \
-            lm_init_brc_status_any_stage.predict(df.loc[df.is_alive], self.rng)
 
-        # Determine the stage of the cancer for those who do have a cancer:
-        if brc_status_any_stage.sum():
-            sum_probs = sum(p['init_prop_breast_cancer_stage'])
-            if sum_probs > 0:
-                prob_by_stage_of_cancer_if_cancer = [i/sum_probs for i in p['init_prop_breast_cancer_stage']]
-                assert (sum(prob_by_stage_of_cancer_if_cancer) - 1.0) < 1e-10
-                df.loc[brc_status_any_stage, "brc_status"] = self.rng.choice(
-                    [val for val in df.brc_status.cat.categories if val != 'none'],
-                    size=brc_status_any_stage.sum(),
-                    p=prob_by_stage_of_cancer_if_cancer
-                )
+
+
 
         # -------------------- SYMPTOMS -----------
         # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of breast_
