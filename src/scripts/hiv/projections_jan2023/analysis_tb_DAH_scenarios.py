@@ -20,7 +20,7 @@ from tlo.analysis.utils import (
 )
 
 resourcefilepath = Path("./resources")
-outputspath = Path("./outputs/newton.chagoma@york.ac.uk")
+outputspath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
@@ -28,7 +28,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #tb_DAH_scenarios-2023-09-18T132119Z
 # Tb_DAH_scenarios_test_run09_partial-2023-10-01T133822Z -looks to work fine
 #Tb_DAH_scenarios_test_run13_partial-2023-10-02T144642Z xcept for CXR scaleup and outreach
-
+#tb_DAH_impact-2023-10-07T150348Z---main results
 results_folder = get_scenario_outputs("tb_DAH_impact-2023-10-07T150348Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
@@ -38,6 +38,7 @@ params = extract_params(results_folder)
 print("the parameter info as follows")
 params.to_excel(outputspath / "parameters.xlsx")
 
+print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
 number_runs = info["runs_per_draw"]
 number_draws = info['number_of_draws']
 
@@ -348,6 +349,18 @@ child_Tb_prevalence= summarize(
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
 
+# Tb_test_screening= summarize(
+#     extract_results(
+#         results_folder,
+#         module="tlo.methods.tb",
+#         key="tb_Test_Screnning",
+#         column="tbPrevActiveChild",
+#         index="date",
+#         do_scaling=False,
+#     ),
+#     collapse_columns=True,
+# ).pipe(set_param_names_as_column_index_level_0)
+
 child_Tb_prevalence.index = child_Tb_prevalence.index.year
 child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence_sample.xlsx")
 
@@ -369,12 +382,12 @@ properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_pe
 # wealth_quintile.index = wealth_quintile.index.year
 # wealth_quintile.to_excel(outputspath / "wealth_quintiles.xlsx")
 
-HSE = log["tlo.methods.healthsystem.summary"]["hsi_event_details"]
+HSE = log["tlo.methods.healthsystem.summary"]["hsi_event_details"]["Tb_Test_Screening"]
 HSE = HSE.set_index("date")
 print("Health system events as follows",HSE)
 HSE.to_excel(outputspath / "HSE.xlsx")
 
-HSEvents = log["tlo.methods.healthsystem.summary"]["HSI_Event"]
+HSEvents = log["tlo.methods.healthsystem.summary"]["HSI_Event"]["Tb_Test_Screening"]
 HSEvents = HSEvents.set_index("date")
 print("Health system events as follows",HSEvents)
 HSEvents.to_excel(outputspath / "HSEvents.xlsx")
@@ -385,7 +398,8 @@ print("Health system events as follows",hsi_event_counts)
 hsi_event_counts.to_excel(outputspath / "hsi_event_counts")
 print(hsi_event_counts)
 
-# print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
+#print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
+print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
 # print(f"Keys of log['tlo.methods.healthburden']: {log['tlo.methods.healthburden'].keys()}")
 # print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography.detail'].keys()}")
 #
