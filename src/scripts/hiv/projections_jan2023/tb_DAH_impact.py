@@ -42,7 +42,7 @@ class ImpactOfTbDaH(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_impact',
+            'filename': 'Tb_DAH_impact01',
            'directory': Path('./outputs/newton.chagoma@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -77,7 +77,7 @@ class ImpactOfTbDaH(BaseScenario):
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                  #  'scaling_factor_WHO': 1.95,
+                  'scaling_factor_WHO': 1.95,
 
                 },
             },
@@ -85,20 +85,20 @@ class ImpactOfTbDaH(BaseScenario):
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
-                  #  'scaling_factor_WHO': 1.89,
+                  'scaling_factor_WHO': 1.89,
                 },
             },
              "CXR scale_up": {
                  'Tb': {
                      'scenario': 3,
-                  #   'scaling_factor_WHO': 1.1,
+                     'scaling_factor_WHO': 0.9,
                  }
              },
             "Outreach services": {
                 'Tb': {
                     'scenario': 0,
                     'probability_community_chest_xray': 0.1,
-                   # 'scaling_factor_WHO': 0.89,
+                   'scaling_factor_WHO': 0.89,
                 }
             },
         }

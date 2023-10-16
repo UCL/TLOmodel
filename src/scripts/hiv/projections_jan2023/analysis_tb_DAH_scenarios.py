@@ -399,6 +399,7 @@ print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healt
 # properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_persons.xlsx")
 
 HSEvents = log["tlo.methods.healthsystem.summary"]["HSI_Event"]
+HSEvents['TREATMENT_ID'] = HSEvents['TREATMENT_ID'].astype(str)
 HSEvents = HSEvents.set_index("date")
 print("Health system events as follows", HSEvents)
 HSEvents.to_excel(outputspath / "HSEvents.xlsx")
