@@ -399,22 +399,32 @@ print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healt
 # properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_persons.xlsx")
 
 ## extracts number of people screen for TB by scenario
-tb_screening= summarize(
-    extract_results(
-        results_folder,
-        module="tlo.methods.healthsystem.summary",
-        key="HSI_Event",
-        column="TREATMENT_ID",
-        index="date",
-        do_scaling=True,
-    ),
-    collapse_columns=True,
-).pipe(set_param_names_as_column_index_level_0)
+# tb_screening= summarize(
+#     extract_results(
+#         results_folder,
+#         module="tlo.methods.healthsystem.summary",
+#         key="HSI_Event",
+#         column="TREATMENT_ID",
+#         index="date",
+#         do_scaling=True,
+#     ),
+#     collapse_columns=True,
+# ).pipe(set_param_names_as_column_index_level_0)
 
+tb_screening = extract_results(
+    results_folder,
+    module="tlo.methods.healthsystem.summary",
+    key="HSI_Event",
+    custom_generate_series=(
+        lambda df: df.assign(year=df["date"].dt.year).groupby(
+            ["year", "TREATMENT_ID"])["Tb_Test_Screening"].count()
+    ),
+    do_scaling=True,
+)
 tb_screening = tb_screening.reset_index()
+
 # summarise across runs
-tb_screening = tb_screening.loc[tb_screening.TREATMENT_ID == "Tb_Test_Screening"]
-tb_screening.index = tb_screening.index.year
+tb_screening_summary = tb_screening.loc[tb_screening.TREATMENT_ID == "Tb_Test_Screening"]
 tb_screening.to_excel(outputspath / "tb_screening.xlsx")
 
 # tb_screeningOutreach = tb_screening.loc[tb_screening == "Tb_Test_ScreeningOutreach"]
