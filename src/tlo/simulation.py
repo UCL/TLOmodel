@@ -16,7 +16,7 @@ from tlo.events import Event, IndividualScopeEventMixin
 from tlo.progressbar import ProgressBar
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.CRITICAL)
 
 
 class Simulation:
@@ -82,7 +82,7 @@ class Simulation:
         self.rng = np.random.RandomState(np.random.MT19937(self._seed_seq))
 
     def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
-                          custom_levels: Dict[str, int] = None, suppress_stdout: bool = False):
+                          custom_levels: Dict[str, int] = None, suppress_stdout: bool = True):
         """Configure logging, can write logging to a logfile in addition the default of stdout.
 
         Minimum custom levels for each logger can be specified for filtering out messages
