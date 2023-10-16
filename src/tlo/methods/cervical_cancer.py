@@ -227,35 +227,41 @@ class CervicalCancer(Module):
             .when("stage4", ce_init_prop_vaginal_bleeding[4])
         )
 
-        has_breast_lump_discernible_at_init = lm_init_breast_lump_discernible.predict(df.loc[df.is_alive], self.rng)
+        has_vaginal_bleeding_at_init = lm_init_vaginal_bleeding.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=has_breast_lump_discernible_at_init.index[has_breast_lump_discernible_at_init].tolist(),
-            symptom_string='breast_lump_discernible',
+            person_id=has_vaginal_bleeding_at_init.index[has_vaginal_bleeding_at_init].tolist(),
+            symptom_string='vaginal bleeding',
             add_or_remove='+',
             disease_module=self
         )
 
-        # -------------------- brc_date_diagnosis -----------
-        # Create shorthand variable for the initial proportion of the population with a discernible breast lump that has
+        # -------------------- ce_date_diagnosis -----------
+        # Create shorthand variable for the initial proportion of the population with vaginal bleeding that has
         # been diagnosed
-        bc_initial_prop_diagnosed_discernible_lump = \
-            p['init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage']
+        ce_initial_prop_diagnosed_vaginal_bleeding = \
+            p['init_prop_with_vaginal_bleeding_diagnosed_cervical_cancer']
         lm_init_diagnosed = LinearModel.multiplicative(
             Predictor(
-                'brc_status',
+                'ce_hpv_cc_status',
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True,
             )
             .when("none", 0.0)
-            .when("stage1", bc_initial_prop_diagnosed_discernible_lump[0])
-            .when("stage2", bc_initial_prop_diagnosed_discernible_lump[1])
-            .when("stage3", bc_initial_prop_diagnosed_discernible_lump[2])
-            .when("stage4", bc_initial_prop_diagnosed_discernible_lump[3])
+            .when("hpv", 0.0)
+            .when("stage1", ce_initial_prop_diagnosed_vaginal_bleeding[0])
+            .when("stage2A", ce_initial_prop_diagnosed_vaginal_bleeding[1])
+            .when("stage2B", ce_initial_prop_diagnosed_vaginal_bleeding[2])
+            .when("stage3", ce_initial_prop_diagnosed_vaginal_bleeding[3])
+            .when("stage4", ce_initial_prop_diagnosed_vaginal_bleeding[4])
         )
-        ever_diagnosed = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
+        ever_diagnosed_cc = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
-        # ensure that persons who have not ever had the symptom breast_lump_discernible are diagnosed:
-        ever_diagnosed.loc[~has_breast_lump_discernible_at_init] = False
+        # ensure that persons who have not ever had the symptom vaginal bleeding are not diagnosed:
+        ever_diagnosed_cc.loc[~has_vaginal_bleeding_at_init] = False
+
+
+
+
 
         # For those that have been diagnosed, set data of diagnosis to today's date
         df.loc[ever_diagnosed, "brc_date_diagnosis"] = self.sim.date
