@@ -65,26 +65,32 @@ class CervicalCancer(Module):
             Types.LIST,
             "initial proportions in cancer categories for woman aged 25+"
         ),
-        "init_prop_breast_lump_discernible_breast_cancer_by_stage": Parameter(
-            Types.LIST, "initial proportions of those with cancer categories that have the symptom breast_lump"
-                        "_discernible"
+        "init_prop_vaginal_bleeding_by_stage": Parameter(
+            Types.LIST, "initial proportions of those with cervical cancer that have the symptom vaginal_bleeding"
         ),
-        "init_prop_with_breast_lump_discernible_diagnosed_breast_cancer_by_stage": Parameter(
-            Types.LIST, "initial proportions of people that have breast_lump_discernible that have been diagnosed"
+        "init_prop_with_vaginal_bleeding_diagnosed_cervical_cancer": Parameter(
+            Types.REAL, "initial proportions of people that have vaginal bleeding that have been diagnosed"
         ),
-        "init_prop_treatment_status_breast_cancer": Parameter(
-            Types.LIST, "initial proportions of people with breast cancer previously treated"
+        "init_prop_prev_treatment_cervical_cancer": Parameter(
+            Types.LIST, "initial proportions of people with cervical cancer previously treated"
         ),
         "init_prob_palliative_care": Parameter(
             Types.REAL, "initial probability of being under palliative care if in stage 4"
         ),
-        "r_stage1_none": Parameter(
+        "r_vp_hpv": Parameter(
             Types.REAL,
-            "probabilty per 3 months of incident stage 1 breast, amongst people with no "
-            "breast cancer",
+            "probabilty per 3 months of incident vaccine preventable hpv infection",
         ),
-        "rr_stage1_none_age3049": Parameter(
-            Types.REAL, "rate ratio for stage1 breast cancer for age 30-49"
+        "r_nvp_hpv": Parameter(
+            Types.REAL,
+            "probabilty per 3 months of incident non-vaccine preventable hpv infection",
+        ),
+        "r_cin1_hpv": Parameter(
+            Types.REAL,
+            "probabilty per 3 months of incident cin1 amongst people with hpv",
+        ),
+        "rr_progress_cc_hiv": Parameter(
+            Types.REAL, "rate ratio for progressing through cin and cervical cancer stages if have unsuppressed hiv9"
         ),
         "rr_stage1_none_agege50": Parameter(
             Types.REAL, "rate ratio for stage1 breast cancer for age 50+"
