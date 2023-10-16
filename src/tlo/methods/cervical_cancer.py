@@ -65,7 +65,7 @@ class CervicalCancer(Module):
             Types.LIST,
             "initial proportions in cancer categories for women aged 25-49"
         ),
-        "init_prop_vaginal_bleeding_by_stage": Parameter(
+        "init_prop_vaginal_bleeding_by_cc_stage": Parameter(
             Types.LIST, "initial proportions of those with cervical cancer that have the symptom vaginal_bleeding"
         ),
         "init_prop_with_vaginal_bleeding_diagnosed_cervical_cancer": Parameter(
@@ -128,9 +128,12 @@ class CervicalCancer(Module):
         "ce_hpv_cc_status": Property(
             Types.CATEGORICAL,
             "Current hpv / cervical cancer status",
-            categories=["none", "stage1", "stage2A", "stage2B", "stage3", "stage4"],
+            categories=["none", "hpv", "stage1", "stage2A", "stage2B", "stage3", "stage4"],
         ),
-
+        "ce_hpv_vp": Property(
+            Types.BOOL,
+            "if ce_hpv_cc_status = hov, is it vaccine preventable?"
+        ),
         "ce_date_diagnosis": Property(
             Types.DATE,
             "the date of diagnosis of cervical cancer (pd.NaT if never diagnosed)"
@@ -206,26 +209,22 @@ class CervicalCancer(Module):
     #       and init_prop_hpv_cc_stage_age2549
 
 
-
-
-
         # -------------------- SYMPTOMS -----------
-        # ----- Impose the symptom of random sample of those in each cancer stage to have the symptom of breast_
-        # lump_discernible:
-        # todo: note dysphagia was mis-spelled here in oesophageal cancer module in master so may not be working
         # Create shorthand variable for the initial proportion of discernible breast cancer lumps in the population
-        bc_init_prop_discernible_lump = p['init_prop_breast_lump_discernible_breast_cancer_by_stage']
-        lm_init_breast_lump_discernible = LinearModel.multiplicative(
+        ce_init_prop_vaginal_bleeding = p['init_prop_vaginal_bleeding_by_cc_stage']
+        lm_init_vaginal_bleeding = LinearModel.multiplicative(
             Predictor(
-                'brc_status',
+                'ce_hpv_cc_status',
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True,
             )
             .when("none", 0.0)
-            .when("stage1", bc_init_prop_discernible_lump[0])
-            .when("stage2", bc_init_prop_discernible_lump[1])
-            .when("stage3", bc_init_prop_discernible_lump[2])
-            .when("stage4", bc_init_prop_discernible_lump[3])
+            .when("hpv", 0.0)
+            .when("stage1", ce_init_prop_vaginal_bleeding[0])
+            .when("stage2A", ce_init_prop_vaginal_bleeding[1])
+            .when("stage2B", ce_init_prop_vaginal_bleeding[2])
+            .when("stage3", ce_init_prop_vaginal_bleeding[3])
+            .when("stage4", ce_init_prop_vaginal_bleeding[4])
         )
 
         has_breast_lump_discernible_at_init = lm_init_breast_lump_discernible.predict(df.loc[df.is_alive], self.rng)
