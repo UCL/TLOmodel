@@ -5,6 +5,7 @@ import argparse
 import difflib
 import json
 import re
+import warnings
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, NamedTuple, Optional, Set, Tuple, Union
@@ -149,14 +150,20 @@ def remove_mark_from_tests(
     for test_node in tests_to_remove_mark:
         if isinstance(test_node, TestFunction):
             function_fst = find_function(module_fst, test_node.name)
-            decorator_fst = find_decorator(function_fst, mark_decorator)
-            remove_decorator(function_fst, decorator_fst)
         else:
-            method_fst = find_class_method(
+            function_fst = find_class_method(
                 module_fst, test_node.class_name, test_node.method_name
             )
-            decorator_fst = find_decorator(function_fst, mark_decorator)
-            remove_decorator(method_fst, decorator_fst)
+        decorator_fst = find_decorator(function_fst, mark_decorator)
+        if decorator_fst is None:
+            msg = (
+                f"Test {test_node} unexpectedly does not have a decorator "
+                f"{mark_decorator} - this suggests you may be using a JSON test report "
+                "generated using a different version of tests code."
+            )
+            warnings.warn(msg, stacklevel=2)
+        else:
+            remove_decorator(function_fst, decorator_fst)
 
 
 def add_mark_to_tests(
@@ -165,18 +172,26 @@ def add_mark_to_tests(
     for test_node in tests_to_add_mark:
         if isinstance(test_node, TestFunction):
             function_fst = find_function(module_fst, test_node.name)
-            add_decorator(function_fst, mark_decorator)
         else:
-            method_fst = find_class_method(
+            function_fst = find_class_method(
                 module_fst, test_node.class_name, test_node.method_name
             )
-            add_decorator(method_fst, mark_decorator)
+        if find_decorator(function_fst, mark_decorator) is not None:
+            msg = (
+                f"Test {test_node} unexpectedly already has a decorator "
+                f"{mark_decorator} - this suggests you may be using a JSON test report "
+                "generated using a different version of tests code."
+            )
+            warnings.warn(msg, stacklevel=2)
+        else:
+            add_decorator(function_fst, mark_decorator)
 
 
-def add_import(module_fst: redbaron.RedBaron, import_statement: str):
+def add_import(module_fst: redbaron.RedBaron, module_name: str):
     last_top_level_import = module_fst.find_all(
         "import", lambda node: node.parent is module_fst
     )[-1]
+    import_statement = f"import {module_name}"
     if last_top_level_import is not None:
         last_top_level_import.insert_after(import_statement)
     else:
@@ -184,6 +199,14 @@ def add_import(module_fst: redbaron.RedBaron, import_statement: str):
             module_fst[0].insert_after(import_statement)
         else:
             module_fst[0].insert_before(import_statement)
+
+
+def remove_import(module_fst: redbaron.RedBaron, module_name: str):
+    import_fst = module_fst.find("import", lambda node: module_name in node.modules())
+    if len(import_fst.modules()) > 1:
+        import_fst.remove(module_name)
+    else:
+        module_fst.remove(import_fst)
 
 
 def update_test_slow_marks(
@@ -212,7 +235,14 @@ def update_test_slow_marks(
             is not None
         )
         if any_marked and not pytest_imported:
-            add_import(module_fst, "import pytest")
+            add_import(module_fst, "pytest")
+        elif not any_marked and pytest_imported:
+            pytest_references = module_fst.find_all("name", "pytest")
+            if (
+                len(pytest_references) == 1
+                and pytest_references[0].parent_find("import") is not None
+            ):
+                remove_import(module_fst, "pytest")
         if show_diff:
             diff_lines = difflib.unified_diff(
                 original_module_fst.dumps().split("\n"),
@@ -254,7 +284,7 @@ if __name__ == "__main__":
     if not args.json_test_report_path.exists():
         msg = f"No file found at --json-test-report-path={args.json_test_report_path}"
         raise FileNotFoundError(msg)
-    # We want a hysteris effect by having remove_slow_threshold < add_slow_threshold
+    # We want a hysteresis effect by having remove_slow_threshold < add_slow_threshold
     # so a test with duration close to the thresholds doesn't keep getting marks added
     # and removed due to noise in durations
     if args.remove_slow_threshold > args.add_slow_threshold:
