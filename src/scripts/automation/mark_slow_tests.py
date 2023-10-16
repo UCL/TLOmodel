@@ -12,7 +12,6 @@ from typing import Dict, NamedTuple, Optional, Set, Tuple, Union
 
 import redbaron
 
-
 SLOW_MARK_DECORATOR = "pytest.mark.slow"
 
 
