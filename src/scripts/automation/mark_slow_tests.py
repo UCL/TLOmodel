@@ -107,6 +107,25 @@ def add_decorator(function_fst: redbaron.DefNode, decorator_code: str):
         function_fst.decorators.append(f"@{decorator_code}")
 
 
+def remove_decorator(
+    function_fst: redbaron.DefNode, decorator_fst: redbaron.DecoratorNode
+):
+    # Need to remove both decorator and associated end line node so we find index of
+    # decorator and pop it and next node (which should be end line node) rather than
+    # use remove method of decorators proxy list directly
+    decorator_index = function_fst.decorators.node_list.index(decorator_fst)
+    popped_decorator_fst = function_fst.decorators.node_list.pop(decorator_index)
+    endline_fst = function_fst.decorators.node_list.pop(decorator_index)
+    if popped_decorator_fst is not decorator_fst or not isinstance(
+        endline_fst, redbaron.EndlNode
+    ):
+        msg = (
+            f"Removed {popped_decorator_fst} and {endline_fst} when expecting "
+            f"{decorator_fst} and end line node."
+        )
+        raise RuntimeError(msg)
+
+
 def remove_mark_from_tests(
     module_fst: redbaron.RedBaron,
     tests_to_remove_mark: Set[TestNode],
@@ -116,13 +135,13 @@ def remove_mark_from_tests(
         if isinstance(test_node, TestFunction):
             function_fst = find_function(module_fst, test_node.name)
             decorator_fst = find_decorator(function_fst, mark_decorator)
-            function_fst.decorators.remove(decorator_fst)
+            remove_decorator(function_fst, decorator_fst)
         else:
             method_fst = find_class_method(
                 module_fst, test_node.class_name, test_node.method_name
             )
             decorator_fst = find_decorator(function_fst, mark_decorator)
-            method_fst.decorators.remove(decorator_fst)
+            remove_decorator(method_fst, decorator_fst)
 
 
 def add_mark_to_tests(
