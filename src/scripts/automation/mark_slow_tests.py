@@ -62,6 +62,7 @@ def parse_test_report(
     tests_to_change_slow_mark_by_module: defaultdict = defaultdict(
         lambda: {"add": set(), "remove": set()}
     )
+    tests_to_keep_slow_mark_by_module: defaultdict = defaultdict(set)
     for test in test_report["tests"]:
         if test["outcome"] != "passed":
             continue
@@ -76,6 +77,20 @@ def parse_test_report(
             tests_to_change_slow_mark_by_module[test_node.module_path]["add"].add(
                 test_node
             )
+        elif marked_slow:
+            tests_to_keep_slow_mark_by_module[test_node.module_path].add(test_node)
+    # Parameterized tests may have different call durations for different parameters
+    # however slow mark applies to all parameters, therefore if any tests appear in
+    # both set of tests to keep slow mark and test to remove slow mark (corresponding
+    # to runs of same test with different parameters) we remove them from the set of
+    # tests to remove slow mark
+    for (
+        module_path,
+        test_nodes_to_change,
+    ) in tests_to_change_slow_mark_by_module.items():
+        test_nodes_to_change["remove"].difference_update(
+            tests_to_keep_slow_mark_by_module[module_path]
+        )
     return dict(tests_to_change_slow_mark_by_module)
 
 
