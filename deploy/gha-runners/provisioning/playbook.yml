@@ -65,7 +65,7 @@
        mode: '1777'
 
    - name: run github actions runner role
-     with_sequence: count="{{ n_runners }}"
+     with_sequence: count="{{ n_runners | default(1) }}"
      include_role:
        name: monolithprojects.github_actions_runner
        apply:
