@@ -20,6 +20,7 @@ The following files are created:
 * 'ResourceFile_Birth_2018Census.csv': Not used currently
 * 'ResourceFile_Deaths_2018Census.csv': Not used currently
 * 'ResourceFile_Pop_Annual_age_sex_WPP2022': Not used currently (commented in analysis_all_calibration)
+* `ResourceFile_TotalBirths_WPP2022.csv`: Not used currently (commented in analysis_all_calibration)
 
 * `ResourceFile_Pop_DeathRates_WPP2019.csv`: Not used currently
 * `ResourceFile_Pop_age_sex_WPP2019.csv`: Not used currently
@@ -461,22 +462,23 @@ assert init_pop['Count'].sum() == pop_2010['Count'].sum()
 
 init_pop.to_csv(path_for_saved_files / 'ResourceFile_Population_2010.csv', index=False)
 
-# %% Fertility and births
+# %% Fertility and births WPP 2019: 5-years periods
 
-tot_births_file = workingfolder + '/WPP_2019/WPP2019_FERT_F01_BIRTHS_BOTH_SEXES.xlsx'
+tot_births_wpp19_file = workingfolder + '/WPP_2019/WPP2019_FERT_F01_BIRTHS_BOTH_SEXES.xlsx'
 
-tot_births = pd.concat([
-    pd.read_excel(tot_births_file, sheet_name='ESTIMATES', header=16),
-    pd.read_excel(tot_births_file, sheet_name='LOW VARIANT', header=16),
-    pd.read_excel(tot_births_file, sheet_name='MEDIUM VARIANT', header=16),
-    pd.read_excel(tot_births_file, sheet_name='HIGH VARIANT', header=16)
+tot_births_wpp19 = pd.concat([
+    pd.read_excel(tot_births_wpp19_file, sheet_name='ESTIMATES', header=16),
+    pd.read_excel(tot_births_wpp19_file, sheet_name='LOW VARIANT', header=16),
+    pd.read_excel(tot_births_wpp19_file, sheet_name='MEDIUM VARIANT', header=16),
+    pd.read_excel(tot_births_wpp19_file, sheet_name='HIGH VARIANT', header=16)
 ], sort=False)
 
-tot_births = tot_births.loc[tot_births[tot_births.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
-tot_births = tot_births.drop(tot_births.columns[[0, 2, 3, 4, 5, 6]], axis='columns')
+tot_births_wpp19 = \
+    tot_births_wpp19.loc[tot_births_wpp19[tot_births_wpp19.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
+tot_births_wpp19 = tot_births_wpp19.drop(tot_births_wpp19.columns[[0, 2, 3, 4, 5, 6]], axis='columns')
 
-tot_births = tot_births.melt(id_vars=['Variant'], var_name='Period', value_name='Total_Births').dropna()
-tot_births['Total_Births'] = 1000 * tot_births['Total_Births']  # Imported units are 1000's
+tot_births_wpp19 = tot_births_wpp19.melt(id_vars=['Variant'], var_name='Period', value_name='Total_Births').dropna()
+tot_births_wpp19['Total_Births'] = 1000 * tot_births_wpp19['Total_Births']  # Imported units are 1000's
 
 # Sex Ratio at Birth
 sex_ratio_file = workingfolder + '/WPP_2019/WPP2019_FERT_F02_SEX_RATIO_AT_BIRTH.xlsx'
@@ -493,27 +495,57 @@ sex_ratio = sex_ratio.melt(id_vars=['Variant'], var_name='Period', value_name='M
 # copy the medium variant sex ratio project for the low and high variants (in order to merge with the total births)
 copy_high = sex_ratio.loc[sex_ratio['Variant'] == 'Medium variant', ['Period', 'M_to_F_Sex_Ratio']].copy()
 copy_high['Variant'] = 'High variant'
-sex_ratio = sex_ratio.append(copy_high, sort=False)
+sex_ratio = pd.concat([sex_ratio, copy_high], sort=False)
 
 copy_low = sex_ratio.loc[sex_ratio['Variant'] == 'Medium variant', ['Period', 'M_to_F_Sex_Ratio']].copy()
 copy_low['Variant'] = 'Low variant'
-sex_ratio = sex_ratio.append(copy_low, sort=False)
+sex_ratio = pd.concat([sex_ratio, copy_low], sort=False)
 
 # Combine these together
-births = tot_births.merge(sex_ratio, on=['Variant', 'Period'], validate='1:1')
+births = tot_births_wpp19.merge(sex_ratio, on=['Variant', 'Period'], validate='1:1')
 
 
 def reformat_date_period_for_wpp(wpp_import):
     # Relabel the calendar periods to be the inclusive year range (2010-2014 instead of 2010-2015)
-    wpp_import['t_lo'], wpp_import['t_hi'] = wpp_import['Period'].str.split('-', 1).str
+    wpp_import['t_lo'] = wpp_import['Period'].str.split(pat='-', n=1, expand=True).loc[:, [0]]
+    wpp_import['t_hi'] = wpp_import['Period'].str.split(pat='-', n=1, expand=True).loc[:, [1]]
     wpp_import['t_hi'] = wpp_import['t_hi'].astype(int) - 1
     wpp_import['Period'] = wpp_import['t_lo'].astype(str) + '-' + wpp_import['t_hi'].astype(str)
     wpp_import.drop(columns=['t_lo', 't_hi'], inplace=True)
 
 
 reformat_date_period_for_wpp(births)
+births['Variant'] = 'WPP2019_' + births['Variant']
 
 births.to_csv(path_for_saved_files / 'ResourceFile_TotalBirths_WPP2019.csv', index=False)
+
+# %% Fertility and births WPP 2022: annual by single age of mother
+
+tot_births_wpp22_file = workingfolder + '/WPP_2022/WPP2022_FERT_F03_BIRTHS_BY_SINGLE_AGE_OF_MOTHER.xlsx'
+
+tot_births_wpp22 = pd.concat([
+    pd.read_excel(tot_births_wpp22_file, sheet_name='Estimates', header=16),
+    pd.read_excel(tot_births_wpp22_file, sheet_name='Low variant', header=16),
+    pd.read_excel(tot_births_wpp22_file, sheet_name='Medium variant', header=16),
+    pd.read_excel(tot_births_wpp22_file, sheet_name='High variant', header=16)
+], sort=False)
+
+tot_births_wpp22 = \
+    tot_births_wpp22.loc[tot_births_wpp22[tot_births_wpp22.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
+tot_births_wpp22 = tot_births_wpp22.drop(tot_births_wpp22.columns[[0, 2, 3, 4, 5, 6, 7, 8, 9]], axis='columns')
+
+tot_births_wpp22[tot_births_wpp22.columns[2:36]] = tot_births_wpp22[tot_births_wpp22.columns[2:36]] * 1000
+#                                                   # given numbers are in 1000's, so multiply by 1000 to give actual
+tot_births_wpp22 = tot_births_wpp22.rename(columns={tot_births_wpp22.columns[1]: 'Year'})
+
+tot_births_wpp22['Variant'] = 'WPP2022_' + tot_births_wpp22['Variant']
+tot_births_wpp22 = tot_births_wpp22.melt(id_vars=['Variant', 'Year'], value_name='Total_Births', var_name='Mother_Age')
+
+tot_births_wpp22['Period'] = tot_births_wpp22['Year'].map(calendar_period_lookup)
+(__tmp__, age_grp_lookup) = create_age_range_lookup(min_age=15, max_age=49, range_size=5)
+tot_births_wpp22['Mother_Age_Grp'] = tot_births_wpp22['Mother_Age'].astype(int).map(age_grp_lookup)
+
+tot_births_wpp22.to_csv(path_for_saved_files / 'ResourceFile_TotalBirths_WPP2022.csv', index=False)
 
 # Give Fraction of births that are male for each year for easy importing to demography module
 frac_birth_male = births.copy()
