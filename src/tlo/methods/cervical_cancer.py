@@ -132,8 +132,11 @@ class CervicalCancer(Module):
         "r_vaginal_bleeding_cc_stage1": Parameter(
             Types.REAL, "rate of vaginal bleeding if have stage 1 cervical cancer"
         ),
-        "rr_vaginal_bleeding_cc_stage2": Parameter(
-            Types.REAL, "rate ratio for vaginal bleeding if have stage 2 breast cancer"
+        "rr_vaginal_bleeding_cc_stage2a": Parameter(
+            Types.REAL, "rate ratio for vaginal bleeding if have stage 2a breast cancer"
+        ),
+        "rr_vaginal_bleeding_cc_stage2b": Parameter(
+            Types.REAL, "rate ratio for vaginal bleeding if have stage 2b breast cancer"
         ),
         "rr_vaginal_bleeding_cc_stage3": Parameter(
             Types.REAL, "rate ratio for vaginal bleeding if have stage 3 breast cancer"
@@ -144,10 +147,10 @@ class CervicalCancer(Module):
         "sensitivity_of_biopsy_for_cervical_cancer": Parameter(
             Types.REAL, "sensitivity of biopsy for diagnosis of cervical cancer"
         ),
-        "sensitivity_of_genexpert_for_hpv": Parameter(
-            Types.REAL, "sensitivity of genexpert for diagnosis of cervical cancer"
+        "sensitivity_of_xpert_for_hpv_cin_cc": Parameter(
+            Types.REAL, "sensitivity of xpert for presence of hpv, cin or cervical cancer"
         ),
-        "sensitivity_of_via_for_cin_cc_by_stage": Parameter(
+        "sensitivity_of_via_for_cin_cc": Parameter(
             Types.LIST, "sensitivity of via for cin and cervical cancer bu stage"
         )
     }
@@ -167,7 +170,18 @@ class CervicalCancer(Module):
             Types.DATE,
             "the date of diagnosis of cervical cancer (pd.NaT if never diagnosed)"
         ),
-
+        "ce_date_via": Property(
+            Types.DATE,
+            "the date of last visual inspection with acetic acid (pd.NaT if never diagnosed)"
+        ),
+        "ce_date_xpert": Property(
+            Types.DATE,
+            "the date of last hpv test using xpert (pd.NaT if never diagnosed)"
+        ),
+        "ce_date_cin_removal": Property(
+            Types.DATE,
+            "the date of last cin removal (pd.NaT if never diagnosed)"
+        ),
         "ce_date_treatment": Property(
             Types.DATE,
             "date of first receiving attempted curative treatment (pd.NaT if never started treatment)"
@@ -289,7 +303,7 @@ class CervicalCancer(Module):
         ever_diagnosed_cc.loc[~has_vaginal_bleeding_at_init] = False
 
         # For those that have been diagnosed, set data of diagnosis to today's date
-        df.loc[ever_diagnosedcc, "ce_date_diagnosis"] = self.sim.date
+        df.loc[ever_diagnosed_cc, "ce_date_diagnosis"] = self.sim.date
 
         # -------------------- ce_date_treatment -----------
 
@@ -464,84 +478,77 @@ class CervicalCancer(Module):
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
+        # Check that the dict labels are correct as these are used to set the value of ce_hpv_cc_status
+        assert set(lm).union({'none'}) == set(df.ce_hpv_cc_status.cat.categories)
 
-
-
-        # Check that the dict labels are correct as these are used to set the value of brc_status
-        assert set(lm).union({'none'}) == set(df.brc_status.cat.categories)
-
-        # Linear Model for the onset of breast_lump_discernible, in each 3 month period
-        # Create variables for used to predict the onset of discernible breast lumps at
+        # Linear Model for the onset of vaginal bleeding, in each 1 month period
+        # Create variables for used to predict the onset of vaginal bleeding at
         # various stages of the disease
-        stage1 = p['r_breast_lump_discernible_stage1']
-        stage2 = p['rr_breast_lump_discernible_stage2'] * p['r_breast_lump_discernible_stage1']
-        stage3 = p['rr_breast_lump_discernible_stage3'] * p['r_breast_lump_discernible_stage1']
-        stage4 = p['rr_breast_lump_discernible_stage4'] * p['r_breast_lump_discernible_stage1']
-        self.lm_onset_breast_lump_discernible = LinearModel.multiplicative(
+
+        stage1 = p['r_vaginal_bleeding_cc_stage1']
+        stage2a = p['rr_vaginal_bleeding_cc_stage2a'] * p['r_vaginal_bleeding_cc_stage1']
+        stage2b = p['rr_vaginal_bleeding_cc_stage2b'] * p['r_vaginal_bleeding_cc_stage1']
+        stage3 = p['rr_vaginal_bleeding_cc_stage3'] * p['r_vaginal_bleeding_cc_stage1']
+        stage4 = p['rr_vaginal_bleeding_cc_stage4'] * p['r_vaginal_bleeding_cc_stage1']
+
+# todo: do we need to restrict to women without pre-existing vaginal bleeding ?
+
+        self.lm_onset_vaginal_bleeding = LinearModel.multiplicative(
             Predictor(
-                'brc_status',
+                'ce_hpv_cc_status',
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True,
             )
             .when('stage1', stage1)
-            .when('stage2', stage2)
+            .when('stage2a', stage2a)
+            .when('stage2b', stage2b)
             .when('stage3', stage3)
             .when('stage4', stage4)
             .when('none', 0.0)
         )
 
         # ----- DX TESTS -----
-        # Create the diagnostic test representing the use of a biopsy to brc_status
-        # This properties of conditional on the test being done only to persons with the Symptom, 'breast_lump_
-        # discernible'.
-        # todo: depends on underlying stage not symptoms
-        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            biopsy_for_breast_cancer_given_breast_lump_discernible=DxTest(
-                property='brc_status',
-                sensitivity=self.parameters['sensitivity_of_biopsy_for_stage1_breast_cancer'],
-                target_categories=["stage1", "stage2", "stage3", "stage4"]
-            )
-        )
+        # Create the diagnostic test representing the use of a biopsy
+        # This properties of conditional on the test being done only to persons with the Symptom, 'vaginal_bleeding!
 
-        # todo: possibly un-comment out below when can discuss with Tim
-        """
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            biopsy_for_breast_cancer_stage2=DxTest(
-                property='brc_status',
-                sensitivity=self.parameters['sensitivity_of_biopsy_for_stage2_breast_cancer'],
-                target_categories=["stage1", "stage2", "stage3", "stage4"]
+            biopsy_for_cervical_cancer_given_vaginal_bleeding=DxTest(
+                property='ce_hpv_cc_status',
+                sensitivity=self.parameters['sensitivity_of_biopsy_for_cervical_cancer'],
+                target_categories=["stage1", "stage2A", "stage2B", "stage3", "stage4"]
             )
         )
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            biopsy_for_breast_cancer_stage3=DxTest(
-                property='brc_status',
-                sensitivity=self.parameters['sensitivity_of_biopsy_for_stage3_breast_cancer'],
-                target_categories=["stage1", "stage2", "stage3", "stage4"]
+            screening_with_via_for_hpv_and_cervical_cancer=DxTest(
+                property='ce_hpv_cc_status',
+                sensitivity=self.parameters['sensitivity_of_xpert_for_hpv_cin_cc'],
+                target_categories=["hpv", "stage1", "stage2A", "stage2B", "stage3", "stage4"]
             )
         )
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            biopsy_for_breast_cancer_stage4=DxTest(
-                property='brc_status',
-                sensitivity=self.parameters['sensitivity_of_biopsy_for_stage4_breast_cancer'],
-                target_categories=["stage1", "stage2", "stage3", "stage4"]
+            screening_with_xpert_for_hpv_and_cervical_cancer=DxTest(
+                property='ce_hpv_cc_status',
+                sensitivity=self.parameters['sensitivity_of_via_for_cin_cc'],
+                target_categories=["stage1", "stage2A", "stage2B", "stage3", "stage4"]
             )
         )
-        """
+
         # ----- DISABILITY-WEIGHT -----
         if "HealthBurden" in self.sim.modules:
             # For those with cancer (any stage prior to stage 4) and never treated
             self.daly_wts["stage_1_3"] = self.sim.modules["HealthBurden"].get_daly_weight(
+                # todo: review the sequlae numbers
                 sequlae_code=550
-                # "Diagnosis and primary therapy phase of esophageal cancer":
+                # "Diagnosis and primary therapy phase of cervical cancer":
                 #  "Cancer, diagnosis and primary therapy ","has pain, nausea, fatigue, weight loss and high anxiety."
             )
 
             # For those with cancer (any stage prior to stage 4) and has been treated
             self.daly_wts["stage_1_3_treated"] = self.sim.modules["HealthBurden"].get_daly_weight(
                 sequlae_code=547
-                # "Controlled phase of esophageal cancer,Generic uncomplicated disease":
+                # "Controlled phase of cervical cancer,Generic uncomplicated disease":
                 # "worry and daily medication,has a chronic disease that requires medication every day and causes some
                 #   worry but minimal interference with daily activities".
             )
@@ -549,7 +556,7 @@ class CervicalCancer(Module):
             # For those in stage 4: no palliative care
             self.daly_wts["stage4"] = self.sim.modules["HealthBurden"].get_daly_weight(
                 sequlae_code=549
-                # "Metastatic phase of esophageal cancer:
+                # "Metastatic phase of cervical cancer:
                 # "Cancer, metastatic","has severe pain, extreme fatigue, weight loss and high anxiety."
             )
 
