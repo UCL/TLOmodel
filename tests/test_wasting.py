@@ -21,9 +21,9 @@ from tlo.methods import (
 from tlo.methods.wasting import (
     AcuteMalnutritionDeathPollingEvent,
     ClinicalAcuteMalnutritionRecoveryEvent,
-    HSI_inpatient_care_for_complicated_SAM,
-    HSI_outpatient_therapeutic_programme_for_SAM,
-    HSI_supplementary_feeding_programme_for_MAM,
+    HSI_Wasting_InpatientCareForComplicated_SAM,
+    HSI_Wasting_OutpatientTherapeuticProgramme_SAM,
+    HSI_Wasting_SupplementaryFeedingProgramme_MAM,
     ProgressionSevereWastingEvent,
     SevereAcuteMalnutritionDeathEvent,
     UpdateToMAM,
@@ -36,6 +36,7 @@ resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
 # Default date for the start of simulations
 start_date = Date(2010, 1, 1)
+end_date = Date(2011, 1, 2)
 
 
 def get_sim(tmpdir):
@@ -317,7 +318,7 @@ def test_recovery_severe_wasting(tmpdir):
     assert pd.isnull(person['un_am_recovery_date'])
     assert pd.isnull(person['un_sam_death_date'])
 
-    # Run Death Polling Polling event to apply death:
+    # Run Death Polling event to apply death:
     death_polling = AcuteMalnutritionDeathPollingEvent(module=sim.modules['Wasting'])
     death_polling.apply(sim.population)
 
@@ -778,7 +779,7 @@ def test_use_of_HSI_for_MAM(tmpdir):
     assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
 
     # Run the HSI event
-    hsi = HSI_supplementary_feeding_programme_for_MAM(person_id=person_id, module=sim.modules['Wasting'])
+    hsi = HSI_Wasting_SupplementaryFeedingProgramme_MAM(person_id=person_id, module=sim.modules['Wasting'])
     hsi.run(squeeze_factor=0.0)
 
     # Check that person is now on treatment:
@@ -801,7 +802,7 @@ def test_use_of_HSI_for_MAM(tmpdir):
 
 
 def test_use_of_HSI_for_SAM(tmpdir):
-    """ Check that the HSI_outpatient_therapeutic_programme_for_SAM and HSI_inpatient_care_for_complicated_SAM work"""
+    """ Check that the HSI_Wasting_OutpatientTherapeuticProgramme_SAM and HSI_Wasting_InpatientCareForComplicated_SAM work"""
 
     def test_use_of_HSI_by_complication(complications):
         dur = pd.DateOffset(days=0)
@@ -890,10 +891,10 @@ def test_use_of_HSI_for_SAM(tmpdir):
 
         # Run the HSI event
         if complications:
-            hsi = HSI_inpatient_care_for_complicated_SAM(person_id=person_id, module=sim.modules['Wasting'])
+            hsi = HSI_Wasting_InpatientCareForComplicated_SAM(person_id=person_id, module=sim.modules['Wasting'])
             hsi.run(squeeze_factor=0.0)
         else:
-            hsi = HSI_outpatient_therapeutic_programme_for_SAM(person_id=person_id, module=sim.modules['Wasting'])
+            hsi = HSI_Wasting_OutpatientTherapeuticProgramme_SAM(person_id=person_id, module=sim.modules['Wasting'])
             hsi.run(squeeze_factor=0.0)
 
         # Check that person is now on treatment:
