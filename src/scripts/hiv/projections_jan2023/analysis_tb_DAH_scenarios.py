@@ -16,7 +16,7 @@ from tlo.analysis.utils import (
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
-    summarize,
+    summarize, parse_log_file,
 )
 
 resourcefilepath = Path("./resources")
@@ -398,10 +398,11 @@ print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healt
 # properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_persons.xlsx")
 
 HSEvents = log["tlo.methods.healthsystem.summary"]["HSI_Event"]
-HSEvents['TREATMENT_ID'] = HSEvents['TREATMENT_ID'].astype(str)
 HSEvents = HSEvents.set_index("date")
 print("Health system events as follows", HSEvents)
 HSEvents.to_excel(outputspath / "HSEvents.xlsx")
+
+
 
 # # Debugging steps
 # if 'TREATMENT_ID' in HSEvents.columns:
@@ -416,7 +417,7 @@ HSEvents.to_excel(outputspath / "HSEvents.xlsx")
 ## extracts number of people screened for TB by scenario
 TARGET_PERIOD = (Date(2010, 1, 1), Date(2033, 12, 31))
 def get_counts_of_hsi_by_treatment_id(_df):
-    """Get the counts of the short TREATMENT_IDs occurring"""
+    """Get the counts of the TREATMENT_IDs occurring"""
     _counts_by_treatment_id = _df \
         .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'TREATMENT_ID'] \
         .apply(pd.Series) \
@@ -435,11 +436,20 @@ counts_of_hsi_by_treatment_id = summarize(
         only_mean=True,
     )
 
-print("Count of TX_IDs as follows", counts_of_hsi_by_treatment_id.columns)
-counts_of_hsi_by_treatment_id.fillna(0.0).to_clipboard(excel=True)
+output = parse_log_file(Path("./outputs/Tb_DAH_impact_scenarios__2023-10-07T150628.log"))
+tb_df = output['tlo.methods.tb']
+tb_test_screening = get_counts_of_hsi_by_treatment_id(tb_df)
+print(tb_test_screening)
+print("Keys (columns) in counts_of_hsi_by_treatment_id:", counts_of_hsi_by_treatment_id.columns)
 
-tb_test_screening = counts_of_hsi_by_treatment_id.loc[counts_of_hsi_by_treatment_id['HSE_Events', 'TREATMENT_ID'] == "Tb_Test_Screening"]
+#print("Count of TX_IDs as follows", counts_of_hsi_by_treatment_id.columns)
+tb_test_screening = counts_of_hsi_by_treatment_id.loc[counts_of_hsi_by_treatment_id['TREATMENT_ID'] == "Tb_Test_Screening"]
+tb_test_screening.to_excel("outputspath/Tb_Test_Screening_results.xlsx")
+# counts_of_hsi_by_treatment_id.fillna(0.0).to_clipboard(excel=True)
+
+
 #tb_test_screening = counts_of_hsi_by_treatment_id[counts_of_hsi_by_treatment_id['TREATMENT_ID'] == "Tb_Test_Screening"]
+
 tb_test_screening.to_excel("outputspath/Tb_Test_Screening_results.xlsx")
 
 
