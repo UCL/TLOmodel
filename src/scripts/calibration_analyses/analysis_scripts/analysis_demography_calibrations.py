@@ -10,7 +10,7 @@ or
 src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py
 
 """
-
+import argparse
 from pathlib import Path
 
 import numpy as np
@@ -21,7 +21,6 @@ from matplotlib.ticker import FormatStrFormatter
 from tlo.analysis.utils import (
     extract_results,
     format_gbd,
-    get_scenario_outputs,
     make_age_grp_lookup,
     make_age_grp_types,
     make_calendar_period_lookup,
@@ -340,7 +339,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     wpp_births = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalBirths_WPP2019.csv")
     wpp_births = wpp_births.groupby(['Period', 'Variant'])['Total_Births'].sum().unstack()
     wpp_births.index = wpp_births.index.astype(make_calendar_period_type())
-    wpp_births.columns = 'WPP2019_' + wpp_births.columns
 
     # Make the WPP line connect to the 'medium variant' to make the lines look like they join up
     wpp_births['WPP2019_continuous'] = wpp_births['WPP2019_Estimates'].combine_first(wpp_births['WPP2019_Medium variant'])
@@ -377,9 +375,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             color=colors['Model'],
             ls='--'
         )
-        ax.fill_between(births_loc.index,
-                        births_loc['Model_lower'] / 1e6,
-                        births_loc['Model_upper'] / 1e6,
+        ax.fill_between((births_loc.index).to_numpy(),
+                        (births_loc['Model_lower'] / 1e6).to_numpy(),
+                        (births_loc['Model_upper'] / 1e6).to_numpy(),
                         facecolor=colors['Model'], alpha=0.2)
         plt.axvline(x='2020-2024', ls=':', color='gray')
         ax.plot(
@@ -388,9 +386,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             color=colors['WPP'],
             label='WPP (2019)'
         )
-        ax.fill_between(births_loc.index,
-                        births_loc['WPP2019_Low variant'] / 1e6,
-                        births_loc['WPP2019_High variant'] / 1e6,
+        ax.fill_between((births_loc.index).to_numpy(),
+                        (births_loc['WPP2019_Low variant'] / 1e6).to_numpy(),
+                        (births_loc['WPP2019_High variant'] / 1e6).to_numpy(),
                         facecolor=colors['WPP'], alpha=0.2)
         ax.legend(loc='upper left')
         plt.xticks(rotation=90)
@@ -793,11 +791,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 if __name__ == "__main__":
-    outputspath = Path('./outputs/tbh03@ic.ac.uk')
-    rfp = Path('./resources')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("results_folder", type=Path)
+    args = parser.parse_args()
 
-    # Find results folder (most recent run generated using that scenario_filename)
-    scenario_filename = 'long_run_all_diseases.py'
-    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
-
-    apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=rfp)
+    apply(
+        results_folder=args.results_folder,
+        output_folder=args.results_folder,
+        resourcefilepath=Path('./resources')
+    )
