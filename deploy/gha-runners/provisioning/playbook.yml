@@ -6,6 +6,7 @@
     github_account: UCL
     github_repo: TLOmodel
     runner_user: gha
+    runner_user_homedir: "/home/{{ runner_user }}"
     runner_workdir: /mnt/tlo
     python_version: "3.8"
     ## SSH hardening
@@ -21,7 +22,7 @@
      ansible.builtin.user:
        name: "{{ runner_user }}"
        create_home: yes
-       home: "/home/{{ runner_user }}"
+       home: "{{ runner_user_homedir }}"
        shell: /bin/bash
 
    - name: add deadsnakes ppa
@@ -44,12 +45,46 @@
          - git-lfs
        state: present
 
-   - name: "Point python3 to python{{ python_version }}"
+   - name: "Create {{ runner_user_homedir }}/bin directory"
      become: true
+     become_user: "{{ runner_user }}"
      ansible.builtin.file:
-       src: "python{{ python_version }}"
-       dest: /usr/bin/python3
+       path: "{{ runner_user_homedir }}/bin"
+       state: directory
+       mode: '0755'
+
+   # Note: we point `python3` to `python{{ python_version }}` only for the user
+   # `{{ runner_user }}` because doing that system-wide would make it impossible
+   # to reprovision a system, because the deadsnake PPA doesn't provide the
+   # `python3-apt` package for that version of Python, and this package is
+   # needed for the `apt_repository` module.
+   - name: "Symlink python3 to python{{ python_version }} for user {{ runner_user }}"
+     become: true
+     become_user: "{{ runner_user }}"
+     ansible.builtin.file:
+       src: "/usr/bin/python{{ python_version }}"
+       dest: "{{ runner_user_homedir }}/bin/python3"
        state: link
+
+   - name: "Check if PATH is already set in {{ runner_user_homedir }}/.bashrc"
+     become: true
+     become_user: "{{ runner_user }}"
+     lineinfile:
+       state: absent
+       path: "{{ runner_user_homedir }}/.bashrc"
+       regexp: '^\[\[ -d "\${HOME}/bin" \]\] && PATH="\${HOME}/bin:\${PATH}"'
+     check_mode: true
+     changed_when: false # This just makes things look prettier in the logs
+     register: check_path_bashrc
+
+   - name: "Add {{ runner_user_homedir }}/bin to PATH in {{ runner_user_homedir }}/.bashrc, if not already there"
+     become: true
+     become_user: "{{ runner_user }}"
+     lineinfile:
+       state: present
+       path: "{{ runner_user_homedir }}/.bashrc"
+       line: "[[ -d \"${HOME}/bin\" ]] && PATH=\"${HOME}/bin:${PATH}\""
+     when: check_path_bashrc.found == 0
 
    - name: install tox
      become: true
