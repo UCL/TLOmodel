@@ -436,7 +436,9 @@ counts_of_hsi_by_treatment_id = summarize(
         ).pipe(set_param_names_as_column_index_level_0),
         only_mean=True,
     )
-print(counts_of_hsi_by_treatment_id.columns)
+
+print("Count of TX_IDs as follows", counts_of_hsi_by_treatment_id.columns)
+counts_of_hsi_by_treatment_id.fillna(0.0).to_clipboard(excel=True)
 #all_treatment_ids = counts_of_hsi_by_treatment_id
 #all_treatment_ids.to_excel("outputspath/all_treatment_ids_results.xlsx")
 
