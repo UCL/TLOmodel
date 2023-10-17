@@ -404,38 +404,45 @@ HSEvents = HSEvents.set_index("date")
 print("Health system events as follows", HSEvents)
 HSEvents.to_excel(outputspath / "HSEvents.xlsx")
 
-# Debugging steps
-if 'TREATMENT_ID' in HSEvents.columns:
-    matching_rows = HSEvents[HSEvents['TREATMENT_ID'] == "Tb_Test_Screening"]
-    print(f"Number of rows where TREATMENT_ID equals 'Tb_Test_Screening': {len(matching_rows)}")
+# # Debugging steps
+# if 'TREATMENT_ID' in HSEvents.columns:
+#     matching_rows = HSEvents[HSEvents['TREATMENT_ID'] == "Tb_Test_Screening"]
+#     print(f"Number of rows where TREATMENT_ID equals 'Tb_Test_Screening': {len(matching_rows)}")
+#
+#     Tb_screening = HSEvents.loc[HSEvents['TREATMENT_ID'] == "Tb_Test_Screening"]
+#     Tb_screening.to_excel(outputspath / "Tb_screening.xlsx")
+# else:
+#     print("TREATMENT_ID column not found in HSEvents DataFrame.")
 
-    Tb_screening = HSEvents.loc[HSEvents['TREATMENT_ID'] == "Tb_Test_Screening"]
-    Tb_screening.to_excel(outputspath / "Tb_screening.xlsx")
-else:
-    print("TREATMENT_ID column not found in HSEvents DataFrame.")
-
-## extracts number of people screen for TB by scenario
-tb_screening= extract_results(
-        results_folder,
-        module="tlo.methods.healthsystem.summary",
-        key="HSI_Event",
-        column="TREATMENT_ID",
-        index="date",
-        do_scaling=True,
- )
-tb_screening = tb_screening.pipe(set_param_names_as_column_index_level_0)
-print(tb_screening)
-
-if 'TREATMENT_ID' in tb_screening.columns:
-    tb_screening = tb_screening.loc[tb_screening['TREATMENT_ID'] == "Tb_Test_Screening"]
-    tb_screening.to_excel(outputspath / "Tb_screening.xlsx")
-else:
-    print("TREATMENT_ID not found")
-
-# tb_screening = tb_screening.loc[tb_screening['TREATMENT_ID'] == "Tb_Test_Screening"]
-# tb_screening.to_excel(outputspath / "Tb_screening.xlsx")
+## extracts number of people screened for TB by scenario
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2033, 12, 31))
+def get_counts_of_hsi_by_treatment_id(_df):
+    """Get the counts of the short TREATMENT_IDs occurring"""
+    _counts_by_treatment_id = _df \
+        .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'TREATMENT_ID'] \
+        .apply(pd.Series) \
+        .sum() \
+        .astype(int)
+    return _counts_by_treatment_id.groupby(level=0).sum()
 
 
+counts_of_hsi_by_treatment_id = summarize(
+        extract_results(
+            results_folder,
+            module='tlo.methods.healthsystem.summary',
+            key='HSI_Event',
+            custom_generate_series=get_counts_of_hsi_by_treatment_id,
+            do_scaling=False,  # Counts of HSI shouldn't be scaled for this investigation
+        ).pipe(set_param_names_as_column_index_level_0),
+        only_mean=True,
+    )
+print(counts_of_hsi_by_treatment_id.columns)
+#all_treatment_ids = counts_of_hsi_by_treatment_id
+#all_treatment_ids.to_excel("outputspath/all_treatment_ids_results.xlsx")
+
+#Tb_test_screening = counts_of_hsi_by_treatment_id[counts_of_hsi_by_treatment_id['TREATMENT_ID'] == "Tb_Test_Screening"]
+tb_screening_summary = counts_of_hsi_by_treatment_id.loc[counts_of_hsi_by_treatment_id.TREATMENT_ID == "Tb_Test_Screening"]
+tb_screening_summary.to_excel("outputspath/Tb_Test_Screening_results.xlsx")
 
 # tb_screening.index = tb_screening.index.year
 # tb_screening_summary = tb_screening[tb_screening['TREATMENT_ID'] == 'Tb_Test_Screening']
@@ -451,11 +458,11 @@ else:
 #     ),
 #     do_scaling=True,
 # )
-tb_screening = tb_screening.reset_index()
+#tb_screening = tb_screening.reset_index()
 
 # summarise across runs
 #tb_screening_summary = tb_screening.loc[tb_screening.TREATMENT_ID == "Tb_Test_Screening"]
-tb_screening.to_excel(outputspath / "tb_screening.xlsx")
+#tb_screening.to_excel(outputspath / "tb_screening.xlsx")
 
 # tb_screeningOutreach = tb_screening.loc[tb_screening == "Tb_Test_ScreeningOutreach"]
 # tb_screeningOutreach.index = tb_screeningOutreach.index.year
