@@ -1,10 +1,10 @@
 ## Overview
 
-We use Github Actions self-hosted runners to run TLOmodel tests. 
-We have many end-to-end tests which take a long time to complete. 
-Using self-hosted runners means we do not use enterprise account credits and are able to manage the capacity ourselves. 
+We use GitHub Actions (GHA) self-hosted runners to run TLOmodel tests.
+We have many end-to-end tests which take a long time to complete.
+Using self-hosted runners means we do not use enterprise account credits and are able to manage the capacity ourselves.
 
-We've written Ansible playbooks, targeting Ubuntu 22.04 LTS (the latest LTS, at time of writing), to install the runners and set up the Python environment. 
+We've written Ansible playbooks, targeting Ubuntu 22.04 LTS (the latest LTS, at time of writing), to install the runners and set up the Python environment.
 The playbooks are used to install runners on Azure virtual machines.
 
 You'll also find a Vagrantfile allowing you to use [Vagrant](https://www.vagrantup.com/) to run a self-hosted runner on your own machine, which can be use for testing. The VM has two cores, and we setup two runners for each core to reflect how runners are deployed in live environment.
@@ -18,7 +18,7 @@ You can use Vagrant to create a virtual machine on your own machine for quick te
 - Fork TLOmodel to your personal account - this is where you'll register the runner.
 - Install Vagrant (requires VirtualBox).
 - Install Ansible
- 
+
 You can use conda environment for Ansible:
 
 ```sh
@@ -57,7 +57,7 @@ You do not need Vagrant, only install Ansible as explained in the above section 
 
 ## Run
 
-The runner requires a [GitHub personal access token](https://github.com/settings/tokens). Use "classic" token and select repo rights. 
+The runner requires a [GitHub personal access token](https://github.com/settings/tokens). Use "classic" token and select repo rights.
 
 Set the GitHub user account and repository where you want to setup the runner in `provisioning/playbook.yml`.
 By default we have
@@ -73,12 +73,26 @@ Then export the token before running Ansible playbook to install the runner:
 
 ```sh
 export PERSONAL_ACCESS_TOKEN=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
-ansible-playbook -i <hostname-or-ip-address>, -u azureuser provisioning/gha-runner.yml --extra-vars "n_runners=2"
+ansible-playbook -i <hostname-or-ip-address>, -u azureuser provisioning/gha-runner.yml
 ```
 
-where `n_runners` has to be set to the number of runners you want to install.
 The argument to `-i` can be either a comma-separated list of hosts where to run the playbook on (this list has to end with a command if you want to run the playbook on a single host, hosts can be specified by IP addresses or hosts names defined in your local SSH or network configurations) or the path to the Ansible inventory you need to access the virtual machine, either a local one or the remote Azure one.
 The argument to `-u` is the user of the machine where to run the playbook on, it can be empty if it is the same as the current user.
+
+There are some variables in the playbook that are intended to be [set at runtime](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html#defining-variables-at-runtime):
+
+* `n_runners`: the number of runners you want to install (default if not specified: `1`)
+* `extra_runner_labels`: the labels to add to the GHA runners, as a list of strings (default if not specified: `[]`)
+
+These variables can be set with the `--extra-vars` argument.
+Note that lists (such as `extra_runner_labels`) have to be set with the JSON format.
+Here are some examples:
+
+```sh
+ansible-playbook -i <hostname-or-ip-address>, -u azureuser provisioning/gha-runner.yml --extra-vars "n_runners=2" # Install 2 runners
+ansible-playbook -i <hostname-or-ip-address>, -u azureuser provisioning/gha-runner.yml --extra-vars '{"extra_runners_labels": ["dev"]}' # Install 1 runner with label "dev"
+ansible-playbook -i <hostname-or-ip-address>, -u azureuser provisioning/gha-runner.yml --extra-vars '{"n_runners": "8", "extra_runners_labels": ["ci"]}' # Install 8 runners with label "ci"
+```
 
 Once GHA runners have been installed, check they are running:
 

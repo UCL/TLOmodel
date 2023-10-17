@@ -109,6 +109,9 @@
        runner_dir: "/opt/actions-runner/{{ item }}"
        runner_name: "{{ ansible_hostname }}-{{ item }}"
        runner_extra_config_args: "--work {{ runner_workdir }}/{{ item }}/_work"
+       # Always use hostname as label, and any other label specified on the
+       # command line with `--extra-vars '{"extra_runners_labels": [...]}'`.
+       runner_labels: "{{ (extra_runners_labels | default([])) + [ansible_hostname] }}"
        reinstall_runner: no
 
   roles:
