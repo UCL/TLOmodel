@@ -18,6 +18,7 @@ from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
+from tlo.methods.hiv import Hiv
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -79,15 +80,43 @@ class CervicalCancer(Module):
         ),
         "r_vp_hpv": Parameter(
             Types.REAL,
-            "probabilty per 3 months of incident vaccine preventable hpv infection",
+            "probabilty per month of incident vaccine preventable hpv infection",
         ),
         "r_nvp_hpv": Parameter(
             Types.REAL,
-            "probabilty per 3 months of incident non-vaccine preventable hpv infection",
+            "probabilty per month of incident non-vaccine preventable hpv infection",
         ),
         "r_cin1_hpv": Parameter(
             Types.REAL,
-            "probabilty per 3 months of incident cin1 amongst people with hpv",
+            "probabilty per month of incident cin1 amongst people with hpv",
+        ),
+        "r_cin2_cin1": Parameter(
+            Types.REAL,
+            "probabilty per month of incident cin2 amongst people with cin1",
+        ),
+        "r_cin3_cin2": Parameter(
+            Types.REAL,
+            "probabilty per month of incident cin3 amongst people with cin2",
+        ),
+        "r_stage1_cin3": Parameter(
+            Types.REAL,
+            "probabilty per month of incident stage1 cervical cancer amongst people with cin3",
+        ),
+        "r_stage2a_stage1": Parameter(
+            Types.REAL,
+            "probabilty per month of incident stage2A cervical cancer amongst people with stage1",
+        ),
+        "r_stage2b_stage2a": Parameter(
+            Types.REAL,
+            "probabilty per month of incident stage2B cervical cancer amongst people with stage2A",
+        ),
+        "r_stage3_stage2b": Parameter(
+            Types.REAL,
+            "probabilty per month of incident stage3 cervical cancer amongst people with stage2B",
+        ),
+        "r_stage4_stage3": Parameter(
+            Types.REAL,
+            "probabilty per month of incident stage4 cervical cancer amongst people with stage3",
         ),
         "rr_progress_cc_hiv": Parameter(
             Types.REAL, "rate ratio for progressing through cin and cervical cancer stages if have unsuppressed hiv9"
@@ -300,9 +329,6 @@ class CervicalCancer(Module):
         df.loc[select_for_care, "ce_date_palliative_care"] = df.loc[select_for_care, "ce_date_diagnosis"]
 
 
-# todo: from here ....................................................
-
-
     def initialise_simulation(self, sim):
         """
         * Schedule the main polling event
@@ -315,58 +341,131 @@ class CervicalCancer(Module):
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
-        sim.schedule_event(BreastCancerLoggingEvent(self), sim.date + DateOffset(months=0))
+        sim.schedule_event(CervicalCancerLoggingEvent(self), sim.date + DateOffset(months=0))
 
         # ----- SCHEDULE MAIN POLLING EVENTS -----
         # Schedule main polling event to happen immediately
-        sim.schedule_event(BreastCancerMainPollingEvent(self), sim.date + DateOffset(months=1))
+        sim.schedule_event(CervicalCancerMainPollingEvent(self), sim.date + DateOffset(months=1))
 
         # ----- LINEAR MODELS -----
-        # Define LinearModels for the progression of cancer, in each 3 month period
-        # NB. The effect being produced is that treatment only has the effect for during the stage at which the
+        # Define LinearModels for the progression of cancer, in each 1 month period
+        # NB. The effect being produced is that treatment only has the effect in the stage at which the
         # treatment was received.
 
         df = sim.population.props
         p = self.parameters
-        lm = self.linear_models_for_progession_of_brc_status
+        lm = self.linear_models_for_progession_of_hpv_cc_status
+
+# todo: check this below
+
+        rate_hpv = 'r_nvp_hpv' + 'r_vp_hpv'
+#       prop_hpv_vp = 'r_vp_hpv' / rate_hpv
+
+        lm['hpv'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p[rate_hpv],
+            Predictor('sex').when('M', 0.0),
+            Predictor('ce_hpv_cc_status').when('none', 1.0).otherwise(0.0),
+            Predictor('hv_art', conditions_are_mutually_exclusive=True)
+            .when('not', p['rr_progress_cc_hiv'])
+            .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
+            .when('on_VL_suppressed', 1.0)
+        )
+
+        lm['cin1'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['r_cin1_hpv'],
+            Predictor('ce_hpv_cc_status').when('hpv', 1.0).otherwise(0.0),
+            Predictor('hv_art', conditions_are_mutually_exclusive=True)
+            .when('not', p['rr_progress_cc_hiv'])
+            .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
+            .when('on_VL_suppressed', 1.0)
+        )
+
+        lm['cin2'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['r_cin2_cin1'],
+            Predictor('ce_hpv_cc_status').when('cin1', 1.0).otherwise(0.0),
+            Predictor('hv_art', conditions_are_mutually_exclusive=True)
+            .when('not', p['rr_progress_cc_hiv'])
+            .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
+            .when('on_VL_suppressed', 1.0)
+        )
+
+        lm['cin3'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['r_cin3_cin2'],
+            Predictor('ce_hpv_cc_status').when('cin2', 1.0).otherwise(0.0),
+            Predictor('hv_art', conditions_are_mutually_exclusive=True)
+            .when('not', p['rr_progress_cc_hiv'])
+            .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
+            .when('on_VL_suppressed', 1.0)
+        )
 
         lm['stage1'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['r_stage1_none'],
-            Predictor('sex').when('M', 0.0),
-            Predictor('brc_status').when('none', 1.0).otherwise(0.0),
-            Predictor('age_years', conditions_are_mutually_exclusive=True)
-            .when('.between(0,14)', 0.0)
-            .when('.between(30,49)', p['rr_stage1_none_age3049'])
-            .when('.between(50,120)', p['rr_stage1_none_agege50'])
+            p['r_stage1_cin3'],
+            Predictor('ce_hpv_cc_status').when('cin3', 1.0).otherwise(0.0),
+            Predictor('hv_art', conditions_are_mutually_exclusive=True)
+            .when('not', p['rr_progress_cc_hiv'])
+            .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
+            .when('on_VL_suppressed', 1.0)
         )
 
-        lm['stage2'] = LinearModel(
+        lm['stage2a'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['r_stage2_stage1'],
+            p['r_stage2a_stage1'],
+            Predictor('ce_hpv_cc_status').when('stage1', 1.0).otherwise(0.0),
             Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_stage2_undergone_curative_treatment']),
-            Predictor('brc_status').when('stage1', 1.0).otherwise(0.0),
-            Predictor('brc_new_stage_this_month').when(True, 0.0).otherwise(1.0)
+                      external=True).when(True, p['rr_progression_cc_undergone_curative_treatment']),
+            Predictor('hv_art', conditions_are_mutually_exclusive=True)
+            .when('not', p['rr_progress_cc_hiv'])
+            .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
+            .when('on_VL_suppressed', 1.0),
+            Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
+        )
+
+        lm['stage2b'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['r_stage2b_stage2a'],
+            Predictor('ce_hpv_cc_status').when('stage2a', 1.0).otherwise(0.0),
+            Predictor('had_treatment_during_this_stage',
+                      external=True).when(True, p['rr_progression_cc_undergone_curative_treatment']),
+            Predictor('hv_art', conditions_are_mutually_exclusive=True)
+            .when('not', p['rr_progress_cc_hiv'])
+            .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
+            .when('on_VL_suppressed', 1.0),
+            Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         lm['stage3'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['r_stage3_stage2'],
+            p['r_stage3_stage2b'],
+            Predictor('ce_hpv_cc_status').when('stage2b', 1.0).otherwise(0.0),
             Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_stage3_undergone_curative_treatment']),
-            Predictor('brc_status').when('stage2', 1.0).otherwise(0.0),
-            Predictor('brc_new_stage_this_month').when(True, 0.0).otherwise(1.0)
+                      external=True).when(True, p['rr_progression_cc_undergone_curative_treatment']),
+            Predictor('hv_art', conditions_are_mutually_exclusive=True)
+            .when('not', p['rr_progress_cc_hiv'])
+            .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
+            .when('on_VL_suppressed', 1.0),
+            Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         lm['stage4'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['r_stage4_stage3'],
+            Predictor('ce_hpv_cc_status').when('stage3', 1.0).otherwise(0.0),
             Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_stage4_undergone_curative_treatment']),
-            Predictor('brc_status').when('stage3', 1.0).otherwise(0.0),
-            Predictor('brc_new_stage_this_month').when(True, 0.0).otherwise(1.0)
+                      external=True).when(True, p['rr_progression_cc_undergone_curative_treatment']),
+            Predictor('hv_art', conditions_are_mutually_exclusive=True)
+            .when('not', p['rr_progress_cc_hiv'])
+            .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
+            .when('on_VL_suppressed', 1.0),
+            Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
+
+
+
 
         # Check that the dict labels are correct as these are used to set the value of brc_status
         assert set(lm).union({'none'}) == set(df.brc_status.cat.categories)
