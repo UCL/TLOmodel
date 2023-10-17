@@ -425,7 +425,6 @@ def get_counts_of_hsi_by_treatment_id(_df):
         .astype(int)
     return _counts_by_treatment_id.groupby(level=0).sum()
 
-
 counts_of_hsi_by_treatment_id = summarize(
         extract_results(
             results_folder,
@@ -439,38 +438,13 @@ counts_of_hsi_by_treatment_id = summarize(
 
 print("Count of TX_IDs as follows", counts_of_hsi_by_treatment_id.columns)
 counts_of_hsi_by_treatment_id.fillna(0.0).to_clipboard(excel=True)
-#all_treatment_ids = counts_of_hsi_by_treatment_id
-#all_treatment_ids.to_excel("outputspath/all_treatment_ids_results.xlsx")
 
-#Tb_test_screening = counts_of_hsi_by_treatment_id[counts_of_hsi_by_treatment_id['TREATMENT_ID'] == "Tb_Test_Screening"]
-tb_screening_summary = counts_of_hsi_by_treatment_id.loc[counts_of_hsi_by_treatment_id.TREATMENT_ID == "Tb_Test_Screening"]
-tb_screening_summary.to_excel("outputspath/Tb_Test_Screening_results.xlsx")
+tb_test_screening = counts_of_hsi_by_treatment_id.loc[counts_of_hsi_by_treatment_id['TREATMENT_ID'] == "Tb_Test_Screening"]
+#tb_test_screening = counts_of_hsi_by_treatment_id[counts_of_hsi_by_treatment_id['TREATMENT_ID'] == "Tb_Test_Screening"]
+tb_test_screening.to_excel("outputspath/Tb_Test_Screening_results.xlsx")
 
-# tb_screening.index = tb_screening.index.year
-# tb_screening_summary = tb_screening[tb_screening['TREATMENT_ID'] == 'Tb_Test_Screening']
-# tb_screening_summary.to_excel(outputspath / "tb_screening_summary.xlsx", index=False)
 
-# tb_screening = extract_results(
-#     results_folder,
-#     module="tlo.methods.healthsystem.summary",
-#     key="HSI_Event",
-#     custom_generate_series=(
-#         lambda df: df.assign(year=df["date"].dt.year).groupby(
-#             ["year", "TREATMENT_ID"])["Tb_Test_Screening"].count()
-#     ),
-#     do_scaling=True,
-# )
-#tb_screening = tb_screening.reset_index()
-
-# summarise across runs
-#tb_screening_summary = tb_screening.loc[tb_screening.TREATMENT_ID == "Tb_Test_Screening"]
-#tb_screening.to_excel(outputspath / "tb_screening.xlsx")
-
-# tb_screeningOutreach = tb_screening.loc[tb_screening == "Tb_Test_ScreeningOutreach"]
-# tb_screeningOutreach.index = tb_screeningOutreach.index.year
-# tb_screeningOutreach.to_excel(outputspath / "tb_screeningOutreach.xlsx")
 ###### PLOTS##################################################
-
 # Calculate the sum of DALYs across years for each scenario
 baseline_total = dalys_summary.loc[:, ('Baseline', 'mean')].sum()
 No_Xpert_total = dalys_summary.loc[:, ('No Xpert Available', 'mean')].sum()
