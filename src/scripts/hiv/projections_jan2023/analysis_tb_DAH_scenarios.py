@@ -60,7 +60,6 @@ def set_param_names_as_column_index_level_0(_df):
 # %% Define parameter names
 param_names = get_parameter_names_from_scenario_file()
 print(param_names)
-
 def get_person_years(draw, run):
     log = load_pickled_dataframes(results_folder, draw, run)
     py_ = log["tlo.methods.demography"]["person_years"]
@@ -439,7 +438,7 @@ counts_of_hsi_by_treatment_id = summarize(
 print("Count of TX_IDs as follows", counts_of_hsi_by_treatment_id.columns)
 counts_of_hsi_by_treatment_id.fillna(0.0).to_clipboard(excel=True)
 
-tb_test_screening = counts_of_hsi_by_treatment_id.loc[counts_of_hsi_by_treatment_id['TREATMENT_ID'] == "Tb_Test_Screening"]
+tb_test_screening = counts_of_hsi_by_treatment_id.loc[counts_of_hsi_by_treatment_id['HSE_Events', 'TREATMENT_ID'] == "Tb_Test_Screening"]
 #tb_test_screening = counts_of_hsi_by_treatment_id[counts_of_hsi_by_treatment_id['TREATMENT_ID'] == "Tb_Test_Screening"]
 tb_test_screening.to_excel("outputspath/Tb_Test_Screening_results.xlsx")
 
