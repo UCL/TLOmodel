@@ -581,14 +581,19 @@ class CervicalCancer(Module):
         :param child_id: the new child
         """
         df = self.sim.population.props
-        df.at[child_id, "brc_status"] = "none"
-        df.at[child_id, "brc_date_diagnosis"] = pd.NaT
-        df.at[child_id, "brc_date_treatment"] = pd.NaT
-        df.at[child_id, "brc_stage_at_which_treatment_given"] = "none"
-        df.at[child_id, "brc_date_palliative_care"] = pd.NaT
-        df.at[child_id, "brc_new_stage_this_month"] = False
-        df.at[child_id, "brc_breast_lump_discernible_investigated"] = False
-        df.at[child_id, "brc_date_death"] = pd.NaT
+        df.at[child_id, "ce_hpv_cc_status"] = "none"
+        df.at[child_id, "ce_hpv_vp"] = False
+        df.at[child_id, "ce_date_treatment"] = pd.NaT
+        df.at[child_id, "ce_stage_at_which_treatment_given"] = "none"
+        df.at[child_id, "ce_date_diagnosis"] = pd.NaT
+        df.at[child_id, "ce_new_stage_this_month"] = False
+        df.at[child_id, "ce_vaginal_bleeding_investigated"] = False
+        df.at[child_id, "ce_date_palliative_care"] = pd.NaT
+        df.at[child_id, "ce_date_xpert"] = pd.NaT
+        df.at[child_id, "ce_date_via"] = pd.NaT
+        df.at[child_id, "ce_date_death"] = pd.NaT
+        df.at[child_id, "ce_date_cin_removal"] = pd.NaT
+        df.at[child_id, "ce_date_treatment"] = pd.NaT
 
     def on_hsi_alert(self, person_id, treatment_id):
         pass
@@ -605,11 +610,15 @@ class CervicalCancer(Module):
         # in the stage in which they were treated
         disability_series_for_alive_persons.loc[
             (
-                (df.brc_status == "stage1") |
-                (df.brc_status == "stage2") |
-                (df.brc_status == "stage3")
+                (df.ce_hpv_cc_status == "stage1") |
+                (df.ce_hpv_cc_status == "stage2A") |
+                (df.ce_hpv_cc_status == "stage2B") |
+                (df.ce_hpv_cc_status == "stage3")
             )
         ] = self.daly_wts['stage_1_3']
+
+# todo: from here..........................
+
 
         # Assign daly_wt to those with cancer stages before stage4 and who have been treated and who are still in the
         # stage in which they were treated.
