@@ -4,7 +4,7 @@
 
 NB. To see larger effects
 * Increase incidence of cancer (see tests)
-* Increase symptom onset (r_dysphagia_stage1)
+* Increase symptom onset
 * Increase progression rates (see tests)
 """
 
@@ -18,7 +18,7 @@ import pandas as pd
 from tlo import Date, Simulation
 from tlo.analysis.utils import make_age_grp_types, parse_log_file
 from tlo.methods import (
-    breast_cancer,
+    cervical_cancer,
     care_of_women_during_pregnancy,
     contraception,
     demography,
@@ -68,7 +68,7 @@ def run_sim(service_availability):
                  pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
                  postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
                  oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-                 breast_cancer.BreastCancer(resourcefilepath=resourcefilepath)
+                 cervical_cancer.CervicalCancer(resourcefilepath=resourcefilepath)
                  )
 
     # Establish the logger
@@ -85,7 +85,7 @@ def get_summary_stats(logfile):
     output = parse_log_file(logfile)
 
     # 1) TOTAL COUNTS BY STAGE OVER TIME
-    counts_by_stage = output['tlo.methods.breast_cancer']['summary_stats']
+    counts_by_stage = output['tlo.methods.cervical_cancer']['summary_stats']
     counts_by_stage['date'] = pd.to_datetime(counts_by_stage['date'])
     counts_by_stage = counts_by_stage.set_index('date', drop=True)
 
@@ -116,7 +116,7 @@ def get_summary_stats(logfile):
     deaths = output['tlo.methods.demography']['death']
     deaths['age_group'] = deaths['age'].map(demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_LOOKUP)
 
-    x = deaths.loc[deaths.cause == 'BreastCancer'].copy()
+    x = deaths.loc[deaths.cause == 'CervicalCancer'].copy()
     x['age_group'] = x['age_group'].astype(make_age_grp_types())
     breast_cancer_deaths = x.groupby(by=['age_group']).size()
 
@@ -131,7 +131,7 @@ def get_summary_stats(logfile):
         'counts_by_cascade': counts_by_cascade,
         'dalys': dalys,
         'deaths': deaths,
-        'breast_cancer_deaths': breast_cancer_deaths,
+        'cervical_cancer_deaths': cervical_cancer_deaths,
         'annual_count_of_dxtr': annual_count_of_dxtr
     }
 
@@ -150,10 +150,7 @@ results_no_healthsystem = get_summary_stats(logfile_no_healthsystem)
 
 # Examine Counts by Stage Over Time
 counts = results_no_healthsystem['total_counts_by_stage_over_time']
-counts.plot(y=['total_stage1', 'total_stage2',
-               'total_stage3',
-               'total_stage4'
-               ])
+counts.plot(y=['total_stage1', 'total_stage2a', 'total_stage2b', 'total_stage3', 'total_stage'])
 plt.title('Count in Each Stage of Disease Over Time')
 plt.xlabel('Time')
 plt.ylabel('Count')
@@ -176,7 +173,7 @@ plt.show()
 
 # Examine DALYS (summed over whole simulation)
 results_no_healthsystem['dalys'].plot.bar(
-    y=['YLD_BreastCancer_0', 'YLL_BreastCancer_BreastCancer'],
+    y=['YLD_CervicalCancer_0', 'YLL_CervicalCancer_CervicalCancer'],
     stacked=True)
 plt.xlabel('Age-group')
 plt.ylabel('DALYS')
@@ -185,7 +182,7 @@ plt.title("With No Health System")
 plt.show()
 
 # Examine Deaths (summed over whole simulation)
-deaths = results_no_healthsystem['breast_cancer_deaths']
+deaths = results_no_healthsystem['cervical_cancer_deaths']
 deaths.index = deaths.index.astype(make_age_grp_types())
 # # make a series with the right categories and zero so formats nicely in the grapsh:
 agegrps = demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_CATEGORIES
@@ -193,7 +190,7 @@ totdeaths = pd.Series(index=agegrps, data=np.nan)
 totdeaths.index = totdeaths.index.astype(make_age_grp_types())
 totdeaths = totdeaths.combine_first(deaths).fillna(0.0)
 totdeaths.plot.bar()
-plt.title('Deaths due to Breast Cancer')
+plt.title('Deaths due to Cervical Cancer')
 plt.xlabel('Age-group')
 plt.ylabel('Total Deaths During Simulation')
 # plt.gca().get_legend().remove()
@@ -201,13 +198,13 @@ plt.show()
 
 # Compare Deaths - with and without the healthsystem functioning - sum over age and time
 deaths = {
-    'No_HealthSystem': sum(results_no_healthsystem['breast_cancer_deaths']),
-    'With_HealthSystem': sum(results_with_healthsystem['breast_cancer_deaths'])
+    'No_HealthSystem': sum(results_no_healthsystem['cervical_cancer_deaths']),
+    'With_HealthSystem': sum(results_with_healthsystem['cervical_cancer_deaths'])
 }
 
 plt.bar(range(len(deaths)), list(deaths.values()), align='center')
 plt.xticks(range(len(deaths)), list(deaths.keys()))
-plt.title('Deaths due to Breast Cancer')
+plt.title('Deaths due to Cervical Cancer')
 plt.xlabel('Scenario')
 plt.ylabel('Total Deaths During Simulation')
 plt.show()
@@ -215,13 +212,13 @@ plt.show()
 
 # %% Get Statistics for Table in write-up (from results_with_healthsystem);
 
-# ** Current prevalence (end-2019) of people who have diagnosed breast cancer in 2020 (total; and current stage
-# 1, 2, 3,
-# 4), per 100,000 population aged 20+
+# ** Current prevalence (end-2019) of people who have diagnosed with cervical
+# cancer in 2020 (total; and current stage 1, 2, 3, 4), per 100,000 population aged 20+
 
 counts = results_with_healthsystem['total_counts_by_stage_over_time'][[
     'total_stage1',
-    'total_stage2',
+    'total_stage2a',
+    'total_stage2b',
     'total_stage3',
     'total_stage4'
 ]].iloc[-1]
@@ -229,18 +226,19 @@ counts = results_with_healthsystem['total_counts_by_stage_over_time'][[
 totpopsize = results_with_healthsystem['total_counts_by_stage_over_time'][[
     'total_none',
     'total_stage1',
-    'total_stage2',
+    'total_stage2a',
+    'total_stage2b',
     'total_stage3',
     'total_stage4'
 ]].iloc[-1].sum()
 
 prev_per_100k = 1e5 * counts.sum() / totpopsize
 
-# ** Number of deaths from breast cancer per year per 100,000 population.
+# ** Number of deaths from cervical cancer per year per 100,000 population.
 # average deaths per year = deaths over ten years divided by ten, * 100k/population size
-(results_with_healthsystem['breast_cancer_deaths'].sum()/10) * 1e5/popsize
+(results_with_healthsystem['cervical_cancer_deaths'].sum()/10) * 1e5/popsize
 
-# ** Incidence rate of diagnosis, treatment, palliative care for breast cancer (all stages combined),
+# ** Incidence rate of diagnosis, treatment, palliative care for cervical cancer (all stages combined),
 # per 100,000 population
 (results_with_healthsystem['annual_count_of_dxtr']).mean() * 1e5/popsize
 
