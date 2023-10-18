@@ -450,7 +450,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             plt.close(fig)
 
     plot_births(births_results, 2019)
-    # plot_births(births_results, 2022)
+    plot_births(births_results, 2022)
 
     # %% Describe patterns of contraceptive usage over time
 
