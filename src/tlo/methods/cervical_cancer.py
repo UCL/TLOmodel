@@ -160,11 +160,11 @@ class CervicalCancer(Module):
         "ce_hpv_cc_status": Property(
             Types.CATEGORICAL,
             "Current hpv / cervical cancer status",
-            categories=["none", "hpv", "stage1", "stage2A", "stage2B", "stage3", "stage4"],
+            categories=["none", "hpv", "cin1", "cin2", "cin3", "stage1", "stage2A", "stage2B", "stage3", "stage4"],
         ),
         "ce_hpv_vp": Property(
             Types.BOOL,
-            "if ce_hpv_cc_status = hov, is it vaccine preventable?"
+            "if ce_hpv_cc_status = hpv, is it vaccine preventable?"
         ),
         "ce_date_diagnosis": Property(
             Types.DATE,
@@ -617,31 +617,29 @@ class CervicalCancer(Module):
             )
         ] = self.daly_wts['stage_1_3']
 
-# todo: from here..........................
-
-
         # Assign daly_wt to those with cancer stages before stage4 and who have been treated and who are still in the
         # stage in which they were treated.
         disability_series_for_alive_persons.loc[
             (
-                ~pd.isnull(df.brc_date_treatment) & (
-                    (df.brc_status == "stage1") |
-                    (df.brc_status == "stage2") |
-                    (df.brc_status == "stage3")
-                ) & (df.brc_status == df.brc_stage_at_which_treatment_given)
+                ~pd.isnull(df.ce_date_treatment) & (
+                    (df.ce_hpv_cc_status == "stage1") |
+                    (df.ce_hpv_cc_status == "stage2A") |
+                    (df.ce_hpv_cc_status == "stage2B") |
+                    (df.ce_hpv_cc_status == "stage3")
+                ) & (df.ce_hpv_cc_status == df.ce_stage_at_which_treatment_given)
             )
         ] = self.daly_wts['stage_1_3_treated']
 
         # Assign daly_wt to those in stage4 cancer (who have not had palliative care)
         disability_series_for_alive_persons.loc[
-            (df.brc_status == "stage4") &
-            (pd.isnull(df.brc_date_palliative_care))
+            (df.ce_hpv_cc_status == "stage4") &
+            (pd.isnull(df.ce_date_palliative_care))
             ] = self.daly_wts['stage4']
 
         # Assign daly_wt to those in stage4 cancer, who have had palliative care
         disability_series_for_alive_persons.loc[
-            (df.brc_status == "stage4") &
-            (~pd.isnull(df.brc_date_palliative_care))
+            (df.ce_hpv_cc_status == "stage4") &
+            (~pd.isnull(df.ce_date_palliative_care))
             ] = self.daly_wts['stage4_palliative_care']
 
         return disability_series_for_alive_persons
@@ -651,43 +649,41 @@ class CervicalCancer(Module):
 #   DISEASE MODULE EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
+class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    Regular event that updates all breast cancer properties for population:
-    * Acquisition and progression of breast Cancer
-    * Symptom Development according to stage of breast Cancer
-    * Deaths from breast Cancer for those in stage4
+    Regular event that updates all cervical cancer properties for population:
+    * Acquisition and progression of hpv, cin, cervical cancer
+    * Symptom Development according to stage of cervical Cancer
+    * Deaths from cervical cancer for those in stage4
     """
 
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
-        # scheduled to run every 3 months: do not change as this is hard-wired into the values of all the parameters.
+        # scheduled to run every 1 month: do not change as this is hard-wired into the values of all the parameters.
 
     def apply(self, population):
         df = population.props  # shortcut to dataframe
         m = self.module
         rng = m.rng
 
-        # -------------------- ACQUISITION AND PROGRESSION OF CANCER (brc_status) -----------------------------------
+        # -------------------- ACQUISITION AND PROGRESSION OF CANCER (ce_hpv_cc_status) -----------------------------------
 
-        df.brc_new_stage_this_month = False
+        df.ce_new_stage_this_month = False
 
         # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
         #  reducing progression risk during the stage at which is received.
         had_treatment_during_this_stage = \
-            df.is_alive & ~pd.isnull(df.brc_date_treatment) & \
-            (df.brc_status == df.brc_stage_at_which_treatment_given)
+            df.is_alive & ~pd.isnull(df.ce_date_treatment) & \
+            (df.cc_hpv_cc_status == df.ce_stage_at_which_treatment_given)
 
-        for stage, lm in self.module.linear_models_for_progession_of_brc_status.items():
+        for stage, lm in self.module.linear_models_for_progession_of_hpv_cc_status.items():
             gets_new_stage = lm.predict(df.loc[df.is_alive], rng,
                                         had_treatment_during_this_stage=had_treatment_during_this_stage)
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
-            df.loc[idx_gets_new_stage, 'brc_status'] = stage
-            df.loc[idx_gets_new_stage, 'brc_new_stage_this_month'] = True
+            df.loc[idx_gets_new_stage, 'ce_hpv_cc_status'] = stage
+            df.loc[idx_gets_new_stage, 'ce_new_stage_this_month'] = True
 
-        # todo: people can move through more than one stage per month (this event runs every month)
-        # todo: I am guessing this is somehow a consequence of this way of looping through the stages
-        # todo: I imagine this issue is the same for bladder cancer and oesophageal cancer
+        # todo: consider that people can move through more than one stage per month (but probably this is OK)
 
         # -------------------- UPDATING OF SYMPTOM OF breast_lump_discernible OVER TIME --------------------------------
         # Each time this event is called (event 3 months) individuals may develop the symptom of breast_lump_
