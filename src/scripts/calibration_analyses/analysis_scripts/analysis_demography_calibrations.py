@@ -85,57 +85,82 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                           )
     pop_model.index = pop_model.index.year
 
-    # Load Data: WPP_Annual including age groups (but only WPP medium variant)
-    wpp_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_age_sex_WPP2019.csv")
-    wpp_ann['Age_Grp'] = wpp_ann['Age_Grp'].astype(make_age_grp_types())
+    def plot_pop_size(in_pop_model, wpp_year):
+        out_pop_model = in_pop_model.copy()
 
-    # Load Data: WPP_Annual incl. all WPP varints (but without age groups)
-    wpp_ann_total_by_sex = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_sex_WPP2019.csv")
-    wpp_ann_total = wpp_ann_total_by_sex.groupby(['Year', 'Variant'])['Count'].sum().unstack()
-    wpp_ann_total['WPP2019_continuous'] = \
-        wpp_ann_total['WPP2019_Estimates'].combine_first(wpp_ann_total['WPP2019_Medium variant'])
+        # Load Data: WPP_Annual incl. all varints
+        # (WPP 2019 with sex grops only but without age groups; WPP 2022 includes both sex and age groups)
+        if wpp_year == 2019:
+            wpp_ann_total_by_sex = pd.read_csv(
+                Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_sex_WPP2019.csv")
+            wpp_ann_total = wpp_ann_total_by_sex.groupby(['Year', 'Variant'])['Count'].sum().unstack()
+            wpp_ann_total['WPP2019_continuous'] = \
+                wpp_ann_total['WPP2019_Estimates'].combine_first(wpp_ann_total['WPP2019_Medium variant'])
+        elif wpp_year == 2022:
+            wpp2022_ann = \
+                pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_age_sex_WPP2022.csv")
+            wpp2022_ann['Age_Grp'] = wpp2022_ann['Age_Grp'].astype(make_age_grp_types())
+            wpp_ann_total = wpp2022_ann.groupby(['Year', 'Variant'])['Count'].sum().unstack()
+            wpp_ann_total['WPP2022_continuous'] = \
+                wpp_ann_total['WPP2022_Estimates'].combine_first(wpp_ann_total['WPP2022_Medium'])
 
-    # Load Data: Census
-    cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
-    cens['Age_Grp'] = cens['Age_Grp'].astype(make_age_grp_types())
-    cens_2018 = cens.groupby('Sex')['Count'].sum()
+        # Load Data: Census
+        cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
+        cens['Age_Grp'] = cens['Age_Grp'].astype(make_age_grp_types())
+        cens_2018 = cens.groupby('Sex')['Count'].sum()
 
-    # Plot population size over time
-    fig, ax = plt.subplots()
-    ax.plot(wpp_ann_total.index, wpp_ann_total['WPP2019_continuous'] / 1e6,
-            label='WPP (2019)', color=colors['WPP'])
-    ax.fill_between(wpp_ann_total.index,
-                    wpp_ann_total['WPP2019_Low variant'] / 1e6,
-                    wpp_ann_total['WPP2019_High variant'] / 1e6,
-                    facecolor=colors['WPP'], alpha=0.2)
-    ax.plot(2018.5, cens_2018.sum() / 1e6,
-            marker='o', markersize=10, linestyle='none', label='Census', zorder=10, color=colors['Census'])
-    ax.plot(pop_model.index, pop_model['mean'] / 1e6,
-            label='Model', color=colors['Model'], ls='--')
-    ax.fill_between(pop_model.index,
-                    pop_model['lower'] / 1e6,
-                    pop_model['upper'] / 1e6,
-                    color=colors['Model'],
-                    alpha=0.2,
-                    zorder=5
-                    )
-    plt.axvline(x=2023, ls=':', color='gray')
-    ax.set_title("Population Size 2010-2100")
-    ax.set_xlabel("Year")
-    ax.set_ylabel("Population Size (millions)")
-    ax.set_xlim(2010, 2100)
-    ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
-    ax.set_ylim(0, 95)
-    ax.legend(loc='lower right')
-    fig.tight_layout()
-    plt.savefig(make_graph_file_name("Pop_Over_Time_2010-2100"))
-    plt.show()
-    plt.close(fig)
+        # Plot population size over time
+        fig, ax = plt.subplots()
+        if wpp_year == 2019:
+            ax.plot(wpp_ann_total.index, wpp_ann_total['WPP2019_continuous'] / 1e6,
+                    label='WPP (2019)', color=colors['WPP'])
+            ax.fill_between(wpp_ann_total.index,
+                            wpp_ann_total['WPP2019_Low variant'] / 1e6,
+                            wpp_ann_total['WPP2019_High variant'] / 1e6,
+                            facecolor=colors['WPP'], alpha=0.2)
+            plt.axvline(x=2023, ls=':', color='gray')
+        elif wpp_year == 2022:
+            ax.plot(wpp_ann_total.index, wpp_ann_total['WPP2022_continuous'] / 1e6,
+                    label='WPP (2022)', color=colors['WPP'])
+            ax.fill_between(wpp_ann_total.index,
+                            wpp_ann_total['WPP2022_Low'] / 1e6,
+                            wpp_ann_total['WPP2022_High'] / 1e6,
+                            facecolor=colors['WPP'], alpha=0.2)
+            # plt.axvline(x=2023, ls=':', color='gray')
+
+        ax.plot(2018.5, cens_2018.sum() / 1e6,
+                marker='o', markersize=10, linestyle='none', label='Census', zorder=10, color=colors['Census'])
+        ax.plot(pop_model.index, pop_model['mean'] / 1e6,
+                label='Model', color=colors['Model'])  # , ls='--') # add for sims with FP interventions
+        ax.fill_between(pop_model.index,
+                        pop_model['lower'] / 1e6,
+                        pop_model['upper'] / 1e6,
+                        color=colors['Model'],
+                        alpha=0.2,
+                        zorder=5
+                        )
+        ax.set_title("Population Size 2010-2100")
+        ax.set_xlabel("Year")
+        ax.set_ylabel("Population Size (millions)")
+        ax.set_xlim(2010, 2100)
+        ax.xaxis.set_major_formatter(FormatStrFormatter('%.0f'))
+        ax.set_ylim(0, 95)
+        ax.legend(loc='lower right')
+        fig.tight_layout()
+        plt.savefig(make_graph_file_name("Pop_Over_Time_2010-2100_WPP" + str(wpp_year)))
+        plt.show()
+        plt.close(fig)
+
+    plot_pop_size(pop_model, 2019)
+    # plot_pop_size(pop_model, 2022)
 
     # 2) Population Size in 2018 (broken down by Male and Female)
 
+    # Load Data: WPP2019_Annual incl. age groups (WPP 2019 only includes medium variant)
+    wpp19_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_age_sex_WPP2019.csv")
+
     # Census vs WPP vs Model
-    wpp_2018 = wpp_ann.groupby(['Year', 'Sex'])['Count'].sum()[2018]
+    wpp_2018 = wpp19_ann.groupby(['Year', 'Sex'])['Count'].sum()[2018]
 
     # Get Model totals for males and females in 2018 (with scaling factor)
     pop_model_male = summarize(extract_results(results_folder,
@@ -285,7 +310,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     for year in [2010, 2015, 2018, 2029, 2049, 2050]:
         try:
             # Get WPP data:
-            wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
+            wpp_thisyr = wpp19_ann.loc[wpp19_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
 
             pops = dict()
             for sex in ['M', 'F']:
