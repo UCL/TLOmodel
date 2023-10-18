@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
+from matplotlib.ticker import MaxNLocator
 
 from tlo.analysis.utils import (
     extract_results,
@@ -325,82 +326,131 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         do_scaling=True
     )
 
-    # Aggregate the model outputs into five year periods:
-    calperiods, calperiodlookup = make_calendar_period_lookup()
-    births_results.index = births_results.index.map(calperiodlookup).astype(make_calendar_period_type())
-    births_results = births_results.groupby(by=births_results.index).sum()
-    births_results = births_results.replace({0: np.nan})
+    def plot_births(in_births_results, wpp_year):
+        out_births_results = in_births_results.copy()
+        if wpp_year == 2019:
+            # Aggregate the model outputs into five-year periods:
+            calperiods, calperiodlookup = make_calendar_period_lookup()
+            out_births_results.index = out_births_results.index.map(calperiodlookup).astype(make_calendar_period_type())
+            out_births_results = out_births_results.groupby(by=out_births_results.index).sum()
+            out_births_results = out_births_results.replace({0: np.nan})
 
-    # Produce summary of results:
-    births_model = summarize(births_results, collapse_columns=True)
-    births_model.columns = ['Model_' + col for col in births_model.columns]
+        # Produce summary of results:
+        births_model = summarize(out_births_results, collapse_columns=True)
+        births_model.columns = ['Model_' + col for col in births_model.columns]
 
-    # Births over time (WPP)
-    wpp_births = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalBirths_WPP2019.csv")
-    wpp_births = wpp_births.groupby(['Period', 'Variant'])['Total_Births'].sum().unstack()
-    wpp_births.index = wpp_births.index.astype(make_calendar_period_type())
+        # Births over time (WPP)
+        def process_wpp_births(in_wpp_births, in_wpp_year):
+            if in_wpp_year == 2019:
+                in_wpp_births = in_wpp_births.groupby(['Period', 'Variant'])['Total_Births'].sum().unstack()
+                in_wpp_births.index = in_wpp_births.index.astype(make_calendar_period_type())
+                # Make the WPP line connect to the 'medium variant' to make the lines look like they join up
+                in_wpp_births['WPP2019_continuous'] = in_wpp_births['WPP2019_Estimates'].combine_first(
+                    in_wpp_births['WPP2019_Medium variant'])
+            elif in_wpp_year == 2022:
+                in_wpp_births['Year'] = in_wpp_births['Year'].astype(int)
+                in_wpp_births = in_wpp_births.groupby(['Year', 'Variant'])['Total_Births'].sum().unstack()
+                # Make the WPP line connect to the 'medium variant' to make the lines look like they join up
+                in_wpp_births['WPP2022_continuous'] = in_wpp_births['WPP2022_Estimates'].combine_first(
+                    in_wpp_births['WPP2022_Medium'])
 
-    # Make the WPP line connect to the 'medium variant' to make the lines look like they join up
-    wpp_births['WPP2019_continuous'] = wpp_births['WPP2019_Estimates'].combine_first(wpp_births['WPP2019_Medium variant'])
+            return in_wpp_births
 
-    # Births in 2018 Census
-    cens_births = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Births_2018Census.csv")
-    cens_births_per_5y_per = cens_births['Count'].sum() * 5
+        if wpp_year == 2019:
+            wpp_births = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalBirths_WPP2019.csv")
+        elif wpp_year == 2022:
+            wpp_births = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalBirths_WPP2022.csv")
+        wpp_births = process_wpp_births(wpp_births, wpp_year)
 
-    # Merge in model results
-    births = wpp_births.merge(births_model, right_index=True, left_index=True, how='left')
-    births['Census'] = np.nan
-    births.at[cens['Period'][0], 'Census'] = cens_births_per_5y_per
+        # Births in 2018 Census
+        cens_births = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Births_2018Census.csv")
+        cens_births_annual = cens_births['Count'].sum()
+        cens_births_per_5y_per = cens_births_annual * 5
 
-    # Create a variety of time periods for the plot
-    time_period = {
-        '1950-2099': births.index,
-        '2010-2029': [(2010 <= int(x[0])) & (int(x[1]) < 2030) for x in births.index.str.split('-')],
-        '2010-2049': [(2010 <= int(x[0])) & (int(x[1]) < 2050) for x in births.index.str.split('-')]
-    }
+        # Merge in model results and census & Create a variety of time periods for the plot
+        births = wpp_births.merge(births_model, right_index=True, left_index=True, how='left')
+        births['Census'] = np.nan
+        if wpp_year == 2019:
+            births.at[cens['Period'][0], 'Census'] = cens_births_per_5y_per
+            time_period = {
+                '1950-2099': births.index,
+                '2010-2029': [(2010 <= int(x[0])) & (int(x[1]) < 2030) for x in births.index.str.split('-')],
+                '2010-2049': [(2010 <= int(x[0])) & (int(x[1]) < 2050) for x in births.index.str.split('-')]
+            }
+        elif wpp_year == 2022:
+            births.at[cens['Year'][0], 'Census'] = cens_births_annual
+            time_period = {
+                '1950-2100': births.index,
+                '2010-2030': [(2010 <= x & x <= 2030) for x in births.index],
+                '2010-2050': [(2010 <= x & x <= 2050) for x in births.index]
+            }
 
-    # Plot:
-    for tp in time_period:
-        births_loc = births.loc[time_period[tp]]
-        fig, ax = plt.subplots()
-        ax.plot()
-        ax.plot(
-            births_loc.index,
-            births_loc['Census'] / 1e6,
-            linestyle='none', marker='o', markersize=10, label='Census', zorder=10, color=colors['Census'])
-        ax.plot(
-            births_loc.index,
-            births_loc['Model_mean'] / 1e6,
-            label='Model',
-            color=colors['Model'],
-            ls='--'
-        )
-        ax.fill_between((births_loc.index).to_numpy(),
-                        (births_loc['Model_lower'] / 1e6).to_numpy(),
-                        (births_loc['Model_upper'] / 1e6).to_numpy(),
-                        facecolor=colors['Model'], alpha=0.2)
-        plt.axvline(x='2020-2024', ls=':', color='gray')
-        ax.plot(
-            births_loc.index,
-            births_loc['WPP2019_continuous'] / 1e6,
-            color=colors['WPP'],
-            label='WPP (2019)'
-        )
-        ax.fill_between((births_loc.index).to_numpy(),
-                        (births_loc['WPP2019_Low variant'] / 1e6).to_numpy(),
-                        (births_loc['WPP2019_High variant'] / 1e6).to_numpy(),
-                        facecolor=colors['WPP'], alpha=0.2)
-        ax.legend(loc='upper left')
-        plt.xticks(rotation=90)
-        ax.set_title(f"Number of Births {tp}")
-        ax.set_xlabel('Calendar Period')
-        ax.set_ylabel('Births per period (millions)')
-        ax.set_ylim(0, 8.15)
-        plt.xticks(np.arange(len(births_loc.index)), births_loc.index)
-        plt.tight_layout()
-        plt.savefig(make_graph_file_name(f"Births_Over_Time_{tp}"))
-        plt.show()
-        plt.close(fig)
+        # Plot:
+        for tp in time_period:
+            births_loc = births.loc[time_period[tp]]
+            fig, ax = plt.subplots()
+            ax.plot()
+            ax.plot(
+                births_loc.index,
+                births_loc['Census'] / 1e6,
+                linestyle='none', marker='o', markersize=10, label='Census', zorder=10, color=colors['Census']
+            )
+            ax.plot(
+                births_loc.index,
+                births_loc['Model_mean'] / 1e6,
+                label='Model',
+                color=colors['Model'],
+                # ls='--' # use for sims with FP interventions
+            )
+            ax.fill_between((births_loc.index).to_numpy(),
+                            (births_loc['Model_lower'] / 1e6).to_numpy(),
+                            (births_loc['Model_upper'] / 1e6).to_numpy(),
+                            facecolor=colors['Model'], alpha=0.2)
+            if wpp_year == 2019:
+                plt.axvline(x='2020-2024', ls=':', color='gray')
+                ax.plot(
+                    births_loc.index,
+                    births_loc['WPP2019_continuous'] / 1e6,
+                    color=colors['WPP'],
+                    label='WPP (2019)'
+                )
+                ax.fill_between((births_loc.index).to_numpy(),
+                                (births_loc['WPP2019_Low variant'] / 1e6).to_numpy(),
+                                (births_loc['WPP2019_High variant'] / 1e6).to_numpy(),
+                                facecolor=colors['WPP'], alpha=0.2)
+                ax.set_xlabel('Calendar Period')
+                ax.set_ylim(0, 8.15)
+                ax.set_ylabel('Births per period (millions)')
+                plt.xticks(rotation=90)
+                plt.xticks(np.arange(len(births_loc.index)), births_loc.index)
+            elif wpp_year == 2022:
+                # plt.axvline(x=2023, ls=':', color='gray')
+                ax.plot(
+                    births_loc.index,
+                    births_loc['WPP2022_continuous'] / 1e6,
+                    color=colors['WPP'],
+                    label='WPP (2022)'
+                )
+                ax.fill_between((births_loc.index).to_numpy(),
+                                (births_loc['WPP2022_Low'] / 1e6).to_numpy(),
+                                (births_loc['WPP2022_High'] / 1e6).to_numpy(),
+                                facecolor=colors['WPP'], alpha=0.2)
+                ax.set_xlabel('Year')
+                ax.set_ylabel('Births per year (millions)')
+                # Display 6 values of years on axis x, incl. first and last year
+                ax = plt.gca()
+                ax.set_xlim(births_loc.index[0], births_loc.index[-1])
+                step = max(1, len(births_loc) // (6 - 1))
+                ax.set_xticks(births_loc.index[::step])
+            ax.legend(loc='upper left')
+            ax.set_title(f"Number of Births {tp}")
+            plt.tight_layout()
+            plt.savefig(make_graph_file_name(f"Births_Over_Time_{tp}_WPP_{wpp_year}"))
+            plt.show()
+            plt.close(fig)
+
+    plot_births(births_results, 2019)
+    # plot_births(births_results, 2022)
 
     # %% Describe patterns of contraceptive usage over time
 
