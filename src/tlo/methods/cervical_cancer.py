@@ -676,6 +676,8 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.is_alive & ~pd.isnull(df.ce_date_treatment) & \
             (df.cc_hpv_cc_status == df.ce_stage_at_which_treatment_given)
 
+# todo: still need to derive the lm to make this work
+
         for stage, lm in self.module.linear_models_for_progession_of_hpv_cc_status.items():
             gets_new_stage = lm.predict(df.loc[df.is_alive], rng,
                                         had_treatment_during_this_stage=had_treatment_during_this_stage)
@@ -685,50 +687,51 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # todo: consider that people can move through more than one stage per month (but probably this is OK)
 
-        # -------------------- UPDATING OF SYMPTOM OF breast_lump_discernible OVER TIME --------------------------------
-        # Each time this event is called (event 3 months) individuals may develop the symptom of breast_lump_
-        # discernible.
-        # Once the symptom is developed it never resolves naturally. It may trigger health-care-seeking behaviour.
-        onset_breast_lump_discernible = self.module.lm_onset_breast_lump_discernible.predict(df.loc[df.is_alive], rng)
+        # -------------------- UPDATING OF SYMPTOM OF vaginal bleeding OVER TIME --------------------------------
+        # Each time this event is called (every month) individuals with cervical cancer may develop the symptom of
+        # vaginal bleeding.  Once the symptom is developed it never resolves naturally. It may trigger
+        # health-care-seeking behaviour.
+        onset_vaginal_bleeding = self.module.lm_onset_vaginal_bleeding.predict(df.loc[df.is_alive], rng)
         self.sim.modules['SymptomManager'].change_symptom(
-            person_id=onset_breast_lump_discernible[onset_breast_lump_discernible].index.tolist(),
-            symptom_string='breast_lump_discernible',
+            person_id=onset_vaginal_bleeding[onset_vaginal_bleeding].index.tolist(),
+            symptom_string='vaginal bleeding',
             add_or_remove='+',
             disease_module=self.module
         )
 
-        # -------------------- DEATH FROM breast CANCER ---------------------------------------
+        # -------------------- DEATH FROM cervical CANCER ---------------------------------------
         # There is a risk of death for those in stage4 only. Death is assumed to go instantly.
-        stage4_idx = df.index[df.is_alive & (df.brc_status == "stage4")]
+        stage4_idx = df.index[df.is_alive & (df.ce_hpv_cc_status == "stage4")]
         selected_to_die = stage4_idx[
-            rng.random_sample(size=len(stage4_idx)) < self.module.parameters['r_death_breast_cancer']]
+            rng.random_sample(size=len(stage4_idx)) < self.module.parameters['r_death_cervical_cancer']]
 
         for person_id in selected_to_die:
             self.sim.schedule_event(
-                InstantaneousDeath(self.module, person_id, "BreastCancer"), self.sim.date
+                InstantaneousDeath(self.module, person_id, "CervicalCancer"), self.sim.date
             )
-            df.loc[selected_to_die, 'brc_date_death'] = self.sim.date
+            df.loc[selected_to_die, 'ce_date_death'] = self.sim.date
 
-    # ---------------------------------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------------------------------
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
 
-class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event, IndividualScopeEventMixin):
+class HSI_CervicalCancer_Investigation_Following_vaginal_bleeding(HSI_Event, IndividualScopeEventMixin):
     """
     This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom
-    breast_lump_discernible.
-    This event begins the investigation that may result in diagnosis of breast Cancer and the scheduling of
+    vaginal bleeding.
+    This event begins the investigation that may result in diagnosis of cervical Cancer and the scheduling of
     treatment or palliative care.
-    It is for people with the symptom breast_lump_discernible.
+    It is for people with the symptom vaginal_bleeding.
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "BreastCancer_Investigation"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "Mammography": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '3'  # Mammography only available at level 3 and above.
+        self.TREATMENT_ID = "VaginalBleeding_Investigation"
+        # todo: check on availability of biopsy
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "Biopsy": 1})
+        self.ACCEPTED_FACILITY_LEVEL = '3'
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -738,35 +741,35 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Check that this event has been called for someone with the symptom breast_lump_discernible
-        assert 'breast_lump_discernible' in self.sim.modules['SymptomManager'].has_what(person_id)
+        # Check that this event has been called for someone with the symptom vaginal_bleeding
+        assert 'vaginal_bleeding' in self.sim.modules['SymptomManager'].has_what(person_id)
 
         # If the person is already diagnosed, then take no action:
-        if not pd.isnull(df.at[person_id, "brc_date_diagnosis"]):
+        if not pd.isnull(df.at[person_id, "ce_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
-        df.brc_breast_lump_discernible_investigated = True
+        df.ce_vaginal_bleeding_investigated = True
 
-        # Use a biopsy to diagnose whether the person has breast Cancer:
+        # Use a biopsy to diagnose whether the person has cervical cancer
         # todo: request consumables needed for this
 
         dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='biopsy_for_breast_cancer_given_breast_lump_discernible',
+            dx_tests_to_run='biopsy_for_cervical_cancer_given_vaginal_bleeding',
             hsi_event=self
         )
 
         if dx_result:
             # record date of diagnosis:
-            df.at[person_id, 'brc_date_diagnosis'] = self.sim.date
+            df.at[person_id, 'ce_date_diagnosis'] = self.sim.date
 
             # Check if is in stage4:
-            in_stage4 = df.at[person_id, 'brc_status'] == 'stage4'
+            in_stage4 = df.at[person_id, 'ce_hpv_cc_status'] == 'stage4'
             # If the diagnosis does detect cancer, it is assumed that the classification as stage4 is made accurately.
 
             if not in_stage4:
                 # start treatment:
                 hs.schedule_hsi_event(
-                    hsi_event=HSI_BreastCancer_StartTreatment(
+                    hsi_event=HSI_CervicalCancer_StartTreatment(
                         module=self.module,
                         person_id=person_id
                     ),
@@ -778,7 +781,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
             else:
                 # start palliative care:
                 hs.schedule_hsi_event(
-                    hsi_event=HSI_BreastCancer_PalliativeCare(
+                    hsi_event=HSI_CervicalCancer_PalliativeCare(
                         module=self.module,
                         person_id=person_id
                     ),
@@ -792,17 +795,17 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
 #   todo: though the symptom remains we don't want to keep repeating the HSI which triggers the diagnostic test
 
 
-class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
+class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_BreastCancer_Investigation_Following_breast_lump_discernible following a diagnosis of
-    breast Cancer. It initiates the treatment of breast Cancer.
+    This event is scheduled by HSI_CervicalCancer_Investigation_Following_vaginal_bleeding following a diagnosis of
+    cervical Cancer. It initiates the treatment of cervical Cancer.
     It is only for persons with a cancer that is not in stage4 and who have been diagnosed.
     """
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "BreastCancer_Treatment"
+        self.TREATMENT_ID = "CervicalCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
@@ -817,12 +820,12 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             return hs.get_blank_appt_footprint()
 
         # If the status is already in `stage4`, start palliative care (instead of treatment)
-        if df.at[person_id, "brc_status"] == 'stage4':
-            logger.warning(key="warning", data="Cancer is in stage 4 - aborting HSI_breastCancer_StartTreatment,"
-                                               "scheduling HSI_BreastCancer_PalliativeCare")
+        if df.at[person_id, "ce_hpv_cc_status"] == 'stage4':
+            logger.warning(key="warning", data="Cancer is in stage 4 - aborting HSI_CervicalCancer_StartTreatment,"
+                                               "scheduling HSI_CervicalCancer_PalliativeCare")
 
             hs.schedule_hsi_event(
-                hsi_event=HSI_BreastCancer_PalliativeCare(
+                hsi_event=HSI_CervicalCancer_PalliativeCare(
                      module=self.module,
                      person_id=person_id,
                 ),
@@ -833,31 +836,36 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({})
 
         # Check that the person has been diagnosed and is not on treatment
-        assert not df.at[person_id, "brc_status"] == 'none'
-        assert not df.at[person_id, "brc_status"] == 'stage4'
-        assert not pd.isnull(df.at[person_id, "brc_date_diagnosis"])
-        assert pd.isnull(df.at[person_id, "brc_date_treatment"])
+        assert not df.at[person_id, "ce_hpv_cc_status"] == 'none'
+        assert not df.at[person_id, "ce_hpv_cc_status"] == 'hpv'
+        assert not df.at[person_id, "ce_hpv_cc_status"] == 'cin1'
+        assert not df.at[person_id, "ce_hpv_cc_status"] == 'cin2'
+        assert not df.at[person_id, "ce_hpv_cc_status"] == 'cin3'
+        assert not df.at[person_id, "ce_hpv_cc_status"] == 'stage4'
+        assert not pd.isnull(df.at[person_id, "ce_date_diagnosis"])
+        assert pd.isnull(df.at[person_id, "ce_date_treatment"])
 
         # Record date and stage of starting treatment
-        df.at[person_id, "brc_date_treatment"] = self.sim.date
-        df.at[person_id, "brc_stage_at_which_treatment_given"] = df.at[person_id, "brc_status"]
+        df.at[person_id, "ce_date_treatment"] = self.sim.date
+        df.at[person_id, "ce_stage_at_which_treatment_given"] = df.at[person_id, "ce_hpv_cc_status"]
 
-        # Schedule a post-treatment check for 12 months:
+        # Schedule a post-treatment check for 3 months:
         hs.schedule_hsi_event(
-            hsi_event=HSI_BreastCancer_PostTreatmentCheck(
+            hsi_event=HSI_CervicalCancer_PostTreatmentCheck(
                 module=self.module,
                 person_id=person_id,
             ),
-            topen=self.sim.date + DateOffset(months=12),
+            topen=self.sim.date + DateOffset(months=3),
             tclose=None,
             priority=0
         )
 
+# todo: add hsis for xpert testing and cin removal via testing and cin removal
 
-class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
+class HSI_CervicalCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_BreastCancer_StartTreatment and itself.
-    It is only for those who have undergone treatment for breast Cancer.
+    This event is scheduled by HSI_CervicalCancer_StartTreatment and itself.
+    It is only for those who have undergone treatment for cervical Cancer.
     If the person has developed cancer to stage4, the patient is initiated on palliative care; otherwise a further
     appointment is scheduled for one year.
     """
@@ -865,7 +873,7 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "BreastCancer_Treatment"
+        self.TREATMENT_ID = "CervicalCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
 
@@ -876,15 +884,19 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Check that the person is has cancer and is on treatment
-        assert not df.at[person_id, "brc_status"] == 'none'
-        assert not pd.isnull(df.at[person_id, "brc_date_diagnosis"])
-        assert not pd.isnull(df.at[person_id, "brc_date_treatment"])
+        # Check that the person has cancer and is on treatment
+        assert not df.at[person_id, "ce_hpv_cc_status"] == 'none'
+        assert not df.at[person_id, "ce_hpv_cc_status"] == 'hpv'
+        assert not df.at[person_id, "ce_hpv_cc_status"] == 'cin1'
+        assert not df.at[person_id, "ce_hpv_cc_status"] == 'cin2'
+        assert not df.at[person_id, "ce_hpv_cc_status"] == 'cin3'
+        assert not pd.isnull(df.at[person_id, "ce_date_diagnosis"])
+        assert not pd.isnull(df.at[person_id, "ce_date_treatment"])
 
-        if df.at[person_id, 'brc_status'] == 'stage4':
+        if df.at[person_id, 'ce_hpv_cc_status'] == 'stage4':
             # If has progressed to stage4, then start Palliative Care immediately:
             hs.schedule_hsi_event(
-                hsi_event=HSI_BreastCancer_PalliativeCare(
+                hsi_event=HSI_CervicalCancer_PalliativeCare(
                     module=self.module,
                     person_id=person_id
                 ),
@@ -894,9 +906,9 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
             )
 
         else:
-            # Schedule another HSI_BreastCancer_PostTreatmentCheck event in one month
+            # Schedule another HSI_CervicalCancer_PostTreatmentCheck event in 3 monthw
             hs.schedule_hsi_event(
-                hsi_event=HSI_BreastCancer_PostTreatmentCheck(
+                hsi_event=HSI_CervicalCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
                 ),
@@ -906,13 +918,13 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
             )
 
 
-class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
+class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     """
     This is the event for palliative care. It does not affect the patients progress but does affect the disability
      weight and takes resources from the healthsystem.
     This event is scheduled by either:
-    * HSI_BreastCancer_Investigation_Following_breast_lump_discernible following a diagnosis of breast Cancer at stage4.
-    * HSI_BreastCancer_PostTreatmentCheck following progression to stage4 during treatment.
+    * HSI_CervicalCancer_Investigation_Following_vagibal_bleeding following a diagnosis of cervical Cancer at stage4.
+    * HSI_CervicalCancer_PostTreatmentCheck following progression to stage4 during treatment.
     * Itself for the continuance of care.
     It is only for persons with a cancer in stage4.
     """
@@ -920,7 +932,7 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "BreastCancer_PalliativeCare"
+        self.TREATMENT_ID = "CervicalCancer_PalliativeCare"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
@@ -935,19 +947,19 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             return hs.get_blank_appt_footprint()
 
         # Check that the person is in stage4
-        assert df.at[person_id, "brc_status"] == 'stage4'
+        assert df.at[person_id, "ce_hpv_cc_status"] == 'stage4'
 
         # Record the start of palliative care if this is first appointment
-        if pd.isnull(df.at[person_id, "brc_date_palliative_care"]):
-            df.at[person_id, "brc_date_palliative_care"] = self.sim.date
+        if pd.isnull(df.at[person_id, "ce_date_palliative_care"]):
+            df.at[person_id, "ce_date_palliative_care"] = self.sim.date
 
         # Schedule another instance of the event for one month
         hs.schedule_hsi_event(
-            hsi_event=HSI_BreastCancer_PalliativeCare(
+            hsi_event=HSI_CervicalCancer_PalliativeCare(
                 module=self.module,
                 person_id=person_id
             ),
-            topen=self.sim.date + DateOffset(months=3),
+            topen=self.sim.date + DateOffset(months=1),
             tclose=None,
             priority=0
         )
@@ -957,7 +969,7 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 #   LOGGING EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
-class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
+class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """The only logging event for this module"""
 
     def __init__(self, module):
@@ -977,24 +989,24 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Current counts, total
         out.update({
-            f'total_{k}': v for k, v in df.loc[df.is_alive].brc_status.value_counts().items()})
+            f'total_{k}': v for k, v in df.loc[df.is_alive].ce_hpv_cc_status.value_counts().items()})
 
         # Current counts, undiagnosed
         out.update({f'undiagnosed_{k}': v for k, v in df.loc[df.is_alive].loc[
-            pd.isnull(df.brc_date_diagnosis), 'brc_status'].value_counts().items()})
+            pd.isnull(df.ce_date_diagnosis), 'ce_hpv_cc_status'].value_counts().items()})
 
         # Current counts, diagnosed
         out.update({f'diagnosed_{k}': v for k, v in df.loc[df.is_alive].loc[
-            ~pd.isnull(df.brc_date_diagnosis), 'brc_status'].value_counts().items()})
+            ~pd.isnull(df.ce_date_diagnosis), 'ce_hpv_cc_status'].value_counts().items()})
 
         # Current counts, on treatment (excl. palliative care)
         out.update({f'treatment_{k}': v for k, v in df.loc[df.is_alive].loc[(~pd.isnull(
-            df.brc_date_treatment) & pd.isnull(
-            df.brc_date_palliative_care)), 'brc_status'].value_counts().items()})
+            df.cc_date_treatment) & pd.isnull(
+            df.cc_date_palliative_care)), 'ce_hpv_cc_status'].value_counts().items()})
 
         # Current counts, on palliative care
         out.update({f'palliative_{k}': v for k, v in df.loc[df.is_alive].loc[
-            ~pd.isnull(df.brc_date_palliative_care), 'brc_status'].value_counts().items()})
+            ~pd.isnull(df.brc_date_palliative_care), 'ce_hpv_cc_status'].value_counts().items()})
 
         # Counts of those that have been diagnosed, started treatment or started palliative care since last logging
         # event:
@@ -1006,30 +1018,35 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # todo: the .between function I think includes the two dates so events on these dates counted twice
         # todo:_ I think we need to replace with date_lastlog <= x < date_now
         n_newly_diagnosed_stage1 = \
-            (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage1')).sum()
-        n_newly_diagnosed_stage2 = \
-            (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage2')).sum()
+            (df.ce_date_diagnosis.between(date_lastlog, date_now) & (df.ce_hpv_cc_status == 'stage1')).sum()
+        n_newly_diagnosed_stage2a = \
+            (df.ce_date_diagnosis.between(date_lastlog, date_now) & (df.ce_hpv_cc_status == 'stage2a')).sum()
+        n_newly_diagnosed_stage2b = \
+            (df.ce_date_diagnosis.between(date_lastlog, date_now) & (df.ce_hpv_cc_status == 'stage2b')).sum()
         n_newly_diagnosed_stage3 = \
-            (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage3')).sum()
+            (df.ce_date_diagnosis.between(date_lastlog, date_now) & (df.ce_hpv_cc_status == 'stage3')).sum()
         n_newly_diagnosed_stage4 = \
-            (df.brc_date_diagnosis.between(date_lastlog, date_now) & (df.brc_status == 'stage4')).sum()
+            (df.ce_date_diagnosis.between(date_lastlog, date_now) & (df.ce_hpv_cc_status == 'stage4')).sum()
+
+# todo: add outputs for cin,  xpert testing and via and removal of cin
 
         n_diagnosed_age_15_29 = (df.is_alive & (df.age_years >= 15) & (df.age_years < 30)
-                                 & ~pd.isnull(df.brc_date_diagnosis)).sum()
+                                 & ~pd.isnull(df.ce_date_diagnosis)).sum()
         n_diagnosed_age_30_49 = (df.is_alive & (df.age_years >= 30) & (df.age_years < 50)
-                                 & ~pd.isnull(df.brc_date_diagnosis)).sum()
-        n_diagnosed_age_50p = (df.is_alive & (df.age_years >= 50) & ~pd.isnull(df.brc_date_diagnosis)).sum()
+                                 & ~pd.isnull(df.ce_date_diagnosis)).sum()
+        n_diagnosed_age_50p = (df.is_alive & (df.age_years >= 50) & ~pd.isnull(df.ce_date_diagnosis)).sum()
 
-        n_diagnosed = (df.is_alive & ~pd.isnull(df.brc_date_diagnosis)).sum()
+        n_diagnosed = (df.is_alive & ~pd.isnull(df.ce_date_diagnosis)).sum()
 
         out.update({
-            'diagnosed_since_last_log': df.brc_date_diagnosis.between(date_lastlog, date_now).sum(),
-            'treated_since_last_log': df.brc_date_treatment.between(date_lastlog, date_now).sum(),
-            'palliative_since_last_log': df.brc_date_palliative_care.between(date_lastlog, date_now).sum(),
-            'death_breast_cancer_since_last_log': df.brc_date_death.between(date_lastlog, date_now).sum(),
+            'diagnosed_since_last_log': df.ce_date_diagnosis.between(date_lastlog, date_now).sum(),
+            'treated_since_last_log': df.ce_date_treatment.between(date_lastlog, date_now).sum(),
+            'palliative_since_last_log': df.ce_date_palliative_care.between(date_lastlog, date_now).sum(),
+            'death_cervical_cancer_since_last_log': df.ce_date_death.between(date_lastlog, date_now).sum(),
             'n women age 15+': n_ge15_f,
             'n_newly_diagnosed_stage1': n_newly_diagnosed_stage1,
-            'n_newly_diagnosed_stage2': n_newly_diagnosed_stage2,
+            'n_newly_diagnosed_stage2a': n_newly_diagnosed_stage2a,
+            'n_newly_diagnosed_stage2b': n_newly_diagnosed_stage2b,
             'n_newly_diagnosed_stage3': n_newly_diagnosed_stage3,
             'n_newly_diagnosed_stage4': n_newly_diagnosed_stage4,
             'n_diagnosed_age_15_29': n_diagnosed_age_15_29,
@@ -1039,5 +1056,5 @@ class BreastCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         })
 
         logger.info(key='summary_stats',
-                    description='summary statistics for breast cancer',
+                    description='summary statistics for cervical cancer',
                     data=out)
