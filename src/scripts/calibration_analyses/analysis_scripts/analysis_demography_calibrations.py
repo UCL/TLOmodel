@@ -152,7 +152,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.close(fig)
 
     plot_pop_size(pop_model, 2019)
-    # plot_pop_size(pop_model, 2022)
+    plot_pop_size(pop_model, 2022)
 
     # 2) Population Size in 2018 (broken down by Male and Female)
 
