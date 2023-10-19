@@ -249,8 +249,8 @@ class CervicalCancer(Module):
         assert sum(p['init_prop_hpv_cc_stage_age2549']) <= 1.0
 
     # todo: create ce_hpv_cc_status for all at baseline using init_prop_hpv_cc_stage_age1524
-    #       and init_prop_hpv_cc_stage_age2549
-
+    #       and init_prop_hpv_cc_stage_age2549 - currently everyone incorrectly starts as "none"
+        df.ce_hpv_cc_status = 'none'
 
         # -------------------- SYMPTOMS -----------
         # Create shorthand variable for the initial proportion of discernible breast cancer lumps in the population
@@ -1054,6 +1054,9 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'n_diagnosed_age_50p': n_diagnosed_age_50p,
             'n_diagnosed': n_diagnosed
         })
+
+        print(df.ce_hpv_cc_status)
+
 
         logger.info(key='summary_stats',
                     description='summary statistics for cervical cancer',
