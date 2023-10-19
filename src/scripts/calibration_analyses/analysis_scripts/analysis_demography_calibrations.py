@@ -388,7 +388,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 plt.close(fig)
 
     plot_population_pyramid(2019)
-    # plot_population_pyramid(2022)
+    plot_population_pyramid(2022)
 
     # %% Births: Number over time
 
