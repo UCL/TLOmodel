@@ -19,19 +19,13 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import make_age_grp_types, parse_log_file
 from tlo.methods import (
     cervical_cancer,
-    care_of_women_during_pregnancy,
-    contraception,
     demography,
     enhanced_lifestyle,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    labour,
-    newborn_outcomes,
-    oesophagealcancer,
-    postnatal_supervisor,
-    pregnancy_supervisor,
-    symptommanager,
+    simplified_births,
+    symptommanager
 )
 
 # Where will outputs go
@@ -45,8 +39,8 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
-popsize = 10000
+end_date = Date(2010, 2, 1)
+popsize = 1000
 
 
 def run_sim(service_availability):
@@ -55,19 +49,14 @@ def run_sim(service_availability):
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=service_availability),
+                                           disable=False,
+                                           cons_availability='all'),
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
                  cervical_cancer.CervicalCancer(resourcefilepath=resourcefilepath)
                  )
 
@@ -140,6 +129,9 @@ def get_summary_stats(logfile):
 
 # With interventions:
 logfile_with_healthsystem = run_sim(service_availability=['*'])
+
+"""
+
 results_with_healthsystem = get_summary_stats(logfile_with_healthsystem)
 
 # Without interventions:
@@ -245,3 +237,5 @@ prev_per_100k = 1e5 * counts.sum() / totpopsize
 
 # ** 5-year survival following treatment
 # See separate file
+
+"""

@@ -849,6 +849,8 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, "ce_date_treatment"] = self.sim.date
         df.at[person_id, "ce_stage_at_which_treatment_given"] = df.at[person_id, "ce_hpv_cc_status"]
 
+        # todo: maybe have a probability of going to status=none rather than a relative rate of progression
+
         # Schedule a post-treatment check for 3 months:
         hs.schedule_hsi_event(
             hsi_event=HSI_CervicalCancer_PostTreatmentCheck(
