@@ -157,7 +157,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # 2) Population Size in 2018 (broken down by Male and Female)
 
-    # Load Data: WPP2019_Annual incl. age groups (WPP 2019 only includes medium variant)
+    # Load Data: WPP2019_Annual by sex & single age & medium variant only
     wpp19_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_age_sex_WPP2019.csv")
     wpp19_ann['Age_Grp'] = wpp19_ann['Age_Grp'].astype(make_age_grp_types())
 
@@ -222,123 +222,173 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # %% Population Pyramid
     # Population Pyramid at two time points
 
-    def plot_population_pyramid(data, fig, in_year):
-        """Plot a population pyramid on the specified figure. Data is of the form:
-        {
-           'F': {
-                    'Model': pd.Series(index_age_groups),
-                    'WPP': pd.Series(index=age_groups)
-                 },
-           'M': {
-                    'Model': pd.Series(index_age_groups),
-                    'WPP': pd.Series(index=age_groups)
-                 },
-        }
-        """
-        ax = fig.add_subplot(111)
+    def plot_population_pyramid(wpp_year):
 
-        # reformat data to ensure axes align
-        sources = data['M'].keys()
-        dat = {_sex: pd.concat(
-            {_source: data['M'][_source] for _source in sources}, axis=1
-        ) for _sex in ['M', 'F']
-        }
+        # Load Data: WPP2019_Every5years by sex & age groups & all 3 variants
+        wpp19_every5ys = \
+            pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Every5years_age_sex_WPP2019.csv")
+        wpp19_every5ys['Age_Grp'] = wpp19_every5ys['Age_Grp'].astype(make_age_grp_types())
 
-        # use horizontal bar chart functions (barh) to plot the pyramid for the Model outputs
-        ax.barh(dat['M'].index, data['M']['Model'].values / 1e3, alpha=1.0, label='Model', color=colors['Model'])
-        ax.barh(dat['F'].index, -data['F']['Model'].values / 1e3, alpha=1.0, label='_', color='cornflowerblue')
-
-        # use plot to overlay the comparison data sources (whatever is available from 'WPP' and/or 'Census')
-        for _dat_source in sorted(set(sources).intersection(['WPP', 'Census'])):
-            ax.plot(data['M'][_dat_source].values / 1e3, dat['M'].index, label=_dat_source, color=colors[_dat_source])
-            ax.plot(-data['F'][_dat_source].values / 1e3, dat['F'].index, label='_', color=colors[_dat_source])
-
-        ax.axvline(0.0, 0.0, color='black')
-
-        # label the plot with titles and correct the x axis tick labels (replace negative values with positive)
-        ax.legend()
-        ax.set_ylabel('Age Groups')
-        ax.set_xlabel('Population (1000s)')
-
-        if in_year == 2050:
-            ax.text(x=2e3, y=10, s="Males", fontdict={'size': 15}, ha='right')
-            ax.text(x=-2e3, y=10, s="Females", fontdict={'size': 15}, ha='left')
+        # Define Data: WPP_Annual by sex & age groups +
+        if wpp_year == 2019:
+            wpp_ann = wpp19_ann  # incl. medium variant only
+        elif wpp_year == 2022:
+            wpp_ann = wpp22_ann  # incl. all variants: low, medium, high
         else:
-            ax.text(x=1e3, y=10, s="Males", fontdict={'size': 15}, ha='right')
-            ax.text(x=-1e3, y=10, s="Females", fontdict={'size': 15}, ha='left')
+            wpp_ann = None
 
-        # reverse order of legend
-        handles, labels = ax.get_legend_handles_labels()
-        labels = ['WPP (2019)' if label == 'WPP' else label for label in labels]
-        ax.legend(handles[::-1], labels[::-1], loc='upper right')
+        def format_plot_population_pyramid(data, fig, in_year, in_wpp_year):
+            """Plot a population pyramid on the specified figure. Data is of the form:
+            {
+               'F': {
+                        'Model': pd.Series(index_age_groups),
+                        'WPP_Estimates': pd.Series(index=age_groups),
+                        'WPP_Low': pd.Series(index=age_groups),
+                        'WPP_Medium': pd.Series(index=age_groups),
+                        'WPP_High': pd.Series(index=age_groups)
+                     },
+               'M': {
+                        'Model': pd.Series(index_age_groups),
+                        'WPP_Estimates': pd.Series(index=age_groups),
+                        'WPP_Low': pd.Series(index=age_groups),
+                        'WPP_Medium': pd.Series(index=age_groups),
+                        'WPP_High': pd.Series(index=age_groups)
+                     },
+            }
+            """
+            ax = fig.add_subplot(111)
 
-        locs = np.array([-2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2]) * 1e3
-        ax.set_xticks(locs)
-        ax.set_xticklabels(np.round(np.sqrt(locs ** 2)).astype(int))
+            # reformat data to ensure axes align
+            sources = data['M'].keys()
+            dat = {_sex: pd.concat(
+                {_source: data['M'][_source] for _source in sources}, axis=1
+            ) for _sex in ['M', 'F']
+            }
 
-        ax.set_axisbelow(True)
-        # ax.yaxis.grid(color='gray', linestyle='dashed')
-        ax.grid()
+            # use horizontal bar chart functions (barh) to plot the pyramid for the Model outputs
+            ax.barh(dat['M'].index, data['M']['Model'].values / 1e3, alpha=1.0, label='Model', color=colors['Model'])
+            ax.barh(dat['F'].index, -data['F']['Model'].values / 1e3, alpha=1.0, label='_', color='cornflowerblue')
 
-        return ax
+            # use plot to overlay the comparison data sources (whatever is available from 'WPP' and/or 'Census')
+            for _dat_source in sorted(set(sources).intersection(['WPP_Estimates', 'WPP_Medium', 'Census'])):
+                if data['M'][_dat_source].any():
+                    ax.plot(data['M'][_dat_source].values / 1e3, dat['M'].index, label=_dat_source,
+                            color=colors['WPP' if 'WPP' in _dat_source else 'Census'])
+                    ax.plot(-data['F'][_dat_source].values / 1e3, dat['F'].index, label='_',
+                            color=colors['WPP' if 'WPP' in _dat_source else 'Census'])
+            if data['M']['WPP_Low'].any():
+                ax.fill_betweenx(dat['M'].index,
+                                 data['M']['WPP_Low'].values / 1e3,
+                                 data['M']['WPP_High'].values / 1e3,
+                                 facecolor=colors['WPP'], alpha=0.4)
+                ax.fill_betweenx(dat['F'].index,
+                                 -data['F']['WPP_Low'].values / 1e3,
+                                 -data['F']['WPP_High'].values / 1e3,
+                                 facecolor=colors['WPP'], alpha=0.4)
 
-    # Get Age/Sex Breakdown of population (with scaling)
-    calperiods, calperiodlookup = make_calendar_period_lookup()
+            ax.axvline(0.0, 0.0, color='black')
 
-    def get_mean_pop_by_age_for_sex_and_year(sex, year):
-        if sex == 'F':
-            key = "age_range_f"
-        else:
-            key = "age_range_m"
+            # label the plot with titles and correct the x axis tick labels (replace negative values with positive)
+            ax.legend()
+            ax.set_ylabel('Age Groups')
+            ax.set_xlabel('Population (1000s)')
 
-        num_by_age = summarize(
-            extract_results(results_folder,
-                            module="tlo.methods.demography",
-                            key=key,
-                            custom_generate_series=(
-                                lambda df_: df_.loc[pd.to_datetime(df_.date).dt.year == year].drop(
-                                    columns=['date']
-                                ).melt(
-                                    var_name='age_grp'
-                                ).set_index('age_grp')['value']
-                            ),
-                            do_scaling=True
-                            ),
-            collapse_columns=True,
-            only_mean=True
-        )
-        return num_by_age
+            if in_year > 2030:
+                ax.text(x=2e3, y=10, s="Males", fontdict={'size': 15}, ha='right')
+                ax.text(x=-2e3, y=10, s="Females", fontdict={'size': 15}, ha='left')
+            else:
+                ax.text(x=1.5e3, y=10, s="Males", fontdict={'size': 15}, ha='right')
+                ax.text(x=-1.5e3, y=10, s="Females", fontdict={'size': 15}, ha='left')
 
-    for year in [2010, 2015, 2018, 2029, 2049, 2050]:
-        try:
-            # Get WPP data:
-            wpp_thisyr = wpp19_ann.loc[wpp19_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
+            # reverse order of legend
+            handles, labels = ax.get_legend_handles_labels()
+            labels = [f'WPP ({wpp_year})' if 'WPP' in label else label for label in labels]
+            ax.legend(handles[::-1], labels[::-1], loc='upper right')
 
-            pops = dict()
-            for sex in ['M', 'F']:
-                # Import model results and scale:
-                model = get_mean_pop_by_age_for_sex_and_year(sex, year)
+            locs = np.array([-3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3]) * 1e3
+            ax.set_xticks(locs)
+            ax.set_xticklabels(np.round(np.sqrt(locs ** 2)).astype(int))
 
-                # Make into dataframes for plotting:
-                pops[sex] = {
-                    'Model': model,
-                    'WPP': wpp_thisyr.loc[sex]
-                }
+            ax.set_axisbelow(True)
+            # ax.yaxis.grid(color='gray', linestyle='dashed')
+            ax.grid()
 
-                if year == 2018:
-                    # Import and format Census data, and add to the comparison if the year is 2018 (year of census)
-                    pops[sex]['Census'] = cens.loc[cens['Sex'] == sex].groupby(by='Age_Grp')['Count'].sum()
+            return ax
 
-            # Simple plot of population pyramid
-            fig = plt.figure()
-            ax = plot_population_pyramid(data=pops, fig=fig, in_year=year)
-            ax.set_title(f'Population Pyramid in {year}')
-            fig.savefig(make_graph_file_name(f"Pop_Size_{year}"))
-            fig.show()
-            plt.close(fig)
+        # Get Age/Sex Breakdown of population (with scaling)
+        calperiods, calperiodlookup = make_calendar_period_lookup()
 
-        except pd.core.base.DataError:
-            pass
+        def get_mean_pop_by_age_for_sex_and_year(sex, year):
+            if sex == 'F':
+                key = "age_range_f"
+            else:
+                key = "age_range_m"
+
+            num_by_age = summarize(
+                extract_results(results_folder,
+                                module="tlo.methods.demography",
+                                key=key,
+                                custom_generate_series=(
+                                    lambda df_: df_.loc[pd.to_datetime(df_.date).dt.year == year].drop(
+                                        columns=['date']
+                                    ).melt(
+                                        var_name='age_grp'
+                                    ).set_index('age_grp')['value']
+                                ),
+                                do_scaling=True
+                                ),
+                collapse_columns=True,
+                only_mean=True
+            )
+            return num_by_age
+
+        for year in [2010, 2015, 2018, 2029, 2030, 2049, 2050]:
+            if year in wpp_ann['Year']:
+                # Get WPP data:
+                if wpp_year == 2022 or (wpp_year == 2019 and year % 5 != 0):
+                    wpp_thisyr = \
+                        wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp', 'Variant'])['Count'].sum()
+                elif wpp_year == 2019 and year % 5 == 0:
+                    wpp_thisyr = \
+                        wpp19_every5ys.loc[
+                            wpp19_every5ys['Year'] == year
+                        ].groupby(['Sex', 'Age_Grp', 'Variant'])['Count'].sum()
+                else:
+                    wpp_year = None
+
+                pops = dict()
+                for sex in ['M', 'F']:
+                    # Import model results and scale:
+                    model = get_mean_pop_by_age_for_sex_and_year(sex, year)
+
+                    # Make into dataframes for plotting:
+                    def separate_wpp_variant(series, variant):
+                        return \
+                            (series[sex].copy().loc[series[sex].index.get_level_values('Variant').str.contains(variant)]
+                             .droplevel('Variant'))
+
+                    pops[sex] = {
+                        'Model': model,
+                        'WPP_Estimates': separate_wpp_variant(wpp_thisyr, '_Estimates'),
+                        'WPP_Low': separate_wpp_variant(wpp_thisyr, '_Low'),
+                        'WPP_Medium': separate_wpp_variant(wpp_thisyr, '_Medium'),
+                        'WPP_High': separate_wpp_variant(wpp_thisyr, '_High')
+                    }
+
+                    if year == 2018:
+                        # Import and format Census data, and add to the comparison if the year is 2018 (year of census)
+                        pops[sex]['Census'] = cens.loc[cens['Sex'] == sex].groupby(by='Age_Grp')['Count'].sum()
+
+                # Simple plot of population pyramid
+                fig = plt.figure()
+                ax = format_plot_population_pyramid(data=pops, fig=fig, in_year=year, in_wpp_year=wpp_year)
+                ax.set_title(f'Population Pyramid in {year}')
+                fig.savefig(make_graph_file_name(f"Pop_Size_{year}_WPP{wpp_year}"))
+                fig.show()
+                plt.close(fig)
+
+    plot_population_pyramid(2019)
+    # plot_population_pyramid(2022)
 
     # %% Births: Number over time
 
