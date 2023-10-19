@@ -1055,7 +1055,15 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'n_diagnosed': n_diagnosed
         })
 
-        print(df.ce_hpv_cc_status)
+#       df = df.rename(columns={'sy_vaginal_bleeding': 'vaginal_b'})
+
+        print(self.sim.date)
+        selected_columns = ['ce_hpv_cc_status']
+        selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15)]
+        print(selected_rows[selected_columns])
+
+#       df = df.rename(columns={'vaginal_b': 'sy_vaginal_bleeding'})
+
 
 
         logger.info(key='summary_stats',
