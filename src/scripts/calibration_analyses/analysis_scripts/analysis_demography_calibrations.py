@@ -85,6 +85,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                           )
     pop_model.index = pop_model.index.year
 
+    # Load Data: Census
+    cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
+    cens['Age_Grp'] = cens['Age_Grp'].astype(make_age_grp_types())
+    cens_2018 = cens.groupby('Sex')['Count'].sum()
+
     def plot_pop_size(in_pop_model, wpp_year):
         out_pop_model = in_pop_model.copy()
 
@@ -103,11 +108,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             wpp_ann_total = wpp2022_ann.groupby(['Year', 'Variant'])['Count'].sum().unstack()
             wpp_ann_total['WPP2022_continuous'] = \
                 wpp_ann_total['WPP2022_Estimates'].combine_first(wpp_ann_total['WPP2022_Medium'])
-
-        # Load Data: Census
-        cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
-        cens['Age_Grp'] = cens['Age_Grp'].astype(make_age_grp_types())
-        cens_2018 = cens.groupby('Sex')['Count'].sum()
 
         # Plot population size over time
         fig, ax = plt.subplots()
@@ -147,7 +147,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_ylim(0, 95)
         ax.legend(loc='lower right')
         fig.tight_layout()
-        plt.savefig(make_graph_file_name("Pop_Over_Time_2010-2100_WPP" + str(wpp_year)))
+        plt.savefig(make_graph_file_name(f"Pop_Over_Time_2010-2100_WPP{wpp_year}"))
         plt.show()
         plt.close(fig)
 
@@ -806,7 +806,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             tot_deaths_byage = pd.DataFrame(
                 deaths_by_agesexperiod.loc[
                     (deaths_by_agesexperiod['Period'] == period) & (deaths_by_agesexperiod['Sex'] == sex)].groupby(
-                    by=['Variant', 'Age_Grp']).sum()).unstack()
+                    by=['Variant', 'Age_Grp']).sum()).unstack()  # TODO: fix so category type values are not summed
             tot_deaths_byage.columns = pd.Index([label[1] for label in tot_deaths_byage.columns.tolist()])
             tot_deaths_byage = tot_deaths_byage.transpose()
 
