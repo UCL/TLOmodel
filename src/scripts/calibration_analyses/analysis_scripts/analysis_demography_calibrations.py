@@ -430,6 +430,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 # Make the WPP line connect to the 'medium variant' to make the lines look like they join up
                 in_wpp_births['WPP2022_continuous'] = in_wpp_births['WPP2022_Estimates'].combine_first(
                     in_wpp_births['WPP2022_Medium'])
+            else:
+                in_wpp_births = None
 
             return in_wpp_births
 
@@ -437,6 +439,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             wpp_births = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalBirths_WPP2019.csv")
         elif wpp_year == 2022:
             wpp_births = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalBirths_WPP2022.csv")
+        else:
+            wpp_births = None
         wpp_births = process_wpp_births(wpp_births, wpp_year)
 
         # Births in 2018 Census
