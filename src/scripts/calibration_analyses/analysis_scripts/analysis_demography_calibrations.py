@@ -90,6 +90,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     cens['Age_Grp'] = cens['Age_Grp'].astype(make_age_grp_types())
     cens_2018 = cens.groupby('Sex')['Count'].sum()
 
+    # Load Data: WPP2019_Annual incl. age groups (WPP 2019 only includes medium variant)
+    wpp22_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_age_sex_WPP2022.csv")
+    wpp22_ann['Age_Grp'] = wpp22_ann['Age_Grp'].astype(make_age_grp_types())
+
     def plot_pop_size(in_pop_model, wpp_year):
         out_pop_model = in_pop_model.copy()
 
@@ -102,10 +106,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             wpp_ann_total['WPP2019_continuous'] = \
                 wpp_ann_total['WPP2019_Estimates'].combine_first(wpp_ann_total['WPP2019_Medium variant'])
         elif wpp_year == 2022:
-            wpp2022_ann = \
-                pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_age_sex_WPP2022.csv")
-            wpp2022_ann['Age_Grp'] = wpp2022_ann['Age_Grp'].astype(make_age_grp_types())
-            wpp_ann_total = wpp2022_ann.groupby(['Year', 'Variant'])['Count'].sum().unstack()
+            wpp_ann_total = wpp22_ann.groupby(['Year', 'Variant'])['Count'].sum().unstack()
             wpp_ann_total['WPP2022_continuous'] = \
                 wpp_ann_total['WPP2022_Estimates'].combine_first(wpp_ann_total['WPP2022_Medium'])
 
@@ -158,6 +159,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Load Data: WPP2019_Annual incl. age groups (WPP 2019 only includes medium variant)
     wpp19_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_age_sex_WPP2019.csv")
+    wpp19_ann['Age_Grp'] = wpp19_ann['Age_Grp'].astype(make_age_grp_types())
 
     # Census vs WPP vs Model
     wpp_2018 = wpp19_ann.groupby(['Year', 'Sex'])['Count'].sum()[2018]
