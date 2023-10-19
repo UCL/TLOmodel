@@ -23,7 +23,7 @@ The following files are created:
 * `ResourceFile_TotalBirths_WPP2022.csv`: Not used currently (commented in analysis_all_calibration)
 
 * `ResourceFile_Pop_DeathRates_WPP2019.csv`: Not used currently
-* `ResourceFile_Pop_age_sex_WPP2019.csv`: Not used currently
+* `ResourceFile_Pop_Every5years_age_sex_WPP2019.csv`: Not used currently
 * `ResourceFile_ASFR_DHS.csv`: Not used currently
 * `ResourceFile_Under_Five_Mortality_DHS.csv`: Not used currently
 
@@ -249,7 +249,7 @@ k2_melt.to_csv(path_for_saved_files / 'ResourceFile_Deaths_2018Census.csv', inde
 # %% **** USE OF THE WPP DATA ****
 
 # %% Population size by age and sex WPP 2019:
-# 5-years age groups, 5-years periods, estimates 1950-2020 + low, medium & high variants 2020-2100
+# 5-years age groups, every 5 years, estimates 1950-2020 + low, medium & high variants 2020-2100
 
 wpp19_pop_males_file = workingfolder + '/WPP_2019/WPP2019_POP_F07_2_POPULATION_BY_AGE_MALE.xlsx'
 
@@ -288,7 +288,7 @@ ests = ests.rename(columns={ests.columns[1]: 'Year'})
 ests_melt = ests.melt(id_vars=['Variant', 'Year', 'Sex'], value_name='Count', var_name='Age_Grp')
 ests_melt['Period'] = ests_melt['Year'].map(calendar_period_lookup)
 
-ests_melt.to_csv(path_for_saved_files / 'ResourceFile_Pop_age_sex_WPP2019.csv', index=False)
+ests_melt.to_csv(path_for_saved_files / 'ResourceFile_Pop_Every5years_age_sex_WPP2019.csv', index=False)
 
 # pop in 2010:
 ests_melt.loc[ests_melt['Year'] == 2010, 'Count'].sum()  # ~14M
