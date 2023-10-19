@@ -221,9 +221,9 @@ class CervicalCancer(Module):
         )
 
         # Register Symptom that this module will use
+        # todo: define odds ratio below - ? not sure about this as odds of health seeking if no symptoms is zero ?
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='vaginal_bleeding',
-        # todo: define odds ratio below - ? not sure about this as odds of health seeking if no symptoms is zero ?
                     odds_ratio_health_seeking_in_adults=4.00)
         )
 
@@ -273,7 +273,7 @@ class CervicalCancer(Module):
         has_vaginal_bleeding_at_init = lm_init_vaginal_bleeding.predict(df.loc[df.is_alive], self.rng)
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=has_vaginal_bleeding_at_init.index[has_vaginal_bleeding_at_init].tolist(),
-            symptom_string='vaginal bleeding',
+            symptom_string='vaginal_bleeding',
             add_or_remove='+',
             disease_module=self
         )
@@ -281,7 +281,7 @@ class CervicalCancer(Module):
         # -------------------- ce_date_diagnosis -----------
         # Create shorthand variable for the initial proportion of the population with vaginal bleeding that has
         # been diagnosed
-        ce_initial_prop_diagnosed_vaginal_bleeding = \
+        initial_prop_diagnosed_vaginal_bleeding = \
             p['init_prop_with_vaginal_bleeding_diagnosed_cervical_cancer']
         lm_init_diagnosed = LinearModel.multiplicative(
             Predictor(
@@ -291,11 +291,14 @@ class CervicalCancer(Module):
             )
             .when("none", 0.0)
             .when("hpv", 0.0)
-            .when("stage1", ce_initial_prop_diagnosed_vaginal_bleeding[0])
-            .when("stage2A", ce_initial_prop_diagnosed_vaginal_bleeding[1])
-            .when("stage2B", ce_initial_prop_diagnosed_vaginal_bleeding[2])
-            .when("stage3", ce_initial_prop_diagnosed_vaginal_bleeding[3])
-            .when("stage4", ce_initial_prop_diagnosed_vaginal_bleeding[4])
+            .when("cin1", 0.0)
+            .when("cin2", 0.0)
+            .when("cin3", 0.0)
+            .when("stage1", initial_prop_diagnosed_vaginal_bleeding[0])
+            .when("stage2A", initial_prop_diagnosed_vaginal_bleeding[1])
+            .when("stage2B", initial_prop_diagnosed_vaginal_bleeding[2])
+            .when("stage3", initial_prop_diagnosed_vaginal_bleeding[3])
+            .when("stage4", initial_prop_diagnosed_vaginal_bleeding[4])
         )
         ever_diagnosed_cc = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -694,7 +697,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         onset_vaginal_bleeding = self.module.lm_onset_vaginal_bleeding.predict(df.loc[df.is_alive], rng)
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=onset_vaginal_bleeding[onset_vaginal_bleeding].index.tolist(),
-            symptom_string='vaginal bleeding',
+            symptom_string='vaginal_bleeding',
             add_or_remove='+',
             disease_module=self.module
         )
