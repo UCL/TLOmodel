@@ -74,14 +74,14 @@ class ImpactOfTbDaHx(BaseScenario):
             "Baseline": {
                 'Tb': {
                     'scenario': 0,
-                    'scaling_factor_WHO': 1.3,
+                    'scaling_factor_WHO': 1.45,
                 },
             },
         # overrides availability of Xpert
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                   'scaling_factor_WHO': 2.6,   #previously 1.95
+                   'scaling_factor_WHO': 2.3,   #previously 1.95
                 },
             },
         # overrides availability of CXR
