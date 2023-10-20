@@ -30,9 +30,9 @@ class CervicalCancer(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.linear_models_for_progession_of_brc_status = dict()
+        self.linear_models_for_progression_of_hpv_cc_status = dict()
         self.lm_onset_vaginal_bleeding = None
- # todo: add in lm for pregression through cc categiries ?
+ # todo: add in lm for pregression through cc categories ?
         self.daly_wts = dict()
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
@@ -104,15 +104,15 @@ class CervicalCancer(Module):
         ),
         "r_stage2a_stage1": Parameter(
             Types.REAL,
-            "probabilty per month of incident stage2A cervical cancer amongst people with stage1",
+            "probabilty per month of incident stage2a cervical cancer amongst people with stage1",
         ),
         "r_stage2b_stage2a": Parameter(
             Types.REAL,
-            "probabilty per month of incident stage2B cervical cancer amongst people with stage2A",
+            "probabilty per month of incident stage2b cervical cancer amongst people with stage2a",
         ),
         "r_stage3_stage2b": Parameter(
             Types.REAL,
-            "probabilty per month of incident stage3 cervical cancer amongst people with stage2B",
+            "probabilty per month of incident stage3 cervical cancer amongst people with stage2b",
         ),
         "r_stage4_stage3": Parameter(
             Types.REAL,
@@ -160,7 +160,7 @@ class CervicalCancer(Module):
         "ce_hpv_cc_status": Property(
             Types.CATEGORICAL,
             "Current hpv / cervical cancer status",
-            categories=["none", "hpv", "cin1", "cin2", "cin3", "stage1", "stage2A", "stage2B", "stage3", "stage4"],
+            categories=["none", "hpv", "cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"],
         ),
         "ce_hpv_vp": Property(
             Types.BOOL,
@@ -194,7 +194,7 @@ class CervicalCancer(Module):
             Types.CATEGORICAL,
             "the cancer stage at which treatment was given (because the treatment only has an effect during the stage"
             "at which it is given).",
-            categories=["none", "stage1", "stage2A", "stage2B", "stage3", "stage4"],
+            categories=["none", "stage1", "stage2a", "stage2b", "stage3", "stage4"],
         ),
         "ce_date_palliative_care": Property(
             Types.DATE,
@@ -254,7 +254,7 @@ class CervicalCancer(Module):
 
         # -------------------- SYMPTOMS -----------
         # Create shorthand variable for the initial proportion of discernible breast cancer lumps in the population
-        ce_init_prop_vaginal_bleeding = p['init_prop_vaginal_bleeding_by_cc_stage']
+        init_prop_vaginal_bleeding = p['init_prop_vaginal_bleeding_by_cc_stage']
         lm_init_vaginal_bleeding = LinearModel.multiplicative(
             Predictor(
                 'ce_hpv_cc_status',
@@ -263,11 +263,14 @@ class CervicalCancer(Module):
             )
             .when("none", 0.0)
             .when("hpv", 0.0)
-            .when("stage1", ce_init_prop_vaginal_bleeding[0])
-            .when("stage2A", ce_init_prop_vaginal_bleeding[1])
-            .when("stage2B", ce_init_prop_vaginal_bleeding[2])
-            .when("stage3", ce_init_prop_vaginal_bleeding[3])
-            .when("stage4", ce_init_prop_vaginal_bleeding[4])
+            .when("cin1", 0.0)
+            .when("cin2", 0.0)
+            .when("cin3", 0.0)
+            .when("stage1", init_prop_vaginal_bleeding[0])
+            .when("stage2a", init_prop_vaginal_bleeding[1])
+            .when("stage2b", init_prop_vaginal_bleeding[2])
+            .when("stage3", init_prop_vaginal_bleeding[3])
+            .when("stage4", init_prop_vaginal_bleeding[4])
         )
 
         has_vaginal_bleeding_at_init = lm_init_vaginal_bleeding.predict(df.loc[df.is_alive], self.rng)
@@ -294,11 +297,11 @@ class CervicalCancer(Module):
             .when("cin1", 0.0)
             .when("cin2", 0.0)
             .when("cin3", 0.0)
-            .when("stage1", initial_prop_diagnosed_vaginal_bleeding[0])
-            .when("stage2A", initial_prop_diagnosed_vaginal_bleeding[1])
-            .when("stage2B", initial_prop_diagnosed_vaginal_bleeding[2])
-            .when("stage3", initial_prop_diagnosed_vaginal_bleeding[3])
-            .when("stage4", initial_prop_diagnosed_vaginal_bleeding[4])
+            .when("stage1", initial_prop_diagnosed_vaginal_bleeding)
+            .when("stage2a", initial_prop_diagnosed_vaginal_bleeding)
+            .when("stage2b", initial_prop_diagnosed_vaginal_bleeding)
+            .when("stage3", initial_prop_diagnosed_vaginal_bleeding)
+            .when("stage4", initial_prop_diagnosed_vaginal_bleeding)
         )
         ever_diagnosed_cc = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
 
@@ -320,8 +323,8 @@ class CervicalCancer(Module):
             .when("none", 0.0)
             .when("hpv", 0.0)
             .when("stage1", ce_inital_treament_status[0])
-            .when("stage2A", ce_inital_treament_status[1])
-            .when("stage2B", ce_inital_treament_status[2])
+            .when("stage2a", ce_inital_treament_status[1])
+            .when("stage2b", ce_inital_treament_status[2])
             .when("stage3", ce_inital_treament_status[3])
             .when("stage4", ce_inital_treament_status[4])
         )
@@ -371,16 +374,16 @@ class CervicalCancer(Module):
 
         df = sim.population.props
         p = self.parameters
-        lm = self.linear_models_for_progession_of_hpv_cc_status
+        lm = self.linear_models_for_progression_of_hpv_cc_status
 
 # todo: check this below
 
-        rate_hpv = 'r_nvp_hpv' + 'r_vp_hpv'
+        rate_hpv = p['r_nvp_hpv'] + p['r_vp_hpv']
 #       prop_hpv_vp = 'r_vp_hpv' / rate_hpv
 
         lm['hpv'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p[rate_hpv],
+            rate_hpv,
             Predictor('sex').when('M', 0.0),
             Predictor('ce_hpv_cc_status').when('none', 1.0).otherwise(0.0),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
@@ -518,7 +521,7 @@ class CervicalCancer(Module):
             biopsy_for_cervical_cancer_given_vaginal_bleeding=DxTest(
                 property='ce_hpv_cc_status',
                 sensitivity=self.parameters['sensitivity_of_biopsy_for_cervical_cancer'],
-                target_categories=["stage1", "stage2A", "stage2B", "stage3", "stage4"]
+                target_categories=["stage1", "stage2a", "stage2b", "stage3", "stage4"]
             )
         )
 
@@ -526,7 +529,7 @@ class CervicalCancer(Module):
             screening_with_via_for_hpv_and_cervical_cancer=DxTest(
                 property='ce_hpv_cc_status',
                 sensitivity=self.parameters['sensitivity_of_xpert_for_hpv_cin_cc'],
-                target_categories=["hpv", "stage1", "stage2A", "stage2B", "stage3", "stage4"]
+                target_categories=["hpv", "stage1", "stage2a", "stage2b", "stage3", "stage4"]
             )
         )
 
@@ -534,7 +537,7 @@ class CervicalCancer(Module):
             screening_with_xpert_for_hpv_and_cervical_cancer=DxTest(
                 property='ce_hpv_cc_status',
                 sensitivity=self.parameters['sensitivity_of_via_for_cin_cc'],
-                target_categories=["stage1", "stage2A", "stage2B", "stage3", "stage4"]
+                target_categories=["stage1", "stage2a", "stage2b", "stage3", "stage4"]
             )
         )
 
@@ -614,8 +617,8 @@ class CervicalCancer(Module):
         disability_series_for_alive_persons.loc[
             (
                 (df.ce_hpv_cc_status == "stage1") |
-                (df.ce_hpv_cc_status == "stage2A") |
-                (df.ce_hpv_cc_status == "stage2B") |
+                (df.ce_hpv_cc_status == "stage2a") |
+                (df.ce_hpv_cc_status == "stage2b") |
                 (df.ce_hpv_cc_status == "stage3")
             )
         ] = self.daly_wts['stage_1_3']
@@ -626,8 +629,8 @@ class CervicalCancer(Module):
             (
                 ~pd.isnull(df.ce_date_treatment) & (
                     (df.ce_hpv_cc_status == "stage1") |
-                    (df.ce_hpv_cc_status == "stage2A") |
-                    (df.ce_hpv_cc_status == "stage2B") |
+                    (df.ce_hpv_cc_status == "stage2a") |
+                    (df.ce_hpv_cc_status == "stage2b") |
                     (df.ce_hpv_cc_status == "stage3")
                 ) & (df.ce_hpv_cc_status == df.ce_stage_at_which_treatment_given)
             )
@@ -681,7 +684,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
 # todo: still need to derive the lm to make this work
 
-        for stage, lm in self.module.linear_models_for_progession_of_hpv_cc_status.items():
+        for stage, lm in self.module.linear_models_for_progression_of_hpv_cc_status.items():
             gets_new_stage = lm.predict(df.loc[df.is_alive], rng,
                                         had_treatment_during_this_stage=had_treatment_during_this_stage)
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
