@@ -20,7 +20,7 @@ from tlo.analysis.utils import (
 )
 
 resourcefilepath = Path("./resources")
-outputspath = Path("./outputs/newton.chagoma@york.ac.uk")
+outputspath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
@@ -29,7 +29,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # Tb_DAH_scenarios_test_run09_partial-2023-10-01T133822Z -looks to work fine
 #Tb_DAH_scenarios_test_run13_partial-2023-10-02T144642Z xcept for CXR scaleup and outreach
 #tb_DAH_impact-2023-10-07T150348Z---main results
-results_folder = get_scenario_outputs("tb_DAH_impact-2023-10-07T150348Z", outputspath)[-1]
+results_folder = get_scenario_outputs("Tb_DAH_impact_partial-2023-10-17T152823Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -348,6 +348,9 @@ child_Tb_prevalence= summarize(
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
 
+child_Tb_prevalence.index = child_Tb_prevalence.index.year
+child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence.xlsx")
+
 #properties of deceased
 properties_of_deceased_persons = log["tlo.methods.demography.detail"]["properties_of_deceased_persons"]
 properties_of_deceased_persons= properties_of_deceased_persons.set_index("date")
@@ -402,18 +405,6 @@ HSEvents = HSEvents.set_index("date")
 print("Health system events as follows", HSEvents)
 HSEvents.to_excel(outputspath / "HSEvents.xlsx")
 
-
-
-# # Debugging steps
-# if 'TREATMENT_ID' in HSEvents.columns:
-#     matching_rows = HSEvents[HSEvents['TREATMENT_ID'] == "Tb_Test_Screening"]
-#     print(f"Number of rows where TREATMENT_ID equals 'Tb_Test_Screening': {len(matching_rows)}")
-#
-#     Tb_screening = HSEvents.loc[HSEvents['TREATMENT_ID'] == "Tb_Test_Screening"]
-#     Tb_screening.to_excel(outputspath / "Tb_screening.xlsx")
-# else:
-#     print("TREATMENT_ID column not found in HSEvents DataFrame.")
-
 ## extracts number of people screened for TB by scenario
 TARGET_PERIOD = (Date(2010, 1, 1), Date(2033, 12, 31))
 def get_counts_of_hsi_by_treatment_id(_df):
@@ -435,23 +426,7 @@ counts_of_hsi_by_treatment_id = summarize(
         ).pipe(set_param_names_as_column_index_level_0),
         only_mean=True,
     )
-
-output = parse_log_file(Path("./outputs/Tb_DAH_impact_scenarios__2023-10-07T150628.log"))
-tb_df = output['tlo.methods.tb']
-tb_test_screening = get_counts_of_hsi_by_treatment_id(tb_df)
-print(tb_test_screening)
-print("Keys (columns) in counts_of_hsi_by_treatment_id:", counts_of_hsi_by_treatment_id.columns)
-
-#print("Count of TX_IDs as follows", counts_of_hsi_by_treatment_id.columns)
-tb_test_screening = counts_of_hsi_by_treatment_id.loc[counts_of_hsi_by_treatment_id['TREATMENT_ID'] == "Tb_Test_Screening"]
-tb_test_screening.to_excel("outputspath/Tb_Test_Screening_results.xlsx")
-# counts_of_hsi_by_treatment_id.fillna(0.0).to_clipboard(excel=True)
-
-
-#tb_test_screening = counts_of_hsi_by_treatment_id[counts_of_hsi_by_treatment_id['TREATMENT_ID'] == "Tb_Test_Screening"]
-
-tb_test_screening.to_excel("outputspath/Tb_Test_Screening_results.xlsx")
-
+counts_of_hsi_by_treatment_id.to_excel(outputspath / "Tb_Test_Screening.xlsx")
 
 ###### PLOTS##################################################
 # Calculate the sum of DALYs across years for each scenario
