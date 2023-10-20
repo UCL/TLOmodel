@@ -825,8 +825,6 @@ class Wasting(Module):
             ((df.un_WHZ_category == '-3<=WHZ<-2') & (df.un_am_MUAC_category != "<115mm")) |
             ((df.un_WHZ_category != 'WHZ<-3') & (df.un_am_MUAC_category != "115-<125mm"))
         ) & df.un_am_bilateral_oedema] = self.daly_wts['MAM_with_oedema']
-        # total_daly_values.loc[df.is_alive & (df.un_clinical_acute_malnutrition == 'MAM')] = \
-        #     self.daly_wts['MAM_w/o_oedema']
 
         return total_daly_values
 
@@ -1156,13 +1154,12 @@ class AcuteMalnutritionDeathPollingEvent(RegularEvent, PopulationScopeEventMixin
                 self.sim.schedule_event(
                     event=SevereAcuteMalnutritionDeathEvent(module=self.module, person_id=person),
                     date=self.sim.date)
-                # df.at[person, 'un_sam_death_date'] = self.sim.date
+
             else:
                 # schedule death according to duration
                 self.sim.schedule_event(
                     event=SevereAcuteMalnutritionDeathEvent(module=self.module, person_id=person),
                     date=death_date)
-                # df.at[person, 'un_sam_death_date'] = death_date
 
         # # # # # # # # # # # # # # # # # # # # # IMPROVEMENT FROM SAM TO MAM # # # # # # # # # # # # # # # # # # # # #
         # SAM = severe wasting (WHZ<-3) and/or MUAC <115mm, or nutritional oedema
@@ -1204,7 +1201,6 @@ class SevereAcuteMalnutritionDeathEvent(Event, IndividualScopeEventMixin):
         # Check if this person should still die from SAM:
         if pd.isnull(df.at[person_id, 'un_am_recovery_date']) &\
                 (df.at[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'):
-            # person_ids = df.at[person_id, 'un_am_recovery_date'])]
             # Cause the death to happen immediately
             df.at[person_id, 'un_sam_death_date'] = self.sim.date
             self.sim.modules['Demography'].do_death(
@@ -1365,20 +1361,11 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
         # ~~~~~~~~~~~~~~~~~~~~~~
         # Make request for some consumables
         consumables = self.sim.modules['HealthSystem'].parameters['item_and_package_code_lookups']
-        # whole package of interventions
-        # pkg_code_mam = pd.unique(
-        #     consumables.loc[consumables['Intervention_Pkg'] == 'Management of moderate acute malnutrition (children)',
-        #                     'Intervention_Pkg_Code'])[0]  # This package includes only CSB(or supercereal or CSB++)
         # individual items
         item_code1 = pd.unique(
             consumables.loc[consumables['Items'] == 'Corn Soya Blend (or Supercereal - CSB++)', 'Item_Code'])[0]
 
-        # consumables_needed = {'Intervention_Package_Code': {pkg_code_mam: 1}, 'Item_Code': {item_code1: 1}}
-
         # check availability of consumables
-        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-        #     hsi_event=self, cons_req_as_footprint=consumables_needed)
-        # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if self.get_consumables([item_code1]):
             logger.debug(key='debug', data='consumables are available')
             # Log that the treatment is provided:
@@ -1388,18 +1375,6 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
             self.module.do_when_am_treatment(person_id, intervention='SFP')
         else:
             logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
-
-        # --------------------------------------------------------------------------------------------------
-        # # check to see if all consumables returned (for demonstration purposes):
-        # all_available = (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_mam]) and \
-        #                 (outcome_of_request_for_consumables['Item_Code'][item_code1])
-        # # use helper function instead (for demonstration purposes)
-        # all_available_using_helper_function = self.get_all_consumables(
-        #     item_codes=[item_code1],
-        #     pkg_codes=[pkg_code_mam]
-        # )
-        # # Demonstrate equivalence
-        # assert all_available == all_available_using_helper_function
 
     def did_not_run(self):
         logger.debug("supplementary_feeding_programme_for_MAM: did not run")
@@ -1437,23 +1412,14 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
         # ~~~~~~~~~~~~~~~~~~~~~~
         # Make request for some consumables
         consumables = self.sim.modules['HealthSystem'].parameters['item_and_package_code_lookups']
-        # whole package of interventions
-        # pkg_code_sam = pd.unique(
-        #     consumables.loc[consumables['Intervention_Pkg'] == 'Management of severe malnutrition (children)',
-        #                     'Intervention_Pkg_Code'])[0]
+
         # individual items
         item_code1 = pd.unique(
             consumables.loc[consumables['Items'] == 'SAM theraputic foods', 'Item_Code'])[0]
         item_code2 = pd.unique(
             consumables.loc[consumables['Items'] == 'SAM medicines', 'Item_Code'])[0]
 
-        # consumables_needed = {'Intervention_Package_Code': {pkg_code_sam: 1}, 'Item_Code': {item_code1: 1,
-        #                                                                   item_code2: 1}}
-
         # check availability of consumables
-        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-        #     hsi_event=self, cons_req_as_footprint=consumables_needed)
-        # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if self.get_consumables(item_code1) and self.get_consumables(item_code2):
             logger.debug(key='debug', data='consumables are available.')
             # Log that the treatment is provided:
@@ -1463,18 +1429,6 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
             self.module.do_when_am_treatment(person_id, intervention='OTC')
         else:
             logger.debug(key='debug', data="consumables not available, so can't use it.")
-        # --------------------------------------------------------------------------------------------------
-        # # check to see if all consumables returned (for demonstration purposes):
-        # all_available = (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_sam]) and \
-        #                 (outcome_of_request_for_consumables['Item_Code'][item_code1][item_code2])
-        #
-        # # use helper function instead (for demonstration purposes)
-        # all_available_using_helper_function = self.get_all_consumables(
-        #     item_codes=[item_code1, item_code2],
-        #     pkg_codes=[pkg_code_sam]
-        # )
-        # # Demonstrate equivalence
-        # assert all_available == all_available_using_helper_function
 
     def did_not_run(self):
         logger.debug("HSI_outpatient_therapeutic_programme_for_SAM: did not run")
@@ -1513,26 +1467,14 @@ class HSI_Wasting_InpatientCareForComplicated_SAM(HSI_Event, IndividualScopeEven
         # ~~~~~~~~~~~~~~~~~~~~~~
         # Make request for some consumables
         consumables = self.sim.modules['HealthSystem'].parameters['item_and_package_code_lookups']
-        # whole package of interventions
-        # pkg_code_sam = pd.unique(
-        #     consumables.loc[consumables['Intervention_Pkg'] == 'Management of severe malnutrition (children)',
-        #                     'Intervention_Pkg_Code'])[0]
+
         # individual items
         item_code1 = pd.unique(
             consumables.loc[consumables['Items'] == 'SAM theraputic foods', 'Item_Code'])[0]
         item_code2 = pd.unique(
             consumables.loc[consumables['Items'] == 'SAM medicines', 'Item_Code'])[0]
 
-        # pkg_codes = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
-        # pkg_codes_num = pkg_codes('Management of severe malnutrition (children)')
-        #
-        # consumables_needed = {'Intervention_Package_Code': {pkg_code_sam: 1}, 'Item_Code': {item_code1: 1,
-        #                                                                                     item_code2: 1}}
-
         # # check availability of consumables
-        # outcome_of_request_for_consumables = self.sim.modules['HealthSystem'].request_consumables(
-        #     hsi_event=self, cons_req_as_footprint=consumables_needed)
-        # answer comes back in the same format, but with quantities replaced with bools indicating availability
         if self.get_consumables(item_code1) and self.get_consumables(item_code2):
             logger.debug(key='debug', data='consumables available, so use it.')
             # Log that the treatment is provided:
@@ -1542,17 +1484,6 @@ class HSI_Wasting_InpatientCareForComplicated_SAM(HSI_Event, IndividualScopeEven
             self.module.do_when_am_treatment(person_id, intervention='ITC')
         else:
             logger.debug(key='debug', data="consumables not available, so can't use it.")
-        # --------------------------------------------------------------------------------------------------
-        # # check to see if all consumables returned (for demonstration purposes):
-        # all_available = (outcome_of_request_for_consumables['Intervention_Package_Code'][pkg_code_sam]) and \
-        #                 (outcome_of_request_for_consumables['Item_Code'][item_code1][item_code2])
-        # # use helper function instead (for demonstration purposes)
-        # all_available_using_helper_function = self.get_all_consumables(
-        #     item_codes=[item_code1, item_code2],
-        #     pkg_codes=[pkg_code_sam]
-        # )
-        # # Demonstrate equivalence
-        # assert all_available == all_available_using_helper_function
 
     def did_not_run(self):
         logger.debug("HSI_inpatient_care_for_complicated_SAM: did not run")
