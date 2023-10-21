@@ -8,6 +8,7 @@ Limitations to note:
 from pathlib import Path
 
 import pandas as pd
+import numpy as np
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -151,7 +152,7 @@ class CervicalCancer(Module):
             Types.REAL, "sensitivity of xpert for presence of hpv, cin or cervical cancer"
         ),
         "sensitivity_of_via_for_cin_cc": Parameter(
-            Types.LIST, "sensitivity of via for cin and cervical cancer bu stage"
+            Types.REAL, "sensitivity of via for cin and cervical cancer bu stage"
         )
     }
 
@@ -190,11 +191,13 @@ class CervicalCancer(Module):
             Types.BOOL,
             "whether vaginal bleeding has been investigated, and cancer missed"
         ),
+        # todo: currently this property has levels to match ce_hov_cc_status to enable the code as written, even
+        # todo: though can only be treated when in stage 1-3
         "ce_stage_at_which_treatment_given": Property(
             Types.CATEGORICAL,
             "the cancer stage at which treatment was given (because the treatment only has an effect during the stage"
             "at which it is given).",
-            categories=["none", "stage1", "stage2a", "stage2b", "stage3", "stage4"],
+            categories=["none", "hpv", "cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"],
         ),
         "ce_date_palliative_care": Property(
             Types.DATE,
@@ -250,7 +253,8 @@ class CervicalCancer(Module):
 
     # todo: create ce_hpv_cc_status for all at baseline using init_prop_hpv_cc_stage_age1524
     #       and init_prop_hpv_cc_stage_age2549 - currently everyone incorrectly starts as "none"
-        df.ce_hpv_cc_status = 'none'
+
+#       df.ce_hpv_cc_status = 'none'
 
         # -------------------- SYMPTOMS -----------
         # Create shorthand variable for the initial proportion of discernible breast cancer lumps in the population
@@ -339,7 +343,7 @@ class CervicalCancer(Module):
         # set date at which treatment began: same as diagnosis (NB. no HSI is established for this)
         df.loc[treatment_initiated, "ce_date_treatment"] = df.loc[treatment_initiated, "ce_date_diagnosis"]
 
-        # -------------------- brc_date_palliative_care -----------
+        # -------------------- ce_date_palliative_care -----------
         in_stage4_diagnosed = df.index[df.is_alive & (df.ce_hpv_cc_status == 'stage4') & ~pd.isnull(df.ce_date_diagnosis)]
 
         select_for_care = self.rng.random_sample(size=len(in_stage4_diagnosed)) < p['init_prob_palliative_care']
@@ -376,7 +380,7 @@ class CervicalCancer(Module):
         p = self.parameters
         lm = self.linear_models_for_progression_of_hpv_cc_status
 
-# todo: check this below
+        # todo: check this below
 
         rate_hpv = p['r_nvp_hpv'] + p['r_vp_hpv']
 #       prop_hpv_vp = 'r_vp_hpv' / rate_hpv
@@ -485,7 +489,8 @@ class CervicalCancer(Module):
         )
 
         # Check that the dict labels are correct as these are used to set the value of ce_hpv_cc_status
-        assert set(lm).union({'none'}) == set(df.ce_hpv_cc_status.cat.categories)
+        # todo: put this line below back in
+#       assert set(lm).union({'none'}) == set(df.ce_hpv_cc_status.cat.categories)
 
         # Linear Model for the onset of vaginal bleeding, in each 1 month period
         # Create variables for used to predict the onset of vaginal bleeding at
@@ -505,12 +510,15 @@ class CervicalCancer(Module):
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True,
             )
+            .when('none', 0.0)
+            .when('cin1', 0.0)
+            .when('cin2', 0.0)
+            .when('cin3', 0.0)
             .when('stage1', stage1)
             .when('stage2a', stage2a)
             .when('stage2b', stage2b)
             .when('stage3', stage3)
             .when('stage4', stage4)
-            .when('none', 0.0)
         )
 
         # ----- DX TESTS -----
@@ -529,7 +537,7 @@ class CervicalCancer(Module):
             screening_with_via_for_hpv_and_cervical_cancer=DxTest(
                 property='ce_hpv_cc_status',
                 sensitivity=self.parameters['sensitivity_of_xpert_for_hpv_cin_cc'],
-                target_categories=["hpv", "stage1", "stage2a", "stage2b", "stage3", "stage4"]
+                target_categories=["cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"]
             )
         )
 
@@ -537,7 +545,7 @@ class CervicalCancer(Module):
             screening_with_xpert_for_hpv_and_cervical_cancer=DxTest(
                 property='ce_hpv_cc_status',
                 sensitivity=self.parameters['sensitivity_of_via_for_cin_cc'],
-                target_categories=["stage1", "stage2a", "stage2b", "stage3", "stage4"]
+                target_categories=["hpv", "cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"]
             )
         )
 
@@ -572,10 +580,10 @@ class CervicalCancer(Module):
             # that for those with stage 1-3 cancers.
 
         # ----- HSI FOR PALLIATIVE CARE -----
-        on_palliative_care_at_initiation = df.index[df.is_alive & ~pd.isnull(df.brc_date_palliative_care)]
+        on_palliative_care_at_initiation = df.index[df.is_alive & ~pd.isnull(df.ce_date_palliative_care)]
         for person_id in on_palliative_care_at_initiation:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_BreastCancer_PalliativeCare(module=self, person_id=person_id),
+                hsi_event=HSI_CervicalCancer_PalliativeCare(module=self, person_id=person_id),
                 priority=0,
                 topen=self.sim.date + DateOffset(months=1),
                 tclose=self.sim.date + DateOffset(months=1) + DateOffset(weeks=1)
@@ -1009,12 +1017,12 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # Current counts, on treatment (excl. palliative care)
         out.update({f'treatment_{k}': v for k, v in df.loc[df.is_alive].loc[(~pd.isnull(
-            df.cc_date_treatment) & pd.isnull(
-            df.cc_date_palliative_care)), 'ce_hpv_cc_status'].value_counts().items()})
+            df.ce_date_treatment) & pd.isnull(
+            df.ce_date_palliative_care)), 'ce_hpv_cc_status'].value_counts().items()})
 
         # Current counts, on palliative care
         out.update({f'palliative_{k}': v for k, v in df.loc[df.is_alive].loc[
-            ~pd.isnull(df.brc_date_palliative_care), 'ce_hpv_cc_status'].value_counts().items()})
+            ~pd.isnull(df.ce_date_palliative_care), 'ce_hpv_cc_status'].value_counts().items()})
 
         # Counts of those that have been diagnosed, started treatment or started palliative care since last logging
         # event:
