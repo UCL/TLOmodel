@@ -39,8 +39,8 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2010, 2, 1)
-popsize = 1000
+end_date = Date(2010, 12, 1)
+popsize = 300
 
 
 def run_sim(service_availability):
