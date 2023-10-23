@@ -802,7 +802,9 @@ def test_use_of_HSI_for_MAM(tmpdir):
 
 
 def test_use_of_HSI_for_SAM(tmpdir):
-    """ Check that the HSI_Wasting_OutpatientTherapeuticProgramme_SAM and HSI_Wasting_InpatientCareForComplicated_SAM work"""
+    """
+    Check that the HSI_Wasting_OutpatientTherapeuticProgramme_SAM and HSI_Wasting_InpatientCareForComplicated_SAM work
+    """
 
     def test_use_of_HSI_by_complication(complications):
         dur = pd.DateOffset(days=0)
