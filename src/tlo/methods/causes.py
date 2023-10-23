@@ -3,6 +3,7 @@ Classes and functions that support declarations of causes of death and disabilit
 """
 
 from collections import defaultdict
+from copy import copy
 from typing import Union
 
 import pandas as pd
@@ -67,8 +68,9 @@ def collect_causes_from_disease_modules(all_modules, collect, acceptable_causes:
                         f"Conflict in declared cause {tlo_cause} by {m.name}. " \
                         f"A different specification has already been registered."
 
-                # If ok, update these causes to the master dict of all causes of death
-                collected_causes.update({tlo_cause: cause})
+                # If ok, update these causes to the master dict of all causes of death  (copies to prevent any
+                # accidental editing of the modules' declarations).
+                collected_causes[tlo_cause] = copy(cause)
 
     # Check that each gbd_cause is not defined in respect of more than one label
     gbd_causes = dict()  # dict(<gbd_cause: label>)
@@ -81,6 +83,18 @@ def collect_causes_from_disease_modules(all_modules, collect, acceptable_causes:
                 gbd_causes[g] = c.label
 
     return collected_causes
+
+
+def get_gbd_causes_not_represented_in_disease_modules(causes: dict, gbd_causes: set):
+    """
+    Find the causes in the GBD datasets (`gbd_causes`) that are *not* represented within the Causes defined in `causes`
+    :return: set of gbd_causes that are not represented.
+    """
+    all_gbd_causes_in_sim = set()
+    for c in causes.values():
+        all_gbd_causes_in_sim.update(c.gbd_causes)
+
+    return gbd_causes - all_gbd_causes_in_sim
 
 
 def create_mappers_from_causes_to_label(causes: dict, all_gbd_causes: set = None):
@@ -119,12 +133,12 @@ def create_mappers_from_causes_to_label(causes: dict, all_gbd_causes: set = None
     #  - from tlo_cause --> label (key=tlo_cause, value=label)
     mapper_from_tlo_causes = dict((v, k) for k, v in (
         lookup_df.tlo_causes.apply(pd.Series).stack().reset_index(level=1, drop=True)
-    ).iteritems())
+    ).items())
 
     #  - from gbd_cause --> label (key=gbd_cause, value=label)
     mapper_from_gbd_causes = dict((v, k) for k, v in (
         lookup_df.gbd_causes.apply(pd.Series).stack().reset_index(level=1, drop=True)
-    ).iteritems())
+    ).items())
 
     # -- checks
     assert set(mapper_from_tlo_causes.keys()) == set(causes.keys())

@@ -47,6 +47,10 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 
+# Profiling results files
+src/scripts/profiling/results/
+results/
+
 # Translations
 *.mo
 *.pot
@@ -112,4 +116,6 @@ docs/reference/tlo*.rst
 # TLO configuration
 tlo.conf
 
-
+# ignore all files in outputs directory, except README
+outputs/*
+!outputs/README

@@ -15,6 +15,7 @@ from tlo.methods import (
     simplified_births,
     symptommanager,
 )
+from tlo.methods.healthseekingbehaviour import HIGH_ODDS_RATIO
 from tlo.methods.symptommanager import (
     DuplicateSymptomWithNonIdenticalPropertiesError,
     Symptom,
@@ -43,25 +44,58 @@ def test_make_a_symptom():
     assert hasattr(symp, 'name')
     assert hasattr(symp, 'no_healthcareseeking_in_children')
     assert hasattr(symp, 'no_healthcareseeking_in_adults')
-    assert hasattr(symp, 'emergency_in_children')
-    assert hasattr(symp, 'emergency_in_adults')
+    assert hasattr(symp, 'prob_seeks_emergency_appt_in_children')
+    assert hasattr(symp, 'prob_seeks_emergency_appt_in_adults')
     assert hasattr(symp, 'odds_ratio_health_seeking_in_children')
     assert hasattr(symp, 'odds_ratio_health_seeking_in_adults')
 
     assert symp.no_healthcareseeking_in_children is False
     assert symp.no_healthcareseeking_in_adults is False
 
-    assert symp.emergency_in_children is False
-    assert symp.emergency_in_adults is False
+    assert symp.prob_seeks_emergency_appt_in_children == 0.0
+    assert symp.prob_seeks_emergency_appt_in_adults == 0.0
 
     assert symp.odds_ratio_health_seeking_in_children == 1.0
     assert symp.odds_ratio_health_seeking_in_adults == 1.0
 
 
+def test_emergency_symptom_defined_through_static_method():
+    """Check that can create an emergency symptom and that is has the expected properties by default"""
+    # Emergency in adults and children
+    symp = Symptom.emergency('emergency_symptom')
+    assert isinstance(symp, Symptom)
+    assert symp.no_healthcareseeking_in_children is False
+    assert symp.no_healthcareseeking_in_adults is False
+    assert symp.prob_seeks_emergency_appt_in_children == 1.0
+    assert symp.prob_seeks_emergency_appt_in_adults == 1.0
+    assert symp.odds_ratio_health_seeking_in_children >= HIGH_ODDS_RATIO
+    assert symp.odds_ratio_health_seeking_in_adults >= HIGH_ODDS_RATIO
+
+    # Emergency in adults only
+    symp = Symptom.emergency(name='emergency_symptom', which='adults')
+    assert isinstance(symp, Symptom)
+    assert symp.no_healthcareseeking_in_children is False
+    assert symp.no_healthcareseeking_in_adults is False
+    assert symp.prob_seeks_emergency_appt_in_children == 0.0
+    assert symp.prob_seeks_emergency_appt_in_adults == 1.0
+    assert symp.odds_ratio_health_seeking_in_children == 0.0
+    assert symp.odds_ratio_health_seeking_in_adults >= HIGH_ODDS_RATIO
+
+    # Emergency in children only
+    symp = Symptom.emergency(name='emergency_symptom', which='children')
+    assert isinstance(symp, Symptom)
+    assert symp.no_healthcareseeking_in_children is False
+    assert symp.no_healthcareseeking_in_adults is False
+    assert symp.prob_seeks_emergency_appt_in_children == 1.0
+    assert symp.prob_seeks_emergency_appt_in_adults == 0.0
+    assert symp.odds_ratio_health_seeking_in_children >= HIGH_ODDS_RATIO
+    assert symp.odds_ratio_health_seeking_in_adults == 0.0
+
+
 def test_register_duplicate_symptoms():
     symp = Symptom(name='symptom')
     symp_duplicate = Symptom(name='symptom')
-    symp_with_different_properties = Symptom(name='symptom', emergency_in_children=True)
+    symp_with_different_properties = Symptom.emergency(name='symptom')
     symp_with_different_name = Symptom(name='symptom_a')
 
     sm = symptommanager.SymptomManager(resourcefilepath=resourcefilepath)
@@ -264,8 +298,10 @@ def test_auto_onset_symptom(seed):
     assert 0 == len(sm.has_what(person_id))
 
 
-def test_spurious_symptoms_during_simulation(seed):
-    """Test on the functionality of the spurious symptoms"""
+def test_nonemergency_spurious_symptoms_during_simulation(seed):
+    """Test on the functionality of a generic non-emergency spurious symptom"""
+    the_generic_symptom = 'fever'
+
     sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the core modules
@@ -278,15 +314,15 @@ def test_spurious_symptoms_during_simulation(seed):
 
     # Make the probability of onset of one of the generic symptoms be 1.0 and duration of one day
     generic_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
-    the_generic_symptom = generic_symptoms.iloc[0].generic_symptom_name
+
     generic_symptoms.loc[
-        (the_generic_symptom == generic_symptoms['generic_symptom_name']),
+        (the_generic_symptom == generic_symptoms['name']),
         ['prob_spurious_occurrence_in_children_per_day',
          'prob_spurious_occurrence_in_adults_per_day']
     ] = (1.0, 1.0)
 
     generic_symptoms.loc[
-        (the_generic_symptom == generic_symptoms['generic_symptom_name']),
+        (the_generic_symptom == generic_symptoms['name']),
         ['duration_in_days_of_spurious_occurrence_in_children',
          'duration_in_days_of_spurious_occurrence_in_adults']
     ] = (1, 1)
@@ -308,6 +344,54 @@ def test_spurious_symptoms_during_simulation(seed):
     sim.date += DateOffset(days=1)
     sim.modules['SymptomManager'].spurious_symptom_resolve_event.apply(sim.population)
     assert [] == sim.modules['SymptomManager'].who_has(the_generic_symptom)
+
+
+def test_emergency_spurious_symptom_during_simulation(seed):
+    """Test on the functionality of the spurious emergency symptom"""
+    emergency_spurious_symptom = 'spurious_emergency_symptom'
+
+    sim = Simulation(start_date=start_date, seed=seed)
+
+    # Register the core modules
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           disable_and_reject_all=True),
+                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath, spurious_symptoms=True),
+                 )
+
+    # Make the probability of onset of the spurious emergency symptom be 1.0 and duration of one day
+    generic_symptoms = sim.modules['SymptomManager'].parameters['generic_symptoms_spurious_occurrence']
+    generic_symptoms.loc[
+        (emergency_spurious_symptom == generic_symptoms['name']),
+        ['prob_spurious_occurrence_in_children_per_day',
+         'prob_spurious_occurrence_in_adults_per_day']
+    ] = (1.0, 1.0)
+
+    generic_symptoms.loc[
+        (emergency_spurious_symptom == generic_symptoms['name']),
+        ['duration_in_days_of_spurious_occurrence_in_children',
+         'duration_in_days_of_spurious_occurrence_in_adults']
+    ] = (1, 1)
+
+    # Run the simulation
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + DateOffset(days=0))
+
+    # Check that no one has symptoms
+    assert [] == sim.modules['SymptomManager'].who_has(emergency_spurious_symptom)
+
+    # Run the onset event & check that all persons now have the generic symptom
+    onset = SymptomManager_SpuriousSymptomOnset(module=sim.modules['SymptomManager'])
+    onset.apply(sim.population)
+    df = sim.population.props
+    assert len(df.is_alive.index) > 0
+    assert set(df.is_alive.index) == set(sim.modules['SymptomManager'].who_has(emergency_spurious_symptom))
+
+    # Update time, run resolve event and check that no one has symptom
+    sim.date += DateOffset(days=1)
+    sim.modules['SymptomManager'].spurious_symptom_resolve_event.apply(sim.population)
+    assert [] == sim.modules['SymptomManager'].who_has(emergency_spurious_symptom)
 
 
 @pytest.fixture

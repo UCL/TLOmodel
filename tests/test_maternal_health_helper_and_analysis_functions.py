@@ -354,8 +354,9 @@ def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed
     mag_sulf = module.item_codes_lab_consumables['magnesium_sulfate']
     htns = module.item_codes_lab_consumables['iv_antihypertensives']
     seps = module.item_codes_lab_consumables['maternal_sepsis_core']
+    resus = module.item_codes_lab_consumables['resuscitation']
 
-    for cons in abx_prom, steroids, cbp, ol, mag_sulf, htns, seps:
+    for cons in abx_prom, steroids, cbp, ol, mag_sulf, htns, seps, resus:
         for item in cons:
             sim.modules['HealthSystem'].override_availability_of_consumables(
                 {item: 0.0})
@@ -365,7 +366,7 @@ def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed
 
     # create dummy HSI to test that consumables truly are unavailable when using standard method
     hsi_event = get_dummy_hsi(sim, mother_id, id=3, fl=2)
-    for cons in abx_prom, steroids, cbp, ol, mag_sulf, htns, seps:
+    for cons in abx_prom, steroids, cbp, ol, mag_sulf, htns, seps, resus:
         available = hsi_event.get_consumables(item_codes=cons)
         assert not available
 
@@ -387,6 +388,7 @@ def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed
     assert mni[mother_id]['mode_of_delivery'] == 'instrumental'
     assert df.at[mother_id, 'la_sepsis_treatment']
     assert mni[mother_id]['clean_birth_practices']
+    assert mni[mother_id]['neo_will_receive_resus_if_needed']
 
     # Now repeat to test the CEmONC event
     params['success_rate_uterine_repair'] = 1.0
@@ -521,6 +523,7 @@ def test_analysis_events_force_availability_of_consumables_for_newborn_hsi(seed)
     df.at[mother_id, 'date_of_last_pregnancy'] = sim.date
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 38
     df.at[mother_id, 'is_pregnant'] = True
+    df.at[mother_id, 'co_contraception'] = "not_using"
 
     # Populate the minimum set of keys within the mni dict so the on_birth function will run
     pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)

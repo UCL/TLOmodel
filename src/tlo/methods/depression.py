@@ -49,7 +49,7 @@ class Depression(Module):
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        'SevereDepression': Cause(gbd_causes='Self-harm', label='Depression / Self-harm')
+        'SevereDepression': Cause(gbd_causes='Depressive disorders', label='Depression / Self-harm')
     }
 
     # Module parameters
@@ -183,7 +183,11 @@ class Depression(Module):
 
         'anti_depressant_medication_item_code': Parameter(Types.INT,
                                                           'The item code used for one month of anti-depressant '
-                                                          'treatment')
+                                                          'treatment'),
+
+        'pr_assessed_for_depression_for_perinatal_female': Parameter(
+            Types.REAL,
+            'Probability that a perinatal female is assessed for depression during antenatal or postnatal services'),
     }
 
     # Properties of individuals 'owned' by this module
@@ -324,12 +328,8 @@ class Depression(Module):
             )
 
         # Symptom that this module will use
-        self.sim.modules['SymptomManager'].register_symptom(
-            Symptom(
-                name='Injuries_From_Self_Harm',
-                emergency_in_adults=True
-            ),
-        )
+        self.sim.modules['SymptomManager'].register_symptom(Symptom.emergency(name='Injuries_From_Self_Harm',
+                                                                              which='adults'))
 
     def apply_linear_model(self, lm, df):
         """
@@ -506,6 +506,35 @@ class Depression(Module):
             fraction_of_month_depr * self.daly_wts['average_per_day_during_any_episode'], fill_value=0.0)
 
         return av_daly_wt_last_month
+
+    def do_on_presentation_to_care(self, person_id, hsi_event):
+        """This member function is called when a person is in an HSI, and there may need to be screening for depression.
+        """
+        df = self.sim.population.props
+        if hsi_event.TREATMENT_ID == "FirstAttendance_NonEmergency":
+            if self.rng.rand() < self.parameters['pr_assessed_for_depression_in_generic_appt_level1']:
+                self.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
+
+        elif hsi_event.TREATMENT_ID == "FirstAttendance_Emergency":
+            symptoms = self.sim.modules['SymptomManager'].has_what(person_id)
+            if 'Injuries_From_Self_Harm' in symptoms:
+                self.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
+                # TODO: Trigger surgical care for injuries.
+
+        elif hsi_event.TREATMENT_ID == "AntenatalCare_Outpatient":  # module care_of_women_during_pregnancy
+            if (not df.at[person_id, 'de_ever_diagnosed_depression']) and (
+                self.rng.rand() < self.parameters['pr_assessed_for_depression_for_perinatal_female']
+            ):
+                self.do_when_suspected_depression(person_id, hsi_event)
+
+        elif hsi_event.TREATMENT_ID == "PostnatalCare_Maternal":  # module labour
+            if (not df.at[person_id, 'de_ever_diagnosed_depression']) and (
+                self.rng.rand() < self.parameters['pr_assessed_for_depression_for_perinatal_female']
+            ):
+                self.do_when_suspected_depression(person_id=person_id, hsi_event=hsi_event)
+
+        else:
+            raise NotImplementedError
 
     def do_when_suspected_depression(self, person_id, hsi_event):
         """
@@ -711,17 +740,21 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         def zero_out_nan(x):
             return x if not np.isnan(x) else 0
 
+        def safe_divide(x, y):
+            return x / y if y > 0.0 else 0.0
+
         dict_for_output = {
-            'prop_ge15_depr': zero_out_nan(n_ge15_depr / n_ge15),
-            'prop_ge15_m_depr': zero_out_nan(n_ge15_m_depr / n_ge15_m),
-            'prop_ge15_f_depr': zero_out_nan(n_ge15_f_depr / n_ge15_f),
-            'prop_ever_depr': zero_out_nan(n_ever_depr / n_ge15),
-            'prop_age_50_ever_depr': zero_out_nan(n_age_50_ever_depr / n_age_50),
-            'p_ever_diagnosed_depression_if_ever_depressed': zero_out_nan(n_ever_diagnosed_depression / n_ever_depr),
-            'prop_antidepr_if_curr_depr': zero_out_nan(n_antidepr_depr / n_ge15_depr),
-            'prop_antidepr_if_ever_depr': zero_out_nan(n_antidepr_ever_depr / n_ever_depr),
-            'prop_ever_talk_ther_if_ever_depr': zero_out_nan(n_ever_talk_ther / n_ever_depr),
-            'prop_ever_self_harmed': zero_out_nan(n_ever_self_harmed / n_ever_depr),
+            'prop_ge15_depr': zero_out_nan(safe_divide(n_ge15_depr, n_ge15)),
+            'prop_ge15_m_depr': zero_out_nan(safe_divide(n_ge15_m_depr, n_ge15_m)),
+            'prop_ge15_f_depr': zero_out_nan(safe_divide(n_ge15_f_depr, n_ge15_f)),
+            'prop_ever_depr': zero_out_nan(safe_divide(n_ever_depr, n_ge15)),
+            'prop_age_50_ever_depr': zero_out_nan(safe_divide(n_age_50_ever_depr, n_age_50)),
+            'p_ever_diagnosed_depression_if_ever_depressed':
+                zero_out_nan(safe_divide(n_ever_diagnosed_depression, n_ever_depr)),
+            'prop_antidepr_if_curr_depr': zero_out_nan(safe_divide(n_antidepr_depr, n_ge15_depr)),
+            'prop_antidepr_if_ever_depr': zero_out_nan(safe_divide(n_antidepr_ever_depr, n_ever_depr)),
+            'prop_ever_talk_ther_if_ever_depr': zero_out_nan(safe_divide(n_ever_talk_ther, n_ever_depr)),
+            'prop_ever_self_harmed': zero_out_nan(safe_divide(n_ever_self_harmed, n_ever_depr)),
         }
 
         logger.info(key='summary_stats', data=dict_for_output)

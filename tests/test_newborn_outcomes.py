@@ -125,6 +125,8 @@ def test_care_seeking_for_babies_delivered_at_home_who_develop_complications(see
     hsi_events = find_and_return_hsi_events_list(sim, child_id)
     assert newborn_outcomes.HSI_NewbornOutcomes_ReceivesPostnatalCheck in hsi_events
 
+    # todo: normal twin birth logic
+
 
 def test_twin_and_single_twin_still_birth_logic_for_twins(seed):
     """Test that for women who experience a single twin stillbirth only produce one newborn child as expected"""

@@ -10,7 +10,7 @@ The **Thanzi La Onse (TLO) Model** is a part of the `Thanzi La Onse <https://tha
 
 It is developed in a collaboration between:
 
-* `University of Malawi <https://www.medcol.mw>`_
+* `Kamuzu University of Health Sciences <https://www.kuhes.ac.mw>`_
 
 * `Imperial College London <https://www.imperial.ac.uk/mrc-global-infectious-disease-analysis>`_
 
@@ -42,5 +42,5 @@ Contents
    reference/index
    background
    publications
-   authors
+   contributors
    contributing

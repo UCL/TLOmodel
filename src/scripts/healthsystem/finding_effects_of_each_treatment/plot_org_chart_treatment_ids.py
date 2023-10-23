@@ -28,7 +28,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     split = pd.concat([base, one_level_up, two_level_up, three_level_up], axis=1)
     split = split.set_index(one_level_up + '*')  # One level up is equivalent to the Short TREATMENT_ID
-    split = split.loc[order_of_short_treatment_ids(split.index)]  # ordering
+    split = split.sort_index(key=order_of_short_treatment_ids)  # ordering
 
     graph = pydot.Dot(graph_type='digraph',
                       rankdir='LR',
