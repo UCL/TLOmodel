@@ -33,6 +33,7 @@ All the options can be set in the # TO SET # section below.
 """
 
 import time
+import warnings
 from pathlib import Path
 
 import fnc_analyse_contraception as a_co
@@ -46,7 +47,7 @@ time_start = time.time()
 #  suffix) & return last year of sims (the same for that) // separate them as pop_size_simulated & last_year_simulated
 # pop_size_simulated = "2K"
 pop_size_simulated = "250K"
-branch_name = 'co_final'
+branch_name = 'co_rev02'
 # which results to use
 # - Without interv
 # datestamp_without_log = '2023-04-26T141435'
@@ -125,9 +126,19 @@ do_interv_analysis = True
 # %% Plot Consumables & Intervention Costs Over Time from the Table?
 # plot_costs = False
 plot_costs = True
+# should the figure of costs by time periods also include totals for all periods together?
+plot_costs_by_periods__incl_totals_bool = False
+# plot_costs_by_periods__incl_totals_bool = True
 ########################################################################################################################
+# Warn if cost table is not requested but cost figure is, the fig can't be prepared without the table
+if (not table_use_costs_bool) and plot_costs:
+    warnings.warn(
+        "\nWarning: The cost figure won't be prepared, as the cost table wasn't requested and the figure cannot be"
+        "prepared without the table")
+
 # Prepare the table of consumables (no sim is needed)
 tables.table_cons(mwk_to_usd_exchange_rate, contraceptives_order)
+print("Fig: Consumables list saved.")
 
 # Actually run analysis for the table, only if you require the table. ;)
 run_analysis = run_analysis and table_use_costs_bool
@@ -206,7 +217,7 @@ def load_analysis_out(in_analysis_type, in_datestamp_log):
                     index_col=[0])
     scaling_factor_with_loaded = \
         pd.read_csv(Path(dataframe_folder + '/scaling_factor_' + in_analysis_type + '_' + in_datestamp_log + '.npy'))
-    return use_with_df_loaded, percentage_use_with_df_loaded, costs_with_df_loaded, interv_costs_with_df_loaded,\
+    return use_with_df_loaded, percentage_use_with_df_loaded, costs_with_df_loaded, interv_costs_with_df_loaded, \
         scaling_factor_with_loaded
 
 
@@ -311,8 +322,8 @@ if table_use_costs_bool:
                                        costs_without_df, costs_with_df,
                                        interv_costs_without_df, interv_costs_with_df,
                                        mwk_to_usd_exchange_rate, rounding_costs_mwk_to, rounding_costs_usd_to,
-                                       plot_costs, datestamp_without_log, datestamp_with_log, suffix,
-                                       ID_without, ID_with)
+                                       plot_costs, plot_costs_by_periods__incl_totals_bool,
+                                       datestamp_without_log, datestamp_with_log, suffix, ID_without, ID_with)
 
     to_print = "Tab: Contraception Use (total & percentage) & Costs within Time Periods "
     if do_no_interv_analysis:

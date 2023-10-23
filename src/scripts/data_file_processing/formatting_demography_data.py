@@ -8,19 +8,22 @@ It reads in the files that were downloaded externally and saves them as Resource
 The following files are created:
 * 'ResourceFile_Population_2010.csv': used in model
 * 'ResourceFile_Pop_Frac_Births_Male.csv': used in model
-* 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv': used in model
-* `ResourceFile_ASFR_WPP.csv`: used in model (SimplifiedBirths module)
+* 'ResourceFile_Pop_DeathRates_Expanded_WPP2019.csv': used in model
+* `ResourceFile_ASFR_WPP2019.csv`: used in model (SimplifiedBirths module)
 
 * `ResourceFile_PopulationSize_2018Census.csv`: used for scaling results to actual size of population in census
-* `ResourceFile_Pop_Annual_WPP.csv`: used for calibration checks
-* `ResourceFile_TotalBirths_WPP.csv`: used for calibration checks
-* `ResourceFile_TotalDeaths_WPP.csv`: used for calibration checks
+* `ResourceFile_Pop_Annual_age_sex_WPP2019.csv`: used for calibration checks
+* `ResourceFile_Pop_Annual_sex_WPP2019.csv`: used for calibration checks
+* `ResourceFile_TotalBirths_WPP2019.csv`: used for calibration checks
+* `ResourceFile_TotalDeaths_WPP19.csv`: used for calibration checks
 
 * 'ResourceFile_Birth_2018Census.csv': Not used currently
 * 'ResourceFile_Deaths_2018Census.csv': Not used currently
+* 'ResourceFile_Pop_Annual_age_sex_WPP2022': Not used currently (commented in analysis_all_calibration)
+* `ResourceFile_TotalBirths_WPP2022.csv`: Not used currently (commented in analysis_all_calibration)
 
-* `ResourceFile_Pop_DeathRates_WPP.csv`: Not used currently
-* `ResourceFile_Pop_WPP.csv`: Not used currently
+* `ResourceFile_Pop_DeathRates_WPP2019.csv`: Not used currently
+* `ResourceFile_Pop_Every5years_age_sex_WPP2019.csv`: Not used currently
 * `ResourceFile_ASFR_DHS.csv`: Not used currently
 * `ResourceFile_Under_Five_Mortality_DHS.csv`: Not used currently
 
@@ -39,11 +42,13 @@ path_for_saved_files = Path("./resources/demography")
 (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
 
 # *** USE OF THE CENSUS DATA ****
+workingfolder =\
+    '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/Module-demography'
+# TODO: use parser?
 
 # %% Totals by Sex for Each District
 
-workingfile_popsizes = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-demography/Census_Main_Report/Series A. Population Tables.xlsx'
+workingfile_popsizes = workingfolder + '/Census_Main_Report/Series A. Population Tables.xlsx'
 
 # Clean up the data that is imported
 a1 = pd.read_excel(workingfile_popsizes, sheet_name='A1')
@@ -172,8 +177,7 @@ table.to_csv(path_for_saved_files / 'ResourceFile_PopulationSize_2018Census.csv'
 
 # %% Number of births
 
-workingfile_fertility = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-demography/Census_Main_Report/Series B. Fertility Tables.xlsx'
+workingfile_fertility = workingfolder + '/Census_Main_Report/Series B. Fertility Tables.xlsx'
 
 b1 = pd.read_excel(workingfile_fertility, sheet_name='TABLE B1')
 b1 = b1.dropna()
@@ -209,8 +213,7 @@ b1[['Variant', 'Year', 'Period', 'Region', 'Count']].to_csv(path_for_saved_files
 
 # %% Number of deaths
 
-workingfile_mortality = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-demography/Census_Main_Report/Series K. Mortality Tables.xlsx'
+workingfile_mortality = workingfolder + '/Census_Main_Report/Series K. Mortality Tables.xlsx'
 
 k2 = pd.read_excel(workingfile_mortality, sheet_name='K2')
 
@@ -245,19 +248,19 @@ k2_melt.to_csv(path_for_saved_files / 'ResourceFile_Deaths_2018Census.csv', inde
 
 # %% **** USE OF THE WPP DATA ****
 
-# Population size: age groups
-wpp_pop_males_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-demography/WPP_2019/WPP2019_POP_F07_2_POPULATION_BY_AGE_MALE.xlsx'
+# %% Population size by age and sex WPP 2019:
+# 5-years age groups, every 5 years, estimates 1950-2020 + low, medium & high variants 2020-2100
 
-wpp_pop_females_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-demography/WPP_2019/WPP2019_POP_F07_3_POPULATION_BY_AGE_FEMALE.xlsx'
+wpp19_pop_males_file = workingfolder + '/WPP_2019/WPP2019_POP_F07_2_POPULATION_BY_AGE_MALE.xlsx'
+
+wpp19_pop_females_file = workingfolder + '/WPP_2019/WPP2019_POP_F07_3_POPULATION_BY_AGE_FEMALE.xlsx'
 
 # Males
 dat = pd.concat([
-    pd.read_excel(wpp_pop_males_file, sheet_name='ESTIMATES', header=16),
-    pd.read_excel(wpp_pop_males_file, sheet_name='LOW VARIANT', header=16),
-    pd.read_excel(wpp_pop_males_file, sheet_name='MEDIUM VARIANT', header=16),
-    pd.read_excel(wpp_pop_males_file, sheet_name='HIGH VARIANT', header=16)
+    pd.read_excel(wpp19_pop_males_file, sheet_name='ESTIMATES', header=16),
+    pd.read_excel(wpp19_pop_males_file, sheet_name='LOW VARIANT', header=16),
+    pd.read_excel(wpp19_pop_males_file, sheet_name='MEDIUM VARIANT', header=16),
+    pd.read_excel(wpp19_pop_males_file, sheet_name='HIGH VARIANT', header=16)
 ], sort=False)
 
 ests_males = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
@@ -265,10 +268,10 @@ ests_males['Sex'] = 'M'
 
 # Females
 dat = pd.concat([
-    pd.read_excel(wpp_pop_females_file, sheet_name='ESTIMATES', header=16),
-    pd.read_excel(wpp_pop_females_file, sheet_name='LOW VARIANT', header=16),
-    pd.read_excel(wpp_pop_females_file, sheet_name='MEDIUM VARIANT', header=16),
-    pd.read_excel(wpp_pop_females_file, sheet_name='HIGH VARIANT', header=16)
+    pd.read_excel(wpp19_pop_females_file, sheet_name='ESTIMATES', header=16),
+    pd.read_excel(wpp19_pop_females_file, sheet_name='LOW VARIANT', header=16),
+    pd.read_excel(wpp19_pop_females_file, sheet_name='MEDIUM VARIANT', header=16),
+    pd.read_excel(wpp19_pop_females_file, sheet_name='HIGH VARIANT', header=16)
 ])
 
 ests_females = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
@@ -280,67 +283,154 @@ ests = ests.drop(ests.columns[[0, 2, 3, 4, 5, 6]], axis=1)
 ests[ests.columns[2:23]] = ests[ests.columns[
                                 2:23]] * 1000  # given numbers are in 1000's, so multiply by 1000 to give actual
 
-ests['Variant'] = 'WPP_' + ests['Variant']
+ests['Variant'] = 'WPP2019_' + ests['Variant']
 ests = ests.rename(columns={ests.columns[1]: 'Year'})
 ests_melt = ests.melt(id_vars=['Variant', 'Year', 'Sex'], value_name='Count', var_name='Age_Grp')
 ests_melt['Period'] = ests_melt['Year'].map(calendar_period_lookup)
 
-ests_melt.to_csv(path_for_saved_files / 'ResourceFile_Pop_WPP.csv', index=False)
+ests_melt.to_csv(path_for_saved_files / 'ResourceFile_Pop_Every5years_age_sex_WPP2019.csv', index=False)
 
 # pop in 2010:
 ests_melt.loc[ests_melt['Year'] == 2010, 'Count'].sum()  # ~14M
 
-# %% Population size: single-year age/time steps
-wpp_pop_males_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-demography/WPP_2019/WPP2019_INT_F03_2_POPULATION_BY_AGE_ANNUAL_MALE.xlsx'
 
-wpp_pop_females_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-demography/WPP_2019/WPP2019_INT_F03_3_POPULATION_BY_AGE_ANNUAL_FEMALE.xlsx'
+# %% Population size by age and sex: single-year age, annual
 
-# Males
-dat = pd.concat([
-    pd.read_excel(wpp_pop_males_file, sheet_name='ESTIMATES', header=16),
-    pd.read_excel(wpp_pop_males_file, sheet_name='MEDIUM VARIANT', header=16)
-], sort=False)
+def format_pop_size_age_sex(wpp_year):
+    """
+    Creates and saves the RF based on WPP data of the input year.
+    Returns DataFrame with initial population size by age and sex.
 
-ests_males = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
-ests_males['Sex'] = 'M'
+    :param wpp_year: The year of WPP data from which the RF should be prepared.
+    :return: pd.DataFrame: DataFrame with population in year 2010, based on WPP data of the input wpp_year.
+    """
 
-# Females
-dat = pd.concat([
-    pd.read_excel(wpp_pop_females_file, sheet_name='ESTIMATES', header=16),
-    pd.read_excel(wpp_pop_females_file, sheet_name='MEDIUM VARIANT', header=16)
-])
+    def concat_excel_sheets(in_file, sheet_names_list):
+        """
+        Concatenate sheets from an Excel workbook into a single DataFrame.
 
-ests_females = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
-ests_females['Sex'] = 'F'
+        :param in_file: (str) Path to the Excel file.
+        :param sheet_names_list: (list) List of sheet names to concatenate.
+        :return: pd.DataFrame: Concatenated DataFrame.
+        """
+        try:
+            # Read the sheet into a list of DataFrames
+            sheet_data = [pd.read_excel(in_file, sheet_name=name, header=16) for name in sheet_names_list]
+
+            # Concatenate the DataFrames along the rows (axis=0)
+            concatenated_df = pd.concat(sheet_data, axis=0, sort=False)
+
+            return concatenated_df
+        except Exception as e:
+            print(f"An error occurred: {str(e)}")
+            return None
+
+    if wpp_year == 2019:
+        # estimates 1950-2020 + medium variant 2020-2100
+        wpp_pop_males_file = workingfolder + '/WPP_2019/WPP2019_INT_F03_2_POPULATION_BY_AGE_ANNUAL_MALE.xlsx'
+        wpp_pop_females_file = workingfolder + '/WPP_2019/WPP2019_INT_F03_3_POPULATION_BY_AGE_ANNUAL_FEMALE.xlsx'
+        sheet_names = ['ESTIMATES', 'MEDIUM VARIANT']
+        col_nmbs_to_drop = [0, 2, 3, 4, 5, 6]
+
+    elif wpp_year == 2022:
+        # estimates 1950-2021 + low, medium & high variants 2022-2100
+        wpp_pop_males_file = workingfolder + '/WPP_2022/WPP2022_POP_F01_2_POPULATION_SINGLE_AGE_MALE.xlsx'
+        wpp_pop_females_file = workingfolder + '/WPP_2022/WPP2022_POP_F01_3_POPULATION_SINGLE_AGE_FEMALE.xlsx'
+        sheet_names = ['Estimates', 'Low variant', 'Medium variant', 'High variant']
+        col_nmbs_to_drop = [0, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    # Males
+    dat_males = concat_excel_sheets(wpp_pop_males_file, sheet_names)
+    ests_males = dat_males.loc[dat_males[dat_males.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
+    ests_males['Sex'] = 'M'
+
+    # Females
+    dat_females = concat_excel_sheets(wpp_pop_females_file, sheet_names)
+    ests_females = dat_females.loc[dat_females[dat_females.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
+    ests_females['Sex'] = 'F'
+
+    # Join and tidy up
+    ests = pd.concat([ests_males, ests_females], sort=False)
+    ests = ests.drop(ests.columns[col_nmbs_to_drop], axis=1)
+
+    ests[ests.columns[2:103]] = ests[ests.columns[
+                                     2:103]] * 1000  # given numbers are in 1000's, so multiply by 1000 to give actual
+    ests = ests.rename(columns={ests.columns[1]: 'Year'})
+
+    if wpp_year == 2019:
+        # Remove duplicates in WPP 2019 data (year 2020 is provided for both, estimates & medium variant)
+        ests.loc[ests.duplicated(subset=['Year', 'Sex']), ['Year']]
+        ests.drop_duplicates(subset=['Year', 'Sex'], inplace=True)
+
+    ests['Variant'] = 'WPP' + str(wpp_year) + '_' + ests['Variant']
+    ests_melt = ests.melt(id_vars=['Variant', 'Year', 'Sex'], value_name='Count', var_name='Age')
+
+    ests_melt['Period'] = ests_melt['Year'].map(calendar_period_lookup)
+
+    (__tmp__, age_grp_lookup) = create_age_range_lookup(min_age=0, max_age=100, range_size=5)
+    if wpp_year == 2022:
+        # Rename age 100+ to 100 in WPP 2022 data
+        ests_melt['Age'] = [age if age != '100+' else '100' for age in ests_melt['Age']]
+    ests_melt['Age_Grp'] = ests_melt['Age'].astype(int).map(age_grp_lookup)
+    output_file_name = 'ResourceFile_Pop_Annual_age_sex_WPP' + str(wpp_year) + '.csv'
+    ests_melt.to_csv(path_for_saved_files / output_file_name, index=False)
+
+    # %% Make the initial population size for the model in 2010
+    pop_age_sex_2010 = ests_melt.loc[ests_melt['Year'] == 2010, ['Sex', 'Age', 'Count']].copy().reset_index(drop=True)
+    pop_age_sex_2010['Age'] = pop_age_sex_2010['Age'].astype(int)
+    pop_age_sex_2010.sum()  # 14M
+
+    return pop_age_sex_2010
+
+
+# Create RF_Pop_Annual_age_sex from WPP 2019 and use WPP 2019 to make the initial population size for the model in 2010
+pop_2010 = format_pop_size_age_sex(2019)
+# Create RF_Pop_Annual_age_sex from WPP 2022
+format_pop_size_age_sex(2022)
+
+# %% Population size by sex WPP 2019:
+# annual, estimates 1950-2020 + medium, high & low variants 2020-2100
+wpp19_tot_pop_males_file = workingfolder + '/WPP_2019/WPP2019_POP_F01_2_TOTAL_POPULATION_MALE.xlsx'
+
+wpp19_tot_pop_females_file = workingfolder + '/WPP_2019/WPP2019_POP_F01_3_TOTAL_POPULATION_FEMALE.xlsx'
+
+
+def process_data_sex(file_sex, sex_indicator):
+    dat = pd.concat([
+        pd.read_excel(file_sex, sheet_name='ESTIMATES', header=16),
+        pd.read_excel(file_sex, sheet_name='LOW VARIANT', header=16),
+        pd.read_excel(file_sex, sheet_name='MEDIUM VARIANT', header=16),
+        pd.read_excel(file_sex, sheet_name='HIGH VARIANT', header=16)
+    ], sort=False)
+
+    ests_sex = dat.loc[dat[dat.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
+    ests_sex = ests_sex.drop(ests_sex.columns[[0, 2, 3, 4, 5, 6]], axis='columns')
+
+    ests_sex = ests_sex.melt(id_vars=['Variant'], var_name='Year', value_name='Count').dropna()
+    ests_sex['Count'] = 1000 * ests_sex['Count']  # given numbers are in 1000's, so multiply by 1000 to give actual
+    ests_sex['Sex'] = sex_indicator
+    ests_sex['Year'] = ests_sex['Year'].astype(int)
+
+    # Remove duplicates (all variants of WPP 2019, including estimates, provide the same value for year 2020)
+    ests_sex = \
+        ests_sex[(ests_sex['Year'] != 2020) | ((ests_sex['Year'] == 2020) & (ests_sex['Variant'] == 'Estimates'))]
+
+    return ests_sex
+
+
+ests_males = process_data_sex(wpp19_tot_pop_males_file, 'M')
+ests_females = process_data_sex(wpp19_tot_pop_females_file, 'F')
 
 # Join and tidy up
 ests = pd.concat([ests_males, ests_females], sort=False)
-ests = ests.drop(ests.columns[[0, 2, 3, 4, 5, 6]], axis=1)
 
-ests[ests.columns[2:103]] = ests[ests.columns[
-                                 2:103]] * 1000  # given numbers are in 1000's, so multiply by 1000 to give actual
-ests = ests.rename(columns={ests.columns[1]: 'Year'})
+ests['Variant'] = 'WPP2019_' + ests['Variant']
 
-# Remove duplicates (year 2020 is provided in each of the individual datasets)
-ests.loc[ests.duplicated(subset=['Year', 'Sex']), ['Year']]
-ests.drop_duplicates(subset=['Year', 'Sex'], inplace=True)
+ests['Period'] = ests['Year'].map(calendar_period_lookup)
 
-ests['Variant'] = 'WPP_' + ests['Variant']
-ests_melt = ests.melt(id_vars=['Variant', 'Year', 'Sex'], value_name='Count', var_name='Age')
+ests.to_csv(path_for_saved_files / 'ResourceFile_Pop_Annual_sex_WPP2019.csv', index=False)
 
-ests_melt['Period'] = ests_melt['Year'].map(calendar_period_lookup)
-
-(__tmp__, age_grp_lookup) = create_age_range_lookup(min_age=0, max_age=100, range_size=5)
-ests_melt['Age_Grp'] = ests_melt['Age'].astype(int).map(age_grp_lookup)
-ests_melt.to_csv(path_for_saved_files / 'ResourceFile_Pop_Annual_WPP.csv', index=False)
-
-# Make the initial population size for the model in 2010
 # Age/sex breakdown from annual WPP - split by district breakdown from Census 2018
-pop_2010 = ests_melt.loc[ests_melt['Year'] == 2010, ['Sex', 'Age', 'Count']].copy().reset_index(drop=True)
-pop_2010['Age'] = pop_2010['Age'].astype(int)
-pop_2010.sum()  # 14M
 district_breakdown = table[['District', 'Count']].groupby(['District']).sum() / table['Count'].sum()
 
 # There will be a a neater way to do this, but....
@@ -372,27 +462,26 @@ assert init_pop['Count'].sum() == pop_2010['Count'].sum()
 
 init_pop.to_csv(path_for_saved_files / 'ResourceFile_Population_2010.csv', index=False)
 
-# %% Fertility and births
+# %% Fertility and births WPP 2019: 5-years periods
 
-tot_births_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-demography/WPP_2019/WPP2019_FERT_F01_BIRTHS_BOTH_SEXES.xlsx'
+tot_births_wpp19_file = workingfolder + '/WPP_2019/WPP2019_FERT_F01_BIRTHS_BOTH_SEXES.xlsx'
 
-tot_births = pd.concat([
-    pd.read_excel(tot_births_file, sheet_name='ESTIMATES', header=16),
-    pd.read_excel(tot_births_file, sheet_name='LOW VARIANT', header=16),
-    pd.read_excel(tot_births_file, sheet_name='MEDIUM VARIANT', header=16),
-    pd.read_excel(tot_births_file, sheet_name='HIGH VARIANT', header=16)
+tot_births_wpp19 = pd.concat([
+    pd.read_excel(tot_births_wpp19_file, sheet_name='ESTIMATES', header=16),
+    pd.read_excel(tot_births_wpp19_file, sheet_name='LOW VARIANT', header=16),
+    pd.read_excel(tot_births_wpp19_file, sheet_name='MEDIUM VARIANT', header=16),
+    pd.read_excel(tot_births_wpp19_file, sheet_name='HIGH VARIANT', header=16)
 ], sort=False)
 
-tot_births = tot_births.loc[tot_births[tot_births.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
-tot_births = tot_births.drop(tot_births.columns[[0, 2, 3, 4, 5, 6]], axis='columns')
+tot_births_wpp19 = \
+    tot_births_wpp19.loc[tot_births_wpp19[tot_births_wpp19.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
+tot_births_wpp19 = tot_births_wpp19.drop(tot_births_wpp19.columns[[0, 2, 3, 4, 5, 6]], axis='columns')
 
-tot_births = tot_births.melt(id_vars=['Variant'], var_name='Period', value_name='Total_Births').dropna()
-tot_births['Total_Births'] = 1000 * tot_births['Total_Births']  # Imported units are 1000's
+tot_births_wpp19 = tot_births_wpp19.melt(id_vars=['Variant'], var_name='Period', value_name='Total_Births').dropna()
+tot_births_wpp19['Total_Births'] = 1000 * tot_births_wpp19['Total_Births']  # Imported units are 1000's
 
 # Sex Ratio at Birth
-sex_ratio_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-demography/WPP_2019/WPP2019_FERT_F02_SEX_RATIO_AT_BIRTH.xlsx'
+sex_ratio_file = workingfolder + '/WPP_2019/WPP2019_FERT_F02_SEX_RATIO_AT_BIRTH.xlsx'
 
 sex_ratio = pd.concat([
     pd.read_excel(sex_ratio_file, sheet_name='ESTIMATES', header=16),
@@ -406,27 +495,57 @@ sex_ratio = sex_ratio.melt(id_vars=['Variant'], var_name='Period', value_name='M
 # copy the medium variant sex ratio project for the low and high variants (in order to merge with the total births)
 copy_high = sex_ratio.loc[sex_ratio['Variant'] == 'Medium variant', ['Period', 'M_to_F_Sex_Ratio']].copy()
 copy_high['Variant'] = 'High variant'
-sex_ratio = sex_ratio.append(copy_high, sort=False)
+sex_ratio = pd.concat([sex_ratio, copy_high], sort=False)
 
 copy_low = sex_ratio.loc[sex_ratio['Variant'] == 'Medium variant', ['Period', 'M_to_F_Sex_Ratio']].copy()
 copy_low['Variant'] = 'Low variant'
-sex_ratio = sex_ratio.append(copy_low, sort=False)
+sex_ratio = pd.concat([sex_ratio, copy_low], sort=False)
 
 # Combine these together
-births = tot_births.merge(sex_ratio, on=['Variant', 'Period'], validate='1:1')
+births = tot_births_wpp19.merge(sex_ratio, on=['Variant', 'Period'], validate='1:1')
 
 
 def reformat_date_period_for_wpp(wpp_import):
     # Relabel the calendar periods to be the inclusive year range (2010-2014 instead of 2010-2015)
-    wpp_import['t_lo'], wpp_import['t_hi'] = wpp_import['Period'].str.split('-', 1).str
+    wpp_import['t_lo'] = wpp_import['Period'].str.split(pat='-', n=1, expand=True).loc[:, [0]]
+    wpp_import['t_hi'] = wpp_import['Period'].str.split(pat='-', n=1, expand=True).loc[:, [1]]
     wpp_import['t_hi'] = wpp_import['t_hi'].astype(int) - 1
     wpp_import['Period'] = wpp_import['t_lo'].astype(str) + '-' + wpp_import['t_hi'].astype(str)
     wpp_import.drop(columns=['t_lo', 't_hi'], inplace=True)
 
 
 reformat_date_period_for_wpp(births)
+births['Variant'] = 'WPP2019_' + births['Variant']
 
-births.to_csv(path_for_saved_files / 'ResourceFile_TotalBirths_WPP.csv', index=False)
+births.to_csv(path_for_saved_files / 'ResourceFile_TotalBirths_WPP2019.csv', index=False)
+
+# %% Fertility and births WPP 2022: annual by single age of mother
+
+tot_births_wpp22_file = workingfolder + '/WPP_2022/WPP2022_FERT_F03_BIRTHS_BY_SINGLE_AGE_OF_MOTHER.xlsx'
+
+tot_births_wpp22 = pd.concat([
+    pd.read_excel(tot_births_wpp22_file, sheet_name='Estimates', header=16),
+    pd.read_excel(tot_births_wpp22_file, sheet_name='Low variant', header=16),
+    pd.read_excel(tot_births_wpp22_file, sheet_name='Medium variant', header=16),
+    pd.read_excel(tot_births_wpp22_file, sheet_name='High variant', header=16)
+], sort=False)
+
+tot_births_wpp22 = \
+    tot_births_wpp22.loc[tot_births_wpp22[tot_births_wpp22.columns[2]] == 'Malawi'].copy().reset_index(drop=True)
+tot_births_wpp22 = tot_births_wpp22.drop(tot_births_wpp22.columns[[0, 2, 3, 4, 5, 6, 7, 8, 9]], axis='columns')
+
+tot_births_wpp22[tot_births_wpp22.columns[2:36]] = tot_births_wpp22[tot_births_wpp22.columns[2:36]] * 1000
+#                                                   # given numbers are in 1000's, so multiply by 1000 to give actual
+tot_births_wpp22 = tot_births_wpp22.rename(columns={tot_births_wpp22.columns[1]: 'Year'})
+
+tot_births_wpp22['Variant'] = 'WPP2022_' + tot_births_wpp22['Variant']
+tot_births_wpp22 = tot_births_wpp22.melt(id_vars=['Variant', 'Year'], value_name='Total_Births', var_name='Mother_Age')
+
+tot_births_wpp22['Period'] = tot_births_wpp22['Year'].map(calendar_period_lookup)
+(__tmp__, age_grp_lookup) = create_age_range_lookup(min_age=15, max_age=49, range_size=5)
+tot_births_wpp22['Mother_Age_Grp'] = tot_births_wpp22['Mother_Age'].astype(int).map(age_grp_lookup)
+
+tot_births_wpp22.to_csv(path_for_saved_files / 'ResourceFile_TotalBirths_WPP2022.csv', index=False)
 
 # Give Fraction of births that are male for each year for easy importing to demography module
 frac_birth_male = births.copy()
@@ -457,8 +576,7 @@ frac_birth_male_for_export = pd.DataFrame(frac_birth_male_list)
 frac_birth_male_for_export.to_csv(path_for_saved_files / 'ResourceFile_Pop_Frac_Births_Male.csv', index=False)
 
 # Age-specific Fertility Rates
-asfr_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-demography/WPP_2019/WPP2019_FERT_F07_AGE_SPECIFIC_FERTILITY.xlsx'
+asfr_file = workingfolder + '/WPP_2019/WPP2019_FERT_F07_AGE_SPECIFIC_FERTILITY.xlsx'
 
 asfr = pd.concat([
     pd.read_excel(asfr_file, sheet_name='ESTIMATES', header=16),
@@ -475,18 +593,16 @@ asfr[asfr.columns[2:9]] = asfr[asfr.columns[
 reformat_date_period_for_wpp(asfr)
 
 # pivot into the usual long-format:
-asfr['Variant'] = 'WPP_' + asfr['Variant']
+asfr['Variant'] = 'WPP2019_' + asfr['Variant']
 asfr_melt = asfr.melt(id_vars=['Variant', 'Period'], value_name='asfr', var_name='Age_Grp')
 
-asfr_melt.to_csv(path_for_saved_files / 'ResourceFile_ASFR_WPP.csv', index=False)
+asfr_melt.to_csv(path_for_saved_files / 'ResourceFile_ASFR_WPP2019.csv', index=False)
 
 # %% Deaths
 
-deaths_males_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-demography/WPP_2019/WPP2019_MORT_F04_2_DEATHS_BY_AGE_MALE.xlsx'
+deaths_males_file = workingfolder + '/WPP_2019/WPP2019_MORT_F04_2_DEATHS_BY_AGE_MALE.xlsx'
 
-deaths_females_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-demography/WPP_2019/WPP2019_MORT_F04_3_DEATHS_BY_AGE_FEMALE.xlsx'
+deaths_females_file = workingfolder + '/WPP_2019/WPP2019_MORT_F04_3_DEATHS_BY_AGE_FEMALE.xlsx'
 
 deaths_males = pd.concat([
     pd.read_excel(deaths_males_file, sheet_name='ESTIMATES', header=16),
@@ -518,16 +634,14 @@ reformat_date_period_for_wpp(deaths)
 
 deaths_melt = deaths.melt(id_vars=['Variant', 'Period', 'Sex'], value_name='Count', var_name='Age_Grp')
 deaths_melt['Count'].sum()
-deaths_melt['Variant'] = 'WPP_' + deaths_melt['Variant']
+deaths_melt['Variant'] = 'WPP2019_' + deaths_melt['Variant']
 
-deaths_melt.to_csv(path_for_saved_files / 'ResourceFile_TotalDeaths_WPP.csv', index=False)
+deaths_melt.to_csv(path_for_saved_files / 'ResourceFile_TotalDeaths_WPP2019.csv', index=False)
 
 # The ASMR from the LifeTable
-lt_males_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-demography/WPP_2019/WPP2019_MORT_F17_2_ABRIDGED_LIFE_TABLE_MALE.xlsx'
+lt_males_file = workingfolder + '/WPP_2019/WPP2019_MORT_F17_2_ABRIDGED_LIFE_TABLE_MALE.xlsx'
 
-lt_females_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-demography/WPP_2019/WPP2019_MORT_F17_3_ABRIDGED_LIFE_TABLE_FEMALE.xlsx'
+lt_females_file = workingfolder + '/WPP_2019/WPP2019_MORT_F17_3_ABRIDGED_LIFE_TABLE_FEMALE.xlsx'
 
 lt_males = pd.concat([pd.read_excel(lt_males_file, sheet_name='ESTIMATES', header=16, usecols='B,C,H,I,J,K'),
                       pd.read_excel(lt_males_file, sheet_name='MEDIUM 2020-2050', header=16, usecols='B,C,H,I,J,K'),
@@ -550,7 +664,7 @@ lt = pd.concat([lt_males, lt_females], sort=False)
 lt = lt.drop(lt.columns[[1]], axis=1)
 lt.loc[lt['Variant'].str.contains('Medium'), 'Variant'] = 'Medium'
 lt = lt.rename(columns={'Central death rate m(x,n)': 'death_rate'})  # NB. it is indeed an instantaneous rate
-lt['Variant'] = 'WPP_' + lt['Variant']
+lt['Variant'] = 'WPP2019_' + lt['Variant']
 lt.drop(lt.index[(lt['Age (x)'] == 100.0)], axis=0, inplace=True)
 
 lt['Age_Grp'] = lt['Age (x)'].astype(int).astype(str) + '-' + (lt['Age (x)'] + lt['Age interval (n)'] - 1).astype(
@@ -558,7 +672,7 @@ lt['Age_Grp'] = lt['Age (x)'].astype(int).astype(str) + '-' + (lt['Age (x)'] + l
 reformat_date_period_for_wpp(lt)
 
 lt[['Variant', 'Period', 'Sex', 'Age_Grp', 'death_rate']].to_csv(
-    path_for_saved_files / 'ResourceFile_Pop_DeathRates_WPP.csv', index=False)
+    path_for_saved_files / 'ResourceFile_Pop_DeathRates_WPP2019.csv', index=False)
 
 # Expand the the life-table to create a row for each age year, for ease of indexing in the simulation
 mort_sched = lt.copy()
@@ -597,13 +711,12 @@ for period in pd.unique(mort_sched['Period']):
 mort_sched_expanded = pd.DataFrame(mort_sched_expanded_as_list,
                                    columns=['fallbackyear', 'sex', 'age_years', 'death_rate'])
 
-mort_sched_expanded.to_csv(path_for_saved_files / 'ResourceFile_Pop_DeathRates_Expanded_WPP.csv', index=False)
+mort_sched_expanded.to_csv(path_for_saved_files / 'ResourceFile_Pop_DeathRates_Expanded_WPP2019.csv', index=False)
 
 
 # %% *** DHS DATA
 
-dhs_working_file = '/Users/tbh03/Dropbox (SPH Imperial College)/Thanzi la Onse Theme 1 SHARE/05 - Resources/\
-Module-demography/DHS/STATcompilerExport20191112_211640.xlsx'
+dhs_working_file = workingfolder + '/DHS/STATcompilerExport20191112_211640.xlsx'
 
 dhs_asfr = pd.read_excel(dhs_working_file, sheet_name='ASFR')
 dhs_asfr[dhs_asfr.columns[1:]] = dhs_asfr[dhs_asfr.columns[1:]] / 1000  # to make the ASFR per women
@@ -611,6 +724,7 @@ dhs_asfr.to_csv(path_for_saved_files / 'ResourceFile_ASFR_DHS.csv', index=False)
 
 
 dhs_u5 = pd.read_excel(dhs_working_file, sheet_name='UNDER_5_MORT', header=1, index=False)
+# TODO: fix this - I'm getting TypeError: read_excel() got an unexpected keyword argument 'index'
 dhs_u5['Year'] = dhs_u5.index
 dhs_u5 = dhs_u5.reset_index(drop=True)
 dhs_u5 = dhs_u5[dhs_u5.columns[[3, 0, 1, 2]]]

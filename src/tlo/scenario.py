@@ -373,7 +373,7 @@ class SampleRunner:
                     #  f"Parameter value '{param_val}' is not scalar type (float, int, str)"
 
                     old_value = module.parameters[param_name]
-                    assert type(old_value) == type(param_val), f"Cannot override parameter '{param_name}' - wrong type"
+                    assert type(old_value) is type(param_val), f"Cannot override parameter '{param_name}' - wrong type"
 
                     module.parameters[param_name] = param_val
                     logger.info(

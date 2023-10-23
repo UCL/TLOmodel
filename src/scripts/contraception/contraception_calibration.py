@@ -53,7 +53,7 @@ adult_age_groups = ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49
 _, period_lookup = make_calendar_period_lookup()
 
 # Load WPP data on live births (age-specific fertility rates)
-wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+wpp = pd.read_csv(resourcefilepath / 'demography' / 'ResourceFile_ASFR_WPP2019.csv')
 
 
 def format_usage_results(_df):
@@ -89,7 +89,7 @@ wpp_fert_per_month_2010 = get_medium_variant_asfr_from_wpp_resourcefile(wpp, mon
 
 # Plot
 plt.plot(asfr_per_month_init.keys(), asfr_per_month_init.values(), 'k', label='Model (Expectation)')
-plt.plot(wpp_fert_per_month_2010.keys(), wpp_fert_per_month_2010.values(), 'r-', label='WPP')
+plt.plot(wpp_fert_per_month_2010.keys(), wpp_fert_per_month_2010.values(), 'r-', label='WPP (2019)')
 plt.title("Age-specific fertility per month in 2010")
 plt.xlabel('Age-group')
 plt.ylabel('Live-births per month per woman')
@@ -187,7 +187,7 @@ for i, agegrp in enumerate(adult_age_groups):
 
     # Comparative plot:
     l1 = ax[i].plot(model_this_agegrp.index.year, model_this_agegrp.values, 'r-', label='Model')
-    l2 = ax[i].plot(wpp_this_agegrp.index, wpp_this_agegrp.values, 'k-', label='WPP')
+    l2 = ax[i].plot(wpp_this_agegrp.index, wpp_this_agegrp.values, 'k-', label='WPP (2019)')
     ax[i].plot((2010, 2010), (0, 0.03), 'b--')
     ax[i].set_title(f"{agegrp}")
     ax[i].set_xlim(2005, end_date_simulation.date().year)
@@ -195,13 +195,13 @@ for i, agegrp in enumerate(adult_age_groups):
 
 # Plot mean of all ages in last panel
 l1 = ax[-1].plot(model_this_agegrp.index.year, model.mean(), 'r-', label='Model')
-l2 = ax[-1].plot(wpp_this_agegrp.index, wpp_fert_per_month.mean(), 'k-', label='WPP')
+l2 = ax[-1].plot(wpp_this_agegrp.index, wpp_fert_per_month.mean(), 'k-', label='WPP (2019)')
 ax[-1].plot((2010, 2010), (0, 0.03), 'b--')
 ax[-1].set_title("* 15-49 *")
 ax[-1].set_xlim(2005, 2030)
 plt.setp(ax[-1].get_xticklabels(), rotation=90, ha='right')
 
-fig.legend((l1[0], l2[0]), ('Model', 'WPP'), 'lower right')
+fig.legend((l1[0], l2[0]), ('Model', 'WPP (2019)'), 'lower right')
 fig.tight_layout()
 fig.subplots_adjust(right=0.90)
 fig.show()

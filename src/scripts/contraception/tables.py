@@ -17,8 +17,8 @@ def table_use_costs__plot_costs(in_use_output, in_use_without_df, in_percentage_
                                 in_costs_without_df, in_costs_with_df,
                                 in_interv_costs_without_df, in_interv_costs_with_df,
                                 in_mwk_to_usd_exchange_rate, in_rounding_costs_mwk_to, in_rounding_costs_usd_to,
-                                in_plot_costs, in_datestamp_without_log, in_datestamp_with_log, in_suffix,
-                                in_ID_without, in_ID_with):
+                                in_plot_costs, in_plot_costs_by_periods__incl_totals_bool,
+                                in_datestamp_without_log, in_datestamp_with_log, in_suffix, in_ID_without, in_ID_with):
 
     def round_df(in_df, in_rounding_to):
         if in_rounding_to:
@@ -105,7 +105,7 @@ def table_use_costs__plot_costs(in_use_output, in_use_without_df, in_percentage_
         bar_chart_costs.plot_costs(
             [in_datestamp_without_log, in_datestamp_with_log], in_suffix, list(in_interv_costs_with_df.index),
             all_cons_costs_without_tp, all_cons_costs_with_tp, pop_interv_costs_with_tp_l, ppfp_interv_costs_with_tp_l,
-            in_mwk_to_usd_exchange_rate  # & default in_reduce_magnitude=1e3
+            in_mwk_to_usd_exchange_rate, in_plot_costs_by_periods__incl_totals_bool  # & default in_reduce_magnitude=1e3
         )
 
     # %% Format cons & interv costs:

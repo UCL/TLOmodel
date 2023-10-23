@@ -197,7 +197,7 @@ class Contraception(Module):
 
         # Import the Age-specific fertility rate data from WPP
         self.parameters['age_specific_fertility_rates'] = \
-            pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP.csv')
+            pd.read_csv(Path(self.resourcefilepath) / 'demography' / 'ResourceFile_ASFR_WPP2019.csv')
 
         # Import 2010 pop and count numbs of women 15-49 & 30-49
         self.parameters['pop_2010'] = \
@@ -586,7 +586,7 @@ class Contraception(Module):
         # parameters to be processed only in the beginning
         if self.sim.date < self.interventions_start_date:
             processed_params['initial_method_use'] = initial_method_use()
-            processed_params['p_switch_from_per_month'],\
+            processed_params['p_switch_from_per_month'], \
                 processed_params['p_switching_to_below30'], processed_params['p_switching_to_30plus'] =\
                 contraception_switch()
             processed_params['p_stop_per_month'] = contraception_stop()
@@ -1262,12 +1262,12 @@ class EndOfPregnancyEvent(Event, IndividualScopeEventMixin):
 def get_medium_variant_asfr_from_wpp_resourcefile(dat: pd.DataFrame, months_exposure: int) -> dict:
     """Process the data on age-specific fertility rates into a form that can be used to quickly map
     age-ranges to an age-specific fertility rate (for the "Medium Variant" in the WPP data source).
-    :param dat: Raw form of the data in `ResourceFile_ASFR_WPP.csv`
+    :param dat: Raw form of the data in `ResourceFile_ASFR_WPP19.csv`
     :param months_exposure: The time (in integer number of months) over which the risk of pregnancy should be
     computed.
     :returns: a dict, keyed by year, giving a dataframe of risk of pregnancy over a period, by age """
 
-    dat = dat.drop(dat[~dat.Variant.isin(['WPP_Estimates', 'WPP_Medium variant'])].index)
+    dat = dat.drop(dat[~dat.Variant.isin(['WPP2019_Estimates', 'WPP2019_Medium variant'])].index)
     dat['Period-Start'] = dat['Period'].str.split('-').str[0].astype(int)
     dat['Period-End'] = dat['Period'].str.split('-').str[1].astype(int)
     years = range(min(dat['Period-Start'].values), 1 + max(dat['Period-End'].values))

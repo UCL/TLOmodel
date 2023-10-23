@@ -3296,7 +3296,7 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
 
         # Check to see if analysis is being conducted when this event runs
         if params['alternative_bemonc_availability'] or params['alternative_cemonc_availability'] or \
-            params['alternative_pnc_coverage'] or params['alternative_pnc_quality']:\
+            params['alternative_pnc_coverage'] or params['alternative_pnc_quality']: \
 
             params['la_analysis_in_progress'] = True
 

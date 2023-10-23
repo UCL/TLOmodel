@@ -97,10 +97,10 @@ births_model = births_model.groupby(by='Period')['total_births'].sum()
 births_model.index = births_model.index.astype(make_calendar_period_type())
 
 # Births over time (WPP)
-wpp = pd.read_csv(Path(resourcefilepath) / 'demography' / "ResourceFile_TotalBirths_WPP.csv")
+wpp = pd.read_csv(Path(resourcefilepath) / 'demography' / "ResourceFile_TotalBirths_WPP2019.csv")
 wpp = wpp.groupby(['Period', 'Variant'])['Total_Births'].sum().unstack()
 wpp.index = wpp.index.astype(make_calendar_period_type())
-wpp.columns = 'WPP_' + wpp.columns
+wpp.columns = 'WPP2019_' + wpp.columns
 
 # Births in 2018 Census
 cens = pd.read_csv(Path(resourcefilepath) / 'demography' / "ResourceFile_Births_2018Census.csv")
@@ -114,7 +114,7 @@ births.at[cens['Period'][0], 'Census'] = cens_per_5y
 
 # Plot:
 cens_period = cens['Period'][0]
-ax = births.plot.line(y=['Model',  'WPP_Estimates', 'WPP_Medium variant'])
+ax = births.plot.line(y=['Model',  'WPP2019_Estimates', 'WPP2019_Medium variant'])
 births.plot.line(
     y=['Census'],
     marker='^',
@@ -122,7 +122,8 @@ births.plot.line(
     ax=ax
 )
 plt.xticks(np.arange(len(births.index)), births.index)
-ax.fill_between(births.index, births['WPP_Low variant'], births['WPP_High variant'], facecolor='green', alpha=0.2)
+ax.fill_between(births.index, births['WPP2019_Low variant'], births['WPP2019_High variant'], facecolor='green',
+                alpha=0.2)
 plt.xticks(rotation=90)
 ax.set_title('Number of Births Per Calendar Period')
 ax.legend(loc='upper left')
