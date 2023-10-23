@@ -8,18 +8,17 @@ Limitations to note:
 from pathlib import Path
 
 import pandas as pd
-import numpy as np
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.healthsystem import HSI_Event
 from tlo.methods.symptommanager import Symptom
-from tlo.methods.hiv import Hiv
+from tlo.methods import Metadata
+
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -36,9 +35,13 @@ class CervicalCancer(Module):
  # todo: add in lm for pregression through cc categories ?
         self.daly_wts = dict()
 
-    INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
+    INIT_DEPENDENCIES = {
+        'Demography', 'SimplifiedBirths', 'HealthSystem', 'Lifestyle', 'SymptomManager'
+    }
 
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden', 'HealthSeekingBehaviour'}
+
+    ADDITIONAL_DEPENDENCIES = {'Tb', 'Hiv'}
 
     METADATA = {
         Metadata.DISEASE_MODULE,
@@ -609,6 +612,14 @@ class CervicalCancer(Module):
         df.at[child_id, "ce_date_cin_removal"] = pd.NaT
         df.at[child_id, "ce_date_treatment"] = pd.NaT
 
+    # todo: decide if this below should replace HSI_CervicalCancer_Investigation_Following_vaginal_bleeding
+    # todo: or should come out (when decide make sure sync with hsi_generic_first_appts.py)
+    def do_when_present_with_vaginal_bleeding(self, person_id: int, hsi_event: HSI_Event):
+        """What to do when a person presents at the generic first appt HSI with a symptom of vaginal bleeding
+        """
+        # todo: work on this below
+#       self.give_inhaler(hsi_event=hsi_event, person_id=person_id)
+
     def on_hsi_alert(self, person_id, treatment_id):
         pass
 
@@ -688,7 +699,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         #  reducing progression risk during the stage at which is received.
         had_treatment_during_this_stage = \
             df.is_alive & ~pd.isnull(df.ce_date_treatment) & \
-            (df.cc_hpv_cc_status == df.ce_stage_at_which_treatment_given)
+            (df.ce_hpv_cc_status == df.ce_stage_at_which_treatment_given)
 
 # todo: still need to derive the lm to make this work
 
@@ -744,7 +755,7 @@ class HSI_CervicalCancer_Investigation_Following_vaginal_bleeding(HSI_Event, Ind
 
         self.TREATMENT_ID = "VaginalBleeding_Investigation"
         # todo: check on availability of biopsy
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "Biopsy": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
 
     def apply(self, person_id, squeeze_factor):
@@ -1074,8 +1085,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 #       df = df.rename(columns={'sy_vaginal_bleeding': 'vaginal_b'})
 
         print(self.sim.date)
-        selected_columns = ['ce_hpv_cc_status']
-        selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15)]
+        selected_columns = ['ce_hpv_cc_status', 'sy_vaginal_bleeding', 'ce_vaginal_bleeding_investigated']
+        selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive']]
         print(selected_rows[selected_columns])
 
 #       df = df.rename(columns={'vaginal_b': 'sy_vaginal_bleeding'})

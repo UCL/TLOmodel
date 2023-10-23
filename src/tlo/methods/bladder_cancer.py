@@ -980,4 +980,4 @@ class BladderCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'death_bladder_cancer_since_last_log': df.bc_date_death.between(date_lastlog, date_now).sum()
         })
 
-        logger.info(key="summary_stats", data=out)
+       logger.info(key="summary_stats", data=out)

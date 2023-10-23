@@ -25,7 +25,10 @@ from tlo.methods import (
     healthseekingbehaviour,
     healthsystem,
     simplified_births,
-    symptommanager
+    symptommanager,
+    epi,
+    tb,
+    hiv
 )
 
 # Where will outputs go
@@ -39,8 +42,8 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2010, 12, 1)
-popsize = 300
+end_date = Date(2012, 12, 1)
+popsize = 50
 
 
 def run_sim(service_availability):
@@ -49,6 +52,7 @@ def run_sim(service_availability):
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 cervical_cancer.CervicalCancer(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
@@ -57,8 +61,11 @@ def run_sim(service_availability):
                  symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
                  healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
                  healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 cervical_cancer.CervicalCancer(resourcefilepath=resourcefilepath)
+                 epi.Epi(resourcefilepath=resourcefilepath),
+                 tb.Tb(resourcefilepath=resourcefilepath, run_with_checks=False),
+                 hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False)
                  )
+
 
     # Establish the logger
     logfile = sim.configure_logging(filename="LogFile")
@@ -107,7 +114,7 @@ def get_summary_stats(logfile):
 
     x = deaths.loc[deaths.cause == 'CervicalCancer'].copy()
     x['age_group'] = x['age_group'].astype(make_age_grp_types())
-    breast_cancer_deaths = x.groupby(by=['age_group']).size()
+    cervical_cancer_deaths = x.groupby(by=['age_group']).size()
 
     # 5) Rates of diagnosis per year:
     counts_by_stage['year'] = counts_by_stage.index.year

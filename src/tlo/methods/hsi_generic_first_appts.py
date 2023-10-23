@@ -17,6 +17,9 @@ from tlo.methods.bladder_cancer import (
 from tlo.methods.breast_cancer import (
     HSI_BreastCancer_Investigation_Following_breast_lump_discernible,
 )
+from tlo.methods.cervical_cancer import (
+    HSI_CervicalCancer_Investigation_Following_vaginal_bleeding,
+)
 from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
     HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
@@ -261,6 +264,23 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     priority=0,
                     topen=sim.date,
                     tclose=None)
+
+#       if 'CervicalCancer' in sim.modules:
+#           # If the symptoms include vaginal bleeding:
+#           if 'vaginal_bleeding' in symptoms:
+#               schedule_hsi(
+#                   HSI_CervicalCancer_Investigation_Following_vaginal_bleeding(
+#                       person_id=person_id,
+#                       module=sim.modules['CervicalCancer'],
+#                   ),
+#                   priority=0,
+#                   topen=sim.date,
+#                   tclose=None)
+
+        if 'CervicalCancer' in sim.modules:
+            if ('vaginal_bleeding' in symptoms):
+                sim.modules['CervicalCancer'].do_when_present_with_vaginal_bleeding(person_id=person_id, hsi_event=hsi_event)
+
 
         if 'Depression' in sim.modules:
             sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
