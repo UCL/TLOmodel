@@ -429,17 +429,17 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
     # some time periods:
     if in_calc_use_costs_bool:
         # time period starts should be given as input
-        assert in_required_time_period_starts != [],\
+        assert in_required_time_period_starts != [], \
             "The calculations of use and costs are requested (ie input 'in_calc_use_costs_bool' set as True, " +\
             "but no periods starts are provided (ie input 'TimePeriods_starts' is empty)."
 
         # this input needs to include at least 3 values
-        assert len([y for y in in_required_time_period_starts if y <= last_year_simulated + 1]) > 2,\
+        assert len([y for y in in_required_time_period_starts if y <= last_year_simulated + 1]) > 2, \
             "The input 'TimePeriods_starts' needs to include at least 3 years within simulated range + 1 year, ie up " \
             "to " + str(last_year_simulated + 1) + ", to define at least 2 time periods."
         # time period starts should be ordered
         assert all(in_required_time_period_starts[i] <= in_required_time_period_starts[i + 1]
-                   for i in range(len(in_required_time_period_starts) - 1)),\
+                   for i in range(len(in_required_time_period_starts) - 1)), \
             "The 'TimePeriods_starts' needs to be in chronological order."
 #  ###### USE ##################################################################
         # Load Contraception Use Results
@@ -932,6 +932,6 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
         co_interv_costs_sum_by_tp_df = \
             pd.DataFrame({'pop_intervention_cost': [], 'ppfp_intervention_cost': [], 'interventions_total': []})
 
-    return co_output_use_modern_tp_df, co_output_percentage_use_df,\
-        cons_costs_by_time_and_method_df, co_interv_costs_sum_by_tp_df,\
+    return co_output_use_modern_tp_df, co_output_percentage_use_df, \
+        cons_costs_by_time_and_method_df, co_interv_costs_sum_by_tp_df, \
         scaling_factor

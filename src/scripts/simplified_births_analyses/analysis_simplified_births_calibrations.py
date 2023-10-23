@@ -122,7 +122,8 @@ births.plot.line(
     ax=ax
 )
 plt.xticks(np.arange(len(births.index)), births.index)
-ax.fill_between(births.index, births['WPP2019_Low variant'], births['WPP2019_High variant'], facecolor='green', alpha=0.2)
+ax.fill_between(births.index, births['WPP2019_Low variant'], births['WPP2019_High variant'], facecolor='green',
+                alpha=0.2)
 plt.xticks(rotation=90)
 ax.set_title('Number of Births Per Calendar Period')
 ax.legend(loc='upper left')

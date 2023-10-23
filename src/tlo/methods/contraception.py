@@ -586,7 +586,7 @@ class Contraception(Module):
         # parameters to be processed only in the beginning
         if self.sim.date < self.interventions_start_date:
             processed_params['initial_method_use'] = initial_method_use()
-            processed_params['p_switch_from_per_month'],\
+            processed_params['p_switch_from_per_month'], \
                 processed_params['p_switching_to_below30'], processed_params['p_switching_to_30plus'] =\
                 contraception_switch()
             processed_params['p_stop_per_month'] = contraception_stop()

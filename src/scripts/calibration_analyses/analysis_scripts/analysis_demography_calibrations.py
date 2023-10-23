@@ -17,7 +17,6 @@ import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
-from matplotlib.ticker import MaxNLocator
 
 from tlo.analysis.utils import (
     extract_results,
@@ -94,8 +93,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     wpp22_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_age_sex_WPP2022.csv")
     wpp22_ann['Age_Grp'] = wpp22_ann['Age_Grp'].astype(make_age_grp_types())
 
-    def plot_pop_size(in_pop_model, wpp_year):
-        out_pop_model = in_pop_model.copy()
+    def plot_pop_size(wpp_year):
 
         # Load Data: WPP_Annual incl. all varints
         # (WPP 2019 with sex grops only but without age groups; WPP 2022 includes both sex and age groups)
@@ -152,8 +150,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.show()
         plt.close(fig)
 
-    plot_pop_size(pop_model, 2019)
-    plot_pop_size(pop_model, 2022)
+    plot_pop_size(2019)
+    plot_pop_size(2022)
 
     # 2) Population Size in 2018 (broken down by Male and Female)
 
@@ -670,9 +668,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     years = range(2010, 2049)
     for i, _agegrp in enumerate(adult_age_groups):
         model = asfr.loc[(slice(2011, years[-1]), _agegrp), :].unstack()
-        data = wpp.loc[
-            (wpp.Age_Grp == _agegrp) & wpp.Variant.isin(['WPP2019_Estimates', 'WPP2019_Medium variant']), ['Period', 'asfr']
-        ]
+        data = wpp.loc[(wpp.Age_Grp == _agegrp) & wpp.Variant.isin(['WPP2019_Estimates', 'WPP2019_Medium variant']),
+                       ['Period', 'asfr']]
         data_year, data_asfr = expand_by_year(data.Period, data.asfr, years)
 
         l1 = ax[i].plot(data_year, data_asfr, 'k-', label='WPP')

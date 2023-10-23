@@ -217,7 +217,7 @@ def load_analysis_out(in_analysis_type, in_datestamp_log):
                     index_col=[0])
     scaling_factor_with_loaded = \
         pd.read_csv(Path(dataframe_folder + '/scaling_factor_' + in_analysis_type + '_' + in_datestamp_log + '.npy'))
-    return use_with_df_loaded, percentage_use_with_df_loaded, costs_with_df_loaded, interv_costs_with_df_loaded,\
+    return use_with_df_loaded, percentage_use_with_df_loaded, costs_with_df_loaded, interv_costs_with_df_loaded, \
         scaling_factor_with_loaded
 
 

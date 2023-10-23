@@ -357,7 +357,7 @@ class SymptomManager(Module):
 
         # Check that a sensible or no date_of_onset is provided
         assert (date_of_onset is None) or (
-            (type(date_of_onset) == pd.Timestamp)
+            (isinstance(date_of_onset, pd.Timestamp))
             and (date_of_onset >= self.sim.date)
         )
 
@@ -438,7 +438,7 @@ class SymptomManager(Module):
         df = self.sim.population.props
 
         # Check that symptom string is OK
-        assert type(symptom_string) == str
+        assert isinstance(symptom_string, str)
         assert symptom_string in self.symptom_names, 'Symptom not registered'
 
         # Does not have symptom:
