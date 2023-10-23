@@ -1476,12 +1476,17 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
                 {187: 0.0})
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {175: 0.53})
+            if self.TREATMENT_ID == "Tb_Test_FollowUp":
+                self.TREATMENT_ID = None
+
         # sets availability of xray to nil
         if scenario == 2:
            self.sim.modules['HealthSystem'].override_availability_of_consumables(
                  {175: 0.0})
            self.sim.modules['HealthSystem'].override_availability_of_consumables(
                   {187: 0.1})
+           if self.TREATMENT_ID == "Tb_Test_Xray":
+               self.TREATMENT_ID = None
         #increases probability of accessing chest xray by 10%
         if scenario == 3:
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
@@ -2275,7 +2280,6 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
     if positive sputum smear, schedule xpert test for drug sensitivity
     then schedule the next follow-up appt if needed
     """
-
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
