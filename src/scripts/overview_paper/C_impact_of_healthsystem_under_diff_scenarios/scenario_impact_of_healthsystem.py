@@ -38,8 +38,8 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'effect_of_healthsystem_under_different_modes',
-            'directory': Path('./outputs'),  # <- (specified only for local running)
+            'filename': 'effect_of_healthsystem_under_different_assumptions',
+            'directory': Path('./outputs'),
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,

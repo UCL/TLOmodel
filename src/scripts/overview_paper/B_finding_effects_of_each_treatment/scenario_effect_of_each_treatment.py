@@ -50,7 +50,7 @@ class EffectOfEachTreatment(BaseScenario):
     def log_configuration(self):
         return {
             'filename': 'effect_of_each_treatment_status_quo',
-            'directory': Path('./outputs'),  # <- (specified only for local running)
+            'directory': Path('./outputs'),
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
