@@ -3,14 +3,12 @@ impact that is achieved under each, relative to there being no health system.
 
 Run on the batch system using:
 ```
-tlo batch-submit
- src/scripts/overview_paper/C_impact_of_healthsystem_assumptions/scenario_impact_of_healthsystem.py
+tlo batch-submit src/scripts/overview_paper/C_impact_of_healthsystem_assumptions/scenario_impact_of_healthsystem.py
 ```
 
 or locally using:
 ```
-tlo scenario-run
- src/scripts/overview_paper/C_impact_of_healthsystem_assumptions/scenario_impact_of_healthsystem.py
+tlo scenario-run src/scripts/overview_paper/C_impact_of_healthsystem_assumptions/scenario_impact_of_healthsystem.py
  ```
 
 """

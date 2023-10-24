@@ -3,10 +3,10 @@ This file defines a batch run of a large population for a long time with all dis
 It's used for calibrations (demographic patterns, health burdens and healthsystem usage)
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/overview_paper/A_long_run_for_calibration_plots/extra_long_run_all_diseases.py```
+```tlo batch-submit src/scripts/overview_paper/A_big_run_for_calibration_plots/scenario_big_run.py```
 
 or locally using:
-    ```tlo scenario-run src/scripts/overview_paper/A_long_run_for_calibration_plots/extra_long_run_all_diseases.py```
+    ```tlo scenario-run src/scripts/overview_paper/A_big_run_for_calibration_plots/scenario_big_run.py```
 
 """
 
@@ -21,14 +21,14 @@ class LongRun(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2031, 1, 1)  # The simulation will stop before reaching this date.
+        self.end_date = Date(2021, 1, 1)  # The simulation will stop before reaching this date.
         self.pop_size = 100_000
         self.number_of_draws = 1
         self.runs_per_draw = 10
 
     def log_configuration(self):
         return {
-            'filename': 'extra_long_run_all_diseases',
+            'filename': 'extra_big_run_all_diseases',
             'directory': './outputs',
             'custom_levels': {
                 '*': logging.WARNING,

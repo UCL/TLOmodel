@@ -3,14 +3,8 @@ This scenario runs the full model under a set of scenario in which each one TREA
 
 This version of the scenario represents _actual_ healthcare capacity/performance and normal healthcare seeking.
 
-
-* No spurious symptoms
-* Appts Constraints: Mode 0 (No Constraints - so can estimate total demand for appointments)
-* use_funded_or_actual_staffing = 'funded_plus' (so can estimate total demand for appointments)
-* Consumables Availability: Default
-* Health care seeking as per defaults
-
 Run on the batch system using:
+
 ```
 tlo batch-submit
  src/scripts/overview_paper/B_finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py
