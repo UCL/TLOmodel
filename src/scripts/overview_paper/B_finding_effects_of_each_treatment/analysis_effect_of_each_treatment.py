@@ -629,7 +629,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         stacked=True, legend=True, ax=ax
     )
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
-    ax.set_ylabel('(/1e6)')
+    ax.set_ylabel('(/millions)')
     ax.set_xlabel('TREATMENT_ID (Short)')
     ax.axhline(0, color='grey')
     ax.spines['top'].set_visible(False)
@@ -656,7 +656,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         stacked=True, legend=True, ax=ax, color=[get_color_coarse_appt(_a) for _a in delta_appts_coarse.index]
     )
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
-    ax.set_xlabel('Additional Appointments (/1e6)')
+    ax.set_xlabel('Additional Appointments (/millions)')
     ax.set_ylabel('TREATMENT_ID (Short)')
     ax.axvline(0, color='grey')
     ax.spines['top'].set_visible(False)
