@@ -1460,6 +1460,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(years=100))
 
+        self.TREATMENT_ID = None
     def apply(self, population):
         p = self.module.parameters
         scenario = p["scenario"]
@@ -1476,15 +1477,12 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
                 {187: 0.0})
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                 {175: 0.53})
-            if self.TREATMENT_ID == "Tb_Test_FollowUp":
-                self.TREATMENT_ID = None
-
         # sets availability of xray to nil
         if scenario == 2:
            self.sim.modules['HealthSystem'].override_availability_of_consumables(
                  {175: 0.0})
            self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                  {187: 0.1})
+                  {187: 0.08})
            if self.TREATMENT_ID == "Tb_Test_Xray":
                self.TREATMENT_ID = None
         #increases probability of accessing chest xray by 10%
