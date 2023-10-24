@@ -42,8 +42,9 @@ def apply(results_folder: Path,
 
     def get_parameter_names_from_scenario_file() -> Tuple[str]:
         """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-        from scripts.overview_paper.C_impact_of_healthsystem_under_diff_scenarios.scenario_impact_of_healthsystem \
-            import ImpactOfHealthSystemAssumptions
+        from scripts.overview_paper.C_impact_of_healthsystem_assumptions.scenario_impact_of_healthsystem import (
+            ImpactOfHealthSystemAssumptions,
+        )
         e = ImpactOfHealthSystemAssumptions()
         return tuple(e._scenarios.keys())
 
