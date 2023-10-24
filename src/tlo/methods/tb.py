@@ -1456,11 +1456,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
     It only occurs once at param: scenario_start_date,
     called by initialise_simulation
     """
-
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(years=100))
 
-        self.TREATMENT_ID = None
     def apply(self, population):
         p = self.module.parameters
         scenario = p["scenario"]
@@ -1483,8 +1481,8 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
                  {175: 0.0})
            self.sim.modules['HealthSystem'].override_availability_of_consumables(
                   {187: 0.08})
-           if self.TREATMENT_ID == "Tb_Test_Xray":
-               self.TREATMENT_ID = None
+           # if self.TREATMENT_ID == "Tb_Test_Xray":
+           #     self.TREATMENT_ID = None
         #increases probability of accessing chest xray by 10%
         if scenario == 3:
             self.sim.modules['HealthSystem'].override_availability_of_consumables(

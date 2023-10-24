@@ -74,34 +74,33 @@ class ImpactOfTbDaHx(BaseScenario):
             "Baseline": {
                 'Tb': {
                     'scenario': 0,
-                  #  'scaling_factor_WHO': 1.4,
                 },
             },
         # overrides availability of Xpert
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                   #'scaling_factor_WHO': 2.3,   #previously 1.95
+                   'scaling_factor_WHO': 1.8,   #previously 1.95
                 },
             },
         # overrides availability of CXR
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
-                  # 'scaling_factor_WHO': 2.1,
+                   'scaling_factor_WHO': 1.9,
                 },
             },
             "CXR scale_up": {
                  'Tb': {
                      'scenario': 3,
-                    # 'scaling_factor_WHO': 1.0,
+                    'scaling_factor_WHO': 0.9,
                  }
             },
                  "Outreach services": {
                 'Tb': {
                      'scenario': 0,
                      'probability_community_chest_xray': 0.1,
-                     #'scaling_factor_WHO': 0.8,
+                     'scaling_factor_WHO': 0.8,
                 }
             },
             # "Outreach services20": {

@@ -77,7 +77,7 @@ class ImpactOfTbDaH(BaseScenario):
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                  'scaling_factor_WHO': 1.95,
+                  'scaling_factor_WHO': 1.8,
 
                 },
             },
