@@ -13,13 +13,13 @@ This version of the scenario represents _actual_ healthcare capacity/performance
 Run on the batch system using:
 ```
 tlo batch-submit
- src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py
+ src/scripts/overview_paper/B_finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py
 ```
 
 or locally using:
 ```
 tlo scenario-run
- src/scripts/healthsystem/finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py
+ src/scripts/overview_paper/B_finding_effects_of_each_treatment/scenario_effect_of_each_treatment.py
 ```
 
 """

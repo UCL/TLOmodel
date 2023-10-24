@@ -12,9 +12,8 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from scripts.calibration_analyses.analysis_scripts import plot_legends
-from scripts.healthsystem.finding_effects_of_each_treatment_comparison_between_scenarios.scenario_effect_of_each_treatment_status_quo import \
-    EffectOfEachTreatmentStatusQuo
-
+from scripts.healthsystem.effects_of_each_treatment_multi_scenario.scenario_effect_of_each_treatment_status_quo \
+    import EffectOfEachTreatmentStatusQuo
 from scripts.healthsystem.org_chart_of_hsi import plot_org_chart_treatment_ids
 from tlo import Date
 from tlo.analysis.utils import (

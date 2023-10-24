@@ -17,12 +17,12 @@ from tlo.analysis.utils import (
     extract_results,
     get_coarse_appt_type,
     get_color_short_treatment_id,
+    load_pickled_dataframes,
     order_of_short_treatment_ids,
     plot_stacked_bar_chart,
     squarify_neat,
     summarize,
     unflatten_flattened_multi_index_in_logging,
-    load_pickled_dataframes,
 )
 
 PREFIX_ON_FILENAME = '3'
@@ -52,8 +52,12 @@ def formatting_hsi_df(_df):
 
     return _df
 
-def table1_description_of_hsi_events(results_folder: Path, output_folder: Path,
-                                                      resourcefilepath: Path):
+
+def table1_description_of_hsi_events(
+    results_folder: Path,
+    output_folder: Path,
+    resourcefilepath: Path
+):
     """ `Table 1`: A summary table of all the HSI Events seen in the simulation.
     This is similar to that created by `hsi_events.py` but records all the different forms (levels/appt-type) that
     an HSI Event can take."""
@@ -579,7 +583,9 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
     # Find top 30 most requested items
     top30 = (cons / 1e6).head(30)
     top30.index = top30.index.str.replace("(country-specific)", '')  # remove confusing suffix
-    top30.index = pd.Series(top30.index).apply(lambda x: x if len(x) < 30 else x[0:30] + '...') # shorten the names for plotting
+    top30.index = (
+        pd.Series(top30.index).apply(lambda x: x if len(x) < 30 else x[0:30] + '...')
+    )  # shorten the names for plotting
 
     fig, ax = plt.subplots()
     name_of_plot = 'Demand For Consumables'

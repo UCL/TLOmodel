@@ -11,16 +11,19 @@ from matplotlib import pyplot as plt
 
 from tlo import Date
 from tlo.analysis.utils import (
-    extract_results,
-    make_age_grp_lookup,
-    summarize,
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
-    order_of_cause_of_death_or_daly_label,
+    extract_results,
     get_color_cause_of_death_or_daly_label,
+    make_age_grp_lookup,
+    order_of_cause_of_death_or_daly_label,
+    summarize,
 )
 
 
-def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, dalys_averted_by_wealth_and_label=None):
+def apply(results_folder: Path,
+          output_folder: Path,
+          resourcefilepath: Path = None,
+          dalys_averted_by_wealth_and_label=None):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.
     - We estimate the epidemiological impact as the EXTRA deaths that would occur if that treatment did not occur.
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
@@ -39,9 +42,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def get_parameter_names_from_scenario_file() -> Tuple[str]:
         """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-        from scripts.healthsystem.impact_of_healthsystem_under_diff_scenarios.scenario_impact_of_healthsystem import (
-            ImpactOfHealthSystemAssumptions,
-        )
+        from scripts.overview_paper.C_impact_of_healthsystem_under_diff_scenarios.scenario_impact_of_healthsystem \
+            import ImpactOfHealthSystemAssumptions
         e = ImpactOfHealthSystemAssumptions()
         return tuple(e._scenarios.keys())
 
@@ -325,6 +327,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax[0].set_xticklabels(ax[0].get_xticklabels(), rotation=90)
     ax[0].set_ylim(0, 15)
     ax[0].legend(fontsize=8)
+    ax[0].set_title('DALYS by Wealth (Totals)')
     (normalised_tots * 100.0).plot(
         ax=ax[1],
         color=('black', 'green', (0.12156862745098039, 0.4666666666666667, 0.7058823529411765)),
@@ -334,13 +337,53 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax[1].set_xticklabels(ax[1].get_xticklabels(), rotation=90)
     ax[1].axhline(100.0, color='k', linestyle='--')
     ax[1].legend().set_visible(False)
-    fig.suptitle(name_of_plot)
+    ax[1].set_title('DALYS by Wealth (Normalised)')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     fig.show()
     plt.close(fig)
 
-    #todo: Which disease are over-represented in No Healthcare System scenario...?
+    # Which disease are over-represented in the highest wealth categories, compared to others
+    #  in No Healthcare System scenario)...?
+
+    dalys_no_hcs = total_num_dalys_by_wealth_and_label['No Healthcare System'].unstack()
+    dalys_no_hcs = dalys_no_hcs.sort_index(axis=1, key=order_of_cause_of_death_or_daly_label).drop(columns=['Other'])
+
+    fig, axs = plt.subplots(nrows=2, ncols=1, sharex=True, sharey=True)
+    name_of_plot = 'Distribution of health benefits'
+    # Excess DALYS in highest compared to middle
+    (
+        (dalys_no_hcs.loc['80-100%'] - dalys_no_hcs.loc['40-59%']) / 1e6
+    ).plot.bar(
+        ax=axs[0],
+        color=[get_color_cause_of_death_or_daly_label(_label) for _label in dalys_no_hcs.columns],
+    )
+    axs[0].set_title('Excess DALYS in Wealth Group 80-100% versus 40-59%')
+    axs[0].set_xlabel('Cause')
+    axs[0].set_ylabel('DALYS (/millions)')
+    axs[0].axhline(0.0, color='black')
+    axs[0].set_ylim(-1.5, 2.0)
+    axs[0].set_yticks(np.arange(-1.0, 2.5, 1.0))
+    axs[0].grid()
+    # Excess DALYS in lowest compared to middle
+    (
+        (dalys_no_hcs.loc['0-19%'] - dalys_no_hcs.loc['40-59%']) / 1e6
+    ).plot.bar(
+        ax=axs[1],
+        color=[get_color_cause_of_death_or_daly_label(_label) for _label in dalys_no_hcs.columns],
+    )
+    axs[1].set_title('Excess DALYS in Wealth Group 0-19% versus 40-59%')
+    axs[1].set_xlabel('Cause')
+    axs[1].set_ylabel('DALYS (/millions)')
+    axs[1].axhline(0.0, color='black')
+    axs[1].set_ylim(-1.5, 2.0)
+    axs[1].set_yticks(np.arange(-1.0, 2.5, 1.0))
+    axs[1].grid()
+
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
+    fig.show()
+    plt.close(fig)
 
 
 if __name__ == "__main__":

@@ -6,12 +6,14 @@ results (change 'scenario_filename').
 """
 import argparse
 from pathlib import Path
-from tlo import Date
+
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 
+from tlo import Date
 from tlo.analysis.utils import (
+    CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
     extract_results,
     format_gbd,
     get_color_cause_of_death_or_daly_label,
@@ -23,7 +25,6 @@ from tlo.analysis.utils import (
     order_of_cause_of_death_or_daly_label,
     plot_clustered_stacked,
     summarize,
-    CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
 )
 
 PREFIX_ON_FILENAME = '2'
@@ -183,7 +184,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 ax.set_title(f'{what}: {sexname(sex)}, {period}', fontsize=18)
                 ax.set_xlabel('Age Group')
                 ax.set_xticklabels(ax.get_xticklabels(), rotation=90)
-
 
                 if scaled:
                     ax.set_ylim([0, 1.05])
@@ -410,9 +410,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.show()
         plt.close(fig)
 
-
         # Describe the burden with respect to wealth quintile:
         TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
+
         def get_total_num_dalys_by_wealth_and_label(_df):
             """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
             wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
@@ -421,12 +421,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
                 .drop(columns=['date', 'year']) \
                 .assign(
-                li_wealth=lambda x: x['li_wealth'].map(wealth_cats)
-                .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
-            ) \
-                .melt(id_vars=['li_wealth'], var_name='label') \
-                .groupby(by=['li_wealth', 'label'])['value'] \
-                .sum()
+                    li_wealth=lambda x: x['li_wealth'].map(wealth_cats).astype(
+                        pd.CategoricalDtype(wealth_cats.values(), ordered=True)
+                    )
+                ).melt(id_vars=['li_wealth'], var_name='label') \
+                 .groupby(by=['li_wealth', 'label'])['value'] \
+                 .sum()
 
         total_num_dalys_by_wealth_and_label = summarize(
             extract_results(
@@ -446,7 +446,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
 
         fig, ax = plt.subplots()
-        name_of_plot = f'DALYS by Wealth and Cause, 2015-2019'
+        name_of_plot = 'DALYS by Wealth and Cause, 2015-2019'
         (
             format_to_plot / 1e6
         ).plot.bar(stacked=True, ax=ax,
@@ -466,7 +466,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
         fig.show()
         plt.close(fig)
-
 
     # %% Make graphs for each of Deaths and DALYS for a specific period
     # make_std_graphs(what='Deaths', period='2010-2014')
