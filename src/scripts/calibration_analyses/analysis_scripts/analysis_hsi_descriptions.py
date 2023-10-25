@@ -245,11 +245,12 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
     ax.tick_params(axis='x', labelrotation=90)
     ax.legend(ncol=2, prop={'size': 8}, loc='upper left')
     ax.legend().set_visible(False)  # suppress legend
-    ax.set_ylabel('Number of appointments (millions)')
-    ax.set_xlabel('Appointment Types')
+    ax.set_ylabel('Number (/millions)')
+    ax.set_xlabel('Appointment Type')
     ax.set_ylim(0, 150)
     ax.set_yticks(np.arange(0, 151, 50))
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
+    ax.grid(axis='y')
     fig.tight_layout()
     fig.savefig(
         output_folder
