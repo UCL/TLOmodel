@@ -20,10 +20,7 @@ from tlo.analysis.utils import (
 )
 
 
-def apply(results_folder: Path,
-          output_folder: Path,
-          resourcefilepath: Path = None,
-          dalys_averted_by_wealth_and_label=None):
+def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.
     - We estimate the epidemiological impact as the EXTRA deaths that would occur if that treatment did not occur.
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
@@ -388,48 +385,12 @@ def apply(results_folder: Path,
 
 
 if __name__ == "__main__":
-    rfp = Path('resources')
-
-    parser = argparse.ArgumentParser(
-        description="Produce plots to show the impact each set of treatments",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-    parser.add_argument(
-        "--output-path",
-        help=(
-            "Directory to write outputs to. If not specified (set to None) outputs "
-            "will be written to value of --results-path argument."
-        ),
-        type=Path,
-        default=None,
-        required=False,
-    )
-    parser.add_argument(
-        "--resources-path",
-        help="Directory containing resource files",
-        type=Path,
-        default=Path('resources'),
-        required=False,
-    )
-    parser.add_argument(
-        "--results-path",
-        type=Path,
-        help=(
-            "Directory containing results from running src/scripts/healthsystem/"
-            "impact_of_healthsystem_under_diff_scenarios/scenario_impact_of_healthsystem.py "
-            "script."
-        ),
-        default=None,
-        required=False
-    )
+    parser = argparse.ArgumentParser()
+    parser.add_argument("results_folder", type=Path)
     args = parser.parse_args()
-    assert args.results_path is not None
-    results_path = args.results_path
-
-    output_path = results_path if args.output_path is None else args.output_path
 
     apply(
-        results_folder=results_path,
-        output_folder=output_path,
-        resourcefilepath=args.resources_path
+        results_folder=args.results_folder,
+        output_folder=args.results_folder,
+        resourcefilepath=Path('./resources')
     )
