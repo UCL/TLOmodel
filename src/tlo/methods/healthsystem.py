@@ -2257,7 +2257,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # The event is not yet due (before topen)
                 hp.heappush(_list_of_events_not_due_today, next_event_tuple)
 
-                if next_event_tuple.priority == self.module.lowest_priority_considered:
+                # Only stop querying when reaching lowest_priority_considered in mode 2
+                if (self.module.mode_appt_constraints == 2) and
+                   (next_event_tuple.priority == self.module.lowest_priority_considered):
                     # Check the priority
                     # If the next event is not due and has lowest allowed priority, then stop looking
                     # through the heapq as all other events will also not be due.
