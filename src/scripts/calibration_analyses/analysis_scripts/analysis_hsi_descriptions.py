@@ -83,6 +83,18 @@ def table1_description_of_hsi_events(
         "beddays_footprint": 'Bed-Days',
     })
 
+    # Reformat 'Appointment Types' and 'Bed-types' column to remove the number and then remove duplicate rows (otherwise there are many
+    # rows with similar number of appointments, especially from Schistosomiasis.)
+    def reformat_col(col):
+        return col.apply(pd.Series) \
+                  .applymap(lambda x: x[0], na_action='ignore') \
+                  .apply(lambda row: ', '.join(_r for _r in row.sort_values() if not pd.isnull(_r)), axis=1)
+
+    h['Appointment Types'] = h['Appointment Types'].pipe(reformat_col)
+    h["Bed-Days"] = h["Bed-Days"].pipe(reformat_col)
+
+    h = h.drop_duplicates()
+
     # Save table as csv
     h.to_csv(
         output_folder / f"{PREFIX_ON_FILENAME}_Table1.csv",
