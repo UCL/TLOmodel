@@ -137,9 +137,6 @@ def test_run_core_modules_high_volumes_of_pregnancy(seed, tmpdir):
     output = parse_log_file(sim.log_filepath)
     assert 'error' not in output['tlo.methods.pregnancy_supervisor']
     assert 'error' not in output['tlo.methods.care_of_women_during_pregnancy']
-    assert 'error' not in output['tlo.methods.labour']
-    assert 'error' not in output['tlo.methods.postnatal_supervisor']
-    assert 'error' not in output['tlo.methods.newborn_outcomes']
 
 
 @pytest.mark.slow

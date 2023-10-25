@@ -42,5 +42,5 @@ Contents
    reference/index
    background
    publications
-   authors
+   contributors
    contributing

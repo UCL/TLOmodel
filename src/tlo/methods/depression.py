@@ -49,7 +49,7 @@ class Depression(Module):
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        'SevereDepression': Cause(gbd_causes='Self-harm', label='Depression / Self-harm')
+        'SevereDepression': Cause(gbd_causes='Depressive disorders', label='Depression / Self-harm')
     }
 
     # Module parameters
@@ -740,17 +740,21 @@ class DepressionLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         def zero_out_nan(x):
             return x if not np.isnan(x) else 0
 
+        def safe_divide(x, y):
+            return x / y if y > 0.0 else 0.0
+
         dict_for_output = {
-            'prop_ge15_depr': zero_out_nan(n_ge15_depr / n_ge15),
-            'prop_ge15_m_depr': zero_out_nan(n_ge15_m_depr / n_ge15_m),
-            'prop_ge15_f_depr': zero_out_nan(n_ge15_f_depr / n_ge15_f),
-            'prop_ever_depr': zero_out_nan(n_ever_depr / n_ge15),
-            'prop_age_50_ever_depr': zero_out_nan(n_age_50_ever_depr / n_age_50),
-            'p_ever_diagnosed_depression_if_ever_depressed': zero_out_nan(n_ever_diagnosed_depression / n_ever_depr),
-            'prop_antidepr_if_curr_depr': zero_out_nan(n_antidepr_depr / n_ge15_depr),
-            'prop_antidepr_if_ever_depr': zero_out_nan(n_antidepr_ever_depr / n_ever_depr),
-            'prop_ever_talk_ther_if_ever_depr': zero_out_nan(n_ever_talk_ther / n_ever_depr),
-            'prop_ever_self_harmed': zero_out_nan(n_ever_self_harmed / n_ever_depr),
+            'prop_ge15_depr': zero_out_nan(safe_divide(n_ge15_depr, n_ge15)),
+            'prop_ge15_m_depr': zero_out_nan(safe_divide(n_ge15_m_depr, n_ge15_m)),
+            'prop_ge15_f_depr': zero_out_nan(safe_divide(n_ge15_f_depr, n_ge15_f)),
+            'prop_ever_depr': zero_out_nan(safe_divide(n_ever_depr, n_ge15)),
+            'prop_age_50_ever_depr': zero_out_nan(safe_divide(n_age_50_ever_depr, n_age_50)),
+            'p_ever_diagnosed_depression_if_ever_depressed':
+                zero_out_nan(safe_divide(n_ever_diagnosed_depression, n_ever_depr)),
+            'prop_antidepr_if_curr_depr': zero_out_nan(safe_divide(n_antidepr_depr, n_ge15_depr)),
+            'prop_antidepr_if_ever_depr': zero_out_nan(safe_divide(n_antidepr_ever_depr, n_ever_depr)),
+            'prop_ever_talk_ther_if_ever_depr': zero_out_nan(safe_divide(n_ever_talk_ther, n_ever_depr)),
+            'prop_ever_self_harmed': zero_out_nan(safe_divide(n_ever_self_harmed, n_ever_depr)),
         }
 
         logger.info(key='summary_stats', data=dict_for_output)
@@ -783,6 +787,8 @@ class HSI_Depression_TalkingTherapy(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.num_of_sessions_had = 0  # A counter for the number of sessions of talking therapy had
 
+        # no equipment needed
+
     def apply(self, person_id, squeeze_factor):
         """Set the property `de_ever_talk_ther` to be True and schedule the next session in the course if the person
         has not yet had 5 sessions."""
@@ -814,6 +820,8 @@ class HSI_Depression_Start_Antidepressant(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Depression_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MentOPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+
+        # no equipment needed
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -855,6 +863,8 @@ class HSI_Depression_Refill_Antidepressant(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = 'Depression_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+        # no equipment needed
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props

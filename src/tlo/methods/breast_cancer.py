@@ -575,6 +575,7 @@ class BreastCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(months=1))
         # scheduled to run every 3 months: do not change as this is hard-wired into the values of all the parameters.
+        # TODO: Is it? There is 1 month as the frequency, isn't it?
 
     def apply(self, population):
         df = population.props  # shortcut to dataframe
@@ -647,6 +648,12 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "Mammography": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'  # Biopsy only available at level 3 and above.
         self.EQUIPMENT = {'Slice Master sample processing Unit', 'Paraffin Dispense', 'Whatever used with biopsy'}
+
+        # ap_oct23 - Eva, I cannot locate a biopsy needle in the equipment - perhaps it is in consumables
+        # the other equipment need is for histology in the lab - there is a whole long list of items needed
+        # for histology done on the sample in the lab - do we need to add each of these, or can we have a
+        # package ?  I do not think mammography is done at this point but I could be wrong.
+
         # biopsy always performed with this HSI, hence always used the same set of equipment
 
     def apply(self, person_id, squeeze_factor):
@@ -726,6 +733,9 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
 
+        # ap_oct23 - I believe this will almost always be mastectomy surgery with chemotherapy, so I think for equipment
+        # we just need the standard surgery equipment list. We may need to add radiotherapy when more available.
+
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
@@ -761,8 +771,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, "brc_date_treatment"] = self.sim.date
         df.at[person_id, "brc_stage_at_which_treatment_given"] = df.at[person_id, "brc_status"]
 
-        # Update equipment used with treatment
-        # NB. read only with HSI run and healthsystem.summary logger set at the level INFO or higher
+        # Update equipment
         self.EQUIPMENT.update({'Anything used for mastectomy'})
 
         # Schedule a post-treatment check for 12 months:
@@ -791,6 +800,9 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "BreastCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
+
+        # ap_oct23 - Eva, I'm not aware of any equipment needed here.  Clinical guidelines do not specify what
+        # checks or monitoring are indicated
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -847,6 +859,8 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
+
+    # not sure there is any need for equipment here
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props

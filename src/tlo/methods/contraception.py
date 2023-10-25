@@ -1206,6 +1206,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         self.TREATMENT_ID = "Contraception_Routine"
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
+        self.EQUIPMENT = set()
 
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
@@ -1293,8 +1294,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
             _new_contraceptive = self.new_contraceptive
 
-            # Update equipment when needed
-            # NB. read only with HSI run and healthsystem.summary logger set at the level of logger.INFO or higher
+            # Update equipment
             if _new_contraceptive == 'female_sterilization':
                 self.EQUIPMENT.update({'Smt used to sterilize a woman'})
             elif _new_contraceptive == 'IUD':

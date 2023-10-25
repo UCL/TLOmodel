@@ -180,6 +180,7 @@ def batch_submit(ctx, scenario_file, asserts_on, keep_pool_alive):
 
     # Create container configuration, prefetching Docker images from the container registry
     container_conf = batch_models.ContainerConfiguration(
+        type="dockerCompatible",
         container_image_names=[image_name],
         container_registries=[container_registry],
     )

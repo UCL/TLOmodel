@@ -1062,7 +1062,6 @@ class NewbornOutcomes(Module):
         # will automatically attend early
         if (timing == '<48') or (m['pnc_twin_one'] == 'early'):
             nci[child_id]['will_receive_pnc'] = 'early'
-            nci[child_id]['pnc_date'] = self.sim.date
 
             if df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 1):
                 m['pnc_twin_one'] = 'early'
@@ -1215,8 +1214,7 @@ class NewbornOutcomes(Module):
                              'sepsis_postnatal': False,
                              'passed_through_week_one': False,
                              'will_receive_pnc': 'none',
-                             'third_delay': False,
-                             'pnc_date': pd.NaT}
+                             'third_delay': False}
 
             if mni[mother_id]['clean_birth_practices']:
                 df.at[child_id, 'nb_clean_birth'] = True
@@ -1366,7 +1364,6 @@ class NewbornOutcomes(Module):
         logger.debug(key='message', data=f'HSI_NewbornOutcomes_ReceivesPostnatalCheck did not run for '
                                          f'{person_id}')
         if person_id in nci:
-            nci[person_id]['date_pnc_check'] = pd.NaT
             self.set_death_status(person_id)
 
 
@@ -1394,15 +1391,6 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
         if not df.at[person_id, 'is_alive'] or df.at[person_id, 'nb_death_after_birth'] or (person_id not in nci):
             return
 
-        if person_id in nci:
-            if pd.isnull(nci[person_id]['pnc_date']):
-                return None
-
-        if (self.sim.date - nci[person_id]['pnc_date']).days > 2:
-            nci[person_id]['date_pnc_check'] = pd.NaT
-            self.module.set_death_status(person_id)
-            return
-
         if (nci[person_id]['will_receive_pnc'] == 'early') and not nci[person_id]['passed_through_week_one']:
             if not self.sim.date <= (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2)):
                 logger.info(key='error', data=f'Child {person_id} arrived at early PNC too late')
@@ -1417,9 +1405,6 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
             if not df.at[person_id, 'nb_pnc_check'] == 0:
                 logger.info(key='error', data=f'Child {person_id} arrived at late PNC twice')
 
-        if pd.isnull(nci[person_id]['pnc_date']):
-            logger.info(key='error', data='Individual at neonatal PNC HSI without topen')
-
         # Log the PNC check
         logger.info(key='postnatal_check', data={'person_id': person_id,
                                                  'delivery_setting': nci[person_id]['delivery_setting'],
@@ -1427,7 +1412,6 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
                                                  'timing': nci[person_id]['will_receive_pnc']})
 
         df.at[person_id, 'nb_pnc_check'] += 1
-        nci[person_id]['date_pnc_check'] = pd.NaT
 
         if squeeze_factor > params['squeeze_threshold_for_delay_three_nb_care']:
             nci[person_id]['third_delay'] = True
@@ -1461,7 +1445,11 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
         self.module.run_if_care_of_the_receives_postnatal_check_cant_run(self)
 
     def did_not_run(self):
-        pass
+        self.module.run_if_care_of_the_receives_postnatal_check_cant_run(self)
+        return False
+
+    def not_available(self):
+        self.module.run_if_care_of_the_receives_postnatal_check_cant_run(self)
 
     def _get_facility_level_for_pnc(self, person_id):
         nci = self.module.newborn_care_info
@@ -1493,7 +1481,11 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_PostnatalSupervisor_NeonatalWardInpatientCare: did not run')
+        return False
 
+    def not_available(self):
+        logger.debug(key='message', data='HSI_PostnatalSupervisor_NeonatalWardInpatientCare: cannot not run with '
+                                         'this configuration')
         return False
 
 

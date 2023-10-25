@@ -3,6 +3,7 @@ Classes and functions that support declarations of causes of death and disabilit
 """
 
 from collections import defaultdict
+from copy import copy
 from typing import Union
 
 import pandas as pd
@@ -67,8 +68,9 @@ def collect_causes_from_disease_modules(all_modules, collect, acceptable_causes:
                         f"Conflict in declared cause {tlo_cause} by {m.name}. " \
                         f"A different specification has already been registered."
 
-                # If ok, update these causes to the master dict of all causes of death
-                collected_causes.update({tlo_cause: cause})
+                # If ok, update these causes to the master dict of all causes of death  (copies to prevent any
+                # accidental editing of the modules' declarations).
+                collected_causes[tlo_cause] = copy(cause)
 
     # Check that each gbd_cause is not defined in respect of more than one label
     gbd_causes = dict()  # dict(<gbd_cause: label>)
