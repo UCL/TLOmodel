@@ -193,7 +193,6 @@ def test_run_no_interventions_allowed(tmpdir, seed):
     assert not any(sim.population.props['mi_status'] == 'P')  # No cures
 
 
-
 @pytest.mark.slow
 def test_policy_has_no_effect_on_mode1(tmpdir, seed):
     # Events ran in mode 1 should be identical regardless of policy assumed.
@@ -201,7 +200,7 @@ def test_policy_has_no_effect_on_mode1(tmpdir, seed):
     # in mode 1 they should all be scheduled and delivered regardless
 
     output = []
-    for i,policy in enumerate(["Naive", "No Services"]):
+    for i, policy in enumerate(["Naive", "No Services"]):
         # Establish the simulation object
         sim = Simulation(
             start_date=start_date,
@@ -239,9 +238,11 @@ def test_policy_has_no_effect_on_mode1(tmpdir, seed):
 
         # read the results
         output.append(parse_log_file(sim.log_filepath, level=logging.DEBUG))
-    assert len(output[0]['tlo.methods.healthsystem']['HSI_Event']) == len(output[1]['tlo.methods.healthsystem']['HSI_Event'])
-    assert output[1]['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
 
+    # Check that the outputs are the same and that all HSIs ran even with policy specifying "No Services"
+    assert len(output[0]['tlo.methods.healthsystem']['HSI_Event']) == \
+           len(output[1]['tlo.methods.healthsystem']['HSI_Event'])
+    assert output[1]['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
 
 
 @pytest.mark.slow
