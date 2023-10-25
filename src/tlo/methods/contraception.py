@@ -1206,7 +1206,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         self.TREATMENT_ID = "Contraception_Routine"
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
-        self.EQUIPMENT = set()  # no specific equipment required unless changed in some circumstances
+        self.EQUIPMENT = set()
 
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
