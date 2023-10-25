@@ -83,8 +83,8 @@ def table1_description_of_hsi_events(
         "beddays_footprint": 'Bed-Days',
     })
 
-    # Reformat 'Appointment Types' and 'Bed-types' column to remove the number and then remove duplicate rows (otherwise there are many
-    # rows with similar number of appointments, especially from Schistosomiasis.)
+    # Reformat 'Appointment Types' and 'Bed-types' column to remove the number and then remove duplicate rows
+    # (otherwise there are many rows with similar number of appointments, especially from Schistosomiasis.)
     def reformat_col(col):
         return col.apply(pd.Series) \
                   .applymap(lambda x: x[0], na_action='ignore') \

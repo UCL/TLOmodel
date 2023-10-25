@@ -151,7 +151,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_deaths_summarized = rename_scenarios_in_index(num_deaths_summarized)
     num_dalys_summarized = rename_scenarios_in_index(num_dalys_summarized)
 
-
     name_of_plot = f'Deaths, {target_period()}'
     fig, ax = do_bar_plot_with_ci(num_deaths_summarized / 1e6)
     ax.set_title(name_of_plot)
