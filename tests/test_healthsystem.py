@@ -193,6 +193,57 @@ def test_run_no_interventions_allowed(tmpdir, seed):
     assert not any(sim.population.props['mi_status'] == 'P')  # No cures
 
 
+
+@pytest.mark.slow
+def test_policy_has_no_effect_on_mode1(tmpdir, seed):
+    # Events ran in mode 1 should be identical regardless of policy assumed.
+    # In policy "No Services", have set all HSIs to priority below lowest_priority_considered,
+    # in mode 1 they should all be scheduled and delivered regardless
+
+    output = []
+    for i,policy in enumerate(["Naive", "No Services"]):
+        # Establish the simulation object
+        sim = Simulation(
+            start_date=start_date,
+            seed=seed,
+            log_config={
+                "filename": "log",
+                "directory": tmpdir,
+                "custom_levels": {
+                    "tlo.methods.healthsystem": logging.DEBUG,
+                }
+            }
+        )
+
+        # Register the core modules
+        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                               capabilities_coefficient=1.0,
+                                               mode_appt_constraints=1,
+                                               policy_name=policy),
+                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+                     epi.Epi(resourcefilepath=resourcefilepath),
+                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
+                     tb.Tb(resourcefilepath=resourcefilepath),
+                     )
+
+        # Run the simulation
+        sim.make_initial_population(n=popsize)
+        sim.simulate(end_date=end_date)
+        check_dtypes(sim)
+
+        print(type(parse_log_file(sim.log_filepath, level=logging.DEBUG)))
+
+        # read the results
+        output.append(parse_log_file(sim.log_filepath, level=logging.DEBUG))
+    assert len(output[0]['tlo.methods.healthsystem']['HSI_Event']) == len(output[1]['tlo.methods.healthsystem']['HSI_Event'])
+    assert output[1]['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
+
+
+
 @pytest.mark.slow
 def test_run_in_mode_0_with_capacity(tmpdir, seed):
     # Events should run and there be no squeeze factors
