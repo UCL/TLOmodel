@@ -92,8 +92,10 @@ def table1_description_of_hsi_events(
 
     h['Appointment Types'] = h['Appointment Types'].pipe(reformat_col)
     h["Bed-Days"] = h["Bed-Days"].pipe(reformat_col)
-
     h = h.drop_duplicates()
+
+    # Put something in for blanks/nan (helps with imported into Excel/Word)
+    h = h.fillna('-').replace('', '-')
 
     # Save table as csv
     h.to_csv(
