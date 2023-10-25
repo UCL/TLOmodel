@@ -1866,6 +1866,9 @@ class Labour(Module):
                 sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='avd',
                                                                                            hsi_event=hsi_event)
 
+                # log equipment
+                hsi_event.EQUIPMENT.update({'Delivery Forceps', 'Vacuum extractor'})
+
                 if avail and sf_check:
                     pregnancy_helper_functions.log_met_need(self, f'avd_{indication}', hsi_event)
 
@@ -2890,6 +2893,11 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         avail = pregnancy_helper_functions.return_cons_avail(
             self.module, self, self.module.item_codes_lab_consumables, core='delivery_core',
             optional='delivery_optional')
+
+        # Log required equipment
+        self.EQUIPMENT.update({'Delivery set', 'Weighing scale', 'Stethoscope, foetal, monaural, Pinard, plastic',
+                               'Resuscitaire', 'Sphygmomanometer', 'Tray, emergency', 'Suction machine',
+                               'Thermometer', 'Drip stand', 'Infusion pump'})
 
         # If the clean delivery kit consumable is available, we assume women benefit from clean delivery
         if avail:
