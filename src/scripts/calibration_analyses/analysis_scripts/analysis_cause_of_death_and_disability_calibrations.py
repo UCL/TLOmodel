@@ -394,7 +394,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             )
         ax.axhline(fraction_causes_modelled_overall, color='b',
                    label=f'Overall: {round(100 * fraction_causes_modelled_overall)}%')
-        ax.legend()
+        ax.legend(loc='upper right')
         ax.set_ylim(0, 1.0)
         xticks = fraction_causes_modelled_by_sex_and_age.index.levels[1]
         ax.set_xticks(range(len(xticks)))
