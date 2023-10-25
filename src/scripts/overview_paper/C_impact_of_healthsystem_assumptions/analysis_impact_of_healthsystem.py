@@ -140,13 +140,17 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_dalys_summarized = summarize(num_dalys).loc[0].unstack().reindex(param_names)
     num_deaths_summarized = summarize(num_deaths).loc[0].unstack().reindex(param_names)
 
-    # Update naming of scenarios
-    scenario_renaming = {
-        '+ Perfect Clinical Practice': '+ Perfect Healthcare System Function'
-    }
+    def rename_scenarios_in_index(ser: pd.Series) -> pd.Series:
+        """Update the index of a pd.Series to reflect updated names of each scenario"""
+        scenario_renaming = {
+            '+ Perfect Clinical Practice': '+ Perfect Healthcare System Function'
+        }
+        ser.index = pd.Series(ser.index).replace(scenario_renaming)
+        return ser
 
-    num_deaths_summarized.index = pd.Series(num_deaths_summarized.index).replace(scenario_renaming)
-    num_dalys_summarized.index = pd.Series(num_dalys_summarized.index).replace(scenario_renaming)
+    num_deaths_summarized = rename_scenarios_in_index(num_deaths_summarized)
+    num_dalys_summarized = rename_scenarios_in_index(num_dalys_summarized)
+
 
     name_of_plot = f'Deaths, {target_period()}'
     fig, ax = do_bar_plot_with_ci(num_deaths_summarized / 1e6)
@@ -213,6 +217,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ).T
     ).iloc[0].unstack().reindex(param_names).drop(['No Healthcare System', 'With Hard Constraints', 'Status Quo'])
 
+    # rename scenarios
+    num_deaths_averted = rename_scenarios_in_index(num_deaths_averted)
+    pc_deaths_averted = rename_scenarios_in_index(pc_deaths_averted)
+    num_dalys_averted = rename_scenarios_in_index(num_dalys_averted)
+    pc_dalys_averted = rename_scenarios_in_index(pc_dalys_averted)
+
     # DEATHS
     name_of_plot = f'Additional Deaths Averted vs Status Quo, {target_period()}'
     fig, ax = do_bar_plot_with_ci(
@@ -240,7 +250,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
     ax.set_title(name_of_plot)
     ax.set_ylim(0, 12)
-    ax.set_ylabel('Additional DALYS Averted (Millions)')
+    ax.set_yticks(np.arange(0, 14, 2))
+    ax.set_ylabel('Additional DALYS Averted \n(Millions)')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
