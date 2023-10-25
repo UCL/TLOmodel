@@ -1842,7 +1842,6 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         # if none of the tests are available, try again for sputum
         # requires another appointment - added in ACTUAL_APPT_FOOTPRINT
         if test_result is None:
-
             if smear_status:
                 test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                     dx_tests_to_run="tb_sputum_test_smear_positive", hsi_event=self
@@ -1861,7 +1860,6 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         # if still no result available, rely on clinical diagnosis
         if test_result is None:
-
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                 dx_tests_to_run="tb_clinical", hsi_event=self
             )
