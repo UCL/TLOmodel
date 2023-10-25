@@ -1795,7 +1795,6 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             assert test in ["sputum", "xpert"]
 
             if test == "sputum":
-
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
                     {"Over5OPD": 1, "LabTBMicro": 1}
                 )
@@ -1821,11 +1820,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     self.EQUIPMENT.update({'Sputum Collection box', 'Ordinary Microscope'})
 
             elif test == "xpert":
-
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
                     {"Over5OPD": 1}
                 )
-
                 # relevant test depends on smear status (changes parameters on sensitivity/specificity
                 if smear_status:
                     test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
@@ -1837,6 +1834,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         dx_tests_to_run="tb_xpert_test_smear_negative", hsi_event=self
                     )
                 if test_result is not None:
+                    # Update equipment
                     self.EQUIPMENT.update({'Sputum Collection box', 'Gene Expert (16 Module)'})
 
         # ------------------------- testing referrals ------------------------- #
@@ -2061,6 +2059,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
                 dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
             )
         if test_result is not None:
+            # Update equipment
             self.EQUIPMENT.update({'X-ray machine', 'X-ray viewer'})  # TODO: make an x-ray pkg with these items
 
         # if consumables not available, refer to level 2
@@ -2135,6 +2134,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
                 dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
             )
         if test_result is not None:
+            # Update equipment
             self.EQUIPMENT.update({'X-ray machine', 'X-ray viewer'})  # TODO: make an x-ray pkg with these items
 
         # if consumables not available, rely on clinical diagnosis
@@ -2397,6 +2397,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
                     dx_tests_to_run="tb_sputum_test_smear_negative", hsi_event=self
                 )
             if test_result is not None:
+                # Update equipment
                 self.EQUIPMENT.update({'Sputum Collection box', 'Ordinary Microscope'})
 
             # if sputum test was available and returned positive and not diagnosed with mdr, schedule xpert test
@@ -2404,7 +2405,6 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
                     {"TBFollowUp": 1, "LabTBMicro": 1, "LabMolec": 1}
                 )
-
                 if person["tb_smear"]:
                     xperttest_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                         dx_tests_to_run="tb_xpert_test_smear_positive", hsi_event=self
@@ -2414,6 +2414,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
                         dx_tests_to_run="tb_xpert_test_smear_negative", hsi_event=self
                     )
                 if xperttest_result is not None:
+                    # Update equipment
                     self.EQUIPMENT.update({'Sputum Collection box', 'Gene Expert (16 Module)'})
 
         # if xpert test returns new mdr-tb diagnosis
