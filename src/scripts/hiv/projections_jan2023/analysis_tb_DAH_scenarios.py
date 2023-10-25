@@ -274,7 +274,7 @@ tb_treatment = summarize(
 
 #tb_treatment.index = tb_treatment.index.year,
 tb_treatment_cov = pd.DataFrame(tb_treatment)
-tb_treatment_cov.to_excel(outputspath / "tb_treatment_coverage_baseline.xlsx")
+tb_treatment_cov.to_excel(outputspath / "tb_treatment_coverage.xlsx")
 
 #TB Incidence
 tb_inc = summarize(
@@ -404,6 +404,11 @@ HSEvents = log["tlo.methods.healthsystem.summary"]["HSI_Event"]
 HSEvents = HSEvents.set_index("date")
 print("Health system events as follows", HSEvents)
 HSEvents.to_excel(outputspath / "HSEvents.xlsx")
+
+Tb_tx_coverage = log["tlo.methods.tb"]["tb_treatment"]
+Tb_tx_coverage = Tb_tx_coverage.set_index("date")
+Tb_tx_coverage.index = pd.to_datetime(Tb_tx_coverage.index)
+Tb_tx_coverage.to_excel(outputspath / "Tb_tx_coverage.xlsx")
 
 ## extracts number of people screened for TB by scenario
 TARGET_PERIOD = (Date(2010, 1, 1), Date(2033, 12, 31))
