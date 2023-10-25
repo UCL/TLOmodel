@@ -1665,6 +1665,7 @@ def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
                      disable=False,
                      randomise_queue=True,
                      ignore_priority=False,
+                     mode_appt_constraints=2,
                      policy_name="Test",  # Test policy enforcing lowest_priority_policy
                                           # assumed in this test. This allows us to check policies
                                           # are loaded correctly.
