@@ -74,7 +74,7 @@ class ImpactOfTbDaHx(BaseScenario):
             "Baseline": {
                 'Tb': {
                     'scenario': 0,
-                    'scaling_factor_WHO': 1.5,
+                    'scaling_factor_WHO': 1.6,
                 },
             },
         # overrides availability of Xpert
@@ -94,7 +94,7 @@ class ImpactOfTbDaHx(BaseScenario):
             "CXR scale_up": {
                  'Tb': {
                      'scenario': 3,
-                    'scaling_factor_WHO': 0.9,
+                    'scaling_factor_WHO': 0.95,
                  }
             },
                  "Outreach services": {
