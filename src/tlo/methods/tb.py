@@ -1993,14 +1993,14 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
     positive result will prompt referral to start treatment
     """
 # remember to remove person and ['person_id'] in the def and super
-    def __init__(self, module, person, person_id, suppress_footprint=False):
-        super().__init__(module, person_id=person['person_id'])
+    def __init__(self, module, person_id, suppress_footprint=False):
+        super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
 
         assert isinstance(suppress_footprint, bool)
         self.suppress_footprint = suppress_footprint
 
-        if person["age_years"] < 5:
+        if self.person["age_years"] < 5:
             self.TREATMENT_ID = "Tb_Test_Xray"
         else:
             self.TREATMENT_ID = None
@@ -2079,14 +2079,14 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
     positive result will prompt referral to start treatment
     """
 
-    def __init__(self, module, person, person_id, suppress_footprint=False):
-        super().__init__(module, person_id=person['person_id'])
+    def __init__(self, module,  person_id, suppress_footprint=False):
+        super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
 
         assert isinstance(suppress_footprint, bool)
         self.suppress_footprint = suppress_footprint
 
-        if person["age_years"] < 5:
+        if self.person["age_years"] < 5:
             self.TREATMENT_ID = "Tb_Test_Xray"
         else:
             self.TREATMENT_ID = None
