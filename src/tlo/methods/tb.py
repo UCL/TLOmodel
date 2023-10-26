@@ -2083,7 +2083,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "Tb_Test_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
-
+        self.ACCEPTED_FACILITY_LEVEL = '2'
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
