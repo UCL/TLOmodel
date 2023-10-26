@@ -735,6 +735,7 @@ class CareOfWomenDuringPregnancy(Module):
         # Delivery of the intervention is conditioned on a random draw against a probability that the intervention
         # would be delivered (used to calibrate to SPA data- acts as proxy for clinical quality)
         if self.rng.random_sample() < params['prob_intervention_delivered_urine_ds']:
+            hsi_event.EQUIPMENT.update({'Urine dip Stick'})
 
             # check consumables
             avail = pregnancy_helper_functions.return_cons_avail(
@@ -748,16 +749,15 @@ class CareOfWomenDuringPregnancy(Module):
                 # We use a temporary variable to store if proteinuria is detected
                 proteinuria_diagnosed = True
                 logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'dipstick'})
-                hsi_event.EQUIPMENT.update({'Urine dip Stick'})
 
         # The process is repeated for blood pressure monitoring
         if self.rng.random_sample() < params['prob_intervention_delivered_bp']:
+            hsi_event.EQUIPMENT.update({'Sphygmomanometer'})
 
             if self.sim.modules['HealthSystem'].dx_manager.run_dx_test(dx_tests_to_run='blood_pressure_measurement',
                                                                        hsi_event=hsi_event):
                 hypertension_diagnosed = True
                 logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'bp_measurement'})
-                hsi_event.EQUIPMENT.update({'Sphygmomanometer'})
 
                 if not df.at[person_id, 'ac_gest_htn_on_treatment'] and\
                     (df.at[person_id, 'ps_htn_disorders'] != 'none') and pd.isnull(mni[person_id]['hypertension'
@@ -2626,8 +2626,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
             self.module, self, self.module.item_codes_preg_consumables, core='post_abortion_care_core',
             optional='post_abortion_care_optional')
 
-        # TODO: equipment set for dilation and cutterage? oxygen?
-        self.EQUIPMENT.update({'Manual Vacuum aspiration Set', 'Drip stand', 'Infusion pump'})
+        self.EQUIPMENT.update({'D&C set', 'Suction Curettage machine', 'Drip stand', 'Infusion pump'})
 
         # Check HCW availability to deliver surgical removal of retained products
         sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
