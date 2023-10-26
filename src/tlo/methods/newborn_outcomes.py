@@ -1008,6 +1008,9 @@ class NewbornOutcomes(Module):
                     df.at[person_id, 'nb_supp_care_neonatal_sepsis'] = True
                     pregnancy_helper_functions.log_met_need(self, 'neo_sep_supportive_care', hsi_event)
 
+                    # Log equipment
+                    hsi_event.EQUIPMENT.update({'Drip stand', 'Infusion pump'})
+
             # The same pattern is then followed for health centre care
             else:
                 avail = pregnancy_helper_functions.return_cons_avail(
@@ -1017,6 +1020,9 @@ class NewbornOutcomes(Module):
                 if avail and sf_check:
                     df.at[person_id, 'nb_inj_abx_neonatal_sepsis'] = True
                     pregnancy_helper_functions.log_met_need(self, 'neo_sep_abx', hsi_event)
+
+                    # Log equipment
+                    hsi_event.EQUIPMENT.update({'Drip stand', 'Infusion pump', 'Oxygen cylinder, with regulator'})
 
     def link_twins(self, child_one, child_two, mother_id):
         """
@@ -1382,6 +1388,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
         self.TREATMENT_ID = 'PostnatalCare_Neonatal'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = self._get_facility_level_for_pnc(person_id)
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         nci = self.module.newborn_care_info
