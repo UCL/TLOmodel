@@ -2118,23 +2118,40 @@ class Labour(Module):
 
         if not mni[person_id]['retained_placenta']:
 
-            # We apply a probability that surgical techniques will be effective
-            treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
+            if avail and sf_check:
 
-            # And store the treatment which will dramatically reduce risk of death
-            if treatment_success_pph and avail and sf_check:
-                self.pph_treatment.set(person_id, 'surgery')
+                # Log equipment
+                # Todo: link to surgical equipment package when that exsists
+                hsi_event.EQUIPMENT.update(
+                    {'Infusion pump', 'Drip stand', 'Laparotomy Set', 'Blood pressure machine', 'Pulse oximeter'})
 
-            # If the treatment is unsuccessful then women will require a hysterectomy to stop the bleeding
-            elif not treatment_success_pph and avail and sf_check:
-                self.pph_treatment.set(person_id, 'hysterectomy')
-                df.at[person_id, 'la_has_had_hysterectomy'] = True
+                # We apply a probability that surgical techniques will be effective
+                treatment_success_pph = params['success_rate_pph_surgery'] > self.rng.random_sample()
+
+                # And store the treatment which will dramatically reduce risk of death
+                if treatment_success_pph:
+                    self.pph_treatment.set(person_id, 'surgery')
+                else:
+                    # If the treatment is unsuccessful then women will require a hysterectomy to stop the bleeding
+
+                    # Log equipment
+                    # Todo: link to surgical equipment package when that exsists
+                    hsi_event.EQUIPMENT.update(
+                     {'Hysterectomy set'})
+
+                    self.pph_treatment.set(person_id, 'hysterectomy')
+                    df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         # Next we apply the effect of surgical treatment for women with retained placenta
         elif (mni[person_id]['retained_placenta'] and not self.pph_treatment.has_all(person_id,
                                                                                      'manual_removal_placenta')
               and sf_check and avail):
             self.pph_treatment.set(person_id, 'surgery')
+
+            # Log equipment
+            # Todo: link to surgical equipment package when that exsists
+            hsi_event.EQUIPMENT.update(
+                {'Infusion pump', 'Drip stand', 'Laparotomy Set', 'Blood pressure machine', 'Pulse oximeter'})
 
         # log intervention delivery
         if self.pph_treatment.has_all(person_id, 'surgery') or df.at[person_id, 'la_has_had_hysterectomy']:
@@ -2162,6 +2179,8 @@ class Labour(Module):
                                                                                    hsi_event=hsi_event)
 
         if avail and sf_check:
+            hsi_event.EQUIPMENT.update({'Drip stand', 'Infusion pump'})
+
             mni[person_id]['received_blood_transfusion'] = True
             pregnancy_helper_functions.log_met_need(self, 'blood_tran', hsi_event)
 
@@ -2184,6 +2203,9 @@ class Labour(Module):
         params = self.current_parameters
         mother = df.loc[person_id]
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+
+        # Log equipment
+        hsi_event.EQUIPMENT.update({'Analyser, Haematology'})
 
         # Use dx_test function to assess anaemia status
         test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
@@ -2853,6 +2875,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'NormalDelivery': 1})
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 2})
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -3033,6 +3056,7 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'PostnatalCare_Maternal'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = self._get_facility_level_for_pnc(person_id)
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
@@ -3160,6 +3184,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.timing = timing
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -3190,6 +3215,12 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                                                                                        hsi_event=self)
 
             if avail and sf_check or (mni[person_id]['cs_indication'] == 'other'):
+
+                # If intervention is delivered - log equipment
+                # Todo: link to surgical equipment package when that exsists
+                self.EQUIPMENT.update(
+                    {'Infusion pump', 'Drip stand', 'Laparotomy Set', 'Blood pressure machine', 'Pulse oximeter'})
+
                 person = df.loc[person_id]
                 logger.info(key='caesarean_delivery', data=person.to_dict())
                 logger.info(key='cs_indications', data={'id': person_id,
@@ -3223,6 +3254,8 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
                 # Unsuccessful repair will lead to this woman requiring a hysterectomy. Hysterectomy will also reduce
                 # risk of death from uterine rupture but leads to permanent infertility in the simulation
                 else:
+                    self.EQUIPMENT.update(
+                        {'Hysterectomy set'})
                     df.at[person_id, 'la_has_had_hysterectomy'] = True
 
         # ============================= SURGICAL MANAGEMENT OF POSTPARTUM HAEMORRHAGE==================================
