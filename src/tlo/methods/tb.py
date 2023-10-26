@@ -1481,15 +1481,13 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
                  {175: 0.0})
            # self.sim.modules['HealthSystem'].override_availability_of_consumables(
            #        {187: 0.08})
-           # if self.TREATMENT_ID == "Tb_Test_Xray":
-           #     self.TREATMENT_ID = None
         #increases probability of accessing chest xray by 10%
         if scenario == 3:
             self.sim.modules['HealthSystem'].override_availability_of_consumables(
                   {175: 0.63})
-        if scenario == 4:
-                self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                    {175: 0.83})
+        # if scenario == 4:
+        #         self.sim.modules['HealthSystem'].override_availability_of_consumables(
+        #             {175: 0.83})
 #######################################################################
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
@@ -1994,16 +1992,21 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
     usually used for testing children unable to produce sputum
     positive result will prompt referral to start treatment
     """
-
-    def __init__(self, module, person_id, suppress_footprint=False):
-        super().__init__(module, person_id=person_id)
+# remember to remove person and ['person_id'] in the def and super
+    def __init__(self, module, person, person_id, suppress_footprint=False):
+        super().__init__(module, person_id=person['person_id'])
         assert isinstance(module, Tb)
 
         assert isinstance(suppress_footprint, bool)
         self.suppress_footprint = suppress_footprint
 
-        self.TREATMENT_ID = "Tb_Test_Xray"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1,"DiagRadio": 1})
+        if person["age_years"] < 5:
+            self.TREATMENT_ID = "Tb_Test_Xray"
+        else:
+            self.TREATMENT_ID = None
+
+       # self.TREATMENT_ID = "Tb_Test_Xray"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
 
 
@@ -2038,7 +2041,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
                 )
                 # add another clinic appointment
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                    {"Under5OPD": 1, "DiagRadio": 1}
+                    {"DiagRadio": 1}
                 )
 
             # if smear-negative, assume still some uncertainty around dx, refer for another x-ray
@@ -2076,16 +2079,20 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
     positive result will prompt referral to start treatment
     """
 
-    def __init__(self, module, person_id, suppress_footprint=False):
-        super().__init__(module, person_id=person_id)
+    def __init__(self, module, person, person_id, suppress_footprint=False):
+        super().__init__(module, person_id=person['person_id'])
         assert isinstance(module, Tb)
 
         assert isinstance(suppress_footprint, bool)
         self.suppress_footprint = suppress_footprint
 
-        self.TREATMENT_ID = "Tb_Test_Xray"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 1, "DiagRadio": 1})  # remember to replace with {"DiagRadio": 1}
-        self.ACCEPTED_FACILITY_LEVEL = '2'
+        if person["age_years"] < 5:
+            self.TREATMENT_ID = "Tb_Test_Xray"
+        else:
+            self.TREATMENT_ID = None
+
+       # self.TREATMENT_ID = "Tb_Test_Xray"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
 
     def apply(self, person_id, squeeze_factor):
 
@@ -2115,7 +2122,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             )
             # add another clinic appointment
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                {"Under5OPD": 1, "DiagRadio": 1}
+                {"DiagRadio": 1}
             )
 
         # if test returns positive result, refer for appropriate treatment
@@ -2223,7 +2230,6 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         treatment_regimen = None  # default return value
 
         # -------- MDR-TB -------- #
-
         if person["tb_diagnosed_mdr"]:
 
             treatment_regimen = "tb_mdrtx"
