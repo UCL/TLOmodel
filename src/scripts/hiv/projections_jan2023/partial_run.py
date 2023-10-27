@@ -82,6 +82,11 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                     'scenario': 1,
                 #   'scaling_factor_WHO': 1.8,   #previously 1.95
+                   'sens_xpert_smear_negative': 0,
+                   'sens_xpert_smear_positive': 0,
+                   'spec_xpert_smear_negative': 0,
+                   'spec_xpert_smear_positive': 0,
+
                 },
             },
         # overrides availability of CXR
@@ -89,6 +94,11 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                     'scenario': 2,
                    #'scaling_factor_WHO': 1.9,
+                    'sens_xray_smear_negative': 0,
+                    'sens_xray_smear_positive':  0,
+                    'spec_xray_smear_negative': 0,
+                    'spec_xray_smear_positive':  0,
+
                 },
             },
             "CXR scale_up": {
