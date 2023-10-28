@@ -35,7 +35,7 @@ class ImpactOfTbDaHx(BaseScenario):
         self.runs_per_draw = 3
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_impact_partial13',
+            'filename': 'Tb_DAH_impact_partial14',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -83,13 +83,8 @@ class ImpactOfTbDaHx(BaseScenario):
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                #   'scaling_factor_WHO': 1.8,   #previously 1.95
-                #    'sens_xpert_smear_negative': 0.0,
-                #    'sens_xpert_smear_positive': 0.0,
-                #    'spec_xpert_smear_negative': 0.0,
-                #    'spec_xpert_smear_positive': 0.0,
-                   'first_line_test':    'sputum',
-                   'second_line_test': 'sputum',
+                      'first_line_test':    'sputum',
+                      'second_line_test': 'sputum',
 
                 },
             },
@@ -98,14 +93,8 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                     'scenario': 2,
                    #'scaling_factor_WHO': 1.9,
-                    # 'sens_xray_smear_negative': 0.0,
-                    # 'sens_xray_smear_positive':  0.0,
-                    # 'spec_xray_smear_negative': 0.0,
-                    # 'spec_xray_smear_positive':  0.0,
                     'first_line_test': 'sputum',
                     'second_line_test': 'xpert',
-                    'sens_clinical':    0.0,
-                    'spec_clinical':    0.0,
                 },
             },
             "CXR scale_up": {
@@ -113,16 +102,16 @@ class ImpactOfTbDaHx(BaseScenario):
                      'scenario': 3,
                      'first_line_test': 'sputum',
                      'second_line_test': 'xpert',
-                     'scaling_factor_WHO': 1.3,
+                     'scaling_factor_WHO': 1.1,
                  }
             },
                  "Outreach services": {
                 'Tb': {
                      'scenario': 0,
                      'probability_community_chest_xray': 0.1,
-                    'first_line_test': 'sputum',
-                    'second_line_test': 'xpert',
-                    'scaling_factor_WHO': 1.3,
+                     'first_line_test': 'sputum',
+                     'second_line_test': 'xpert',
+                     'scaling_factor_WHO': 1.0,
                 }
             },
             # "Outreach services20": {
