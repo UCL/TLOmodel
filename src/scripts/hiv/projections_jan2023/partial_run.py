@@ -74,6 +74,8 @@ class ImpactOfTbDaHx(BaseScenario):
             "Baseline": {
                 'Tb': {
                     'scenario': 0,
+                    'first_line_test': 'sputum',
+                    'second_line_test': 'xpert',
                   #  'scaling_factor_WHO': 1.6,
                 },
             },
@@ -109,14 +111,18 @@ class ImpactOfTbDaHx(BaseScenario):
             "CXR scale_up": {
                  'Tb': {
                      'scenario': 3,
-                     'scaling_factor_WHO': 1.3,
+                     'first_line_test': 'sputum',
+                     'second_line_test': 'xpert',
+                    # 'scaling_factor_WHO': 1.3,
                  }
             },
                  "Outreach services": {
                 'Tb': {
                      'scenario': 0,
                      'probability_community_chest_xray': 0.1,
-                     'scaling_factor_WHO': 1.3,
+                    'first_line_test': 'sputum',
+                    'second_line_test': 'xpert',
+                     #'scaling_factor_WHO': 1.3,
                 }
             },
             # "Outreach services20": {
