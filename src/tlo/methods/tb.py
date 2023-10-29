@@ -1894,9 +1894,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                     dx_tests_to_run="tb_sputum_test_smear_negative", hsi_event=self
                 )
-
+          #change over5opd to 1 and remember to reverse
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                {"Over5OPD": 2, "LabTBMicro": 1}
+                {"Over5OPD": 1, "LabTBMicro": 1}
             )
 
         # if still no result available, rely on clinical diagnosis

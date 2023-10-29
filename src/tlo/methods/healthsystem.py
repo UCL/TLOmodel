@@ -249,7 +249,6 @@ class HSI_Event:
 
     def make_appt_footprint(self, dict_of_appts):
         """Helper function to make appointment footprint in format expected downstream.
-
         Should be passed a dictionary keyed by appointment type codes with non-negative
         values.
         """
