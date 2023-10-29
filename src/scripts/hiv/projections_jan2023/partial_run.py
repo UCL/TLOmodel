@@ -74,9 +74,6 @@ class ImpactOfTbDaHx(BaseScenario):
             "Baseline": {
                 'Tb': {
                     'scenario': 0,
-                    'first_line_test': 'sputum',
-                    'second_line_test': 'xpert',
-                  #  'scaling_factor_WHO': 1.6,
                 },
             },
         # overrides availability of Xpert
@@ -85,14 +82,14 @@ class ImpactOfTbDaHx(BaseScenario):
                     'scenario': 1,
                       'first_line_test':    'sputum',
                       'second_line_test': 'sputum',
-
+                    'scaling_factor_WHO': 1.9,
                 },
             },
         # overrides availability of CXR
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
-                   #'scaling_factor_WHO': 1.9,
+                    'scaling_factor_WHO': 1.8,
                     'first_line_test': 'sputum',
                     'second_line_test': 'xpert',
                 },
@@ -100,8 +97,6 @@ class ImpactOfTbDaHx(BaseScenario):
             "CXR scale_up": {
                  'Tb': {
                      'scenario': 3,
-                     'first_line_test': 'sputum',
-                     'second_line_test': 'xpert',
                      'scaling_factor_WHO': 0.9,
                  }
             },
@@ -109,8 +104,6 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                      'scenario': 0,
                      'probability_community_chest_xray': 0.1,
-                     'first_line_test': 'sputum',
-                     'second_line_test': 'xpert',
                      'scaling_factor_WHO': 0.9,
                 }
             },
