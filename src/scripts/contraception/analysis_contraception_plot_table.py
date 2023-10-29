@@ -138,7 +138,7 @@ if (not table_use_costs_bool) and plot_costs:
 
 # Prepare the table of consumables (no sim is needed)
 tables.table_cons(mwk_to_usd_exchange_rate, contraceptives_order)
-print("Fig: Consumables list saved.")
+print("Tab: Consumables list saved.")
 
 # Actually run analysis for the table, only if you require the table. ;)
 run_analysis = run_analysis and table_use_costs_bool
@@ -203,22 +203,22 @@ def do_analysis(ID, logFile, in_calc_intervention_costs_bool):
 
 
 def load_analysis_out(in_analysis_type, in_datestamp_log):
-    use_with_df_loaded = \
+    use_df_loaded = \
         pd.read_csv(Path(dataframe_folder + '/use_' + in_analysis_type + '_df_' + in_datestamp_log + '.csv'),
                     index_col=[0])
-    percentage_use_with_df_loaded = \
+    percentage_use_df_loaded = \
         pd.read_csv(Path(dataframe_folder + '/percentage_use_' + in_analysis_type + '_df_' + in_datestamp_log + '.csv'),
                     index_col=[0])
-    costs_with_df_loaded = \
+    costs_df_loaded = \
         pd.read_csv(Path(dataframe_folder + '/costs_' + in_analysis_type + '_df_' + in_datestamp_log + '.csv'),
                     index_col=[0, 1])
-    interv_costs_with_df_loaded = \
+    interv_costs_df_loaded = \
         pd.read_csv(Path(dataframe_folder + '/interv_costs_' + in_analysis_type + '_df_' + in_datestamp_log + '.csv'),
                     index_col=[0])
-    scaling_factor_with_loaded = \
+    scaling_factor_loaded = \
         pd.read_csv(Path(dataframe_folder + '/scaling_factor_' + in_analysis_type + '_' + in_datestamp_log + '.npy'))
-    return use_with_df_loaded, percentage_use_with_df_loaded, costs_with_df_loaded, interv_costs_with_df_loaded, \
-        scaling_factor_with_loaded
+    return use_df_loaded, percentage_use_df_loaded, costs_df_loaded, interv_costs_df_loaded, \
+        scaling_factor_loaded
 
 
 if do_no_interv_analysis:
