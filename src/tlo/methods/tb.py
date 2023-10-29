@@ -965,10 +965,10 @@ class Tb(Module):
 
         # schedule outreach xrays for tb screening from 2023
 
-        sim.schedule_event(TbCommunityXray(self), self.parameters["outreach_xray_start_date"])
+        #sim.schedule_event(TbCommunityXray(self), self.parameters["outreach_xray_start_date"])
 
         # schedule outreach xrays for tb screening to begin from 2010 just like tthe sim date- will be removed from actual sim
-       # sim.schedule_event(TbCommunityXray(self), sim.date + DateOffset(years=1))
+        sim.schedule_event(TbCommunityXray(self), sim.date + DateOffset(years=1))
 
         # log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
