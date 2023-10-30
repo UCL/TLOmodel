@@ -2487,13 +2487,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             else:
                 break
 
-        # Traverse the queue again to check all appts which have expired are removed from the queue,
-        # and call did_not_run() for all those that were postponed.
         # In previous iteration, we stopped querying the queue once capabilities
-        # were exhausted, so here ensure if any events expired were left unchecked they are properly
-        # removed from the queue, and did_not_run() is invoked for all postponed events.
-        # (This should still be more efficient than querying the queue as done in mode_appt_constraints
-        #  = 0 and 1 while ensuring mid-day effects are avoided.)
+        # were exhausted, so here we traverse the queue again to ensure that if any events expired were
+        # left unchecked they are properly removed from the queue, and did_not_run() is invoked for all
+        # postponed events. (This should still be more efficient than querying the queue as done in
+        # mode_appt_constraints = 0 and 1 while ensuring mid-day effects are avoided.)
+        # We also schedule a call_never_run for any HSI below the lowest_priority_considered,
+        # in case any of them where left in the queue due to a transition from mode 0/1 to mode 2
         while len(self.module.HSI_EVENT_QUEUE) > 0:
 
             next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
@@ -2501,7 +2501,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
             event = next_event_tuple.hsi_event
 
-            if self.sim.date > next_event_tuple.tclose:
+            # If the event is lower than lowest_priority_considered, schedule a call_never_ran on tclose
+            # regardless of whether appt is due today or any other time
+            if next_event_tuple.priority > self.module.lowest_priority_considered:
+                self.module.schedule_to_call_never_ran_on_date(hsi_event=event,
+                                                               tdate=next_event_tuple.tclose)
+
+            elif self.sim.date > next_event_tuple.tclose:
                 # The event has expired (after tclose) having never been run. Call the 'never_ran' function
                 self.module.call_and_record_never_ran_hsi_event(
                       hsi_event=event,
@@ -2517,55 +2523,44 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 pass
 
             elif self.sim.date < next_event_tuple.topen:
-                # The event is not yet due (before topen)
+                # The event is not yet due (before topen). Do not stop querying the queue here if we have
+                # reached the lowest_priority_considered, as we want to make sure HSIs with lower priority
+                # (which may have been scheduled during a prior mode 0/1 period) are flushed from the queue.
                 hp.heappush(list_of_events_not_due_today, next_event_tuple)
 
-                if next_event_tuple.priority == self.module.lowest_priority_considered:
-                    # Check the priority
-                    # If the next event is not due and has lowest allowed priority, then stop looking
-                    # through the heapq as all other events will also not be due.
-                    break
-
             else:
-                # The event is now due to run today and the person is confirmed to be still alive
-                # Check if it is still above lowest priority policy at time of running. If not,
-                # schedule a "never_ran" call at tclose time.
-                if next_event_tuple.priority > self.module.lowest_priority_considered:
-                    self.module.schedule_to_call_never_ran_on_date(hsi_event=event,
-                                                                   tdate=next_event_tuple.tclose)
+                # Add it to the list of events due today if at population level.
+                # Otherwise, run event immediately.
+                is_pop_level_hsi_event = isinstance(event.target, tlo.population.Population)
+                if is_pop_level_hsi_event:
+                    list_of_population_hsi_event_tuples_due_today.append(next_event_tuple)
                 else:
-                    # Add it to the list of events due today if at population level.
-                    # Otherwise, run event immediately.
-                    is_pop_level_hsi_event = isinstance(event.target, tlo.population.Population)
-                    if is_pop_level_hsi_event:
-                        list_of_population_hsi_event_tuples_due_today.append(next_event_tuple)
-                    else:
-                        # In previous iteration, have already ran all the events for today that could run
-                        # given capabilities available, so put back any remaining events due today to the
-                        # hold_over queue as it would not be possible to run them today.
+                    # In previous iteration, have already ran all the events for today that could run
+                    # given capabilities available, so put back any remaining events due today to the
+                    # hold_over queue as it would not be possible to run them today.
 
-                        # Do not run,
-                        # Call did_not_run for the hsi_event
-                        rtn_from_did_not_run = event.did_not_run()
+                    # Do not run,
+                    # Call did_not_run for the hsi_event
+                    rtn_from_did_not_run = event.did_not_run()
 
-                        # If received no response from the call to did_not_run, or a True signal, then
-                        # add to the hold-over queue.
-                        # Otherwise (disease module returns "FALSE") the event is not rescheduled and
-                        # will not run.
+                    # If received no response from the call to did_not_run, or a True signal, then
+                    # add to the hold-over queue.
+                    # Otherwise (disease module returns "FALSE") the event is not rescheduled and
+                    # will not run.
 
-                        if not (rtn_from_did_not_run is False):
-                            # reschedule event
-                            # Add the event to the queue:
-                            hp.heappush(hold_over, next_event_tuple)
+                    if not (rtn_from_did_not_run is False):
+                        # reschedule event
+                        # Add the event to the queue:
+                        hp.heappush(hold_over, next_event_tuple)
 
-                        # Log that the event did not run
-                        self.module.record_hsi_event(
-                           hsi_event=event,
-                           actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
-                           squeeze_factor=0,
-                           did_run=False,
-                           priority=next_event_tuple.priority
-                           )
+                    # Log that the event did not run
+                    self.module.record_hsi_event(
+                       hsi_event=event,
+                       actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
+                       squeeze_factor=0,
+                       did_run=False,
+                       priority=next_event_tuple.priority
+                       )
 
         # add events from the list_of_events_not_due_today back into the queue
         while len(list_of_events_not_due_today) > 0:
