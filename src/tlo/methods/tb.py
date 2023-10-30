@@ -1992,7 +1992,6 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
     usually used for testing children unable to produce sputum
     positive result will prompt referral to start treatment
     """
-# remember to remove person and ['person_id'] in the def and super
     def __init__(self, module, person_id, suppress_footprint=False):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
