@@ -21,6 +21,10 @@ It is developed in a collaboration between:
 It benefits from a close partnership between this team and the Ministry of Health, Malawi.
 
 
+Open Source Code Repository
+=================
+Our code base is open source and available for review and usage at `<https://github.com/UCL/TLOmodel>`_
+
 Last Update
 =================
 This project is under active development. The last update was: |today|
