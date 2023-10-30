@@ -47,7 +47,7 @@ time_start = time.time()
 #  suffix) & return last year of sims (the same for that) // separate them as pop_size_simulated & last_year_simulated
 # pop_size_simulated = "2K"
 pop_size_simulated = "250K"
-branch_name = 'co_rev02'
+branch_name = 'co_rev03'
 # which results to use
 # - Without interv
 # datestamp_without_log = '2023-04-26T141435'
@@ -216,7 +216,7 @@ def load_analysis_out(in_analysis_type, in_datestamp_log):
         pd.read_csv(Path(dataframe_folder + '/interv_costs_' + in_analysis_type + '_df_' + in_datestamp_log + '.csv'),
                     index_col=[0])
     scaling_factor_loaded = \
-        pd.read_csv(Path(dataframe_folder + '/scaling_factor_' + in_analysis_type + '_' + in_datestamp_log + '.npy'))
+        np.load(Path(dataframe_folder + '/scaling_factor_' + in_analysis_type + '_' + in_datestamp_log + '.npy'))
     return use_df_loaded, percentage_use_df_loaded, costs_df_loaded, interv_costs_df_loaded, \
         scaling_factor_loaded
 

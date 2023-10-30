@@ -143,7 +143,7 @@ def table_use_costs__plot_costs(in_use_output, in_use_without_df, in_percentage_
                 # consumable costs in MWK (in USD)
                 l_tp_costs = []
                 for meth in in_df_use.columns:
-                    if meth in list(in_df_costs.loc[tp].index.get_level_values('Contraceptive_Method')):
+                    if meth in list(in_df_costs.loc[tp].index):
                         # add costs for each meth & 'co_modern_total'
                         l_tp_costs.append(in_df_costs.loc[(tp, meth), 'Costs'])
                     else:
@@ -221,7 +221,7 @@ def table_use_costs__plot_costs(in_use_output, in_use_without_df, in_percentage_
     writer = pd.ExcelWriter(output_table_file)
     use_costs_table_df.to_excel(writer, index_label=use_costs_table_df.columns.name)
 
-    writer.save()
+    writer.close()
 
 
 # %% TABLE CONSUMABLES .................................................................................................
@@ -296,6 +296,6 @@ def table_cons(in_mwk_to_usd_exchange_rate,
     writer = pd.ExcelWriter(output_table_file)
     co_pkgs_df.to_excel(writer, index=False)
 
-    writer.save()
+    writer.close()
     # TODO: finish? (the boarders, header align left, make the expected units to be nmbs so they are aligned right,
     #  write down the unique contraception package just once)

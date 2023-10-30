@@ -134,6 +134,7 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
     plt.savefig(outputpath / output_filename, format='png')
 
     # %%% Plot total only ..............................................................................................
+    # TODO: fix (if TOTAL not included in the fig above, this one shows last decade not the TOTAL)
     fig2, ax2 = plt.subplots()
     # custom x-axis tick labels
     x2_i = np.array(0)  # the x_label locations
