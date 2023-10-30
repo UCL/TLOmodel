@@ -82,14 +82,14 @@ class ImpactOfTbDaHx(BaseScenario):
                     'scenario': 1,
                       'first_line_test':    'sputum',
                       'second_line_test': 'sputum',
-                      'scaling_factor_WHO': 1.9,
+                      #'scaling_factor_WHO': 1.9,
                 },
             },
         # overrides availability of CXR
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
-                    'scaling_factor_WHO': 1.8,
+                  #  'scaling_factor_WHO': 1.8,
                     'first_line_test': 'sputum',
                     'second_line_test': 'xpert',
                 },
@@ -97,14 +97,14 @@ class ImpactOfTbDaHx(BaseScenario):
             "CXR scale_up": {
                  'Tb': {
                      'scenario': 3,
-                     'scaling_factor_WHO': 1.4,
+                   #  'scaling_factor_WHO': 1.4,
                  }
             },
                  "Outreach services": {
                 'Tb': {
                      'scenario': 0,
                      'probability_community_chest_xray': 0.1,
-                     'scaling_factor_WHO': 1.3,
+                     #'scaling_factor_WHO': 1.3,
                 }
             },
             # "Outreach services20": {
