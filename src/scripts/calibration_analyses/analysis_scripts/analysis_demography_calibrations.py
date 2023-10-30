@@ -34,8 +34,10 @@ PREFIX_ON_FILENAME = '1'
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
 
-    # Declare path for output graphs from this script
-    make_graph_file_name = lambda stub: output_folder / f"{PREFIX_ON_FILENAME}_{stub}.png"  # noqa: E731
+    def make_graph_file_name(file_name, file_format):
+        # Declare path for output graphs from this script
+        graph_file_name = str(output_folder / f"{PREFIX_ON_FILENAME}_{file_name}.{file_format}")  # noqa: E731
+        return graph_file_name
 
     # Define colo(u)rs to use:
     colors = {
@@ -146,7 +148,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_ylim(0, 95)
         ax.legend(loc='lower right')
         fig.tight_layout()
-        plt.savefig(make_graph_file_name(f"Pop_Over_Time_2010-2100_WPP{wpp_year}"))
+        plt.savefig(make_graph_file_name(f"Pop_Over_Time_2010-2100_WPP{wpp_year}", 'png'))
+        # plt.savefig(make_graph_file_name(f"Pop_Over_Time_2010-2100_WPP{wpp_year}", 'svg'))
         plt.show()
         plt.close(fig)
 
@@ -213,7 +216,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_title('Population Size 2018')
     ax.legend()
     fig.tight_layout()
-    plt.savefig(make_graph_file_name("Pop_Males_Females_2018"))
+    plt.savefig(make_graph_file_name("Pop_Males_Females_2018", 'png'))
+    # plt.savefig(make_graph_file_name("Pop_Males_Females_2018", 'svg'))
     plt.show()
     plt.close(fig)
 
@@ -381,7 +385,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 fig = plt.figure()
                 ax = format_plot_population_pyramid(data=pops, fig=fig, in_year=year, in_wpp_year=wpp_year)
                 ax.set_title(f'Population Pyramid in {year}')
-                fig.savefig(make_graph_file_name(f"Pop_Size_{year}_WPP{wpp_year}"))
+                fig.savefig(make_graph_file_name(f"Pop_Size_{year}_WPP{wpp_year}", 'png'))
+                # fig.savefig(make_graph_file_name(f"Pop_Size_{year}_WPP{wpp_year}", 'svg'))
                 fig.show()
                 plt.close(fig)
 
@@ -479,7 +484,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 births_loc['Model_mean'] / 1e6,
                 label='Model',
                 color=colors['Model'],
-                # ls='--' # use for sims with FP interventions
+                ls='--',  # use for sims with FP interventions
             )
             ax.fill_between((births_loc.index).to_numpy(),
                             (births_loc['Model_lower'] / 1e6).to_numpy(),
@@ -524,7 +529,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax.legend(loc='upper left')
             ax.set_title(f"Number of Births {tp}")
             plt.tight_layout()
-            plt.savefig(make_graph_file_name(f"Births_Over_Time_{tp}_WPP_{wpp_year}"))
+            plt.savefig(make_graph_file_name(f"Births_Over_Time_{tp}_WPP_{wpp_year}", 'png'))
+            # plt.savefig(make_graph_file_name(f"Births_Over_Time_{tp}_WPP_{wpp_year}", 'svg'))
             plt.show()
             plt.close(fig)
 
@@ -564,7 +570,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.legend(loc=7)
     fig.tight_layout()
     fig.subplots_adjust(right=0.65)
-    plt.savefig(make_graph_file_name("Contraception_1549"))
+    plt.savefig(make_graph_file_name("Contraception_1549", 'png'))
+    # plt.savefig(make_graph_file_name("Contraception_1549", 'svg'))
     plt.show()
     plt.close(fig)
 
@@ -614,7 +621,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.legend(loc=7)
         fig.tight_layout()
         fig.subplots_adjust(right=0.65)
-        plt.savefig(make_graph_file_name(f"Contraception_{_age}"))
+        plt.savefig(make_graph_file_name(f"Contraception_{_age}", 'png'))
+        # plt.savefig(make_graph_file_name(f"Contraception_{_age}", 'svg'))
         plt.show()
         plt.close(fig)
 
@@ -684,7 +692,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax[-1].set_axis_off()
     fig.legend((l1[0], l2[0]), ('WPP', 'Model'), 'lower right')
     fig.tight_layout()
-    fig.savefig(make_graph_file_name("asfr_model_vs_data"))
+    fig.savefig(make_graph_file_name("asfr_model_vs_data", 'png'))
+    # fig.savefig(make_graph_file_name("asfr_model_vs_data", 'svg'))
     fig.show()
     plt.close(fig)
 
@@ -712,7 +721,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.legend()
     fig.suptitle('Live Births By Age of Mother At Conception')
     fig.tight_layout()
-    fig.savefig(make_graph_file_name("asfr_model_vs_data_average_by_age"))
+    fig.savefig(make_graph_file_name("asfr_model_vs_data_average_by_age", 'png'))
+    # fig.savefig(make_graph_file_name("asfr_model_vs_data_average_by_age", 'svg'))
     fig.show()
     plt.close(fig)
 
@@ -822,7 +832,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_ylabel('Number per period (millions)')
     plt.xticks(np.arange(len(deaths_by_period.index)), deaths_by_period.index, rotation=90)
     fig.tight_layout()
-    plt.savefig(make_graph_file_name("Deaths_OverTime"))
+    plt.savefig(make_graph_file_name("Deaths_OverTime", 'png'))
+    # plt.savefig(make_graph_file_name("Deaths_OverTime", 'svg'))
     plt.show()
     plt.close(fig)
 
@@ -913,7 +924,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax[i].set_ylim(0, 80)
 
         fig.tight_layout()
-        plt.savefig(make_graph_file_name(f"Deaths_By_Age_{period}"))
+        plt.savefig(make_graph_file_name(f"Deaths_By_Age_{period}", 'png'))
+        # plt.savefig(make_graph_file_name(f"Deaths_By_Age_{period}", 'svg'))
         plt.show()
         plt.close(fig)
 
