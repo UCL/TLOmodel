@@ -200,7 +200,7 @@ def test_policy_has_no_effect_on_mode1(tmpdir, seed):
     in mode 1 they should all be scheduled and delivered regardless"""
 
     output = []
-    for i, policy in enumerate(["Naive", "Test Mode 1"]):
+    for _, policy in enumerate(["Naive", "Test Mode 1", "", "ClinicallyVulnerable"]):
         # Establish the simulation object
         sim = Simulation(
             start_date=start_date,
