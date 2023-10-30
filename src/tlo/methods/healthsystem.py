@@ -658,9 +658,9 @@ class HealthSystem(Module):
         # Check that the name of policy being evaluated is included
         self.priority_policy = None
         if policy_name is not None:
-            assert policy_name in ['', 'Default', 'Test', 'Random', 'Naive', 'RMNCH',
+            assert policy_name in ['', 'Default', 'Test', 'Test Mode 1', 'Random', 'Naive', 'RMNCH',
                                        'VerticalProgrammes', 'ClinicallyVulnerable', 'EHP_III',
-                                       'LCOA_EHP', 'No Services']
+                                       'LCOA_EHP']
         self.arg_policy_name = policy_name
 
         self.tclose_overwrite = None

@@ -195,12 +195,12 @@ def test_run_no_interventions_allowed(tmpdir, seed):
 
 @pytest.mark.slow
 def test_policy_has_no_effect_on_mode1(tmpdir, seed):
-    # Events ran in mode 1 should be identical regardless of policy assumed.
-    # In policy "No Services", have set all HSIs to priority below lowest_priority_considered,
-    # in mode 1 they should all be scheduled and delivered regardless
+    """Events ran in mode 1 should be identical regardless of policy assumed.
+    In policy "No Services", have set all HSIs to priority below lowest_priority_considered,
+    in mode 1 they should all be scheduled and delivered regardless"""
 
     output = []
-    for i, policy in enumerate(["Naive", "No Services"]):
+    for i, policy in enumerate(["Naive", "Test Mode 1"]):
         # Establish the simulation object
         sim = Simulation(
             start_date=start_date,
@@ -215,19 +215,10 @@ def test_policy_has_no_effect_on_mode1(tmpdir, seed):
         )
 
         # Register the core modules
-        sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                     healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                               capabilities_coefficient=1.0,
-                                               mode_appt_constraints=1,
-                                               policy_name=policy),
-                     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                     epi.Epi(resourcefilepath=resourcefilepath),
-                     hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
-                     tb.Tb(resourcefilepath=resourcefilepath),
-                     )
+        sim.register(*fullmodel(resourcefilepath=resourcefilepath,
+                                module_kwargs={'HealthSystem': {'capabilities_coefficient': 1.0,
+                                                                'mode_appt_constraints': 1,
+                                                                'policy_name': policy}}))
 
         # Run the simulation
         sim.make_initial_population(n=popsize)
@@ -239,10 +230,9 @@ def test_policy_has_no_effect_on_mode1(tmpdir, seed):
         # read the results
         output.append(parse_log_file(sim.log_filepath, level=logging.DEBUG))
 
-    # Check that the outputs are the same and that all HSIs ran even with policy specifying "No Services"
-    assert len(output[0]['tlo.methods.healthsystem']['HSI_Event']) == \
-           len(output[1]['tlo.methods.healthsystem']['HSI_Event'])
-    assert output[1]['tlo.methods.healthsystem']['HSI_Event']['did_run'].all()
+    # Check that the outputs are the same
+    pd.testing.assert_frame_equal(output[0]['tlo.methods.healthsystem']['HSI_Event'],
+                                  output[1]['tlo.methods.healthsystem']['HSI_Event'])
 
 
 @pytest.mark.slow
