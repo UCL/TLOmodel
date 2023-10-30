@@ -324,7 +324,7 @@ class SampleRunner:
         sample["sample_number"] = sample_number
 
         # Instead of using the random number generator to create a seed for the simulation, we use an integer hash
-        # function to create an integer based on the sum of the draw_number and sample_number. This means the
+        # function to get an integer based on the sum of the scenario seed and sample_number. This means the
         # seed can be created independently and out-of-order (i.e. instead of sampling a seed for each sample in order)
         sample["simulation_seed"] = SampleRunner.low_bias_32(self.run_config["scenario_seed"] + sample_number)
         return sample
