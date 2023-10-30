@@ -134,7 +134,7 @@
 
     <span class="c1"># Declare Causes of Disability</span>
     <span class="n">CAUSES_OF_DISABILITY</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s1">&#39;SevereDepression&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span><span class="n">gbd_causes</span><span class="o">=</span><span class="s1">&#39;Self-harm&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Depression / Self-harm&#39;</span><span class="p">)</span>
+        <span class="s1">&#39;SevereDepression&#39;</span><span class="p">:</span> <span class="n">Cause</span><span class="p">(</span><span class="n">gbd_causes</span><span class="o">=</span><span class="s1">&#39;Depressive disorders&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Depression / Self-harm&#39;</span><span class="p">)</span>
     <span class="p">}</span>
 
     <span class="c1"># Module parameters</span>
@@ -825,17 +825,21 @@
         <span class="k">def</span> <span class="nf">zero_out_nan</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">x</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span>
 
+        <span class="k">def</span> <span class="nf">safe_divide</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">x</span> <span class="o">/</span> <span class="n">y</span> <span class="k">if</span> <span class="n">y</span> <span class="o">&gt;</span> <span class="mf">0.0</span> <span class="k">else</span> <span class="mf">0.0</span>
+
         <span class="n">dict_for_output</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s1">&#39;prop_ge15_depr&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">n_ge15_depr</span> <span class="o">/</span> <span class="n">n_ge15</span><span class="p">),</span>
-            <span class="s1">&#39;prop_ge15_m_depr&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">n_ge15_m_depr</span> <span class="o">/</span> <span class="n">n_ge15_m</span><span class="p">),</span>
-            <span class="s1">&#39;prop_ge15_f_depr&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">n_ge15_f_depr</span> <span class="o">/</span> <span class="n">n_ge15_f</span><span class="p">),</span>
-            <span class="s1">&#39;prop_ever_depr&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">n_ever_depr</span> <span class="o">/</span> <span class="n">n_ge15</span><span class="p">),</span>
-            <span class="s1">&#39;prop_age_50_ever_depr&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">n_age_50_ever_depr</span> <span class="o">/</span> <span class="n">n_age_50</span><span class="p">),</span>
-            <span class="s1">&#39;p_ever_diagnosed_depression_if_ever_depressed&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">n_ever_diagnosed_depression</span> <span class="o">/</span> <span class="n">n_ever_depr</span><span class="p">),</span>
-            <span class="s1">&#39;prop_antidepr_if_curr_depr&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">n_antidepr_depr</span> <span class="o">/</span> <span class="n">n_ge15_depr</span><span class="p">),</span>
-            <span class="s1">&#39;prop_antidepr_if_ever_depr&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">n_antidepr_ever_depr</span> <span class="o">/</span> <span class="n">n_ever_depr</span><span class="p">),</span>
-            <span class="s1">&#39;prop_ever_talk_ther_if_ever_depr&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">n_ever_talk_ther</span> <span class="o">/</span> <span class="n">n_ever_depr</span><span class="p">),</span>
-            <span class="s1">&#39;prop_ever_self_harmed&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">n_ever_self_harmed</span> <span class="o">/</span> <span class="n">n_ever_depr</span><span class="p">),</span>
+            <span class="s1">&#39;prop_ge15_depr&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">safe_divide</span><span class="p">(</span><span class="n">n_ge15_depr</span><span class="p">,</span> <span class="n">n_ge15</span><span class="p">)),</span>
+            <span class="s1">&#39;prop_ge15_m_depr&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">safe_divide</span><span class="p">(</span><span class="n">n_ge15_m_depr</span><span class="p">,</span> <span class="n">n_ge15_m</span><span class="p">)),</span>
+            <span class="s1">&#39;prop_ge15_f_depr&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">safe_divide</span><span class="p">(</span><span class="n">n_ge15_f_depr</span><span class="p">,</span> <span class="n">n_ge15_f</span><span class="p">)),</span>
+            <span class="s1">&#39;prop_ever_depr&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">safe_divide</span><span class="p">(</span><span class="n">n_ever_depr</span><span class="p">,</span> <span class="n">n_ge15</span><span class="p">)),</span>
+            <span class="s1">&#39;prop_age_50_ever_depr&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">safe_divide</span><span class="p">(</span><span class="n">n_age_50_ever_depr</span><span class="p">,</span> <span class="n">n_age_50</span><span class="p">)),</span>
+            <span class="s1">&#39;p_ever_diagnosed_depression_if_ever_depressed&#39;</span><span class="p">:</span>
+                <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">safe_divide</span><span class="p">(</span><span class="n">n_ever_diagnosed_depression</span><span class="p">,</span> <span class="n">n_ever_depr</span><span class="p">)),</span>
+            <span class="s1">&#39;prop_antidepr_if_curr_depr&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">safe_divide</span><span class="p">(</span><span class="n">n_antidepr_depr</span><span class="p">,</span> <span class="n">n_ge15_depr</span><span class="p">)),</span>
+            <span class="s1">&#39;prop_antidepr_if_ever_depr&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">safe_divide</span><span class="p">(</span><span class="n">n_antidepr_ever_depr</span><span class="p">,</span> <span class="n">n_ever_depr</span><span class="p">)),</span>
+            <span class="s1">&#39;prop_ever_talk_ther_if_ever_depr&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">safe_divide</span><span class="p">(</span><span class="n">n_ever_talk_ther</span><span class="p">,</span> <span class="n">n_ever_depr</span><span class="p">)),</span>
+            <span class="s1">&#39;prop_ever_self_harmed&#39;</span><span class="p">:</span> <span class="n">zero_out_nan</span><span class="p">(</span><span class="n">safe_divide</span><span class="p">(</span><span class="n">n_ever_self_harmed</span><span class="p">,</span> <span class="n">n_ever_depr</span><span class="p">)),</span>
         <span class="p">}</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;summary_stats&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dict_for_output</span><span class="p">)</span>
@@ -1063,7 +1067,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 11, 2023.
+      <span class="lastupdated">Last updated on Oct 30, 2023.
       </span></p>
   </div>
 

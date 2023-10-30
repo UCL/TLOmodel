@@ -164,7 +164,7 @@ tlo.methods.epi module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x7fe1f4e302c0>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x7ff64ef7cbd0>
 
      **Functions (defined or overridden in class HsiBaseVaccine):**
 

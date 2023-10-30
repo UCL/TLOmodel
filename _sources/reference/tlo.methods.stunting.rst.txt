@@ -130,9 +130,9 @@ tlo.methods.stunting module
 
      **Class attributes:**
 
-     INIT_DEPENDENCIES : {'Demography', 'Wasting', 'NewbornOutcomes', 'Diarrhoea', 'Hiv'}
+     INIT_DEPENDENCIES : {'NewbornOutcomes', 'Hiv', 'Diarrhoea', 'Wasting', 'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      **Functions (defined or overridden in class Stunting):**
 
@@ -267,7 +267,7 @@ tlo.methods.stunting module
 
      **Class attributes:**
 
-     ALTERNATIVE_TO : {'Hiv', 'Diarrhoea', 'Wasting'}
+     ALTERNATIVE_TO : {'Diarrhoea', 'Wasting', 'Hiv'}
 
      INIT_DEPENDENCIES : {'Demography'}
 

@@ -445,17 +445,17 @@ tlo.methods.pregnancy_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Contraception', 'Lifestyle', 'Labour', 'HealthSystem', 'CareOfWomenDuringPregnancy'}
+     ADDITIONAL_DEPENDENCIES : {'Labour', 'CareOfWomenDuringPregnancy', 'Lifestyle', 'Contraception', 'HealthSystem'}
 
-     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x7fe1f635f160>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x7fe1f635f640>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x7fe1f635f6a0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7fe1f635f700>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x7fe1f635f760>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x7fe1f635f7c0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x7fe1f635f820>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x7fe1f635f880>}
+     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x7ff650b60160>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x7ff650b60640>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x7ff650b606a0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7ff650b60700>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x7ff650b60760>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x7ff650b607c0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x7ff650b60820>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x7ff650b60880>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x7fe1f635f8e0>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x7ff650b608e0>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'CardioMetabolicDisorders', 'HealthBurden', 'Malaria', 'Hiv'}
+     OPTIONAL_INIT_DEPENDENCIES : {'Malaria', 'CardioMetabolicDisorders', 'HealthBurden', 'Hiv'}
 
      **Functions (defined or overridden in class PregnancySupervisor):**
 
