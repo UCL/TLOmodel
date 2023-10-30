@@ -2362,131 +2362,125 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                 else:
                     # The event is now due to run today and the person is confirmed to be still alive.
-                    # Check if it is still above lowest priority policy at time of running. If not,
-                    # schedule a "never_ran" call at tclose time.
-                    if next_event_tuple.priority > self.module.lowest_priority_considered:
-                        self.module.schedule_to_call_never_ran_on_date(hsi_event=event,
-                                                                       tdate=next_event_tuple.tclose)
+                    # Add it to the list of events due today if at population level.
+                    # Otherwise, run event immediately.
+                    is_pop_level_hsi_event = isinstance(event.target, tlo.population.Population)
+                    if is_pop_level_hsi_event:
+                        list_of_population_hsi_event_tuples_due_today.append(next_event_tuple)
                     else:
-                        # Add it to the list of events due today if at population level.
-                        # Otherwise, run event immediately.
-                        is_pop_level_hsi_event = isinstance(event.target, tlo.population.Population)
-                        if is_pop_level_hsi_event:
-                            list_of_population_hsi_event_tuples_due_today.append(next_event_tuple)
+
+                        # Retrieve officers&facility required for HSI
+                        original_call = next_event_tuple.hsi_event.expected_time_requests
+                        _priority = next_event_tuple.priority
+                        # In this version of mode_appt_constraints = 2, do not have access to squeeze
+                        # based on queue information, and we assume no squeeze ever takes place.
+                        squeeze_factor = 0.
+
+                        # Check if any of the officers required have ran out.
+                        out_of_resources = False
+                        for officer, call in original_call.items():
+                            # If any of the officers are not available, then out of resources
+                            if officer not in set_capabilities_still_available:
+                                out_of_resources = True
+                        # If officers still available, run event. Note: in current logic, a little
+                        # overtime is allowed to run last event of the day. This seems more realistic
+                        # than medical staff leaving earlier than
+                        # planned if seeing another patient would take them into overtime.
+
+                        if out_of_resources:
+
+                            # Do not run,
+                            # Call did_not_run for the hsi_event
+                            rtn_from_did_not_run = event.did_not_run()
+
+                            # If received no response from the call to did_not_run, or a True signal, then
+                            # add to the hold-over queue.
+                            # Otherwise (disease module returns "FALSE") the event is not rescheduled and
+                            # will not run.
+
+                            if not (rtn_from_did_not_run is False):
+                                # reschedule event
+                                # Add the event to the queue:
+                                hp.heappush(hold_over, next_event_tuple)
+
+                            # Log that the event did not run
+                            self.module.record_hsi_event(
+                                hsi_event=event,
+                                actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
+                                squeeze_factor=squeeze_factor,
+                                did_run=False,
+                                priority=_priority
+                            )
+
+                        # Have enough capabilities left to run event
                         else:
+                            # Notes-to-self: Shouldn't this be done after checking the footprint?
+                            # Compute the bed days that are allocated to this HSI and provide this
+                            # information to the HSI
+                            if sum(event.BEDDAYS_FOOTPRINT.values()):
+                                event._received_info_about_bed_days = \
+                                    self.module.bed_days.issue_bed_days_according_to_availability(
+                                        facility_id=self.module.bed_days.get_facility_id_for_beds(
+                                                                           persons_id=event.target),
+                                        footprint=event.BEDDAYS_FOOTPRINT
+                                    )
 
-                            # Retrieve officers&facility required for HSI
-                            original_call = next_event_tuple.hsi_event.expected_time_requests
-                            _priority = next_event_tuple.priority
-                            # In this version of mode_appt_constraints = 2, do not have access to squeeze
-                            # based on queue information, and we assume no squeeze ever takes place.
-                            squeeze_factor = 0.
+                            # Check that a facility has been assigned to this HSI
+                            assert event.facility_info is not None, \
+                                f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
 
-                            # Check if any of the officers required have ran out.
-                            out_of_resources = False
-                            for officer, call in original_call.items():
-                                # If any of the officers are not available, then out of resources
-                                if officer not in set_capabilities_still_available:
-                                    out_of_resources = True
-                            # If officers still available, run event. Note: in current logic, a little
-                            # overtime is allowed to run last event of the day. This seems more realistic
-                            # than medical staff leaving earlier than
-                            # planned if seeing another patient would take them into overtime.
+                            # Expected appt footprint before running event
+                            _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
+                            # Run event & get actual footprint
+                            actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
 
-                            if out_of_resources:
+                            # Check if the HSI event returned updated_appt_footprint, and if so adjust original_call
+                            if actual_appt_footprint is not None:
 
-                                # Do not run,
-                                # Call did_not_run for the hsi_event
-                                rtn_from_did_not_run = event.did_not_run()
+                                # check its formatting:
+                                assert self.module.appt_footprint_is_valid(actual_appt_footprint)
 
-                                # If received no response from the call to did_not_run, or a True signal, then
-                                # add to the hold-over queue.
-                                # Otherwise (disease module returns "FALSE") the event is not rescheduled and
-                                # will not run.
-
-                                if not (rtn_from_did_not_run is False):
-                                    # reschedule event
-                                    # Add the event to the queue:
-                                    hp.heappush(hold_over, next_event_tuple)
-
-                                # Log that the event did not run
-                                self.module.record_hsi_event(
-                                    hsi_event=event,
-                                    actual_appt_footprint=event.EXPECTED_APPT_FOOTPRINT,
-                                    squeeze_factor=squeeze_factor,
-                                    did_run=False,
-                                    priority=_priority
+                                # Update call that will be used to compute capabilities used
+                                updated_call = self.module.get_appt_footprint_as_time_request(
+                                    facility_info=event.facility_info,
+                                    appt_footprint=actual_appt_footprint
                                 )
-
-                            # Have enough capabilities left to run event
                             else:
-                                # Notes-to-self: Shouldn't this be done after checking the footprint?
-                                # Compute the bed days that are allocated to this HSI and provide this
-                                # information to the HSI
-                                if sum(event.BEDDAYS_FOOTPRINT.values()):
-                                    event._received_info_about_bed_days = \
-                                        self.module.bed_days.issue_bed_days_according_to_availability(
-                                            facility_id=self.module.bed_days.get_facility_id_for_beds(
-                                                                               persons_id=event.target),
-                                            footprint=event.BEDDAYS_FOOTPRINT
+                                actual_appt_footprint = _appt_footprint_before_running
+                                updated_call = original_call
+
+                            # Recalculate call on officers based on squeeze factor.
+                            for k in updated_call.keys():
+                                updated_call[k] = updated_call[k]/(squeeze_factor + 1.)
+
+                            # Subtract this from capabilities used so-far today
+                            capabilities_monitor.subtract(updated_call)
+
+                            # If any of the officers have ran out of time by performing this hsi,
+                            # remove them from list of available officers.
+                            for officer, call in updated_call.items():
+                                if capabilities_monitor[officer] <= 0:
+                                    if officer in set_capabilities_still_available:
+                                        set_capabilities_still_available.remove(officer)
+                                    else:
+                                        logger.warning(
+                                            key="message",
+                                            data=(f"{event.TREATMENT_ID} actual_footprint requires different"
+                                                  f"officers than expected_footprint.")
                                         )
 
-                                # Check that a facility has been assigned to this HSI
-                                assert event.facility_info is not None, \
-                                    f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
+                            # Update today's footprint based on actuall call and squeeze factor
+                            self.module.running_total_footprint -= original_call
+                            self.module.running_total_footprint += updated_call
 
-                                # Expected appt footprint before running event
-                                _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
-                                # Run event & get actual footprint
-                                actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
-
-                                # Check if the HSI event returned updated_appt_footprint, and if so adjust original_call
-                                if actual_appt_footprint is not None:
-
-                                    # check its formatting:
-                                    assert self.module.appt_footprint_is_valid(actual_appt_footprint)
-
-                                    # Update call that will be used to compute capabilities used
-                                    updated_call = self.module.get_appt_footprint_as_time_request(
-                                        facility_info=event.facility_info,
-                                        appt_footprint=actual_appt_footprint
-                                    )
-                                else:
-                                    actual_appt_footprint = _appt_footprint_before_running
-                                    updated_call = original_call
-
-                                # Recalculate call on officers based on squeeze factor.
-                                for k in updated_call.keys():
-                                    updated_call[k] = updated_call[k]/(squeeze_factor + 1.)
-
-                                # Subtract this from capabilities used so-far today
-                                capabilities_monitor.subtract(updated_call)
-
-                                # If any of the officers have ran out of time by performing this hsi,
-                                # remove them from list of available officers.
-                                for officer, call in updated_call.items():
-                                    if capabilities_monitor[officer] <= 0:
-                                        if officer in set_capabilities_still_available:
-                                            set_capabilities_still_available.remove(officer)
-                                        else:
-                                            logger.warning(
-                                                key="message",
-                                                data=(f"{event.TREATMENT_ID} actual_footprint requires different"
-                                                      f"officers than expected_footprint.")
-                                            )
-
-                                # Update today's footprint based on actuall call and squeeze factor
-                                self.module.running_total_footprint -= original_call
-                                self.module.running_total_footprint += updated_call
-
-                                # Write to the log
-                                self.module.record_hsi_event(
-                                    hsi_event=event,
-                                    actual_appt_footprint=actual_appt_footprint,
-                                    squeeze_factor=squeeze_factor,
-                                    did_run=True,
-                                    priority=_priority
-                                )
+                            # Write to the log
+                            self.module.record_hsi_event(
+                                hsi_event=event,
+                                actual_appt_footprint=actual_appt_footprint,
+                                squeeze_factor=squeeze_factor,
+                                did_run=True,
+                                priority=_priority
+                            )
 
             # Don't have any capabilities at all left for today, no
             # point in going through the queue to check what's left to do today.
