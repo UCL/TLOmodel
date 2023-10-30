@@ -24,10 +24,10 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
     # output file name
     if in_plot_costs_by_periods__incl_totals_bool:
         output_filename =\
-            str('Consumables and Interventions Costs with totals ' + in_id[0] + "_" + in_id[1] + in_suffix + '.png')
+            str('Consumables and Interventions Costs with totals ' + in_id[0] + "_" + in_id[1] + in_suffix + '.svg')
     else:
         output_filename =\
-            str('Consumables and Interventions Costs without totals ' + in_id[0] + "_" + in_id[1] + in_suffix + '.png')
+            str('Consumables and Interventions Costs without totals ' + in_id[0] + "_" + in_id[1] + in_suffix + '.svg')
 
     # width of the bars
     width = 0.3
@@ -131,7 +131,7 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
 
     fig.tight_layout()
 
-    plt.savefig(outputpath / output_filename, format='png')
+    plt.savefig(outputpath / output_filename)
 
     # %%% Plot total only ..............................................................................................
     # TODO: fix (if TOTAL not included in the fig above, this one shows last decade not the TOTAL)
@@ -175,7 +175,6 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
     fig2.tight_layout()
 
     plt.savefig(outputpath /
-                (str('Total Consumables and Interventions Costs ' + in_id[0] + "_" + in_id[1] + in_suffix + '.png')),
-                format='png')
+                (str('Total Consumables and Interventions Costs ' + in_id[0] + "_" + in_id[1] + in_suffix + '.svg')))
 
     print("Fig: Consumables and Interventions Costs Over time saved.")

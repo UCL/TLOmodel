@@ -149,7 +149,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             # plt.gca().set_xlim(Date(2010, 1, 1), Date(2023, 1, 1)) to see only 2010-2023 (excl)
             plt.legend(['Total women age 15-49 years', 'Not Using Contraception', 'Using Contraception'])
             plt.savefig(outputpath / ('Contraception Use ' + in_id + "_UpTo" + str(plot_months.year[-1]) + in_suffix
-                                      + '.png'), format='png')
+                                      + '.svg'))
 
             # Plot proportions within 15-49 population
             fig, ax = plt.subplots()
@@ -166,7 +166,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             plt.xlabel("Year")
             plt.ylabel('Proportion')
             plt.savefig(outputpath / ('Prop Fem1549 Using Contraceptive Over Time ' + in_id +
-                                      "_UpTo" + str(plot_months.year[-1]) + in_suffix + '.png'), format='png')
+                                      "_UpTo" + str(plot_months.year[-1]) + in_suffix + '.svg'))
 
             print("Figs: Contraception Use Over time saved.")
 
@@ -235,7 +235,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             labels_without_underscore = [s.replace("_", " ") for s in contraceptives_order_all_meths]
             plt.legend(labels_without_underscore)
             plt.savefig(outputpath / ('Contraception Use By Method ' + in_id +
-                                      "_UpTo" + str(plot_months.year[-1]) + in_suffix + '.png'), format='png')
+                                      "_UpTo" + str(plot_months.year[-1]) + in_suffix + '.svg'))
 
             # Plot proportions within 15-49 population
             def get_annual_mean_usage(_df):
@@ -309,7 +309,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             fig.legend(handles[::-1], labels[::-1], title='Contraception Method', loc=7)
             fig.subplots_adjust(right=0.65)
             plt.savefig(outputpath / ('Prop Fem1549 Using Method ' + in_id +
-                                      "_UpTo" + str(plot_months.year[-1]) + in_suffix + '.png'), format='png')
+                                      "_UpTo" + str(plot_months.year[-1]) + in_suffix + '.svg'))
 
             print("Figs: Contraception Use By Method Over time saved.")
 
@@ -344,7 +344,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             plt.xlabel("Year")
             plt.ylabel("Number of pregnancies")
             plt.savefig(outputpath / ('Pregnancies per Year ' + in_id +
-                                      "_UpTo" + str(plot_years[-1]) + in_suffix + '.png'), format='png')
+                                      "_UpTo" + str(plot_years[-1]) + in_suffix + '.svg'))
 
             # Calculate Means of Pregnancies Proportions within Women 15-49 per Year
             # (women1549_total are monthly data, hence pregnancy monthly data used to calculate the means )
@@ -364,7 +364,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
             plt.xlabel("Year")
             plt.ylabel("Mean proportion of pregnancies")
             plt.savefig(outputpath / ('Mean Prop of Fem15-49 Becom Preg per Year ' + in_id +
-                                      "_UpTo" + str(plot_years[-1]) + in_suffix + '.png'), format='png')
+                                      "_UpTo" + str(plot_years[-1]) + in_suffix + '.svg'))
 
             print("Figs: Pregnancies Over time saved.")
 
@@ -419,7 +419,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
         plt.xlabel("Year")
         plt.ylabel("Dependency ratio")
         plt.savefig(outputpath / ('Dependency Ratio over Time ' + in_id +
-                                  "_UpTo" + str(plot_years[-1]) + in_suffix + '.png'), format='png')
+                                  "_UpTo" + str(plot_years[-1]) + in_suffix + '.svg'))
 
         print("Fig: Dependency Ratio Over time saved.")
 

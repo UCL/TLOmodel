@@ -148,8 +148,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.set_ylim(0, 95)
         ax.legend(loc='lower right')
         fig.tight_layout()
-        plt.savefig(make_graph_file_name(f"Pop_Over_Time_2010-2100_WPP{wpp_year}", 'png'))
-        # plt.savefig(make_graph_file_name(f"Pop_Over_Time_2010-2100_WPP{wpp_year}", 'svg'))
+        # plt.savefig(make_graph_file_name(f"Pop_Over_Time_2010-2100_WPP{wpp_year}", 'png'))
+        plt.savefig(make_graph_file_name(f"Pop_Over_Time_2010-2100_WPP{wpp_year}", 'svg'))
         plt.show()
         plt.close(fig)
 
@@ -385,8 +385,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 fig = plt.figure()
                 ax = format_plot_population_pyramid(data=pops, fig=fig, in_year=year, in_wpp_year=wpp_year)
                 ax.set_title(f'Population Pyramid in {year}')
-                fig.savefig(make_graph_file_name(f"Pop_Size_{year}_WPP{wpp_year}", 'png'))
-                # fig.savefig(make_graph_file_name(f"Pop_Size_{year}_WPP{wpp_year}", 'svg'))
+                # fig.savefig(make_graph_file_name(f"Pop_Size_{year}_WPP{wpp_year}", 'png'))
+                fig.savefig(make_graph_file_name(f"Pop_Size_{year}_WPP{wpp_year}", 'svg'))
                 fig.show()
                 plt.close(fig)
 
@@ -529,8 +529,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax.legend(loc='upper left')
             ax.set_title(f"Number of Births {tp}")
             plt.tight_layout()
-            plt.savefig(make_graph_file_name(f"Births_Over_Time_{tp}_WPP_{wpp_year}", 'png'))
-            # plt.savefig(make_graph_file_name(f"Births_Over_Time_{tp}_WPP_{wpp_year}", 'svg'))
+            # plt.savefig(make_graph_file_name(f"Births_Over_Time_{tp}_WPP_{wpp_year}", 'png'))
+            plt.savefig(make_graph_file_name(f"Births_Over_Time_{tp}_WPP_{wpp_year}", 'svg'))
             plt.show()
             plt.close(fig)
 
