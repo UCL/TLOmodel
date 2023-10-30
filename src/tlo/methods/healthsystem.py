@@ -1755,12 +1755,16 @@ class HealthSystem(Module):
         did_run: bool,
         priority: int,
     ):
+        if event_details.facility_level is not None:
+            treatment_id_and_level = event_details.treatment_id + "_Level_" + event_details.facility_level
+        else:
+            treatment_id_and_level = event_details.treatment_id + "_Level_NA"
         """Write the log `HSI_Event` and add to the summary counter."""
         logger.debug(
             key="HSI_Event",
             data={
                 'Event_Name': event_details.event_name,
-                'TREATMENT_ID': event_details.treatment_id,
+                'TREATMENT_ID': treatment_id_and_level,
                 'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
                 'Person_ID': person_id,
                 'Squeeze_Factor': squeeze_factor,
@@ -1778,7 +1782,7 @@ class HealthSystem(Module):
                 )
                 self._hsi_event_counts_log_period[event_details_key] += 1
             self._summary_counter.record_hsi_event(
-                treatment_id=event_details.treatment_id,
+                treatment_id=treatment_id_and_level,
                 hsi_event_name=event_details.event_name,
                 squeeze_factor=squeeze_factor,
                 appt_footprint=event_details.appt_footprint,
@@ -1817,12 +1821,18 @@ class HealthSystem(Module):
         facility_id: Optional[int],
         priority: int,
     ):
+
+        if event_details.facility_level is not None:
+            treatment_id_and_level = event_details.treatment_id + "_Level_" + event_details.facility_level
+        else:
+            treatment_id_and_level = event_details.treatment_id + "_Level_NA"
+            
         """Write the log `HSI_Event` and add to the summary counter."""
         logger.debug(
             key="Never_ran_HSI_Event",
             data={
                 'Event_Name': event_details.event_name,
-                'TREATMENT_ID': event_details.treatment_id,
+                'TREATMENT_ID': treatment_id_and_level, #event_details.treatment_id,
                 'Number_By_Appt_Type_Code': dict(event_details.appt_footprint),
                 'Person_ID': person_id,
                 'priority': priority,
@@ -1837,12 +1847,12 @@ class HealthSystem(Module):
             )
             self._never_ran_hsi_event_counts_log_period[event_details_key] += 1
         self._summary_counter.record_never_ran_hsi_event(
-            treatment_id=event_details.treatment_id,
+            treatment_id=treatment_id_and_level,
             hsi_event_name=event_details.event_name,
             appt_footprint=event_details.appt_footprint,
             level=event_details.facility_level,
         )
-
+            
     def log_current_capabilities_and_usage(self):
         """
         This will log the percentage of the current capabilities that is used at each Facility Type, according the
