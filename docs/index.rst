@@ -6,7 +6,7 @@
 Welcome
 ========
 
-The **Thanzi La Onse (TLO) Model** is a part of the `Thanzi La Onse <https://thanzi.org>`_ (Health for All) Collaboration, funded by `GCRF <https://www.newton-gcrf.org>`_ and `UKRI <https://www.ukri.org>`_ in the United Kingdom.
+The **Thanzi La Onse (TLO) Model** is a part of the `Thanzi La Onse <https://thanzi.org>`_ (Health for All) Collaboration, funded by `Wellcome <https://wellcome.org>`_ (and formerly `GCRF <https://www.newton-gcrf.org>`_ and `UKRI <https://www.ukri.org>`_).
 
 It is developed in a collaboration between:
 
