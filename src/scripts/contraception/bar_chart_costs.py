@@ -113,8 +113,8 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
     ax.bar(x_i + width * 0.6, ppfp_interv_costs_with, width, bottom=ppfp_bottom,
            label=labels['ppfp'], color=colors['ppfp'])
     # add legend
-    ax.legend()
-    plt.grid(axis='y')
+    ax.legend(loc='upper left', bbox_to_anchor=(-0.0122, 1.0156))
+    plt.grid(axis='y', lw=0.5)
 
     # the below needs at least 3.4 version of matplotlib package (we have 3.3.4)
     # ax.bar_label(bar_without, padding=3)
@@ -160,8 +160,8 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
     ax2.bar(x2_i + width * 0.2, ppfp_interv_costs_with[-1], width/3, bottom=ppfp_bottom[-1],
             label=labels['ppfp'], color=colors['ppfp'])
     # add legend
-    ax2.legend(loc='upper left', bbox_to_anchor=(0, -.12))
-    plt.grid(axis='y')
+    ax2.legend(loc='upper left', bbox_to_anchor=(-0.0122, -0.1))
+    plt.grid(axis='y', lw=0.5)
 
     # add secondary y-axis labels
     ax2_us = ax2.secondary_yaxis("right")

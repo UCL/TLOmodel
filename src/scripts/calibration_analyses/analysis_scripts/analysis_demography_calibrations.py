@@ -34,6 +34,26 @@ PREFIX_ON_FILENAME = '1'
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
 
+    # Set the font to Times New Roman for all text elements in figures
+    plt.rcParams['font.family'] = 'Times New Roman'
+
+    # Set font sizes for title, axes, and labels
+    plt.rcParams['axes.titlesize'] = 10  # Size for title
+    plt.rcParams['axes.labelsize'] = 8  # Size for axes labels
+    plt.rcParams['xtick.labelsize'] = 6.5  # Size for x-axis tick labels
+    plt.rcParams['ytick.labelsize'] = 6.5  # Size for y-axis tick labels
+    plt.rcParams['legend.fontsize'] = 6.5  # Size for legend labels
+    plt.rcParams['legend.labelspacing'] = 0.2  # Adjust the spacing between legend handle and text
+
+    # Set the default figure size to half the page width
+    plt.rcParams['figure.figsize'] = (4*0.85, 3*0.85)
+
+    # Set the spacing between the title and the figure
+    plt.rcParams['axes.titlepad'] = 11
+
+    # Set the line width for line plots
+    lw_all = 0.5
+
     def make_graph_file_name(file_name, file_format):
         # Declare path for output graphs from this script
         graph_file_name = str(output_folder / f"{PREFIX_ON_FILENAME}_{file_name}.{file_format}")  # noqa: E731
@@ -114,15 +134,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig, ax = plt.subplots()
         if wpp_year == 2019:
             ax.plot(wpp_ann_total.index, wpp_ann_total['WPP2019_continuous'] / 1e6,
-                    label='WPP (2019)', color=colors['WPP'])
+                    label='WPP (2019)', color=colors['WPP'], lw=lw_all)
             ax.fill_between(wpp_ann_total.index,
                             wpp_ann_total['WPP2019_Low variant'] / 1e6,
                             wpp_ann_total['WPP2019_High variant'] / 1e6,
                             facecolor=colors['WPP'], alpha=0.2)
-            plt.axvline(x=2023, ls=':', color='gray')
+            plt.axvline(x=2023, ls=':', color='gray', lw=lw_all)
         elif wpp_year == 2022:
             ax.plot(wpp_ann_total.index, wpp_ann_total['WPP2022_continuous'] / 1e6,
-                    label='WPP (2022)', color=colors['WPP'])
+                    label='WPP (2022)', color=colors['WPP'], lw=lw_all)
             ax.fill_between(wpp_ann_total.index,
                             wpp_ann_total['WPP2022_Low'] / 1e6,
                             wpp_ann_total['WPP2022_High'] / 1e6,
@@ -130,9 +150,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             # plt.axvline(x=2023, ls=':', color='gray')
 
         ax.plot(2018.5, cens_2018.sum() / 1e6,
-                marker='o', markersize=10, linestyle='none', label='Census', zorder=10, color=colors['Census'])
+                marker='o', markersize=5, linestyle='none', label='Census', zorder=10, color=colors['Census'])
         ax.plot(pop_model.index, pop_model['mean'] / 1e6,
-                label='Model', color=colors['Model'])  # , ls='--') # add for sims with FP interventions
+                label='Model', color=colors['Model'], lw=lw_all, ls='--')  # add for sims with FP interventions
         ax.fill_between(pop_model.index,
                         pop_model['lower'] / 1e6,
                         pop_model['upper'] / 1e6,
@@ -275,9 +295,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             for _dat_source in sorted(set(sources).intersection(['WPP_Estimates', 'WPP_Medium', 'Census'])):
                 if data['M'][_dat_source].any():
                     ax.plot(data['M'][_dat_source].values / 1e3, dat['M'].index, label=_dat_source,
-                            color=colors['WPP' if 'WPP' in _dat_source else 'Census'])
+                            color=colors['WPP' if 'WPP' in _dat_source else 'Census'], lw=lw_all)
                     ax.plot(-data['F'][_dat_source].values / 1e3, dat['F'].index, label='_',
-                            color=colors['WPP' if 'WPP' in _dat_source else 'Census'])
+                            color=colors['WPP' if 'WPP' in _dat_source else 'Census'], lw=lw_all)
             if data['M']['WPP_Low'].any():
                 ax.fill_betweenx(dat['M'].index,
                                  data['M']['WPP_Low'].values / 1e3,
@@ -296,11 +316,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax.set_xlabel('Population (1000s)')
 
             if in_year > 2030:
-                ax.text(x=2e3, y=10, s="Males", fontdict={'size': 15}, ha='right')
-                ax.text(x=-2e3, y=10, s="Females", fontdict={'size': 15}, ha='left')
+                ax.text(x=1.65e3, y=10, s="Males", fontdict={'size': 6.5}, ha='right')
+                ax.text(x=-1.65e3, y=10, s="Females", fontdict={'size': 6.5}, ha='left')
             else:
-                ax.text(x=1.5e3, y=10, s="Males", fontdict={'size': 15}, ha='right')
-                ax.text(x=-1.5e3, y=10, s="Females", fontdict={'size': 15}, ha='left')
+                ax.text(x=1.2e3, y=10, s="Males", fontdict={'size': 6.5}, ha='right')
+                ax.text(x=-1.2e3, y=10, s="Females", fontdict={'size': 6.5}, ha='left')
 
             # reverse order of legend
             handles, labels = ax.get_legend_handles_labels()
@@ -313,7 +333,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             ax.set_axisbelow(True)
             # ax.yaxis.grid(color='gray', linestyle='dashed')
-            ax.grid()
+            ax.grid(lw=lw_all)
 
             return ax
 
@@ -477,13 +497,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax.plot(
                 births_loc.index,
                 births_loc['Census'] / 1e6,
-                linestyle='none', marker='o', markersize=10, label='Census', zorder=10, color=colors['Census']
+                linestyle='none', marker='o', markersize=5, label='Census', zorder=10, color=colors['Census']
             )
             ax.plot(
                 births_loc.index,
                 births_loc['Model_mean'] / 1e6,
                 label='Model',
                 color=colors['Model'],
+                lw=lw_all,
                 ls='--',  # use for sims with FP interventions
             )
             ax.fill_between((births_loc.index).to_numpy(),
@@ -491,12 +512,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                             (births_loc['Model_upper'] / 1e6).to_numpy(),
                             facecolor=colors['Model'], alpha=0.2)
             if wpp_year == 2019:
-                plt.axvline(x='2020-2024', ls=':', color='gray')
+                plt.axvline(x='2020-2024', ls=':', color='gray', lw=lw_all)
                 ax.plot(
                     births_loc.index,
                     births_loc['WPP2019_continuous'] / 1e6,
                     color=colors['WPP'],
-                    label='WPP (2019)'
+                    label='WPP (2019)',
+                    lw=lw_all
                 )
                 ax.fill_between((births_loc.index).to_numpy(),
                                 (births_loc['WPP2019_Low variant'] / 1e6).to_numpy(),
@@ -513,7 +535,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                     births_loc.index,
                     births_loc['WPP2022_continuous'] / 1e6,
                     color=colors['WPP'],
-                    label='WPP (2022)'
+                    label='WPP (2022)',
+                    lw=lw_all
                 )
                 ax.fill_between((births_loc.index).to_numpy(),
                                 (births_loc['WPP2022_Low'] / 1e6).to_numpy(),
