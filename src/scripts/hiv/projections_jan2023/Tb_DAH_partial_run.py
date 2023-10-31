@@ -26,16 +26,17 @@ warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 class ImpactOfTbDaHx(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 0 #random.randint(0, 50000)
+        self.seed = random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2013, 12, 31)
-        self.pop_size =2000
+        self.pop_size = 1000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 3
+        self.runs_per_draw = 4
+
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_impact_partial21',
+            'filename': 'Tb_DAH_scenarios_test_run07_partial',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -47,6 +48,7 @@ class ImpactOfTbDaHx(BaseScenario):
                 'tlo.methods.hiv': logging.INFO,
             }
         }
+
     def modules(self):
         return [
             demography.Demography(resourcefilepath=self.resources),
@@ -70,51 +72,45 @@ class ImpactOfTbDaHx(BaseScenario):
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
         return {
-        # baseline scenario
             "Baseline": {
                 'Tb': {
                     'scenario': 0,
+                    'probability_community_chest_xray': 0.0,
+                    'scaling_factor_WHO': 99.9,
                 },
             },
-        # overrides availability of Xpert
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                      'first_line_test':    'sputum',
-                      'second_line_test': 'sputum',
-                      #'scaling_factor_WHO': 1.9,
+                    'probability_community_chest_xray': 0.0,
+                    'scaling_factor_WHO': 99.9,
                 },
             },
-        # overrides availability of CXR
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
-                  #  'scaling_factor_WHO': 1.8,
-                    'first_line_test': 'sputum',
-                    'second_line_test': 'xpert',
+                    'probability_access_to_xray': 0.0,
+                    'probability_community_chest_xray': 0.0,
+                    'scaling_factor_WHO': 99.9,
                 },
             },
-            "CXR scale_up": {
-                 'Tb': {
-                     'scenario': 3,
-                   #  'scaling_factor_WHO': 1.4,
-                 }
-            },
-                 "Outreach services": {
+            "CXR scaleup": {
                 'Tb': {
-                     'scenario': 0,
-                     'probability_community_chest_xray': 0.1,
-                     #'scaling_factor_WHO': 1.3,
+                    'scenario': 0,
+                    'probability_access_to_xray': 0.11,
+                    'probability_community_chest_xray': 0.0,
+                    'scaling_factor_WHO': 99.9,
                 }
             },
-            # "Outreach services20": {
-            #     'Tb': {
-            #         'scenario': 0,
-            #         'probability_community_chest_xray': 0.4,
-            #         'scaling_factor_WHO': 0.9,
-            #     }
-            # },
+            "Outreach services": {
+                'Tb': {
+                    'scenario': 0,
+                    'probability_community_chest_xray': 0.01,
+                    'scaling_factor_WHO': 99.9,
+                }
+            }
         }
+
 if __name__ == '__main__':
     from tlo.cli import scenario_run
     scenario_run([__file__])
