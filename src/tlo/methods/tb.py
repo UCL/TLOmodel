@@ -1772,7 +1772,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Screening"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         #changed facility level to 2 from 1 as the resource file doesnt have CXR at level 1-ref
-        self.ACCEPTED_FACILITY_LEVEL = '2'
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def apply(self, person_id, squeeze_factor):
         """Do the screening and referring to next tests"""
