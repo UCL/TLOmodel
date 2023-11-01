@@ -1776,7 +1776,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Screening"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         #changed facility level to 2 from 1 as the resource file doesnt have CXR at level 1-ref
-      #  self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = ['1a', '1b', '2', '3']  #'1a'
 
     def apply(self, person_id, squeeze_factor):
         """Do the screening and referring to next tests"""
@@ -1899,19 +1899,19 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                     dx_tests_to_run="tb_sputum_test_smear_negative", hsi_event=self
                 )
-                # change facility level based on test type
-                if test_result is None:
-                    if test == "xpert":
-                        self.ACCEPTED_FACILITY_LEVEL = '2'
-                    else:
-                        self.ACCEPTED_FACILITY_LEVEL = '1a'
-                    ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                        {"Over5OPD": 1, "LabTBMicro": 1}
-                    )
+                # # change facility level based on test type
+                # if test_result is None:
+                #     if test == "xpert":
+                #         self.ACCEPTED_FACILITY_LEVEL = '2'
+                #     else:
+                #         self.ACCEPTED_FACILITY_LEVEL = '1a'
+                #     ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+                #         {"Over5OPD": 1, "LabTBMicro": 1}
+                #     )
 
-            # ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-            #     {"Over5OPD": 1, "LabTBMicro": 1}
-            # )
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+                {"Over5OPD": 1, "LabTBMicro": 1}
+            )
 
         # if still no result available, rely on clinical diagnosis
         if test_result is None:
