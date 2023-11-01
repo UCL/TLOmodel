@@ -533,7 +533,7 @@ class HealthSystem(Module):
         'policy_name': Parameter(
             Types.STRING, "Name of priority policy assumed to have been adopted until policy switch"),
         'year_mode_switch': Parameter(
-            Types.INT, "Year in which priority policy switch in enforced"),
+            Types.INT, "Year in which mode switch in enforced"),
 
         'priority_rank': Parameter(
             Types.DICT, "Data on the priority ranking of each of the Treatment_IDs to be adopted by "
@@ -557,8 +557,7 @@ class HealthSystem(Module):
                        ' to the module initialiser.',
         ),
         'mode_appt_constraints_postSwitch': Parameter(
-            Types.INT, 'If considering a mode switch alongside priority policy switch, specify in this parameter. '
-                       'The switch occcurs in the year given in `year_mode_switch`.')
+            Types.INT, 'Mode considered after a mode switch in year_mode_switch.')
     }
 
     PROPERTIES = {
@@ -873,7 +872,7 @@ class HealthSystem(Module):
             self.healthsystemscheduler = HealthSystemScheduler(self)
             sim.schedule_event(self.healthsystemscheduler, sim.date)
 
-        # Schedule priority policy and mode_appt_constraints change
+        # Schedule a mode_appt_constraints change
         sim.schedule_event(HealthSystemChangeMode(self),
                            Date(self.parameters["year_mode_switch"], 1, 1))
 

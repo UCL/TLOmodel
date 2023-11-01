@@ -200,7 +200,8 @@ def test_policy_has_no_effect_on_mode1(tmpdir, seed):
     in mode 1 they should all be scheduled and delivered regardless"""
 
     output = []
-    for _, policy in enumerate(["Naive", "Test Mode 1", "", "ClinicallyVulnerable"]):
+    policy_list = ["Naive", "Test Mode 1", "", "ClinicallyVulnerable"]
+    for _, policy in enumerate(policy_list):
         # Establish the simulation object
         sim = Simulation(
             start_date=start_date,
@@ -231,10 +232,10 @@ def test_policy_has_no_effect_on_mode1(tmpdir, seed):
         output.append(parse_log_file(sim.log_filepath, level=logging.DEBUG))
 
     # Check that the outputs are the same
-    pd.testing.assert_frame_equal(output[0]['tlo.methods.healthsystem']['HSI_Event'],
-                                  output[1]['tlo.methods.healthsystem']['HSI_Event'])
-
-
+    for i in range(1,len(policy_list)):
+        pd.testing.assert_frame_equal(output[0]['tlo.methods.healthsystem']['HSI_Event'],
+                                      output[i]['tlo.methods.healthsystem']['HSI_Event'])
+     
 @pytest.mark.slow
 def test_run_in_mode_0_with_capacity(tmpdir, seed):
     # Events should run and there be no squeeze factors
