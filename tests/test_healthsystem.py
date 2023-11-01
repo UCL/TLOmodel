@@ -232,10 +232,11 @@ def test_policy_has_no_effect_on_mode1(tmpdir, seed):
         output.append(parse_log_file(sim.log_filepath, level=logging.DEBUG))
 
     # Check that the outputs are the same
-    for i in range(1,len(policy_list)):
+    for i in range(1, len(policy_list)):
         pd.testing.assert_frame_equal(output[0]['tlo.methods.healthsystem']['HSI_Event'],
                                       output[i]['tlo.methods.healthsystem']['HSI_Event'])
-     
+
+
 @pytest.mark.slow
 def test_run_in_mode_0_with_capacity(tmpdir, seed):
     # Events should run and there be no squeeze factors
