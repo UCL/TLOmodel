@@ -1488,7 +1488,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 3:
            # self.sim.modules['HealthSystem'].override_availability_of_consumables(
            #       {175: 0.63})
-            self.sim.modules['HealthSystem'].get_item_codes_from_package_name({175: 0.63})
+            self.sim.modules['HealthSystem'].get_item_codes_from_package_name({175: 0.2})
 
         # if scenario == 4:
         #         self.sim.modules['HealthSystem'].override_availability_of_consumables(
