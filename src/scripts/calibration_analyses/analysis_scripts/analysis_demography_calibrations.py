@@ -728,7 +728,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             tot_deaths_byage = pd.DataFrame(
                 deaths_by_agesexperiod.loc[
                     (deaths_by_agesexperiod['Period'] == period) & (deaths_by_agesexperiod['Sex'] == sex)].groupby(
-                    by=['Variant', 'Age_Grp']).sum()).unstack()
+                    by=['Variant', 'Age_Grp'])['Count'].sum()).unstack()
             tot_deaths_byage.columns = pd.Index([label[1] for label in tot_deaths_byage.columns.tolist()])
             tot_deaths_byage = tot_deaths_byage.transpose()
 
