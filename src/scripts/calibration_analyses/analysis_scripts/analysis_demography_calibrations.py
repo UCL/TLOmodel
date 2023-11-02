@@ -181,7 +181,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.show()
     plt.close(fig)
 
-
     # Population Pyramid at two time points
     def plot_population_pyramid(data, fig):
         """Plot a population pyramid on the specified figure. Data is of the form:
