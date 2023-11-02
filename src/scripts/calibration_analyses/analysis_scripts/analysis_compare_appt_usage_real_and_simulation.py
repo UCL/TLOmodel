@@ -601,6 +601,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.show()
     plt.close(fig)
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("results_folder", type=Path)
