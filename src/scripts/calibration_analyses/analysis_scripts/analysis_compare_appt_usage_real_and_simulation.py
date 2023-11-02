@@ -425,6 +425,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
     plt.show()
+    plt.close(fig)
 
     # Plot Simulation with 95% CI vs Adjusted Real usage by appt type, across all levels (trimmed to 0.1 and 10)
     # format data
@@ -489,7 +490,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _usage_fraction = pd.pivot(_usage_fraction, index='appt_type', columns='facility_level', values='ratio')
 
         # add nan rows of appts_real_only
-        nan_df = pd.DataFrame(index=appts_real_only, columns=_usage_fraction.columns)
+        nan_df = pd.DataFrame(index=sorted(appts_real_only), columns=_usage_fraction.columns)
         _usage_fraction = pd.concat([_usage_fraction, nan_df]).sort_index()
 
         # make row of appts_simulation_only nan
@@ -513,7 +514,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         _usage_fraction = pd.pivot(_usage_fraction, index='appt_type', columns='facility_level', values='ratio')
 
         # add nan rows of appts_simulation_only
-        nan_df = pd.DataFrame(index=appts_simulation_only, columns=_usage_fraction.columns)
+        nan_df = pd.DataFrame(index=sorted(appts_simulation_only), columns=_usage_fraction.columns)
         _usage_fraction = pd.concat([_usage_fraction, nan_df]).sort_index()
 
         # make row of appts_real_only nan
@@ -558,6 +559,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
     plt.show()
+    plt.close(fig)
 
     # appendix - plot Simulation with 95% CI vs Adjusted & Unadjusted real, across all levels
     def format_data_for_bar_plot(_usage):
@@ -597,7 +599,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
     plt.show()
-
+    plt.close(fig)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
