@@ -1486,8 +1486,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
            #        {187: 0.08})
         #increases probability of accessing chest xray by 10%
         if scenario == 3:
-            self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                  {175: 0.63})
+           # self.sim.modules['HealthSystem'].override_availability_of_consumables(
+           #       {175: 0.63})
+            self.sim.modules['HealthSystem'].get_item_codes_from_package_name({175: 0.63})
 
         # if scenario == 4:
         #         self.sim.modules['HealthSystem'].override_availability_of_consumables(
@@ -1775,8 +1776,8 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "Tb_Test_Screening"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        #changed facility level to 2 from 1 as the resource file doesnt have CXR at level 1-ref
-        self.ACCEPTED_FACILITY_LEVEL = ('1a', '1b', '2', '3') #'1a'
+        #changed facility level to 1a as the resource file doesnt have CXR at level 1-ref
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def apply(self, person_id, squeeze_factor):
         """Do the screening and referring to next tests"""
