@@ -588,25 +588,23 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     # %% All-Cause Deaths
-    #  todo - fix this -- only do summarize after the groupbys
-    #  Get Model output (aggregating by year before doing the summarize)
+    #  Get Model output (aggregating by period before doing the summarize)
+
+    # Aggregate the model outputs into five-year periods for age and time:
+    def get_counts_of_death_by_period_sex_agegrp(df):
+        df['year'] = df['date'].dt.year
+        df['Age_Grp'] = df['age'].map(agegrplookup).astype(make_age_grp_types())
+        df['Period'] = df['year'].map(calperiodlookup).astype(make_calendar_period_type())
+        df['Sex'] = df['sex']
+        return df.groupby(by=['Period', 'Sex', 'Age_Grp'])['person_id'].count()
 
     results_deaths = extract_results(
         results_folder,
         module="tlo.methods.demography",
         key="death",
-        custom_generate_series=(
-            lambda df: df.assign(year=df['date'].dt.year).groupby(['sex', 'year', 'age'])['person_id'].count()
-        ),
+        custom_generate_series=get_counts_of_death_by_period_sex_agegrp,
         do_scaling=True
     )
-
-    # Aggregate the model outputs into five year periods for age and time:
-    results_deaths = results_deaths.reset_index()
-    results_deaths['Age_Grp'] = results_deaths['age'].map(agegrplookup).astype(make_age_grp_types())
-    results_deaths['Period'] = results_deaths['year'].map(calperiodlookup).astype(make_calendar_period_type())
-    results_deaths = results_deaths.rename(columns={'sex': 'Sex'})
-    results_deaths = results_deaths.drop(columns=['age', 'year']).groupby(['Period', 'Sex', 'Age_Grp']).sum()
 
     # Load WPP data
     wpp_deaths = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_TotalDeaths_WPP.csv")
