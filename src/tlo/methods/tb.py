@@ -1472,20 +1472,20 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         # sets availability of xpert to nil
         if scenario == 1:
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.0})
-            self.sim.modules['HealthSystem'].get_item_codes_from_package_name({187: 0})
+           # self.sim.modules['HealthSystem'].get_item_codes_from_package_name({187: 0})
 
             # self.sim.modules['HealthSystem'].override_availability_of_consumables(
             #     {175: 0.53})
         # sets availability of xray to nil
         if scenario == 2:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.0})
-           self.sim.modules['HealthSystem'].get_item_codes_from_package_name({175: 0})
+          # self.sim.modules['HealthSystem'].get_item_codes_from_package_name({175: 0})
            # self.sim.modules['HealthSystem'].override_availability_of_consumables(
            #        {187: 0.08})
         #increases probability of accessing chest xray by 10%
         if scenario == 3:
           self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.63})
-          self.sim.modules['HealthSystem'].get_item_codes_from_package_name({175: 0.2})
+         # self.sim.modules['HealthSystem'].get_item_codes_from_package_name({175: 0.2})
 
         # if scenario == 4:
         #         self.sim.modules['HealthSystem'].override_availability_of_consumables(
