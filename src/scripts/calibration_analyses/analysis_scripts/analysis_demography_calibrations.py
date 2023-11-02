@@ -87,7 +87,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     # Load Data: WPP_Annual
     wpp_ann = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_Pop_Annual_WPP.csv")
     wpp_ann['Age_Grp'] = wpp_ann['Age_Grp'].astype(make_age_grp_types())
-    wpp_ann_total = wpp_ann.groupby(['Year'])['Count'].sum()
+    wpp_ann_total = wpp_ann.groupby(by=['Year'])['Count'].sum()
 
     # Load Data: Census
     cens = pd.read_csv(Path(resourcefilepath) / "demography" / "ResourceFile_PopulationSize_2018Census.csv")
