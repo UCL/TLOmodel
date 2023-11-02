@@ -181,9 +181,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.show()
     plt.close(fig)
 
-    # %% Population Pyramid
-    # Population Pyramid at two time points
 
+    # Population Pyramid at two time points
     def plot_population_pyramid(data, fig):
         """Plot a population pyramid on the specified figure. Data is of the form:
         {
@@ -267,7 +266,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return num_by_age
 
     for year in [2010, 2015, 2018, 2029, 2049]:
-        if year in wpp_ann['Year']:
+        if year in pop_model.index:
             # Get WPP data:
             wpp_thisyr = wpp_ann.loc[wpp_ann['Year'] == year].groupby(['Sex', 'Age_Grp'])['Count'].sum()
 
@@ -551,7 +550,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax[i].set_ylabel('Live births per woman')
 
     ax[-1].set_axis_off()
-    fig.legend((l1[0], l2[0]), ('WPP', 'Model'), 'lower right')
+    fig.legend(handles=(l1[0], l2[0]), labels=('WPP', 'Model'), loc='lower right')
     fig.tight_layout()
     fig.savefig(make_graph_file_name("asfr_model_vs_data"))
     fig.show()
