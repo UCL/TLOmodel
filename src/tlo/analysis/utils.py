@@ -855,7 +855,7 @@ def get_color_cause_of_death_or_daly_label(cause_of_death_label: str) -> str:
     return CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.get(cause_of_death_label, np.nan)
 
 
-def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabels=5, **kwargs):
+def squarify_neat(sizes: np.array, label: np.array, colormap: Callable = None, numlabels: int = 5, **kwargs):
     """Pass through to squarify, with some customisation: ...
      * Apply the colormap specified
      * Only give label a selection of the segments
@@ -867,7 +867,7 @@ def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabel
     squarify.plot(
         sizes=sizes,
         label=[_label if _label in to_label else '' for _label in label],
-        color=[colormap(_x) for _x in label],
+        color=[colormap(_x) for _x in label] if colormap is not None else None,
         **kwargs,
     )
 
