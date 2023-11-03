@@ -2458,7 +2458,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             drugs_were_available = self.do_at_continuation(person_id)
 
         if drugs_were_available:
-
             df.at[person_id, 'hv_date_last_ART'] = self.sim.date
 
             # If person has been placed/continued on ART, schedule 'decision about whether to continue on Treatment
