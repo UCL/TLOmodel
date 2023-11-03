@@ -2443,7 +2443,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # alternate routes into testing/tx may mean person already has recent ARV dispensation
         if person['hv_date_last_ART'] >= (
                 self.sim.date - pd.DateOffset(months=self.module.parameters['dispensation_period_months'])):
-            return
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         if art_status_at_beginning_of_hsi == "not":
 
