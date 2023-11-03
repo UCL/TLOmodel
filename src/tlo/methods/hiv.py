@@ -1426,6 +1426,7 @@ class Hiv(Module):
             df.at[mother_id, 'hv_diagnosed'] and (
             df.at[child_id, 'nb_pnc_check'] == 1) and (
                 self.rng.random_sample() < self.parameters['prob_hiv_test_for_newborn_infant']):
+
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Hiv_TestAndRefer(
                     person_id=child_id,
