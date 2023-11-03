@@ -1457,6 +1457,9 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
         if df.at[person_id, f'nc_{_c}_ever_diagnosed']:
             return
 
+        if _c == 'chronic_ischemic_heart_disease':
+            self.EQUIPMENT.update({'Stethoscope'})
+
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run=f'assess_{_c}',
             hsi_event=self
@@ -1764,7 +1767,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                                'Analyser, Haematology',
                                'Patient monitor', 'Drip stand',
                                'Infusion pump', 'Blood pressure machine',
-                               'Pulse oximeter', 'Trolley, emergency'})
+                               'Pulse oximeter', 'Trolley, emergency', 'Stethoscope'})
 
         for _ev in self.events_to_investigate:
             self.do_for_each_event_to_be_investigated(_ev)
