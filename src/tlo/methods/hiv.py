@@ -373,7 +373,7 @@ class Hiv(Module):
         ),
         "dispensation_period_months": Parameter(
             Types.REAL,
-            "length of prescription for ARVs, same for all PLHIV",
+            "length of prescription for ARVs in months, same for all PLHIV",
         ),
     }
 
