@@ -736,6 +736,7 @@ class Diarrhoea(Module):
         # STEP ONE: Aim to alleviate dehydration:
         prob_remove_dehydration = 0.0
         if is_in_patient:
+
             if hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['Treatment_Severe_Dehydration']):
                 # In-patient receiving IV fluids (WHO Plan C)
                 prob_remove_dehydration = \
@@ -1547,6 +1548,7 @@ class HSI_Diarrhoea_Treatment_Inpatient(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         """Run `do_treatment` for this person from an in-potient setting."""
@@ -1554,6 +1556,8 @@ class HSI_Diarrhoea_Treatment_Inpatient(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         if not df.at[person_id, 'is_alive']:
             return
+
+        self.EQUIPMENT.update({'Infusion pump', 'Drip stand'})
 
         self.module.do_treatment(person_id=person_id, hsi_event=self)
 
