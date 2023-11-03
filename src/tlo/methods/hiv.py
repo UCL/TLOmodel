@@ -2311,7 +2311,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # if breastfeeding has ceased or child >18 months, no further prophylaxis required
-        if (df.at[person_id, "nb_breastfeeding_status"] == "none") \
+        if (df.at[person_id, "nb_breastfeeding_status"] == "none")\
                 or (df.at[person_id, "age_years"] >= 1.5):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
