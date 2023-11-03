@@ -455,11 +455,8 @@ class Wasting(Module):
             self.sim.schedule_event(
                 event=ClinicalAcuteMalnutritionRecoveryEvent(module=self, person_id=person),
                 date=self.sim.date + DateOffset(days=self.rng.randint(0, 90)))  # in the next 3 months
-        # we suggest progressing to severe wasting if not recovered
-        for person in children_with_mam[~recovered_mam]:
-            self.sim.schedule_event(
-                event=ProgressionSevereWastingEvent(module=self, person_id=person),
-                date=self.sim.date + DateOffset(months=3))  # in the next 3 months
+        # if not cured by the intervention, remain as MAM and outcome will be determined in the 
+        # natural history of the next polling event
 
     def initialise_simulation(self, sim):
         """Prepares for simulation:
