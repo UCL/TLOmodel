@@ -80,8 +80,8 @@ class ImpactOfTbDaHx(BaseScenario):
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                      'first_line_test':    'sputum',
-                      'second_line_test': 'sputum',
+                    #  'first_line_test':    'sputum',
+                    #  'second_line_test': 'sputum',
                       #'scaling_factor_WHO': 1.9,
                 },
             },
@@ -90,8 +90,8 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                     'scenario': 2,
                   #  'scaling_factor_WHO': 1.8,
-                    'first_line_test': 'sputum',
-                    'second_line_test': 'xpert',
+                   # 'first_line_test': 'sputum',
+                   # 'second_line_test': 'xpert',
                 },
             },
             "CXR scale_up": {
