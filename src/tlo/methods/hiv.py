@@ -1605,8 +1605,8 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             test_rates = p["hiv_testing_rates"]
 
             testing_rate_adults = test_rates.loc[
-                                      test_rates.year == current_year, "annual_testing_rate_adults"
-                                  ].values[0] * p["hiv_testing_rate_adjustment"]
+                test_rates.year == current_year, "annual_testing_rate_adults"
+            ].values[0] * p["hiv_testing_rate_adjustment"]
 
             # adult testing trends also informed by demographic characteristics
             # relative probability of testing - this may skew testing rates higher or lower than moh reports
