@@ -1767,7 +1767,8 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
                                'Analyser, Haematology',
                                'Patient monitor', 'Drip stand',
                                'Infusion pump', 'Blood pressure machine',
-                               'Pulse oximeter', 'Trolley, emergency', 'Stethoscope'})
+                               'Pulse oximeter', 'Trolley, emergency', 'Stethoscope',
+                               'Oxygen cylinder, with regulator'})
 
         for _ev in self.events_to_investigate:
             self.do_for_each_event_to_be_investigated(_ev)
