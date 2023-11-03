@@ -1,10 +1,18 @@
-name: CI
+name: Tests
 
 on:
   push:
     branches: "master"
     tags: ["*"]
   pull_request:
+    paths:
+      - .github/workflows/tests.yml
+      - requirements/**
+      - resources/**
+      - src/tlo/**
+      - tests/**
+      - setup.*
+      - tox.ini
   schedule:
     - cron: 0 0 * * *
 
@@ -24,16 +32,14 @@ jobs:
 
   gen-test-matrix:
     name: Find test files
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
-    runs-on: [self-hosted]
+    runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
-    strategy:
-      fail-fast: false
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
-          lfs: true
+          # No tests should be under LFS so no need to fetch LFS files
+          lfs: false
       - id: set-matrix
         name: Set matrix
         run: |
@@ -49,14 +55,13 @@ jobs:
 
   test:
     needs: gen-test-matrix
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
     name: Test ${{ matrix.file }}
     runs-on: [self-hosted]
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.gen-test-matrix.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           lfs: true
       - name: System info
@@ -71,47 +76,3 @@ jobs:
       - name: Test with tox
         run: |
           tox -v -e py38,report -- pytest --cov --cov-report=term-missing -vv "${{ matrix.file }}"
-
-  check:
-    name: Checks
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
-    runs-on: [self-hosted]
-    strategy:
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          lfs: true
-      - name: System info
-        run: |
-          set -x
-          python --version
-          uname -a
-          lsb_release -a
-          virtualenv --version
-          pip --version
-          tox --version
-      - name: Run checks
-        run: tox -v -e check
-
-  docs:
-    name: Documentation
-    if: "!contains(github.event.head_commit.message, '[skip ci]')"
-    runs-on: [self-hosted]
-    strategy:
-      fail-fast: false
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          lfs: true
-      - name: System info
-        run: |
-          set -x
-          python --version
-          uname -a
-          lsb_release -a
-          virtualenv --version
-          pip --version
-          tox --version
-      - name: Build documentation
-        run: tox -v -e docs

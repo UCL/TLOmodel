@@ -22,6 +22,7 @@ from tlo.analysis.utils import (
     order_of_coarse_appt,
     order_of_short_treatment_ids,
     parse_log_file,
+    summarize,
     unflatten_flattened_multi_index_in_logging,
 )
 from tlo.events import PopulationScopeEventMixin, RegularEvent
@@ -431,3 +432,87 @@ def test_scenario_switcher(seed):
     # Spot check for health care seeking being forced to occur for all symptoms
     hcs = sim.modules['HealthSeekingBehaviour'].force_any_symptom_to_lead_to_healthcareseeking
     assert isinstance(hcs, bool) and hcs
+
+
+def test_summarize():
+    """Check that the summarize utility function works as expected."""
+
+    results_multiple_draws = pd.DataFrame(
+        columns=pd.MultiIndex.from_tuples([
+            ('DrawA', 'DrawA_Run1'),
+            ('DrawA', 'DrawA_Run2'),
+            ('DrawB', 'DrawB_Run1'),
+            ('DrawB', 'DrawB_Run2')],
+            names=('draw', 'run')),
+        index=['TimePoint0', 'TimePoint1'],
+        data=np.array([
+            [0, 20, 1000, 2000],
+            [0, 20, 1000, 2000],
+            ])
+    )
+
+    results_one_draw = pd.DataFrame(
+        columns=pd.MultiIndex.from_tuples([
+            ('DrawA', 'DrawA_Run1'),
+            ('DrawA', 'DrawA_Run2')],
+            names=('draw', 'run')),
+        index=['TimePoint0', 'TimePoint1'],
+        data=np.array([
+            [0, 20],
+            [0, 20]
+        ]),
+    )
+
+    # Without collapsing and all stats provided
+    pd.testing.assert_frame_equal(
+        pd.DataFrame(
+            columns=pd.MultiIndex.from_tuples([
+                ('DrawA', 'lower'),
+                ('DrawA', 'mean'),
+                ('DrawA', 'upper'),
+                ("DrawB", "lower"),
+                ("DrawB", "mean"),
+                ("DrawB", "upper")],
+                names=('draw', 'stat')),
+            index=['TimePoint0', 'TimePoint1'],
+            data=np.array([
+                [0.5, 10.0, 19.5, 1025.0, 1500.0, 1975.0],
+                [0.5, 10.0, 19.5, 1025.0, 1500.0, 1975.0],
+            ])
+        ),
+        summarize(results_multiple_draws)
+    )
+
+    # Without collapsing and only mean
+    pd.testing.assert_frame_equal(
+        pd.DataFrame(
+            columns=pd.Index([
+                'DrawA',
+                'DrawB'],
+                name='draw'),
+            index=['TimePoint0', 'TimePoint1'],
+            data=np.array([
+                [10.0, 1500.0],
+                [10.0, 1500.0]
+                ])
+        ),
+        summarize(results_multiple_draws, only_mean=True)
+    )
+
+    # With collapsing (as only one draw)
+    pd.testing.assert_frame_equal(
+        pd.DataFrame(
+            columns=pd.Index(
+                ['lower',
+                 'mean',
+                 'upper'],
+                name='stat'
+            ),
+            index=['TimePoint0', 'TimePoint1'],
+            data=np.array([
+                [0.5, 10.0, 19.5],
+                [0.5, 10.0, 19.5],
+            ])
+        ),
+        summarize(results_one_draw, collapse_columns=True)
+    )
