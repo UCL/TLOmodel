@@ -265,7 +265,7 @@ def extract_results(results_folder: Path,
                                            )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
 
     if custom_generate_series is None:
-        # If there is no `custom_generate_series` provided, it implies that function required selects a the specified
+        # If there is no `custom_generate_series` provided, it implies that function required selects the specified
         # column from the dataframe.
         assert column is not None, "Must specify which column to extract"
 

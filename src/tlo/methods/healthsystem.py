@@ -353,7 +353,7 @@ class HSI_Event:
             # If there are bed-days specified, add (if needed) the in-patient admission and in-patient day Appointment
             # Types.
             # (HSI that require a bed for one or more days always need such appointments, but this may have been
-            # missed in the declaration of the `EXPECTED_APPPT_FOOTPRINT` in the HSI.)
+            # missed in the declaration of the `EXPECTED_APPT_FOOTPRINT` in the HSI.)
             # NB. The in-patient day Appointment time is automatically applied on subsequent days.
             if sum(self.BEDDAYS_FOOTPRINT.values()):
                 self.EXPECTED_APPT_FOOTPRINT = health_system.bed_days.add_first_day_inpatient_appts_to_footprint(
@@ -672,7 +672,7 @@ class HealthSystem(Module):
         self.list_fasttrack = []  # provided so that there is a default even before simulation is run
 
         # Store the argument provided for service_availability
-        self.arg_service_availabily = service_availability
+        self.arg_service_availability = service_availability
         self.service_availability = ['*']  # provided so that there is a default even before simulation is run
 
         # Check that the capabilities coefficient is correct
@@ -1162,10 +1162,10 @@ class HealthSystem(Module):
         """Returns service availability. (Should be equal to what is specified by the parameter, but overwrite with what
         was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
 
-        if self.arg_service_availabily is None:
+        if self.arg_service_availability is None:
             service_availability = self.parameters['Service_Availability']
         else:
-            service_availability = self.arg_service_availabily
+            service_availability = self.arg_service_availability
 
         assert isinstance(service_availability, list)
 
@@ -1996,7 +1996,7 @@ class HealthSystem(Module):
     def run_individual_level_events_in_mode_0_or_1(self,
                                                    _list_of_individual_hsi_event_tuples:
                                                    List[HSIEventQueueItem]) -> List:
-        """Run a list of individual level events. Returns: list of events that did not run (maybe an empty a list)."""
+        """Run a list of individual level events. Returns: list of events that did not run (maybe an empty list)."""
         _to_be_held_over = list()
         assert self.mode_appt_constraints in (0, 1)
 
@@ -2194,9 +2194,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
     If the event is to be run, then the following events occur:
         * The HSI event itself is run.
-        * The occurence of the event is logged
+        * The occurrence of the event is logged
         * The resources used are 'occupied' (if individual level HSI event)
-        * Other disease modules are alerted of the occurence of the HSI event (if individual level HSI event)
+        * Other disease modules are alerted of the occurrence of the HSI event (if individual level HSI event)
 
     Here is where we can have multiple types of assumption regarding how these capabilities are modelled.
     """
@@ -2262,7 +2262,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                 if next_event_tuple.priority == self.module.lowest_priority_considered:
                     # Check the priority
-                    # If the next event is not due and has lowest allowed priority, then stop looking
+                    # If the next event is not due and has the lowest allowed priority, then stop looking
                     # through the heapq as all other events will also not be due.
                     break
 
@@ -2312,7 +2312,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         set_capabilities_still_available = {k for k, v in capabilities_monitor.items() if v > 0.0}
 
         # Here use different approach for appt_mode_constraints = 2: rather than collecting events
-        # due today all at once, run event immediately at time of querying. This ensure that no
+        # due today all at once, run event immediately at time of querying. This ensures that no
         # artificial "midday effects" are introduced when evaluating priority policies.
 
         # To avoid repeated dataframe accesses in subsequent loop, assemble set of alive
@@ -2365,7 +2365,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                     if next_event_tuple.priority == self.module.lowest_priority_considered:
                         # Check the priority
-                        # If the next event is not due and has lowest allowed priority, then stop looking
+                        # If the next event is not due and has the lowest allowed priority, then stop looking
                         # through the heapq as all other events will also not be due.
                         break
 
@@ -2386,7 +2386,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         # based on queue information, and we assume no squeeze ever takes place.
                         squeeze_factor = 0.
 
-                        # Check if any of the officers required have ran out.
+                        # Check if any of the officers required have run out.
                         out_of_resources = False
                         for officer, call in original_call.items():
                             # If any of the officers are not available, then out of resources
@@ -2466,7 +2466,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             # Subtract this from capabilities used so-far today
                             capabilities_monitor.subtract(updated_call)
 
-                            # If any of the officers have ran out of time by performing this hsi,
+                            # If any of the officers have run out of time by performing this hsi,
                             # remove them from list of available officers.
                             for officer, call in updated_call.items():
                                 if capabilities_monitor[officer] <= 0:
@@ -2479,7 +2479,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                                   f"officers than expected_footprint.")
                                         )
 
-                            # Update today's footprint based on actuall call and squeeze factor
+                            # Update today's footprint based on actual call and squeeze factor
                             self.module.running_total_footprint -= original_call
                             self.module.running_total_footprint += updated_call
 
@@ -2503,7 +2503,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         # were exhausted, so here ensure if any events expired were left unchecked they are properly
         # removed from the queue, and did_not_run() is invoked for all postponed events.
         # (This should still be more efficient than querying the queue as done in mode_appt_constraints
-        #  = 0 and 1 while ensuring mid-day effects are avoided.)
+        #  = 0 and 1 while ensuring midday effects are avoided.)
         while len(self.module.HSI_EVENT_QUEUE) > 0:
 
             next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
@@ -2532,7 +2532,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                 if next_event_tuple.priority == self.module.lowest_priority_considered:
                     # Check the priority
-                    # If the next event is not due and has lowest allowed priority, then stop looking
+                    # If the next event is not due and has the lowest allowed priority, then stop looking
                     # through the heapq as all other events will also not be due.
                     break
 
@@ -2545,7 +2545,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 if is_pop_level_hsi_event:
                     list_of_population_hsi_event_tuples_due_today.append(next_event_tuple)
                 else:
-                    # In previous iteration, have already ran all the events for today that could run
+                    # In previous iteration, have already run all the events for today that could run
                     # given capabilities available, so put back any remaining events due today to the
                     # hold_over queue as it would not be possible to run them today.
 
@@ -2663,13 +2663,13 @@ class HealthSystemSummaryCounter:
         self._treatment_ids = defaultdict(int)  # Running record of the `TREATMENT_ID`s of `HSI_Event`s
         self._appts = defaultdict(int)  # Running record of the Appointments of `HSI_Event`s that have run
         self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+        # <--Same as `self._appts` but also split by facility_level
 
         # Log HSI_Events that never ran to monitor shortcoming of Health System
         self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
         self._never_ran_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
 
-        # <--Same as `self._appts` but also split by facility_level
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
         #                                                           treatment_id. Key is of the form:
