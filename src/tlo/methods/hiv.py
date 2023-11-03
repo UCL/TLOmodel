@@ -1687,7 +1687,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     & (df.sex == "M")
                     & (df.age_years < 15)
                     & (~df.li_is_circ)
-                    ],
+                ],
                 self.module.rng,
                 year=self.sim.date.year,
             )
