@@ -1232,6 +1232,7 @@ class WastingNaturalRecoveryEvent(Event, IndividualScopeEventMixin):
         # For cases with normal WHZ, attribute probability of MUAC category
         if df.at[person_id, 'age_exact_years'] > 0.5:
             m.muac_cutoff_by_WHZ(idx=df.loc[[person_id]].index, whz='WHZ>=-2')
+            m.nutritional_oedema_present(idx==df.loc[[person_id]].index, whz='WHZ>=-2')
 
         # Note assumption: prob of oedema remained the same as applied in wasting onset
 
