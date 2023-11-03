@@ -2487,7 +2487,6 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             self.counter_for_drugs_not_available += 1  # The current appointment is included in the count.
 
             if art_status_at_beginning_of_hsi != "not":
-
                 self.module.stops_treatment(person_id)
 
             p = self.module.parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"]
