@@ -229,7 +229,7 @@ class PregnancySupervisor(Module):
         'rr_preterm_labour_multiple_pregnancy': Parameter(
             Types.LIST, 'relative risk of early labour onset in women pregnant with twins'),
 
-        # ANTENATAL STILLBIRTH
+        # ANTENATAL STILLBIRTH...
         'prob_still_birth_per_month': Parameter(
             Types.LIST, 'underlying risk of stillbirth per month without the impact of risk factors'),
         'rr_still_birth_ga_41': Parameter(
@@ -381,21 +381,21 @@ class PregnancySupervisor(Module):
     }
 
     PROPERTIES = {
-        'ps_gestational_age_in_weeks': Property(Types.REAL, 'current gestational age, in weeks, of a womans '
+        'ps_gestational_age_in_weeks': Property(Types.REAL, 'current gestational age, in weeks, of a woman '
                                                             'pregnancy'),
         'ps_date_of_anc1': Property(Types.DATE, 'Date first ANC visit is scheduled for'),
-        'ps_ectopic_pregnancy': Property(Types.CATEGORICAL, 'Whether a womans is experiencing ectopic pregnancy and'
+        'ps_ectopic_pregnancy': Property(Types.CATEGORICAL, 'Whether a woman is experiencing ectopic pregnancy and'
                                                             ' its current state',
                                          categories=['none', 'not_ruptured', 'ruptured']),
-        'ps_multiple_pregnancy': Property(Types.BOOL, 'Whether a womans is pregnant with multiple fetuses'),
-        'ps_placenta_praevia': Property(Types.BOOL, 'Whether a womans pregnancy will be complicated by placenta'
+        'ps_multiple_pregnancy': Property(Types.BOOL, 'Whether a woman is pregnant with multiple fetuses'),
+        'ps_placenta_praevia': Property(Types.BOOL, 'Whether a woman pregnancy will be complicated by placenta'
                                                     'praevia'),
-        'ps_syphilis': Property(Types.BOOL, 'Whether a womans has syphilis during pregnancy'),
+        'ps_syphilis': Property(Types.BOOL, 'Whether a woman has syphilis during pregnancy'),
         'ps_anaemia_in_pregnancy': Property(Types.CATEGORICAL, 'Whether a woman has anaemia in pregnancy and its '
                                                                'severity',
                                             categories=['none', 'mild', 'moderate', 'severe']),
 
-        'ps_anc4': Property(Types.BOOL, 'Whether this womans is predicted to attend 4 or more antenatal care visits '
+        'ps_anc4': Property(Types.BOOL, 'Whether this woman is predicted to attend 4 or more antenatal care visits '
                                         'during her pregnancy'),
         'ps_abortion_complications': Property(Types.INT, 'Bitset column holding types of abortion complication'),
         'ps_prev_spont_abortion': Property(Types.BOOL, 'Whether this woman has had any previous pregnancies end in '
@@ -413,13 +413,13 @@ class PregnancySupervisor(Module):
         'ps_prev_gest_diab': Property(Types.BOOL, 'whether this woman has ever suffered from gestational diabetes '
                                                   'during a previous pregnancy'),
         'ps_placental_abruption': Property(Types.BOOL, 'Whether this woman is experiencing placental abruption'),
-        'ps_antepartum_haemorrhage': Property(Types.CATEGORICAL, 'severity of this womans antepartum haemorrhage',
+        'ps_antepartum_haemorrhage': Property(Types.CATEGORICAL, 'severity of this woman antepartum haemorrhage',
                                               categories=['none', 'mild_moderate', 'severe']),
         'ps_premature_rupture_of_membranes': Property(Types.BOOL, 'whether this woman has experience rupture of '
                                                                   'membranes before the onset of labour. If this is '
                                                                   '<37 weeks from gestation the woman has preterm '
                                                                   'premature rupture of membranes'),
-        'ps_chorioamnionitis': Property(Types.BOOL, 'Whether a womans is experiencing chorioamnionitis'),
+        'ps_chorioamnionitis': Property(Types.BOOL, 'Whether a woman is experiencing chorioamnionitis'),
         'ps_emergency_event': Property(Types.BOOL, 'signifies a woman in undergoing an acute emergency event in her '
                                                    'pregnancy- used to consolidated care seeking in the instance of '
                                                    'multiple complications')
@@ -541,7 +541,7 @@ class PregnancySupervisor(Module):
             'ectopic_pregnancy_death': LinearModel.custom(pregnancy_supervisor_lm.ectopic_pregnancy_death,
                                                           parameters=params),
 
-            # This equation determines the monthly probability of a women experiencing a miscarriage prior to 28 weeks
+            # This equation determines the monthly probability of a woman experiencing a miscarriage prior to 28 weeks
             # gestation
             'spontaneous_abortion': LinearModel.custom(pregnancy_supervisor_lm.spontaneous_abortion, parameters=params),
 
@@ -556,7 +556,7 @@ class PregnancySupervisor(Module):
             # This equation determines the monthly probability of a woman determining anaemia during her pregnancy
             'maternal_anaemia': LinearModel.custom(pregnancy_supervisor_lm.maternal_anaemia, module=self),
 
-            # This equation determines the monthly probability of a women going into labour before reaching term
+            # This equation determines the monthly probability of a woman going into labour before reaching term
             # gestation (i.e. 37 weeks or more)
             'early_onset_labour': LinearModel.custom(pregnancy_supervisor_lm.preterm_labour, module=self),
 
@@ -568,20 +568,20 @@ class PregnancySupervisor(Module):
             # pregnancy which is a strong predictor of antenatal bleeding
             'placental_abruption': LinearModel.custom(pregnancy_supervisor_lm.placental_abruption, parameters=params),
 
-            # This equation determines the monthly probability of a women developing antepartum haemorrhage. Haemorrhage
+            # This equation determines the monthly probability of a woman developing antepartum haemorrhage. Haemorrhage
             # may only occur in the presence of either praevia or abruption
             'antepartum_haem': LinearModel.custom(pregnancy_supervisor_lm.antepartum_haem, parameters=params),
 
-            # This equation determines the monthly probability of a women developing gestational diabetes
+            # This equation determines the monthly probability of a woman developing gestational diabetes
             'gest_diab': LinearModel.custom(pregnancy_supervisor_lm.gest_diab, parameters=params),
 
-            # This equation determines the monthly probability of a women developing gestational hypertension
+            # This equation determines the monthly probability of a woman developing gestational hypertension
             'gest_htn': LinearModel.custom(pregnancy_supervisor_lm.gest_htn, parameters=params),
 
-            # This equation determines the monthly probability of a women developing mild pre-eclampsia
+            # This equation determines the monthly probability of a woman developing mild pre-eclampsia
             'pre_eclampsia': LinearModel.custom(pregnancy_supervisor_lm.pre_eclampsia, module=self),
 
-            # This equation determines the monthly probability of a women experiencing an antenatal stillbirth,
+            # This equation determines the monthly probability of a woman experiencing an antenatal stillbirth,
             # pregnancy loss following 28 weeks gestation
             'antenatal_stillbirth': LinearModel.custom(pregnancy_supervisor_lm.antenatal_stillbirth, module=self),
         }
@@ -642,7 +642,7 @@ class PregnancySupervisor(Module):
 
         if df.at[mother_id, 'is_alive']:
 
-            # We reset all womans gestational age when they deliver as they are no longer pregnant
+            # We reset all women gestational age when they deliver as they are no longer pregnant
             df.at[mother_id, 'ps_gestational_age_in_weeks'] = 0
             df.at[mother_id, 'ps_date_of_anc1'] = pd.NaT
 
