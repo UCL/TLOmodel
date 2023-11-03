@@ -369,7 +369,6 @@ def test_analysis_events_force_availability_of_consumables_for_pnc_analysis(seed
     df.at[mother_id, 'la_is_postpartum'] = True
     df.at[mother_id, 'la_date_most_recent_delivery'] = sim.date
     mni[mother_id]['will_receive_pnc'] = 'early'
-    mni[mother_id]['pnc_date'] = sim.date
 
     # set some complications
     df.at[mother_id, 'la_postpartum_haem'] = True

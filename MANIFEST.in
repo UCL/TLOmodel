@@ -10,6 +10,7 @@ include tox.ini
 include tlo.example.conf
 include CITATION.cff
 include LICENSE.txt
+include contributors.yaml
 
 exclude .editorconfig
 recursive-exclude .ci *
@@ -23,6 +24,7 @@ exclude docs/reference/tlo.rst
 exclude docs/reference/modules.rst
 exclude docs/_*.rst
 exclude docs/hsi_events.csv
+exclude docs/_contributors_list.html
 
 global-exclude *.py[cod] __pycache__ *.so *.dylib .ipynb_checkpoints/** *~
 
