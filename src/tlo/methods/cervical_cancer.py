@@ -32,7 +32,6 @@ class CervicalCancer(Module):
         self.resourcefilepath = resourcefilepath
         self.linear_models_for_progression_of_hpv_cc_status = dict()
         self.lm_onset_vaginal_bleeding = None
- # todo: add in lm for pregression through cc categories ?
         self.daly_wts = dict()
 
     INIT_DEPENDENCIES = {
@@ -53,7 +52,6 @@ class CervicalCancer(Module):
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
         'CervicalCancer': Cause(gbd_causes='Cervical cancer', label='Cancer (Cervix)'),
-        # todo: here and for disability below, check this is correct format for gbd cause
     }
 
     # Declare Causes of Disability
@@ -123,7 +121,12 @@ class CervicalCancer(Module):
             "probabilty per month of incident stage4 cervical cancer amongst people with stage3",
         ),
         "rr_progress_cc_hiv": Parameter(
-            Types.REAL, "rate ratio for progressing through cin and cervical cancer stages if have unsuppressed hiv9"
+            Types.REAL, "rate ratio for progressing through cin and cervical cancer stages if have unsuppressed hiv"
+        ),
+        "rr_hpv_vaccinated": Parameter(
+            Types.REAL,
+            "rate ratio for hpv if vaccinated - this is combined effect of probability the hpv is "
+            "vaccine-preventable and vaccine efficacy against vaccine-preventable hpv ",
         ),
          "rr_progression_cc_undergone_curative_treatment": Parameter(
             Types.REAL,
@@ -137,16 +140,16 @@ class CervicalCancer(Module):
             Types.REAL, "rate of vaginal bleeding if have stage 1 cervical cancer"
         ),
         "rr_vaginal_bleeding_cc_stage2a": Parameter(
-            Types.REAL, "rate ratio for vaginal bleeding if have stage 2a breast cancer"
+            Types.REAL, "rate ratio for vaginal bleeding if have stage 2a cervical cancer"
         ),
         "rr_vaginal_bleeding_cc_stage2b": Parameter(
-            Types.REAL, "rate ratio for vaginal bleeding if have stage 2b breast cancer"
+            Types.REAL, "rate ratio for vaginal bleeding if have stage 2b cervical cancer"
         ),
         "rr_vaginal_bleeding_cc_stage3": Parameter(
-            Types.REAL, "rate ratio for vaginal bleeding if have stage 3 breast cancer"
+            Types.REAL, "rate ratio for vaginal bleeding if have stage 3 cervical cancer"
         ),
         "rr_vaginal_bleeding_cc_stage4": Parameter(
-            Types.REAL, "rate ratio for vaginal bleeding if have stage 4 breast cancer"
+            Types.REAL, "rate ratio for vaginal bleeding if have stage 4 cervical cancer"
         ),
         "sensitivity_of_biopsy_for_cervical_cancer": Parameter(
             Types.REAL, "sensitivity of biopsy for diagnosis of cervical cancer"
@@ -159,6 +162,9 @@ class CervicalCancer(Module):
         )
     }
 
+    """
+    note: hpv vaccination is in epi.py
+    """
 
     PROPERTIES = {
         "ce_hpv_cc_status": Property(
@@ -194,8 +200,8 @@ class CervicalCancer(Module):
             Types.BOOL,
             "whether vaginal bleeding has been investigated, and cancer missed"
         ),
-        # todo: currently this property has levels to match ce_hov_cc_status to enable the code as written, even
-        # todo: though can only be treated when in stage 1-3
+# currently this property has levels to match ce_hov_cc_status to enable the code as written, even
+# though can only be treated when in stage 1-3
         "ce_stage_at_which_treatment_given": Property(
             Types.CATEGORICAL,
             "the cancer stage at which treatment was given (because the treatment only has an effect during the stage"
@@ -227,7 +233,6 @@ class CervicalCancer(Module):
         )
 
         # Register Symptom that this module will use
-        # todo: define odds ratio below - ? not sure about this as odds of health seeking if no symptoms is zero ?
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='vaginal_bleeding',
                     odds_ratio_health_seeking_in_adults=4.00)
@@ -260,7 +265,7 @@ class CervicalCancer(Module):
 #       df.ce_hpv_cc_status = 'none'
 
         # -------------------- SYMPTOMS -----------
-        # Create shorthand variable for the initial proportion of discernible breast cancer lumps in the population
+        # Create shorthand variable for the initial proportion of discernible cervical cancer lumps in the population
         init_prop_vaginal_bleeding = p['init_prop_vaginal_bleeding_by_cc_stage']
         lm_init_vaginal_bleeding = LinearModel.multiplicative(
             Predictor(
@@ -383,14 +388,14 @@ class CervicalCancer(Module):
         p = self.parameters
         lm = self.linear_models_for_progression_of_hpv_cc_status
 
-        # todo: check this below
-
         rate_hpv = p['r_nvp_hpv'] + p['r_vp_hpv']
-#       prop_hpv_vp = 'r_vp_hpv' / rate_hpv
 
         lm['hpv'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             rate_hpv,
+            Predictor('va_hpv')
+            .when(1, p['rr_hpv_vaccinated'])
+            .when(2, p['rr_hpv_vaccinated']),
             Predictor('sex').when('M', 0.0),
             Predictor('ce_hpv_cc_status').when('none', 1.0).otherwise(0.0),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
@@ -492,8 +497,7 @@ class CervicalCancer(Module):
         )
 
         # Check that the dict labels are correct as these are used to set the value of ce_hpv_cc_status
-        # todo: put this line below back in
-#       assert set(lm).union({'none'}) == set(df.ce_hpv_cc_status.cat.categories)
+        assert set(lm).union({'none'}) == set(df.ce_hpv_cc_status.cat.categories)
 
         # Linear Model for the onset of vaginal bleeding, in each 1 month period
         # Create variables for used to predict the onset of vaginal bleeding at
@@ -612,14 +616,6 @@ class CervicalCancer(Module):
         df.at[child_id, "ce_date_cin_removal"] = pd.NaT
         df.at[child_id, "ce_date_treatment"] = pd.NaT
 
-    # todo: decide if this below should replace HSI_CervicalCancer_Investigation_Following_vaginal_bleeding
-    # todo: or should come out (when decide make sure sync with hsi_generic_first_appts.py)
-    def do_when_present_with_vaginal_bleeding(self, person_id: int, hsi_event: HSI_Event):
-        """What to do when a person presents at the generic first appt HSI with a symptom of vaginal bleeding
-        """
-        # todo: work on this below
-#       self.give_inhaler(hsi_event=hsi_event, person_id=person_id)
-
     def on_hsi_alert(self, person_id, treatment_id):
         pass
 
@@ -710,8 +706,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[idx_gets_new_stage, 'ce_hpv_cc_status'] = stage
             df.loc[idx_gets_new_stage, 'ce_new_stage_this_month'] = True
 
-        # todo: consider that people can move through more than one stage per month (but probably this is OK)
-
         # -------------------- UPDATING OF SYMPTOM OF vaginal bleeding OVER TIME --------------------------------
         # Each time this event is called (every month) individuals with cervical cancer may develop the symptom of
         # vaginal bleeding.  Once the symptom is developed it never resolves naturally. It may trigger
@@ -740,6 +734,8 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 #   HEALTH SYSTEM INTERACTION EVENTS
 # ---------------------------------------------------------------------------------------------------------
 
+#  todo: hsi for routine screening (ie the hsi is health system-initiated) using hpv xpert and/or via,
+#  todo: with cin removal - need to agree how to do this
 
 class HSI_CervicalCancer_Investigation_Following_vaginal_bleeding(HSI_Event, IndividualScopeEventMixin):
     """
@@ -753,8 +749,10 @@ class HSI_CervicalCancer_Investigation_Following_vaginal_bleeding(HSI_Event, Ind
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "VaginalBleeding_Investigation"
-        # todo: check on availability of biopsy
+        print(person_id, self.sim.date, 'vaginal_bleeding_hsi_called -1')
+
+        self.TREATMENT_ID = "CervicalCancer_Investigation"
+
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
 
@@ -766,6 +764,8 @@ class HSI_CervicalCancer_Investigation_Following_vaginal_bleeding(HSI_Event, Ind
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
+        print(person_id, self.sim.date, 'vaginal_bleeding_hsi_called -2')
+
         # Check that this event has been called for someone with the symptom vaginal_bleeding
         assert 'vaginal_bleeding' in self.sim.modules['SymptomManager'].has_what(person_id)
 
@@ -773,7 +773,7 @@ class HSI_CervicalCancer_Investigation_Following_vaginal_bleeding(HSI_Event, Ind
         if not pd.isnull(df.at[person_id, "ce_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
-        df.ce_vaginal_bleeding_investigated = True
+        df.loc[person_id, 'ce_vaginal_bleeding_investigated'] = True
 
         # Use a biopsy to diagnose whether the person has cervical cancer
         # todo: request consumables needed for this
@@ -814,11 +814,6 @@ class HSI_CervicalCancer_Investigation_Following_vaginal_bleeding(HSI_Event, Ind
                     topen=self.sim.date,
                     tclose=None
                 )
-
-#   todo: we would like to note that the symptom has been investigated in a diagnostic test and the diagnosis was
-#   todo: was missed, so the same test will not likely be repeated, at least not in the short term, so we even
-#   todo: though the symptom remains we don't want to keep repeating the HSI which triggers the diagnostic test
-
 
 class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
@@ -887,8 +882,6 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             priority=0
         )
 
-# todo: add hsis for xpert testing and cin removal via testing and cin removal
-
 class HSI_CervicalCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
     """
     This event is scheduled by HSI_CervicalCancer_StartTreatment and itself.
@@ -950,7 +943,7 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     This is the event for palliative care. It does not affect the patients progress but does affect the disability
      weight and takes resources from the healthsystem.
     This event is scheduled by either:
-    * HSI_CervicalCancer_Investigation_Following_vagibal_bleeding following a diagnosis of cervical Cancer at stage4.
+    * HSI_CervicalCancer_Investigation_Following_vaginal_bleeding following a diagnosis of cervical Cancer at stage4.
     * HSI_CervicalCancer_PostTreatmentCheck following progression to stage4 during treatment.
     * Itself for the continuance of care.
     It is only for persons with a cancer in stage4.
@@ -1042,18 +1035,16 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         n_ge15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
 
-        # todo: the .between function I think includes the two dates so events on these dates counted twice
-        # todo:_ I think we need to replace with date_lastlog <= x < date_now
         n_newly_diagnosed_stage1 = \
-            (df.ce_date_diagnosis.between(date_lastlog, date_now) & (df.ce_hpv_cc_status == 'stage1')).sum()
+            (df.ce_date_diagnosis.between(date_lastlog, date_now - DateOffset(days=1)) & (df.ce_hpv_cc_status == 'stage1')).sum()
         n_newly_diagnosed_stage2a = \
-            (df.ce_date_diagnosis.between(date_lastlog, date_now) & (df.ce_hpv_cc_status == 'stage2a')).sum()
+            (df.ce_date_diagnosis.between(date_lastlog, date_now - DateOffset(days=1)) & (df.ce_hpv_cc_status == 'stage2a')).sum()
         n_newly_diagnosed_stage2b = \
-            (df.ce_date_diagnosis.between(date_lastlog, date_now) & (df.ce_hpv_cc_status == 'stage2b')).sum()
+            (df.ce_date_diagnosis.between(date_lastlog, date_now - DateOffset(days=1)) & (df.ce_hpv_cc_status == 'stage2b')).sum()
         n_newly_diagnosed_stage3 = \
-            (df.ce_date_diagnosis.between(date_lastlog, date_now) & (df.ce_hpv_cc_status == 'stage3')).sum()
+            (df.ce_date_diagnosis.between(date_lastlog, date_now - DateOffset(days=1)) & (df.ce_hpv_cc_status == 'stage3')).sum()
         n_newly_diagnosed_stage4 = \
-            (df.ce_date_diagnosis.between(date_lastlog, date_now) & (df.ce_hpv_cc_status == 'stage4')).sum()
+            (df.ce_date_diagnosis.between(date_lastlog, date_now - DateOffset(days=1)) & (df.ce_hpv_cc_status == 'stage4')).sum()
 
 # todo: add outputs for cin,  xpert testing and via and removal of cin
 
@@ -1082,16 +1073,14 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'n_diagnosed': n_diagnosed
         })
 
-#       df = df.rename(columns={'sy_vaginal_bleeding': 'vaginal_b'})
+#       df = df.rename(columns={'ce_stage_at_which_treatment_given': 'treatment_stage'})
 
         print(self.sim.date)
-        selected_columns = ['ce_hpv_cc_status', 'sy_vaginal_bleeding', 'ce_vaginal_bleeding_investigated']
-        selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive']]
+        selected_columns = ['ce_hpv_cc_status', 'ce_hpv_vp']
+        selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15)]
         print(selected_rows[selected_columns])
 
-#       df = df.rename(columns={'vaginal_b': 'sy_vaginal_bleeding'})
-
-
+#       df = df.rename(columns={'treatment_stage': 'ce_stage_at_which_treatment_given'})
 
         logger.info(key='summary_stats',
                     description='summary statistics for cervical cancer',
