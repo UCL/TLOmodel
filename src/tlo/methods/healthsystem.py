@@ -2500,8 +2500,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
             event = next_event_tuple.hsi_event
 
-            # If the event is lower than lowest_priority_considered, schedule a call_never_ran on tclose
-            # regardless of whether appt is due today or any other time
+            # If the priority of the event is lower than lowest_priority_considered, schedule a call_never_ran
+            # on tclose regardless of whether appt is due today or any other time. (Although in mode 2 HSIs with
+            # priority > lowest_priority_considered are never added to the queue, some such HSIs may still be present
+            # in the queue if mode 2 was preceded by a period in mode 1).
             if next_event_tuple.priority > self.module.lowest_priority_considered:
                 self.module.schedule_to_call_never_ran_on_date(hsi_event=event,
                                                                tdate=next_event_tuple.tclose)
