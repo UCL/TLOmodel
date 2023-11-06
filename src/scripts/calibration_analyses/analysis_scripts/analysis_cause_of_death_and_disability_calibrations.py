@@ -106,7 +106,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 do_scaling=True
             )
 
-        # groupby, sum and divide by five to give the average number of deaths per year within the five year period:
+        # divide by five to give the average number of deaths per year within the five year period:
         results = results.div(5.0)
 
         # %% Load the cause-of-deaths mappers and use them to populate the 'label' for gbd outputs
