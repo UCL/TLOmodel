@@ -118,7 +118,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.legend()
     fig.tight_layout()
     plt.savefig(make_graph_file_name("Pop_Over_Time"))
-    plt.show()
     plt.close(fig)
 
     # 2) Population Size in 2018 (broken down by Male and Female)
@@ -178,7 +177,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.legend()
     fig.tight_layout()
     plt.savefig(make_graph_file_name("Pop_Males_Females_2018"))
-    plt.show()
     plt.close(fig)
 
     # Population Pyramid at two time points
@@ -289,7 +287,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax = plot_population_pyramid(data=pops, fig=fig)
             ax.set_title(f'Population Pyramid in {year}')
             fig.savefig(make_graph_file_name(f"Pop_Size_{year}"))
-            fig.show()
             plt.close(fig)
 
     # %% Births: Number over time
@@ -378,7 +375,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         plt.xticks(np.arange(len(births_loc.index)), births_loc.index)
         plt.tight_layout()
         plt.savefig(make_graph_file_name(f"Births_Over_Time_{tp}"))
-        plt.show()
         plt.close(fig)
 
     # %% Describe patterns of contraceptive usage over time
@@ -415,7 +411,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.tight_layout()
     fig.subplots_adjust(right=0.65)
     plt.savefig(make_graph_file_name("Contraception_1549"))
-    plt.show()
     plt.close(fig)
 
     # %% Describe patterns of contraceptive usage over time and age
@@ -465,7 +460,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fig.tight_layout()
         fig.subplots_adjust(right=0.65)
         plt.savefig(make_graph_file_name(f"Contraception_use_over_time_{_age}"))
-        plt.show()
         plt.close(fig)
 
     # Show Distribution of use at different ages at one time point (2015)
@@ -477,7 +471,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.set_xlabel('Age-Group')
     ax.set_ylabel('Proportion')
     fig.tight_layout()
-    fig.show()
     fig.savefig(make_graph_file_name(f"Contraception_use_by_age_in_year_{year_of_interest}"))
     plt.close(fig)
 
@@ -582,7 +575,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.suptitle('Live Births By Age of Mother At Conception')
     fig.tight_layout()
     fig.savefig(make_graph_file_name("asfr_model_vs_data_average_by_age_2015-2019"))
-    fig.show()
     plt.close(fig)
 
     # %% All-Cause Deaths
@@ -690,7 +682,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.xticks(np.arange(len(deaths_by_period.index)), deaths_by_period.index, rotation=90)
     fig.tight_layout()
     plt.savefig(make_graph_file_name("Deaths_OverTime"))
-    plt.show()
     plt.close(fig)
 
     # 2) Plots by sex and age-group for selected period:
@@ -781,7 +772,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
             fig.tight_layout()
             fig.savefig(make_graph_file_name(f"Deaths_By_Age_{sex}_{period}"))
-            fig.show()
             plt.close(fig)
 
 

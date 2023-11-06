@@ -205,7 +205,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 # 5.2, 11_000, 'GBD || Model', horizontalalignment='left',  verticalalignment='bottom', fontsize=8)
                 ax.legend().set_visible(False)
 
-                fig.show()
                 plt.close(fig)
 
         # Simple pie-charts of just TLO estimates
@@ -243,7 +242,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
         fig.tight_layout()
         fig.savefig(make_graph_file_name(f"{what}_{period}_PieChart_Model"))
-        fig.show()
         plt.close(fig)
 
         # %% Plots of age-breakdown of outcomes patten for each cause:
@@ -286,7 +284,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 fig.savefig(make_graph_file_name(
                     f"B_{what}_{period}_AgeAndSexSpecificLineGraph_{reformat_cause(cause)}")
                 )
-                fig.show()
                 plt.close(fig)
 
             except KeyError:
@@ -351,7 +348,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.legend(ncol=1, prop={'size': 8}, loc='lower right')
         ax.legend().set_visible(False)
         plt.savefig(make_graph_file_name(f"A_{what}_{period}_Scatter_Plot"))
-        plt.show()
         plt.close(fig)
 
         # %% Assess the "coverage" of the model: i.e. the fraction of deaths/dalys that are causes that are represented
@@ -394,7 +390,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 bbox={'edgecolor': 'r', 'facecolor': 'w'})
         fig.tight_layout()
         plt.savefig(make_graph_file_name(f"C_{what}_{period}_coverage"))
-        plt.show()
         plt.close(fig)
 
     # %% Make graphs for each of Deaths and DALYS for a specific period

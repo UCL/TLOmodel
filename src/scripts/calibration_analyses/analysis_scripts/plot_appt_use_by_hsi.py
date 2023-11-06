@@ -112,7 +112,6 @@ def figure5_proportion_of_hsi_events_per_appt_type(results_folder: Path, output_
         output_folder
         / f"{PREFIX_ON_FILENAME}_{name_of_figure.replace(' ', '_')}.png"
     )
-    fig.show()
     plt.close(fig)
 
     # VERSION USING SHORT TREATMENT ID & DEFAULT COLOUR SCHEME:
@@ -149,7 +148,6 @@ def figure5_proportion_of_hsi_events_per_appt_type(results_folder: Path, output_
         output_folder
         / f"{PREFIX_ON_FILENAME}_{name_of_figure.replace(' ', '_')}.png"
     )
-    fig.show()
     plt.close(fig)
 
 
