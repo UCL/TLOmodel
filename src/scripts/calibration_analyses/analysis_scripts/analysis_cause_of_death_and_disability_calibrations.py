@@ -70,8 +70,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         def get_counts_of_death_by_period_sex_agegrp_label(df):
             """Aggregate the model outputs into five-year periods for age and time"""
-            agegrps, agegrplookup = make_age_grp_lookup()
-            calperiods, calperiodlookup = make_calendar_period_lookup()
+            _, agegrplookup = make_age_grp_lookup()
+            _, calperiodlookup = make_calendar_period_lookup()
             df["year"] = df["date"].dt.year
             df["age_grp"] = df["age"].map(agegrplookup).astype(make_age_grp_types())
             df["period"] = df["year"].map(calperiodlookup).astype(make_calendar_period_type())
