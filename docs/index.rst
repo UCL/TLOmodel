@@ -6,11 +6,11 @@
 Welcome
 ========
 
-The **Thanzi La Onse (TLO) Model** is a part of the `Thanzi La Onse <https://thanzi.org>`_ (Health for All) Collaboration, funded by `GCRF <https://www.newton-gcrf.org>`_ and `UKRI <https://www.ukri.org>`_ in the United Kingdom.
+The **Thanzi La Onse (TLO) Model** is a part of the `Thanzi La Onse <https://thanzi.org>`_ (Health for All) Collaboration, funded by `Wellcome <https://wellcome.org>`_ (and formerly `GCRF <https://www.newton-gcrf.org>`_ and `UKRI <https://www.ukri.org>`_).
 
 It is developed in a collaboration between:
 
-* `University of Malawi <https://www.medcol.mw>`_
+* `Kamuzu University of Health Sciences <https://www.kuhes.ac.mw>`_
 
 * `Imperial College London <https://www.imperial.ac.uk/mrc-global-infectious-disease-analysis>`_
 
@@ -20,6 +20,10 @@ It is developed in a collaboration between:
 
 It benefits from a close partnership between this team and the Ministry of Health, Malawi.
 
+
+Open Source Code Repository
+=================
+Our code base is open source and available for review and usage at `<https://github.com/UCL/TLOmodel>`_
 
 Last Update
 =================
@@ -42,5 +46,5 @@ Contents
    reference/index
    background
    publications
-   authors
+   contributors
    contributing

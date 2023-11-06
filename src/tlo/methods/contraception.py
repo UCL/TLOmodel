@@ -194,7 +194,9 @@ class Contraception(Module):
         ))
 
         # Temporary fix of loading the boolean  parameter 'use_interventions':
-        co_params = pd.read_csv('resources/ResourceFile_ContraceptionParams.csv')
+        co_params = pd.read_csv(
+            Path(self.resourcefilepath) / 'ResourceFile_ContraceptionParams.csv'
+        )
         self.parameters['use_interventions_loaded'] =\
             co_params['value'].loc[co_params['parameter_name'] == 'use_interventions'].values[0]
         self.parameters['use_interventions'] = self.parameters['use_interventions_loaded'] == 'On'
@@ -449,7 +451,7 @@ class Contraception(Module):
             switching_matrix_except_fs = switching_matrix.loc[switching_matrix.index != 'female_sterilization']
             switching_matrix_30plus = switching_matrix_except_fs.apply(lambda col: col / col.sum())
             switching_matrix_30plus = switching_matrix_30plus * (1 - new_fs_probs_30plus)
-            switching_matrix_30plus = switching_matrix_30plus.append(new_fs_probs_30plus)
+            switching_matrix_30plus.loc[new_fs_probs_30plus.name] = new_fs_probs_30plus
 
             assert set(switching_matrix_30plus.columns) == (
                 self.all_contraception_states - {"not_using", "female_sterilization"})
@@ -712,8 +714,12 @@ class Contraception(Module):
             p_start_after_birth = p_start_after_birth.mul(self.parameters['Interventions_PPFP'].loc[0])
 
             # Add 'not_using' to initiation probabilities of contraception methods after birth
-            p_start_after_birth =\
-                pd.Series((1.0 - p_start_after_birth.sum()), index=['not_using']).append(p_start_after_birth)
+            p_start_after_birth = pd.concat(
+                (
+                    pd.Series((1.0 - p_start_after_birth.sum()), index=['not_using']),
+                    p_start_after_birth
+                )
+            )
 
             return avoid_sterilization_below30(p_start_after_birth)
 
@@ -744,6 +750,7 @@ class Contraception(Module):
         get_items_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
 
         _cons_codes = dict()
+        # items for each method that requires an HSI to switch to
         _cons_codes['pill'] = get_items_from_pkg('Pill')
         _cons_codes['male_condom'] = get_items_from_pkg('Male condom')
         _cons_codes['other_modern'] = get_items_from_pkg('Female Condom')
@@ -753,6 +760,7 @@ class Contraception(Module):
         _cons_codes['implant'] = get_items_from_pkg('Implant')
         _cons_codes['female_sterilization'] = get_items_from_pkg('Female sterilization')
         assert set(_cons_codes.keys()) == set(self.states_that_may_require_HSI_to_switch_to)
+        # items used when initiating a modern reliable method after not using or switching from non-reliable method
         _cons_codes['co_initiation'] = get_items_from_pkg('Contraception initiation')
 
         return _cons_codes

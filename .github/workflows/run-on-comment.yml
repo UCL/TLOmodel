@@ -31,6 +31,24 @@ on:
           with results of test is installed on if relevant.
         required: false
         type: string
+      artifact-path:
+        description: |
+          Path to upload as a workflow artifact if the workflow is successful. 
+          No artifact will be produced if this value is left unpopulated.
+        required: false
+        type: string
+      artifact-name:
+        description: |
+          The name to assign to any artifacts that are to uploaded.
+        required: false
+        type: string
+        default: comment-triggered-workflow-artifact
+      artifact-retention-days:
+        description: |
+          Number of days to retain the artifact, if it is produced.
+        required: false
+        type: number
+        default: 1
     secrets:
       application-id:
         description: |
@@ -62,10 +80,12 @@ jobs:
           });
           const permission_level = response.data.permission;
           return (permission_level == 'admin') || (permission_level == 'write')
+  
     - name: Exit if insufficient permissions
       if: ${{ steps.has_permissions.outputs.result == 'false' }}
       run: |
         exit 1
+
     - name: React to comment
       uses: actions/github-script@v6
       with:
@@ -76,13 +96,14 @@ jobs:
             comment_id: context.payload.comment.id,
             content: "rocket",
           });
+
     - name: Get SHA of last commit on default branch if issue or pull-request branch
       id: sha
       uses: actions/github-script@v6
       with:
         result-encoding: string
         script: |
-          if (!context.payload.pull_request) {
+          if (!context.payload.issue.pull_request) {
             return context.sha;
           };
           const { data: pr } = await github.rest.pulls.get({
@@ -91,21 +112,25 @@ jobs:
             pull_number: context.issue.number,
           });
           return pr.head.sha;
+
     - name: Checkout SHA
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         lfs: true
         ref: ${{ steps.sha.outputs.result }}
+
     - name: Run test command(s)
       run: ${{ inputs.commands }}
+
     - name: Get comment-bot token
       if: always() && steps.has_permissions.outputs.result == 'true'
       id: get_comment_bot_token
-      uses: peter-murray/workflow-application-token-action@e8782d687a306fb13d733244d0f2a50e272d3752
+      uses: peter-murray/workflow-application-token-action@b1ad34e28f4ef30582df1bd5f45df2044eb7a6b9
       with:
         application_id: ${{ secrets.application-id }}
         application_private_key: ${{ secrets.application-private-key }}
         organization: ${{ inputs.application-organization }}
+
     - name: Create comment with test result and link to workflow run information
       if: always() && steps.has_permissions.outputs.result == 'true'
       uses: actions/github-script@v6
@@ -165,3 +190,11 @@ jobs:
             repo: context.repo.repo,  
             body: `## ${{inputs.description }} ${result}\n${details}`,
           });
+
+    - name: Upload artifact if requested
+      if: "${{ inputs.artifact-path != '' }}"
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: ${{ inputs.artifact-path }}
+        retention-days: ${{ inputs.artifact-retention-days }}
