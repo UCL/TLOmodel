@@ -552,7 +552,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.legend(handles=(l1[0], l2[0]), labels=('WPP', 'Model'), loc='lower right')
     fig.tight_layout()
     fig.savefig(make_graph_file_name("asfr_model_vs_data"))
-    fig.show()
     plt.close(fig)
 
     # Plot with respect to age, averaged in the five-year periods:
