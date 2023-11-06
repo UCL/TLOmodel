@@ -360,7 +360,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             _ax.legend().set_visible(False)
         _fig.tight_layout()
         _fig.savefig(make_graph_file_name(_name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
-        _fig.show()
         plt.close(_fig)
 
     # get average annual usage by level for Simulation and Real
@@ -426,7 +425,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.title(name_of_plot)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
-    plt.show()
     plt.close(fig)
 
     # Plot Simulation with 95% CI vs Adjusted Real usage by appt type, across all levels (trimmed to 0.1 and 10)
@@ -560,7 +558,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.add_artist(legend_1)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
-    plt.show()
     plt.close(fig)
 
     # appendix - plot Simulation with 95% CI vs Adjusted & Unadjusted real, across all levels
@@ -600,7 +597,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.add_artist(legend)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(',', '').replace('\n', '_').replace(' ', '_')))
-    plt.show()
     plt.close(fig)
 
 
