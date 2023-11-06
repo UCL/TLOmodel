@@ -79,7 +79,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         def get_dalys_by_period_sex_agegrp_label(df):
             """Sum the dalys by period, sex, age-group and label"""
-            calperiods, calperiodlookup = make_calendar_period_lookup()
+            _, calperiodlookup = make_calendar_period_lookup()
 
             df['age_grp'] = df['age_range'].astype(make_age_grp_types())
             df["period"] = df["year"].map(calperiodlookup).astype(make_calendar_period_type())
