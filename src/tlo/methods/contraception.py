@@ -370,7 +370,7 @@ class Contraception(Module):
             probs_30plus = probs.copy()
             probs_30plus['female_sterilization'] = \
                 probs.loc['female_sterilization'] / \
-                (self.n_female3049_in_2010 / self.n_female1549_in_2010)
+                (self.n_female3049_in_2010.Count / self.n_female1549_in_2010.Count)
             # Scale so that the probability of all outcomes sum to 1.0
             probs_30plus = probs_30plus / probs_30plus.sum()
             assert np.isclose(1.0, probs_30plus.sum())
@@ -446,7 +446,7 @@ class Contraception(Module):
             # Increase prob of 'female_sterilization' in older women accordingly
             new_fs_probs_30plus = switching_matrix.loc['female_sterilization', :] /\
                 float(
-                    self.n_female3049_in_2010 / self.n_female1549_in_2010
+                    self.n_female3049_in_2010.Count / self.n_female1549_in_2010.Count
                 )
             switching_matrix_except_fs = switching_matrix.loc[switching_matrix.index != 'female_sterilization']
             switching_matrix_30plus = switching_matrix_except_fs.apply(lambda col: col / col.sum())
