@@ -1471,8 +1471,8 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             return
         # sets availability of xpert to nil
         if scenario == 1:
-           # self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.0})
-            self.sim.modules['HealthSystem'].get_item_codes_from_package_name({187: 0})
+           self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.0})
+            #self.sim.modules['HealthSystem'].get_item_codes_from_package_name({187: 0})
             #self.sim.modules['parameters']['first_line_test'] = 'sputum'
            # self.sim.modules['parameters']['second_line_test'] = 'sputum'
 
@@ -1481,8 +1481,8 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             #     {175: 0.53})
         # sets availability of xray to nil
         if scenario == 2:
-          #self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.0})
-          self.sim.modules['HealthSystem'].get_item_codes_from_package_name({175: 0})
+          self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.0})
+         # self.sim.modules['HealthSystem'].get_item_codes_from_package_name({175: 0})
           #self.sim.modules['parameters']['first_line_test'] = 'sputum'
           #self.sim.modules['parameters']['second_line_test'] = 'xpert'
 
@@ -1490,8 +1490,8 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
            #        {187: 0.08})
         #increases probability of accessing chest xray by 10%
         if scenario == 3:
-         # self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.63})
-          self.sim.modules['HealthSystem'].get_item_codes_from_package_name({175: 0.8})
+           self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.63})
+          #self.sim.modules['HealthSystem'].get_item_codes_from_package_name({175: 0.8})
           #self.sim.modules['parameters']['first_line_test'] = 'sputum'
           #self.sim.modules['parameters']['second_line_test'] = 'xpert'
 
