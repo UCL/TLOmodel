@@ -1473,8 +1473,8 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 1:
            # self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.0})
             self.sim.modules['HealthSystem'].get_item_codes_from_package_name({187: 0})
-            self.sim.modules['parameters']['first_line_test'] = 'sputum'
-            self.sim.modules['parameters']['second_line_test'] = 'sputum'
+            #self.sim.modules['parameters']['first_line_test'] = 'sputum'
+           # self.sim.modules['parameters']['second_line_test'] = 'sputum'
 
 
             # self.sim.modules['HealthSystem'].override_availability_of_consumables(
@@ -1483,8 +1483,8 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 2:
           #self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.0})
           self.sim.modules['HealthSystem'].get_item_codes_from_package_name({175: 0})
-          self.sim.modules['parameters']['first_line_test'] = 'sputum'
-          self.sim.modules['parameters']['second_line_test'] = 'xpert'
+          #self.sim.modules['parameters']['first_line_test'] = 'sputum'
+          #self.sim.modules['parameters']['second_line_test'] = 'xpert'
 
            # self.sim.modules['HealthSystem'].override_availability_of_consumables(
            #        {187: 0.08})
@@ -1492,15 +1492,13 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 3:
          # self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.63})
           self.sim.modules['HealthSystem'].get_item_codes_from_package_name({175: 0.8})
-          self.sim.modules['parameters']['first_line_test'] = 'sputum'
-          self.sim.modules['parameters']['second_line_test'] = 'xpert'
+          #self.sim.modules['parameters']['first_line_test'] = 'sputum'
+          #self.sim.modules['parameters']['second_line_test'] = 'xpert'
 
         if scenario == 4:
          self.sim.modules['parameters']['probability_community_chest_xray'] = 0.01
-         self.sim.modules['parameters']['first_line_test'] = 'sputum'
-         self.sim.modules['parameters']['second_line_test'] = 'xpert'
-
-
+         #self.sim.modules['parameters']['first_line_test'] = 'sputum'
+         #self.sim.modules['parameters']['second_line_test'] = 'xpert'
 #######################################################################
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
