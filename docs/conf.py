@@ -68,6 +68,8 @@ html_static_path = ['_static']
 html_extra_path = ['./.nojekyll', './.gitattributes']
 html_favicon = 'favicon.png'
 
+html_css_files = ['theme_overrides.css']
+
 rawfiles = ['.github']
 
 napoleon_use_ivar = True
