@@ -9,6 +9,7 @@
 
 import os
 import sys
+from importlib.metadata import version as get_version
 
 sys.path.insert(0, os.path.abspath('../..')), os.path.abspath('../src')
 
@@ -39,7 +40,8 @@ project = 'TLOmodel'
 year = '2021'
 author = 'The TLOmodel Team'
 copyright = '{0}, {1}'.format(year, author)
-version = release = '0.1.0'
+release = get_version('setuptools_scm')
+version = ".".join(release.split('.')[:2])
 
 pygments_style = 'trac'
 templates_path = ['.']
