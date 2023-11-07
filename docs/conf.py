@@ -68,11 +68,7 @@ html_static_path = ['_static']
 html_extra_path = ['./.nojekyll', './.gitattributes']
 html_favicon = 'favicon.png'
 
-html_context = {
-    'css_files': [
-        '_static/theme_overrides.css',
-    ],
-}
+html_css_files = ['theme_overrides.css']
 
 rawfiles = ['.github']
 
