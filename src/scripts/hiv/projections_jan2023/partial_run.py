@@ -100,7 +100,7 @@ class ImpactOfTbDaHx(BaseScenario):
                  "Outreach services": {
                 'Tb': {
                      'scenario': 0,
-                     'probability_community_chest_xray': 0.1,
+                     'probability_community_chest_xray': 0.01,
                 }
             },
         }

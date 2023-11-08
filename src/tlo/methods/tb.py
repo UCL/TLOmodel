@@ -1474,30 +1474,24 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 1:
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.0})
             self.sim.modules['HealthSystem'].override_availability_of_consumables( {175: 0.53})
-            self.sim.modules["Tb"].parameters['first_line_test'] = 'sputum'
-            self.sim.modules["Tb"].parameters['second_line_test'] = 'sputum'
 
         # sets availability of xray to nil
         if scenario == 2:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.0})
-          # self.sim.modules['HealthSystem'].get_item_codes_from_package_name({175: 0})
-           self.sim.modules["Tb"].parameters['first_line_test'] = 'sputum'
-           self.sim.modules["Tb"].parameters['second_line_test'] = 'xpert'
 
         #increases probability of accessing chest xray by 10%
         if scenario == 3:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.63})
-          #self.sim.modules['HealthSystem'].get_item_codes_from_package_name({175: 0.8})
+
+        # introduce community CXR
         if scenario == 4:
          self.sim.modules['parameters']['probability_community_chest_xray'] = 0.01
          self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.53})
-         self.sim.modules["Tb"].parameters['first_line_test'] = 'sputum'
-         self.sim.modules["Tb"].parameters['second_line_test'] = 'xpert'
+
+         #increase CXR by 30
          if scenario == 5:
              self.sim.modules['parameters']['probability_community_chest_xray'] = 0.01
              self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.83})
-             self.sim.modules["Tb"].parameters['first_line_test'] = 'sputum'
-             self.sim.modules["Tb"].parameters['second_line_test'] = 'xpert'
 
 #######################################################################
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
