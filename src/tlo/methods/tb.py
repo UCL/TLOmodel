@@ -1473,11 +1473,10 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         # sets availability of xpert to nil
         if scenario == 1:
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.0})
-            #self.sim.modules['HealthSystem'].get_item_codes_from_package_name({187: 0})
-            # self.sim.modules['HealthSystem'].override_availability_of_consumables(
-            #     {175: 0.53})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables( {175: 0.53})
             self.sim.modules["Tb"].parameters['first_line_test'] = 'sputum'
             self.sim.modules["Tb"].parameters['second_line_test'] = 'sputum'
+
         # sets availability of xray to nil
         if scenario == 2:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.0})
