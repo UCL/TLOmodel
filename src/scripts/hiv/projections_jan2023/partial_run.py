@@ -29,13 +29,13 @@ class ImpactOfTbDaHx(BaseScenario):
         self.seed = 0 #random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2013, 12, 31)
-        self.pop_size =2000
+        self.pop_size =600
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 3
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_impact_partial39',
+            'filename': 'Tb_DAH_impact_partial40',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -80,40 +80,25 @@ class ImpactOfTbDaHx(BaseScenario):
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
-                    #  'first_line_test':    'sputum',
-                    #  'second_line_test': 'sputum',
-                      #'scaling_factor_WHO': 1.9,
                 },
             },
         # overrides availability of CXR
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
-                  #  'scaling_factor_WHO': 1.8,
-                   # 'first_line_test': 'sputum',
-                   # 'second_line_test': 'xpert',
                 },
             },
             "CXR scale_up": {
                  'Tb': {
                      'scenario': 3,
-                   #  'scaling_factor_WHO': 1.4,
                  }
             },
                  "Outreach services": {
                 'Tb': {
                      'scenario': 0,
                      'probability_community_chest_xray': 0.1,
-                     #'scaling_factor_WHO': 1.3,
                 }
             },
-            # "Outreach services20": {
-            #     'Tb': {
-            #         'scenario': 0,
-            #         'probability_community_chest_xray': 0.4,
-            #         'scaling_factor_WHO': 0.9,
-            #     }
-            # },
         }
 if __name__ == '__main__':
     from tlo.cli import scenario_run

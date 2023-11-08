@@ -1475,12 +1475,16 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules['HealthSystem'].get_item_codes_from_package_name({187: 0})
             # self.sim.modules['HealthSystem'].override_availability_of_consumables(
             #     {175: 0.53})
+            self.sim.modules["Tb"].parameters['first_line_test'] = 'sputum'
+            self.sim.modules["Tb"].parameters['second_line_test'] = 'sputum'
         # sets availability of xray to nil
         if scenario == 2:
           #self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.0})
            self.sim.modules['HealthSystem'].get_item_codes_from_package_name({175: 0})
            # self.sim.modules['HealthSystem'].override_availability_of_consumables(
            #        {187: 0.08})
+        self.sim.modules["Tb"].parameters['first_line_test'] = 'sputum'
+        self.sim.modules["Tb"].parameters['second_line_test'] = 'xpert'
 
         #increases probability of accessing chest xray by 10%
         if scenario == 3:
@@ -1488,6 +1492,8 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
           self.sim.modules['HealthSystem'].get_item_codes_from_package_name({175: 0.8})
         if scenario == 4:
          self.sim.modules['parameters']['probability_community_chest_xray'] = 0.01
+
+
 #######################################################################
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
