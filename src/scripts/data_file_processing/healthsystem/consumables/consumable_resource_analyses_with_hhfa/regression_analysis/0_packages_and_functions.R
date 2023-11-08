@@ -67,6 +67,7 @@ dir.create(file.path(path_to_outputs, "predictions"))
 dir.create(file.path(paste0(path_to_outputs, "predictions/", "figures")))
 dir.create(file.path(path_to_outputs, "tables"))
 dir.create(file.path(path_to_outputs, "figures"))
+dir.create(file.path(path_to_outputs, "reviewer_responses_lancetgh"))
 
 
 # 2. Create functions #
@@ -138,7 +139,7 @@ custom_forest_plot <- function(model, ylimit= 4){
                                             "dist_todh_cat10-25 kms", "dist_todh_cat25-50 kms", "dist_todh_cat50-75 kms", "dist_todh_cat> 75 kms",                                
                                             "dist_torms_cat10-50 kms", "dist_torms_cat50-100 kms", "dist_torms_cat100-200 kms", "dist_torms_cat> 200 kms",                              
                                             "drug_order_fulfilment_freq_last_3mts_cat2", "drug_order_fulfilment_freq_last_3mts_cat3", "drug_order_fulfilment_freq_last_3mts_cat>= 4"), 
-                                   newnames = c("...Secondary",
+                                   newnames = c("...Level 1b",
                                                 "...Christian Health Association of Malawi (CHAM)", "...Non-governmental Organisation (NGO)", "...Private for profit",
                                                 "Facility is urban",
                                                 "Functional computer available",
@@ -158,8 +159,8 @@ custom_forest_plot <- function(model, ylimit= 4){
   forest_matrix <- tidy(model_forest,conf.int=TRUE,exponentiate=TRUE)
   forest_matrix <- forest_matrix[2:28,] # store only variables of interest
   forest_matrix[c('estimate', 'conf.low', 'conf.high')] <- lapply(forest_matrix[c('estimate', 'conf.low', 'conf.high')], round, 2)
-  forest_matrix[c('p.value')] <- sprintf("%.3f",unlist(lapply(forest_matrix[c('p.value')], round, 3)))
-  forest_matrix[which(forest_matrix[c('p.value')] == "0.000"),][c('p.value')] <- "<0.001" # added on 11 March 2023
+  forest_matrix[c('p.value')] <- sprintf("%.4f",unlist(lapply(forest_matrix[c('p.value')], round, 4)))
+  forest_matrix[which(forest_matrix[c('p.value')] == "0.0000"),][c('p.value')] <- "<0.0001" # added on 11 March 2023
   
   # Change rownames
   forest_matrix$order <- 1:27
@@ -184,17 +185,17 @@ custom_forest_plot <- function(model, ylimit= 4){
   for (df_name in c('fplottable', 'forestdf')){
     df_results <- get(df_name)
     df_results$labels <- as.character(df_results$labels) # change format to character in order to add new rows
-    r_fac_type <- c("Facility level (Ref: Primary)", rep(NA, dim(df_results)[2]-1))
+    r_fac_type <- c("Facility level (Ref: Level 1a)", rep(NA, dim(df_results)[2]-1))
     r_fac_owner <- c("Facility owner (Ref: Government)", rep(NA, dim(df_results)[2]-1))
     r_incharge_drug_orders <- c("Person in charge of drug orders (Ref: Drug store clerk)", rep(NA, dim(df_results)[2]-1))
     r_dist_todh <- c("Distance from DHO (Ref: 0-10kms)", rep(NA, dim(df_results)[2]-1))
     r_dist_torms <- c("Distance from RMS (Ref: 0-10kms)", rep(NA, dim(df_results)[2]-1))
     r_drug_order_fulfilment_freq_last_3mts <- c("Quarterly drug order fulfillment frequency (Ref: 1)", rep(NA, dim(df_results)[2]-1))
-    regressor_headings = c("Facility level (Ref: Primary)", "Facility owner (Ref: Government)",
+    regressor_headings = c("Facility level (Ref: Level 1a)", "Facility owner (Ref: Government)",
                            "Person in charge of drug orders (Ref: Drug store clerk)", "Distance from DHO (Ref: 0-10kms)",
                            "Distance from RMS (Ref: 0-10kms)", "Quarterly drug order fulfillment frequency (Ref: 1)")
     
-    a <- which(df_results$labels == "...Secondary")
+    a <- which(df_results$labels == "...Level 1b")
     df_results <- insertRow(df_results , r_fac_type, a)
     b <- which(df_results$labels == "...Christian Health Association of Malawi (CHAM)")
     df_results <- insertRow(df_results , r_fac_owner, b)
@@ -286,7 +287,7 @@ custom_forest_plot_by_level <- function(model, xlab = "Odds ratio with 95% Confi
                                             "dist_todh_cat10-25 kms", "dist_todh_cat25-50 kms", "dist_todh_cat50-75 kms", "dist_todh_cat> 75 kms",                                
                                             "dist_torms_cat10-50 kms", "dist_torms_cat50-100 kms", "dist_torms_cat100-200 kms", "dist_torms_cat> 200 kms",                              
                                             "drug_order_fulfilment_freq_last_3mts_cat2", "drug_order_fulfilment_freq_last_3mts_cat3", "drug_order_fulfilment_freq_last_3mts_cat>= 4"), 
-                                   newnames = c("Secondary...",
+                                   newnames = c("Level 1b...",
                                                 "Christian Health Association of Malawi (CHAM)...", "Non-governmental Organisation (NGO)...", "Private for profit...",
                                                 "Facility is urban",
                                                 "Functional computer available",
@@ -309,8 +310,8 @@ custom_forest_plot_by_level <- function(model, xlab = "Odds ratio with 95% Confi
   position_last_var <- which(forest_matrix$term == "drug_order_fulfilment_freq_last_3mts_cat>= 4")
   forest_matrix <- forest_matrix[2:position_last_var,] 
   forest_matrix[c('estimate', 'conf.low', 'conf.high')] <- lapply(forest_matrix[c('estimate', 'conf.low', 'conf.high')], round, 2)
-  forest_matrix[c('p.value')] <- sprintf("%.3f",unlist(lapply(forest_matrix[c('p.value')], round, 3)))
-  forest_matrix[which(forest_matrix[c('p.value')] == "0.000"),][c('p.value')] <- "<0.001" # added on 11 March 2023
+  forest_matrix[c('p.value')] <- sprintf("%.4f",unlist(lapply(forest_matrix[c('p.value')], round, 4)))
+  forest_matrix[which(forest_matrix[c('p.value')] == "0.0000"),][c('p.value')] <- "<0.0001" # added on 11 March 2023
   
   # Change rownames
   forest_matrix$order <- 1:(position_last_var-1)
@@ -335,17 +336,17 @@ custom_forest_plot_by_level <- function(model, xlab = "Odds ratio with 95% Confi
   for (df_name in c('fplottable', 'forestdf')){
     df_results <- get(df_name)
     df_results$labels <- as.character(df_results$labels) # change format to character in order to add new rows
-    r_fac_type <- c("Facility level (Ref: Primary)", rep(NA, dim(df_results)[2]-1))
+    r_fac_type <- c("Facility level (Ref: Level 1a)", rep(NA, dim(df_results)[2]-1))
     r_fac_owner <- c("Facility owner (Ref: Government)", rep(NA, dim(df_results)[2]-1))
     r_incharge_drug_orders <- c("Person in charge of drug orders (Ref: Drug store clerk)", rep(NA, dim(df_results)[2]-1))
     r_dist_todh <- c("Distance from DHO (Ref: 0-10kms)", rep(NA, dim(df_results)[2]-1))
     r_dist_torms <- c("Distance from RMS (Ref: 0-10kms)", rep(NA, dim(df_results)[2]-1))
     r_drug_order_fulfilment_freq_last_3mts <- c("Quarterly drug order fulfillment frequency (Ref: 1)", rep(NA, dim(df_results)[2]-1))
-    regressor_headings = c("Facility level (Ref: Primary)", "Facility owner (Ref: Government)",
+    regressor_headings = c("Facility level (Ref: Level 1a)", "Facility owner (Ref: Government)",
                            "Person in charge of drug orders (Ref: Drug store clerk)", "Distance from DHO (Ref: 0-10kms)",
                            "Distance from RMS (Ref: 0-10kms)", "Quarterly drug order fulfillment frequency (Ref: 1)")
     
-    a <- which(df_results$labels == "Secondary...")
+    a <- which(df_results$labels == "Level 1b...")
     if (length(a)!= 0){ # because analysis by level does not include fac_type
       print("run")
       df_results <- insertRow(df_results , r_fac_type, a)} else{print("dont'run")}
@@ -497,7 +498,7 @@ custom_forest_plot_by_level_itemfe <- function(model, xlab = "Odds ratio with 95
                                             "dist_todh_cat10-25 kms", "dist_todh_cat25-50 kms", "dist_todh_cat50-75 kms", "dist_todh_cat> 75 kms",                                
                                             "dist_torms_cat10-50 kms", "dist_torms_cat50-100 kms", "dist_torms_cat100-200 kms", "dist_torms_cat> 200 kms",                              
                                             "drug_order_fulfilment_freq_last_3mts_cat2", "drug_order_fulfilment_freq_last_3mts_cat3", "drug_order_fulfilment_freq_last_3mts_cat>= 4"), 
-                                   newnames = c("...Secondary",
+                                   newnames = c("...Level 1b",
                                                 "...Christian Health Association of Malawi (CHAM)", "...Non-governmental Organisation (NGO)", "...Private for profit",
                                                 "Facility is urban",
                                                 "Functional computer available",
@@ -510,7 +511,7 @@ custom_forest_plot_by_level_itemfe <- function(model, xlab = "Odds ratio with 95
                                                 "...10-25 kms", "...25-50 kms", "...50-75 kms", "...> 75 kms",
                                                 "...10-50 kms", "...50-100 kms", "...100-200 kms", "...> 200 kms",
                                                 "...2", "...3", "...>=4"))
-
+  
   # Create the dataframe "forestdf" for the forest plot (Odds ratio, and upper/lower bounds)
   #-----------------------------------------------------------------------------------------
   forest_matrix <- tidy(model_forest,conf.int=TRUE,exponentiate=TRUE)
@@ -527,8 +528,8 @@ custom_forest_plot_by_level_itemfe <- function(model, xlab = "Odds ratio with 95
   forest_matrix <- rbind(forest_matrix1, forest_matrix2) #%%
   
   forest_matrix[c('estimate', 'conf.low', 'conf.high')] <- lapply(forest_matrix[c('estimate', 'conf.low', 'conf.high')], round, 2)
-  forest_matrix[c('p.value')] <- sprintf("%.3f",unlist(lapply(forest_matrix[c('p.value')], round, 3)))
-  forest_matrix[which(forest_matrix[c('p.value')] == "0.000"),][c('p.value')] <- "<0.001" # added on 11 March 2023
+  forest_matrix[c('p.value')] <- sprintf("%.4f",unlist(lapply(forest_matrix[c('p.value')], round, 4)))
+  forest_matrix[which(forest_matrix[c('p.value')] == "0.0000"),][c('p.value')] <- "<0.0001" # added on 11 March 2023
   
   # Change rownames
   forest_matrix$order <- 1:dim(forest_matrix)[1] #%%
@@ -553,18 +554,18 @@ custom_forest_plot_by_level_itemfe <- function(model, xlab = "Odds ratio with 95
   for (df_name in c('fplottable', 'forestdf')){
     df_results <- get(df_name) 
     df_results$labels <- as.character(df_results$labels) # change format to character in order to add new rows
-    r_fac_type <- c("Facility level (Ref: Primary)", rep(NA, dim(df_results)[2]-1))
+    r_fac_type <- c("Facility level (Ref: Level 1a)", rep(NA, dim(df_results)[2]-1))
     r_fac_owner <- c("Facility owner (Ref: Government)", rep(NA, dim(df_results)[2]-1))
     r_incharge_drug_orders <- c("Person in charge of drug orders (Ref: Drug store clerk)", rep(NA, dim(df_results)[2]-1))
     r_dist_todh <- c("Distance from DHO (Ref: 0-10kms)", rep(NA, dim(df_results)[2]-1))
     r_dist_torms <- c("Distance from RMS (Ref: 0-10kms)", rep(NA, dim(df_results)[2]-1))
     r_drug_order_fulfilment_freq_last_3mts <- c("Quarterly drug order fulfillment frequency (Ref: 1)", rep(NA, dim(df_results)[2]-1))
     r_item <- c(paste0("Item (Ref: ",ref_item,")"), rep(NA, dim(df_results)[2]-1))
-    regressor_headings = c("Facility level (Ref: Primary)", "Facility owner (Ref: Government)",
+    regressor_headings = c("Facility level (Ref: Level 1a)", "Facility owner (Ref: Government)",
                            "Person in charge of drug orders (Ref: Drug store clerk)", "Distance from DHO (Ref: 0-10kms)",
                            "Distance from RMS (Ref: 0-10kms)", "Quarterly drug order fulfillment frequency (Ref: 1)", r_item)
     
-    a <- which(df_results$labels == "...Secondary")
+    a <- which(df_results$labels == "...Level 1b")
     if (length(a)!= 0){ # because analysis by level does not include fac_type
       print("run")
       df_results <- insertRow(df_results , r_fac_type, a)} else{print("dont'run")}
@@ -617,7 +618,7 @@ custom_forest_plot_by_level_itemfe <- function(model, xlab = "Odds ratio with 95
   column_headers_space1 <- c("", NA, NA, NA, "white")
   forestdf <<- insertRow(forestdf , column_headers_space1, 1)
   forestdf <- insertRow(forestdf , column_headers_space1, 1)
-
+  
   column_headers <- c("", "Odds ratio (95% CI)", "p-value", "white")
   column_headers_space2 <- c("", "__________________", "________", "white")
   fplottable <- insertRow(fplottable , column_headers, 1)

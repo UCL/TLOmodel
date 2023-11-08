@@ -17,7 +17,7 @@ source(paste0(path_to_scripts, "2_feature_manipulation.R"))
 #source("0 scripts/3_pre_regression_analysis.R") 
 
 # Output of 3_pre_regression_analysis.R
-chosen_varlist_orig = c( "available",                       "fac_urban",                           
+chosen_varlist_orig = c( "available",                            "fac_urban",                           
                          "fac_type" ,                            "functional_computer",                 
                          "incharge_drug_orders",                 "functional_emergency_vehicle",        
                          "dist_todh",                            "dist_torms",                          
@@ -32,7 +32,8 @@ chosen_varlist_orig = c( "available",                       "fac_urban",
                          "functional_toilet",                    "functional_landline",                 
                          "fuctional_mobile",                     "service_imci",                        
                          "drug_transport_self",                  "source_drugs_pvt",
-                         "rms",                                  "item_drug")
+                         "rms",                                  "item_drug",
+                         "eml_priority_v")
 
 # 1.2 Setting up categorical variables for regression analysis
 #--------------------------------------------------------------
@@ -61,7 +62,7 @@ correlation_final_varlist <- cor(full_df[varlist_check_corr])
 corrplot_final_varlist <- ggcorrplot(correlation_final_varlist, lab_size = 1.5, p.mat = NULL, 
                                      insig = c("pch", "blank"), pch = 1, pch.col = "black", pch.cex =1,
                                      tl.cex =5.5, lab = TRUE)
-ggsave(plot = corrplot_final_varlist, filename = "2 outputs/figures/correlation_final_varlist.png")
+ggsave(plot = corrplot_final_varlist, filename = paste0(path_to_outputs, "figures/correlation_final_varlist.png"))
 
 # Based on the above results, drop variables on account of reasons listed below
 vars_low_variation <- c('service_cvd') # %% service_diagnostic was previously dropped %%
@@ -81,51 +82,22 @@ corrplot_final_varlist_post <- ggcorrplot(correlation_final_varlist_post, lab_si
                                           insig = c("pch", "blank"), pch = 1, pch.col = "black", pch.cex =1,
                                           tl.cex =5.5, lab = TRUE)
 
-ggsave(plot = corrplot_final_varlist_post, filename = "2 outputs/figures/correlation_final_varlist_post.png")
+ggsave(plot = corrplot_final_varlist_post, filename = paste0(path_to_outputs, "figures/correlation_final_varlist_post.png"))
 
 
-# Convert binary variables to factors
+# List of binary variables
 bin_exp_vars <- c('fac_urban', 'functional_emergency_vehicle' ,'functional_computer', 
                   'service_diagnostic' , 'functional_refrigerator', 'functional_landline',
                   'fuctional_mobile', 'functional_toilet', 'functional_handwashing_facility', 
                   'outpatient_only', 'service_hiv', 'service_othersti', 'service_malaria',
                   'service_tb', 'service_fp', 'service_imci', 'source_drugs_ngo', 
-                  'source_drugs_pvt', 'drug_transport_self', 'item_drug')
+                  'source_drugs_pvt', 'drug_transport_self', 'item_drug', "eml_priority_v")
 
 
 #######################################################################
 # 2. Set up Dataframes for Regression analysis
 #######################################################################
-# 2.1 Logistic regression model with independent vars based on literature (Model 1)
-#--------------------------------------------------------------------------------
-# Set up data for regression analysis
-stockout_factors_from_lit <- stockout_factors_from_lit[!(stockout_factors_from_lit %in%
-                                                           vars_low_variation)]
-stockout_factors_from_lit <- stockout_factors_from_lit[!(stockout_factors_from_lit %in%
-                                                           vars_highly_correlated)]
-
-stockout_factors_from_lit = stockout_factors_from_lit[!(stockout_factors_from_lit %in% continuous_variables)]
-stockout_factors_from_lit = unlist(c(stockout_factors_from_lit,continuous_variables_cat_version ))
-
-df_for_lit <- df[unlist(c(stockout_factors_from_lit, 'available'))]
-df_for_lit <- na.omit(df_for_lit)
-
-# 2.2 Basic Logistic regression model with facility-features from stepwise  (Model 2)
-#------------------------------------------------------------------------------------------
-# Set up data for regression analysis
-chosen_varlist_for_base <-  chosen_varlist[!(chosen_varlist %in% c('item'))] 
-# add program and district fixed effects
-chosen_varlist_for_base <- unlist(c(chosen_varlist_for_base, 'program', 'district'))
-
-df_for_base <- df[chosen_varlist_for_base]
-df_for_base <- na.omit(df_for_base)
-
-# 2.3 Model with facility random errors (Model 3)
-#------------------------------------------------------
-# Set up data for regression analysis
-chosen_varlist_for_fac_re <-  chosen_varlist[!(chosen_varlist %in% c('item'))] 
-chosen_varlist_for_fac_re <- unlist(c(chosen_varlist_for_fac_re, 'program', 'fac_code', 'item', 'district', 'item_type'))
-
+# Drop items and facilities with too few facilities reporting/items reported respectively
 # Drop items and facs with very few observations
 df_not_na_by_fac <- df %>% 
   group_by(fac_code) %>% 
@@ -142,20 +114,49 @@ df_not_na_by_item <- df %>%
 items_with_too_few_obs <- subset(df_not_na_by_item, df_not_na_by_item$available_count < 100)['item']
 items_with_too_few_obs <- as.list(items_with_too_few_obs)
 
-# Make a list of facilities with less than 10% facilities reporting 
+# Make a list of facilities with less than 10% items reported 
 print(max(df_not_na_by_fac$available_count)) 
 facs_with_too_few_obs <- subset(df_not_na_by_fac, df_not_na_by_fac$available_count <= 0.1*max(df_not_na_by_fac$available_count))['fac_code']
 facs_with_too_few_obs <- as.list(facs_with_too_few_obs)
-# %% the aobve was previously 90 %%
 
-df_for_fac_re <- df[chosen_varlist_for_fac_re]
-df_for_fac_re <- na.omit(df_for_fac_re)
+df_for_regs <- subset(df, !(fac_code %in% facs_with_too_few_obs$fac_code))
+df_for_regs <- subset(df_for_regs, !(item %in% items_with_too_few_obs$item))
 
-# Drop above facitlities from the dataset
-df_for_fac_re <- subset(df_for_fac_re, !(fac_code %in% facs_with_too_few_obs$fac_code))
-df_for_fac_re <- subset(df_for_fac_re, !(item %in% items_with_too_few_obs$item))
 print(paste(length(facs_with_too_few_obs$fac_code), " facilities dropped."))
 print(paste(length(items_with_too_few_obs$item), " items dropped."))
+
+# 2.1 Logistic regression model with independent vars based on literature (Model 1)
+#--------------------------------------------------------------------------------
+# Set up data for regression analysis
+stockout_factors_from_lit <- stockout_factors_from_lit[!(stockout_factors_from_lit %in%
+                                                           vars_low_variation)]
+stockout_factors_from_lit <- stockout_factors_from_lit[!(stockout_factors_from_lit %in%
+                                                           vars_highly_correlated)]
+
+stockout_factors_from_lit = stockout_factors_from_lit[!(stockout_factors_from_lit %in% continuous_variables)]
+stockout_factors_from_lit = unlist(c(stockout_factors_from_lit,continuous_variables_cat_version ))
+
+df_for_lit <- df_for_regs[unlist(c(stockout_factors_from_lit, 'available'))]
+df_for_lit <- na.omit(df_for_lit)
+
+# 2.2 Basic Logistic regression model with facility-features from stepwise  (Model 2)
+#------------------------------------------------------------------------------------------
+# Set up data for regression analysis
+chosen_varlist_for_base <-  chosen_varlist[!(chosen_varlist %in% c('item'))] 
+# add program and district fixed effects
+chosen_varlist_for_base <- unlist(c(chosen_varlist_for_base, 'program', 'district'))
+
+df_for_base <- df_for_regs[chosen_varlist_for_base]
+df_for_base <- na.omit(df_for_base)
+
+# 2.3 Model with facility random errors (Model 3)
+#------------------------------------------------------
+# Set up data for regression analysis
+chosen_varlist_for_fac_re <-  chosen_varlist[!(chosen_varlist %in% c('item'))] 
+chosen_varlist_for_fac_re <- unlist(c(chosen_varlist_for_fac_re, 'program', 'fac_code', 'item', 'district', 'item_type'))
+
+df_for_fac_re <- df_for_regs[chosen_varlist_for_fac_re]
+df_for_fac_re <- na.omit(df_for_fac_re)
 
 # Sort by fac_code and item
 df_for_fac_re_sorted <-  df_for_fac_re[order(df_for_fac_re$fac_code),]
@@ -165,5 +166,4 @@ df_for_fac_re_sorted <- as.data.frame(df_for_fac_re_sorted)
 
 # 2.4 Model with item and facility random errors  (Model 4)
 #------------------------------------------------------------------
-# Drop above items from the dataset (# already dropped)
-df_for_fac_item_re_sorted <- subset(df_for_fac_re_sorted, !(item %in% items_with_too_few_obs$item))
+df_for_fac_item_re_sorted <- df_for_fac_re_sorted

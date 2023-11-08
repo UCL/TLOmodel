@@ -18,14 +18,14 @@ source(paste0(path_to_scripts, "3b_data_setup_for_regression.R"))
 # 2.1 Logistic regression model with independent vars based on literature (Model 1)
 #--------------------------------------------------------------------------------
 model_lit <- glm(available ~ .,
-                  data = df_for_lit,
-                  family = "binomial")
+                 data = df_for_lit,
+                 family = "binomial")
 
 # 2.2 Basic Logistic regression model with facility-features from stepwise  (Model 2)
 #------------------------------------------------------------------------------------------
 model_base <- glm(available ~ .,
-                     data = df_for_base,
-                     family = "binomial")
+                  data = df_for_base,
+                  family = "binomial")
 
 # 2.3 Model with facility random errors (Model 3)
 #------------------------------------------------------
@@ -42,14 +42,14 @@ model_fac_re <- glmer(available ~ fac_type + fac_owner + fac_urban + functional_
                         service_malaria + service_tb + 
                         service_fp + service_imci +  
                         source_drugs_ngo +  source_drugs_pvt + 
-                        drug_transport_self + program + item_drug +
+                        drug_transport_self + program + item_drug + eml_priority_v +
                         (1|district/fac_code), 
-                        family = binomial(logit),
-                        data = df_for_fac_re_sorted,
-                        control = glmerControl(optimizer = "bobyqa",
-                                                 optCtrl=list(maxfun=1e5),
-                                                 calc.derivs = TRUE)) 
-                       
+                      family = binomial(logit),
+                      data = df_for_fac_re_sorted,
+                      control = glmerControl(optimizer = "bobyqa",
+                                             optCtrl=list(maxfun=1e5),
+                                             calc.derivs = TRUE)) 
+
 # Add option if the above model does not converge - optCtrl=list(maxfun=10000) 
 
 # dropped service_cvd since nearly fully explained by fac_type; 
@@ -83,14 +83,14 @@ model_fac_item_re <- glmer(available ~ fac_type + fac_owner + fac_urban + functi
                              service_malaria + service_tb + 
                              service_fp + service_imci +  
                              source_drugs_ngo +  source_drugs_pvt + 
-                             drug_transport_self + item_drug +
+                             drug_transport_self + item_drug + eml_priority_v + 
                              (1|district/fac_code) + (1|program/item), 
-                             family = binomial(logit),
-                             data = df_for_fac_item_re_sorted, 
-                             control = glmerControl(optimizer = "bobyqa",
-                                                    optCtrl=list(maxfun=1e5),
-                                                    calc.derivs = TRUE)
-                        ) 
+                           family = binomial(logit),
+                           data = df_for_fac_item_re_sorted, 
+                           control = glmerControl(optimizer = "bobyqa",
+                                                  optCtrl=list(maxfun=1e5),
+                                                  calc.derivs = TRUE)
+) 
 
 # Calculate the Intra-class correlation
 icc_between_model_fac_item_re = performance::icc(model_fac_item_re, by_group = TRUE)
@@ -107,13 +107,19 @@ margins_fac_item_re <- margins(model_fac_item_re, type = "response", variables =
 save(margins_fac_item_re, file = "2 outputs/regression_results/margins_fac_item_re.rdta")
 write_xlsx(margins_fac_item_re,"2 outputs/tables/margins_fac_item_re.xlsx")
 
+# Save regression results
+###########################
+save(model_lit, file = paste0(path_to_outputs, "regression_results/model_lit.rdta"))
+save(model_base, file = paste0(path_to_outputs, "regression_results/model_base.rdta"))
+save(model_fac_re, file = paste0(path_to_outputs, "regression_results/model_fac_re.rdta"))
+save(model_fac_item_re, file = paste0(path_to_outputs, "regression_results/model_fac_item_re.rdta"))
 
 # 3. Summarise results in a table
 ##################################
-t1 <- tbl_regression(model_lit, exponentiate = TRUE, conf.int = TRUE)
-t2 <- tbl_regression(model_base, exponentiate = TRUE, conf.int = TRUE) # R often hangs while running this line. If this happens, run this line separately. 
-t3 <- tbl_regression(model_fac_re, exponentiate = TRUE, conf.int = TRUE)
-t4 <- tbl_regression(model_fac_item_re, exponentiate = TRUE, conf.int = TRUE)
+t1 <- tbl_regression(model_lit, exponentiate = TRUE, conf.int = TRUE, pvalue_fun = ~style_sigfig(., digits = 4))
+t2 <- tbl_regression(model_base, exponentiate = TRUE, conf.int = TRUE, pvalue_fun = ~style_sigfig(., digits = 4)) # R often hangs while running this line. If this happens, run this line separately. 
+t3 <- tbl_regression(model_fac_re, exponentiate = TRUE, conf.int = TRUE, pvalue_fun = ~style_sigfig(., digits = 4))
+t4 <- tbl_regression(model_fac_item_re, exponentiate = TRUE, conf.int = TRUE, pvalue_fun = ~style_sigfig(., digits = 4))
 
 tbl_merge <-
   tbl_merge(
@@ -126,12 +132,7 @@ tbl_merge <-
 #    filename = reg_results1
 #  )
 
-# Save regression results
-###########################
-save(model_lit, file = paste0(path_to_outputs, "regression_results/model_lit.rdta"))
-save(model_base, file = paste0(path_to_outputs, "regression_results/model_base.rdta"))
-save(model_fac_re, file = paste0(path_to_outputs, "regression_results/model_fac_re.rdta"))
-save(model_fac_item_re, file = paste0(path_to_outputs, "regression_results/model_fac_item_re.rdta"))
+
 
 # 4. Sub-group analyses
 ##############################
@@ -180,9 +181,9 @@ for (prog in programs_for_reg){
                                     control = glmerControl(optimizer = "bobyqa",
                                                            optCtrl=list(maxfun=1e5),
                                                            calc.derivs = TRUE))  #  item_drug + removed on 14 Nov 2022 - could be reverted
- 
+  
   # Confidence intervals
-  model_prog_ci[[i]]<- tbl_regression(model_prog_summaries[[i]], exponentiate = TRUE, conf.int = TRUE)
+  model_prog_ci[[i]]<- tbl_regression(model_prog_summaries[[i]], exponentiate = TRUE, conf.int = TRUE, pvalue_fun = ~style_sigfig(., digits = 4))
   
   # Data count
   prog_regs_stats[j,1] <- prog
@@ -221,28 +222,28 @@ for (prog in programs_for_reg){
   df_for_fac_item_re_sorted_prog <- df_for_fac_item_re_sorted[which(df_for_fac_item_re_sorted$program == prog),]
   # Regression
   model_prog_summaries_itemfe[[i]] <-glmer(available ~ fac_type + fac_owner + fac_urban + functional_computer +
-                                      functional_emergency_vehicle + service_diagnostic +
-                                      incharge_drug_orders +
-                                      dist_todh_cat + dist_torms_cat +
-                                      drug_order_fulfilment_freq_last_3mts_cat + rms +
-                                      functional_refrigerator +  functional_landline + fuctional_mobile +
-                                      functional_toilet +  functional_handwashing_facility +
-                                      water_source_main +
-                                      outpatient_only + 
-                                      service_hiv + service_othersti + 
-                                      service_malaria + service_tb + 
-                                      service_fp + service_imci +  
-                                      source_drugs_ngo +  source_drugs_pvt + 
-                                      drug_transport_self + item +
-                                      (1|fac_code), 
-                                    family = binomial(logit),
-                                    data = df_for_fac_item_re_sorted_prog, 
-                                    control = glmerControl(optimizer = "bobyqa",
-                                                           optCtrl=list(maxfun=1e5),
-                                                           calc.derivs = TRUE))  
+                                             functional_emergency_vehicle + service_diagnostic +
+                                             incharge_drug_orders +
+                                             dist_todh_cat + dist_torms_cat +
+                                             drug_order_fulfilment_freq_last_3mts_cat + rms +
+                                             functional_refrigerator +  functional_landline + fuctional_mobile +
+                                             functional_toilet +  functional_handwashing_facility +
+                                             water_source_main +
+                                             outpatient_only + 
+                                             service_hiv + service_othersti + 
+                                             service_malaria + service_tb + 
+                                             service_fp + service_imci +  
+                                             source_drugs_ngo +  source_drugs_pvt + 
+                                             drug_transport_self + item +
+                                             (1|fac_code), 
+                                           family = binomial(logit),
+                                           data = df_for_fac_item_re_sorted_prog, 
+                                           control = glmerControl(optimizer = "bobyqa",
+                                                                  optCtrl=list(maxfun=1e5),
+                                                                  calc.derivs = TRUE))  
   
   # Confidence intervals
-  model_prog_ci_itemfe[[i]]<- tbl_regression(model_prog_summaries_itemfe[[i]], exponentiate = TRUE, conf.int = TRUE)
+  model_prog_ci_itemfe[[i]]<- tbl_regression(model_prog_summaries_itemfe[[i]], exponentiate = TRUE, conf.int = TRUE, pvalue_fun = ~style_sigfig(., digits = 4))
   
   # Data count
   prog_regs_stats_itemfe[j,1] <- prog
@@ -288,27 +289,27 @@ for (level in fac_types_for_reg){
   
   # Regression
   model_level_summaries[[i]] <-glmer(available ~ fac_owner + fac_urban + functional_computer +
-                                      functional_emergency_vehicle + service_diagnostic +
-                                      incharge_drug_orders +
-                                      dist_todh_cat + dist_torms_cat +
-                                      drug_order_fulfilment_freq_last_3mts_cat + rms +
-                                      functional_refrigerator +  functional_landline + fuctional_mobile +
-                                      functional_toilet +  functional_handwashing_facility +
-                                      water_source_main +
-                                      outpatient_only + 
-                                      service_hiv + service_othersti + 
-                                      service_malaria + service_tb + 
-                                      service_fp + service_imci +  
-                                      source_drugs_ngo +  source_drugs_pvt + 
-                                      drug_transport_self + item_drug +
-                                      (1|fac_code) + (1|program/item), 
-                                    family = binomial(logit),
-                                    data = df_for_fac_item_re_sorted_level, 
-                                    control = glmerControl(optimizer = "bobyqa",
-                                                           optCtrl=list(maxfun=1e5),
-                                                           calc.derivs = TRUE))  
+                                       functional_emergency_vehicle + service_diagnostic +
+                                       incharge_drug_orders +
+                                       dist_todh_cat + dist_torms_cat +
+                                       drug_order_fulfilment_freq_last_3mts_cat + rms +
+                                       functional_refrigerator +  functional_landline + fuctional_mobile +
+                                       functional_toilet +  functional_handwashing_facility +
+                                       water_source_main +
+                                       outpatient_only + 
+                                       service_hiv + service_othersti + 
+                                       service_malaria + service_tb + 
+                                       service_fp + service_imci +  
+                                       source_drugs_ngo +  source_drugs_pvt + 
+                                       drug_transport_self + item_drug + eml_priority_v +
+                                       (1|fac_code) + (1|program/item), 
+                                     family = binomial(logit),
+                                     data = df_for_fac_item_re_sorted_level, 
+                                     control = glmerControl(optimizer = "bobyqa",
+                                                            optCtrl=list(maxfun=1e5),
+                                                            calc.derivs = TRUE))  
   # Confidence intervals
-  model_level_ci[[i]]<- tbl_regression(model_level_summaries[[i]], exponentiate = TRUE, conf.int = TRUE)
+  model_level_ci[[i]]<- tbl_regression(model_level_summaries[[i]], exponentiate = TRUE, conf.int = TRUE, pvalue_fun = ~style_sigfig(., digits = 4))
   
   # Data count
   fac_regs_stats[j,1] <- level
@@ -359,7 +360,7 @@ for (owner in fac_owners_for_reg){
                                        service_malaria + service_tb + 
                                        service_fp + service_imci +  
                                        source_drugs_ngo +  source_drugs_pvt + 
-                                       drug_transport_self + item_drug +
+                                       drug_transport_self + item_drug + eml_priority_v +
                                        (1|fac_code) + (1|program/item), 
                                      family = binomial(logit),
                                      data = df_for_fac_item_re_sorted_owner, 
@@ -367,7 +368,7 @@ for (owner in fac_owners_for_reg){
                                                             optCtrl=list(maxfun=1e5),
                                                             calc.derivs = TRUE))  
   # Confidence intervals
-  model_owner_ci[[i]]<- tbl_regression(model_owner_summaries[[i]], exponentiate = TRUE, conf.int = TRUE)
+  model_owner_ci[[i]]<- tbl_regression(model_owner_summaries[[i]], exponentiate = TRUE, conf.int = TRUE, pvalue_fun = ~style_sigfig(., digits = 4))
   
   # Data count
   owner_regs_stats[j,1] <- owner
@@ -406,27 +407,27 @@ for (type in item_types_for_reg){
   
   # Regression
   model_item_type_summaries[[i]] <-glmer(available ~ fac_type + fac_owner + fac_urban + functional_computer +
-                                       functional_emergency_vehicle + service_diagnostic +
-                                       incharge_drug_orders +
-                                       dist_todh_cat + dist_torms_cat +
-                                       drug_order_fulfilment_freq_last_3mts_cat + rms +
-                                       functional_refrigerator +  functional_landline + fuctional_mobile +
-                                       functional_toilet +  functional_handwashing_facility +
-                                       water_source_main +
-                                       outpatient_only + 
-                                       service_hiv + service_othersti + 
-                                       service_malaria + service_tb + 
-                                       service_fp + service_imci +  
-                                       source_drugs_ngo +  source_drugs_pvt + 
-                                       drug_transport_self +
-                                       (1|fac_code) + (1|program/item), 
-                                     family = binomial(logit),
-                                     data = df_for_fac_item_re_sorted_type, 
-                                     control = glmerControl(optimizer = "bobyqa",
-                                                            optCtrl=list(maxfun=1e5),
-                                                            calc.derivs = TRUE))  
+                                           functional_emergency_vehicle + service_diagnostic +
+                                           incharge_drug_orders +
+                                           dist_todh_cat + dist_torms_cat +
+                                           drug_order_fulfilment_freq_last_3mts_cat + rms +
+                                           functional_refrigerator +  functional_landline + fuctional_mobile +
+                                           functional_toilet +  functional_handwashing_facility +
+                                           water_source_main +
+                                           outpatient_only + 
+                                           service_hiv + service_othersti + 
+                                           service_malaria + service_tb + 
+                                           service_fp + service_imci +  
+                                           source_drugs_ngo +  source_drugs_pvt + 
+                                           drug_transport_self +  eml_priority_v +
+                                           (1|fac_code) + (1|program/item), 
+                                         family = binomial(logit),
+                                         data = df_for_fac_item_re_sorted_type, 
+                                         control = glmerControl(optimizer = "bobyqa",
+                                                                optCtrl=list(maxfun=1e5),
+                                                                calc.derivs = TRUE))  
   # Confidence intervals
-  model_item_type_ci[[i]]<- tbl_regression(model_item_type_summaries[[i]], exponentiate = TRUE, conf.int = TRUE)
+  model_item_type_ci[[i]]<- tbl_regression(model_item_type_summaries[[i]], exponentiate = TRUE, conf.int = TRUE, pvalue_fun = ~style_sigfig(., digits = 4))
   
   # Data count
   item_type_regs_stats[j,1] <- type
@@ -445,16 +446,145 @@ item_type_tbl_merge <-
   )  %>%    # build gtsummary table
   as_gt() 
 
+# 4.5 Regression by essential medicine list category
+#---------------------------------------------------
+group_by_eml_priority <- 
+  df %>%                             #Applying group_by &summarise
+  group_by(eml_priority_v) %>%
+  summarise(unique_items = n_distinct(item))
+
+item_priority_for_reg <- c(1,0)
+i = 1
+model_item_priority_summaries <- list()      # Create empty list to store model outputs
+model_item_priority_ci <- list() # Create empty list to store confidence intervals
+item_priority_regs_stats <- matrix(NaN, nrow = length(unique(df_for_fac_item_re_sorted$eml_priority_v)) , ncol = 4) # list to store data counts
+j = 1
+
+for (category in item_priority_for_reg){
+  print(paste("running eml_priority_v", category))
+  df_for_fac_item_re_sorted_category <- df_for_fac_item_re_sorted[which(df_for_fac_item_re_sorted$eml_priority_v == category),]
+  
+  # Regression
+  model_item_priority_summaries[[i]] <-glmer(available ~ fac_type + fac_owner + fac_urban + functional_computer +
+                                               functional_emergency_vehicle + service_diagnostic +
+                                               incharge_drug_orders +
+                                               dist_todh_cat + dist_torms_cat +
+                                               drug_order_fulfilment_freq_last_3mts_cat + rms +
+                                               functional_refrigerator +  functional_landline + fuctional_mobile +
+                                               functional_toilet +  functional_handwashing_facility +
+                                               water_source_main +
+                                               outpatient_only + 
+                                               service_hiv + service_othersti + 
+                                               service_malaria + service_tb + 
+                                               service_fp + service_imci +  
+                                               source_drugs_ngo +  source_drugs_pvt + 
+                                               drug_transport_self + item_drug +
+                                               (1|fac_code) + (1|program/item), 
+                                             family = binomial(logit),
+                                             data = df_for_fac_item_re_sorted_category, 
+                                             control = glmerControl(optimizer = "bobyqa",
+                                                                    optCtrl=list(maxfun=1e5),
+                                                                    calc.derivs = TRUE))  
+  # Confidence intervals
+  model_item_priority_ci[[i]]<- tbl_regression(model_item_priority_summaries[[i]], exponentiate = TRUE, conf.int = TRUE, pvalue_fun = ~style_sigfig(., digits = 4))
+  
+  # Data count
+  item_priority_regs_stats[j,1] <- type
+  item_priority_regs_stats[j,2] <- dim(df_for_fac_item_re_sorted_category)[1]
+  item_priority_regs_stats[j,3] <- length(unique(df_for_fac_item_re_sorted_category$fac_code))
+  item_priority_regs_stats[j,4] <- length(unique(df_for_fac_item_re_sorted_category$item))
+  
+  i = i+1
+  j = j + 1
+}
+
+item_priority_tbl_merge <-
+  tbl_merge(
+    tbls = list(model_item_priority_ci[[1]],model_item_priority_ci[[2]]),
+    tab_spanner = c("**Vital consumables**", "**Other consumables**")
+  )  %>%    # build gtsummary table
+  as_gt()
+
+# 4.6 Regression by national consumable availability
+#---------------------------------------------------
+# Make a list of items with less than 10% availability across all facilities
+df_by_item <- df %>% 
+  group_by(item) %>% 
+  summarise(available_average = mean(available, na.rm = TRUE)) %>%
+  arrange(available_average)
+
+items_with_low_national_availability <- subset(df_by_item, df_by_item$available_average < 0.1)['item']
+items_with_low_national_availability <- as.list(items_with_low_national_availability)
+items_with_high_national_availability <- subset(df_by_item, df_by_item$available_average >= 0.1)['item']
+items_with_high_national_availability <- as.list(items_with_high_national_availability)
+
+item_availability_groups_for_reg <- c(items_with_low_national_availability, items_with_high_national_availability)
+
+i = 1
+model_item_availability_group_summaries <- list()      # Create empty list to store model outputs
+model_item_availability_group_ci <- list() # Create empty list to store confidence intervals
+item_availability_group_regs_stats <- matrix(NaN, nrow = 2 , ncol = 4) # list to store data counts
+j = 1
+
+for (group in item_availability_groups_for_reg){
+  print(paste("running availability group"))
+  df_for_fac_item_re_sorted_group <- df_for_fac_item_re_sorted %>% filter(!(item %in% group))
+  
+  # Regression
+  model_item_availability_group_summaries[[i]] <-glmer(available ~ fac_type + fac_owner + fac_urban + functional_computer +
+                                                         functional_emergency_vehicle + service_diagnostic +
+                                                         incharge_drug_orders +
+                                                         dist_todh_cat + dist_torms_cat +
+                                                         drug_order_fulfilment_freq_last_3mts_cat + rms +
+                                                         functional_refrigerator +  functional_landline + fuctional_mobile +
+                                                         functional_toilet +  functional_handwashing_facility +
+                                                         water_source_main +
+                                                         outpatient_only + 
+                                                         service_hiv + service_othersti + 
+                                                         service_malaria + service_tb + 
+                                                         service_fp + service_imci +  
+                                                         source_drugs_ngo +  source_drugs_pvt + 
+                                                         drug_transport_self + item_drug + eml_priority_v + 
+                                                         (1|fac_code) + (1|program/item), 
+                                                       family = binomial(logit),
+                                                       data = df_for_fac_item_re_sorted_group, 
+                                                       control = glmerControl(optimizer = "bobyqa",
+                                                                              optCtrl=list(maxfun=1e5),
+                                                                              calc.derivs = TRUE))  
+  # Confidence intervals
+  model_item_availability_group_ci[[i]]<- tbl_regression(model_item_availability_group_summaries[[i]], exponentiate = TRUE, conf.int = TRUE, pvalue_fun = ~style_sigfig(., digits = 4))
+  
+  # Data count
+  item_availability_group_regs_stats[j,1] <- group
+  item_availability_group_regs_stats[j,2] <- dim(df_for_fac_item_re_sorted_group)[1]
+  item_availability_group_regs_stats[j,3] <- length(unique(df_for_fac_item_re_sorted_group$fac_code))
+  item_availability_group_regs_stats[j,4] <- length(unique(df_for_fac_item_re_sorted_group$item))
+  
+  i = i+1
+  j = j + 1
+}
+
+item_availability_group_tbl_merge <-
+  tbl_merge(
+    tbls = list(model_item_availability_group_ci[[1]],model_item_availability_group_ci[[2]]),
+    tab_spanner = c("**Availability >= 10%**", "**Availability < 10%**")
+  )  %>%    # build gtsummary table
+  as_gt()
+
 # Save subgroup regression results
 ###########################
 save(model_owner_summaries, file = paste0(path_to_outputs, "regression_results/sub-group/model_owner.rdta"))
 save(model_item_type_summaries, file = paste0(path_to_outputs, "regression_results/sub-group/model_item_type.rdta"))
+save(model_item_priority_summaries, file = paste0(path_to_outputs, "regression_results/sub-group/model_item_priority.rdta"))
+save(model_item_availability_group_summaries, file = paste0(path_to_outputs, "regression_results/sub-group/model_item_availability_group.rdta"))
 save(model_level_summaries, file = paste0(path_to_outputs, "regression_results/sub-group/model_level.rdta"))
 save(model_prog_summaries, file = paste0(path_to_outputs, "regression_results/sub-group/model_program.rdta"))
 save(model_prog_summaries_itemfe, file = paste0(path_to_outputs, "regression_results/sub-group/model_program_itemfe.rdta"))
 
 save(model_owner_ci, file = paste0(path_to_outputs, "regression_results/sub-group/model_owner_ci.rdta"))
 save(model_item_type_ci, file = paste0(path_to_outputs, "regression_results/sub-group/model_item_type_ci.rdta"))
+save(model_item_priority_ci, file = paste0(path_to_outputs, "regression_results/sub-group/model_item_priority_ci.rdta"))
+save(model_item_availability_group_ci, file = paste0(path_to_outputs, "regression_results/sub-group/model_item_availability_group_ci.rdta"))
 save(model_level_ci, file = paste0(path_to_outputs, "regression_results/sub-group/model_level_ci.rdta"))
 save(model_prog_ci, file = paste0(path_to_outputs, "regression_results/sub-group/model_program_ci.rdta"))
 save(model_prog_ci_itemfe, file = paste0(path_to_outputs, "regression_results/sub-group/model_program_itemfe_ci.rdta"))

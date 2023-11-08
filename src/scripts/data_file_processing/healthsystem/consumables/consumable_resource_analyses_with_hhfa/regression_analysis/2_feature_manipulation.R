@@ -67,20 +67,20 @@ df[which(df$water_source_main == "other"|df$water_source_main == "no water sourc
 # Generate categorical version of dist_rorms 
 df$dist_torms_cat = ""
 df$dist_torms_cat <- ifelse((df$dist_torms_orig > 10000) & (df$dist_torms_orig <= 50000), "10-50 kms",
-                             ifelse((df$dist_torms_orig > 50000) & (df$dist_torms_orig < 100000),"50-100 kms",
-                                    ifelse((df$dist_torms_orig > 100000) & (df$dist_torms_orig < 200000),"100-200 kms", 
-                                           ifelse((df$dist_torms_orig < 10000), "0-10 kms","> 200 kms"))
-                                    ))
+                            ifelse((df$dist_torms_orig > 50000) & (df$dist_torms_orig < 100000),"50-100 kms",
+                                   ifelse((df$dist_torms_orig > 100000) & (df$dist_torms_orig < 200000),"100-200 kms", 
+                                          ifelse((df$dist_torms_orig < 10000), "0-10 kms","> 200 kms"))
+                            ))
 
 df$dist_torms_cat <- ifelse((is.na(df$dist_torms_orig)), NaN, df$dist_torms_cat)
 df$dist_torms_cat <- factor(df$dist_torms_cat, levels = c("0-10 kms", "10-50 kms", "50-100 kms", "100-200 kms", "> 200 kms")) # specify order
 
 # Generate categorical version of dist_todh
 df$dist_todh_cat <- ifelse((df$dist_todh_orig > 10000) & (df$dist_todh_orig <= 25000), "10-25 kms",
-                            ifelse((df$dist_todh_orig > 25000) & (df$dist_todh_orig < 50000),"25-50 kms",
-                                   ifelse((df$dist_todh_orig > 50000) & (df$dist_todh_orig < 75000),"50-75 kms", 
-                                          ifelse((df$dist_todh_orig < 10000), "0-10 kms","> 75 kms"))
-                            ))
+                           ifelse((df$dist_todh_orig > 25000) & (df$dist_todh_orig < 50000),"25-50 kms",
+                                  ifelse((df$dist_todh_orig > 50000) & (df$dist_todh_orig < 75000),"50-75 kms", 
+                                         ifelse((df$dist_todh_orig < 10000), "0-10 kms","> 75 kms"))
+                           ))
 
 df$dist_todh_cat <- ifelse((is.na(df$dist_todh_orig)), NaN, df$dist_todh_cat)
 df$dist_todh_cat <- factor(df$dist_todh_cat, levels = c("0-10 kms", "10-25 kms", "25-50 kms", "50-75 kms", "> 75 kms")) # specify order
@@ -131,9 +131,8 @@ df[which(df$item == "Cryptococcal antigen"),]$program = "hiv"
 df[which(df$item == "Ephedrine (injection)"),]$program = "surgical"
 df[which(df$item == "Fluconazole"),]$program = "hiv"
 
-
 # 1.6 Clean consumable names for manuscript
-#-------------------------------------------
+#-------------------------------------------------------------
 df[which(df$item == "slides and cover slips"),]$item = "Slides and cover slips"
 df[which(df$item == "art_component_1"),]$item = "Antiretroviral treatment (ART) component 1 (ZDV/AZT/TDF/D4T)"
 df[which(df$item == "art_component_2"),]$item = "Antiretroviral treatment (ART) component 2 (3TC/FTC)"
@@ -189,15 +188,15 @@ df <- df %>%
 ###############################################################
 # For the dataframe with facilities in levels 1a and 1b
 new_vars <- c('dist_torms_cat', 'dist_todh_cat', 'drug_order_fulfilment_freq_last_3mts_cat' )
-fac_features <- aggregate(df[unlist(c(fac_exp_vars, new_vars))], df[,'fac_code'], FUN = head, 1)
-availability_by_facility <- aggregate( df[,'available'], df[,'fac_code'], 
+fac_features <- aggregate(df[unlist(c(fac_exp_vars, new_vars))], by = list(fac_code = df$fac_code), FUN = head, 1)
+availability_by_facility <- aggregate( df[,'available'], list(fac_code = df$fac_code), 
                                        FUN = mean, na.rm = TRUE)
 fac_reg_df <- merge(fac_features,availability_by_facility,by="fac_code")
 fac_reg_df <- na.omit(fac_reg_df)
 
 # For the dataframe with all facilities
-fac_features_all_levels <- aggregate(df_all_levels[unlist(c(fac_exp_vars, new_vars))], df_all_levels[,'fac_code'], FUN = head, 1)
-availability_by_facility_all_levels <- aggregate( df_all_levels[,'available'], df_all_levels[,'fac_code'], 
-                                       FUN = mean, na.rm = TRUE)
+fac_features_all_levels <- aggregate(df_all_levels[unlist(c(fac_exp_vars, new_vars))], list(fac_code = df_all_levels$fac_code),  FUN = head, 1)
+availability_by_facility_all_levels <- aggregate( df_all_levels[,'available'], list(fac_code = df_all_levels$fac_code), 
+                                                  FUN = mean, na.rm = TRUE)
 fac_reg_df_all_levels <- merge(fac_features_all_levels,availability_by_facility_all_levels,by="fac_code")
 fac_reg_df_all_levels <- na.omit(fac_reg_df_all_levels)

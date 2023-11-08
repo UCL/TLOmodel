@@ -86,7 +86,7 @@ fac_reg_df <- na.omit(fac_reg_df)
 
 # Edit long data based on the above removal of explanatory variables
 # Define explanatory variables list
-exp_vars <- list(fac_exp_vars, 'available', 'item', 'rms') # 'drug_class_rx_list', 'fac_code', 'program', 'mode_administration'
+exp_vars <- list(fac_exp_vars, 'available', 'item', 'rms', item_vars_binary) # 'drug_class_rx_list', 'fac_code', 'program', 'mode_administration'
 exp_vars <- unlist(exp_vars, recursive=FALSE)
 
 
@@ -98,24 +98,24 @@ reg_df <- na.omit(reg_df)
 #########################################################
 # 2a.Apply logistic model to item-level data
 logistic_model_allvars <- glm(available ~ .,
-                                  data = reg_df, family = binomial("logit"))
+                              data = reg_df, family = binomial("logit"))
 logistic_model_litvars <- glm(available ~  fac_urban + fac_type +
-                                    functional_computer + incharge_drug_orders +
-                                    functional_emergency_vehicle + 
-                                    dist_todh + dist_torms + drug_order_fulfilment_freq_last_3mts + 
-                                    service_diagnostic,
-                                  data = reg_df, family = binomial("logit")) # quasibinomial does not work because no AIC for backward elimination
+                                functional_computer + incharge_drug_orders +
+                                functional_emergency_vehicle + 
+                                dist_todh + dist_torms + drug_order_fulfilment_freq_last_3mts + 
+                                service_diagnostic + item_drug + eml_priority_v,
+                              data = reg_df, family = binomial("logit")) # quasibinomial does not work because no AIC for backward elimination
 # %% drug_resupply_calculation_system was dropped because this seems to be incorrectly recorded %%
 # %% district, fac_type were dropped because they lead to convergence issues when accounting for random effects %%
 
 # Run bidirectional stepwise to determine best parsimonious model (based on BIC)
 stepwise_logistic_model <- stepAIC(logistic_model_litvars, k= log(nrow(reg_df)), direction = "both",
-                                       scope = list(lower = ~  fac_urban + fac_type +
-                                                      functional_computer + incharge_drug_orders +
-                                                      functional_emergency_vehicle + 
-                                                      dist_todh + dist_torms + drug_order_fulfilment_freq_last_3mts + 
-                                                      service_diagnostic,
-                                                    upper = logistic_model_allvars))
+                                   scope = list(lower = ~  fac_urban + fac_type +
+                                                  functional_computer + incharge_drug_orders +
+                                                  functional_emergency_vehicle + 
+                                                  dist_todh + dist_torms + drug_order_fulfilment_freq_last_3mts + 
+                                                  service_diagnostic + eml_priority_v,
+                                                upper = logistic_model_allvars))
 
 model_base <- summary(stepwise_logistic_model)
 stepwise_logistic_model$call
@@ -134,8 +134,8 @@ test_set <- subset(x = reg_df, sample_split == FALSE)
 independent_varlist_logistic <- unlist(c('available', attr(stepwise_logistic_model$terms , "term.labels")))
 train_set_reg = train_set[,dput(as.character(independent_varlist_logistic))] 
 model_base_train <- glm(available ~ .,
-                                  data = train_set_reg,
-                                  family = "binomial")
+                        data = train_set_reg,
+                        family = "binomial")
 
 # Generating predictions to test model accuracy
 test_set_reg <- test_set[,dput(as.character(independent_varlist_logistic))] 
@@ -151,8 +151,8 @@ print(paste("accuracy = ", cm$overall[1]*100, "%"))
 
 # Export relevant regressor lists from various model selection steps
 sheet_lst <- list('regressor_list_initial' = regressor_list_initial, 
-               'regressor_list_postcorr' = regressor_list_postcorrelationanalysis,
-                'regressor_list_postother' = regressor_list_postotherreasons, 
-               'chosen_varlist'= chosen_varlist)
+                  'regressor_list_postcorr' = regressor_list_postcorrelationanalysis,
+                  'regressor_list_postother' = regressor_list_postotherreasons, 
+                  'chosen_varlist'= chosen_varlist)
 
 write.xlsx(sheet_lst, file = paste0(path_to_outputs, "tables/regressor_list.xlsx"))

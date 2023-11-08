@@ -8,9 +8,9 @@ source(paste0(path_to_scripts, "2_feature_manipulation.R"))
 # 1. Set up variable lists #
 ###########################
 desc_table_varlist_lit_bin <- c('fac_type', 'fac_owner', 'fac_urban',
-                       'functional_computer', 'incharge_drug_orders',
-                       'functional_emergency_vehicle', 'service_diagnostic',
-                       'dist_todh_cat', 'dist_torms_cat',  'drug_order_fulfilment_freq_last_3mts_cat' )
+                                'functional_computer', 'incharge_drug_orders',
+                                'functional_emergency_vehicle', 'service_diagnostic',
+                                'dist_todh_cat', 'dist_torms_cat',  'drug_order_fulfilment_freq_last_3mts_cat' )
 desc_table_varlist_lit_cont <- c('dist_todh', 'drug_order_fulfilment_freq_last_3mts')
 desc_table_varlist_full_bin <- unlist(c(desc_table_varlist_lit_bin,'rms', 
                                         'functional_refrigerator',  
@@ -25,25 +25,34 @@ desc_table_varlist_full_bin <- unlist(c(desc_table_varlist_lit_bin,'rms',
 # 'drug_transport_self' # these variables are failing
 desc_table_varlist_full_cont <- unlist(c(desc_table_varlist_lit_cont))
 
+# redefine fac_reg_df without dropping na
+fac_features <- aggregate(df_for_fac_item_re_sorted[unlist(c(desc_table_varlist_full_bin))], by = list(fac_code = df_for_fac_item_re_sorted$fac_code), FUN = head, 1)
+availability_by_facility <- aggregate( df_for_fac_item_re_sorted[,'available'], list(fac_code = df_for_fac_item_re_sorted$fac_code), 
+                                       FUN = mean, na.rm = TRUE)
+fac_df <- merge(fac_features,availability_by_facility,by="fac_code")
+
 # 2.1 Extract descriptive table for primary analysis dataset #
 #############################################################
 i = 0
 for (var in desc_table_varlist_full_bin){
   #m1 <- lm(available ~ fac_type, data = df)
   print(paste("processing", var))
-  tempSubset <- df[,c("available", var)]
+  tempSubset <- df_for_fac_item_re_sorted[,c("available", var)]
   tempSubset <- tempSubset[complete.cases(tempSubset),]
+  
+  fac_df_subset <- fac_df[,c("fac_code", var)]
+  fac_df_subset <- fac_df_subset[complete.cases(fac_df_subset),]
   
   # Convert binary variable to categorical
   if (is.numeric(tempSubset[[var]]) && all(unique(is.numeric(tempSubset[[var]])) %in% c(0, 1, NA, NaN))){
     tempSubset[[var]] <- ifelse(tempSubset[[var]]== 0, "No", ifelse(tempSubset[[var]] == 1, "Yes", tempSubset[[var]]))
   }
-
+  
   m1 <- glm(available ~ ., data = tempSubset, family = binomial) # for logistic reg results
-  m1a <- fac_reg_df %>% tabyl(var) # for frequency stats
+  m1a <- fac_df_subset %>% tabyl(var) %>% filter(n > 0) # for frequency stats
   m1b <- tidy(lm(available ~ . - 1, data = tempSubset)) # for mean availability by category
   m1c <- tbl_regression(m1, exponentiate = TRUE, conf.int = TRUE) # for OR and CI from logistic reg results
-
+  
   desc_table_var <- cbind(m1a[,1:3], m1b[1:dim(m1a),2], rbind(
     matrix("Ref", nrow = 1, ncol = 4),
     round(cbind(m1c$table_body$estimate, m1c$table_body$conf.low,
@@ -112,22 +121,25 @@ write_xlsx(desc_table,paste0(path_to_outputs, "tables/desc_table_alllevels.xlsx"
 
 # 2.2 Extract descriptive table for program and item   #
 #--------------------------------------------------#
+# Choose which dataframe is used to draw descriptive stats (M4 or M1 df)
+item_desc_df <- df
+
 # Create collapsed dataframe by item
-item_exp_vars <- c('program', 'item_drug')
-item_features <- aggregate(df[item_exp_vars], df[,'item'], FUN = head, 1)
-availability_by_item<- aggregate( df[,'available'], df[,'item'], 
-                                       FUN = mean, na.rm = TRUE)
+item_exp_vars <- c('program', 'item_drug', 'eml_priority_v')
+item_features <- aggregate(item_desc_df[item_exp_vars], by = list(item = item_desc_df[,'item']), FUN = head, 1)
+availability_by_item<- aggregate( item_desc_df[,'available'], by = list(item = item_desc_df[,'item']), 
+                                  FUN = mean, na.rm = TRUE)
 desc_table_item_pt1 <- merge(item_features,availability_by_item,by="item")
 desc_table_item_pt1 <- na.omit(desc_table_item_pt1)
-  
+
 # Get odds ratios and 95% CI for availability by item
-m1 <- glm(available ~ item, data = df, family = binomial) # for logistic reg results
+m1 <- glm(available ~ item, data = item_desc_df, family = binomial) # for logistic reg results
 m1c <- tbl_regression(m1, exponentiate = TRUE, conf.int = TRUE) # for OR and CI from logistic reg results
 
 desc_table_item_pt2 <- cbind(m1c$table_body$label[2:dim(m1c$table_body)[1]], rbind(matrix("Ref", nrow = 1, ncol = 4),
-                                   round(cbind(m1c$table_body$estimate, m1c$table_body$conf.low,
-                                   m1c$table_body$conf.high, m1c$table_body$p.value)[3:dim(m1c$table_body)[1],],3))
-                            )
+                                                                                   round(cbind(m1c$table_body$estimate, m1c$table_body$conf.low,
+                                                                                               m1c$table_body$conf.high, m1c$table_body$p.value)[3:dim(m1c$table_body)[1],],3))
+)
 colnames(desc_table_item_pt2) = c("item", "or", "ci.lower", "ci.upper", "p.value")
 item_summary <- merge(desc_table_item_pt1,desc_table_item_pt2,by="item")
 
@@ -139,7 +151,7 @@ write_xlsx(item_summary,paste0(path_to_outputs, "tables/desc_table_item.xlsx"))
 # Get descriptve table by program
 
 # Get odds ratios and 95% CI for availability by item
-m1 <- glm(available ~ program, data = df, family = binomial) # for logistic reg results
+m1 <- glm(available ~ program, data = item_desc_df, family = binomial) # for logistic reg results
 m1c <- tbl_regression(m1, exponentiate = TRUE, conf.int = TRUE) # for OR and CI from logistic reg results
 m1a <- desc_table_item_pt1 %>% tabyl('program') # for frequency stats
 
@@ -156,11 +168,11 @@ desc_table_program
 write_xlsx(desc_table_program,paste0(path_to_outputs, "tables/desc_table_program.xlsx"))
 
 # Get descriptve table by type of consumable
-df$item_drug <- relevel(factor(df$item_drug), ref="0")
-m1 <- glm(available ~ item_drug, data = df, family = binomial) # for logistic reg results
+item_desc_df$item_drug <- relevel(factor(item_desc_df$item_drug), ref="0")
+m1 <- glm(available ~ item_drug, data = item_desc_df, family = binomial) # for logistic reg results
 m1c <- tbl_regression(m1, exponentiate = TRUE, conf.int = TRUE) # for OR and CI from logistic reg results
 m1a <- desc_table_item_pt1 %>% tabyl('item_drug') # for frequency stats
-m1b <- tidy(lm(available ~ item_drug - 1, data = df))
+m1b <- tidy(lm(available ~ item_drug - 1, data = item_desc_df))
 
 desc_table_item_type <- cbind(m1a[,1:3], m1b[1:2,2], rbind(
   matrix("Ref", nrow = 1, ncol = 4),
@@ -173,6 +185,25 @@ colnames(desc_table_item_type) = c("consumable type", "n", "percent", "mean", "o
 # Display and extract descriptive table
 desc_table_item_type
 write_xlsx(desc_table_item_type,paste0(path_to_outputs, "tables/desc_table_item_type.xlsx"))
+
+# Get descriptive table by EML prioritization
+item_desc_df$eml_priority_v <- relevel(factor(item_desc_df$eml_priority_v), ref="0")
+m1 <- glm(available ~ eml_priority_v, data = item_desc_df, family = binomial) # for logistic reg results
+m1c <- tbl_regression(m1, exponentiate = TRUE, conf.int = TRUE) # for OR and CI from logistic reg results
+m1a <- desc_table_item_pt1 %>% tabyl('eml_priority_v') # for frequency stats
+m1b <- tidy(lm(available ~ eml_priority_v - 1, data = item_desc_df))
+
+desc_table_eml_priority <- cbind(m1a[,1:3], m1b[1:2,2], rbind(
+  matrix("Ref", nrow = 1, ncol = 4),
+  round(cbind(m1c$table_body$estimate, m1c$table_body$conf.low,
+              m1c$table_body$conf.high, m1c$table_body$p.value),3))
+)
+
+colnames(desc_table_eml_priority) = c("EML classification", "n", "percent", "mean", "or", "ci.lower", "ci.upper", "p.value")
+
+# Display and extract descriptive table
+desc_table_eml_priority
+write_xlsx(desc_table_eml_priority,paste0(path_to_outputs, "tables/desc_table_eml_priority.xlsx"))
 
 
 # 3. Extract descriptive table by level of care for secondary analysis #
@@ -207,7 +238,7 @@ for (level in 1:length(datasets_by_level)){
     if (is.numeric(tempSubset[[var]]) && all(unique(is.numeric(tempSubset[[var]])) %in% c(0, 1, NA, NaN))){
       tempSubset[[var]] <- ifelse(tempSubset[[var]]== 0, "No", ifelse(tempSubset[[var]] == 1, "Yes", tempSubset[[var]]))
     }
-
+    
     m1 <- lm(available ~ ., data = tempSubset)
     
     m1a <- data_fac %>% tabyl(var)
@@ -242,9 +273,13 @@ print(m1c$result$chi2[3],digits=3.3)
 # 4. Other descriptive tables for manuscript
 ##############################################
 # Table of districts
-district_table <-  df %>% 
+district_table_all <-  df %>% 
   group_by(district) %>% 
   summarise(facilities = n_distinct(fac_code))
+district_table_reg <-  df_for_fac_item_re_sorted %>% 
+  group_by(district) %>% 
+  summarise(facilities = n_distinct(fac_code))
+district_table <- merge(district_table_all,district_table_reg,by="district")
 write.csv(district_table,paste0(path_to_outputs, "tables/district_table.csv"), row.names = TRUE)
 
 # Table of items

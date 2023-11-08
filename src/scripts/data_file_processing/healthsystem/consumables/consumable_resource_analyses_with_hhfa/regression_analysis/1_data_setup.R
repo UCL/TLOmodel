@@ -26,7 +26,20 @@ df <- df_orig %>%
 # Formatting
 df$fac_code <- as.character(df$fac_code)
 
-# 3. Define variable lists for analysis #
+# 3. Add consumable classification in the Essential Medicines List #
+#####################################################################
+essential_med_mapping <- read.csv(paste0(path_to_data, "essential_medicine_list_mapping.csv"))
+names(essential_med_mapping)[names(essential_med_mapping) == 'Consumable'] <- 'item'
+names(essential_med_mapping)[names(essential_med_mapping) == 'Therapeutic.priority'] <- 'eml_therapeutic_priority'
+
+df <- merge(df, essential_med_mapping[c('item','eml_therapeutic_priority')], by = 'item')
+# Generate binary variable
+df$eml_priority_v <- 0
+df[which(df$eml_therapeutic_priority == "V"),]$eml_priority_v <- 1
+df$eml_priority_e <- 0
+df[which(df$eml_therapeutic_priority == "E"),]$eml_priority_e <- 1
+
+# 4. Define variable lists for analysis #
 #########################################
 fac_exp_vars <- c(# Main characteristics 
   'district', 'fac_type','fac_owner', 'fac_urban', 'rms', 'item_drug',
@@ -55,7 +68,6 @@ fac_exp_vars <- c(# Main characteristics
   'functional_motor_cycle', 'functional_motor_cycle_no',
   'functional_bike_ambulance', 'functional_bike_ambulance_no',
   'functional_bicycle', 'functional_bicycle_no',
-  # There are quite a few missing values but kept for now
   'vaccine_storage','functional_refrigerator',
   
   # Drug ordering process
@@ -99,24 +111,26 @@ fac_vars_binary = c('outpatient_only', 'fac_urban',
                     'vaccine_storage','functional_refrigerator',
                     'source_drugs_cmst','source_drugs_local_warehouse','source_drugs_ngo','source_drugs_donor','source_drugs_pvt',
                     'drug_transport_local_supplier','drug_transport_higher_level_supplier','drug_transport_self','drug_transport_other',
-                    'referral_system_from_community','referrals_to_other_facs', 'item_drug')
+                    'referral_system_from_community','referrals_to_other_facs')
+
+item_vars_binary = c('item_drug', 'eml_priority_v', 'eml_priority_e')
 
 # Determinants as per literature
 stockout_factors_from_lit <- c('fac_type', 'fac_owner', 'fac_urban','functional_computer', 
                                'functional_emergency_vehicle', 'incharge_drug_orders',  
                                'dist_todh','dist_torms','drug_order_fulfilment_freq_last_3mts',
-                               'service_diagnostic', 'item_drug')
+                               'service_diagnostic', 'item_drug','eml_priority_v')
 # drug_resupply_calculation_system - this variable has been dropped since it's not clear whether this was  accurately reported
 
 # Look at data by item
 df_not_na <- subset(df, !is.na(df$available))
 df_by_item <- df %>%
-              group_by(item) %>%
-              summarise(available = mean(available))
+  group_by(item) %>%
+  summarise(available = mean(available))
 
 df_by_fac <- df_not_na %>%
-              group_by(fac_code) %>%
-              summarise(available = mean(available),
-                        drug_resupply_calculation_system = first(na.omit(drug_resupply_calculation_system)),
-                        fac_owner = first(na.omit(fac_owner)),
-                        functional_bike_ambulance_no = first(na.omit(functional_bike_ambulance_no)))
+  group_by(fac_code) %>%
+  summarise(available = mean(available),
+            drug_resupply_calculation_system = first(na.omit(drug_resupply_calculation_system)),
+            fac_owner = first(na.omit(fac_owner)),
+            functional_bike_ambulance_no = first(na.omit(functional_bike_ambulance_no)))
