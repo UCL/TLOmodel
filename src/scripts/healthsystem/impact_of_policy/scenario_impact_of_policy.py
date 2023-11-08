@@ -29,15 +29,15 @@ class ImpactOfHealthSystemMode(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = self.start_date + pd.DateOffset(years=5)
-        self.pop_size = 75_000
+        self.end_date = self.start_date + pd.DateOffset(years=33)
+        self.pop_size = 100_000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 1
+        self.runs_per_draw = 10
 
     def log_configuration(self):
         return {
-            'filename': 'effect_of_each_treatment',
+            'filename': 'effect_of_policy',
             'directory': Path('./outputs'),  # <- (specified only for local running)
             'custom_levels': {
                 '*': logging.WARNING,
@@ -61,20 +61,237 @@ class ImpactOfHealthSystemMode(BaseScenario):
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario.
         """
         return {
-            "Vertical Programmes Status Quo cons Longer tclose":
+            "No Healthcare System":
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
                      'HealthSystem': {
-                        'cons_availability': "default",
+                        'Service_Availability': []
+                      },
+                    }
+                ),
+
+            "Naive status quo":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {
+                     'HealthSystem': {
                         "use_funded_or_actual_staffing": "actual",
-                        'year_policy_switch': 2011,
+                        'year_mode_switch': 2023,
                         'mode_appt_constraints_postSwitch': 2,
-                        "policy_name_post_switch": "VerticalProgrammes",
+                        "policy_name": "Naive",
                         'tclose_overwrite': 1,
-                        'tclose_days_offset_overwrite': 10,
+                        'tclose_days_offset_overwrite': 7,
+                      },
+                    }
+                ),
+
+            "RMNCH status quo":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {
+                     'HealthSystem': {
+                        "use_funded_or_actual_staffing": "actual",
+                        'year_mode_switch': 2023,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "policy_name": "RMNCH",
+                        'tclose_overwrite': 1,
+                        'tclose_days_offset_overwrite': 7,
+                      },
+                    }
+                ),
+
+            "Clinically Vulnerable status quo":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {
+                     'HealthSystem': {
+                        "use_funded_or_actual_staffing": "actual",
+                        'year_mode_switch': 2023,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "policy_name": "ClinicallyVulnerable",
+                        'tclose_overwrite': 1,
+                        'tclose_days_offset_overwrite': 7,
                      },
                     }),
+
+            "Vertical Programmes status quo":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {
+                     'HealthSystem': {
+                        "use_funded_or_actual_staffing": "actual",
+                        'year_mode_switch': 2023,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "policy_name": "VerticalProgrammes",
+                        'tclose_overwrite': 1,
+                        'tclose_days_offset_overwrite': 7,
+                     },
+                    }),
+            
+            "CVD status quo":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {
+                     'HealthSystem': {
+                        "use_funded_or_actual_staffing": "actual",
+                        'year_mode_switch': 2023,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "policy_name": "CVD",
+                        'tclose_overwrite': 1,
+                        'tclose_days_offset_overwrite': 7,
+                     },
+                    }),
+
+            "EHP III status quo":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {
+                     'HealthSystem': {
+                        "use_funded_or_actual_staffing": "actual",
+                        'year_mode_switch': 2023,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "policy_name": "EHP_III",
+                        'tclose_overwrite': 1,
+                        'tclose_days_offset_overwrite': 7,
+                     },
+                    }),
+
+            "LCOA EHP status quo":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {
+                     'HealthSystem': {
+                        "use_funded_or_actual_staffing": "actual",
+                        'year_mode_switch': 2023,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "policy_name": "LCOA_EHP",
+                        'tclose_overwrite': 1,
+                        'tclose_days_offset_overwrite': 7,
+                     },
+                    }),
+
+            "Naive ideal case":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {'ScenarioSwitcher': {
+                        'max_healthsystem_function': True,
+                        'max_healthcare_seeking': True}},
+                    {
+                     'HealthSystem': {
+                        "use_funded_or_actual_staffing": "actual",
+                        'year_mode_switch': 2023,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "policy_name": "Naive",
+                        'tclose_overwrite': 1,
+                        'tclose_days_offset_overwrite': 7,
+                      },
+                    }
+                ),
+
+            "RMNCH ideal case":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {'ScenarioSwitcher': {
+                        'max_healthsystem_function': True,
+                        'max_healthcare_seeking': True}},
+                    {
+                     'HealthSystem': {
+                        "use_funded_or_actual_staffing": "actual",
+                        'year_mode_switch': 2023,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "policy_name": "RMNCH",
+                        'tclose_overwrite': 1,
+                        'tclose_days_offset_overwrite': 7,
+                      },
+                    }
+                ),
+
+            "Clinically Vulnerable ideal case":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {'ScenarioSwitcher': {
+                        'max_healthsystem_function': True,
+                        'max_healthcare_seeking': True}},
+                    {
+                     'HealthSystem': {
+                        "use_funded_or_actual_staffing": "actual",
+                        'year_mode_switch': 2023,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "policy_name": "ClinicallyVulnerable",
+                        'tclose_overwrite': 1,
+                        'tclose_days_offset_overwrite': 7,
+                     },
+                    }),
+
+            "Vertical Programmes ideal case":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {'ScenarioSwitcher': {
+                        'max_healthsystem_function': True,
+                        'max_healthcare_seeking': True}},
+                    {
+                     'HealthSystem': {
+                        "use_funded_or_actual_staffing": "actual",
+                        'year_mode_switch': 2023,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "policy_name": "VerticalProgrammes",
+                        'tclose_overwrite': 1,
+                        'tclose_days_offset_overwrite': 7,
+                     },
+                    }),
+
+            "CVD ideal case":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {'ScenarioSwitcher': {
+                        'max_healthsystem_function': True,
+                        'max_healthcare_seeking': True}},
+                    {
+                     'HealthSystem': {
+                        "use_funded_or_actual_staffing": "actual",
+                        'year_mode_switch': 2023,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "policy_name": "CVD",
+                        'tclose_overwrite': 1,
+                        'tclose_days_offset_overwrite': 7,
+                     },
+                    }),
+
+            "EHP III ideal case":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {'ScenarioSwitcher': {
+                        'max_healthsystem_function': True,
+                        'max_healthcare_seeking': True}},
+                    {
+                     'HealthSystem': {
+                        "use_funded_or_actual_staffing": "actual",
+                        'year_mode_switch': 2023,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "policy_name": "EHP_III",
+                        'tclose_overwrite': 1,
+                        'tclose_days_offset_overwrite': 7,
+                     },
+                    }),
+
+            "LCOA EHP ideal case":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {'ScenarioSwitcher': {
+                        'max_healthsystem_function': True,
+                        'max_healthcare_seeking': True}},
+                    {
+                     'HealthSystem': {
+                        "use_funded_or_actual_staffing": "actual",
+                        'year_mode_switch': 2023,
+                        'mode_appt_constraints_postSwitch': 2,
+                        "policy_name": "LCOA_EHP",
+                        'tclose_overwrite': 1,
+                        'tclose_days_offset_overwrite': 7,
+                     },
+                    }
+                ),
         }
 
 
