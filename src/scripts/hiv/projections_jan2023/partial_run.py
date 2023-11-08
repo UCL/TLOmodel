@@ -74,23 +74,27 @@ class ImpactOfTbDaHx(BaseScenario):
             "Baseline": {
                 'Tb': {
                     'scenario': 0,
+                    'probability_community_chest_xray': 0.0,
                 },
             },
         # overrides availability of Xpert
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
+                    'probability_community_chest_xray': 0.0,
                 },
             },
         # overrides availability of CXR
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
+                    'probability_community_chest_xray': 0.0,
                 },
             },
             "CXR scale_up": {
                  'Tb': {
                      'scenario': 3,
+                     'probability_community_chest_xray': 0.0,
                  }
             },
                  "Outreach services": {

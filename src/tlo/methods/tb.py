@@ -1492,6 +1492,13 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 4:
          self.sim.modules['parameters']['probability_community_chest_xray'] = 0.01
          self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.53})
+         self.sim.modules["Tb"].parameters['first_line_test'] = 'sputum'
+         self.sim.modules["Tb"].parameters['second_line_test'] = 'xpert'
+         if scenario == 5:
+             self.sim.modules['parameters']['probability_community_chest_xray'] = 0.01
+             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.83})
+             self.sim.modules["Tb"].parameters['first_line_test'] = 'sputum'
+             self.sim.modules["Tb"].parameters['second_line_test'] = 'xpert'
 
 #######################################################################
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
