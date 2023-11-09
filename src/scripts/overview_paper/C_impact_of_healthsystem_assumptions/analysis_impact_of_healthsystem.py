@@ -164,7 +164,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-    name_of_plot = f'DALYs, {target_period()}'
+    name_of_plot = f'All Scenarios: DALYs, {target_period()}'
     fig, ax = do_bar_plot_with_ci(num_dalys_summarized / 1e6)
     ax.set_title(name_of_plot)
     ax.set_ylabel('(Millions)')
