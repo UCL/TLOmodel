@@ -40,7 +40,7 @@ project = 'TLOmodel'
 year = '2021'
 author = 'The TLOmodel Team'
 copyright = '{0}, {1}'.format(year, author)
-release = get_version('setuptools_scm')
+release = get_version('tlo')
 version = ".".join(release.split('.')[:2])
 
 pygments_style = 'trac'
@@ -67,6 +67,8 @@ html_short_title = '%s-%s' % (project, version)
 html_static_path = ['_static']
 html_extra_path = ['./.nojekyll', './.gitattributes']
 html_favicon = 'favicon.png'
+
+html_css_files = ['theme_overrides.css']
 
 rawfiles = ['.github']
 
