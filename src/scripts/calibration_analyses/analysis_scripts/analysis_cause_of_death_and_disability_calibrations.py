@@ -454,7 +454,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.legend().set_visible(False)
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-        fig.show()
         plt.close(fig)
 
     # %% Make graphs for each of Deaths and DALYS for a specific period

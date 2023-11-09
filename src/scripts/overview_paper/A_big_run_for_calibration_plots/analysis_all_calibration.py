@@ -45,6 +45,13 @@ if __name__ == "__main__":
     parser.add_argument("results_folder", type=Path)
     args = parser.parse_args()
 
+    # Needed the first time as pickles were not created on Azure side:
+    # from tlo.analysis.utils import create_pickles_locally
+    # create_pickles_locally(
+    #     scenario_output_dir=args.results_folder,
+    #     compressed_file_name_prefix=args.results_folder.name.split('-')[0],
+    # )
+
     apply(
         results_folder=args.results_folder,
         output_folder=args.results_folder,
