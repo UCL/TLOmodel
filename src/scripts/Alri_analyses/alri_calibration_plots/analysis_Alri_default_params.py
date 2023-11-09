@@ -243,9 +243,13 @@ plt.show()
 # Get comparison
 comparison = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=resourcefilepath)
 
+fig, axs = plt.subplots(nrows=2, ncols=1, sharex=True)
 # Make a simple bar chart
-comparison.loc[('2010-2014', slice(None), '0-4', 'Lower respiratory infections')].sum().plot.bar()
-plt.title('Deaths per year due to ALRI, 2010-2014')
-plt.tight_layout()
-plt.savefig(outputpath / ("ALRI_death_calibration_plot" + datestamp + ".png"), format='png')
+for ax, period in zip(axs, ('2010-2014', '2015-2019')):
+    comparison.loc[(period, slice(None), '0-4', 'Lower respiratory infections')].sum().plot.bar(ax=ax)
+    ax.set_title(f'Deaths per year due to ALRI, {period}')
+fig.tight_layout()
+fig.savefig(outputpath / ("ALRI_death_calibration_plot" + datestamp + ".png"), format='png')
 plt.show()
+plt.close(fig)
+
