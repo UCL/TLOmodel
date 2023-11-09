@@ -197,10 +197,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                           color=color, alpha=0.5)
         _ax.set_xticks(range(len(_df_sorted.index)))
         _ax.set_xticklabels(_df_sorted.index, rotation=90)
-        _ax.legend([lb, ub], ['All TREATMENT_IDs', 'No TREATMENT_IDs'], loc='upper right')
+        _ax.legend([lb, ub], ["All Services Available", "No Services Available"], loc='upper right')
 
     fig, ax = plt.subplots()
-    name_of_plot = f'Deaths With None or All TREATMENT_IDs, {target_period()}'
+    name_of_plot = f'Deaths With None or All Services, {target_period()}'
     do_bar_plot_with_ci(num_deaths_by_cause_label / 1e3, ax)
     ax.set_title(name_of_plot)
     ax.set_xlabel('Cause of Death')
@@ -215,7 +215,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     plt.close(fig)
 
     fig, ax = plt.subplots()
-    name_of_plot = f'DALYS With None or All TREATMENT_IDs, {target_period()}'
+    name_of_plot = f'DALYS With None or All Services, {target_period()}'
     do_bar_plot_with_ci(num_dalys_by_cause_label / 1e6, ax)
     ax.set_title(name_of_plot)
     ax.set_xlabel('Cause of Disability/Death')
@@ -308,7 +308,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = f'Deaths Averted by Each TREATMENT_ID, {target_period()}'
     do_barh_plot_with_ci(num_deaths_averted.drop(['*']) / 1e3, ax)
     ax.set_title(name_of_plot)
-    ax.set_ylabel('TREATMENT_ID (Short)')
+    ax.set_ylabel('TREATMENT_ID')
     ax.set_xlabel('Number of Deaths Averted (/1000)')
     ax.set_xlim(0, 300)
     do_label_barh_plot(pc_deaths_averted.drop(['*']), ax)
@@ -325,7 +325,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = f'DALYS Averted by Each TREATMENT_ID, {target_period()}'
     do_barh_plot_with_ci(num_dalys_averted.drop(['*']) / 1e6, ax)
     ax.set_title(name_of_plot)
-    ax.set_ylabel('TREATMENT_ID (Short)')
+    ax.set_ylabel('TREATMENT_ID')
     ax.set_xlabel('Number of DALYS Averted (/1e6)')
     ax.set_xlim(0, 12)
     do_label_barh_plot(pc_dalys_averted.drop(['*']), ax)
@@ -368,7 +368,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
 
         fig, ax = plt.subplots()
-        name_of_plot = f'Deaths Averted by {_scenario_name} by Age and Cause {target_period()}'
+        name_of_plot = f'Deaths Averted by Services For {_scenario_name} by Age and Cause {target_period()}'
         (
             format_to_plot / 1000
         ).plot.bar(stacked=True, ax=ax,
@@ -419,7 +419,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
 
         fig, ax = plt.subplots()
-        name_of_plot = f'Deaths Averted by {_scenario_name} by Wealth and Cause {target_period()}'
+        name_of_plot = f'Deaths Averted by Services For {_scenario_name} by Wealth and Cause {target_period()}'
         (
             format_to_plot / 1000
         ).plot.bar(stacked=True, ax=ax,
@@ -472,7 +472,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
 
         fig, ax = plt.subplots()
-        name_of_plot = f'DALYS Averted by {_scenario_name} by Age and Cause {target_period()}'
+        name_of_plot = f'DALYS Averted by Services For: {_scenario_name} ({target_period()})'
         (
             format_to_plot / 1e6
         ).plot.bar(stacked=True, ax=ax,
@@ -534,7 +534,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
 
         fig, ax = plt.subplots()
-        name_of_plot = f'DALYS Averted by {_scenario_name} by Wealth and Cause {target_period()}'
+        name_of_plot = f'DALYS Averted by Services For {_scenario_name} by Wealth and Cause {target_period()}'
         (
             format_to_plot / 1e6
         ).plot.bar(stacked=True, ax=ax,
@@ -630,7 +630,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     )
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     ax.set_ylabel('(/millions)')
-    ax.set_xlabel('TREATMENT_ID (Short)')
+    ax.set_xlabel('TREATMENT_ID')
     ax.axhline(0, color='grey')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -642,7 +642,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # VERSION WITH COARSE APPOINTMENTS, CONFORMING TO STANDARD ORDERING/COLORS AND ORDER
     fig, ax = plt.subplots()
-    name_of_plot = f'Additional Appointments, {target_period()}'
+    name_of_plot = 'Change in Appointments When Service Provided'
     delta_appts_coarse = delta_appts \
         .groupby(axis=0, by=delta_appts.index.map(get_coarse_appt_type)) \
         .sum() \
@@ -656,8 +656,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         stacked=True, legend=True, ax=ax, color=[get_color_coarse_appt(_a) for _a in delta_appts_coarse.index]
     )
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
-    ax.set_xlabel('Additional Appointments (/millions)')
-    ax.set_ylabel('TREATMENT_ID (Short)')
+    ax.set_xlabel('Difference in Number of Appointments (/millions)')
+    ax.set_ylabel('TREATMENT_ID')
     ax.axvline(0, color='grey')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
