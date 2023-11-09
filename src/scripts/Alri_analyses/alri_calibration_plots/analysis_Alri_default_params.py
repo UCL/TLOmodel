@@ -38,7 +38,7 @@ output_files = dict()
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
 end_date = start_date + pd.DateOffset(years=10)
-popsize = 10_000
+popsize = 20_000
 
 log_config = {
     "filename": "alri_with_treatment",
@@ -51,7 +51,7 @@ log_config = {
 }
 
 # Establish the simulation object
-sim = Simulation(start_date=start_date, log_config=log_config, show_progress_bar=True)
+sim = Simulation(start_date=start_date, log_config=log_config, show_progress_bar=True, seed=0)
 
 # run the simulation
 sim.register(
@@ -248,6 +248,8 @@ fig, axs = plt.subplots(nrows=2, ncols=1, sharex=True)
 for ax, period in zip(axs, ('2010-2014', '2015-2019')):
     comparison.loc[(period, slice(None), '0-4', 'Lower respiratory infections')].sum().plot.bar(ax=ax)
     ax.set_title(f'Deaths per year due to ALRI, {period}')
+    ax.set_ylim(0, 10_000)
+    ax.axhline(comparison.loc[(period, slice(None), '0-4', 'Lower respiratory infections')].sum()['model'])
 fig.tight_layout()
 fig.savefig(outputpath / ("ALRI_death_calibration_plot" + datestamp + ".png"), format='png')
 plt.show()
