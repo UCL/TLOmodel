@@ -177,7 +177,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.show()
     plt.close(fig)
 
-
     name_of_plot = f'DALYs, {target_period()}'
     fig, ax = do_bar_plot_with_ci(
         num_dalys_summarized.loc[['No Healthcare System', 'With Hard Constraints', 'Status Quo']] / 1e6
@@ -191,8 +190,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
     fig.show()
     plt.close(fig)
-
-
 
     # %% Deaths and DALYS averted relative to Status Quo
     num_deaths_averted = summarize(
