@@ -211,7 +211,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.spines['right'].set_visible(False)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
     fig, ax = plt.subplots()
@@ -227,7 +226,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.spines['right'].set_visible(False)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
     # %%  Quantify the health gains associated with each TREATMENT_ID (short) individually (i.e., the
@@ -318,7 +316,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.spines['right'].set_visible(False)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
     fig, ax = plt.subplots()
@@ -335,7 +332,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.spines['right'].set_visible(False)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
     # %% Quantify the health associated with each TREATMENT_ID (short) SPLIT BY AGE and WEALTH
@@ -386,7 +382,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.legend().set_visible(False)
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-        fig.show()
         plt.close(fig)
 
     def get_total_num_death_by_wealth_and_label(_df):
@@ -437,7 +432,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.legend().set_visible(False)
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-        fig.show()
         plt.close(fig)
 
     # -- DALYS
@@ -496,7 +490,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.legend().set_visible(False)
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-        fig.show()
         plt.close(fig)
 
     def get_total_num_dalys_by_wealth_and_label(_df):
@@ -552,7 +545,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.legend().set_visible(False)
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-        fig.show()
         plt.close(fig)
 
     # %% Quantify the healthcare system resources used with each TREATMENT_ID (short) (The difference in the number of
@@ -598,7 +590,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax.set_axis_off()
             ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
             fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-            fig.show()
             plt.close(fig)
 
     # 2) Examine the Difference in the number/type of appointments occurring
@@ -637,7 +628,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.legend(ncol=3, fontsize=5, loc='upper left')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
     # VERSION WITH COARSE APPOINTMENTS, CONFORMING TO STANDARD ORDERING/COLORS AND ORDER
@@ -665,13 +655,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.legend().set_visible(False)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
 
 if __name__ == "__main__":
-    rfp = Path('resources')
-
     parser = argparse.ArgumentParser()
     parser.add_argument("results_folder", type=Path)
     args = parser.parse_args()
