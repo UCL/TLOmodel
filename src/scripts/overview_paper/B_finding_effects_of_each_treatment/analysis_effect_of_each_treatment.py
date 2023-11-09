@@ -671,7 +671,7 @@ if __name__ == "__main__":
 
     # Plot the legends
     plot_legends.apply(
-        results_folder=None, output_folder=args.results_folder, resourcefilepath=rfp)
+        results_folder=None, output_folder=args.results_folder, resourcefilepath=Path('./resources'))
 
     # Plot the organisation chart of the TREATMENT_IDs
     plot_org_chart_treatment_ids.apply(
