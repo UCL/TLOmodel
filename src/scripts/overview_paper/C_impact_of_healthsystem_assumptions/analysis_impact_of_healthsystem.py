@@ -51,11 +51,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         return pd.Series(data=len(_df.loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)]))
 
     def get_num_dalys(_df):
-        """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD)
+        """Return total number of DALYS (Stacked) by label (total within the TARGET_PERIOD).
+        Throw error if not a record for every year in the TARGET PERIOD (to guard against inadvertently using
+        results from runs that crashed mid-way through the simulation.
         """
+        years_needed = [i.year for i in TARGET_PERIOD]
+        assert set(_df.year.unique()).issuperset(years_needed), "Some years are not recorded."
         return pd.Series(
             data=_df
-            .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])]
+            .loc[_df.year.between(*years_needed)]
             .drop(columns=['date', 'sex', 'age_range', 'year'])
             .sum().sum()
         )
@@ -412,6 +416,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("results_folder", type=Path)
     args = parser.parse_args()
+
+    # Needed the first time as pickles were not created on Azure side:
+    # from tlo.analysis.utils import create_pickles_locally
+    # create_pickles_locally(
+    #     scenario_output_dir=args.results_folder,
+    #     compressed_file_name_prefix=args.results_folder.name.split('-')[0],
+    # )
 
     apply(
         results_folder=args.results_folder,
