@@ -215,14 +215,12 @@ class CareOfWomenDuringPregnancy(Module):
         """
         get_list_of_items = pregnancy_helper_functions.get_list_of_items
 
-        # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
-        # TODO: As we now consider both consumables and equipment, using 'equipment' when meaning consumables is
-        #  confusing
-        self.item_codes_preg_consumables['blood_test_equipment'] = \
+        # ---------------------------------- BLOOD TEST CONSUMABLES --------------------------------------------------
+        self.item_codes_preg_consumables['blood_test_cons'] = \
             get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
 
-        # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
-        self.item_codes_preg_consumables['iv_drug_equipment'] = \
+        # ---------------------------------- IV DRUG ADMIN CONSUMABLES  -----------------------------------------------
+        self.item_codes_preg_consumables['iv_drug_cons'] = \
             get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Disposables gloves, powder free, 100 pieces per box'])
@@ -922,7 +920,7 @@ class CareOfWomenDuringPregnancy(Module):
         if self.rng.random_sample() < params['prob_intervention_delivered_poct']:
             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hb_screen'})
 
-            hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_test_equipment'])
+            hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_test_cons'])
             hsi_event.EQUIPMENT.update({'Haemoglobinometer'})
 
             # We run the test through the dx_manager and if a woman has anaemia and its detected she will be admitted
@@ -971,7 +969,7 @@ class CareOfWomenDuringPregnancy(Module):
         # This intervention is a place holder prior to the Hepatitis B module being coded
         # Define the consumables
         avail = hsi_event.get_consumables(item_codes=cons['hep_b_test'],
-                                          optional_item_codes=cons['blood_test_equipment'])
+                                          optional_item_codes=cons['blood_test_cons'])
 
         # We log all the consumables required above but we only condition the event test happening on the
         # availability of the test itself
@@ -998,7 +996,7 @@ class CareOfWomenDuringPregnancy(Module):
 
             avail = pregnancy_helper_functions.return_cons_avail(
                 self, hsi_event, self.item_codes_preg_consumables, core='syphilis_test',
-                optional='blood_test_equipment')
+                optional='blood_test_cons')
 
             test = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
                          dx_tests_to_run='blood_test_syphilis', hsi_event=hsi_event)
@@ -1008,7 +1006,7 @@ class CareOfWomenDuringPregnancy(Module):
 
                 avail = pregnancy_helper_functions.return_cons_avail(
                     self, hsi_event, self.item_codes_preg_consumables, core='syphilis_treatment',
-                    optional='blood_test_equipment')
+                    optional='blood_test_cons')
 
                 if avail:
                     # We assume that treatment is 100% effective at curing infection
@@ -1073,7 +1071,7 @@ class CareOfWomenDuringPregnancy(Module):
             if self.rng.random_sample() < params['prob_intervention_delivered_gdm_test']:
 
                 avail = pregnancy_helper_functions.return_cons_avail(
-                    self, hsi_event, self.item_codes_preg_consumables, core='gdm_test', optional='iv_drug_equipment')
+                    self, hsi_event, self.item_codes_preg_consumables, core='gdm_test', optional='iv_drug_cons')
 
                 # If the test accurately detects a woman has gestational diabetes the consumables are recorded and
                 # she is referred for treatment
@@ -1249,7 +1247,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # Check for consumables
         avail = pregnancy_helper_functions.return_cons_avail(
-            self, hsi_event, self.item_codes_preg_consumables, core='blood_transfusion', optional='iv_drug_equipment')
+            self, hsi_event, self.item_codes_preg_consumables, core='blood_transfusion', optional='iv_drug_cons')
 
         sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
                                                                                    sf='blood_tran',
@@ -1357,7 +1355,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # check consumables and whether HCW are available to deliver the intervention
         avail = hsi_event.get_consumables(item_codes=cons['abx_for_prom'],
-                                          optional_item_codes=cons['iv_drug_equipment'])
+                                          optional_item_codes=cons['iv_drug_cons'])
 
         sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
                                                                                    sf='iv_abx',
@@ -2649,7 +2647,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
 
             cons_for_haemorrhage = pregnancy_helper_functions.return_cons_avail(
                 self.module, self, self.module.item_codes_preg_consumables, core='blood_transfusion',
-                optional='iv_drug_equipment')
+                optional='iv_drug_cons')
 
             cons_for_shock = pregnancy_helper_functions.return_cons_avail(
                 self.module, self, self.module.item_codes_preg_consumables, core='post_abortion_care_shock',
