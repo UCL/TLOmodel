@@ -1497,8 +1497,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
 
          #increase CXR by 30
          if scenario == 5:
-             self.sim.modules['parameters']['probability_community_chest_xray'] = 0.01
-             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.83})
+             self.sim.modules['parameters']['probability_community_chest_xray'] = 0.1
+             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.73})
+             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.85})
 
 #######################################################################
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
