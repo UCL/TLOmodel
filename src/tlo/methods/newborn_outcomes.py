@@ -409,16 +409,16 @@ class NewbornOutcomes(Module):
         """
         get_list_of_items = pregnancy_helper_functions.get_list_of_items
 
-        # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
+        # ---------------------------------- IV DRUG ADMIN CONSUMABLE  -------------------------------------------------
         # TODO: As we now consider both consumables and equipment, using 'equipment' when meaning consumables is
         #  confusing
-        self.item_codes_nb_consumables['iv_drug_equipment'] = \
+        self.item_codes_nb_consumables['iv_drug_cons'] = \
             get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Disposables gloves, powder free, 100 pieces per box'])
 
-        # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
-        self.item_codes_nb_consumables['blood_test_equipment'] = \
+        # ---------------------------------- BLOOD TEST CONSUMABLES ---------------------------------------------------
+        self.item_codes_nb_consumables['blood_test_cons'] = \
             get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
 
         # -------------------------------------------- VITAMIN K ------------------------------------------
@@ -861,7 +861,7 @@ class NewbornOutcomes(Module):
         # We define the consumables
         avail_eyecare = hsi_event.get_consumables(item_codes=cons['eye_care'])
         avail_vit_k = hsi_event.get_consumables(item_codes=cons['vitamin_k'],
-                                                optional_item_codes=cons['iv_drug_equipment'])
+                                                optional_item_codes=cons['iv_drug_cons'])
 
         # If they are available the intervention is delivered, there is limited evidence of the effect of these
         # interventions so currently we are just mapping the consumables
@@ -1015,7 +1015,7 @@ class NewbornOutcomes(Module):
             else:
                 avail = pregnancy_helper_functions.return_cons_avail(
                     self, hsi_event, self.item_codes_nb_consumables, core='sepsis_abx',
-                    optional='iv_drug_equipment')
+                    optional='iv_drug_cons')
 
                 if avail and sf_check:
                     df.at[person_id, 'nb_inj_abx_neonatal_sepsis'] = True
