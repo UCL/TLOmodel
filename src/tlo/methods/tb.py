@@ -2513,18 +2513,47 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
                                           size=len(eligible),
                                           p=[prob_screening, 1 - prob_screening])
 
-        # If anyone is selected for screening
         if select_for_screening.sum():
             screen_idx = eligible[select_for_screening]
 
-            # Send individuals for community x-ray screening
+            # Send individuals for community x-ray screening based on their symptoms
             for person_id in screen_idx:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Tb_CommunityXray(person_id=person_id, module=self.module),
-                    topen=now,
-                    tclose=None,
-                    priority=0,
-                )
+                persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+
+                # Check if the patient has cough, fever, night sweat, or weight loss
+                if any(x in self.module.symptom_list for x in persons_symptoms):
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        HSI_Tb_CommunityXray(person_id=person_id, module=self.module),
+                        topen=now,
+                        tclose=None,
+                        priority=0,
+                    )
+
+        # If anyone is selected for screening
+        # if select_for_screening.sum():
+        #     screen_idx = eligible[select_for_screening]
+        #
+        #     # Send individuals for community x-ray screening
+        #     # for person_id in screen_idx:
+        #     #     self.sim.modules["HealthSystem"].schedule_hsi_event(
+        #     #         HSI_Tb_CommunityXray(person_id=person_id, module=self.module),
+        #     #         topen=now,
+        #     #         tclose=None,
+        #     #         priority=0,
+        #     #     )
+        #
+        #         # check if patient has: cough, fever, night sweat, weight loss
+        #         # if none of the above conditions are present, no further action
+        #         for person_id in screen_idx:
+        #             persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        #
+        #             if any(x in self.module.symptom_list for x in persons_symptoms):
+        #                 self.sim.modules["HealthSystem"].schedule_hsi_event(
+        #                     HSI_Tb_CommunityXray(person_id=person_id, module=self.module),
+        #                     topen=now,
+        #                     tclose=None,
+        #                     priority=0,
+        #                 )
 
 
 class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
