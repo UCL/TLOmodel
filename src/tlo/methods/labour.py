@@ -691,16 +691,15 @@ class Labour(Module):
 
         get_list_of_items = pregnancy_helper_functions.get_list_of_items
 
-        # ---------------------------------- IV DRUG ADMIN EQUIPMENT  -------------------------------------------------
-        # TODO: As we now consider both consumables and equipment, using 'equipment' when meaning consumables is
-        #  confusing
-        self.item_codes_lab_consumables['iv_drug_equipment'] = \
+        # ---------------------------------- IV DRUG ADMIN CONSUMABLES  -----------------------------------------------
+
+        self.item_codes_lab_consumables['iv_drug_cons'] = \
             get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
                                      'Disposables gloves, powder free, 100 pieces per box'])
 
-        # ---------------------------------- BLOOD TEST EQUIPMENT ---------------------------------------------------
-        self.item_codes_lab_consumables['blood_test_equipment'] = \
+        # ---------------------------------- BLOOD TEST CONSUMABLES ---------------------------------------------------
+        self.item_codes_lab_consumables['blood_test_cons'] = \
             get_list_of_items(self, ['Disposables gloves, powder free, 100 pieces per box'])
 
         # -------------------------------------------- DELIVERY ------------------------------------------------------
@@ -1660,7 +1659,7 @@ class Labour(Module):
 
                 # If she has not already receive antibiotics, we check for consumables
                 avail = pregnancy_helper_functions.return_cons_avail(
-                    self, hsi_event, self.item_codes_lab_consumables, core='abx_for_prom', optional='iv_drug_equipment')
+                    self, hsi_event, self.item_codes_lab_consumables, core='abx_for_prom', optional='iv_drug_cons')
 
                 # Then query if these consumables are available during this HSI And provide if available.
                 # Antibiotics for from reduce risk of newborn sepsis within the first
@@ -1675,7 +1674,7 @@ class Labour(Module):
 
             avail = pregnancy_helper_functions.return_cons_avail(
                 self, hsi_event, self.item_codes_lab_consumables, core='antenatal_steroids',
-                optional='iv_drug_equipment')
+                optional='iv_drug_cons')
 
             # If available they are given. Antenatal steroids reduce a preterm newborns chance of developing
             # respiratory distress syndrome and of death associated with prematurity
@@ -1770,7 +1769,7 @@ class Labour(Module):
             # Then query if these consumables are available during this HSI
             avail = pregnancy_helper_functions.return_cons_avail(
                 self, hsi_event, self.item_codes_lab_consumables, core='iv_antihypertensives',
-                optional='iv_drug_equipment')
+                optional='iv_drug_cons')
 
             # If they are available then the woman is started on treatment. Intravenous antihypertensive reduce a
             # womans risk of progression from mild to severe gestational hypertension ANd reduce risk of death for
@@ -1994,7 +1993,7 @@ class Labour(Module):
 
         # Define and check available consumables
         avail = pregnancy_helper_functions.return_cons_avail(
-            self, hsi_event, self.item_codes_lab_consumables, core='amtsl', optional='iv_drug_equipment')
+            self, hsi_event, self.item_codes_lab_consumables, core='amtsl', optional='iv_drug_cons')
 
         # run HCW check
         sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='uterotonic',
@@ -2172,7 +2171,7 @@ class Labour(Module):
         # Check consumables
         avail = pregnancy_helper_functions.return_cons_avail(
             self, hsi_event, self.item_codes_lab_consumables, core='blood_transfusion',
-            optional='iv_drug_equipment')
+            optional='iv_drug_cons')
 
         # check HCW
         sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='blood_tran',
@@ -2211,7 +2210,7 @@ class Labour(Module):
         test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
             dx_tests_to_run='full_blood_count_hb_pn', hsi_event=hsi_event)
 
-        hsi_event.get_consumables(item_codes=self.item_codes_lab_consumables['blood_test_equipment'])
+        hsi_event.get_consumables(item_codes=self.item_codes_lab_consumables['blood_test_cons'])
 
         # Check consumables
         if test_result:

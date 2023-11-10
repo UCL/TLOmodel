@@ -3428,6 +3428,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # mortality percentage = 51.2 overall, 50% for TBI admission and 49% for hemorrhage
         # determine the number of ICU days used to treat patient
 
+        # TODO: Add general ICU equipment here? What form of organ support is offered?
         if df.loc[person_id, 'rt_ISS_score'] > self.hdu_cut_off_iss_score:
             mean_icu_days = p['mean_icu_days']
             sd_icu_days = p['sd_icu_days']
@@ -3722,7 +3723,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
     This HSI event handles the process of treating hypovolemic shock, as recommended by the pediatric
     handbook for Malawi and (TODO: FIND ADULT REFERENCE)
     Currently this HSI_Event is described only and not used, as I still need to work out how to model the occurrence
-    of shock
+    of shock TODO: is this still the case - should this be scheduled/ignored?
     """
 
     def __init__(self, module, person_id):
@@ -3732,6 +3733,7 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Rti_ShockTreatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -3743,6 +3745,10 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return self.make_appt_footprint({})
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+
+        self.EQUIPMENT.update({'Infusion pump', 'Drip stand', 'Oxygen cylinder, with regulator', 'Nasal Prongs',
+                               'Patient monitor', 'Blood pressure machine', 'Pulse oximeter'})
+
         # TODO: find a more complete list of required consumables for adults
         if is_child:
             self.module.item_codes_for_consumables_required['shock_treatment_child'] = {
@@ -3824,6 +3830,7 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Rti_FractureCast'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         # Get the population and health system
