@@ -29,17 +29,20 @@
             "ProstateCancer_*",
             "Rti_*",
             "Schisto_*",
-            "Undernutrition_*"
+            "Undernutrition_*",
+            "Hiv_PalliativeCare",
+            "Tb_PalliativeCare",
+            "Malaria_Treatment_Complicated"
           ],
           "use_funded_or_actual_staffing": "funded",
           "mode_appt_constraints": 1
         },
         "Hiv": {
-          "scenario": 0
+          "scenario": 5
         }
       }
     }
   ],
-  "commit": "5088741814cb89e125e35bb036d6c500370e7eab",
-  "github": "https://github.com/UCL/TLOmodel/tree/5088741814cb89e125e35bb036d6c500370e7eab"
+  "commit": "5c96790c648a9956f17e2d41b9be3a90ab097aab",
+  "github": "https://github.com/UCL/TLOmodel/tree/5c96790c648a9956f17e2d41b9be3a90ab097aab"
 }

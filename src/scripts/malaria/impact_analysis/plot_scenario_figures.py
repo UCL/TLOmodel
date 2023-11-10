@@ -24,7 +24,8 @@ from tlo.analysis.utils import (
     make_age_grp_types,
 )
 
-outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
+# outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
+outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
 results_folder = get_scenario_outputs("effect_of_treatment_packages_combined.py", outputspath)[-1]
@@ -352,6 +353,179 @@ plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left',
            labels=['mode1', '-hiv', '-tb', '-malaria', '-all3'], )
 
 plt.show()
+
+
+# ----------------------------------------------------------------------
+# extract deaths by year for life expectancy calculations
+
+TARGET_PERIOD = (Date(2019, 1, 1), Date(2020, 1, 1))
+
+
+# get mean number of deaths by age-group for the target period
+def extract_deaths_by_age_sex(results_folder):
+    def extract_deaths(df: pd.DataFrame) -> pd.Series:
+        _, age_group_lookup = make_age_grp_lookup()
+        df["Age_Grp"] = df["age"].map(age_group_lookup).astype(make_age_grp_types())
+        df = df.rename(columns={"sex": "Sex"})
+        return df.loc[pd.to_datetime(df.date).between(*TARGET_PERIOD)].groupby(["Age_Grp", "Sex"])["person_id"].count()
+
+    return summarize(extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=extract_deaths,
+        do_scaling=True
+    ), only_mean=True, collapse_columns=False
+    )
+
+deaths_by_age_sex = extract_deaths_by_age_sex(results_folder)
+
+
+# get person-years by age-group for target period
+# use demography.age_range_m for pop size
+# select target years
+# for each column, take median
+def extract_pop_size(results_folder, draw, key):
+    module = "tlo.methods.demography"
+
+    def get_multiplier(_draw, _run):
+        """Helper function to get the multiplier from the simulation."""
+        return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.population'
+                                           )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+
+    # get number of draws and numbers of runs
+    info = get_scenario_info(results_folder)
+
+    # Dictionary to store DataFrames
+    dataframes = {}
+
+    # get the dataframes from each run
+    for run in range(info['runs_per_draw']):
+
+        df_name = f'df_{run}'  # Create a dynamic name for each DataFrame
+        data = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+        dataframes[df_name] = pd.DataFrame(data)
+
+    # Concatenate DataFrames along a new axis (axis=2)
+    concatenated_df = pd.concat([dataframes["df_1"],
+                                 dataframes["df_2"],
+                                 dataframes["df_3"],
+                                 dataframes["df_4"],
+                                 ], axis=1, keys=['df1', 'df2', 'df3', 'df4'])
+
+    # Remove column 'B' from all data frames within concatenated_df
+    concatenated_df = concatenated_df.drop('date', level=1, axis=1)
+    # Calculate the mean for each row in each column
+    tmp = concatenated_df.groupby(level=1, axis=1).mean()
+
+    return tmp
+
+
+pop_baseline_m = extract_pop_size(results_folder=results_folder, draw=0, key="age_group_m")
+pop_baseline_f = extract_pop_size(results_folder=results_folder, draw=0, key="age_group_f")
+pop_exclHTM_m = extract_pop_size(results_folder=results_folder, draw=4,  key="age_group_m")
+pop_exclHTM_f = extract_pop_size(results_folder=results_folder, draw=4,  key="age_group_f")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# --------------------------------------------------------------------
+# LIFE EXPECTANCY FOR MALES AND FEMALES - SIMPLE METHOD
+
+# get deaths for males and females for the target time period
+def get_num_deaths_by_sex(_df):
+    """Return total number of Deaths by sex (total within the TARGET_PERIOD)
+    """
+    return _df \
+        .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
+        .groupby(_df['sex']) \
+        .size()
+
+
+deaths_by_sex = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=get_num_deaths_by_sex,
+        do_scaling=True
+)
+
+
+
+# get person-years for same time-period
+def get_person_years_M(_df):
+    """ extract person-years for each draw/run
+    men and women calculated separately
+    will skip column if particular run has failed
+    """
+    years = pd.to_datetime(_df["date"]).dt.year
+    # create empty series
+    py_M = pd.Series(dtype="int64", index=years)
+
+    for year in years:
+        tot_m = (
+            (_df.loc[pd.to_datetime(_df["date"]).dt.year == year]["M"]).apply(pd.Series)
+        ).transpose()
+        py_M[year] = tot_m.sum().values[0]
+
+    return py_M
+
+
+def get_person_years_F(_df):
+    """ extract person-years for each draw/run
+    men and women calculated separately
+    will skip column if particular run has failed
+    """
+    years = pd.to_datetime(_df["date"]).dt.year
+    # create empty series
+    py_F = pd.Series(dtype="int64", index=years)
+
+    for year in years:
+        tot_f = (
+            (_df.loc[pd.to_datetime(_df["date"]).dt.year == year]["F"]).apply(pd.Series)
+        ).transpose()
+        py_F[year] = tot_f.sum().values[0]
+
+    return py_F
+
+py_M = extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years_M,
+    do_scaling=True
+)
+
+py_F = extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years_F,
+    do_scaling=True
+)
+
+# calculate life expectancy for 2019
+
 
 
 # %%:  ---------------------------------- DALYS ---------------------------------- #
