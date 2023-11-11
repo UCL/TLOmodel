@@ -168,7 +168,7 @@ def tb_mortality0(results_folder):
         custom_generate_series=(
             lambda df: df.assign(year=df["date"].dt.year).groupby(["year", "cause"])["person_id"].count()
         ),
-        do_scaling=False,
+        do_scaling=True,
     ).pipe(set_param_names_as_column_index_level_0)
 
     # Select only causes AIDS_TB, AIDS_non_TB, and TB
@@ -195,7 +195,7 @@ def tb_mortality_rate(results_folder, pyears_all):
         custom_generate_series=(
             lambda df: df.assign(year=df["date"].dt.year).groupby(["year", "cause"])["person_id"].count()
         ),
-        do_scaling=False,
+        do_scaling=True,
     ).pipe(set_param_names_as_column_index_level_0)
 
     # Select only causes AIDS_TB, AIDS_non_TB, and TB
@@ -234,7 +234,7 @@ tb_hiv_prop = summarize(
         key="tb_incidence",
         column="prop_active_tb_in_plhiv",
         index="date",
-        do_scaling=False,
+        do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
@@ -250,7 +250,7 @@ mdr_tb_cases = summarize(
         key="tb_mdr",
         column="tbNewActiveMdrCases",
         index="date",
-        do_scaling=False,
+        do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
@@ -267,7 +267,7 @@ tb_treatment = summarize(
             key="tb_treatment",
             column="tbTreatmentCoverage",
             index="date",
-            do_scaling=False,
+            do_scaling=True,
         ),
         collapse_columns=True,
     ).pipe(set_param_names_as_column_index_level_0)
@@ -284,7 +284,7 @@ tb_inc = summarize(
         key="tb_incidence",
         column="num_new_active_tb",
         index="date",
-        do_scaling=False,
+        do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
@@ -313,7 +313,7 @@ Tb_prevalence= summarize(
         key="tb_prevalence",
         column="tbPrevActive",
         index="date",
-        do_scaling=False,
+        do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
@@ -328,7 +328,7 @@ adult_Tb_prevalence= summarize(
         key="tb_prevalence",
         column="tbPrevActiveAdult",
         index="date",
-        do_scaling=False,
+        do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
@@ -343,7 +343,7 @@ child_Tb_prevalence= summarize(
         key="tb_prevalence",
         column="tbPrevActiveChild",
         index="date",
-        do_scaling=False,
+        do_scaling=True,
     ),
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
