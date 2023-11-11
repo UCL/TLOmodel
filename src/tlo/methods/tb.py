@@ -2527,13 +2527,14 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
 
                 # Check if the patient has cough, fever, night sweat, or weight loss
                 if any(x in self.module.symptom_list for x in persons_symptoms):
+                    print(f"Screening scheduled for person {person_id} due to TB symptoms.")
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         HSI_Tb_CommunityXray(person_id=person_id, module=self.module),
                         topen=now,
                         tclose=None,
                         priority=0,
                     )
-        print(f"Screening scheduled for person {person_id} due to TB symptoms.")
+
         # If anyone is selected for screening
         # if select_for_screening.sum():
         #     screen_idx = eligible[select_for_screening]
