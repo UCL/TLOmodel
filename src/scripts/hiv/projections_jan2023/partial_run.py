@@ -29,7 +29,7 @@ class ImpactOfTbDaHx(BaseScenario):
         self.seed = 0 #random.randint(0, 50000)
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2013, 12, 31)
-        self.pop_size =600
+        self.pop_size =2000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 3
@@ -82,7 +82,7 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                     'scenario': 1,
                     'probability_community_chest_xray': 0.0,
-                   # 'scaling_factor_WHO': 2.1,
+                    'scaling_factor_WHO': 2.1,
                 },
             },
         # overrides availability of CXR
@@ -90,14 +90,14 @@ class ImpactOfTbDaHx(BaseScenario):
                 'Tb': {
                     'scenario': 2,
                     'probability_community_chest_xray': 0.0,
-                   # 'scaling_factor_WHO': 1.89
+                    'scaling_factor_WHO': 1.89
                 },
             },
             "CXR scale_up": {
                  'Tb': {
                      'scenario': 3,
                      'probability_community_chest_xray': 0.0,
-                     # 'scaling_factor_WHO': 0.9,
+                     #'scaling_factor_WHO': 0.9,
                  }
             },
                  "Outreach services": {
