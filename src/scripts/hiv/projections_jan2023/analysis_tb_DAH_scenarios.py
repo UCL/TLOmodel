@@ -156,8 +156,36 @@ print("DALYs for TB are as follows:")
 print(dalys_summary)
 dalys_summary.to_excel(outputspath / "summarised_tb_dalys.xlsx")
 
-# secondary outcomes
-print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
+#extracts dalys by SES groups
+# def get_total_num_dalys_by_wealth_and_label(_df):
+#     """Return the total number of DALYS by wealth and cause label."""
+#     wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
+#
+#     return _df \
+#         .drop(columns=['date', 'year']) \
+#         .assign(
+#         li_wealth=lambda x: x['li_wealth'].map(wealth_cats)
+#         .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
+#     ) \
+#         .melt(id_vars=['li_wealth'], var_name='label') \
+#         .groupby(by=['li_wealth', 'label'])['value'] \
+#         .sum()
+#
+# total_dalys_by_wealth = extract_results(
+#     results_folder,
+#     module="tlo.methods.healthburden",
+#     key="dalys_by_wealth_stacked_by_age_and_time",
+#     custom_generate_series=get_total_num_dalys_by_wealth_and_label,
+#     do_scaling=True
+# ).pipe(set_param_names_as_column_index_level_0)
+
+# print("total_dalys_by_wealth:", total_dalys_by_wealth.shape)
+# dalys_summary = summarize(total_dalys_by_wealth).sort_index()
+# print("Shape after summarize:", total_dalys_by_wealth.shape)
+#
+# total_dalys_by_wealth = summarize(total_dalys_by_wealth).sort_index()
+# total_dalys_by_wealth.to_excel(outputspath / "total_dalys_by_wealths.xlsx")
+
 
 #raw mortality
 def tb_mortality0(results_folder):
