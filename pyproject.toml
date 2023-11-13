@@ -127,9 +127,6 @@ markers = ["group2", "slow"]
 [tool.ruff]
 target-version = "py38"
 line-length = 120
-ignore = [
-    "F601", # dictionary literal key repeated
-]
 
 [tool.setuptools.packages.find]
 where = ["src"]
