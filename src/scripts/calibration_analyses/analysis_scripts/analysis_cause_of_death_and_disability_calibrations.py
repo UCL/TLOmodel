@@ -190,7 +190,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                         ax.set_yticks(np.arange(0, 30_000, 5_000))
                     else:
                         ax.set_ylabel(f"{what} per year (/1000)\n")
-                        ax.set_ylim([0, 1800.0])
+                        ax.set_ylim([0, 2000.0])
 
                 # Create figure legend and remove duplicated entries, but keep the first entries
                 handles, labels = ax.get_legend_handles_labels()
