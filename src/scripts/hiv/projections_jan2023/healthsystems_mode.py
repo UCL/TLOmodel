@@ -495,16 +495,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
         wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
 
-        return _df \
-            .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
-            .drop(columns=['date', 'year']) \
-            .assign(
-                li_wealth=lambda x: x['li_wealth'].map(wealth_cats)
-                .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
-            ) \
-            .melt(id_vars=['li_wealth'], var_name='label') \
-            .groupby(by=['li_wealth', 'label'])['value'] \
-            .sum()
+        value__sum = \
+        _df.loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])].drop(columns=['date', 'year']).assign(
+            li_wealth=lambda x: x['li_wealth'].map(wealth_cats).astype(
+                pd.CategoricalDtype(wealth_cats.values(), ordered=True))).melt(id_vars=['li_wealth'],
+                                                                               var_name='label').groupby(
+            by=['li_wealth', 'label'])['value'].sum()
+        return value__sum
 
     total_num_dalys_by_wealth_and_label = extract_results(
         results_folder,
