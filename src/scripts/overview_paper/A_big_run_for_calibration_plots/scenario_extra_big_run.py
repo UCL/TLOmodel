@@ -3,10 +3,10 @@ This file defines a batch run of a large population for a long time with all dis
 It's used for calibrations (demographic patterns, health burdens and healthsystem usage)
 
 Run on the batch system using:
-```tlo batch-submit src/scripts/overview_paper/A_big_run_for_calibration_plots/scenario_big_run.py```
+```tlo batch-submit src/scripts/overview_paper/A_big_run_for_calibration_plots/scenario_extra_big_run.py```
 
 or locally using:
-    ```tlo scenario-run src/scripts/overview_paper/A_big_run_for_calibration_plots/scenario_big_run.py```
+    ```tlo scenario-run src/scripts/overview_paper/A_big_run_for_calibration_plots/scenario_extra_big_run.py```
 
 """
 
