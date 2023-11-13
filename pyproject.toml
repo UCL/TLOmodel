@@ -128,7 +128,6 @@ markers = ["group2", "slow"]
 target-version = "py38"
 line-length = 120
 ignore = [
-    "E741", # ambiguous variable name
     "F601", # dictionary literal key repeated
 ]
 
