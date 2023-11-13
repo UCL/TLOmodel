@@ -96,17 +96,15 @@ def write_log_to_excel(filename, log_dataframes):
                 sheet_count += 1
                 metadata.append([module, key, sheet_count, dataframes['_metadata'][module][key]['description']])
 
-    writer = pd.ExcelWriter(filename)
-    index = pd.DataFrame(data=metadata, columns=['module', 'key', 'sheet', 'description'])
-    index.to_excel(writer, sheet_name='Index')
-
-    sheet_count = 0
-    for module, dataframes in log_dataframes.items():
-        for key, df in dataframes.items():
-            if key != '_metadata':
-                sheet_count += 1
-                df.to_excel(writer, sheet_name=f'Sheet {sheet_count}')
-    writer.save()
+    with pd.ExcelWriter(filename) as writer:  # https://github.com/PyCQA/pylint/issues/3060 pylint: disable=E0110
+        index = pd.DataFrame(data=metadata, columns=['module', 'key', 'sheet', 'description'])
+        index.to_excel(writer, sheet_name='Index')
+        sheet_count = 0
+        for module, dataframes in log_dataframes.items():
+            for key, df in dataframes.items():
+                if key != '_metadata':
+                    sheet_count += 1
+                    df.to_excel(writer, sheet_name=f'Sheet {sheet_count}')
 
 
 def make_calendar_period_lookup():
