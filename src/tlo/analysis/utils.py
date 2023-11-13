@@ -106,7 +106,7 @@ def write_log_to_excel(filename, log_dataframes):
             if key != '_metadata':
                 sheet_count += 1
                 df.to_excel(writer, sheet_name=f'Sheet {sheet_count}')
-    writer.save()
+    writer.close()
 
 
 def make_calendar_period_lookup():
