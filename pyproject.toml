@@ -100,7 +100,6 @@ disable = [
     "E1137", # doesn't support item assignment
     "E1101", # no-member
     "E1120", # no-value-for-parameter
-    "E1130", # bad operand type for unary ~
 ]
 
 
