@@ -29,7 +29,7 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2020, 1, 1)
-        self.pop_size = 50_000
+        self.pop_size = 50_000  # Note smaller population size (should be 100_000 but runs on draws did not complete)
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 10
