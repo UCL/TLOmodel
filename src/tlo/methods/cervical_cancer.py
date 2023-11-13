@@ -8,6 +8,7 @@ Limitations to note:
 from pathlib import Path
 
 import pandas as pd
+import random
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -60,13 +61,9 @@ class CervicalCancer(Module):
     }
 
     PARAMETERS = {
-        "init_prop_hpv_cc_stage_age1524": Parameter(
+        "init_prev_cin_hpv_cc_stage": Parameter(
             Types.LIST,
-            "initial proportions in cancer categories for women aged 15-24"
-        ),
-        "init_prop_hpv_cc_stage_age2549": Parameter(
-            Types.LIST,
-            "initial proportions in cancer categories for women aged 25-49"
+            "initial proportions in hpv cancer categories"
         ),
         "init_prop_vaginal_bleeding_by_cc_stage": Parameter(
             Types.LIST, "initial proportions of those with cervical cancer that have the symptom vaginal_bleeding"
@@ -80,6 +77,7 @@ class CervicalCancer(Module):
         "init_prob_palliative_care": Parameter(
             Types.REAL, "initial probability of being under palliative care if in stage 4"
         ),
+# currently these two below are just added as vaccine efficacy implictly takes account of whether hpv is vaccine preventable
         "r_vp_hpv": Parameter(
             Types.REAL,
             "probabilty per month of incident vaccine preventable hpv infection",
@@ -128,11 +126,23 @@ class CervicalCancer(Module):
             "rate ratio for hpv if vaccinated - this is combined effect of probability the hpv is "
             "vaccine-preventable and vaccine efficacy against vaccine-preventable hpv ",
         ),
-         "rr_progression_cc_undergone_curative_treatment": Parameter(
+         "prob_cure_stage1": Parameter(
             Types.REAL,
-            "rate ratio for progression to next cervical cancer stage if had curative treatment at current stage",
+            "probability of cure if treated in stage 1 cervical cancer",
         ),
-         "r_death_cervical_cancer": Parameter(
+        "prob_cure_stage2a": Parameter(
+            Types.REAL,
+            "probability of cure if treated in stage 1 cervical cancer",
+        ),
+        "prob_cure_stage2b": Parameter(
+            Types.REAL,
+            "probability of cure if treated in stage 1 cervical cancer",
+        ),
+        "prob_cure_stage3": Parameter(
+            Types.REAL,
+            "probability of cure if treated in stage 1 cervical cancer",
+        ),
+        "r_death_cervical_cancer": Parameter(
             Types.REAL,
             "probabilty per 3 months of death from cervical cancer amongst people with stage 4 cervical cancer",
         ),
@@ -172,6 +182,7 @@ class CervicalCancer(Module):
             "Current hpv / cervical cancer status",
             categories=["none", "hpv", "cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"],
         ),
+# this property not currently used as vaccine efficacy implicitly takes into account probability hpv is no vaccine preventable
         "ce_hpv_vp": Property(
             Types.BOOL,
             "if ce_hpv_cc_status = hpv, is it vaccine preventable?"
@@ -196,12 +207,8 @@ class CervicalCancer(Module):
             Types.DATE,
             "date of first receiving attempted curative treatment (pd.NaT if never started treatment)"
         ),
-        "ce_vaginal_bleeding_investigated": Property(
-            Types.BOOL,
-            "whether vaginal bleeding has been investigated, and cancer missed"
-        ),
-# currently this property has levels to match ce_hov_cc_status to enable the code as written, even
-# though can only be treated when in stage 1-3
+            # currently this property has levels to match ce_hov_cc_status to enable the code as written, even
+            # though can only be treated when in stage 1-3
         "ce_stage_at_which_treatment_given": Property(
             Types.CATEGORICAL,
             "the cancer stage at which treatment was given (because the treatment only has an effect during the stage"
@@ -242,6 +249,7 @@ class CervicalCancer(Module):
         """Set property values for the initial population."""
         df = population.props  # a shortcut to the data-frame
         p = self.parameters
+        rng = self.rng
 
         # defaults
         df.loc[df.is_alive, "ce_hpv_cc_status"] = "none"
@@ -250,115 +258,23 @@ class CervicalCancer(Module):
         df.loc[df.is_alive, "ce_stage_at_which_treatment_given"] = "none"
         df.loc[df.is_alive, "ce_date_palliative_care"] = pd.NaT
         df.loc[df.is_alive, "ce_date_death"] = pd.NaT
-        df.loc[df.is_alive, "ce_vaginal_bleeding_investigated"] = False
         df.loc[df.is_alive, "ce_new_stage_this_month"] = False
 
         # -------------------- ce_hpv_cc_status -----------
         # Determine who has cancer at ANY cancer stage:
         # check parameters are sensible: probability of having any cancer stage cannot exceed 1.0
-        assert sum(p['init_prop_hpv_cc_stage_age1524']) <= 1.0
-        assert sum(p['init_prop_hpv_cc_stage_age2549']) <= 1.0
 
-    # todo: create ce_hpv_cc_status for all at baseline using init_prop_hpv_cc_stage_age1524
-    #       and init_prop_hpv_cc_stage_age2549 - currently everyone incorrectly starts as "none"
+        women_over_15_idx = df.index[(df["age_years"] > 15) & (df["sex"] == 'F')]
 
-#       df.ce_hpv_cc_status = 'none'
-
-        # -------------------- SYMPTOMS -----------
-        # Create shorthand variable for the initial proportion of discernible cervical cancer lumps in the population
-        init_prop_vaginal_bleeding = p['init_prop_vaginal_bleeding_by_cc_stage']
-        lm_init_vaginal_bleeding = LinearModel.multiplicative(
-            Predictor(
-                'ce_hpv_cc_status',
-                conditions_are_mutually_exclusive=True,
-                conditions_are_exhaustive=True,
-            )
-            .when("none", 0.0)
-            .when("hpv", 0.0)
-            .when("cin1", 0.0)
-            .when("cin2", 0.0)
-            .when("cin3", 0.0)
-            .when("stage1", init_prop_vaginal_bleeding[0])
-            .when("stage2a", init_prop_vaginal_bleeding[1])
-            .when("stage2b", init_prop_vaginal_bleeding[2])
-            .when("stage3", init_prop_vaginal_bleeding[3])
-            .when("stage4", init_prop_vaginal_bleeding[4])
+        df.loc[women_over_15_idx, 'ce_hpv_cc_status'] = rng.choice(
+            ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
+            size=len(women_over_15_idx), p=p['init_prev_cin_hpv_cc_stage']
         )
 
-        has_vaginal_bleeding_at_init = lm_init_vaginal_bleeding.predict(df.loc[df.is_alive], self.rng)
-        self.sim.modules['SymptomManager'].change_symptom(
-            person_id=has_vaginal_bleeding_at_init.index[has_vaginal_bleeding_at_init].tolist(),
-            symptom_string='vaginal_bleeding',
-            add_or_remove='+',
-            disease_module=self
-        )
+        # -------------------- symptoms, diagnosis, treatment  -----------
+        # For simplicity we assume all these are null at baseline - we don't think this will influence population
+        # status in the present to any significant degree
 
-        # -------------------- ce_date_diagnosis -----------
-        # Create shorthand variable for the initial proportion of the population with vaginal bleeding that has
-        # been diagnosed
-        initial_prop_diagnosed_vaginal_bleeding = \
-            p['init_prop_with_vaginal_bleeding_diagnosed_cervical_cancer']
-        lm_init_diagnosed = LinearModel.multiplicative(
-            Predictor(
-                'ce_hpv_cc_status',
-                conditions_are_mutually_exclusive=True,
-                conditions_are_exhaustive=True,
-            )
-            .when("none", 0.0)
-            .when("hpv", 0.0)
-            .when("cin1", 0.0)
-            .when("cin2", 0.0)
-            .when("cin3", 0.0)
-            .when("stage1", initial_prop_diagnosed_vaginal_bleeding)
-            .when("stage2a", initial_prop_diagnosed_vaginal_bleeding)
-            .when("stage2b", initial_prop_diagnosed_vaginal_bleeding)
-            .when("stage3", initial_prop_diagnosed_vaginal_bleeding)
-            .when("stage4", initial_prop_diagnosed_vaginal_bleeding)
-        )
-        ever_diagnosed_cc = lm_init_diagnosed.predict(df.loc[df.is_alive], self.rng)
-
-        # ensure that persons who have not ever had the symptom vaginal bleeding are not diagnosed:
-        ever_diagnosed_cc.loc[~has_vaginal_bleeding_at_init] = False
-
-        # For those that have been diagnosed, set data of diagnosis to today's date
-        df.loc[ever_diagnosed_cc, "ce_date_diagnosis"] = self.sim.date
-
-        # -------------------- ce_date_treatment -----------
-
-        ce_inital_treament_status = p['init_prop_prev_treatment_cervical_cancer']
-        lm_init_treatment_for_those_diagnosed = LinearModel.multiplicative(
-            Predictor(
-                'ce_hpv_cc_status',
-                conditions_are_mutually_exclusive=True,
-                conditions_are_exhaustive=True,
-            )
-            .when("none", 0.0)
-            .when("hpv", 0.0)
-            .when("stage1", ce_inital_treament_status[0])
-            .when("stage2a", ce_inital_treament_status[1])
-            .when("stage2b", ce_inital_treament_status[2])
-            .when("stage3", ce_inital_treament_status[3])
-            .when("stage4", ce_inital_treament_status[4])
-        )
-        treatment_initiated = lm_init_treatment_for_those_diagnosed.predict(df.loc[df.is_alive], self.rng)
-
-        # prevent treatment having been initiated for anyone who is not yet diagnosed
-        treatment_initiated.loc[pd.isnull(df.ce_date_diagnosis)] = False
-
-        # assume that the stage at which treatment is begun is the stage the person is in now;
-        df.loc[treatment_initiated, "ce_stage_at_which_treatment_given"] = df.loc[treatment_initiated, "ce_hpv_cc_status"]
-
-        # set date at which treatment began: same as diagnosis (NB. no HSI is established for this)
-        df.loc[treatment_initiated, "ce_date_treatment"] = df.loc[treatment_initiated, "ce_date_diagnosis"]
-
-        # -------------------- ce_date_palliative_care -----------
-        in_stage4_diagnosed = df.index[df.is_alive & (df.ce_hpv_cc_status == 'stage4') & ~pd.isnull(df.ce_date_diagnosis)]
-
-        select_for_care = self.rng.random_sample(size=len(in_stage4_diagnosed)) < p['init_prob_palliative_care']
-        select_for_care = in_stage4_diagnosed[select_for_care]
-
-        # set date of palliative care being initiated: same as diagnosis (NB. future HSI will be scheduled for this)
-        df.loc[select_for_care, "ce_date_palliative_care"] = df.loc[select_for_care, "ce_date_diagnosis"]
 
 
     def initialise_simulation(self, sim):
@@ -392,16 +308,19 @@ class CervicalCancer(Module):
 
         lm['hpv'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            rate_hpv,
+            p['r_nvp_hpv'],
             Predictor('va_hpv')
             .when(1, p['rr_hpv_vaccinated'])
             .when(2, p['rr_hpv_vaccinated']),
+            Predictor('age_years', conditions_are_mutually_exclusive=True)
+            .when('.between(0,15)', 0.0),
             Predictor('sex').when('M', 0.0),
             Predictor('ce_hpv_cc_status').when('none', 1.0).otherwise(0.0),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', p['rr_progress_cc_hiv'])
+            .when('not', 1.0)
             .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
-            .when('on_VL_suppressed', 1.0)
+            .when('on_VL_suppressed', 1.0),
+            Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         lm['cin1'] = LinearModel(
@@ -409,9 +328,10 @@ class CervicalCancer(Module):
             p['r_cin1_hpv'],
             Predictor('ce_hpv_cc_status').when('hpv', 1.0).otherwise(0.0),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', p['rr_progress_cc_hiv'])
+            .when('not', 1.0)
             .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
-            .when('on_VL_suppressed', 1.0)
+            .when('on_VL_suppressed', 1.0),
+            Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         lm['cin2'] = LinearModel(
@@ -419,9 +339,10 @@ class CervicalCancer(Module):
             p['r_cin2_cin1'],
             Predictor('ce_hpv_cc_status').when('cin1', 1.0).otherwise(0.0),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', p['rr_progress_cc_hiv'])
+            .when('not', 1.0)
             .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
-            .when('on_VL_suppressed', 1.0)
+            .when('on_VL_suppressed', 1.0),
+            Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         lm['cin3'] = LinearModel(
@@ -429,9 +350,10 @@ class CervicalCancer(Module):
             p['r_cin3_cin2'],
             Predictor('ce_hpv_cc_status').when('cin2', 1.0).otherwise(0.0),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', p['rr_progress_cc_hiv'])
+            .when('not', 1.0)
             .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
-            .when('on_VL_suppressed', 1.0)
+            .when('on_VL_suppressed', 1.0),
+            Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         lm['stage1'] = LinearModel(
@@ -439,19 +361,18 @@ class CervicalCancer(Module):
             p['r_stage1_cin3'],
             Predictor('ce_hpv_cc_status').when('cin3', 1.0).otherwise(0.0),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', p['rr_progress_cc_hiv'])
+            .when('not', 1.0)
             .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
-            .when('on_VL_suppressed', 1.0)
+            .when('on_VL_suppressed', 1.0),
+            Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
         lm['stage2a'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['r_stage2a_stage1'],
             Predictor('ce_hpv_cc_status').when('stage1', 1.0).otherwise(0.0),
-            Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_progression_cc_undergone_curative_treatment']),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', p['rr_progress_cc_hiv'])
+            .when('not', 1.0)
             .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
             .when('on_VL_suppressed', 1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
@@ -461,10 +382,8 @@ class CervicalCancer(Module):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage2b_stage2a'],
             Predictor('ce_hpv_cc_status').when('stage2a', 1.0).otherwise(0.0),
-            Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_progression_cc_undergone_curative_treatment']),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', p['rr_progress_cc_hiv'])
+            .when('not', 1.0)
             .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
             .when('on_VL_suppressed', 1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
@@ -474,10 +393,8 @@ class CervicalCancer(Module):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage3_stage2b'],
             Predictor('ce_hpv_cc_status').when('stage2b', 1.0).otherwise(0.0),
-            Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_progression_cc_undergone_curative_treatment']),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', p['rr_progress_cc_hiv'])
+            .when('not', 1.0)
             .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
             .when('on_VL_suppressed', 1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
@@ -487,10 +404,8 @@ class CervicalCancer(Module):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage4_stage3'],
             Predictor('ce_hpv_cc_status').when('stage3', 1.0).otherwise(0.0),
-            Predictor('had_treatment_during_this_stage',
-                      external=True).when(True, p['rr_progression_cc_undergone_curative_treatment']),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', p['rr_progress_cc_hiv'])
+            .when('not', 1.0)
             .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
             .when('on_VL_suppressed', 1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
@@ -508,8 +423,6 @@ class CervicalCancer(Module):
         stage2b = p['rr_vaginal_bleeding_cc_stage2b'] * p['r_vaginal_bleeding_cc_stage1']
         stage3 = p['rr_vaginal_bleeding_cc_stage3'] * p['r_vaginal_bleeding_cc_stage1']
         stage4 = p['rr_vaginal_bleeding_cc_stage4'] * p['r_vaginal_bleeding_cc_stage1']
-
-# todo: do we need to restrict to women without pre-existing vaginal bleeding ?
 
         self.lm_onset_vaginal_bleeding = LinearModel.multiplicative(
             Predictor(
@@ -608,7 +521,6 @@ class CervicalCancer(Module):
         df.at[child_id, "ce_stage_at_which_treatment_given"] = "none"
         df.at[child_id, "ce_date_diagnosis"] = pd.NaT
         df.at[child_id, "ce_new_stage_this_month"] = False
-        df.at[child_id, "ce_vaginal_bleeding_investigated"] = False
         df.at[child_id, "ce_date_palliative_care"] = pd.NaT
         df.at[child_id, "ce_date_xpert"] = pd.NaT
         df.at[child_id, "ce_date_via"] = pd.NaT
@@ -693,20 +605,18 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
         #  reducing progression risk during the stage at which is received.
-        had_treatment_during_this_stage = \
-            df.is_alive & ~pd.isnull(df.ce_date_treatment) & \
-            (df.ce_hpv_cc_status == df.ce_stage_at_which_treatment_given)
-
-# todo: still need to derive the lm to make this work
 
         for stage, lm in self.module.linear_models_for_progression_of_hpv_cc_status.items():
-            gets_new_stage = lm.predict(df.loc[df.is_alive], rng,
-                                        had_treatment_during_this_stage=had_treatment_during_this_stage)
+            gets_new_stage = lm.predict(df.loc[df.is_alive], rng)
+
             idx_gets_new_stage = gets_new_stage[gets_new_stage].index
+
+#           print(stage, lm, gets_new_stage, idx_gets_new_stage)
+
             df.loc[idx_gets_new_stage, 'ce_hpv_cc_status'] = stage
             df.loc[idx_gets_new_stage, 'ce_new_stage_this_month'] = True
 
-        # -------------------- UPDATING OF SYMPTOM OF vaginal bleeding OVER TIME --------------------------------
+    # -------------------- UPDATING OF SYMPTOM OF vaginal bleeding OVER TIME --------------------------------
         # Each time this event is called (every month) individuals with cervical cancer may develop the symptom of
         # vaginal bleeding.  Once the symptom is developed it never resolves naturally. It may trigger
         # health-care-seeking behaviour.
@@ -717,6 +627,13 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             add_or_remove='+',
             disease_module=self.module
         )
+
+
+# vaccinating 9 year old girls - this only uncommented for testing - vaccination is controlled by epi
+#       age9_f_idx = df.index[(df.is_alive) & (df.age_exact_years > 9) & (df.age_exact_years < 90) & (df.sex == 'F')]
+#       df.loc[age9_f_idx, 'va_hpv'] = 1
+
+
 
         # -------------------- DEATH FROM cervical CANCER ---------------------------------------
         # There is a risk of death for those in stage4 only. Death is assumed to go instantly.
@@ -736,6 +653,11 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
 #  todo: hsi for routine screening (ie the hsi is health system-initiated) using hpv xpert and/or via,
 #  todo: with cin removal - need to agree how to do this
+#  From write-up: There is the possibility that screening for cervical cancer is conducted using visual
+#  inspection with acetic acid.   HSI_acetic_acid_screening.  Also, there is self-sampling to produce a
+#  sample for HPV testing using GeneXpert.  HSI_hpv_xpert.   If CIN1 – CIN3 is detected on visual inspection
+#  or HPV is detected this leads to HSI_colposcopy_with_cin_removal.    How do we want to implement this in code ?
+#  I assume similar to how we schedule vaccinations
 
 class HSI_CervicalCancer_Investigation_Following_vaginal_bleeding(HSI_Event, IndividualScopeEventMixin):
     """
@@ -749,7 +671,7 @@ class HSI_CervicalCancer_Investigation_Following_vaginal_bleeding(HSI_Event, Ind
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        print(person_id, self.sim.date, 'vaginal_bleeding_hsi_called -1')
+#       print(person_id, self.sim.date, 'vaginal_bleeding_hsi_called -1')
 
         self.TREATMENT_ID = "CervicalCancer_Investigation"
 
@@ -764,16 +686,16 @@ class HSI_CervicalCancer_Investigation_Following_vaginal_bleeding(HSI_Event, Ind
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        print(person_id, self.sim.date, 'vaginal_bleeding_hsi_called -2')
+#       print(person_id, self.sim.date, 'vaginal_bleeding_hsi_called -2')
 
         # Check that this event has been called for someone with the symptom vaginal_bleeding
         assert 'vaginal_bleeding' in self.sim.modules['SymptomManager'].has_what(person_id)
 
         # If the person is already diagnosed, then take no action:
-        if not pd.isnull(df.at[person_id, "ce_date_diagnosis"]):
-            return hs.get_blank_appt_footprint()
+#       if not pd.isnull(df.at[person_id, "ce_date_diagnosis"]):
+#           return hs.get_blank_appt_footprint()
 
-        df.loc[person_id, 'ce_vaginal_bleeding_investigated'] = True
+#       df.loc[person_id, 'ce_vaginal_bleeding_investigated'] = True
 
         # Use a biopsy to diagnose whether the person has cervical cancer
         # todo: request consumables needed for this
@@ -833,6 +755,7 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
+        p = self.sim.modules['CervicalCancer'].parameters
 
         # todo: request consumables needed for this
 
@@ -863,13 +786,43 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         assert not df.at[person_id, "ce_hpv_cc_status"] == 'cin3'
         assert not df.at[person_id, "ce_hpv_cc_status"] == 'stage4'
         assert not pd.isnull(df.at[person_id, "ce_date_diagnosis"])
-        assert pd.isnull(df.at[person_id, "ce_date_treatment"])
+#       assert pd.isnull(df.at[person_id, "ce_date_treatment"])
 
         # Record date and stage of starting treatment
         df.at[person_id, "ce_date_treatment"] = self.sim.date
         df.at[person_id, "ce_stage_at_which_treatment_given"] = df.at[person_id, "ce_hpv_cc_status"]
 
-        # todo: maybe have a probability of going to status=none rather than a relative rate of progression
+        df.at[person_id, "ce_hpv_cc_status"] = 'none'
+
+# stop vaginal bleeding
+        self.sim.modules['SymptomManager'].change_symptom(
+            person_id=person_id,
+            symptom_string='vaginal_bleeding',
+            add_or_remove='-',
+            disease_module=self.module
+            )
+
+        random_value = random.random()
+
+        if random_value <= p['prob_cure_stage1'] and df.at[person_id, "ce_date_treatment"] == self.sim.date:
+            df.at[person_id, "ce_hpv_cc_status"] = 'none'
+        else:
+            df.at[person_id, "ce_hpv_cc_status"] = 'stage1'
+
+        if random_value <= p['prob_cure_stage2a'] and df.at[person_id, "ce_date_treatment"] == self.sim.date:
+            df.at[person_id, "ce_hpv_cc_status"] = 'none'
+        else:
+            df.at[person_id, "ce_hpv_cc_status"] = 'stage2a'
+
+        if random_value <= p['prob_cure_stage2b'] and df.at[person_id, "ce_date_treatment"] == self.sim.date:
+            df.at[person_id, "ce_hpv_cc_status"] = 'none'
+        else:
+            df.at[person_id, "ce_hpv_cc_status"] = 'stage2b'
+
+        if random_value <= p['prob_cure_stage3'] and df.at[person_id, "ce_date_treatment"] == self.sim.date:
+            df.at[person_id, "ce_hpv_cc_status"] = 'none'
+        else:
+            df.at[person_id, "ce_hpv_cc_status"] = 'stage3'
 
         # Schedule a post-treatment check for 3 months:
         hs.schedule_hsi_event(
@@ -904,14 +857,12 @@ class HSI_CervicalCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Check that the person has cancer and is on treatment
-        assert not df.at[person_id, "ce_hpv_cc_status"] == 'none'
-        assert not df.at[person_id, "ce_hpv_cc_status"] == 'hpv'
-        assert not df.at[person_id, "ce_hpv_cc_status"] == 'cin1'
-        assert not df.at[person_id, "ce_hpv_cc_status"] == 'cin2'
-        assert not df.at[person_id, "ce_hpv_cc_status"] == 'cin3'
         assert not pd.isnull(df.at[person_id, "ce_date_diagnosis"])
         assert not pd.isnull(df.at[person_id, "ce_date_treatment"])
+
+        days_threshold_365 = 365
+        days_threshold_1095 = 1095
+        days_threshold_1825 = 1825
 
         if df.at[person_id, 'ce_hpv_cc_status'] == 'stage4':
             # If has progressed to stage4, then start Palliative Care immediately:
@@ -926,17 +877,38 @@ class HSI_CervicalCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
             )
 
         else:
-            # Schedule another HSI_CervicalCancer_PostTreatmentCheck event in 3 monthw
-            hs.schedule_hsi_event(
-                hsi_event=HSI_CervicalCancer_PostTreatmentCheck(
+            if df.at[person_id, 'ce_date_treatment'] > (self.sim.date - pd.DateOffset(days=days_threshold_365)):
+                hs.schedule_hsi_event(
+                    hsi_event=HSI_CervicalCancer_PostTreatmentCheck(
                     module=self.module,
                     person_id=person_id
-                ),
-                topen=self.sim.date + DateOffset(months=3),
-                tclose=None,
-                priority=0
-            )
-
+                    ),
+                    topen=self.sim.date + DateOffset(months=3),
+                    tclose=None,
+                    priority=0
+                )
+            if df.at[person_id, 'ce_date_treatment'] < (self.sim.date - pd.DateOffset(days=days_threshold_365)) \
+                and df.at[person_id, 'ce_date_treatment'] > (self.sim.date - pd.DateOffset(days=days_threshold_1095)):
+                hs.schedule_hsi_event(
+                    hsi_event=HSI_CervicalCancer_PostTreatmentCheck(
+                    module=self.module,
+                    person_id=person_id
+                    ),
+                    topen=self.sim.date + DateOffset(months=6),
+                    tclose=None,
+                    priority=0
+                )
+            if df.at[person_id, 'ce_date_treatment'] < (self.sim.date - pd.DateOffset(days=days_threshold_1095)) \
+                and df.at[person_id, 'ce_date_treatment'] > (self.sim.date - pd.DateOffset(days=days_threshold_1825)):
+                hs.schedule_hsi_event(
+                    hsi_event=HSI_CervicalCancer_PostTreatmentCheck(
+                    module=self.module,
+                    person_id=person_id
+                    ),
+                    topen=self.sim.date + DateOffset(months=12),
+                    tclose=None,
+                    priority=0
+                )
 
 class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1019,7 +991,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({f'diagnosed_{k}': v for k, v in df.loc[df.is_alive].loc[
             ~pd.isnull(df.ce_date_diagnosis), 'ce_hpv_cc_status'].value_counts().items()})
 
-        # Current counts, on treatment (excl. palliative care)
+        # Current counts, ever treated (excl. palliative care)
         out.update({f'treatment_{k}': v for k, v in df.loc[df.is_alive].loc[(~pd.isnull(
             df.ce_date_treatment) & pd.isnull(
             df.ce_date_palliative_care)), 'ce_hpv_cc_status'].value_counts().items()})
@@ -1034,6 +1006,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         date_lastlog = self.sim.date - pd.DateOffset(days=29)
 
         n_ge15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
+        n_hpv = (df.is_alive & df.ce_hpv_cc_status == 'hpv').sum()
+        p_hpv = n_hpv / n_ge15_f
 
         n_newly_diagnosed_stage1 = \
             (df.ce_date_diagnosis.between(date_lastlog, date_now - DateOffset(days=1)) & (df.ce_hpv_cc_status == 'stage1')).sum()
@@ -1056,6 +1030,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         n_diagnosed = (df.is_alive & ~pd.isnull(df.ce_date_diagnosis)).sum()
 
+        n_alive = (df.is_alive).sum()
+
         out.update({
             'diagnosed_since_last_log': df.ce_date_diagnosis.between(date_lastlog, date_now).sum(),
             'treated_since_last_log': df.ce_date_treatment.between(date_lastlog, date_now).sum(),
@@ -1070,15 +1046,23 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'n_diagnosed_age_15_29': n_diagnosed_age_15_29,
             'n_diagnosed_age_30_49':  n_diagnosed_age_30_49,
             'n_diagnosed_age_50p': n_diagnosed_age_50p,
-            'n_diagnosed': n_diagnosed
+            'n_diagnosed': n_diagnosed,
+            'n_alive': n_alive
         })
 
 #       df = df.rename(columns={'ce_stage_at_which_treatment_given': 'treatment_stage'})
+        date_5_years_ago = self.sim.date - pd.DateOffset(days=1825)
+
+        n_deaths_past_year = df.ce_date_death.between(date_5_years_ago, date_now).sum()
 
         print(self.sim.date)
-        selected_columns = ['ce_hpv_cc_status', 'ce_hpv_vp']
-        selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15)]
+        selected_columns = ['ce_hpv_cc_status', 'age_years', 'sex', 'va_hpv']
+        selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 9)]
         print(selected_rows[selected_columns])
+
+        print(n_alive)
+        print(n_deaths_past_year)
+        print(p_hpv)
 
 #       df = df.rename(columns={'treatment_stage': 'ce_stage_at_which_treatment_given'})
 

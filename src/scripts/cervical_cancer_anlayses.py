@@ -42,13 +42,13 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1 , 1)
-popsize = 50
+end_date = Date(2020, 1, 1)
+popsize = 17000
 
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
-    sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date, seed=3)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
@@ -136,32 +136,36 @@ def get_summary_stats(logfile):
 
 # With interventions:
 logfile_with_healthsystem = run_sim(service_availability=['*'])
-
-"""
-
 results_with_healthsystem = get_summary_stats(logfile_with_healthsystem)
 
+
 # Without interventions:
-logfile_no_healthsystem = run_sim(service_availability=[])
-results_no_healthsystem = get_summary_stats(logfile_no_healthsystem)
+# logfile_no_healthsystem = run_sim(service_availability=[])
+# results_no_healthsystem = get_summary_stats(logfile_no_healthsystem)
 
 # %% Produce Summary Graphs:
 
+"""
+
 # Examine Counts by Stage Over Time
 counts = results_no_healthsystem['total_counts_by_stage_over_time']
-counts.plot(y=['total_stage1', 'total_stage2a', 'total_stage2b', 'total_stage3', 'total_stage'])
+counts.plot(y=['total_stage1', 'total_stage2a', 'total_stage2b', 'total_stage3'])
 plt.title('Count in Each Stage of Disease Over Time')
 plt.xlabel('Time')
 plt.ylabel('Count')
 plt.show()
+
+"""
 
 # Examine numbers in each stage of the cascade:
 results_with_healthsystem['counts_by_cascade'].plot(y=['udx', 'dx', 'tr', 'pc'])
 plt.title('With Health System')
 plt.xlabel('Numbers of those With Cancer by Stage in Cascade')
 plt.xlabel('Time')
-plt.legend(['Undiagnosed', 'Diagnosed', 'On Treatment', 'On Palliative Care'])
+plt.legend(['Undiagnosed', 'Diagnosed', 'Ever treated', 'On Palliative Care'])
 plt.show()
+
+"""
 
 results_no_healthsystem['counts_by_cascade'].plot(y=['udx', 'dx', 'tr', 'pc'])
 plt.title('With No Health System')
@@ -180,8 +184,13 @@ plt.legend()
 plt.title("With No Health System")
 plt.show()
 
+"""
+
 # Examine Deaths (summed over whole simulation)
-deaths = results_no_healthsystem['cervical_cancer_deaths']
+deaths = results_with_healthsystem['cervical_cancer_deaths']
+
+print(deaths)
+
 deaths.index = deaths.index.astype(make_age_grp_types())
 # # make a series with the right categories and zero so formats nicely in the grapsh:
 agegrps = demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_CATEGORIES
@@ -194,6 +203,8 @@ plt.xlabel('Age-group')
 plt.ylabel('Total Deaths During Simulation')
 # plt.gca().get_legend().remove()
 plt.show()
+
+"""
 
 # Compare Deaths - with and without the healthsystem functioning - sum over age and time
 deaths = {
