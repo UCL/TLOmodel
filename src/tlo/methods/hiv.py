@@ -3167,7 +3167,7 @@ def map_to_age_group(ser):
 
 def unpack_raw_output_dict(raw_dict):
     x = pd.DataFrame.from_dict(data=raw_dict, orient="index")
-    x = x.reset_index()
+    x.reset_index(inplace=True)
     x.rename(columns={"index": "age_group", 0: "value"}, inplace=True)
     x["age_group"] = set_age_group(x["age_group"])
     return x

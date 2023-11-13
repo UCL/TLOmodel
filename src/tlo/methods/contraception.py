@@ -580,7 +580,7 @@ class Contraception(Module):
                 columns=sorted(self.all_contraception_states - {"not_using"})
             )
             p_pregnancy_with_contraception_per_month.loc[15, :] = p_pregnancy_by_method_per_month
-            p_pregnancy_with_contraception_per_month = p_pregnancy_with_contraception_per_month.ffill()
+            p_pregnancy_with_contraception_per_month.ffill(inplace=True)
             p_pregnancy_with_contraception_per_month.loc[
                 p_pregnancy_with_contraception_per_month.index < 25
                 ] *= self.parameters['rr_fail_under25']
