@@ -1215,7 +1215,7 @@ class CareOfWomenDuringPregnancy(Module):
         # Run dx_test for anaemia...
         # If a woman is not truly anaemic but the FBC returns a result of anaemia, due to tests specificity, we
         # assume the reported anaemia is mild
-        hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_test_equipment'])
+        hsi_event.get_consumables(item_codes=self.item_codes_preg_consumables['blood_test_cons'])
         hsi_event.EQUIPMENT.update({'Analyser, Haematology'})
 
         test_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
@@ -1298,7 +1298,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         # Define the consumables and check their availability
         avail = hsi_event.get_consumables(item_codes=cons['iv_antihypertensives'],
-                                          optional_item_codes=cons['iv_drug_equipment'])
+                                          optional_item_codes=cons['iv_drug_cons'])
 
         # If they are available then the woman is started on treatment
         if avail:
