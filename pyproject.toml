@@ -128,7 +128,6 @@ markers = ["group2", "slow"]
 target-version = "py38"
 line-length = 120
 ignore = [
-    "E712", # comparison to False
     "E713", # use `not in`
     "E714", # use `is not`
     "E721", # do not compare types
