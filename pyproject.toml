@@ -98,7 +98,6 @@ disable = [
     "E0702", # raising NoneType
     "E1136", # unsubscriptable type
     "E1137", # doesn't support item assignment
-    "E1101", # no-member
     "E1120", # no-value-for-parameter
     "E1130", # bad operand type for unary ~
 ]
