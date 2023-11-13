@@ -750,6 +750,7 @@ class Contraception(Module):
         get_items_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
 
         _cons_codes = dict()
+        # items for each method that requires an HSI to switch to
         _cons_codes['pill'] = get_items_from_pkg('Pill')
         _cons_codes['male_condom'] = get_items_from_pkg('Male condom')
         _cons_codes['other_modern'] = get_items_from_pkg('Female Condom')
@@ -759,6 +760,7 @@ class Contraception(Module):
         _cons_codes['implant'] = get_items_from_pkg('Implant')
         _cons_codes['female_sterilization'] = get_items_from_pkg('Female sterilization')
         assert set(_cons_codes.keys()) == set(self.states_that_may_require_HSI_to_switch_to)
+        # items used when initiating a modern reliable method after not using or switching from non-reliable method
         _cons_codes['co_initiation'] = get_items_from_pkg('Contraception initiation')
 
         return _cons_codes

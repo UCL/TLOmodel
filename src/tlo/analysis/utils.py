@@ -265,7 +265,7 @@ def extract_results(results_folder: Path,
                                            )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
 
     if custom_generate_series is None:
-        # If there is no `custom_generate_series` provided, it implies that function required selects a the specified
+        # If there is no `custom_generate_series` provided, it implies that function required selects the specified
         # column from the dataframe.
         assert column is not None, "Must specify which column to extract"
 
@@ -311,24 +311,23 @@ def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: 
     Finds mean value and 95% interval across the runs for each draw.
     """
 
-    summary = pd.DataFrame(
-        columns=pd.MultiIndex.from_product(
-            [
-                results.columns.unique(level='draw'),
-                ["mean", "lower", "upper"]
-            ],
-            names=['draw', 'stat']),
-        index=results.index
+    summary = pd.concat(
+        {
+            'mean': results.groupby(axis=1, by='draw', sort=False).mean(),
+            'lower': results.groupby(axis=1, by='draw', sort=False).quantile(0.025),
+            'upper': results.groupby(axis=1, by='draw', sort=False).quantile(0.975),
+        },
+        axis=1
     )
-
-    summary.loc[:, (slice(None), "mean")] = results.groupby(axis=1, by='draw').mean().values
-    summary.loc[:, (slice(None), "lower")] = results.groupby(axis=1, by='draw').quantile(0.025).values
-    summary.loc[:, (slice(None), "upper")] = results.groupby(axis=1, by='draw').quantile(0.975).values
+    summary.columns = summary.columns.swaplevel(1, 0)
+    summary.columns.names = ['draw', 'stat']
+    summary = summary.sort_index(axis=1)
 
     if only_mean and (not collapse_columns):
         # Remove other metrics and simplify if 'only_mean' across runs for each draw is required:
         om: pd.DataFrame = summary.loc[:, (slice(None), "mean")]
         om.columns = [c[0] for c in om.columns.to_flat_index()]
+        om.columns.name = 'draw'
         return om
 
     elif collapse_columns and (len(summary.columns.levels[0]) == 1):
@@ -856,7 +855,7 @@ def get_color_cause_of_death_or_daly_label(cause_of_death_label: str) -> str:
     return CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.get(cause_of_death_label, np.nan)
 
 
-def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabels=5, **kwargs):
+def squarify_neat(sizes: np.array, label: np.array, colormap: Callable = None, numlabels: int = 5, **kwargs):
     """Pass through to squarify, with some customisation: ...
      * Apply the colormap specified
      * Only give label a selection of the segments
@@ -868,7 +867,7 @@ def squarify_neat(sizes: np.array, label: np.array, colormap: Callable, numlabel
     squarify.plot(
         sizes=sizes,
         label=[_label if _label in to_label else '' for _label in label],
-        color=[colormap(_x) for _x in label],
+        color=[colormap(_x) for _x in label] if colormap is not None else None,
         **kwargs,
     )
 
