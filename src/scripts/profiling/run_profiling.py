@@ -64,7 +64,7 @@ def record_simulation_statistics(s: Simulation) -> Dict[str, Union[int, float]]:
         Number of rows in the final population DataFrame
     pop_df_cols: int
         Number of cols in the final population DataFrame
-    pop_df_mem_mb: float
+    pop_df_mem_MB: float
         Size in MBs of the final population DataFrame
     pop_df_times_extended: int
         Number of times the population DataFrame had to be expanded
@@ -77,7 +77,7 @@ def record_simulation_statistics(s: Simulation) -> Dict[str, Union[int, float]]:
     pop_stats = {
         "pop_df_rows": pops.props.shape[0],
         "pop_df_cols": pops.props.shape[1],
-        "pop_df_mem_mb": pops.props.memory_usage(index=True, deep=True).sum() / 1e6,
+        "pop_df_mem_MB": pops.props.memory_usage(index=True, deep=True).sum() / 1e6,
         "pop_df_times_extended": int(
             np.ceil((pops.props.shape[0] - pops.initial_size) / pops.new_rows.shape[0])
         ),
@@ -108,9 +108,9 @@ def record_disk_statistics(
         Time in seconds spent writing to disk during simulation
     """
     if disk_usage is None:
-        return dict()
+        return {}
 
-    disk_stats = {
+    return {
         "disk_reads": disk_usage["read_count"],
         "disk_writes": disk_usage["write_count"],
         "disk_read_MB": disk_usage["read_bytes"] / 1e6,
@@ -118,8 +118,6 @@ def record_disk_statistics(
         "disk_read_s": disk_usage["read_time"] / 1e3,
         "disk_write_s": disk_usage["write_time"] / 1e3,
     }
-
-    return disk_stats
 
 
 def record_profiling_session_statistics(
@@ -129,7 +127,7 @@ def record_profiling_session_statistics(
     Extract important profiling statistics from the session that was captured.
     Statistics are returned as a dictionary.
 
-                "start_time": self.start_time,
+            "start_time": self.start_time,
             "duration": self.duration,
             "sample_count": self.sample_count,
             "start_call_stack": self.start_call_stack,
@@ -147,15 +145,13 @@ def record_profiling_session_statistics(
         session.
     """
     if session is None:
-        return dict()
+        return {}
 
-    profiler_stats = {
+    return {
         "start_time": session.start_time,
         "duration": session.duration,
         "cpu_time": session.cpu_time,
     }
-
-    return profiler_stats
 
 
 def record_run_statistics(
@@ -168,7 +164,7 @@ def record_run_statistics(
 ) -> None:
     """
     Organise all statistics to be collected from the profiling run into a single dict,
-    which can then be dumped to a JSON file.
+    which is then be dumped to a JSON file.
 
     :param output_file: JSON file / path to write to.
     :param html_output_file: The name of the output HTML file from the profiling run,
@@ -224,7 +220,6 @@ def run_profiling(
     Uses pyinstrument to profile the scale_run simulation,
     writing the output in the requested formats.
     """
-    # Suppress "ignore" warnings
     warnings.filterwarnings("ignore")
 
     # Create the profiler to record the stack
