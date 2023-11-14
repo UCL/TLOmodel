@@ -1469,7 +1469,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         # baseline scenario--no change to parameters
         if scenario == 0:
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
-            #self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.31})
             return
         # sets availability of xpert to nil
         if scenario == 1:
@@ -1480,7 +1479,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         # sets availability of xray to nil
         if scenario == 2:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.0})
-           #self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.31})
            #self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.7
 
         #increases probability of accessing chest xray by 10%
