@@ -646,8 +646,9 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         self.TREATMENT_ID = "BreastCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "Mammography": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'  # Biopsy only available at level 3 and above.
-        # TODO: but the appt footprints suggests mammography to be provided
-        self.EQUIPMENT = {'Slice Master sample processing Unit', 'Paraffin Dispense', 'Whatever used with biopsy'}
+
+        # TODO: Eva's dummy equipment example (not sure if it actually needs to be added and if it is in the RF)
+        #  {'Slice Master sample processing Unit', 'Paraffin Dispense', 'Whatever used with biopsy'}
 
         # ap_oct23 - Eva, I cannot locate a biopsy needle in the equipment - perhaps it is in consumables
         # the other equipment need is for histology in the lab - there is a whole long list of items needed
@@ -771,8 +772,9 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         df.at[person_id, "brc_date_treatment"] = self.sim.date
         df.at[person_id, "brc_stage_at_which_treatment_given"] = df.at[person_id, "brc_status"]
 
+        # TODO: Eva's dummy equipment example - it needs to be replaced by real items from the RF
         # Update equipment
-        self.EQUIPMENT.update({'Anything used for mastectomy'})
+        # self.EQUIPMENT.update({'Anything used for mastectomy'})
 
         # Schedule a post-treatment check for 12 months:
         hs.schedule_hsi_event(

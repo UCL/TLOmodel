@@ -1284,8 +1284,10 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
             # Update equipment
             if _new_contraceptive == 'female_sterilization':
+                # TODO: Eva's dummy example - needs to be replaced by real item(s)
                 self.EQUIPMENT.update({'Smt used to sterilize a woman'})
             elif _new_contraceptive == 'IUD':
+                # TODO: Eva's dummy example - needs to be replaced by real item(s)
                 self.EQUIPMENT.update({'Equipment used when performing IUD'})
 
         else:
