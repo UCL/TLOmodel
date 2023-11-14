@@ -2027,7 +2027,7 @@ class Hiv_DecisionToContinueTreatment(Event, IndividualScopeEventMixin):
             return
 
         # Check that they are on Treatment currently:
-        if not (person["hv_art"] in ["on_VL_suppressed", "on_not_VL_suppressed"]):
+        if person["hv_art"] not in ["on_VL_suppressed", "on_not_VL_suppressed"]:
             logger.warning(
                 key="message",
                 data="This event should not be running, Hiv_DecisionToContinueTreatment is for those already on tx")
@@ -3167,7 +3167,7 @@ def map_to_age_group(ser):
 
 def unpack_raw_output_dict(raw_dict):
     x = pd.DataFrame.from_dict(data=raw_dict, orient="index")
-    x = x.reset_index()
+    x.reset_index(inplace=True)
     x.rename(columns={"index": "age_group", 0: "value"}, inplace=True)
     x["age_group"] = set_age_group(x["age_group"])
     return x

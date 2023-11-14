@@ -251,9 +251,9 @@ def run_maternal_newborn_health_analysis(scenario_file_dict, outputspath, interv
         'Neonatal Mortality Ratio per Year at Baseline and Under Intervention',
         plot_destination_folder, 'neonatal_mr_int')
 
-    for group, l in zip(['Maternal', 'Neonatal'], ['m', 'n']):
+    for group, group_label in zip(['Maternal', 'Neonatal'], ['m', 'n']):
         analysis_utility_functions.comparison_bar_chart_multiple_bars(
-            death_data, f'crude_{l}_deaths', intervention_years,
+            death_data, f'crude_{group_label}_deaths', intervention_years,
             f'Total {group} Deaths (scaled)', f'Yearly Baseline {group} Deaths Compared to Intervention',
             plot_destination_folder, f'{group}_crude_deaths_comparison.png')
 
