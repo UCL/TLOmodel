@@ -43,8 +43,14 @@ class Simulation:
         with independent state.
     """
 
-    def __init__(self, *, start_date: Date, seed: int = None, log_config: dict = None,
-                 show_progress_bar=False):
+    def __init__(
+        self,
+        *,
+        start_date: Date,
+        seed: int = None,
+        log_config: dict = None,
+        show_progress_bar=False,
+    ):
         """Create a new simulation.
 
         :param start_date: the date the simulation begins; must be given as
@@ -72,17 +78,22 @@ class Simulation:
         self.configure_logging(**log_config)
 
         # random number generator
-        seed_from = 'auto' if seed is None else 'user'
+        seed_from = "auto" if seed is None else "user"
         self._seed = seed
         self._seed_seq = np.random.SeedSequence(seed)
         logger.info(
-            key='info',
-            data=f'Simulation RNG {seed_from} entropy = {self._seed_seq.entropy}'
+            key="info",
+            data=f"Simulation RNG {seed_from} entropy = {self._seed_seq.entropy}",
         )
         self.rng = np.random.RandomState(np.random.MT19937(self._seed_seq))
 
-    def configure_logging(self, filename: str = None, directory: Union[Path, str] = "./outputs",
-                          custom_levels: Dict[str, int] = None, suppress_stdout: bool = False):
+    def configure_logging(
+        self,
+        filename: str = None,
+        directory: Union[Path, str] = "./outputs",
+        custom_levels: Dict[str, int] = None,
+        suppress_stdout: bool = False,
+    ):
         """Configure logging, can write logging to a logfile in addition the default of stdout.
 
         Minimum custom levels for each logger can be specified for filtering out messages
@@ -99,7 +110,9 @@ class Simulation:
         # clear logging environment
         # if using progress bar we do not print log messages to stdout to avoid
         # clashes between progress bar and log output
-        logging.init_logging(add_stdout_handler=not (self.show_progress_bar or suppress_stdout))
+        logging.init_logging(
+            add_stdout_handler=not (self.show_progress_bar or suppress_stdout)
+        )
         logging.set_simulation(self)
 
         if custom_levels:
@@ -111,10 +124,10 @@ class Simulation:
                 self._custom_log_levels = custom_levels
 
         if filename and directory:
-            timestamp = datetime.datetime.now().strftime('%Y-%m-%dT%H%M%S')
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%dT%H%M%S")
             log_path = Path(directory) / f"{filename}__{timestamp}.log"
             self.output_file = logging.set_output_file(log_path)
-            logger.info(key='info', data=f'Log output: {log_path}')
+            logger.info(key="info", data=f"Log output: {log_path}")
             self._log_filepath = log_path
             return log_path
 
@@ -151,21 +164,23 @@ class Simulation:
         # Iterate over modules and per-module seed sequences spawned from simulation
         # level seed sequence
         for module, seed_seq in zip(modules, self._seed_seq.spawn(len(modules))):
-            assert module.name not in self.modules, f'A module named {module.name} has already been registered'
+            assert (
+                module.name not in self.modules
+            ), f"A module named {module.name} has already been registered"
 
             # Seed the RNG for the registered module using spawned seed sequence
             logger.info(
-                key='info',
+                key="info",
                 data=(
-                    f'{module.name} RNG auto (entropy, spawn key) = '
-                    f'({seed_seq.entropy}, {seed_seq.spawn_key[0]})'
-                )
+                    f"{module.name} RNG auto (entropy, spawn key) = "
+                    f"({seed_seq.entropy}, {seed_seq.spawn_key[0]})"
+                ),
             )
             module.rng = np.random.RandomState(np.random.MT19937(seed_seq))
 
             self.modules[module.name] = module
             module.sim = self
-            module.read_parameters('')
+            module.read_parameters("")
 
         if self._custom_log_levels:
             logging.set_logging_levels(self._custom_log_levels)
@@ -187,10 +202,82 @@ class Simulation:
         for module in self.modules.values():
             start1 = time.time()
             module.initialise_population(self.population)
-            logger.debug(key='debug', data=f'{module.name}.initialise_population() {time.time() - start1} s')
+            logger.debug(
+                key="debug",
+                data=f"{module.name}.initialise_population() {time.time() - start1} s",
+            )
 
         end = time.time()
-        logger.info(key='info', data=f'make_initial_population() {end - start} s')
+        logger.info(key="info", data=f"make_initial_population() {end - start} s")
+
+    def initialise(self):
+        for module in self.modules.values():
+            module.initialise_simulation(self)
+
+    def finalise(self):
+        for module in self.modules.values():
+            module.on_simulation_end()
+
+    def close_output_file(self):
+        # From Python logging.shutdown
+        try:
+            self.output_file.acquire()
+            self.output_file.flush()
+            self.output_file.close()
+        except (OSError, ValueError):
+            pass
+        finally:
+            self.output_file.release()
+
+    @staticmethod
+    def _initialise_progress_bar(start_date, end_date):
+        num_simulated_days = (end_date - start_date).days
+        progress_bar = ProgressBar(
+            num_simulated_days, "Simulation progress", unit="day"
+        )
+        progress_bar.start()
+        return progress_bar
+
+    @staticmethod
+    def _update_progress_bar(
+        progress_bar, start_date, date, population, event_queue, hsi_event_queue
+    ):
+        simulation_day = (date - start_date).days
+        stats_dict = {
+            "date": str(date.date()),
+            "dataframe size": str(len(population.props)),
+            "queued events": str(len(event_queue)),
+        }
+        if hsi_event_queue is not None:
+            stats_dict["queued HSI events"] = str(len(hsi_event_queue))
+        progress_bar.update(simulation_day, stats_dict=stats_dict)
+
+    def run_simulation_to(self, *, end_date: Date):
+        if self.show_progress_bar:
+            progress_bar = self._initialise_progress_bar(self.start_date, end_date)
+        while self.event_queue:
+            event, date = self.event_queue.next_event()
+            if self.show_progress_bar:
+                hsi_event_queue = (
+                    self.modules["HealthSystem"].HSI_EVENT_QUEUE
+                    if "HealthSystem" in self.modules
+                    else None
+                )
+                self._update_progress_bar(
+                    progress_bar,
+                    self.start_date,
+                    date,
+                    self.population,
+                    self.event_queue,
+                    hsi_event_queue,
+                )
+            if date >= end_date:
+                self.date = end_date
+                break
+            self.fire_single_event(event, date)
+        # The simulation has ended.
+        if self.show_progress_bar:
+            progress_bar.stop()
 
     def simulate(self, *, end_date):
         """Simulation until the given end date
@@ -201,57 +288,12 @@ class Simulation:
         """
         start = time.time()
         self.end_date = end_date  # store the end_date so that others can reference it
-
-        for module in self.modules.values():
-            module.initialise_simulation(self)
-
-        progress_bar = None
-        if self.show_progress_bar:
-            num_simulated_days = (end_date - self.start_date).days
-            progress_bar = ProgressBar(
-                num_simulated_days, "Simulation progress", unit="day")
-            progress_bar.start()
-
-        while self.event_queue:
-            event, date = self.event_queue.next_event()
-
-            if self.show_progress_bar:
-                simulation_day = (date - self.start_date).days
-                stats_dict = {
-                    "date": str(date.date()),
-                    "dataframe size": str(len(self.population.props)),
-                    "queued events": str(len(self.event_queue)),
-                }
-                if "HealthSystem" in self.modules:
-                    stats_dict["queued HSI events"] = str(
-                        len(self.modules["HealthSystem"].HSI_EVENT_QUEUE)
-                    )
-                progress_bar.update(simulation_day, stats_dict=stats_dict)
-
-            if date >= end_date:
-                self.date = end_date
-                break
-            self.fire_single_event(event, date)
-
-        # The simulation has ended.
-        if self.show_progress_bar:
-            progress_bar.stop()
-
-        for module in self.modules.values():
-            module.on_simulation_end()
-
-        logger.info(key='info', data=f'simulate() {time.time() - start} s')
-
-        # From Python logging.shutdown
+        self.initialise()
+        self.run_simulation_to(end_date=end_date)
+        self.finalise()
+        logger.info(key="info", data=f"simulate() {time.time() - start} s")
         if self.output_file:
-            try:
-                self.output_file.acquire()
-                self.output_file.flush()
-                self.output_file.close()
-            except (OSError, ValueError):
-                pass
-            finally:
-                self.output_file.release()
+            self.close_output_file()
 
     def schedule_event(self, event, date):
         """Schedule an event to happen on the given future date.
@@ -259,12 +301,14 @@ class Simulation:
         :param event: the Event to schedule
         :param date: when the event should happen
         """
-        assert date >= self.date, 'Cannot schedule events in the past'
+        assert date >= self.date, "Cannot schedule events in the past"
 
-        assert 'TREATMENT_ID' not in dir(event), \
-            'This looks like an HSI event. It should be handed to the healthsystem scheduler'
-        assert (event.__str__().find('HSI_') < 0), \
-            'This looks like an HSI event. It should be handed to the healthsystem scheduler'
+        assert "TREATMENT_ID" not in dir(
+            event
+        ), "This looks like an HSI event. It should be handed to the healthsystem scheduler"
+        assert (
+            event.__str__().find("HSI_") < 0
+        ), "This looks like an HSI event. It should be handed to the healthsystem scheduler"
         assert isinstance(event, Event)
 
         self.event_queue.schedule(event=event, date=date)
