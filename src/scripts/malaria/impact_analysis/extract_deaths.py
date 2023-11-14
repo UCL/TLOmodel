@@ -50,6 +50,9 @@ TARGET_PERIOD = (Date(2010, 1, 1), Date(2020, 1, 1))
 
 # extract total deaths
 def extract_total_deaths(results_folder, do_scaling=True):
+    """ sum all deaths occurring for each run of each draw
+    dataframe returned: row=total deaths, column=run/draw
+    """
     def extract_deaths_total(df: pd.DataFrame) -> pd.Series:
         return pd.Series({"Total": len(df)})
 
@@ -63,6 +66,10 @@ def extract_total_deaths(results_folder, do_scaling=True):
 
 
 def plot_summarized_total_deaths(summarized_total_deaths, scenario_info, mean_deaths_difference_by_run):
+    """ barplot with mean total deaths for each scenario
+    with the mean difference in numbers of deaths compared with the baseline
+    added above each bar
+    """
     list_of_scenarios = list(range(scenario_info['number_of_draws']))
     fig, ax = plt.subplots()
     number_of_draws = scenario_info['number_of_draws']
@@ -97,9 +104,10 @@ def plot_summarized_total_deaths(summarized_total_deaths, scenario_info, mean_de
     return fig, ax
 
 
-# this computes the mean difference in deaths between each scenario and baseline
-# numbers of deaths are compared run-for-run
 def compute_difference_in_deaths_across_runs(total_deaths, scenario_info):
+    """# this computes the mean difference in deaths between each scenario and baseline
+    # numbers of deaths are compared run-for-run
+    """
     out = [None] * scenario_info["number_of_draws"]
     for scenario in range(scenario_info["number_of_draws"]):
         deaths_difference_by_run = [
@@ -113,6 +121,10 @@ def compute_difference_in_deaths_across_runs(total_deaths, scenario_info):
 
 
 def extract_deaths_by_age(results_folder):
+    """ produces dataframe with mean (+ 95% UI) number of deaths
+    for each draw by age-group
+    dataframe returned: rows=age-gp, columns=draw median, draw lower, draw upper
+    """
     def extract_deaths_by_age_group(df: pd.DataFrame) -> pd.Series:
         _, age_group_lookup = make_age_grp_lookup()
         df["Age_Grp"] = df["age"].map(age_group_lookup).astype(make_age_grp_types())
@@ -238,8 +250,11 @@ plt.show()
 fig_1, ax_1 = barplot_summarized_deaths_by_age(deaths_summarized_by_age, proportion=False)
 plt.show()
 
+
 def get_num_deaths_by_cause_label(_df):
-    """Return total number of Deaths by label (total by age-group within the TARGET_PERIOD)
+    """Return total number of Deaths by label within the TARGET_PERIOD
+    values are summed for all ages and aggregated across the runs
+    df returned: rows=COD, columns=draw
     """
     return _df \
         .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
@@ -263,6 +278,11 @@ mean_deaths_by_cause = num_deaths_by_cause_label.xs('mean', level=1, axis=1)
 
 # plot AIDS deaths by yr
 def summarise_aids_deaths(results_folder):
+    """ returns mean AIDS deaths for each year
+    aggregated across all runs of each draw
+    AIDS_TB and AIDS_non_TB are combined into one count
+    """
+
     results_deaths = extract_results(
         results_folder,
         module="tlo.methods.demography",
@@ -291,6 +311,11 @@ def summarise_aids_deaths(results_folder):
 
 
 def summarise_deaths_for_one_cause(results_folder, cause):
+    """ returns mean deaths for each year of the simulation
+    values are aggregated across the runs of each draw
+    for the specified cause
+    """
+
     results_deaths = extract_results(
         results_folder,
         module="tlo.methods.demography",
@@ -322,234 +347,4 @@ aids_deaths = summarise_aids_deaths(results_folder)
 tb_deaths = summarise_deaths_for_one_cause(results_folder, 'TB')
 malaria_deaths = summarise_deaths_for_one_cause(results_folder, 'Malaria')
 
-plt.style.use('ggplot')
-plt.style.use('seaborn-bright')
 
-# plot aids deaths over time for each scenario
-fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3,
-                                    constrained_layout=True,
-                                    figsize=(8, 3))
-fig.suptitle('')
-
-ax1.plot(aids_deaths)
-ax1.set(title='AIDS deaths',
-        ylabel='Num AIDS deaths')
-ax1.tick_params(axis='x', rotation=70)
-ax1.xaxis.set_ticks(range(2010, 2020, 1))
-
-ax2.plot(tb_deaths)
-ax2.set(title='TB deaths',
-        ylabel='Num TB deaths')
-ax2.tick_params(axis='x', rotation=70)
-ax2.xaxis.set_ticks(range(2010, 2020, 1))
-
-ax3.plot(malaria_deaths)
-ax3.set(title='Malaria deaths',
-        ylabel='Num malaria deaths')
-ax3.tick_params(axis='x', rotation=70)
-ax3.xaxis.set_ticks(range(2010, 2020, 1))
-
-plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left',
-           labels=['mode1', '-hiv', '-tb', '-malaria', '-all3'], )
-
-plt.show()
-
-
-# ----------------------------------------------------------------------
-# extract deaths by year for life expectancy calculations
-
-TARGET_PERIOD = (Date(2019, 1, 1), Date(2020, 1, 1))
-
-
-# get mean number of deaths by age-group for the target period
-def extract_deaths_by_age_sex(results_folder):
-    def extract_deaths(df: pd.DataFrame) -> pd.Series:
-        _, age_group_lookup = make_age_grp_lookup()
-        df["Age_Grp"] = df["age"].map(age_group_lookup).astype(make_age_grp_types())
-        df = df.rename(columns={"sex": "Sex"})
-        return df.loc[pd.to_datetime(df.date).between(*TARGET_PERIOD)].groupby(["Age_Grp", "Sex"])["person_id"].count()
-
-    return summarize(extract_results(
-        results_folder,
-        module="tlo.methods.demography",
-        key="death",
-        custom_generate_series=extract_deaths,
-        do_scaling=True
-    ), only_mean=True, collapse_columns=False
-    )
-
-deaths_by_age_sex = extract_deaths_by_age_sex(results_folder)
-
-
-# get person-years by age-group for target period
-# use demography.age_range_m for pop size
-# select target years
-# for each column, take median
-def extract_pop_size(results_folder, draw, key):
-    module = "tlo.methods.demography"
-
-    def get_multiplier(_draw, _run):
-        """Helper function to get the multiplier from the simulation."""
-        return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.population'
-                                           )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
-
-    # get number of draws and numbers of runs
-    info = get_scenario_info(results_folder)
-
-    # Dictionary to store DataFrames
-    dataframes = {}
-
-    # get the dataframes from each run
-    for run in range(info['runs_per_draw']):
-
-        df_name = f'df_{run}'  # Create a dynamic name for each DataFrame
-        data = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-        dataframes[df_name] = pd.DataFrame(data)
-
-    # Concatenate DataFrames along a new axis (axis=2)
-    concatenated_df = pd.concat([dataframes["df_1"],
-                                 dataframes["df_2"],
-                                 dataframes["df_3"],
-                                 dataframes["df_4"],
-                                 ], axis=1, keys=['df1', 'df2', 'df3', 'df4'])
-
-    # Remove column 'B' from all data frames within concatenated_df
-    concatenated_df = concatenated_df.drop('date', level=1, axis=1)
-    # Calculate the mean for each row in each column
-    tmp = concatenated_df.groupby(level=1, axis=1).mean()
-
-    return tmp
-
-
-pop_baseline_m = extract_pop_size(results_folder=results_folder, draw=0, key="age_group_m")
-pop_baseline_f = extract_pop_size(results_folder=results_folder, draw=0, key="age_group_f")
-pop_exclHTM_m = extract_pop_size(results_folder=results_folder, draw=4,  key="age_group_m")
-pop_exclHTM_f = extract_pop_size(results_folder=results_folder, draw=4,  key="age_group_f")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# --------------------------------------------------------------------
-# LIFE EXPECTANCY FOR MALES AND FEMALES - SIMPLE METHOD
-
-# get deaths for males and females for the target time period
-def get_num_deaths_by_sex(_df):
-    """Return total number of Deaths by sex (total within the TARGET_PERIOD)
-    """
-    return _df \
-        .loc[pd.to_datetime(_df.date).between(*TARGET_PERIOD)] \
-        .groupby(_df['sex']) \
-        .size()
-
-
-deaths_by_sex = extract_results(
-        results_folder,
-        module="tlo.methods.demography",
-        key="death",
-        custom_generate_series=get_num_deaths_by_sex,
-        do_scaling=True
-)
-
-
-
-# get person-years for same time-period
-def get_person_years_M(_df):
-    """ extract person-years for each draw/run
-    men and women calculated separately
-    will skip column if particular run has failed
-    """
-    years = pd.to_datetime(_df["date"]).dt.year
-    # create empty series
-    py_M = pd.Series(dtype="int64", index=years)
-
-    for year in years:
-        tot_m = (
-            (_df.loc[pd.to_datetime(_df["date"]).dt.year == year]["M"]).apply(pd.Series)
-        ).transpose()
-        py_M[year] = tot_m.sum().values[0]
-
-    return py_M
-
-
-def get_person_years_F(_df):
-    """ extract person-years for each draw/run
-    men and women calculated separately
-    will skip column if particular run has failed
-    """
-    years = pd.to_datetime(_df["date"]).dt.year
-    # create empty series
-    py_F = pd.Series(dtype="int64", index=years)
-
-    for year in years:
-        tot_f = (
-            (_df.loc[pd.to_datetime(_df["date"]).dt.year == year]["F"]).apply(pd.Series)
-        ).transpose()
-        py_F[year] = tot_f.sum().values[0]
-
-    return py_F
-
-py_M = extract_results(
-    results_folder,
-    module="tlo.methods.demography",
-    key="person_years",
-    custom_generate_series=get_person_years_M,
-    do_scaling=True
-)
-
-py_F = extract_results(
-    results_folder,
-    module="tlo.methods.demography",
-    key="person_years",
-    custom_generate_series=get_person_years_F,
-    do_scaling=True
-)
-
-# calculate life expectancy for 2019
-
-
-
-# %%:  ---------------------------------- DALYS ---------------------------------- #
-
-def num_dalys_by_cause(_df):
-    """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
-    return _df \
-        .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
-        .drop(columns=['date', 'sex', 'age_range', 'year']) \
-        .sum()
-
-
-# extract dalys by cause with mean and upper/lower intervals
-# With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
-
-daly_summary = summarize(
-    extract_results(
-        results_folder,
-        module="tlo.methods.healthburden",
-        key="dalys_stacked",
-        custom_generate_series=num_dalys_by_cause,
-        do_scaling=True,
-    ),
-    only_mean=True,
-    collapse_columns=False,
-)
-daly_summary = daly_summary.astype(int)
