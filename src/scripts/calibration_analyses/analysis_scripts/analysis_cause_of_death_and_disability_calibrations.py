@@ -58,9 +58,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     def make_std_graphs(what, period):
         """Make the standard Graphs for a specific period for either 'Deaths' or 'DALYS'"""
 
-        assert type(what) is str
+        assert isinstance(what, str)
         assert what in ('Deaths', 'DALYs')
-        assert type(period) is str
+        assert isinstance(period, str)
         assert period in make_calendar_period_lookup()[0]
 
         # limit to the subject of interest (either 'Deaths' or 'DALYS')

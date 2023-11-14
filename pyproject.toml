@@ -93,13 +93,9 @@ disable = [
     "R",
     "C",
     "W",
-    "E0110", # abstract class instantiated
     "E0611", # no-name-in-module
     "E0702", # raising NoneType
-    "E1136", # unsubscriptable type
-    "E1137", # doesn't support item assignment
     "E1101", # no-member
-    "E1120", # no-value-for-parameter
 ]
 
 
@@ -126,15 +122,6 @@ markers = ["group2", "slow"]
 [tool.ruff]
 target-version = "py38"
 line-length = 120
-ignore = [
-    "E712", # comparison to False
-    "E713", # use `not in`
-    "E714", # use `is not`
-    "E721", # do not compare types
-    "E731", # do not assign a lambda expression
-    "E741", # ambiguous variable name
-    "F601", # dictionary literal key repeated
-]
 
 [tool.setuptools.packages.find]
 where = ["src"]

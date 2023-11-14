@@ -1,6 +1,5 @@
 
 import os
-import time
 from pathlib import Path
 
 import pytest
@@ -58,12 +57,3 @@ def test_properties_and_dtypes(simulation):
     df = simulation.population.props
     orig = simulation.population.new_row
     assert (df.dtypes == orig.dtypes).all()
-
-
-if __name__ == '__main__':
-    t0 = time.time()
-    simulation = simulation()
-    simulation.make_initial_population(n=popsize)
-    simulation.simulate(end_date=end_date)
-    t1 = time.time()
-    print('Time taken', t1 - t0)
