@@ -418,6 +418,7 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
             ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.EQUIPMENT = set()  # initialise empty set
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key="HSI_Measles_Treatment",
@@ -436,6 +437,8 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
         # for measles with pneumonia
         if "respiratory_symptoms" in symptoms:
             item_codes.append(self.module.consumables['severe_pneumonia'])
+            # Update equipment
+            self.EQUIPMENT.update({'Oxygen concentrator', 'Oxygen cylinder, with regulator'})
 
         # request the treatment
         if self.get_consumables(item_codes):
