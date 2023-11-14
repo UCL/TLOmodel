@@ -93,7 +93,6 @@ disable = [
     "R",
     "C",
     "W",
-    "E0611", # no-name-in-module
     "E0702", # raising NoneType
     "E1101", # no-member
     "E1130", # bad operand type for unary ~
