@@ -26,7 +26,11 @@ def set_logging_levels(custom_levels: Dict[str, int]):
     :param custom_levels: Dictionary of modules and their level, '*' can be used as a key for all modules
     """
     # get list of `tlo.` loggers to process (this assumes logger have been setup on module import)
-    loggers = {_logging.getLogger(name) for name in _logging.root.manager.loggerDict if name.startswith('tlo.methods')}
+    loggers = {
+        _logging.getLogger(name)
+        for name in _logging.root.manager.loggerDict  # pylint: disable=E1101
+        if name.startswith('tlo.methods')
+    }
 
     # set the baseline logging level from methods, if it's been set
     if '*' in custom_levels:
