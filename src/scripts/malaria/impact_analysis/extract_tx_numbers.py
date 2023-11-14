@@ -206,6 +206,9 @@ def summarise_grouped_appts(results_folder, module, key, column, draw):
     group treatment_id by stub
     then summarise
     keep firstattendance_emergency and non-emergency separate
+
+    produces dataframe: rows=treatment_id_stub e.g. Hiv, Alri
+    columns = number of appts for each run, median, lower and upper UIs
     """
 
     info = get_scenario_info(results_folder)

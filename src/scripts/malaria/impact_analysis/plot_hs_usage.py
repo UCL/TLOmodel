@@ -1,6 +1,6 @@
 """This file uses the results of the scenario runs to generate plots
 
-*1 health system usage
+* bar plot showing the numbers of opd, inpat and emergency appts across the draws
 
 """
 

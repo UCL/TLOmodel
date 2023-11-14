@@ -56,6 +56,7 @@ TARGET_PERIOD = (Date(2019, 1, 1), Date(2020, 1, 1))
 def extract_deaths_by_age_sex(results_folder):
     """ extract numbers of deaths for each age-group
     return mean across runs
+    return dataframe: rows=age_gp, columns=draw
     """
     def extract_deaths(df: pd.DataFrame) -> pd.Series:
         _, age_group_lookup = make_age_grp_lookup()
