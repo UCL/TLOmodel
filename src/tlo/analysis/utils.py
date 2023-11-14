@@ -96,17 +96,15 @@ def write_log_to_excel(filename, log_dataframes):
                 sheet_count += 1
                 metadata.append([module, key, sheet_count, dataframes['_metadata'][module][key]['description']])
 
-    writer = pd.ExcelWriter(filename)
-    index = pd.DataFrame(data=metadata, columns=['module', 'key', 'sheet', 'description'])
-    index.to_excel(writer, sheet_name='Index')
-
-    sheet_count = 0
-    for module, dataframes in log_dataframes.items():
-        for key, df in dataframes.items():
-            if key != '_metadata':
-                sheet_count += 1
-                df.to_excel(writer, sheet_name=f'Sheet {sheet_count}')
-    writer.close()
+    with pd.ExcelWriter(filename) as writer:  # https://github.com/PyCQA/pylint/issues/3060 pylint: disable=E0110
+        index = pd.DataFrame(data=metadata, columns=['module', 'key', 'sheet', 'description'])
+        index.to_excel(writer, sheet_name='Index')
+        sheet_count = 0
+        for module, dataframes in log_dataframes.items():
+            for key, df in dataframes.items():
+                if key != '_metadata':
+                    sheet_count += 1
+                    df.to_excel(writer, sheet_name=f'Sheet {sheet_count}')
 
 
 def make_calendar_period_lookup():
@@ -268,16 +266,18 @@ def extract_results(results_folder: Path,
         # If there is no `custom_generate_series` provided, it implies that function required selects the specified
         # column from the dataframe.
         assert column is not None, "Must specify which column to extract"
-
-        if index is not None:
-            _gen_series = lambda _df: _df.set_index(index)[column]  # noqa: 731
-        else:
-            _gen_series = lambda _df: _df.reset_index(drop=True)[column]  # noqa: 731
-
     else:
         assert index is None, "Cannot specify an index if using custom_generate_series"
         assert column is None, "Cannot specify a column if using custom_generate_series"
-        _gen_series = custom_generate_series
+
+    def generate_series(dataframe: pd.DataFrame) -> pd.Series:
+        if custom_generate_series is None:
+            if index is not None:
+                return dataframe.set_index(index)[column]
+            else:
+                return dataframe.reset_index(drop=True)[column]
+        else:
+            return custom_generate_series(dataframe)
 
     # get number of draws and numbers of runs
     info = get_scenario_info(results_folder)
@@ -291,7 +291,7 @@ def extract_results(results_folder: Path,
 
             try:
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
-                output_from_eval: pd.Series = _gen_series(df)
+                output_from_eval: pd.Series = generate_series(df)
                 assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
                 res[draw_run] = output_from_eval * get_multiplier(draw, run)
 
