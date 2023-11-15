@@ -28,7 +28,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #tb_DAH_scenarios-2023-09-18T132119Z
 # Tb_DAH_scenarios_test_run09_partial-2023-10-01T133822Z -looks to work fine
 #Tb_DAH_scenarios_test_run13_partial-2023-10-02T144642Z xcept for CXR scaleup and outreach
-results_folder = get_scenario_outputs("Tb_DAH_impactx02-2023-11-15T150108Z", outputspath)[-1]
+results_folder = get_scenario_outputs("Tb_DAH_impactx03-2023-11-15T174641Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -274,6 +274,29 @@ tb_treatment = summarize(
 #tb_treatment.index = tb_treatment.index.year,
 tb_treatment_cov = pd.DataFrame(tb_treatment)
 tb_treatment_cov.to_excel(outputspath / "tb_treatment_coverage_baseline.xlsx")
+
+## extracts number of people screened for TB by scenario
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2013, 12, 31))
+def get_counts_of_hsi_by_treatment_id(_df):
+    """Get the counts of the TREATMENT_IDs occurring"""
+    _counts_by_treatment_id = _df \
+        .loc[pd.to_datetime(_df['date']).between(*TARGET_PERIOD), 'TREATMENT_ID'] \
+        .apply(pd.Series) \
+        .sum() \
+        .astype(int)
+    return _counts_by_treatment_id.groupby(level=0).sum()
+
+counts_of_hsi_by_treatment_id = summarize(
+        extract_results(
+            results_folder,
+            module='tlo.methods.healthsystem.summary',
+            key='HSI_Event',
+            custom_generate_series=get_counts_of_hsi_by_treatment_id,
+            do_scaling=False,  # Counts of HSI shouldn't be scaled for this investigation
+        ).pipe(set_param_names_as_column_index_level_0),
+        only_mean=True,
+    )
+counts_of_hsi_by_treatment_id.to_excel(outputspath / "Tb_Test_Screening.xlsx")
 
 #TB Incidence
 tb_inc = summarize(
