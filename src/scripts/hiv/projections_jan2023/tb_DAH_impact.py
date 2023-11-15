@@ -89,18 +89,21 @@ class ImpactOfTbDaH(BaseScenario):
             "Baseline": {
                 'Tb': {
                     'scenario': 0,
+                    'probability_community_chest_xray': 0.0,
                 },
             },
             # overrides availability of Xpert to nil
             "No Xpert Available": {
                 'Tb': {
                     'scenario': 1,
+                    'probability_community_chest_xray': 0.0,
                 },
             },
             # overrides availability of CXR to nil
             "No CXR Available": {
                 'Tb': {
                     'scenario': 2,
+                    'probability_community_chest_xray': 0.0,
                 },
             },
             #increase CXR by 10 percentage points
