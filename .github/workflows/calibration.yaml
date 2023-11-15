@@ -2,7 +2,7 @@ name: Calibration
 
 on:
   push:
-    branches: "master"
+    branches: "mg/calibration-workflow"
 
 env:
   WORKTREE_PATH:   /mnt/tlo/${{ github.sha }}
