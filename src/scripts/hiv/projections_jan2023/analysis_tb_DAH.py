@@ -28,7 +28,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #tb_DAH_scenarios-2023-09-18T132119Z
 # Tb_DAH_scenarios_test_run09_partial-2023-10-01T133822Z -looks to work fine
 #Tb_DAH_scenarios_test_run13_partial-2023-10-02T144642Z xcept for CXR scaleup and outreach
-results_folder = get_scenario_outputs("Tb_DAH_scenarios_test_run43_partial-2023-10-13T100458Z", outputspath)[-1]
+results_folder = get_scenario_outputs("Tb_DAH_impactx02-2023-11-15T150108Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -394,14 +394,14 @@ print(hsi_event_counts)
 # properties_of_deceased_persons.to_excel(outputspath / "properties_of_deceased_persons.xlsx")
 
 ###### PLOTS##################################################
-
+print(dalys_summary.columns)
 # Calculate the sum of DALYs across years for each scenario
 baseline = dalys_summary.loc[:, ('Baseline', 'mean')].sum()
 No_Xpert = dalys_summary.loc[:, ('No Xpert Available', 'mean')].sum()
 No_CXR = dalys_summary.loc[:, ('No CXR Available', 'mean')].sum()
-CXR_scaleup10 = dalys_summary.loc[:, ('CXR scale_up', 'mean')].sum()
+CXR_scaleup10 = dalys_summary.loc[:, ('CXR_scale_up10', 'mean')].sum()
 CXR_scaleup20 = dalys_summary.loc[:, ('CXR scale_up20', 'mean')].sum()
-CXR_scaleup30 = dalys_summary.loc[:, ('CXR scale_up20', 'mean')].sum()
+CXR_scaleup30 = dalys_summary.loc[:, ('CXR scale_up30', 'mean')].sum()
 CXR_outreach = dalys_summary.loc[:, ('Outreach services', 'mean')].sum()
 
 
@@ -416,7 +416,7 @@ No_CXR_lower = dalys_summary.loc[:, ('No CXR Available', 'lower')].sum()
 No_CXR_upper = dalys_summary.loc[:, ('No CXR Available', 'upper')].sum()
 
 CXR_scaleup10_lower = dalys_summary.loc[:, ('CXR_scale_up10', 'lower')].sum()
-CXR_scaleup10_upper = dalys_summary.loc[:, ('CXR scale_up10', 'upper')].sum()
+CXR_scaleup10_upper = dalys_summary.loc[:, ('CXR_scale_up10', 'upper')].sum()
 
 CXR_scaleup20_lower = dalys_summary.loc[:, ('CXR scale_up20', 'lower')].sum()
 CXR_scaleup20_upper = dalys_summary.loc[:, ('CXR scale_up20', 'upper')].sum()
@@ -451,12 +451,12 @@ ax.legend()
 
 # Displaying graph
 plt.show()
-
+print(tb_mortality.columns)
 ##mortality
 baseline = tb_mortality.loc[:, ('Baseline', 'mean')].sum()
 No_Xpert = tb_mortality.loc[:, ('No Xpert Available', 'mean')].sum()
 No_CXR = tb_mortality.loc[:, ('No CXR Available', 'mean')].sum()
-CXR_scaleup10 = tb_mortality.loc[:, ('CXR scale_up10', 'mean')].sum()
+CXR_scaleup10 = tb_mortality.loc[:, ('CXR_scale_up10', 'mean')].sum()
 CXR_scaleup20 = tb_mortality.loc[:, ('CXR scale_up20', 'mean')].sum()
 CXR_scaleup30 = tb_mortality.loc[:, ('CXR scale_up30', 'mean')].sum()
 CXR_outreach = tb_mortality.loc[:, ('Outreach services', 'mean')].sum()
@@ -471,14 +471,14 @@ No_Xpert_upper = tb_mortality.loc[:, ('No Xpert Available', 'upper')].sum()
 No_CXR_lower = tb_mortality.loc[:, ('No CXR Available', 'lower')].sum()
 No_CXR_upper = tb_mortality.loc[:, ('No CXR Available', 'upper')].sum()
 
-CXR_scaleup_lower = tb_mortality.loc[:, ('CXR scaleup10', 'lower')].sum()
-CXR_scaleup_upper = tb_mortality.loc[:, ('CXR scaleup10', 'upper')].sum()
+CXR_scaleup_lower = tb_mortality.loc[:, ('CXR_scale_up10', 'lower')].sum()
+CXR_scaleup_upper = tb_mortality.loc[:, ('CXR_scale_up10', 'upper')].sum()
 
-CXR_scaleup20_lower = tb_mortality.loc[:, ('CXR scaleup20', 'lower')].sum()
-CXR_scaleup20_upper = tb_mortality.loc[:, ('CXR scaleup20', 'upper')].sum()
+CXR_scaleup20_lower = tb_mortality.loc[:, ('CXR scale_up20', 'lower')].sum()
+CXR_scaleup20_upper = tb_mortality.loc[:, ('CXR scale_up20', 'upper')].sum()
 
-CXR_scaleup30_lower = tb_mortality.loc[:, ('CXR scaleup30', 'lower')].sum()
-CXR_scaleup30_upper = tb_mortality.loc[:, ('CXR scaleup30', 'upper')].sum()
+CXR_scaleup30_lower = tb_mortality.loc[:, ('CXR scale_up30', 'lower')].sum()
+CXR_scaleup30_upper = tb_mortality.loc[:, ('CXR scale_up30', 'upper')].sum()
 
 CXR_outreach_lower = tb_mortality.loc[:, ('Outreach services', 'lower')].sum()
 CXR_outreach_upper = tb_mortality.loc[:, ('Outreach services', 'upper')].sum()
