@@ -69,7 +69,7 @@ class ImpactOfTbDaHx(BaseScenario):
         else:
             return None
 
-class ImpactOfTbDaHx:
+
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
         return {
