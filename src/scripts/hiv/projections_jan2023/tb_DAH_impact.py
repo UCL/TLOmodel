@@ -52,7 +52,7 @@ class ImpactOfTbDaH(BaseScenario):
         self.runs_per_draw = 2
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_impactx01',
+            'filename': 'Tb_DAH_impactx02',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
