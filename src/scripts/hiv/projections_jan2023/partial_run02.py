@@ -79,7 +79,8 @@ class ImpactOfTbDaHx(BaseScenario):
                     'scenario': 0,
                     'probability_community_chest_xray': 0.0,
                 },
-                **({'HealthSystem': {'cons_availability': {'item_code': {157: [0.51]}}}} if 0 == 0 else {}),
+                **({'HealthSystem': {
+                    'override_availability_of_consumables': {175: 0.51, 187: 0.85}}} if 0 == 0 else {}),
             },
             # overrides availability of Xpert to nil
             "No Xpert Available": {
@@ -95,7 +96,7 @@ class ImpactOfTbDaHx(BaseScenario):
                     'scenario': 2,
                     'probability_community_chest_xray': 0.0,
                 },
-                **({'HealthSystem': {'cons_availability': {'item_code': {175: ['none']}}}} if 2 == 0 else {}),
+                **({'HealthSystem': {'override_availability_of_consumables': {175: 0.0, 187: 0.85}}} if 2 == 0 else {}),
             },
             # increase CXR by 10 percentage points
             "CXR_scale_up10": {
@@ -103,7 +104,7 @@ class ImpactOfTbDaHx(BaseScenario):
                     'scenario': 3,
                     'probability_community_chest_xray': 0.0,
                 },
-                **({'HealthSystem': {'cons_availability': {'item_code': {175: 0.61}}}} if 3 == 0 else {}),
+                **({'HealthSystem': {'override_availability_of_consumables': {175: 0.51, 187: 0.85}}} if 3 == 0 else {}),
             },
 
             # increase CXR by 20 percentage points
@@ -112,7 +113,7 @@ class ImpactOfTbDaHx(BaseScenario):
                     'scenario': 4,
                     'probability_community_chest_xray': 0.0,
                 },
-                **({'HealthSystem': {'cons_availability': {'item_code': {175: 0.71}}}} if 4 == 0 else {}),
+                **({'HealthSystem': {'override_availability_of_consumables': {175: 0.61, 187: 0.85}}} if 4 == 0 else {}),
             },
 
             # increase CXR by 30 percentage points
@@ -121,7 +122,7 @@ class ImpactOfTbDaHx(BaseScenario):
                     'scenario': 5,
                     'probability_community_chest_xray': 0.0,
                 },
-                **({'HealthSystem': {'cons_availability': {'item_code': {175: 0.81}}}} if 5 == 0 else {}),
+                **({'HealthSystem': {'override_availability_of_consumables': {175: 0.71, 187: 0.85}}} if 5 == 0 else {}),
             },
 
             # introduce outreach services
