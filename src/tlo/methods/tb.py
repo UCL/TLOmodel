@@ -1469,38 +1469,45 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         # baseline scenario--no change to parameters
         if scenario == 0:
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
+            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
             return
 
         # sets availability of xpert to nil
         if scenario == 1:
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.0})
+            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
            # self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.9
 
         # sets availability of xray to nil
         if scenario == 2:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.0})
+           self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
            #self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.7
 
         #increases probability of accessing chest xray by 10%
         if scenario == 3:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.61})
+           self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
            # self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.
 
         # increase CXR by 20%
         if scenario == 4:
+            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.71})
             # self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.0
 
         # increase CXR by 30%
         if scenario == 5:
+            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.81})
             # self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.0
 
         # Introduce community Xray
         if scenario == 6:
-            self.sim.modules['parameters']['probability_community_chest_xray'] = 0.0
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.71})
+            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.1
+            #self.sim.modules['parameters']['probability_community_chest_xray'] = 0.0
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
 
 #######################################################################
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
@@ -2347,7 +2354,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         # if person on shorter paediatric regimen
         elif person["tb_treatment_regimen"] == "tb_tx_child_shorter":
             sputum_fup = follow_up_times["shine_sputum"].dropna()
-            treatment_length = p["shine_treatment_length"]
+            treatment_length = p["child_shorter_treatment_length"]
 
         # check schedule for sputum test and perform if necessary
         if months_since_tx in sputum_fup:
