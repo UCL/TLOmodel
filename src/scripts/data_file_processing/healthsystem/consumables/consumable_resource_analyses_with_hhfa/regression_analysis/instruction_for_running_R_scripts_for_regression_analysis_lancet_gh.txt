@@ -1,5 +1,9 @@
-The R scripts for regression analysis need to be run in the following order:#
-Main sequence of scripts - 
+The R scripts for regression analysis need to be run in the following order:
+
+*Preparing HHFA data*
+prepare_hhfa_consumables_data_for_inferential_analysis.py - Prepares HHFA data for analysis using R. 
+
+*Main sequence of regression analyis scripts*
 1. 0_packages_and_functions - This script loads the necessary packages for the regression analysis and creates functions used in scripts 2-5
 2. 1_data_setup - This script loads the HHFA data for descriptive and inferential analysis
 3. 2_feature_manipulation - This script performs feature manipulation on the cleaned HHFA dataset 
@@ -9,7 +13,7 @@ Main sequence of scripts -
 6. 4b_regression_analysis_tables_and_graphs - This script generates tables and graphs based on the results of 4_regression_analysis.R
 7. 5_test_model_accuracy - This file generates confusion matrices for the 4 regression models in 4_regression_analysis.R to compare model accuracy. This script can be run independently (if regression model outputs from 4_regression_analysis.R are already saved) OR after running the following code - source(paste0(path_to_scripts, "4_regression_analysis.R"))
 
-Other scripts which can be run independently -
+*Other scripts which can be run independently*
 1. 3_pre_regression_analysis - This script performs the analysis to choose the regression model. Since this script can take several hours to run, the output of this script has been copied directly into  3b_data_setup_for_regression.R rather that running this each time.  
 2. 6_descriptive_analysis - This script extracts descriptive tables for the manuscript. This script can be run independently.
 3. 7_regression_analysis_only_observed - This script runs the main regression model and generates the forest plot for the version of the HHFA data which codes consumables reported as available but not observed as NOT available. 
