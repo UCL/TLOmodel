@@ -3,6 +3,8 @@
 # 1. Load HHFA data
 ####################
 df_orig <- read.csv(paste0(path_to_data, "cleaned_hhfa_2019.csv"))
+# Replace with the following code in order to use the version of HHFA data which treats 'available but not observed' consumables as NOT available. 
+#df_orig <- read_csv(paste0(path_to_data,"cleaned_hhfa_2019_onlyobserved.csv"), col_names = TRUE)
 
 # 1.1 Assign a code to items
 #----------------------------

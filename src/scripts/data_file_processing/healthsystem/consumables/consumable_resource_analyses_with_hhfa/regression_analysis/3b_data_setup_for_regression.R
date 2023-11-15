@@ -2,8 +2,6 @@
 # based on results from  3_pre_regression_analysis.R - we don't need to run this script again because the output has been
 # copied into this script. 
 
-# setwd() # use if running locally
-
 ###########################################################
 # 1. Data setup
 ###########################################################

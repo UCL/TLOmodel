@@ -1,4 +1,5 @@
-# This script loads the data for descriptive and inferential analysis
+# This script loads the data for descriptive and inferential analysis - this version of the data treats 'available but not observed' consumables 
+# as NOT available. 
 
 # 1. Load HHFA data#
 ####################

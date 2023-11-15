@@ -1,11 +1,6 @@
 # This script performs the analysis to choose the regression model
 # Since this script can take several hours to run, the output of this script has been copied directly into 
-# 4_regression_analysis.R rather that running this each time. 
-
-# Run setup files
-source(paste0(path_to_scripts, "0_packages_and_functions.R"))
-source(paste0(path_to_scripts, "1_data_setup.R"))
-source(paste0(path_to_scripts, "2_feature_manipulation.R"))
+# 3b_data_setup_for_regression.R rather that running this each time. 
 
 # 1. Choose variables to be included in the backward elimination analysis #
 ###########################################################################

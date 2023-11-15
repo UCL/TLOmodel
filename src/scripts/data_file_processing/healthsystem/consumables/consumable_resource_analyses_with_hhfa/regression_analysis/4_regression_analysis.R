@@ -1,9 +1,4 @@
-# This script performs the regression analysis based on the model suggested by 
-# 3_pre_regression_analysis.R - we don't need to run this script again because the output has been
-# copied into this script. 
-
-# setwd() # use if running locally
-
+# This script performs the regression analyses
 
 ###########################################################
 # 1. Data setup
@@ -324,7 +319,7 @@ for (level in fac_types_for_reg){
 level_tbl_merge <-
   tbl_merge(
     tbls = list(model_level_ci[[1]],model_level_ci[[2]]),
-    tab_spanner = c("**Primary level**", "**Secondary level**")
+    tab_spanner = c("**Level 1a**", "**Level 1b**")
   )  %>%    # build gtsummary table
   as_gt() 
 
@@ -524,6 +519,7 @@ i = 1
 model_item_availability_group_summaries <- list()      # Create empty list to store model outputs
 model_item_availability_group_ci <- list() # Create empty list to store confidence intervals
 item_availability_group_regs_stats <- matrix(NaN, nrow = 2 , ncol = 4) # list to store data counts
+group_name = c("availability >= 10%", "availability < 10%")
 j = 1
 
 for (group in item_availability_groups_for_reg){
@@ -555,7 +551,7 @@ for (group in item_availability_groups_for_reg){
   model_item_availability_group_ci[[i]]<- tbl_regression(model_item_availability_group_summaries[[i]], exponentiate = TRUE, conf.int = TRUE, pvalue_fun = ~style_sigfig(., digits = 4))
   
   # Data count
-  item_availability_group_regs_stats[j,1] <- group
+  item_availability_group_regs_stats[j,1] <- group_name[i]
   item_availability_group_regs_stats[j,2] <- dim(df_for_fac_item_re_sorted_group)[1]
   item_availability_group_regs_stats[j,3] <- length(unique(df_for_fac_item_re_sorted_group$fac_code))
   item_availability_group_regs_stats[j,4] <- length(unique(df_for_fac_item_re_sorted_group$item))

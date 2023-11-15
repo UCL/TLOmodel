@@ -1,5 +1,4 @@
-# This file generates confusion matrices for the 4 regression models in 4_regression_analysis.R to compare
-# model accuracy
+# This file generates confusion matrices for the 4 regression models in 4_regression_analysis.R to compare model accuracy
 # This script can be run independently (if regression model outputs from 4_regression_analysis.R are already saved) OR after running the following code. 
 # source(paste0(path_to_scripts, "4_regression_analysis.R"))
 
@@ -8,7 +7,7 @@
 ###########################################################
 # 1.1 Run previous setup files
 #---------------------------------
-source(paste0(path_to_scripts, "3b_data_setup_for_regression.R"))
+#source(paste0(path_to_scripts, "3b_data_setup_for_regression.R"))
 
 ###########################################################
 # 2. Load model outputs

@@ -1,4 +1,4 @@
-# This script extracts descriptive tables for the manuscript
+# This script extracts descriptive tables for the manuscript. This script can be run independently.
 
 # Run setup files
 source(paste0(path_to_scripts, "0_packages_and_functions.R"))
