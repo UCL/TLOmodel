@@ -79,8 +79,7 @@ class ImpactOfTbDaHx(BaseScenario):
                     'scenario': 0,
                     'probability_community_chest_xray': 0.0,
                 },
-                **({'HealthSystem': {
-                    'override_availability_of_consumables': {175: 0.51, 187: 0.85}}} if 0 == 0 else {}),
+                **({'HealthSystem': { 'override_availability_of_consumables': {175: 0.51, 187: 0.85}}} if 0 == 0 else {}),
             },
             # overrides availability of Xpert to nil
             "No Xpert Available": {
