@@ -1,0 +1,133 @@
+name: Calibration
+
+on:
+  push:
+    branches: "master"
+
+env:
+  WORKTREE_PATH:   /mnt/tlo/${{ github.sha }}
+  REPO_PATH:       /mnt/tlo/TLOmodel
+  ENV:             /mnt/tlo/env-${{ github.sha }}
+  OUTPUT_ROOT:     /mnt/tlo/output
+  RUNS_NUMBER:     4
+  PYTHON_VER:      3.8
+  RUN_NAME:        021_long_run_all_diseases_run
+  PROCESS_NAME:    022_long_run_all_diseases_process
+
+jobs:
+
+  # Do a single clone from the remote repository, to reduce bandwidth usage.
+  # The repo is cloned to a directory outside of the runner workspace, because
+  # we want it to survive the current job, but this also means we can't use the
+  # `actions/checkout` workflow.
+  setup:
+    name: Setup
+    runs-on: [tlo-dev-vm-3]
+    strategy:
+      fail-fast: false
+    outputs:
+      output_dir: ${{ steps.out-dir.outputs.output_dir }}
+      tasks: ${{ steps.tasks.outputs.tasks }}
+    steps:
+      - name: Clone remote TLO repository
+        run: |
+          if [[ -d "${REPO_PATH}" ]]; then
+              git -C "${REPO_PATH}" fetch --depth 1 origin "${GITHUB_REF_NAME}"
+          else
+              git clone --depth 1 --branch "${GITHUB_REF_NAME}" "https://github.com/${{ github.repository }}.git" "${REPO_PATH}"
+          fi
+
+      - name: Create worktree
+        run: |
+          git -C "${REPO_PATH}" worktree add "${WORKTREE_PATH}" ${{ github.sha }}
+
+      - name: Create virtual environment
+        run: |
+          python${PYTHON_VER} -m venv "${ENV}"
+          source "${ENV}/bin/activate"
+          pip install -r requirements/dev.txt
+          pip install -e .
+        working-directory: "${{ env.WORKTREE_PATH }}"
+
+      - name: Generate output directory
+        id: out-dir
+        run: |
+          commit_dir=$(git show -s --date=format:'%Y-%m-%d_%H%M%S' --format=%cd_%h "${{ github.sha }}")
+          output_dir="${OUTPUT_ROOT}/${commit_dir}"
+          echo "output_dir=${output_dir}"
+          echo "output_dir=${output_dir}" >> "${GITHUB_OUTPUT}"
+        working-directory: "${{ env.WORKTREE_PATH }}"
+
+      - name: Generate list of tasks
+        id: tasks
+        run: |
+          RUNS="["
+          for run in $(seq 0 $((${RUNS_NUMBER} - 1))); do
+              RUNS="${RUNS}\"${run}\","
+          done
+          RUNS="${RUNS}]"
+          echo "tasks=${RUNS}"
+          echo "tasks=${RUNS}" >> "${GITHUB_OUTPUT}"
+
+  # Run the tasks.
+  tasks:
+    needs: setup
+    name: Run task ${{ matrix.index }}
+    runs-on: [tlo-dev-vm-3, tasks] # Use only runners dedicated to running the tasks.
+    timeout-minutes: 5760 # = 4 * 24 * 60 minutes = 4 days
+    strategy:
+      fail-fast: false
+      matrix:
+        index: ${{ fromJSON(needs.setup.outputs.tasks) }}
+    steps:
+      - name: Run the task
+        run: |
+          source "${ENV}/bin/activate"
+          draw=0
+          task_output_dir="${output_dir}/${RUN_NAME}/${draw}/${{ matrix.index }}"
+          mkdir -p "${task_output_dir}"
+
+          tlo scenario-run --output-dir "${task_output_dir}" --draw "${draw}" ${{ matrix.index }} "${WORKTREE_PATH}/src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py"
+        working-directory: "${{ env.WORKTREE_PATH }}"
+        env:
+          output_dir: "${{ needs.setup.outputs.output_dir }}"
+
+  # Do the postprocessing
+  postprocess:
+    name: Post processing
+    needs: [setup, tasks]
+    runs-on: [tlo-dev-vm-3, postprocess] # Use only the runners dedicated to postprocessing
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Run post-processing
+        run: |
+          source "${ENV}/bin/activate"
+          task_output_dir="${output_dir}/${PROCESS_NAME}"
+          mkdir -p "${task_output_dir}"
+
+          python3 "${WORKTREE_PATH}/src/scripts/calibration_analyses/analysis_scripts/process.py" "${task_output_dir}" "${RUN_NAME}" "${WORKTREE_PATH}/resources"
+        working-directory: "${{ env.WORKTREE_PATH }}"
+        env:
+          output_dir: "${{ needs.setup.outputs.output_dir }}"
+
+  # Cleanup stage, to remove temporary directories and such
+  cleanup:
+    name: Cleanup job
+    # It depends on all the previous jobs, but it always runs, regardless of
+    # their success (or maybe check that only `setup` was
+    # successful?)
+    if: ${{ always() }}
+    timeout-minutes: 10
+    needs: [setup, tasks, postprocess]
+    runs-on: [tlo-dev-vm-3]
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Cleanup worktree
+        run: |
+          git -C "${REPO_PATH}" worktree remove -f "${WORKTREE_PATH}" || true
+
+      - name: Cleanup virtual environment
+        run: |
+          rm -rvf "${ENV}"
