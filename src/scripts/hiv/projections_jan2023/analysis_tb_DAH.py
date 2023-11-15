@@ -28,7 +28,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #tb_DAH_scenarios-2023-09-18T132119Z
 # Tb_DAH_scenarios_test_run09_partial-2023-10-01T133822Z -looks to work fine
 #Tb_DAH_scenarios_test_run13_partial-2023-10-02T144642Z xcept for CXR scaleup and outreach
-results_folder = get_scenario_outputs("Tb_DAH_impactx03-2023-11-15T174641Z", outputspath)[-1]
+results_folder = get_scenario_outputs("Tb_DAH_impactx04-2023-11-15T194752Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -157,6 +157,65 @@ dalys_summary.to_excel(outputspath / "summarised_tb_dalys.xlsx")
 
 # secondary outcomes
 print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
+#
+# columns = ['date', 'year', 'li_wealth', 'value']  # Adjust columns as per your actual data
+# df = pd.DataFrame(columns=columns)
+# def get_total_num_dalys_by_wealth_and_label(_df):
+#     """
+#     Return the total number of DALYS for all years by wealth and cause label.
+#
+#     Parameters:
+#     - df: DataFrame containing DALY data
+#     """
+#     wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
+#
+#     value_sum = df \
+#         .drop(columns=['date', 'year']) \
+#         .assign(
+#             li_wealth=lambda x: x['li_wealth'].map(wealth_cats).astype(
+#                 pd.CategoricalDtype(wealth_cats.values(), ordered=True))
+#         ) \
+#         .melt(id_vars=['li_wealth'], var_name='label') \
+#         .groupby(by=['li_wealth', 'label'])['value'].sum().reset_index()
+#     return value_sum
+#
+# #extracting DALY by SES
+# def total_num_dalys_by_wealth_and_label(results_folder):
+#     SES_dalys = extract_results(
+#         results_folder,
+#         module="tlo.methods.healthburden",
+#         key="dalys_by_wealth_stacked_by_age_and_time",
+#         custom_generate_series=get_total_num_dalys_by_wealth_and_label,
+#         do_scaling=True,
+#     )
+#     print("Contents of SES_dalys:")
+#     print(SES_dalys)
+#
+#     # Check if SES_dalys is None or empty
+#     if SES_dalys is None or SES_dalys.empty:
+#         print("No data found or an issue with data extraction.")
+#         return None  # or handle it according to your needs
+#
+#     SES_dalys = SES_dalys.sort_index()
+#     SES_dalys1 = summarize(SES_dalys[SES_dalys.index.get_level_values('cause').isin(["AIDS_TB", "TB", "AIDS_non_TB"])]).sort_index()
+#     SES_dalys1["year"] = SES_dalys1.index.get_level_values("year")  # Extract the 'year' values from the index
+#     SES_dalys1.reset_index(drop=True, inplace=True)
+#
+#     # Group deaths by year
+#     SES_dalysx = pd.DataFrame(SES_dalys1.groupby(["year"], as_index=False).sum())
+#     SES_dalysx.set_index("year", inplace=True)
+#     return SES_dalys
+#
+# # Print SES_dalys before writing to Excel
+# print("SES_dalys before writing to Excel:")
+# #print(SES_dalys)
+#
+# SES_dalys = total_num_dalys_by_wealth_and_label(results_folder)
+# # Check if SES_dalys is None before writing to Excel
+# if SES_dalys is not None:
+#     SES_dalys.to_excel(outputspath / "SES_dalys.xlsx")
+
+
 
 #raw mortality
 def tb_mortality0(results_folder):
