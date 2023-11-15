@@ -2119,7 +2119,7 @@ class HealthSystem(Module):
                     # add to the hold-over queue.
                     # Otherwise (disease module returns "FALSE") the event is not rescheduled and will not run.
 
-                    if not (rtn_from_did_not_run is False):
+                    if rtn_from_did_not_run is not False:
                         # reschedule event
                         hp.heappush(_to_be_held_over, _list_of_individual_hsi_event_tuples[ev_num])
 
@@ -2407,7 +2407,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             # Otherwise (disease module returns "FALSE") the event is not rescheduled and
                             # will not run.
 
-                            if not (rtn_from_did_not_run is False):
+                            if rtn_from_did_not_run is not False:
                                 # reschedule event
                                 # Add the event to the queue:
                                 hp.heappush(hold_over, next_event_tuple)
@@ -2559,7 +2559,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # Otherwise (disease module returns "FALSE") the event is not rescheduled and
                     # will not run.
 
-                    if not (rtn_from_did_not_run is False):
+                    if rtn_from_did_not_run is not False:
                         # reschedule event
                         # Add the event to the queue:
                         hp.heappush(hold_over, next_event_tuple)
