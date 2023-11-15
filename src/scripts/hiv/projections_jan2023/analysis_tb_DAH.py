@@ -452,12 +452,11 @@ ax.legend()
 # Displaying graph
 plt.show()
 
-
 ##mortality
 baseline = tb_mortality.loc[:, ('Baseline', 'mean')].sum()
 No_Xpert = tb_mortality.loc[:, ('No Xpert Available', 'mean')].sum()
 No_CXR = tb_mortality.loc[:, ('No CXR Available', 'mean')].sum()
-CXR_scaleup10 = tb_mortality.loc[:, ('CXR scale_up', 'mean')].sum()
+CXR_scaleup10 = tb_mortality.loc[:, ('CXR scale_up10', 'mean')].sum()
 CXR_scaleup20 = tb_mortality.loc[:, ('CXR scale_up20', 'mean')].sum()
 CXR_scaleup30 = tb_mortality.loc[:, ('CXR scale_up30', 'mean')].sum()
 CXR_outreach = tb_mortality.loc[:, ('Outreach services', 'mean')].sum()
@@ -472,8 +471,8 @@ No_Xpert_upper = tb_mortality.loc[:, ('No Xpert Available', 'upper')].sum()
 No_CXR_lower = tb_mortality.loc[:, ('No CXR Available', 'lower')].sum()
 No_CXR_upper = tb_mortality.loc[:, ('No CXR Available', 'upper')].sum()
 
-CXR_scaleup_lower = tb_mortality.loc[:, ('CXR scaleup', 'lower')].sum()
-CXR_scaleup_upper = tb_mortality.loc[:, ('CXR scaleup', 'upper')].sum()
+CXR_scaleup_lower = tb_mortality.loc[:, ('CXR scaleup10', 'lower')].sum()
+CXR_scaleup_upper = tb_mortality.loc[:, ('CXR scaleup10', 'upper')].sum()
 
 CXR_scaleup20_lower = tb_mortality.loc[:, ('CXR scaleup20', 'lower')].sum()
 CXR_scaleup20_upper = tb_mortality.loc[:, ('CXR scaleup20', 'upper')].sum()
@@ -493,7 +492,7 @@ fig, ax = plt.subplots(figsize=(8, 6))
 bar1 = ax.bar(x[0], baseline, width, label='Baseline', yerr=[[baseline - baseline_lower], [baseline_upper - baseline]])
 bar2 = ax.bar(x[1], No_Xpert, width, label='No Xpert Available', yerr=[[No_Xpert - No_Xpert_lower], [No_Xpert_upper - No_Xpert]])
 bar3 = ax.bar(x[2], No_CXR, width, label='No CXR Available', yerr=[[No_CXR - No_CXR_lower], [No_CXR_upper - No_CXR]])
-bar4 = ax.bar(x[3], CXR_scaleup10, width, label='CXR Scale_up', yerr=[[CXR_scaleup10 - CXR_scaleup10_lower], [CXR_scaleup10_upper - CXR_scaleup10]])
+bar4 = ax.bar(x[3], CXR_scaleup10, width, label='CXR Scale_up10', yerr=[[CXR_scaleup10 - CXR_scaleup10_lower], [CXR_scaleup10_upper - CXR_scaleup10]])
 bar5 = ax.bar(x[4], CXR_scaleup20, width, label='CXR Scale_up20', yerr=[[CXR_scaleup20 - CXR_scaleup20_lower], [CXR_scaleup20_upper - CXR_scaleup20]])
 bar6 = ax.bar(x[5], CXR_scaleup30, width, label='Outreach services', yerr=[[CXR_scaleup30 - CXR_scaleup30_lower], [CXR_scaleup30_upper - CXR_scaleup30]])
 bar7 = ax.bar(x[6], CXR_outreach, width, label='CXR_outreach', yerr=[[CXR_outreach - CXR_outreach_lower], [CXR_outreach_upper - CXR_outreach]])
