@@ -2,6 +2,7 @@
 scenarios (scenario_impact_of_healthsystem.py)"""
 
 import argparse
+import textwrap
 from pathlib import Path
 from typing import Tuple
 
@@ -86,7 +87,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .drop(columns=([comparison] if drop_comparison else [])) \
             .stack()
 
-    def do_bar_plot_with_ci(_df, annotations=None):
+    def do_bar_plot_with_ci(_df, annotations=None, xticklabels_horizontal_and_wrapped=False):
         """Make a vertical bar plot for each row of _df, using the columns to identify the height of the bar and the
          extent of the error bar."""
         yerr = np.array([
@@ -110,7 +111,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             for xpos, ypos, text in zip(xticks.keys(), _df['upper'].values, annotations):
                 ax.text(xpos, ypos*1.05, text, horizontalalignment='center')
         ax.set_xticks(list(xticks.keys()))
-        ax.set_xticklabels(list(xticks.values()), rotation=90)
+        if not xticklabels_horizontal_and_wrapped:
+            # xticklabels will be vertical and not wrapped
+            ax.set_xticklabels(list(xticks.values()), rotation=90)
+        else:
+            wrapped_labs = ["\n".join(textwrap.wrap(_lab, 20)) for _lab in xticks.values()]
+            ax.set_xticklabels(wrapped_labs)
         ax.grid(axis="y")
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
@@ -267,9 +273,27 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ]
     )
     ax.set_title(name_of_plot)
-    ax.set_ylim(0, 14)
-    ax.set_yticks(np.arange(0, 16, 2))
-    # ax.set_xticklabels(list(ax.get_xticklabels()), rotation=0)
+    ax.set_ylim(0, 16)
+    ax.set_yticks(np.arange(0, 18, 2))
+    ax.set_ylabel('Additional DALYS Averted \n(Millions)')
+    fig.tight_layout()
+    fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
+    fig.show()
+    plt.close(fig)
+
+    # DALYS (with xtickabels horizontal and wrapped)
+    name_of_plot = f'Additional DALYs Averted vs Status Quo, {target_period()}'
+    fig, ax = do_bar_plot_with_ci(
+        (num_dalys_averted / 1e6).clip(lower=0.0),
+        annotations=[
+            f"{round(row['mean'], 1)} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
+            for _, row in pc_dalys_averted.clip(lower=0.0).iterrows()
+        ],
+        xticklabels_horizontal_and_wrapped=True,
+    )
+    ax.set_title(name_of_plot)
+    ax.set_ylim(0, 16)
+    ax.set_yticks(np.arange(0, 18, 2))
     ax.set_ylabel('Additional DALYS Averted \n(Millions)')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_').replace(',', '')))
