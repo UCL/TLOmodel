@@ -1107,14 +1107,14 @@ class Labour(Module):
             return
 
         # At the point of conception we schedule labour to onset for all women between after 37 weeks gestation - first
-        # we determine if she will go into labour post term (41+ weeks)
+        # we determine if she will go into labour post term (42+ weeks)
 
         if self.rng.random_sample() < self.la_linear_models['post_term_labour'].predict(
            df.loc[[individual_id]])[individual_id]:
 
             df.at[individual_id, 'la_due_date_current_pregnancy'] = \
                 (df.at[individual_id, 'date_of_last_pregnancy'] + pd.DateOffset(
-                    days=(7 * 39) + self.rng.randint(0, 7 * 4)))
+                    days=(7 * 40) + self.rng.randint(0, 7 * 3)))
 
         else:
             df.at[individual_id, 'la_due_date_current_pregnancy'] = \
