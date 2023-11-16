@@ -252,7 +252,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(
         num_deaths_averted.clip(lower=0.0),
         annotations=[
-            f"{round(row['mean'], 1)} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
+            f"{round(row['mean'], 0)} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
             for _, row in pc_deaths_averted.clip(lower=0.0).iterrows()
         ]
     )
@@ -268,7 +268,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(
         (num_dalys_averted / 1e6).clip(lower=0.0),
         annotations=[
-            f"{round(row['mean'], 1)} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
+            f"{round(row['mean'])} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
             for _, row in pc_dalys_averted.clip(lower=0.0).iterrows()
         ]
     )
@@ -286,7 +286,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     fig, ax = do_bar_plot_with_ci(
         (num_dalys_averted / 1e6).clip(lower=0.0),
         annotations=[
-            f"{round(row['mean'], 1)} ({round(row['lower'], 1)}-{round(row['upper'], 1)}) %"
+            f"{round(row['mean'])} ({round(row['lower'], 0)}-{round(row['upper'], 0)}) %"
             for _, row in pc_dalys_averted.clip(lower=0.0).iterrows()
         ],
         xticklabels_horizontal_and_wrapped=True,
