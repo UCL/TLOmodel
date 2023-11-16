@@ -4,8 +4,6 @@ graft tests
 graft requirements
 
 include README.rst
-include .bumpversion.cfg
-include .coveragerc
 include tox.ini
 include tlo.example.conf
 include CITATION.cff

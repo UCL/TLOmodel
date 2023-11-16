@@ -403,7 +403,7 @@ class HealthBurden(Module):
         period = pd.DataFrame(df.groupby(by=['year', 'age_range'])['days'].count())
         period['person_years'] = (period['days'] / 365).clip(lower=0.0, upper=1.0)
 
-        period = period.drop(columns=['days'], axis=1)
+        period.drop(columns=['days'], axis=1, inplace=True)
 
         return period
 

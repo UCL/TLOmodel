@@ -60,9 +60,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     def make_std_graphs(what, period):
         """Make the standard Graphs for a specific period for either 'Deaths' or 'DALYS'"""
 
-        assert type(what) is str
+        assert isinstance(what, str)
         assert what in ('Deaths', 'DALYs')
-        assert type(period) is str
+        assert isinstance(period, str)
         assert period in make_calendar_period_lookup()[0]
 
         # limit to the subject of interest (either 'Deaths' or 'DALYS')
@@ -72,8 +72,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         def get_counts_of_death_by_period_sex_agegrp_label(df):
             """Aggregate the model outputs into five-year periods for age and time"""
-            agegrps, agegrplookup = make_age_grp_lookup()
-            calperiods, calperiodlookup = make_calendar_period_lookup()
+            _, agegrplookup = make_age_grp_lookup()
+            _, calperiodlookup = make_calendar_period_lookup()
             df["year"] = df["date"].dt.year
             df["age_grp"] = df["age"].map(agegrplookup).astype(make_age_grp_types())
             df["period"] = df["year"].map(calperiodlookup).astype(make_calendar_period_type())
@@ -81,7 +81,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         def get_dalys_by_period_sex_agegrp_label(df):
             """Sum the dalys by period, sex, age-group and label"""
-            calperiods, calperiodlookup = make_calendar_period_lookup()
+            _, calperiodlookup = make_calendar_period_lookup()
 
             df['age_grp'] = df['age_range'].astype(make_age_grp_types())
             df["period"] = df["year"].map(calperiodlookup).astype(make_calendar_period_type())
@@ -108,7 +108,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 do_scaling=True
             )
 
-        # groupby, sum and divide by five to give the average number of deaths per year within the five year period:
+        # divide by five to give the average number of deaths per year within the five year period:
         results = results.div(5.0)
 
         # %% Load the cause-of-deaths mappers and use them to populate the 'label' for gbd outputs
