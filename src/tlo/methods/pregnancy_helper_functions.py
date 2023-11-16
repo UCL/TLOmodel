@@ -497,7 +497,7 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
             lab_params = self.sim.modules['Labour'].current_parameters
 
             if cause == 'antepartum_haemorrhage':
-                param = 'ps_anaemia_during_pregnancy'
+                param = 'ps_anaemia_in_pregnancy'
             else:
                 param = 'pn_anaemia_following_pregnancy'
 
