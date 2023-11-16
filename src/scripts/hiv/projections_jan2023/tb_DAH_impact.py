@@ -45,14 +45,14 @@ class ImpactOfTbDaH(BaseScenario):
         # self.seed = 0
         self.seed = random.randint(0, 50000),
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2015, 12, 31)
-        self.pop_size = 5000
+        self.end_date = Date(2013, 12, 31)
+        self.pop_size = 2000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 2
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_impactx05',
+            'filename': 'Tb_DAH_impactx06',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
