@@ -369,11 +369,17 @@ def get_treatment_effect(delay_one_two, delay_three, treatment_effect, params):
 
     # If they have experienced all delays, treatment effectiveness is reduced by greater amount
     if delay_one_two and delay_three:
-        treatment_effect = 1 - ((1 - params[treatment_effect]) * params['treatment_effect_modifier_all_delays'])
+        if treatment_effect in ('prob_haemostatis_uterotonics', 'prob_successful_manual_removal_placenta'):
+            treatment_effect = params[treatment_effect] * params['treatment_effect_modifier_all_delays']
+        else:
+            treatment_effect = 1 - ((1 - params[treatment_effect]) * params['treatment_effect_modifier_all_delays'])
 
     # Otherwise, if only one type of delay is experience the treatment effect is reduced by a lesser amount
     elif delay_one_two or delay_three:
-        treatment_effect = 1 - ((1 - params[treatment_effect]) * params['treatment_effect_modifier_one_delay'])
+        if treatment_effect in ('prob_haemostatis_uterotonics', 'prob_successful_manual_removal_placenta'):
+            treatment_effect = params[treatment_effect] * params['treatment_effect_modifier_one_delay']
+        else:
+            treatment_effect = 1 - ((1 - params[treatment_effect]) * params['treatment_effect_modifier_one_delay'])
 
     # If no delays occurred, maximum treatment effectiveness is applied
     else:

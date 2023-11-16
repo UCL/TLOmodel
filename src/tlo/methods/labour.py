@@ -2060,9 +2060,9 @@ class Labour(Module):
 
                 # We apply a probability that this treatment will stop a womans bleeding in the first instance
                 # meaning she will not require further treatment (adjusted for delays)
-                prob_haemostatis_uterotonics = 1 - (pregnancy_helper_functions.get_treatment_effect(
+                prob_haemostatis_uterotonics = pregnancy_helper_functions.get_treatment_effect(
                     mni[person_id]['delay_one_two'], mni[person_id]['delay_three'], 'prob_haemostatis_uterotonics',
-                    params))
+                    params)
 
                 if prob_haemostatis_uterotonics > self.rng.random_sample():
 
@@ -2109,9 +2109,9 @@ class Labour(Module):
             if sf_check:
                 pregnancy_helper_functions.log_met_need(self, 'man_r_placenta', hsi_event)
 
-                prob_successful_manual_removal_placenta = 1 - (pregnancy_helper_functions.get_treatment_effect(
+                prob_successful_manual_removal_placenta = pregnancy_helper_functions.get_treatment_effect(
                     mni[person_id]['delay_one_two'], mni[person_id]['delay_three'],
-                    'prob_successful_manual_removal_placenta', params))
+                    'prob_successful_manual_removal_placenta', params)
 
                 if prob_successful_manual_removal_placenta > self.rng.random_sample():
 
