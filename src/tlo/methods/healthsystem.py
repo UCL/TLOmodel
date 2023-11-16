@@ -126,6 +126,7 @@ class HSIEventDetails(NamedTuple):
     facility_level: Optional[str]
     appt_footprint: Tuple[Tuple[str, int]]
     beddays_footprint: Tuple[Tuple[str, int]]
+    equipment: set
 
 
 class HSIEventQueueItem(NamedTuple):
@@ -399,7 +400,8 @@ class HSI_Event:
             appt_footprint=tuple(sorted(appt_footprint.items())),
             beddays_footprint=tuple(
                 sorted((k, v) for k, v in self.BEDDAYS_FOOTPRINT.items() if v > 0)
-            )
+            ),
+            equipment=(tuple(self.EQUIPMENT))
         )
 
 
@@ -1837,10 +1839,13 @@ class HealthSystem(Module):
                 'did_run': did_run,
                 'Facility_Level': event_details.facility_level if event_details.facility_level is not None else -99,
                 'Facility_ID': facility_id if facility_id is not None else -99,
+                'equipment': equipment,
             },
             description="record of each HSI event"
         )
         if did_run:
+            print("\nevent_details")
+            print(event_details)
             if self._hsi_event_count_log_period is not None:
                 event_details_key = self._hsi_event_details.setdefault(
                     event_details, len(self._hsi_event_details)
@@ -1885,7 +1890,7 @@ class HealthSystem(Module):
         event_details: HSIEventDetails,
         person_id: int,
         facility_id: Optional[int],
-        priority: int,
+        priority: int
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         logger.debug(
@@ -1910,7 +1915,7 @@ class HealthSystem(Module):
             treatment_id=event_details.treatment_id,
             hsi_event_name=event_details.event_name,
             appt_footprint=event_details.appt_footprint,
-            level=event_details.facility_level,
+            level=event_details.facility_level
         )
 
     def log_current_capabilities_and_usage(self):
@@ -2170,7 +2175,7 @@ class HealthSystem(Module):
                         actual_appt_footprint=actual_appt_footprint,
                         squeeze_factor=squeeze_factor,
                         did_run=True,
-                        priority=_priority
+                        priority=_priority,
                     )
 
                 # if not ok_to_run
@@ -2668,7 +2673,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         treatment_id='Inpatient_Care',
                         facility_level=self.module._facility_by_facility_id[_fac_id].level,
                         appt_footprint=tuple(sorted(_inpatient_appts.items())),
-                        beddays_footprint=()
+                        beddays_footprint=(),
+                        equipment=()  # TODO: what should be in here?
                     ),
                     person_id=-1,
                     facility_id=_fac_id,
