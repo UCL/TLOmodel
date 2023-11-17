@@ -1476,14 +1476,16 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 1:
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.0})
-            self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.9
+            #self.sim.modules['HealthSystem'].get_item_codes_from_package_name("Xpert test")
+            #self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.9
+            self.sim.modules['HealthSystem'].get_item_code_from_item_name({"Xpert test": 0})
 
         # sets availability of xray to nil
         if scenario == 2:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.0})
            # self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
-           self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.8
-
+           #self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.9
+           self.sim.modules['HealthSystem'].get_item_code_from_item_name({"X-ray": 0})
 
         #increases probability of accessing chest xray by 10%
         if scenario == 3:
@@ -1496,14 +1498,14 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.71})
             #self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
-            self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.29
+            self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.3
 
         # increase CXR by 30%
         if scenario == 5:
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.81})
             #self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
-            self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.220
+            self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.3
 
 
         # Introduce community Xray
