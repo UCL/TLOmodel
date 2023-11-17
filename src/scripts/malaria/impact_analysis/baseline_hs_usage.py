@@ -56,6 +56,9 @@ scaling_factor = extract_results(
     do_scaling=False)
 
 
+# %% -------------------------------------------------------------------------------------------------------
+# EXTRACT SERVICES USED FOR HTM PROVISION USING TREATMENT_ID
+
 # extract numbers of appts delivered for every run within a specified draw
 def sum_appt_by_id(results_folder, module, key, column, draw):
     """
@@ -127,5 +130,67 @@ tx_fup_sums = summarise_appt_groups(tx_fup)
 preventive_sums = summarise_appt_groups(preventive)
 inpatient_sums = summarise_appt_groups(inpatient)
 
+
+
+# %% -------------------------------------------------------------------------------------------------------
+# EXTRACT TOTAL HEALTH SYSTEM USAGE IN BASELINE SCENARIO USING APPT_TYPE
+
+# extract numbers of appts
+module = "tlo.methods.healthsystem.summary"
+key = 'HSI_Event'
+column = 'Number_By_Appt_Type_Code'
+
+# get total counts of every appt type for each scenario
+appt_types = sum_appt_by_id(results_folder,
+                           module=module, key=key, column=column, draw=0)
+
+appt_types.loc['Total'] = appt_types.sum()
+
+print(appt_types.loc['Total'].median())
+print(appt_types.loc['Total'].quantile(0.025))
+print(appt_types.loc['Total'].quantile(0.975))
+
+# get median number certain appt types
+print(appt_types.loc['AccidentsandEmerg'].median())
+
+print(appt_types.loc['IPAdmission'].median())
+
+# add in median and UI for each row
+appt_types['median'] = appt_types.median(axis='columns')
+appt_types['lower'] = appt_types.quantile(0.025, axis='columns')
+appt_types['upper'] = appt_types.quantile(0.975, axis='columns')
+
+# produce table for export
+output_table = appt_types[['median', 'lower', 'upper']].copy()
+
+# round all values to nearest 100
+# Define a custom rounding function
+def round_to_nearest_100(x):
+    return round(x, -2)
+
+output_table = output_table.applymap(round_to_nearest_100)
+# Convert all values to integers
+output_table = output_table.astype(int, errors='ignore')
+
+output_table.to_csv(outputspath / ('baseline_appt_numbers' + '.csv'))
+
+
+
+
+
+
+
+
+
+
+# extract squeeze factor
+# todo these are in the 1000s, so don't use without further checks
+module = "tlo.methods.healthsystem.summary"
+key = 'HSI_Event'
+column = 'squeeze_factor'
+
+# get total counts of every appt type for each scenario
+squeeze = sum_appt_by_id(results_folder,
+                           module=module, key=key, column=column, draw=0)
 
 

@@ -1616,6 +1616,26 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules["Tb"].parameters["rr_ipt_adult_hiv"] = treatment_effects.loc[
                 treatment_effects.parameter == "rr_ipt_adult_hiv", "no_effect"].values[0]
 
+            # treatment success rate DS
+            self.sim.modules["Tb"].parameters["tb_prob_tx_success_ds"] = treatment_effects.loc[
+                treatment_effects.parameter == "tb_prob_tx_success_ds", "no_effect"].values[0]
+
+            # treatment success rate DS
+            self.sim.modules["Tb"].parameters["tb_prob_tx_success_mdr"] = treatment_effects.loc[
+                treatment_effects.parameter == "tb_prob_tx_success_mdr", "no_effect"].values[0]
+
+            # treatment success rate DS
+            self.sim.modules["Tb"].parameters["tb_prob_tx_success_0_4"] = treatment_effects.loc[
+                treatment_effects.parameter == "tb_prob_tx_success_0_4", "no_effect"].values[0]
+
+            # treatment success rate DS
+            self.sim.modules["Tb"].parameters["tb_prob_tx_success_5_14"] = treatment_effects.loc[
+                treatment_effects.parameter == "tb_prob_tx_success_5_14", "no_effect"].values[0]
+
+            # treatment success rate DS
+            self.sim.modules["Tb"].parameters["tb_prob_tx_success_shorter"] = treatment_effects.loc[
+                treatment_effects.parameter == "tb_prob_tx_success_shorter", "no_effect"].values[0]
+
         # scenario 3: remove malaria treatment effects
         if (scenario == 3) or (scenario == 5):
             # Malaria

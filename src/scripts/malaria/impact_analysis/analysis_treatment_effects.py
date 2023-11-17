@@ -32,7 +32,7 @@ import os
 import pandas as pd
 
 from tlo import Date, logging
-from tlo.analysis.utils import get_parameters_for_status_quo, mix_scenarios
+from tlo.analysis.utils import get_filtered_treatment_ids, get_parameters_for_status_quo, mix_scenarios
 from tlo.methods.fullmodel import fullmodel
 from tlo.scenario import BaseScenario
 
@@ -63,6 +63,7 @@ class EffectOfProgrammes(BaseScenario):
                 'tlo.methods.malaria': logging.INFO,
                 'tlo.methods.demography': logging.INFO,
                 'tlo.methods.healthsystem.summary': logging.INFO,
+                'tlo.methods.healthsystem': logging.INFO,
                 'tlo.methods.healthburden': logging.INFO
             }
         }
@@ -71,18 +72,32 @@ class EffectOfProgrammes(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
+        treatments = get_filtered_treatment_ids(depth=1)
+
+        # get service availability with all select services removed
+        services_to_remove = ['Hiv_*', 'Tb_*', 'Malaria_*']
+        service_availability = dict({'Everything': ["*"]})
+
+        # create service package with all three sets of interventions removed
+        service_availability.update(
+            {f'No_HTM': [v for v in treatments if v not in services_to_remove]}
+        )
+        # add in HIV/TB EOL care plus malaria_complicated treatment
+        # run in scenario 5 so malaria treatment has no effect on mortality
+        service_availability['No_HTM'].append('Hiv_PalliativeCare')
+        service_availability['No_HTM'].append('Tb_PalliativeCare')
+        service_availability['No_HTM'].append('Malaria_Treatment_Complicated')
+
         return {
             'HealthSystem': {
+                'Service_Availability': service_availability[
+                    'Everything', 'Everything', 'Everything', 'Everything', 'Everything', 'No_HTM'][draw_number],
                 'use_funded_or_actual_staffing': 'funded',
-                # 'mode_appt_constraints': [1, 1, 1, 1, 2, 2][draw_number],
                 'mode_appt_constraints': 1,
-                # 'policy_name': ['Naive', 'Naive', 'Naive', 'Naive', 'VerticalProgrammes', 'VerticalProgrammes'][
-                #     draw_number],
                 'policy_name': 'Naive',
             },
             'Hiv': {
-                # 'scenario': [0, 1, 2, 3, 0, 5][draw_number],
-                'scenario': 5,
+                'scenario': [0, 1, 2, 3, 5, 5][draw_number],
             },
         }
 

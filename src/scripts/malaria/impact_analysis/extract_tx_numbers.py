@@ -255,6 +255,8 @@ treatment_id3 = extract_appt_details(results_folder,
                                      module=module, key=key, column=column, draw=3)
 treatment_id4 = extract_appt_details(results_folder,
                                      module=module, key=key, column=column, draw=4)
+treatment_id5 = extract_appt_details(results_folder,
+                                     module=module, key=key, column=column, draw=5)
 
 # get total counts of every appt type for each scenario
 sum0 = sum_appt_by_id(results_folder,
@@ -277,28 +279,42 @@ sum4 = sum_appt_by_id(results_folder,
                       module=module, key=key, column=column, draw=4)
 sum4['mean'] = sum4.mean(axis=1) * scaling_factor.values[0][0]
 
-data_output = pd.concat([sum0['mean'], sum1['mean'], sum2['mean'], sum3['mean'], sum4['mean']], axis=1)
-data_output.to_csv(outputspath / ('treatment_numbers2' + '.csv'))
+sum5 = sum_appt_by_id(results_folder,
+                      module=module, key=key, column=column, draw=5)
+sum5['mean'] = sum5.mean(axis=1) * scaling_factor.values[0][0]
+
+
+data_output = pd.concat([sum0['mean'], sum1['mean'], sum2['mean'], sum3['mean'], sum4['mean'],
+                         sum5['mean']], axis=1)
+data_output.to_csv(outputspath / ('treatment_numbers3' + '.csv'))
 
 sum0.to_csv(outputspath / ('baseline_appt_numbers' + '.csv'))
 
 # extract numbers of appts grouped by treatment_id stub
 # median is taken across runs for grouped numbers of appts
+# this is scaled
 sum_tx0 = summarise_grouped_appts(results_folder,
                                   module=module, key=key, column=column, draw=0)
 
 sum_tx4 = summarise_grouped_appts(results_folder,
                                   module=module, key=key, column=column, draw=4)
 
+sum_tx5 = summarise_grouped_appts(results_folder,
+                                  module=module, key=key, column=column, draw=5)
+
+
 # summary table for output
-# todo these are scaled
+# todo note these are scaled
 output_table = pd.DataFrame({
     'baseline_median': sum_tx0['median'],
     'baseline_lower': sum_tx0['lower'],
     'baseline_upper': sum_tx0['upper'],
     'sc4_median': sum_tx4['median'],
     'sc4_lower': sum_tx4['lower'],
-    'sc4_upper': sum_tx4['upper']
+    'sc4_upper': sum_tx4['upper'],
+    'sc5_median': sum_tx5['median'],
+    'sc5_lower': sum_tx5['lower'],
+    'sc5_upper': sum_tx5['upper']
 })
 
 
@@ -310,6 +326,9 @@ def round_to_nearest_100(x):
 output_table = output_table.applymap(round_to_nearest_100)
 # Convert all values to integers
 output_table = output_table.astype(int, errors='ignore')
+
+output_table.to_csv(outputspath / ('tx_id_numbers' + '.csv'))
+
 
 # ---------------------------------------------------------------------------------
 # HOW MUCH HS REQUIRED FOR BIG 3 PROGRAMME DELIVERY
