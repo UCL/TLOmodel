@@ -1489,21 +1489,21 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 3:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.61})
            #self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
-           self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.5
+           self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.3
 
         # increase CXR by 20%
         if scenario == 4:
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.71})
             #self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
-            self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.40
+            self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.29
 
         # increase CXR by 30%
         if scenario == 5:
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.81})
             #self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
-            self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.3
+            self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.220
 
 
         # Introduce community Xray
