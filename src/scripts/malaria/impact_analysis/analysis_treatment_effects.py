@@ -42,10 +42,10 @@ class EffectOfProgrammes(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2020, 1, 1)
-        self.pop_size = 100_000
-        self.number_of_draws = 1  # todo reset
-        self.runs_per_draw = 5
+        self.end_date = Date(2013, 1, 1) # todo reset
+        self.pop_size = 1000 # todo reset
+        self.number_of_draws = 6
+        self.runs_per_draw = 2 # todo reset
 
         self.treatment_effects = pd.read_excel(
             os.path.join(self.resources, "ResourceFile_HIV.xlsx"),
@@ -78,10 +78,22 @@ class EffectOfProgrammes(BaseScenario):
         services_to_remove = ['Hiv_*', 'Tb_*', 'Malaria_*']
         service_availability = dict({'Everything': ["*"]})
 
+        # create service packages with one set of interventions removed
+        for service in services_to_remove:
+            service_availability.update(
+                {f"No_{service}": [v for v in treatments if v != service]}
+            )
+
         # create service package with all three sets of interventions removed
         service_availability.update(
             {f'No_HTM': [v for v in treatments if v not in services_to_remove]}
         )
+
+        # add EOL / palliative care back in
+        service_availability['No_Hiv_*'].append('Hiv_PalliativeCare')
+        service_availability['No_Tb_*'].append('Tb_PalliativeCare')
+        service_availability['No_Malaria_*'].append('Malaria_Treatment_Complicated')
+
         # add in HIV/TB EOL care plus malaria_complicated treatment
         # run in scenario 5 so malaria treatment has no effect on mortality
         service_availability['No_HTM'].append('Hiv_PalliativeCare')
@@ -90,14 +102,17 @@ class EffectOfProgrammes(BaseScenario):
 
         return {
             'HealthSystem': {
-                'Service_Availability': service_availability[
-                    'Everything', 'Everything', 'Everything', 'Everything', 'Everything', 'No_HTM'][draw_number],
+                'Service_Availability': [service_availability['Everything'], service_availability['Everything'],
+                                         service_availability['Everything'], service_availability['Everything'],
+                                         service_availability['Everything'],
+                                         service_availability['No_HTM'], service_availability['No_HTM'],
+                                         service_availability['No_HTM'], service_availability['No_HTM']][draw_number],
                 'use_funded_or_actual_staffing': 'funded',
                 'mode_appt_constraints': 1,
                 'policy_name': 'Naive',
             },
             'Hiv': {
-                'scenario': [0, 1, 2, 3, 5, 5][draw_number],
+                'scenario': [0, 1, 2, 3, 5, 5, 5, 5, 5][draw_number],
             },
         }
 
