@@ -1507,6 +1507,9 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
         mmr = return_rate(deaths, births_results_exc_2010, 100_000, sim_years)
         ylim = mmr[0][0] + 20
+        if pd.isna(ylim):
+            ylim = 0
+
 
         # Plot each yearly cause-specific MMR against calibration plots
         analysis_utility_functions.line_graph_with_ci_and_target_rate(
