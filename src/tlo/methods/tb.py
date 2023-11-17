@@ -1498,7 +1498,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         #increases probability of accessing chest xray by 10%
         if scenario == 3:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.61})
-           self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
+           #self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
            self.sim.modules["Tb"].parameters["rate_testing_general_pop"] = 0.20
            self.sim.modules["Tb"].parameters[" first_line_test"] = 'sputum'
            self.sim.modules["Tb"].parameters[" second_line_test"] = 'xpert'
@@ -1529,7 +1529,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             #self.sim.modules['parameters']['probability_community_chest_xray'] = 0.0
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
             #self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
-            #self.sim.modules["Tb"].parameters["rate_testing_general_pop"] = 0.20
+            self.sim.modules["Tb"].parameters["rate_testing_general_pop"] = 0.20
             self.sim.modules["Tb"].parameters[" first_line_test"] = 'sputum'
             self.sim.modules["Tb"].parameters[" second_line_test"] = 'xpert'
 
