@@ -42,9 +42,9 @@ class EffectOfProgrammes(BaseScenario):
         super().__init__()
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2013, 1, 1) # todo reset
+        self.end_date = Date(2012, 1, 1) # todo reset
         self.pop_size = 1000 # todo reset
-        self.number_of_draws = 6
+        self.number_of_draws = 2
         self.runs_per_draw = 2 # todo reset
 
         self.treatment_effects = pd.read_excel(
