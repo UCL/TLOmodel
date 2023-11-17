@@ -46,7 +46,7 @@ class ImpactOfTbDaH(BaseScenario):
         self.seed = random.randint(0, 50000),
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2012, 12, 31)
-        self.pop_size = 3000
+        self.pop_size = 2000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 2
