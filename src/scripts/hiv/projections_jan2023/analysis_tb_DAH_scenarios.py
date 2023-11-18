@@ -21,7 +21,7 @@ from tlo.analysis.utils import (
 )
 
 resourcefilepath = Path("./resources")
-outputspath = Path("./outputs/nic503@york.ac.uk")
+outputspath = Path("./outputs/newton.chagoma@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
 # Get basic information about the results
@@ -31,7 +31,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #Tb_DAH_scenarios_test_run13_partial-2023-10-02T144642Z xcept for CXR scaleup and outreach
 #tb_DAH_impact-2023-10-07T150348Z---main results
  #Tb_DAH_impact_partial55-2023-11-13T212007Z 10k pop
-results_folder = get_scenario_outputs("Tb_DAH_impact_partial55-2023-11-13T212007Z", outputspath)[-1]
+results_folder = get_scenario_outputs("tb_DAH_impact-2023-10-07T150348Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -158,36 +158,36 @@ print(dalys_summary)
 dalys_summary.to_excel(outputspath / "summarised_tb_dalys.xlsx")
 
 #extracts dalys by SES groups
-def get_total_num_dalys_by_wealth_and_label(_df):
-    """
-    Return the total number of DALYS for all years by wealth and cause label.
-
-    Parameters:
-    - _df: DataFrame containing DALY data
-    """
-    wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
-
-    value_sum = _df \
-        .drop(columns=['date', 'year']) \
-        .assign(
-            li_wealth=lambda x: x['li_wealth'].map(wealth_cats).astype(
-                pd.CategoricalDtype(wealth_cats.values(), ordered=True))
-        ) \
-        .melt(id_vars=['li_wealth'], var_name='label') \
-        .groupby(by=['li_wealth', 'label'])['value'].sum()
-
-    return value_sum
-
-# Assuming you have a DataFrame named df
-total_num_dalys_by_wealth_and_label = extract_results(
-    results_folder,
-    module="tlo.methods.healthburden",
-    key="dalys_by_wealth_stacked_by_age_and_time",
-    custom_generate_series=get_total_num_dalys_by_wealth_and_label,
-    do_scaling=True
-).pipe(set_param_names_as_column_index_level_0)
-
-print("Shape of wealth_dalys:", total_num_dalys_by_wealth_and_label.shape)
+# def get_total_num_dalys_by_wealth_and_label(_df):
+#     """
+#     Return the total number of DALYS for all years by wealth and cause label.
+#
+#     Parameters:
+#     - _df: DataFrame containing DALY data
+#     """
+#     wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
+#
+#     value_sum = _df \
+#         .drop(columns=['date', 'year']) \
+#         .assign(
+#             li_wealth=lambda x: x['li_wealth'].map(wealth_cats).astype(
+#                 pd.CategoricalDtype(wealth_cats.values(), ordered=True))
+#         ) \
+#         .melt(id_vars=['li_wealth'], var_name='label') \
+#         .groupby(by=['li_wealth', 'label'])['value'].sum()
+#
+#     return value_sum
+#
+# # Assuming you have a DataFrame named df
+# total_num_dalys_by_wealth_and_label = extract_results(
+#     results_folder,
+#     module="tlo.methods.healthburden",
+#     key="dalys_by_wealth_stacked_by_age_and_time",
+#     custom_generate_series=get_total_num_dalys_by_wealth_and_label,
+#     do_scaling=True
+# ).pipe(set_param_names_as_column_index_level_0)
+#
+# print("Shape of wealth_dalys:", total_num_dalys_by_wealth_and_label.shape)
 
 
 #raw mortality
