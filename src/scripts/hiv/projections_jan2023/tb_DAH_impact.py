@@ -97,7 +97,7 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 1,
                     'probability_community_chest_xray': 0.0,
-                    'WHO scaling factor': 1.99
+                    'scaling_factor_WHO': 1.99
                 },
             },
             # overrides availability of CXR to nil
@@ -105,7 +105,7 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 2,
                     'probability_community_chest_xray': 0.0,
-                    'WHO scaling factor': 1.89
+                    'scaling_factor_WHO': 1.89
                 },
             },
             #increase CXR by 10 percentage points
@@ -113,7 +113,7 @@ class ImpactOfTbDaH(BaseScenario):
                  'Tb': {
                      'scenario': 3,
                      'probability_community_chest_xray': 0.0,
-                     'WHO scaling factor': 1.99
+                     'scaling_factor_WHO': 1.99
                  }
              },
             # increase CXR by 20 percentage points
@@ -121,7 +121,7 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 4,
                     'probability_community_chest_xray': 0.0,
-                    'WHO scaling factor': 0.89
+                    'scaling_factor_WHO': 0.89
                 }
             },
             # increase CXR by 30 percentage points
@@ -129,7 +129,7 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 5,
                     'probability_community_chest_xray': 0.0,
-                    'WHO scaling factor': 0.89
+                    'scaling_factor_WHO': 0.89
                 }
             },
             #introduce outreach services
@@ -137,7 +137,7 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 6,
                     'probability_community_chest_xray': 0.1,
-                    'WHO scaling factor': 0.89
+                    'scaling_factor_WHO': 0.89
                 }
             },
         }
