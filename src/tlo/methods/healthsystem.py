@@ -1774,8 +1774,6 @@ class HealthSystem(Module):
             description="record of each HSI event"
         )
         if did_run:
-            print("\nevent_details")
-            print(event_details)
             if self._hsi_event_count_log_period is not None:
                 event_details_key = self._hsi_event_details.setdefault(
                     event_details, len(self._hsi_event_details)
@@ -1787,7 +1785,6 @@ class HealthSystem(Module):
                 squeeze_factor=squeeze_factor,
                 appt_footprint=event_details.appt_footprint,
                 level=event_details.facility_level,
-                equipment=equipment,
             )
 
     def call_and_record_never_ran_hsi_event(self, hsi_event, priority=None):
@@ -1820,7 +1817,7 @@ class HealthSystem(Module):
         event_details: HSIEventDetails,
         person_id: int,
         facility_id: Optional[int],
-        priority: int
+        priority: int,
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         logger.debug(
@@ -1845,7 +1842,7 @@ class HealthSystem(Module):
             treatment_id=event_details.treatment_id,
             hsi_event_name=event_details.event_name,
             appt_footprint=event_details.appt_footprint,
-            level=event_details.facility_level
+            level=event_details.facility_level,
         )
 
     def log_current_capabilities_and_usage(self):
@@ -2105,7 +2102,7 @@ class HealthSystem(Module):
                         actual_appt_footprint=actual_appt_footprint,
                         squeeze_factor=squeeze_factor,
                         did_run=True,
-                        priority=_priority,
+                        priority=_priority
                     )
 
                 # if not ok_to_run
@@ -2611,7 +2608,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     squeeze_factor=0.0,
                     priority=-1,
                     did_run=True,
-                    equipment=set()  # TODO: explore more, should it be non-emtpy in some cases?
+                    equipment=set(),  # TODO: explore more, should it be non-emtpy in some cases?
                 )
 
         # Restart the total footprint of all calls today, beginning with those due to existing in-patients.
@@ -2665,14 +2662,13 @@ class HealthSystemSummaryCounter:
         self._treatment_ids = defaultdict(int)  # Running record of the `TREATMENT_ID`s of `HSI_Event`s
         self._appts = defaultdict(int)  # Running record of the Appointments of `HSI_Event`s that have run
         self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
-        self._equip_by_level = {_level: set() for _level in ('0', '1a', '1b', '2', '3', '4')}
+        # <--Same as `self._appts` but also split by facility_level
 
         # Log HSI_Events that never ran to monitor shortcoming of Health System
         self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
         self._never_ran_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
 
-        # <--Same as `self._appts` but also split by facility_level
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
         #                                                           treatment_id. Key is of the form:
@@ -2683,8 +2679,7 @@ class HealthSystemSummaryCounter:
                          hsi_event_name: str,
                          squeeze_factor: float,
                          appt_footprint: Counter,
-                         level: str,
-                         equipment: set
+                         level: str
                          ) -> None:
         """Add information about an `HSI_Event` to the running summaries."""
 
@@ -2700,9 +2695,6 @@ class HealthSystemSummaryCounter:
         for appt_type, number in appt_footprint:
             self._appts[appt_type] += number
             self._appts_by_level[level][appt_type] += number
-
-        # Update used equipment by level
-        self._equip_by_level[level].update(equipment)
 
     def record_never_ran_hsi_event(self,
                                    treatment_id: str,
@@ -2763,17 +2755,6 @@ class HealthSystemSummaryCounter:
             data={
                 "average_Frac_Time_Used_Overall": np.mean(self._frac_time_used_overall),
                 # <-- leaving space here for additional summary measures that may be needed in the future.
-            },
-        )
-
-        # Sort equipment within levels, and log them
-        for key in self._equip_by_level:
-            self._equip_by_level[key] = sorted(self._equip_by_level[key])
-        logger_summary.info(
-            key="Equipment",
-            description="Sets of used equipment for each facility level in this calendar year.",
-            data={
-                "Equipment_By_Level": self._equip_by_level,
             },
         )
 
