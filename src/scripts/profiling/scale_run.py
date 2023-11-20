@@ -22,9 +22,9 @@ _TLO_OUTPUT_DIR: Path = (_TLO_ROOT / "outputs").resolve()
 _TLO_RESOURCES_DIR: Path = (_TLO_ROOT / "resources").resolve()
 
 
-def save_arguments_to_json(arguments_dict: dict, output_directory: Path):
+def save_arguments_to_json(arguments_dict: dict, output_path: Path):
     """Save run arguments to a JSON file converting any paths to strings."""
-    with open(output_directory / "args.json", "w") as f:
+    with open(output_path, "w") as f:
         json.dump(
             {
                 k: str(v) if isinstance(v, Path) else v 
@@ -259,10 +259,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     args_dict = vars(args)
 
-    if not os.path.exists(args.output_dir):
+    if not args.output_dir.exists():
         os.makedirs(args.output_dir)
 
     if args_dict.pop("save_args_json"):
-        save_arguments_to_json(args_dict, args.output_dir)
+        save_arguments_to_json(args_dict, args.output_dir / "args.json")
 
     scale_run(**args_dict)
