@@ -15,7 +15,6 @@ from scale_run import save_arguments_to_json, scale_run
 
 from tlo import Simulation
 
-
 _PROFILING_RESULTS: Path = (Path(__file__).parents[3] / "profiling_results").resolve()
 
 

@@ -16,7 +16,6 @@ from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file as parse_log_file_fn
 from tlo.methods.fullmodel import fullmodel
 
-
 _TLO_ROOT: Path = Path(__file__).parents[3].resolve()
 _TLO_OUTPUT_DIR: Path = (_TLO_ROOT / "outputs").resolve()
 _TLO_RESOURCES_DIR: Path = (_TLO_ROOT / "resources").resolve()
