@@ -24,12 +24,12 @@ def current_time(format_str: str = "%Y-%m-%d_%H%M") -> str:
     return datetime.utcnow().strftime(format_str)
 
 
-def parse_key_value_string(key_value_string: str, sep: str = "=") -> Tuple[str, str]:
+def parse_key_value_string(key_value_string: str) -> Tuple[str, str]:
     """Parse a key-value pair from the command-line into a tuple.
 
     Input is a string of the format::
 
-        "{key}{sep}{value}"
+        "{key}={value}"
 
     which will be parsed into a key-value tuple as::
 
@@ -37,10 +37,14 @@ def parse_key_value_string(key_value_string: str, sep: str = "=") -> Tuple[str, 
 
     Note that the key and value are always interpreted as strings.
     """
-    separated_string = key_value_string.split(sep)
-    key = separated_string[0].strip()
+    sep = "="
+    key, *value = key_value_string.split(sep)
+    if len(value) == 0:
+        msg = "Key-value pair should be in format {key}={value} with no spaces."
+        raise argparse.ArgumentTypeError(msg)
+    key = key.strip()
     # Allow for separator string appearing in value by rejoining
-    value = sep.join(separated_string[1:])
+    value = sep.join(value)
     return (key, value)
 
 
