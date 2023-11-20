@@ -231,7 +231,7 @@ def run_profiling(
         "years": 0,
         "months": 1,
         "initial_population": 50000,
-        "output_dir": _PROFILING_RESULTS,
+        "output_dir": output_dir,
         "log_filename": "scale_run_profiling",
         "log_level": "DEBUG",
         "parse_log_file": False,
