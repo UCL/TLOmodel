@@ -10,12 +10,15 @@ import pandas as pd
 if TYPE_CHECKING:
     from pyinstrument import Profiler
 
-from _paths import TLO_OUTPUT_DIR, TLO_ROOT
 from shared import print_checksum, schedule_profile_log
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file as parse_log_file_fn
 from tlo.methods.fullmodel import fullmodel
+
+
+_TLO_ROOT: Path = Path(__file__).parents[3].resolve()
+_TLO_OUTPUT_DIR: Path = (_TLO_ROOT / "outputs").resolve()
 
 HELP_STR = (
     "A run of the full model at scale using all disease modules considered complete and all"
@@ -32,8 +35,8 @@ def scale_run(
     years: int = 20,
     months: int = 0,
     initial_population: int = 50000,
-    tlo_dir: Path = TLO_ROOT,
-    output_dir: Path = TLO_OUTPUT_DIR,
+    tlo_dir: Path = _TLO_ROOT,
+    output_dir: Path = _TLO_OUTPUT_DIR,
     log_filename: str = "scale_run_profiling",
     log_level: Literal["CRITICAL", "DEBUG", "FATAL", "WARNING", "INFO"] = "WARNING",
     parse_log_file: bool = False,
@@ -139,13 +142,13 @@ if __name__ == "__main__":
         "--initial-population", type=int, help="Initial population size", default=50000
     )
     parser.add_argument(
-        "--tlo-dir", type=Path, help="Root TLOmodel directory", default=TLO_ROOT
+        "--tlo-dir", type=Path, help="Root TLOmodel directory", default=_TLO_ROOT
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
         help="Directory to write output to",
-        default=TLO_OUTPUT_DIR,
+        default=_TLO_OUTPUT_DIR,
     )
     parser.add_argument(
         "--log-filename",

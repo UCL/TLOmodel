@@ -7,8 +7,6 @@ from pathlib import Path
 from typing import Dict, List, Union
 
 import numpy as np
-from _parameters import scale_run_parameters
-from _paths import PROFILING_RESULTS
 from psutil import disk_io_counters
 from pyinstrument import Profiler
 from pyinstrument.renderers import HTMLRenderer
@@ -16,6 +14,11 @@ from pyinstrument.session import Session
 from scale_run import scale_run
 
 from tlo import Simulation
+
+
+_TLO_ROOT: Path = Path(__file__).parents[3].resolve()
+_TLO_OUTPUT_DIR: Path = (_TLO_ROOT / "outputs").resolve()
+_PROFILING_RESULTS: Path = (_TLO_ROOT / "profiling_results").resolve()
 
 
 def current_time(format_str: str = "%Y-%m-%d_%H%M") -> str:
@@ -204,7 +207,7 @@ def record_run_statistics(
 
 
 def run_profiling(
-    output_dir: Path = PROFILING_RESULTS,
+    output_dir: Path = _PROFILING_RESULTS,
     output_name: Path = None,
     write_html: bool = False,
     interval: float = 1e-1,
@@ -224,6 +227,25 @@ def run_profiling(
     p = Profiler(interval=interval)
 
     print(f"[{current_time('%H:%M:%S')}:INFO] Starting profiling runs")
+    
+    scale_run_parameters = {
+        "years": 0,
+        "months": 1,
+        "initial_population": 50000,
+        "tlo_dir": _TLO_ROOT,
+        "output_dir": _TLO_OUTPUT_DIR,
+        "log_filename": "scale_run_profiling",
+        "log_level": "DEBUG",
+        "parse_log_file": False,
+        "show_progress_bar": True,
+        "seed": 0,
+        "disable_health_system": False,
+        "disable_spurious_symptoms": False,
+        "capabilities_coefficient": None,
+        "mode_appt_constraints": 0,
+        "save_final_population": False,
+        "record_hsi_event_details": False,
+    }
 
     # Profile scale_run
     disk_at_start = disk_io_counters()
@@ -290,7 +312,7 @@ if __name__ == "__main__":
         "--output-dir",
         type=Path,
         help="Redirect the output(s) to this directory.",
-        default=PROFILING_RESULTS,
+        default=_PROFILING_RESULTS,
     )
     parser.add_argument(
         "--output-name",
