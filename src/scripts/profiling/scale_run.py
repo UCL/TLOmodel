@@ -20,16 +20,6 @@ from tlo.methods.fullmodel import fullmodel
 _TLO_ROOT: Path = Path(__file__).parents[3].resolve()
 _TLO_OUTPUT_DIR: Path = (_TLO_ROOT / "outputs").resolve()
 
-HELP_STR = (
-    "A run of the full model at scale using all disease modules considered complete and all"
-    "modules for birth / labour / newborn outcome.\n"
-    "Simulation parameters can be set using command line arguments - run with --help option"
-    "for more details.\n"
-    "By default a 20 year simulation is run with an initial population size"
-    "of 20k and with logged events at level WARNING or above recorded.\n"
-    "For use in profiling."
-)
-
 
 def scale_run(
     years: int = 20,
@@ -125,7 +115,14 @@ def scale_run(
 
 if __name__ == "__main__":
     # Parse arguments defining run options
-    parser = argparse.ArgumentParser(description=HELP_STR)
+    parser = argparse.ArgumentParser(
+        description=(
+            "A run of the full model at scale using all disease modules considered "
+            "complete and all modules for birth / labour / newborn outcome. Simulation "
+            "parameters can be set using command line arguments. For use in profiling."
+        ),
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     parser.add_argument(
         "--years",
         type=int,
