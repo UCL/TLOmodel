@@ -45,7 +45,7 @@ class ImpactOfTbDaH(BaseScenario):
         # self.seed = 0
         self.seed = random.randint(0, 50000),
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2012, 6, 31)
+        self.end_date = Date(2012, 1, 31)
         self.pop_size = 3000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
@@ -90,7 +90,7 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 0,
                     'probability_community_chest_xray': 0.0,
-                    'scaling_factor_WHO': 1.45
+
                 },
             },
             # overrides availability of Xpert to nil
