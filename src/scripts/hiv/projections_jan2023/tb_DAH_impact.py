@@ -52,7 +52,7 @@ class ImpactOfTbDaH(BaseScenario):
         self.runs_per_draw = 2
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_impactx23',
+            'filename': 'Tb_DAH_impactx24',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -115,7 +115,7 @@ class ImpactOfTbDaH(BaseScenario):
                  'Tb': {
                      'scenario': 3,
                      'probability_community_chest_xray': 0.0,
-                     'scaling_factor_WHO': 1.5,
+                     'scaling_factor_WHO': 1.3,
                  }
              },
             # increase CXR by 20 percentage points
@@ -123,7 +123,7 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 4,
                     'probability_community_chest_xray': 0.0,
-                    'scaling_factor_WHO': 1.5,
+                    'scaling_factor_WHO': 1.3,
                 }
             },
             # increase CXR by 30 percentage points
@@ -131,7 +131,7 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 5,
                     'probability_community_chest_xray': 0.0,
-                    'scaling_factor_WHO': 1.4,
+                    'scaling_factor_WHO': 1.3,
                 }
             },
             #introduce outreach services
