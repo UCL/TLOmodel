@@ -107,7 +107,7 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 2,
                     'probability_community_chest_xray': 0.0,
-                   # 'scaling_factor_WHO': 1.89
+                    'scaling_factor_WHO': 1.7
                 },
             },
             #increase CXR by 10 percentage points
