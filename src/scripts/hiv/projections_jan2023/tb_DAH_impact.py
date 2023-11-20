@@ -90,7 +90,7 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 0,
                     'probability_community_chest_xray': 0.0,
-                    'WHO scaling factor': 1.6
+                    'scaling_factor_WHO': 1.6
 
                 },
             },
