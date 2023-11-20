@@ -17,12 +17,6 @@ from scale_run import scale_run
 
 from tlo import Simulation
 
-HELP_STR = (
-    "Produces profiling runs for a selection of models and parameters,\n"
-    "writing the results in HTML and/or JSON format.\n"
-    "Output names will default to the profiling timestamp if not provided."
-)
-
 
 def current_time(format_str: str = "%Y-%m-%d_%H%M") -> str:
     """Produces a string of the current time in the specified format."""
@@ -285,7 +279,13 @@ def run_profiling(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=HELP_STR)
+    parser = argparse.ArgumentParser(
+        description=(
+            "Produces profiling runs for a selection of models and parameters, "
+            "writing the results in HTML and/or JSON format. "
+            "Output names will default to the profiling timestamp if not provided."
+        )
+    )
     parser.add_argument(
         "--output-dir",
         type=Path,
