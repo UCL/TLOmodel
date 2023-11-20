@@ -295,9 +295,14 @@ if __name__ == "__main__":
         )
     )
     parser.add_argument(
-        "--output-dir",
+        "--root-output-dir",
         type=Path,
-        help="Redirect the output(s) to this directory.",
+        help=(
+            "Root directory to write profiling outputs to. Results will be written to "
+            "a subdirectory within this directory based on the date-time at which the "
+            "profiling run was started, specifically using the format codes from "
+            "strftime, within a directory corresponding to '%Y/%m/%d/%H%M'."
+        ),
         default=_PROFILING_RESULTS,
     )
     parser.add_argument(
@@ -379,7 +384,7 @@ if __name__ == "__main__":
 
     # Pass to the profiling "script"
     run_profiling(
-        root_output_dir=args.output_dir,
+        root_output_dir=args.root_output_dir,
         output_name=args.output_name,
         write_html=args.write_html,
         write_pyisession=args.write_pyisession,
