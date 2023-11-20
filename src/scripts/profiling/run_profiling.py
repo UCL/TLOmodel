@@ -11,7 +11,7 @@ from psutil import disk_io_counters
 from pyinstrument import Profiler
 from pyinstrument.renderers import HTMLRenderer
 from pyinstrument.session import Session
-from .scale_run import save_arguments_to_json, scale_run
+from scale_run import save_arguments_to_json, scale_run
 
 from tlo import Simulation
 
