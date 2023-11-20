@@ -19,13 +19,14 @@ from tlo.methods.fullmodel import fullmodel
 
 _TLO_ROOT: Path = Path(__file__).parents[3].resolve()
 _TLO_OUTPUT_DIR: Path = (_TLO_ROOT / "outputs").resolve()
+_TLO_RESOURCES_DIR: Path = (_TLO_ROOT / "resources").resolve()
 
 
 def scale_run(
     years: int = 20,
     months: int = 0,
     initial_population: int = 50000,
-    tlo_dir: Path = _TLO_ROOT,
+    resources_dir: Path = _TLO_RESOURCES_DIR,
     output_dir: Path = _TLO_OUTPUT_DIR,
     log_filename: str = "scale_run_profiling",
     log_level: Literal["CRITICAL", "DEBUG", "FATAL", "WARNING", "INFO"] = "WARNING",
@@ -48,9 +49,6 @@ def scale_run(
     start_date = Date(2010, 1, 1)
     end_date = start_date + pd.DateOffset(years=years, months=months)
 
-    # The resource files
-    resourcefilepath = Path(tlo_dir / "resources")
-
     log_config = {
         "filename": log_filename,
         "directory": output_dir,
@@ -67,7 +65,7 @@ def scale_run(
     # Register the appropriate modules with the arguments passed through
     sim.register(
         *fullmodel(
-            resourcefilepath=resourcefilepath,
+            resourcefilepath=resources_dir,
             use_simplified_births=False,
             module_kwargs={
                 "HealthSystem": {
@@ -139,7 +137,10 @@ if __name__ == "__main__":
         "--initial-population", type=int, help="Initial population size", default=50000
     )
     parser.add_argument(
-        "--tlo-dir", type=Path, help="Root TLOmodel directory", default=_TLO_ROOT
+        "--resources-dir",
+        type=Path,
+        help="Directory containing resources files for simulation",
+        default=_TLO_RESOURCES_DIR
     )
     parser.add_argument(
         "--output-dir",

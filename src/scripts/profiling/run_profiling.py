@@ -17,7 +17,6 @@ from tlo import Simulation
 
 
 _TLO_ROOT: Path = Path(__file__).parents[3].resolve()
-_TLO_OUTPUT_DIR: Path = (_TLO_ROOT / "outputs").resolve()
 _PROFILING_RESULTS: Path = (_TLO_ROOT / "profiling_results").resolve()
 
 
@@ -232,8 +231,7 @@ def run_profiling(
         "years": 0,
         "months": 1,
         "initial_population": 50000,
-        "tlo_dir": _TLO_ROOT,
-        "output_dir": _TLO_OUTPUT_DIR,
+        "output_dir": _PROFILING_RESULTS,
         "log_filename": "scale_run_profiling",
         "log_level": "DEBUG",
         "parse_log_file": False,
