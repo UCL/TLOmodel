@@ -22,6 +22,19 @@ _TLO_OUTPUT_DIR: Path = (_TLO_ROOT / "outputs").resolve()
 _TLO_RESOURCES_DIR: Path = (_TLO_ROOT / "resources").resolve()
 
 
+def save_arguments_to_json(arguments_dict: dict, output_directory: Path):
+    """Save run arguments to a JSON file converting any paths to strings."""
+    with open(output_directory / "args.json", "w") as f:
+        json.dump(
+            {
+                k: str(v) if isinstance(v, Path) else v 
+                for k, v in arguments_dict.items()
+            }, 
+            f, 
+            indent=4
+        )
+
+
 def scale_run(
     years: int = 20,
     months: int = 0,
@@ -39,8 +52,12 @@ def scale_run(
     mode_appt_constraints: Literal[0, 1, 2] = 2,
     save_final_population: bool = False,
     record_hsi_event_details: bool = False,
+    ignore_warnings: bool = False,
     profiler: Optional[Type["Profiler"]] = None,
 ) -> Simulation:
+    if ignore_warnings:
+        warnings.filterwarnings("ignore")
+
     # Start profiler if one has been passed
     if profiler is not None:
         profiler.start()
@@ -240,23 +257,12 @@ if __name__ == "__main__":
         action="store_true",
     )
     args = parser.parse_args()
-
-    if args.ignore_warnings:
-        warnings.filterwarnings("ignore")
+    args_dict = vars(args)
 
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
 
-    if args.save_args_json:
-        # Save arguments to a JSON file
-        with open(args.output_dir / "arguments.json", "w") as f:
-            args_dict = {
-                k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()
-            }
-            json.dump(args_dict, f, indent=4)
+    if args_dict.pop("save_args_json"):
+        save_arguments_to_json(args_dict, args.output_dir)
 
-    inputs = vars(args)
-    inputs.pop("ignore_warnings")
-    inputs.pop("save_args_json")
-
-    scale_run(**inputs)
+    scale_run(**args_dict)
