@@ -53,6 +53,7 @@ def scale_run(
     save_final_population: bool = False,
     record_hsi_event_details: bool = False,
     ignore_warnings: bool = False,
+    log_final_population_checksum: bool = True,
     profiler: Optional[Type["Profiler"]] = None,
 ) -> Simulation:
     if ignore_warnings:
@@ -102,7 +103,8 @@ def scale_run(
     sim.make_initial_population(n=initial_population)
     schedule_profile_log(sim)
     sim.simulate(end_date=end_date)
-    print_checksum(sim)
+    if log_final_population_checksum:
+        print_checksum(sim)
 
     if save_final_population:
         sim.population.props.to_pickle(output_dir / "final_population.pkl")
@@ -246,6 +248,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--save-final-population",
         help="Save the final population dataframe to a pickle file",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--log-final-population-checksum",
+        help="Write checksum (hash) of final population dataframe to log",
         action="store_true",
     )
     parser.add_argument(
