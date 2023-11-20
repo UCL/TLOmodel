@@ -194,32 +194,36 @@ def run_profiling(
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    scale_run_parameters = {
-        "years": 0,
-        "months": 1,
+    scale_run_args = {
+        "years": 5,
+        "months": 0,
         "initial_population": 50000,
         "log_filename": "scale_run_profiling",
-        "log_level": "DEBUG",
+        "log_level": "WARNING",
         "parse_log_file": False,
         "show_progress_bar": True,
         "seed": 0,
         "disable_health_system": False,
         "disable_spurious_symptoms": False,
         "capabilities_coefficient": None,
-        "mode_appt_constraints": 0,
+        "mode_appt_constraints": 2,
         "save_final_population": False,
         "record_hsi_event_details": False,
         "ignore_warnings": True,
+        "log_final_population_checksum": False,
     }
 
-    save_arguments_to_json(scale_run_parameters, output_dir / "parameters.json")
+    output_arg_file = output_dir / f"{output_name}.args.json"
+    print(f"Writing {output_arg_file}", end="...", flush=True)
+    save_arguments_to_json(scale_run_args, output_arg_file)
+    print("done")
 
     print(f"[{current_time('%H:%M:%S')}:INFO] Starting profiling runs")
 
     # Profile scale_run
     disk_at_start = disk_io_counters()
     completed_simulation = scale_run(
-        **scale_run_parameters, output_dir=output_dir, profiler=profiler
+        **scale_run_args, output_dir=output_dir, profiler=profiler
     )
     disk_at_end = disk_io_counters()
 
