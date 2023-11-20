@@ -1476,48 +1476,41 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 1:
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.0})
-            self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.99
-            #self.sim.modules["Tb"].parameters["first_line_test"] = 'sputum'
-            #self.sim.modules["Tb"].parameters["second_line_test"] = 'sputum'
+            #self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.99
+
 
         # sets availability of xray to nil
         if scenario == 2:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.0})
-           self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.89
-           #self.sim.modules["Tb"].parameters["first_line_test"] = 'sputum'
-          # self.sim.modules["Tb"].parameters["second_line_test"] = 'xpert'
+           #self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.89
 
 
         #increases probability of accessing chest xray by 10%
         if scenario == 3:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.61})
-           self.sim.modules["Tb"].parameters["WHO scaling factor"] = 0.89
-           #self.sim.modules["Tb"].parameters["first_line_test"] = 'sputum'
-          # self.sim.modules["Tb"].parameters["second_line_test"] = 'xpert'
+           #self.sim.modules["Tb"].parameters["WHO scaling factor"] = 0.89
+
 
         # increase CXR by 20%
         if scenario == 4:
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.71})
-            self.sim.modules["Tb"].parameters["WHO scaling factor"] = 0.89
-            #self.sim.modules["Tb"].parameters["first_line_test"] = 'sputum'
-           # self.sim.modules["Tb"].parameters["second_line_test"] = 'xpert'
+          # self.sim.modules["Tb"].parameters["WHO scaling factor"] = 0.89
+
 
         # increase CXR by 30%
         if scenario == 5:
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.81})
-            self.sim.modules["Tb"].parameters["WHO scaling factor"] = 0.89
-            #self.sim.modules["Tb"].parameters["first_line_test"] = 'sputum'
-            #self.sim.modules["Tb"].parameters["second_line_test"] = 'xpert'
+           #self.sim.modules["Tb"].parameters["WHO scaling factor"] = 0.89
+
 
 
         # Introduce community Xray
         if scenario == 6:
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.1
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
-           # self.sim.modules["Tb"].parameters[" first_line_test"] = 'sputum'
-            #self.sim.modules["Tb"].parameters[" second_line_test"] = 'xpert'
+
             self.sim.modules["Tb"].parameters["WHO scaling factor"] = 0.89
 
 #######################################################################
