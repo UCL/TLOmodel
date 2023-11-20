@@ -86,9 +86,11 @@ def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None):
 @cli.command()
 @click.argument("scenario_file", type=click.Path(exists=True))
 @click.option("--asserts-on", type=bool, default=False, is_flag=True, help="Enable assertions in simulation run.")
+@click.option("--more-memory", type=bool, default=False, is_flag=True,
+              help="Request machine wth more memory (for larger population sizes).")
 @click.option("--keep-pool-alive", type=bool, default=False, is_flag=True, hidden=True)
 @click.pass_context
-def batch_submit(ctx, scenario_file, asserts_on, keep_pool_alive):
+def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive):
     """Submit a scenario to the batch system.
 
     SCENARIO_FILE is path to file containing scenario class.
@@ -147,7 +149,10 @@ def batch_submit(ctx, scenario_file, asserts_on, keep_pool_alive):
                       )
 
     # Configuration of the pool: type of machines and number of nodes.
-    vm_size = config["BATCH"]["POOL_VM_SIZE"]
+    if more_memory:
+        vm_size = config["BATCH"]["POOL_VM_SIZE_MORE_MEMORY"]
+    else:
+        vm_size = config["BATCH"]["POOL_VM_SIZE"]
     # TODO: cap the number of nodes in the pool?  Take the number of nodes in
     # input from the user, but always at least 2?
     pool_node_count = max(2, math.ceil(scenario.number_of_draws * scenario.runs_per_draw))
@@ -219,6 +224,7 @@ def batch_submit(ctx, scenario_file, asserts_on, keep_pool_alive):
     git fetch origin {commit.hexsha}
     git checkout {commit.hexsha}
     pip install -r requirements/base.txt
+    env | grep "^AZ_" | while read line; do echo "$line"; done
     {py_opt} tlo --config-file tlo.example.conf batch-run {azure_run_json} {working_dir} {{draw_number}} {{run_number}}
     cp {task_dir}/std*.txt {working_dir}/{{draw_number}}/{{run_number}}/.
     gzip {working_dir}/{{draw_number}}/{{run_number}}/*.{gzip_pattern_match}
