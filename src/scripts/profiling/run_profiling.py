@@ -172,6 +172,7 @@ def run_profiling(
     root_output_dir: Path = _PROFILING_RESULTS,
     output_name: str = "profiling",
     write_html: bool = False,
+    write_pyisession: bool = False,
     interval: float = 1e-1,
     additional_stats: Optional[Dict[str, str]] = None,
 ) -> None:
@@ -263,6 +264,12 @@ def run_profiling(
             )
         additional_stats["html_output"] = output_html_file
 
+    if write_pyisession:
+        output_ipysession_file = output_dir / f"{output_name}.pyisession"
+        print(f"Writing {output_ipysession_file}", end="...", flush=True)
+        scale_run_session.save(output_ipysession_file)
+        print("done")
+
     # Write the statistics file, main output
     output_stat_file = output_dir / f"{output_name}.stats.json"
     print(f"Writing {output_stat_file}", end="...", flush=True)
@@ -306,6 +313,12 @@ if __name__ == "__main__":
         dest="write_html",
     )
     parser.add_argument(
+        "--pyisession",
+        help="Write raw profiler pyisession output.",
+        action="store_true",
+        dest="write_pyisession",
+    )
+    parser.add_argument(
         "-i",
         "--interval-seconds",
         dest="interval",
@@ -335,6 +348,7 @@ if __name__ == "__main__":
         root_output_dir=args.output_dir,
         output_name=args.output_name,
         write_html=args.write_html,
+        write_pyisession=args.write_pyisession,
         interval=args.interval,
         additional_stats=command_line_stats,
     )
