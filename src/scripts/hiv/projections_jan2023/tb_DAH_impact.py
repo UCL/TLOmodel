@@ -45,8 +45,8 @@ class ImpactOfTbDaH(BaseScenario):
         # self.seed = 0
         self.seed = random.randint(0, 50000),
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2012, 1, 31)
-        self.pop_size = 3000
+        self.end_date = Date(2015, 1, 31)
+        self.pop_size = 5000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 2
@@ -90,7 +90,7 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 0,
                     'probability_community_chest_xray': 0.0,
-                    'scaling_factor_WHO': 1.6
+                    'scaling_factor_WHO': 1.5
 
                 },
             },
@@ -107,7 +107,7 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 2,
                     'probability_community_chest_xray': 0.0,
-                    'scaling_factor_WHO': 1.7
+                    'scaling_factor_WHO': 1.75
                 },
             },
             #increase CXR by 10 percentage points
@@ -131,7 +131,7 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 5,
                     'probability_community_chest_xray': 0.0,
-                    'scaling_factor_WHO': 1.3,
+                    'scaling_factor_WHO': 1.2,
                 }
             },
             #introduce outreach services
