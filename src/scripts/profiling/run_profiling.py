@@ -383,15 +383,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Pass to the profiling "script"
-    run_profiling(
-        root_output_dir=args.root_output_dir,
-        output_name=args.output_name,
-        write_html=args.write_html,
-        write_pyisession=args.write_pyisession,
-        interval=args.interval,
-        simulation_months=args.simulation_months,
-        simulation_years=args.simulation_years,
-        initial_population=args.initial_population,
-        mode_appt_constraints=args.mode_appt_constraints,
-        additional_stats=args.additional_stats,
-    )
+    run_profiling(**vars(args))
