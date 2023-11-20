@@ -65,21 +65,16 @@ def map_age_to_age_group(dataframe):
     age_groups = ['0'] + ['1-4'] + [f'{start}-{start + 4}' for start in range(5, 100, 5)] + ['100+']
 
     # Create a new column 'age-group' based on the age-to-age-group mapping
-    dataframe['age_group'] = pd.cut(dataframe['age'], bins=[0] + list(range(1, 105, 5)) + [float('inf')],
+    dataframe['age_group'] = pd.cut(dataframe['age'], bins=[0] + [1] + list(range(5, 105, 5)) + [float('inf')],
                              labels=age_groups, right=False)
 
     return dataframe
 
 
-df = log['tlo.methods.demography']['death']
-
-
-# todo extract number of deaths occurring at age-bands 0, 1-4, 5-9, 10-14
-# age-group 100+ is the final group, 21 broad age-groups
-# todo select target period (2019)
 TARGET_PERIOD = (Date(2019, 1, 1), Date(2020, 1, 1))
 
-def extract_deaths_by_age(results_folder):
+
+def num_deaths_by_age_group(results_folder):
     """ produces dataframe with mean (+ 95% UI) number of deaths
     for each draw by age-group
     dataframe returned: rows=age-gp, columns=draw median, draw lower, draw upper
@@ -89,10 +84,7 @@ def extract_deaths_by_age(results_folder):
 
         # Call the function to add the 'age-group' column
         df = map_age_to_age_group(df)
-        # sum deaths occurring in target period by age-group
-        df = df.loc[pd.to_datetime(df.date).between(*TARGET_PERIOD)]
-
-        return df.groupby(["age_group"])["person_id"].count()
+        return df.loc[pd.to_datetime(df.date).between(*TARGET_PERIOD)].groupby(["age_group", "sex"])["person_id"].count()
 
     return extract_results(
         results_folder,
@@ -102,9 +94,105 @@ def extract_deaths_by_age(results_folder):
         do_scaling=True
     )
 
-deaths_summarized_by_age = extract_deaths_by_age(results_folder)
+deaths_summarized_by_age = num_deaths_by_age_group(results_folder)
 
-# todo extract population size at start of interval
+# todo extract total population-years at risk over the specified time period.
+#  Sum of the populations for each year or average population x years
+
+
+TARGET_PERIOD = (Date(2017, 1, 1), Date(2020, 1, 1))
+years = range(2010, 2020, 1)  # todo replace with simulation end date
+# remember range finishes before the end point
+
+# todo this will return the person-years for males in one run
+# this is what it needs to read in
+# _df = log['tlo.methods.demography']['person_years']
+
+def get_person_years(_df):
+    """ extract person-years for each draw/run
+    calculate for men and women separately
+    return a dataframe with index=age-groups and columns=person-years
+    """
+    output = pd.DataFrame()
+    for sex in ['M', 'F']:
+
+        py = _df[sex] # extract values for males
+        # using series of py for M per year:
+        # create dataframe one row per year and one column per age_year
+        new_df = pd.DataFrame(py.tolist())
+        new_df.index = _df.date
+        new_df = new_df.loc[TARGET_PERIOD[0]:TARGET_PERIOD[1]]
+
+        # sum values for each age (single years)
+        py_by_single_age_years = new_df.sum(numeric_only=True, axis=0)
+        py_by_single_age_years = py_by_single_age_years.reset_index()
+        py_by_single_age_years = py_by_single_age_years.rename(columns={'index': 'age', 0: 'person_years'})
+
+        # convert single age years to float for mapping
+        py_by_single_age_years['age'] = py_by_single_age_years['age'].astype(float)
+        # map single age bands to age-groups
+        py_with_age_groups = map_age_to_age_group(py_by_single_age_years)
+
+        summary = py_with_age_groups.groupby(["age_group"])["person_years"].sum()
+
+        output = pd.concat([output, summary], axis=1)
+        output.columns = ['Male_py', 'Female_py']
+
+    return output
+
+
+
+
+
+
+# do we want the population size at start date
+# or the person-years lived within the interval for each age-group
+# get person-years by age-group for target period
+# use demography.age_range_m for pop size
+# select target years
+# for each column, take median
+# todo adapt function to return all draws/runs
+# todo return within target period
+
+def extract_pop_size(results_folder, draw, key):
+    module = "tlo.methods.demography"
+
+    def get_multiplier(_draw, _run):
+        """Helper function to get the multiplier from the simulation."""
+        return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.population'
+                                           )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+
+    # get number of draws and numbers of runs
+    info = get_scenario_info(results_folder)
+
+    # Dictionary to store DataFrames
+    dataframes = {}
+
+    # get the dataframes from each run
+    for run in range(info['runs_per_draw']):
+
+        df_name = f'df_{run}'  # Create a dynamic name for each DataFrame
+        data = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+        dataframes[df_name] = pd.DataFrame(data)
+
+    # Concatenate DataFrames along a new axis (axis=2)
+    concatenated_df = pd.concat([dataframes["df_1"],
+                                 dataframes["df_2"],
+                                 dataframes["df_3"],
+                                 dataframes["df_4"],
+                                 ], axis=1, keys=['df1', 'df2', 'df3', 'df4'])
+
+    # Remove column 'B' from all data frames within concatenated_df
+    concatenated_df = concatenated_df.drop('date', level=1, axis=1)
+    # Calculate the mean for each row in each column
+    tmp = concatenated_df.groupby(level=1, axis=1).mean() * get_multiplier(0, 0)
+
+    return tmp
+
+
+pop_baseline_m = extract_pop_size(results_folder=results_folder, draw=0, key="age_range_m")
+
+
 
 
 
