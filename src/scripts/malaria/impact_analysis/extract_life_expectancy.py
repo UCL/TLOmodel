@@ -105,8 +105,16 @@ years = range(2010, 2020, 1)  # todo replace with simulation end date
 # remember range finishes before the end point
 
 # todo this will return the person-years for males in one run
+# todo find a nice way to do this across draws/runs
+# todo consider what the best output format would be
 # this is what it needs to read in
 # _df = log['tlo.methods.demography']['person_years']
+
+def get_multiplier(_draw, _run):
+    """Helper function to get the multiplier from the simulation."""
+    return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.population'
+                                   )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+
 
 def get_person_years(_df):
     """ extract person-years for each draw/run
