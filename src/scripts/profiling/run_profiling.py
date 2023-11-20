@@ -11,7 +11,7 @@ from psutil import disk_io_counters
 from pyinstrument import Profiler
 from pyinstrument.renderers import HTMLRenderer
 from pyinstrument.session import Session
-from .scale_run import scale_run
+from .scale_run import save_arguments_to_json, scale_run
 
 from tlo import Simulation
 
@@ -206,8 +206,8 @@ def record_run_statistics(
 
 
 def run_profiling(
-    output_dir: Path = _PROFILING_RESULTS,
-    output_name: Path = None,
+    root_output_dir: Path = _PROFILING_RESULTS,
+    output_name: str = "profiling",
     write_html: bool = False,
     interval: float = 1e-1,
     **additional_stats: str,
@@ -222,15 +222,17 @@ def run_profiling(
     # combining the recorded sessions into one at the end.
     # As such, the same profiler can be used to record the profile of multiple scripts,
     # however this may create large datafiles so using separate profilers is preferable
-    p = Profiler(interval=interval)
+    profiler = Profiler(interval=interval)
 
-    print(f"[{current_time('%H:%M:%S')}:INFO] Starting profiling runs")
-    
+    # Create the directory that this profiling run will live in
+    output_dir = root_output_dir / current_time("%Y/%m/%d/%H%M")
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)    
+
     scale_run_parameters = {
         "years": 0,
         "months": 1,
         "initial_population": 50000,
-        "output_dir": output_dir,
         "log_filename": "scale_run_profiling",
         "log_level": "DEBUG",
         "parse_log_file": False,
@@ -242,12 +244,18 @@ def run_profiling(
         "mode_appt_constraints": 0,
         "save_final_population": False,
         "record_hsi_event_details": False,
-        "ignore_warnings": True
+        "ignore_warnings": True,
     }
+
+    save_arguments_to_json(scale_run_parameters, output_dir / "parameters.json")
+
+    print(f"[{current_time('%H:%M:%S')}:INFO] Starting profiling runs")
 
     # Profile scale_run
     disk_at_start = disk_io_counters()
-    completed_simulation = scale_run(**scale_run_parameters, profiler=p)
+    completed_simulation = scale_run(
+        **scale_run_parameters, output_dir=output_dir, profiler=profiler
+    )
     disk_at_end = disk_io_counters()
 
     print(f"[{current_time('%H:%M:%S')}:INFO] Profiling runs complete")
@@ -255,26 +263,17 @@ def run_profiling(
     # Fetch the recorded session: if multiple scripts are to be profiled,
     # this needs to be done after each model "run",
     # and p needs to be re-initialised before starting the next model run.
-    scale_run_session = p.last_session
+    scale_run_session = profiler.last_session
     # Infer disk usage statistics
     disk_usage = {
         key: getattr(disk_at_end, key) - getattr(disk_at_start, key)
         for key in disk_at_start._fields
     }
 
-    # Create the directory that this profiling run will live in
-    output_dir = output_dir / current_time("%Y/%m/%d/%H%M")
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-
-    # Assign output filenames
-    output_stem = "output" if output_name is None else output_name.stem
-    output_stat_file = output_dir / f"{output_stem}.stats.json"
-    output_html_file = output_dir / f"{output_stem}.html" if write_html else None
-
     # Write outputs to files
     # HTML (if requested)
     if write_html:
+        output_html_file = output_dir / f"{output_name}.html"
         # Renderer initialisation options:
         # show_all: removes library calls where identifiable
         # timeline: if true, samples are left in chronological order rather than total time
@@ -283,7 +282,9 @@ def run_profiling(
         with open(output_html_file, "w") as f:
             f.write(html_renderer.render(scale_run_session))
         print("done")
+
     # Write the statistics file, main output
+    output_stat_file = output_dir / f"{output_name}.stats.json"
     print(f"Writing {output_stat_file}", end="...", flush=True)
     record_run_statistics(
         output_stat_file,
@@ -314,10 +315,10 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--output-name",
-        type=Path,
+        type=str,
         help="Name to give to the output file(s). "
         "File extensions will automatically appended.",
-        default=None,
+        default="profiling",
     )
     parser.add_argument(
         "--html",
@@ -351,7 +352,7 @@ if __name__ == "__main__":
 
     # Pass to the profiling "script"
     run_profiling(
-        output_dir=args.output_dir,
+        root_output_dir=args.output_dir,
         output_name=args.output_name,
         write_html=args.write_html,
         interval=args.interval,
