@@ -216,7 +216,6 @@ def run_profiling(
     Uses pyinstrument to profile the scale_run simulation,
     writing the output in the requested formats.
     """
-    warnings.filterwarnings("ignore")
 
     # Create the profiler to record the stack
     # An instance of a Profiler can be start()-ed and stop()-ped multiple times,
@@ -243,6 +242,7 @@ def run_profiling(
         "mode_appt_constraints": 0,
         "save_final_population": False,
         "record_hsi_event_details": False,
+        "ignore_warnings": True
     }
 
     # Profile scale_run
