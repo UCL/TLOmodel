@@ -4,7 +4,7 @@ import os
 import warnings
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Literal, Optional, Union
+from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 from psutil import disk_io_counters
@@ -24,24 +24,24 @@ def current_time(format_str: str = "%Y-%m-%d_%H%M") -> str:
     return datetime.utcnow().strftime(format_str)
 
 
-def parse_keyword_args(key_value_strings: List[str], sep: str = "=") -> Dict[str, str]:
-    """Parse a series of key-value pairs from the command-line into a dictionary.
+def parse_key_value_string(key_value_string: str, sep: str = "=") -> Tuple[str, str]:
+    """Parse a key-value pair from the command-line into a tuple.
 
-    Input is a list of strings of the format
-    KEY{sep}VALUE,
-    which will be parsed into a key-value pair as
-    "KEY" : "VALUE".
+    Input is a string of the format::
 
-    Note that keys and values are always interpreted as strings.
+        "{key}{sep}{value}"
+
+    which will be parsed into a key-value tuple as::
+
+        ("{key}", "{value}")
+
+    Note that the key and value are always interpreted as strings.
     """
-    key_value_dict = {}
-    for key_value_string in key_value_strings:
-        separated_string = key_value_string.split(sep)
-        key = separated_string[0].strip()
-        # Allow for separator string appearing in value by rejoining
-        value = sep.join(separated_string[1:])
-        key_value_dict[key] = value
-    return key_value_dict
+    separated_string = key_value_string.split(sep)
+    key = separated_string[0].strip()
+    # Allow for separator string appearing in value by rejoining
+    value = sep.join(separated_string[1:])
+    return (key, value)
 
 
 def simulation_statistics(
@@ -178,14 +178,13 @@ def run_profiling(
     simulation_years: int = 5,
     simulation_months: int = 0,
     mode_appt_constraints: Literal[0, 1, 2] = 2,
-    additional_stats: Optional[Dict[str, str]] = None,
+    additional_stats: Optional[List[Tuple[str, str]]] = None,
 ) -> None:
     """
     Uses pyinstrument to profile the scale_run simulation,
     writing the output in the requested formats.
     """
-
-    additional_stats = {} if additional_stats is None else additional_stats
+    additional_stats = dict(() if additional_stats is None else additional_stats)
 
     # Create the profiler to record the stack
     # An instance of a Profiler can be start()-ed and stop()-ped multiple times,
@@ -365,6 +364,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--additional-stats",
         metavar="KEY=VALUE",
+        type=parse_key_value_string,
         nargs="*",
         default=[],
         help=(
@@ -376,8 +376,6 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    # Parse additional run statistics from the command line
-    command_line_stats = parse_keyword_args(args.additional_stats)
 
     # Pass to the profiling "script"
     run_profiling(
@@ -390,5 +388,5 @@ if __name__ == "__main__":
         simulation_years=args.simulation_years,
         initial_population=args.initial_population,
         mode_appt_constraints=args.mode_appt_constraints,
-        additional_stats=command_line_stats,
+        additional_stats=args.additional_stats,
     )
