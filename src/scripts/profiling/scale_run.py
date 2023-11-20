@@ -3,7 +3,7 @@ import json
 import os
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Optional, Type
+from typing import TYPE_CHECKING, Literal, Optional
 
 import pandas as pd
 
@@ -48,13 +48,13 @@ def scale_run(
     seed: int = 0,
     disable_health_system: bool = False,
     disable_spurious_symptoms: bool = False,
-    capabilities_coefficient: float = None,
+    capabilities_coefficient: Optional[float] = None,
     mode_appt_constraints: Literal[0, 1, 2] = 2,
     save_final_population: bool = False,
     record_hsi_event_details: bool = False,
     ignore_warnings: bool = False,
     log_final_population_checksum: bool = True,
-    profiler: Optional[Type["Profiler"]] = None,
+    profiler: Optional["Profiler"] = None,
 ) -> Simulation:
     if ignore_warnings:
         warnings.filterwarnings("ignore")
