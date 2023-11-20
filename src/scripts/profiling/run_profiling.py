@@ -4,7 +4,7 @@ import os
 import warnings
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
 import numpy as np
 from psutil import disk_io_counters
@@ -174,6 +174,10 @@ def run_profiling(
     write_html: bool = False,
     write_pyisession: bool = False,
     interval: float = 1e-1,
+    initial_population: int = 50000,
+    simulation_years: int = 5,
+    simulation_months: int = 0,
+    mode_appt_constraints: Literal[0, 1, 2] = 2,
     additional_stats: Optional[Dict[str, str]] = None,
 ) -> None:
     """
@@ -196,9 +200,9 @@ def run_profiling(
         os.makedirs(output_dir)
 
     scale_run_args = {
-        "years": 5,
-        "months": 0,
-        "initial_population": 50000,
+        "years": simulation_years,
+        "months": simulation_months,
+        "initial_population": initial_population,
         "log_filename": "scale_run_profiling",
         "log_level": "WARNING",
         "parse_log_file": False,
@@ -207,7 +211,7 @@ def run_profiling(
         "disable_health_system": False,
         "disable_spurious_symptoms": False,
         "capabilities_coefficient": None,
-        "mode_appt_constraints": 2,
+        "mode_appt_constraints": mode_appt_constraints,
         "save_final_population": False,
         "record_hsi_event_details": False,
         "ignore_warnings": True,
@@ -327,6 +331,38 @@ if __name__ == "__main__":
         default=1e-1,
     )
     parser.add_argument(
+        "-y",
+        "--simulation-years",
+        type=int,
+        help="Number of years to simulate for (plus --simulation-months months)",
+        default=20,
+    )
+    parser.add_argument(
+        "-m",
+        "--simulation-months",
+        type=int,
+        help="Number of months to simulate for (plus --simulation-years years)",
+        default=0,
+    )
+    parser.add_argument(
+        "-p",
+        "--initial-population",
+        type=int,
+        help="Initial population size",
+        default=50000,
+    )
+    parser.add_argument(
+        "--mode-appt-constraints",
+        help=(
+            "Mode of constraints to use in HealthSystem (0: no constraints - all events"
+            " run with no squeeze factor, 1: elastic, all events run with squeeze "
+            "factor, 2: hard, only events with no squeeze factor run"
+        ),
+        choices=(0, 1, 2),
+        type=int,
+        default=2,
+    )
+    parser.add_argument(
         "--additional-stats",
         metavar="KEY=VALUE",
         nargs="*",
@@ -350,5 +386,9 @@ if __name__ == "__main__":
         write_html=args.write_html,
         write_pyisession=args.write_pyisession,
         interval=args.interval,
+        simulation_months=args.simulation_months,
+        simulation_years=args.simulation_years,
+        initial_population=args.initial_population,
+        mode_appt_constraints=args.mode_appt_constraints,
         additional_stats=command_line_stats,
     )
