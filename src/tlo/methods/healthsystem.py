@@ -183,7 +183,7 @@ class HSI_Event:
         self._received_info_about_bed_days = None
         self.expected_time_requests = {}
         self.facility_info = None
-        self.EQUIPMENT = set()
+        self.EQUIPMENT = None
 
     @property
     def bed_days_allocated_to_this_event(self):
