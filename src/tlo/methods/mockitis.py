@@ -397,6 +397,7 @@ class HSI_Mockitis_PresentsForCareWithSevereSymptoms(HSI_Event, IndividualScopeE
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'  # This enforces that the appointment must be run at that facility-level
         self.ALERT_OTHER_DISEASES = []
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(
@@ -439,6 +440,7 @@ class HSI_Mockitis_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key='debug',
@@ -506,6 +508,7 @@ class HSI_Mockitis_TreatmentMonitoring(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1, 'NewAdult': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = ['*']
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         # There is a follow-up appoint happening now but it has no real effect!

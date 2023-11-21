@@ -1625,6 +1625,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = set()
 
         self.condition = condition
 
@@ -1696,6 +1697,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
+        self.EQUIPMENT = set()
         self.events_to_investigate = events_to_investigate
 
     def do_for_each_event_to_be_investigated(self, _ev):

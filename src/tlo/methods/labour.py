@@ -3322,6 +3322,7 @@ class HSI_Labour_PostnatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 5})
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         logger.debug(key='message', data='HSI_Labour_PostnatalWardInpatientCare now running to capture '

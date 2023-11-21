@@ -250,6 +250,7 @@ class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
         self.ALERT_OTHER_DISEASES = []
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         """

@@ -163,6 +163,8 @@ def get_details_of_defined_hsi_events(
             }
             arguments = signature.bind(module=module, **dummy_kwargs)
             try:
+                print("hsi_event_class")
+                print(hsi_event_class)
                 hsi_event = hsi_event_class(*arguments.args, **arguments.kwargs)
             except NotImplementedError:
                 # If method called in HSI event constructor is not implemented assume

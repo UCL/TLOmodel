@@ -634,6 +634,7 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
         self.TREATMENT_ID = "OtherAdultCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = set()
 
         # equipment: investigations will differ by presenting symptom, but suggest we have biopsy and histology
         # and ultrasound
@@ -707,6 +708,7 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
+        self.EQUIPMENT = set()
 
         # equipment: a proportion of these cancers will require surgery - also radiotherapy in some cases when available
 
@@ -769,6 +771,7 @@ class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMix
         self.TREATMENT_ID = "OtherAdultCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.EQUIPMENT = set()
 
         # equipment: some checks will involve further biopsy, ultrasound, histology
 
@@ -831,6 +834,7 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
+        self.EQUIPMENT = set()
 
         # equipment: in general not required I don't think
 

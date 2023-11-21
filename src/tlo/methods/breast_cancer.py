@@ -646,6 +646,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         self.TREATMENT_ID = "BreastCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "Mammography": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'  # Biopsy only available at level 3 and above.
+        self.EQUIPMENT = set()
 
         # TODO: Eva's dummy equipment example (not sure if it actually needs to be added and if it is in the RF)
         #  {'Slice Master sample processing Unit', 'Paraffin Dispense', 'Whatever used with biopsy'}
@@ -733,6 +734,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
+        self.EQUIPMENT = set()
 
         # ap_oct23 - I believe this will almost always be mastectomy surgery with chemotherapy, so I think for equipment
         # we just need the standard surgery equipment list. We may need to add radiotherapy when more available.
@@ -802,6 +804,7 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "BreastCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.EQUIPMENT = set()
 
         # ap_oct23 - Eva, I'm not aware of any equipment needed here.  Clinical guidelines do not specify what
         # checks or monitoring are indicated
@@ -861,6 +864,7 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
+        self.EQUIPMENT = set()
 
     # not sure there is any need for equipment here
 

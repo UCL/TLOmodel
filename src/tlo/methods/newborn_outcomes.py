@@ -1478,6 +1478,7 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
 

@@ -670,6 +670,7 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
         self.TREATMENT_ID = "ProstateCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = set()
 
         # biopsy equipment needed (perhaps ultrasound to guide).  histology lab equipment.
 
@@ -717,6 +718,7 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
         self.TREATMENT_ID = "ProstateCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = set()
 
     # biopsy equipment needed (perhaps ultrasound to guide).  histology lab equipment.
 
@@ -764,6 +766,7 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
         self.TREATMENT_ID = "ProstateCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = set()
 
         # biopsy equipment needed (perhaps ultrasound to guide).  histology lab equipment.
 
@@ -835,6 +838,7 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
+        self.EQUIPMENT = set()
 
         # equipment as required for surgery
 
@@ -896,6 +900,7 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
         self.TREATMENT_ID = "ProstateCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.EQUIPMENT = set()
 
         # possibly biopsy and histology
 
@@ -954,6 +959,7 @@ class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
+        self.EQUIPMENT = set()
 
         # generally not sure equipment is required as therapy is with drug, but can require castration surgery
 
