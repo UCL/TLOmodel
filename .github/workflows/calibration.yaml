@@ -3,11 +3,16 @@ name: Calibration
 on:
   push:
     branches: "mg/calibration-workflow"
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: 'Commit'
+        required: true
+        default: ""
+        type: string
 
 env:
-  WORKTREE_PATH:   /mnt/tlo/${{ github.sha }}
   REPO_PATH:       /mnt/tlo/TLOmodel
-  ENV:             /mnt/tlo/env-${{ github.sha }}
   OUTPUT_ROOT:     /mnt/tlo/output
   RUNS_NUMBER:     4
   PYTHON_VER:      3.8
@@ -26,20 +31,42 @@ jobs:
     strategy:
       fail-fast: false
     outputs:
+      environment_path: ${{ steps.vars.outputs.environment_path }}
+      worktree_path: ${{ steps.vars.outputs.worktree_path }}
       output_dir: ${{ steps.out-dir.outputs.output_dir }}
       tasks: ${{ steps.tasks.outputs.tasks }}
     steps:
-      - name: Clone remote TLO repository
+      - name: Generate environment variables
+        id: vars
         run: |
-          if [[ -d "${REPO_PATH}" ]]; then
-              git -C "${REPO_PATH}" fetch --depth 1 origin "${GITHUB_REF_NAME}"
+          if [[ ${{ github.event_name }} == 'workflow_dispatch' ]] && [[ -n "${{ inputs.commit }}" ]]; then
+              SHA=${{ inputs.commit }}
           else
-              git clone --depth 1 --branch "${GITHUB_REF_NAME}" "https://github.com/${{ github.repository }}.git" "${REPO_PATH}"
+              SHA=${{ github.sha }}
           fi
+          ENV="/mnt/tlo/env-${SHA}"
+          WORKTREE_PATH="/mnt/tlo/${SHA}"
+          echo "SHA=${SHA}"
+          echo "SHA=${SHA}" >> "${GITHUB_ENV}"
+          echo "ENV=${ENV}"
+          echo "ENV=${ENV}" >> "${GITHUB_ENV}"
+          echo "environment_path=${ENV}" >> "${GITHUB_OUTPUT}"
+          echo "WORKTREE_PATH=${WORKTREE_PATH}"
+          echo "WORKTREE_PATH=${WORKTREE_PATH}" >> "${GITHUB_ENV}"
+          echo "worktree_path=${WORKTREE_PATH}" >> "${GITHUB_OUTPUT}"
+
+      - name: Clone remote TLO repository and fetch desired commit
+        run: |
+          # If the repository doesn't exist on disk, clone it.
+          if [[ ! -d "${REPO_PATH}" ]]; then
+              git clone --depth=1 --branch="${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "${REPO_PATH}"
+          fi
+          # In any case, fetch the requested commit.
+          git -C "${REPO_PATH}" fetch --depth=1 origin "${SHA}"
 
       - name: Create worktree
         run: |
-          git -C "${REPO_PATH}" worktree add "${WORKTREE_PATH}" ${{ github.sha }}
+          git -C "${REPO_PATH}" worktree add "${WORKTREE_PATH}" ${SHA}
 
       - name: Create virtual environment
         run: |
@@ -52,7 +79,7 @@ jobs:
       - name: Generate output directory
         id: out-dir
         run: |
-          commit_dir=$(git show -s --date=format:'%Y-%m-%d_%H%M%S' --format=%cd_%h "${{ github.sha }}")
+          commit_dir=$(git show -s --date=format:'%Y-%m-%d_%H%M%S' --format=%cd_%h "${SHA}")
           output_dir="${OUTPUT_ROOT}/${commit_dir}"
           echo "output_dir=${output_dir}"
           echo "output_dir=${output_dir}" >> "${GITHUB_OUTPUT}"
@@ -82,15 +109,13 @@ jobs:
     steps:
       - name: Run the task
         run: |
-          source "${ENV}/bin/activate"
+          source "${{ needs.setup.outputs.environment_path }}/bin/activate"
           draw=0
-          task_output_dir="${output_dir}/${RUN_NAME}/${draw}/${{ matrix.index }}"
+          task_output_dir="${{ needs.setup.outputs.output_dir }}/${RUN_NAME}/${draw}/${{ matrix.index }}"
           mkdir -p "${task_output_dir}"
 
-          tlo scenario-run --output-dir "${task_output_dir}" --draw "${draw}" ${{ matrix.index }} "${WORKTREE_PATH}/src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py"
-        working-directory: "${{ env.WORKTREE_PATH }}"
-        env:
-          output_dir: "${{ needs.setup.outputs.output_dir }}"
+          tlo scenario-run --output-dir "${task_output_dir}" --draw "${draw}" ${{ matrix.index }} "${{ needs.setup.outputs.worktree_path }}/src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py"
+        working-directory: "${{ needs.setup.outputs.worktree_path }}"
 
   # Do the postprocessing
   postprocess:
@@ -102,14 +127,12 @@ jobs:
     steps:
       - name: Run post-processing
         run: |
-          source "${ENV}/bin/activate"
-          task_output_dir="${output_dir}/${PROCESS_NAME}"
+          source "${{ needs.setup.outputs.environment_path }}/bin/activate"
+          task_output_dir="${{ needs.setup.outputs.output_dir }}/${PROCESS_NAME}"
           mkdir -p "${task_output_dir}"
 
-          python3 "${WORKTREE_PATH}/src/scripts/calibration_analyses/analysis_scripts/process.py" "${task_output_dir}" "${RUN_NAME}" "${WORKTREE_PATH}/resources"
-        working-directory: "${{ env.WORKTREE_PATH }}"
-        env:
-          output_dir: "${{ needs.setup.outputs.output_dir }}"
+          python3 "${{ needs.setup.outputs.worktree_path }}/src/scripts/calibration_analyses/analysis_scripts/process.py" "${task_output_dir}" "${RUN_NAME}" "${{ needs.setup.outputs.worktree_path }}/resources"
+        working-directory: "${{ needs.setup.outputs.worktree_path }}"
 
   # Cleanup stage, to remove temporary directories and such
   cleanup:
@@ -126,8 +149,8 @@ jobs:
     steps:
       - name: Cleanup worktree
         run: |
-          git -C "${REPO_PATH}" worktree remove -f "${WORKTREE_PATH}" || true
+          git -C "${REPO_PATH}" worktree remove -f "${{ needs.setup.outputs.worktree_path }}" || true
 
       - name: Cleanup virtual environment
         run: |
-          rm -rvf "${ENV}"
+          rm -rvf "${{ needs.setup.outputs.environment_path }}"
