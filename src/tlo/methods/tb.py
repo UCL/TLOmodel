@@ -1492,7 +1492,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 3:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.61})
            #self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.5
-           self.sim.module["Tb"].parameters["rate_testing_general_pop"] = 0.030
+           self.sim.modules["Tb"].parameters["rate_testing_general_pop"] = 0.030
 
 
         # increase CXR by 20%
