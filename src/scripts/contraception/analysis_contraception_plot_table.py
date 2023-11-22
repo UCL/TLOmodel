@@ -329,3 +329,8 @@ time_end = time.time()
 print("\n")
 print("running time (s):")
 print(time_end - time_start)
+
+if __name__ == "__main__":
+    print()
+    # TODO: add the fnc to be called instead (everything happening here should be within that fnc so it can't called
+    #  from somewhere and overwrite the result files
