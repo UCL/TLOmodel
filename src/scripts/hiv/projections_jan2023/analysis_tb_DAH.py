@@ -29,8 +29,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 # Tb_DAH_scenarios_test_run09_partial-2023-10-01T133822Z -looks to work fine
 #Tb_DAH_scenarios_test_run13_partial-2023-10-02T144642Z xcept for CXR scaleup and outreach
 # Tb_DAH_impactx18-2023-11-19T195232Z- works but the number of additional scenarios gives way less number of patients on treatment
-
-results_folder = get_scenario_outputs("Tb_DAH_impactx24-2023-11-20T222148Z", outputspath)[-1]
+# Tb_DAH_impactx25-2023-11-20T231845Z
+results_folder = get_scenario_outputs("Tb_DAH_impactx25-2023-11-20T231845Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -300,7 +300,7 @@ tb_hiv_prop = summarize(
 ).pipe(set_param_names_as_column_index_level_0)
 tb_hiv_prop.index = tb_hiv_prop.index.year
 tb_hiv_prop_with_year = pd.DataFrame(tb_hiv_prop)
-tb_hiv_prop.to_excel(outputspath / "PLHIV_tb_baseline.xlsx")
+tb_hiv_prop.to_excel(outputspath / "PLHIV_tb.xlsx")
 
 #MDR TB cases
 mdr_tb_cases = summarize(
@@ -334,7 +334,7 @@ tb_treatment = summarize(
 
 #tb_treatment.index = tb_treatment.index.year,
 tb_treatment_cov = pd.DataFrame(tb_treatment)
-tb_treatment_cov.to_excel(outputspath / "tb_treatment_coverage_baseline.xlsx")
+tb_treatment_cov.to_excel(outputspath / "tb_treatment_coverage.xlsx")
 
 ## extracts number of people screened for TB by scenario
 TARGET_PERIOD = (Date(2010, 1, 1), Date(2013, 12, 31))
@@ -386,7 +386,7 @@ pyears_summary = pyears_summary.reset_index(drop=True)
 print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
 mdr = log["tlo.methods.tb"]["tb_mdr"]
 mdr = mdr.set_index("date")
-mdr.to_excel(outputspath / "mdr_sample.xlsx")
+mdr.to_excel(outputspath / "mdr_numbers.xlsx")
 
 #Active Tb prevalence
 Tb_prevalence= summarize(
@@ -401,7 +401,7 @@ Tb_prevalence= summarize(
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
 Tb_prevalence.index = Tb_prevalence.index.year
-Tb_prevalence.to_excel(outputspath / "Tb_prevalence_sample.xlsx")
+Tb_prevalence.to_excel(outputspath / "Tb_prevalence.xlsx")
 
 #Active Tb prevalence in adults
 adult_Tb_prevalence= summarize(
@@ -416,7 +416,7 @@ adult_Tb_prevalence= summarize(
     collapse_columns=True,
 ).pipe(set_param_names_as_column_index_level_0)
 adult_Tb_prevalence.index = adult_Tb_prevalence.index.year
-adult_Tb_prevalence.to_excel(outputspath / "adult_Tb_prevalence_sample.xlsx")
+adult_Tb_prevalence.to_excel(outputspath / "adult_Tb_prevalence.xlsx")
 
 #Active Tb prevalence in children
 child_Tb_prevalence= summarize(
@@ -432,7 +432,7 @@ child_Tb_prevalence= summarize(
 ).pipe(set_param_names_as_column_index_level_0)
 
 child_Tb_prevalence.index = child_Tb_prevalence.index.year
-child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence_sample.xlsx")
+child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence.xlsx")
 
 #properties of deceased
 properties_of_deceased_persons = log["tlo.methods.demography.detail"]["properties_of_deceased_persons"]
@@ -487,7 +487,6 @@ CXR_scaleup10 = dalys_summary.loc[:, ('CXR_scale_up10', 'mean')].sum()
 CXR_scaleup20 = dalys_summary.loc[:, ('CXR scale_up20', 'mean')].sum()
 CXR_scaleup30 = dalys_summary.loc[:, ('CXR scale_up30', 'mean')].sum()
 CXR_outreach = dalys_summary.loc[:, ('Outreach services', 'mean')].sum()
-
 
 # Calculate the corresponding lower and upper bounds
 baseline_lower = dalys_summary.loc[:, ('Baseline', 'lower')].sum()
@@ -566,7 +565,6 @@ CXR_scaleup30_upper = tb_mortality.loc[:, ('CXR scale_up30', 'upper')].sum()
 
 CXR_outreach_lower = tb_mortality.loc[:, ('Outreach services', 'lower')].sum()
 CXR_outreach_upper = tb_mortality.loc[:, ('Outreach services', 'upper')].sum()
-
 
 # Plotting bar graph
 x = np.arange(7)
