@@ -47,7 +47,6 @@ scenario_info = get_scenario_info(results_folder)
 params = extract_params(results_folder)
 
 # %% --------------------------------------------------------------
-from tlo.util import create_age_range_lookup
 
 
 def map_age_to_age_group(dataframe):
@@ -104,11 +103,9 @@ TARGET_PERIOD = (Date(2017, 1, 1), Date(2020, 1, 1))
 years = range(2010, 2020, 1)  # todo replace with simulation end date
 # remember range finishes before the end point
 
-# todo this will return the person-years for males in one run
-# todo find a nice way to do this across draws/runs
-# todo consider what the best output format would be
 # this is what it needs to read in
 # _df = log['tlo.methods.demography']['person_years']
+
 
 def get_multiplier(_draw, _run):
     """Helper function to get the multiplier from the simulation."""
@@ -116,35 +113,77 @@ def get_multiplier(_draw, _run):
                                    )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
 
 
-def get_person_years(_df):
+def extract_person_years(_draw, _run):
+    """Helper function to get the multiplier from the simulation, if do_scaling=True.
+    Note that if the scaling factor cannot be found a `KeyError` is thrown."""
+
+    return load_pickled_dataframes(results_folder, _draw, _run,
+                                   'tlo.methods.demography')['tlo.methods.demography']['person_years']
+
+
+# todo need to enter results_folder
+# todo then extract relevant module/key/columns
+def group_person_years(_df):
     """ extract person-years for each draw/run
     calculate for men and women separately
     return a dataframe with index=age-groups and columns=person-years
     """
+
+    # get number of draws and numbers of runs
+    info = get_scenario_info(results_folder)
+
+    # Create an empty DataFrame to store all outputs
     output = pd.DataFrame()
-    for sex in ['M', 'F']:
 
-        py = _df[sex] # extract values for males
-        # using series of py for M per year:
-        # create dataframe one row per year and one column per age_year
-        new_df = pd.DataFrame(py.tolist())
-        new_df.index = _df.date
-        new_df = new_df.loc[TARGET_PERIOD[0]:TARGET_PERIOD[1]]
+    for draw in range(info['number_of_draws']):
+        for run in range(info['runs_per_draw']):
 
-        # sum values for each age (single years)
-        py_by_single_age_years = new_df.sum(numeric_only=True, axis=0)
-        py_by_single_age_years = py_by_single_age_years.reset_index()
-        py_by_single_age_years = py_by_single_age_years.rename(columns={'index': 'age', 0: 'person_years'})
+            _df = extract_person_years(_draw=draw, _run=run)
 
-        # convert single age years to float for mapping
-        py_by_single_age_years['age'] = py_by_single_age_years['age'].astype(float)
-        # map single age bands to age-groups
-        py_with_age_groups = map_age_to_age_group(py_by_single_age_years)
+            draw_run = (draw, run)
 
-        summary = py_with_age_groups.groupby(["age_group"])["person_years"].sum()
+            # create empty dataframe to store outputs from each run
+            tmp = pd.DataFrame()
 
-        output = pd.concat([output, summary], axis=1)
-        output.columns = ['Male_py', 'Female_py']
+            for sex in ['M', 'F']:
+
+                py = _df[sex]  # extract values for each sex
+                # create dataframe one row per year and one column per age_year
+                new_df = pd.DataFrame(py.tolist())
+                new_df.index = _df.date
+                new_df = new_df.loc[TARGET_PERIOD[0]:TARGET_PERIOD[1]]
+
+                # sum values for each age (single years)
+                py_by_single_age_years = new_df.sum(numeric_only=True, axis=0).reset_index()
+                # py_by_single_age_years = py_by_single_age_years.reset_index()
+                py_by_single_age_years = py_by_single_age_years.rename(columns={'index': 'age', 0: 'person_years'})
+
+                # convert single age years to float for mapping
+                py_by_single_age_years['age'] = py_by_single_age_years['age'].astype(float)
+                # map single age bands to age-groups
+                py_with_age_groups = map_age_to_age_group(py_by_single_age_years)
+
+                summary = py_with_age_groups.groupby(["age_group"])["person_years"].sum()
+                tmp = pd.concat([tmp, summary], axis=0)
+
+            # then join each draw/run in a new column
+            output = pd.concat([output, tmp[0]], axis=1)
+
+    # Create a MultiIndex for rows using age group and 'Male' and 'Female'
+    multi_index_rows_male = pd.MultiIndex.from_product([summary.index, ['M']], names=['AgeGroup', 'Sex'])
+    multi_index_rows_female = pd.MultiIndex.from_product([summary.index, ['F']], names=['AgeGroup', 'Sex'])
+    output.index = multi_index_rows_male.append(multi_index_rows_female)
+
+    # create multi index for columns, level 0=draw, level 1=run
+    # Specify the levels for the multi-index columns in the new DataFrame
+    level_0 = ['X', 'Y']
+    level_1 = ['M', 'N']
+
+    # Create an empty DataFrame with the specified multi-index columns
+    multi_index_columns = pd.MultiIndex.from_product([range(info['number_of_draws']),
+                                                      range(info['runs_per_draw'])],
+                                                     names=['Draw', 'Run'])
+    output.columns = multi_index_columns
 
     return output
 
