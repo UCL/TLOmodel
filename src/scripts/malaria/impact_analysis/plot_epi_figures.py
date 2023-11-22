@@ -32,7 +32,8 @@ from tlo.analysis.utils import (
 outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("effect_of_treatment_packages_combined.py", outputspath)[-1]
+# results_folder = get_scenario_outputs("effect_of_treatment_packages_combined.py", outputspath)[-1]
+results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -369,7 +370,7 @@ font = {'family': 'sans-serif',
         'size': 11,
         }
 
-colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
+colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
 
 # Set x-axis tick positions and labels at every second data point
 xvals_for_ticks = xvals[0::4]
@@ -388,10 +389,10 @@ for i, scenario in enumerate(smoothed_hiv_inc.filter(like='median')):
     ax1.plot(xvals, smoothed_hiv_inc.filter(like='median')[scenario], label=scenario,
              color=colors[i], zorder=2)
 
-# for i, scenario in enumerate(smoothed_hiv_inc.filter(like='lower')):
-#     ax1.fill_between(xvals, np.array(smoothed_hiv_inc.loc[:, [(i, 'lower')]]).flatten(),
-#                  np.array(smoothed_hiv_inc.loc[:, [(i, 'upper')]]).flatten(), color=colors[i],
-#                  alpha=0.2, zorder=2)
+for i, scenario in enumerate(smoothed_hiv_inc.filter(like='lower')):
+    ax1.fill_between(xvals, np.array(smoothed_hiv_inc.loc[:, [(i, 'lower')]]).flatten(),
+                 np.array(smoothed_hiv_inc.loc[:, [(i, 'upper')]]).flatten(), color=colors[i],
+                 alpha=0.2, zorder=2)
 
 ax1.grid(True, linestyle='-', color=gridcol, zorder=1)
 ax1.set(title='HIV',
@@ -405,10 +406,10 @@ for i, scenario in enumerate(smoothed_tb_inc.filter(like='median')):
     ax2.plot(xvals, smoothed_tb_inc.filter(like='median')[scenario], label=scenario,
              color=colors[i], zorder=2)
 
-# for i, scenario in enumerate(smoothed_tb_inc.filter(like='lower')):
-#     ax2.fill_between(xvals, np.array(smoothed_tb_inc.loc[:, [(i, 'lower')]]).flatten(),
-#                  np.array(smoothed_tb_inc.loc[:, [(i, 'upper')]]).flatten(), color=colors[i],
-#                  alpha=0.2, zorder=2)
+for i, scenario in enumerate(smoothed_tb_inc.filter(like='lower')):
+    ax2.fill_between(xvals, np.array(smoothed_tb_inc.loc[:, [(i, 'lower')]]).flatten(),
+                 np.array(smoothed_tb_inc.loc[:, [(i, 'upper')]]).flatten(), color=colors[i],
+                 alpha=0.2, zorder=2)
 
 ax2.grid(True, linestyle='-', color=gridcol, zorder=1)
 ax2.set(title='TB',
@@ -423,10 +424,10 @@ for i, scenario in enumerate(smoothed_mal_inc.filter(like='median')):
     ax3.plot(xvals, smoothed_mal_inc.filter(like='median')[scenario], label=scenario,
              color=colors[i], zorder=2)
 
-# for i, scenario in enumerate(smoothed_mal_inc.filter(like='lower')):
-#     ax3.fill_between(xvals, np.array(smoothed_mal_inc.loc[:, [(i, 'lower')]]).flatten(),
-#                  np.array(smoothed_mal_inc.loc[:, [(i, 'upper')]]).flatten(), color=colors[i],
-#                  alpha=0.2, zorder=2)
+for i, scenario in enumerate(smoothed_mal_inc.filter(like='lower')):
+    ax3.fill_between(xvals, np.array(smoothed_mal_inc.loc[:, [(i, 'lower')]]).flatten(),
+                 np.array(smoothed_mal_inc.loc[:, [(i, 'upper')]]).flatten(), color=colors[i],
+                 alpha=0.2, zorder=2)
 
 ax3.grid(True, linestyle='-', color=gridcol, zorder=1)
 ax3.set(title='Malaria',
@@ -443,10 +444,10 @@ for i, scenario in enumerate(smoothed_aids_deaths.filter(like='median')):
     ax5.plot(xvals, smoothed_aids_deaths.filter(like='median')[scenario], label=scenario,
              color=colors[i], zorder=2)
 
-# for i, scenario in enumerate(smoothed_aids_deaths.filter(like='lower')):
-#     ax5.fill_between(xvals, np.array(smoothed_aids_deaths.loc[:, [(i, 'lower')]]).flatten(),
-#                  np.array(smoothed_aids_deaths.loc[:, [(i, 'upper')]]).flatten(), color=colors[i],
-#                  alpha=0.2, zorder=2)
+for i, scenario in enumerate(smoothed_aids_deaths.filter(like='lower')):
+    ax5.fill_between(xvals, np.array(smoothed_aids_deaths.loc[:, [(i, 'lower')]]).flatten(),
+                 np.array(smoothed_aids_deaths.loc[:, [(i, 'upper')]]).flatten(), color=colors[i],
+                 alpha=0.2, zorder=2)
 
 ax5.grid(True, linestyle='-', color=gridcol, zorder=1)
 ax5.set(title='',
@@ -461,10 +462,10 @@ for i, scenario in enumerate(smoothed_tb_deaths.filter(like='median')):
     ax6.plot(xvals, smoothed_tb_deaths.filter(like='median')[scenario], label=scenario,
              color=colors[i], zorder=2)
 
-# for i, scenario in enumerate(smoothed_tb_deaths.filter(like='lower')):
-#     ax6.fill_between(xvals, np.array(smoothed_tb_deaths.loc[:, [(i, 'lower')]]).flatten(),
-#                  np.array(smoothed_tb_deaths.loc[:, [(i, 'upper')]]).flatten(), color=colors[i],
-#                  alpha=0.2, zorder=2)
+for i, scenario in enumerate(smoothed_tb_deaths.filter(like='lower')):
+    ax6.fill_between(xvals, np.array(smoothed_tb_deaths.loc[:, [(i, 'lower')]]).flatten(),
+                 np.array(smoothed_tb_deaths.loc[:, [(i, 'upper')]]).flatten(), color=colors[i],
+                 alpha=0.2, zorder=2)
 
 ax6.grid(True, linestyle='-', color=gridcol, zorder=1)
 ax6.set(title='',
@@ -479,10 +480,10 @@ for i, scenario in enumerate(smoothed_malaria_deaths.filter(like='median')):
     ax7.plot(xvals, smoothed_malaria_deaths.filter(like='median')[scenario], label=scenario,
              color=colors[i], zorder=2)
 
-# for i, scenario in enumerate(smoothed_malaria_deaths.filter(like='lower')):
-#     ax7.fill_between(xvals, np.array(smoothed_malaria_deaths.loc[:, [(i, 'lower')]]).flatten(),
-#                  np.array(smoothed_malaria_deaths.loc[:, [(i, 'upper')]]).flatten(), color=colors[i],
-#                  alpha=0.2, zorder=2)
+for i, scenario in enumerate(smoothed_malaria_deaths.filter(like='lower')):
+    ax7.fill_between(xvals, np.array(smoothed_malaria_deaths.loc[:, [(i, 'lower')]]).flatten(),
+                 np.array(smoothed_malaria_deaths.loc[:, [(i, 'upper')]]).flatten(), color=colors[i],
+                 alpha=0.2, zorder=2)
 
 ax7.grid(True, linestyle='-', color=gridcol, zorder=1)
 ax7.set(title='',
@@ -492,8 +493,7 @@ ax7.set_xticklabels(xlabels_for_ticks)
 ax7.set_ylim(0, 50000)
 ax7.tick_params(axis='x', rotation=70)
 ax7.legend(loc='upper right',
-           labels=['Status Quo', 'HIV services excl', 'TB service excluded', 'Malaria services excl', 'Full impact',
-                   'TX EXCL'],
+           labels=['Status Quo', 'HIV services excl', 'TB service excluded', 'Malaria services excl', 'Full impact'],
            bbox_to_anchor=(1.8, 1.0))
 
 # empty plot
