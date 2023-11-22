@@ -30,7 +30,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #Tb_DAH_scenarios_test_run13_partial-2023-10-02T144642Z xcept for CXR scaleup and outreach
 # Tb_DAH_impactx18-2023-11-19T195232Z- works but the number of additional scenarios gives way less number of patients on treatment
 # Tb_DAH_impactx25-2023-11-20T231845Z
-results_folder = get_scenario_outputs("Tb_DAH_impactx25-2023-11-20T231845Z", outputspath)[-1]
+results_folder = get_scenario_outputs("Tb_DAH_impactx26-2023-11-22T220350Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -48,6 +48,7 @@ def get_parameter_names_from_scenario_file() -> Tuple[str]:
     e = ImpactOfTbDaH()
     return tuple(e._scenarios.keys())
 
+TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 def set_param_names_as_column_index_level_0(_df):
     """Set the columns index (level 0) as the param_names."""
     ordered_param_names_no_prefix = {i: x for i, x in enumerate(param_names)}
@@ -197,6 +198,25 @@ print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
 #     if SES_dalys is None or SES_dalys.empty:
 #         print("No data found or an issue with data extraction.")
 #         return None  # or handle it according to your needs
+#
+# def get_total_num_dalys_by_agegrp_and_label(_df):
+#     """Return the total number of DALYS in the TARGET_PERIOD by age-group and cause label."""
+#     return _df \
+#         .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
+#         .assign(age_group=_df['age_range']) \
+#         .drop(columns=['date', 'year', 'sex', 'age_range']) \
+#         .melt(id_vars=['age_group'], var_name='label', value_name='dalys') \
+#         .groupby(by=['age_group', 'label'])['dalys'] \
+#         .sum()
+#
+#
+# total_num_dalys_by_agegrp_and_label = extract_results(
+#     results_folder,
+#     module="tlo.methods.healthburden",
+#     key='dalys_stacked_by_age_and_time',  # <-- for stacking by age and time
+#     custom_generate_series=get_total_num_dalys_by_agegrp_and_label,
+#     do_scaling=True
+# ).pipe(set_param_names_as_column_index_level_0)
 #
 #     SES_dalys = SES_dalys.sort_index()
 #     SES_dalys1 = summarize(SES_dalys[SES_dalys.index.get_level_values('cause').isin(["AIDS_TB", "TB", "AIDS_non_TB"])]).sort_index()
