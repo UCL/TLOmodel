@@ -157,3 +157,7 @@ def plot_costs(in_id, in_suffix, in_x_labels, in_cons_costs_without, in_cons_cos
     plt.savefig(outputpath / (str('Total ' + output_filename)), format='png')
 
     print("Fig: Consumables and Interventions Costs Over time saved.")
+
+
+if __name__ == "__main__":
+    print()

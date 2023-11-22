@@ -932,3 +932,7 @@ def analyse_contraception(in_id: str, in_log_file: str, in_suffix: str,
     return co_output_use_modern_tp_df, co_output_percentage_use_df, \
         cons_costs_by_time_and_method_df, co_interv_costs_sum_by_tp_df, \
         scaling_factor
+
+
+if __name__ == "__main__":
+    print()

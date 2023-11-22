@@ -329,3 +329,6 @@ time_end = time.time()
 print("\n")
 print("running time (s):")
 print(time_end - time_start)
+
+if __name__ == "__main__":
+    print()

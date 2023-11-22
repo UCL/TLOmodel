@@ -299,3 +299,7 @@ def table_cons(in_mwk_to_usd_exchange_rate,
     writer.save()
     # TODO: finish? (the boarders, header align left, make the expected units to be nmbs so they are aligned right,
     #  write down the unique contraception package just once)
+
+
+if __name__ == "__main__":
+    print()

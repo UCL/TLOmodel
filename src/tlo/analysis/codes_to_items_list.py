@@ -73,3 +73,6 @@ df[code_col_name] = df[code_col_name].astype('Int64')  # Convert to nullable int
 
 # Save CSV with equipment codes
 df.to_csv(Path(file_path) / str(csv_file_to_update_name + '_new.csv'), index=False)
+
+if __name__ == "__main__":
+    print()
