@@ -30,7 +30,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #Tb_DAH_scenarios_test_run13_partial-2023-10-02T144642Z xcept for CXR scaleup and outreach
 # Tb_DAH_impactx18-2023-11-19T195232Z- works but the number of additional scenarios gives way less number of patients on treatment
 # Tb_DAH_impactx25-2023-11-20T231845Z
-results_folder = get_scenario_outputs("Tb_DAH_impactx30-2023-11-23T163917Z", outputspath)[-1]
+results_folder = get_scenario_outputs("Tb_DAH_impactx31-2023-11-23T201349Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
