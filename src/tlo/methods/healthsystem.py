@@ -2608,7 +2608,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     squeeze_factor=0.0,
                     priority=-1,
                     did_run=True,
-                    equipment=set(),  # TODO: explore more, should it be non-emtpy in some cases?
+                    equipment=set(),  # TODO: explore more, should it be non-empty in some cases?
                 )
 
         # Restart the total footprint of all calls today, beginning with those due to existing in-patients.
