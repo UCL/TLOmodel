@@ -2681,7 +2681,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     squeeze_factor=0.0,
                     priority=-1,
                     did_run=True,
-                    equipment=set()  # TODO: explore more, should it be non-emtpy in some cases?
+                    equipment=set(),  # TODO: explore more, should it be non-empty in some cases?
                 )
 
         # Restart the total footprint of all calls today, beginning with those due to existing in-patients.
@@ -2736,7 +2736,6 @@ class HealthSystemSummaryCounter:
         self._appts = defaultdict(int)  # Running record of the Appointments of `HSI_Event`s that have run
         self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
         # <--Same as `self._appts` but also split by facility_level
-        self._equip_by_level = {_level: set() for _level in ('0', '1a', '1b', '2', '3', '4')}
 
         # Log HSI_Events that never ran to monitor shortcoming of Health System
         self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
@@ -2753,8 +2752,7 @@ class HealthSystemSummaryCounter:
                          hsi_event_name: str,
                          squeeze_factor: float,
                          appt_footprint: Counter,
-                         level: str,
-                         equipment: set
+                         level: str
                          ) -> None:
         """Add information about an `HSI_Event` to the running summaries."""
 
@@ -2770,9 +2768,6 @@ class HealthSystemSummaryCounter:
         for appt_type, number in appt_footprint:
             self._appts[appt_type] += number
             self._appts_by_level[level][appt_type] += number
-
-        # Update used equipment by level
-        self._equip_by_level[level].update(equipment)
 
     def record_never_ran_hsi_event(self,
                                    treatment_id: str,
@@ -2833,17 +2828,6 @@ class HealthSystemSummaryCounter:
             data={
                 "average_Frac_Time_Used_Overall": np.mean(self._frac_time_used_overall),
                 # <-- leaving space here for additional summary measures that may be needed in the future.
-            },
-        )
-
-        # Sort equipment within levels, and log them
-        for key in self._equip_by_level:
-            self._equip_by_level[key] = sorted(self._equip_by_level[key])
-        logger_summary.info(
-            key="Equipment",
-            description="Sets of used equipment for each facility level in this calendar year.",
-            data={
-                "Equipment_By_Level": self._equip_by_level,
             },
         )
 
