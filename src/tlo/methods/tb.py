@@ -1505,15 +1505,15 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 5:
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.81})
-            self.sim.modules["Tb"].parameters["rate_testing_general_pop"] = 0.048
-            self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.4
+            self.sim.modules["Tb"].parameters["rate_testing_general_pop"] = 0.045
+            self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.56
 
         # Introduce community Xray
         if scenario == 6:
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.1
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
             #self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.5
-            self.sim.modules["Tb"].parameters["rate_testing_general_pop"] = 0.050
+            self.sim.modules["Tb"].parameters["rate_testing_general_pop"] = 0.040
 #######################################################################
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
