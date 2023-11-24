@@ -394,7 +394,23 @@ def produce_life_expectancy_estimates(results_folder, median=True):
             output.columns = multi_index_columns
             output.index = ['M', 'F']
 
-    return (output)
+    if median == True:
+        return (output)
+
+    else:
+        summary = pd.DataFrame(
+            columns=pd.MultiIndex.from_product(
+                [
+                    output.columns.unique(level='draw'),
+                    ["median", "lower", "upper"]
+                ],
+                names=['draw', 'stat']),
+            index=output.index
+        )
+
+        summary.loc[:, (slice(None), "median")] = output.groupby(axis=1, by='draw').median().values
+        summary.loc[:, (slice(None), "lower")] = output.groupby(axis=1, by='draw').quantile(0.025).values
+        summary.loc[:, (slice(None), "upper")] = output.groupby(axis=1, by='draw').quantile(0.975).values
 
 
 test = produce_life_expectancy_estimates(results_folder, median=True)
