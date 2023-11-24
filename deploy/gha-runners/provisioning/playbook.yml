@@ -8,7 +8,7 @@
     runner_user: gha
     runner_user_homedir: "/home/{{ runner_user }}"
     runner_workdir: /mnt/tlo
-    python_version: "3.8"
+    python_version: "3.11"
     ## SSH hardening
     ssh_deny_users: "{{ runner_user }}"
     # In Azure VMs connection times out after every ~4.5 minutes, sending this

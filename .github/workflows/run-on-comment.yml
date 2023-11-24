@@ -70,7 +70,7 @@ jobs:
     steps:
     - name: Check permissions of commenting user
       id: has_permissions
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         script: |
           const response = await github.rest.repos.getCollaboratorPermissionLevel({
@@ -87,7 +87,7 @@ jobs:
         exit 1
 
     - name: React to comment
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         script: |
           github.rest.reactions.createForIssueComment({
@@ -99,7 +99,7 @@ jobs:
 
     - name: Get SHA of last commit on default branch if issue or pull-request branch
       id: sha
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         result-encoding: string
         script: |
@@ -133,7 +133,7 @@ jobs:
 
     - name: Create comment with test result and link to workflow run information
       if: always() && steps.has_permissions.outputs.result == 'true'
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         github-token: ${{ steps.get_comment_bot_token.outputs.token }}
         script: |
