@@ -26,7 +26,7 @@ jobs:
       runs-on: self-hosted
       keyword: multiple-seed-tests
       commands: |
-        tox -v -e py38,report -- pytest --seed 2671936806 3512589365 --cov --cov-report=term-missing -vv tests
+        tox -v -e py311,report -- pytest --seed 2671936806 3512589365 --cov --cov-report=term-missing -vv tests
       description: Run of tests over multiple seeds
       timeout-minutes: 8640
       application-organization: UCL

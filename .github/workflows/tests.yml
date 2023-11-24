@@ -67,7 +67,7 @@ jobs:
       - name: System info
         run: |
           set -x
-          python --version
+          python3 --version
           uname -a
           lsb_release -a
           virtualenv --version
@@ -75,4 +75,4 @@ jobs:
           tox --version
       - name: Test with tox
         run: |
-          tox -v -e py38,report -- pytest --cov --cov-report=term-missing -vv "${{ matrix.file }}"
+          tox -v -e py311,report -- pytest --cov --cov-report=term-missing -vv "${{ matrix.file }}"
