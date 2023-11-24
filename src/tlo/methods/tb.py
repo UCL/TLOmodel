@@ -1490,7 +1490,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         # Introduce community Xray
         #community referral for notified cases estimated at 15% based on the NTP strategy 2016-2020
         if scenario == 4:
-            #self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.15
+            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.15
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.85})
             #self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.45
