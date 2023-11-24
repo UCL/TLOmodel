@@ -53,7 +53,12 @@ vagrant provision
 
 ### Using an Azure virtual machine
 
-You do not need Vagrant, only install Ansible as explained in the above section on your own machine.
+You do not need Vagrant in this case, only install Ansible as explained in the above section on your own machine.
+To create the virtual machines using [Azure CLI](https://learn.microsoft.com/en-gb/cli/azure/) we typically use a command like
+
+```
+az vm create --resource-group <RESOURCE_GROUP> --name <NAME> --size Standard_F8s_v2 --location <REGION> --image Canonical:0001-com-ubuntu-server-jammy:22_04-lts-gen2:latest --admin-username azureuser --nic-delete-option Delete --data-disk-delete-option Delete --os-disk-delete-option Delete --ssh-key-values <PATH_TO_YOUR_PUBLIC_SSH_KEY>
+```
 
 ## Run
 
@@ -73,7 +78,7 @@ Then export the token before running Ansible playbook to install the runner:
 
 ```sh
 export PERSONAL_ACCESS_TOKEN=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
-ansible-playbook -i <hostname-or-ip-address>, -u azureuser provisioning/gha-runner.yml
+ansible-playbook -i <hostname-or-ip-address>, -u azureuser provisioning/playbook.yml
 ```
 
 The argument to `-i` can be either a comma-separated list of hosts where to run the playbook on (this list has to end with a command if you want to run the playbook on a single host, hosts can be specified by IP addresses or hosts names defined in your local SSH or network configurations) or the path to the Ansible inventory you need to access the virtual machine, either a local one or the remote Azure one.
@@ -89,9 +94,9 @@ Note that lists (such as `extra_runner_labels`) have to be set with the JSON for
 Here are some examples:
 
 ```sh
-ansible-playbook -i <hostname-or-ip-address>, -u azureuser provisioning/gha-runner.yml --extra-vars "n_runners=2" # Install 2 runners
-ansible-playbook -i <hostname-or-ip-address>, -u azureuser provisioning/gha-runner.yml --extra-vars '{"extra_runners_labels": ["dev"]}' # Install 1 runner with label "dev"
-ansible-playbook -i <hostname-or-ip-address>, -u azureuser provisioning/gha-runner.yml --extra-vars '{"n_runners": "8", "extra_runners_labels": ["ci"]}' # Install 8 runners with label "ci"
+ansible-playbook -i <hostname-or-ip-address>, -u azureuser provisioning/playbook.yml --extra-vars "n_runners=2" # Install 2 runners
+ansible-playbook -i <hostname-or-ip-address>, -u azureuser provisioning/playbook.yml --extra-vars '{"extra_runners_labels": ["sim"]}' # Install 1 runner with label "sim"
+ansible-playbook -i <hostname-or-ip-address>, -u azureuser provisioning/playbook.yml --extra-vars '{"n_runners": "8", "extra_runners_labels": ["test"]}' # Install 8 runners with label "test"
 ```
 
 Once GHA runners have been installed, check they are running:
@@ -106,6 +111,19 @@ systemctl list-units 'actions.runner.*'
 
 and check runners on GitHub in the [actions runner setting page](https://github.com/UCL/TLOmodel/settings/actions/runners).
 
+### Simulation runner machine
+
+For the machine running the simulations, run the playbook `provisioning/task-runner-playbook.yml`, which automatically runs the playbook `provisioning/playbook.yml` and some extra operations needed only on these machines (e.g. mounting external storage volumes).
+The playbook `task-runner-playbook.yml` does not require extra arguments, and it automatically forwards all arguments to `playbook.yaml`.
+Example:
+
+```sh
+ansible-playbook -i <hostname-or-ip-address>, -u azureuser provisioning/task-runner-playbook.yml --extra-vars '{"extra_runners_labels": ["sim", "tasks"], "n_runners":"15"}'
+```
+
+> [!NOTE]
+> On the simulation runner machine we usually want to install $n$ GitHub Actions runners, $n-1$ of which should have the `tasks` label, and the other one the `postprocess` label.
+> We do not have an easy way to create different sets of runners with different labels, for the time being the simplest option is to set up all runners with the `tasks` label, and manually change the label of one to `postprocess` in GitHub web UI.
 
 ## Notes
 
