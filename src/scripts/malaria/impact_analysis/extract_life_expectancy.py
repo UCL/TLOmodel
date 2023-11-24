@@ -91,10 +91,11 @@ def extract_person_years(_draw, _run):
     return load_pickled_dataframes(results_folder, _draw, _run,
                                    'tlo.methods.demography')['tlo.methods.demography']['person_years']
 
+
 def create_multi_index_columns():
     return pd.MultiIndex.from_product([range(info['number_of_draws']),
-                                                  range(info['runs_per_draw'])],
-                                                 names=['draw', 'run'])
+                                       range(info['runs_per_draw'])],
+                                      names=['draw', 'run'])
 
 
 # %% extract key population data for life expectancy calculations
@@ -120,6 +121,8 @@ def num_deaths_by_age_group(results_folder):
 
 
 df = log['tlo.methods.demography']['num_children']
+
+
 # todo numbers of children <5 are aggregated by sex
 
 # get population size in target period
@@ -134,7 +137,6 @@ def extract_pop_during_target_period(results_folder, key):
 
     for draw in range(info['number_of_draws']):
         for run in range(info['runs_per_draw']):
-
             df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
             output_from_eval: pd.Series = df.loc[pd.to_datetime(df.date).between(*TARGET_PERIOD)].stack()
             res.loc[:, (draw, run)] = output_from_eval[1:]
@@ -142,7 +144,6 @@ def extract_pop_during_target_period(results_folder, key):
             res.loc[:, (draw, run)] = res.loc[:, (draw, run)] * get_multiplier(_draw=draw, _run=run)
 
     return res
-
 
 
 def get_population_size_by_age(results_folder):
@@ -207,8 +208,6 @@ def get_population_size_by_age(results_folder):
     t3.index = multi_index_rows_male.append(multi_index_rows_female)
 
     return t3
-
-
 
 
 # todo logged: person-years lived by single year of age in the past year.
@@ -394,8 +393,8 @@ def produce_life_expectancy_estimates(results_folder, median=True):
             output.columns = multi_index_columns
             output.index = ['M', 'F']
 
-    if median == True:
-        return (output)
+    if median:
+        return output
 
     else:
         summary = pd.DataFrame(
@@ -412,6 +411,7 @@ def produce_life_expectancy_estimates(results_folder, median=True):
         summary.loc[:, (slice(None), "lower")] = output.groupby(axis=1, by='draw').quantile(0.025).values
         summary.loc[:, (slice(None), "upper")] = output.groupby(axis=1, by='draw').quantile(0.975).values
 
+        return summary
+
 
 test = produce_life_expectancy_estimates(results_folder, median=True)
-
