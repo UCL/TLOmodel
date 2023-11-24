@@ -14,7 +14,7 @@ on:
 env:
   REPO_PATH:       /mnt/tlo/TLOmodel
   OUTPUT_ROOT:     /mnt/tlodev2stg/tlo-dev-fs-2/task-runner/output
-  RUNS_NUMBER:     4
+  RUNS_NUMBER:     14
   PYTHON_VER:      3.11
   RUN_NAME:        021_long_run_all_diseases_run
   PROCESS_NAME:    022_long_run_all_diseases_process
