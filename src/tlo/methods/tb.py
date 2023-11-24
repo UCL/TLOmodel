@@ -1492,6 +1492,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.30
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.85})
+            self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.45
 
 #######################################################################
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
