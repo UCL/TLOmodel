@@ -91,6 +91,7 @@ class ImpactOfTbDaH(BaseScenario):
                     'scenario': 0,
                     'probability_community_chest_xray': 0.0,
                     #'scaling_factor_WHO': 1.5
+                    #'rate_testing_general_pop':
 
                 },
             },
@@ -100,6 +101,7 @@ class ImpactOfTbDaH(BaseScenario):
                     'scenario': 1,
                     'probability_community_chest_xray': 0.0,
                     #'scaling_factor_WHO': 1.99
+                    'rate_testing_general_pop': 0.020
                 },
             },
             # overrides availability of CXR to nil
@@ -108,6 +110,7 @@ class ImpactOfTbDaH(BaseScenario):
                     'scenario': 2,
                     'probability_community_chest_xray': 0.0,
                    # 'scaling_factor_WHO': 1.75
+                    'rate_testing_general_pop': 0.020
                 },
             },
             #increase CXR by 10 percentage points
@@ -116,6 +119,7 @@ class ImpactOfTbDaH(BaseScenario):
                      'scenario': 3,
                      'probability_community_chest_xray': 0.0,
                     # 'scaling_factor_WHO': 1.3,
+                     'rate_testing_general_pop': 0.0450
                  }
              },
             # increase CXR by 20 percentage points
@@ -124,6 +128,7 @@ class ImpactOfTbDaH(BaseScenario):
                     'scenario': 4,
                     'probability_community_chest_xray': 0.0,
                    # 'scaling_factor_WHO': 1.3,
+                    'rate_testing_general_pop': 0.05
                 }
             },
             # increase CXR by 30 percentage points
@@ -132,6 +137,7 @@ class ImpactOfTbDaH(BaseScenario):
                     'scenario': 5,
                     'probability_community_chest_xray': 0.0,
                   #  'scaling_factor_WHO': 1.2,
+                    'rate_testing_general_pop': 0.055
                 }
             },
             #introduce outreach services
@@ -140,6 +146,7 @@ class ImpactOfTbDaH(BaseScenario):
                     'scenario': 6,
                     'probability_community_chest_xray': 0.1,
                    # 'scaling_factor_WHO': 1.2
+                    'rate_testing_general_pop': 0.05
                 }
             },
         }
