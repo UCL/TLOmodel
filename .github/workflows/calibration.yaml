@@ -2,7 +2,7 @@ name: Calibration
 
 on:
   push:
-    branches: "mg/calibration-workflow"
+    branches: "master"
   workflow_dispatch:
     inputs:
       commit:
