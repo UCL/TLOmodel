@@ -1485,11 +1485,12 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         #increases probability of accessing chest xray by 75%
         if scenario == 3:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.75})
-
+           self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.85})
         # Introduce community Xray
         if scenario == 4:
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.10
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.85})
 
 #######################################################################
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
