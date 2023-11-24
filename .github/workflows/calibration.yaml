@@ -15,7 +15,7 @@ env:
   REPO_PATH:       /mnt/tlo/TLOmodel
   OUTPUT_ROOT:     /mnt/tlo/output
   RUNS_NUMBER:     4
-  PYTHON_VER:      3.8
+  PYTHON_VER:      3.11
   RUN_NAME:        021_long_run_all_diseases_run
   PROCESS_NAME:    022_long_run_all_diseases_process
 
