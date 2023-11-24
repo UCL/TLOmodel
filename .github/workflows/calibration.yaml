@@ -27,7 +27,7 @@ jobs:
   # `actions/checkout` workflow.
   setup:
     name: Setup
-    runs-on: [tlo-dev-vm-3]
+    runs-on: [tlo-dev-vm-1]
     strategy:
       fail-fast: false
     outputs:
@@ -100,7 +100,7 @@ jobs:
   tasks:
     needs: setup
     name: Run task ${{ matrix.index }}
-    runs-on: [tlo-dev-vm-3, tasks] # Use only runners dedicated to running the tasks.
+    runs-on: [tlo-dev-vm-1, tasks] # Use only runners dedicated to running the tasks.
     timeout-minutes: 5760 # = 4 * 24 * 60 minutes = 4 days
     strategy:
       fail-fast: false
@@ -121,7 +121,7 @@ jobs:
   postprocess:
     name: Post processing
     needs: [setup, tasks]
-    runs-on: [tlo-dev-vm-3, postprocess] # Use only the runners dedicated to postprocessing
+    runs-on: [tlo-dev-vm-1, postprocess] # Use only the runners dedicated to postprocessing
     strategy:
       fail-fast: false
     steps:
@@ -143,7 +143,7 @@ jobs:
     if: ${{ always() }}
     timeout-minutes: 10
     needs: [setup, tasks, postprocess]
-    runs-on: [tlo-dev-vm-3]
+    runs-on: [tlo-dev-vm-1]
     strategy:
       fail-fast: false
     steps:
