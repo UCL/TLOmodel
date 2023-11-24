@@ -389,11 +389,12 @@ def produce_life_expectancy_estimates(results_folder, median=True):
                 person_years_at_risk=person_years.loc[:, (draw, run)])
 
             output = pd.concat([output, le], axis=1)
-            multi_index_columns = create_multi_index_columns()
-            output.columns = multi_index_columns
-            output.index = ['M', 'F']
 
-    if median:
+    multi_index_columns = create_multi_index_columns()
+    output.columns = multi_index_columns
+    output.index = ['M', 'F']
+
+    if not median:
         return output
 
     else:
