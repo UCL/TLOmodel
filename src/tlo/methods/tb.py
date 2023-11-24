@@ -1486,6 +1486,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 3:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.75})
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.85})
+
         # Introduce community Xray
         if scenario == 4:
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.10

@@ -107,10 +107,16 @@ class ImpactOfTbDaH(BaseScenario):
                     'probability_community_chest_xray': 0.0,
                 },
             },
+            "CXR upscale": {
+                'Tb': {
+                    'scenario': 3,
+                    'probability_community_chest_xray': 0.0,
+                },
+            },
             #introduce outreach services
             "Outreach services": {
                 'Tb': {
-                    'scenario': 3,
+                    'scenario': 4,
                     'probability_community_chest_xray': 0.1,
                 }
             },
