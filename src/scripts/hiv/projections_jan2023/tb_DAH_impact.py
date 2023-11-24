@@ -91,8 +91,6 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 0,
                     'probability_community_chest_xray': 0.0,
-
-
                 },
             },
             # overrides availability of Xpert to nil
@@ -100,7 +98,6 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 1,
                     'probability_community_chest_xray': 0.0,
-
                 },
             },
             # overrides availability of CXR to nil
@@ -108,35 +105,12 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 2,
                     'probability_community_chest_xray': 0.0,
-
                 },
-            },
-            #increase CXR by 10 percentage points
-             "CXR_scale_up10": {
-                 'Tb': {
-                     'scenario': 3,
-                     'probability_community_chest_xray': 0.0,
-
-                 }
-             },
-            # increase CXR by 20 percentage points
-            "CXR scale_up20": {
-                'Tb': {
-                    'scenario': 4,
-                    'probability_community_chest_xray': 0.0,
-                }
-            },
-            # increase CXR by 30 percentage points
-            "CXR scale_up30": {
-                'Tb': {
-                    'scenario': 5,
-                    'probability_community_chest_xray': 0.0,
-                }
             },
             #introduce outreach services
             "Outreach services": {
                 'Tb': {
-                    'scenario': 6,
+                    'scenario': 3,
                     'probability_community_chest_xray': 0.1,
                 }
             },

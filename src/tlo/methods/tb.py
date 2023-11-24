@@ -1469,6 +1469,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         # baseline scenario--no change to parameters
         if scenario == 0:
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.85})
             return
 
         # sets availability of xpert to nil
@@ -1479,29 +1480,15 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         # sets availability of xray to nil
         if scenario == 2:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.0})
-
+           self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.85})
 
         #increases probability of accessing chest xray by 75%
         if scenario == 3:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.75})
 
-
-        # increase CXR by 1000%
-        if scenario == 4:
-            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 1.0})
-
-
-        # increase CXR by 30%
-        if scenario == 5:
-            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
-            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.20
-
-
         # Introduce community Xray
-        if scenario == 6:
-            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.60
+        if scenario == 4:
+            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.10
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
 
 #######################################################################
