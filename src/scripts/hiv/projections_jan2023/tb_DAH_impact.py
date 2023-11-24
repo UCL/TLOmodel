@@ -53,7 +53,7 @@ class ImpactOfTbDaH(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_impactx37',
+            'filename': 'Tb_DAH_impactx36',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -117,7 +117,7 @@ class ImpactOfTbDaH(BaseScenario):
             "Outreach services": {
                 'Tb': {
                     'scenario': 4,
-                    'probability_community_chest_xray': 0.1,
+                    'probability_community_chest_xray': 0.15,
                 }
             },
         }
