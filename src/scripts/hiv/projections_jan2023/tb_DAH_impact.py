@@ -119,7 +119,7 @@ class ImpactOfTbDaH(BaseScenario):
                      'scenario': 3,
                      'probability_community_chest_xray': 0.0,
                     # 'scaling_factor_WHO': 1.3,
-                     'rate_testing_general_pop': 0.0450
+                     'rate_testing_general_pop': 0.0350
                  }
              },
             # increase CXR by 20 percentage points
@@ -128,7 +128,7 @@ class ImpactOfTbDaH(BaseScenario):
                     'scenario': 4,
                     'probability_community_chest_xray': 0.0,
                    # 'scaling_factor_WHO': 1.3,
-                    'rate_testing_general_pop': 0.05
+                    'rate_testing_general_pop': 0.045
                 }
             },
             # increase CXR by 30 percentage points
@@ -137,7 +137,7 @@ class ImpactOfTbDaH(BaseScenario):
                     'scenario': 5,
                     'probability_community_chest_xray': 0.0,
                   #  'scaling_factor_WHO': 1.2,
-                    'rate_testing_general_pop': 0.055
+                    'rate_testing_general_pop': 0.05
                 }
             },
             #introduce outreach services
@@ -146,7 +146,7 @@ class ImpactOfTbDaH(BaseScenario):
                     'scenario': 6,
                     'probability_community_chest_xray': 0.1,
                    # 'scaling_factor_WHO': 1.2
-                    'rate_testing_general_pop': 0.05
+                    'rate_testing_general_pop': 0.045
                 }
             },
         }
