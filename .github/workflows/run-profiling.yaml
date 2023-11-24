@@ -51,7 +51,7 @@ jobs:
     needs: set-variables
     uses: ./.github/workflows/run-on-comment.yml
     with:
-      runs-on: self-hosted
+      runs-on: [self-hosted, test]
       keyword: profiling
       commands: |
         tox -vv -e profile -- --output_name ${{ needs.set-variables.outputs.profiling-filename }}
@@ -69,7 +69,7 @@ jobs:
     name: Scheduled / dispatch triggered profiling
     if: ${{ github.event_name != 'issue_comment' }}
     needs: set-variables
-    runs-on: self-hosted
+    runs-on: [self-hosted, test]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
