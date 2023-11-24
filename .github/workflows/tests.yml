@@ -67,7 +67,7 @@ jobs:
       - name: System info
         run: |
           set -x
-          python --version
+          python3 --version
           uname -a
           lsb_release -a
           virtualenv --version
