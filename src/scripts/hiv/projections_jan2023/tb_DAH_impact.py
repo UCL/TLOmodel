@@ -53,7 +53,7 @@ class ImpactOfTbDaH(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'Tb_DAH_impactx37',
+            'filename': 'Tb_DAH_impactx38',
             'directory': Path('./outputs/nic503@york.ac.uk'),
             'custom_levels': {
                 '*': logging.WARNING,
@@ -98,6 +98,8 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 1,
                     'probability_community_chest_xray': 0.0,
+                    'first_line_test': 'sputum',
+                    'second_line_test': 'sputum',
                 },
             },
             # overrides availability of CXR to nil
@@ -105,12 +107,16 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 2,
                     'probability_community_chest_xray': 0.0,
+                    'first_line_test': 'sputum',
+                    'second_line_test': 'xpert',
                 },
             },
             "CXR upscale": {
                 'Tb': {
                     'scenario': 3,
                     'probability_community_chest_xray': 0.0,
+                    'first_line_test': 'sputum',
+                    'second_line_test': 'xpert',
                 },
             },
             #introduce outreach services
@@ -118,6 +124,8 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 4,
                     'probability_community_chest_xray': 0.15,
+                    'first_line_test': 'sputum',
+                    'second_line_test': 'xpert',
                 }
             },
         }
