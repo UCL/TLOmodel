@@ -549,9 +549,7 @@ print(tb_mortality.columns)
 baseline = tb_mortality.loc[:, ('Baseline', 'mean')].sum()
 No_Xpert = tb_mortality.loc[:, ('No Xpert Available', 'mean')].sum()
 No_CXR = tb_mortality.loc[:, ('No CXR Available', 'mean')].sum()
-CXR_scaleup10 = tb_mortality.loc[:, ('CXR_scale_up10', 'mean')].sum()
-CXR_scaleup20 = tb_mortality.loc[:, ('CXR scale_up20', 'mean')].sum()
-CXR_scaleup30 = tb_mortality.loc[:, ('CXR scale_up30', 'mean')].sum()
+CXR_scaleup = tb_mortality.loc[:, ('CXR scaleup', 'mean')].sum()
 CXR_outreach = tb_mortality.loc[:, ('Outreach services', 'mean')].sum()
 
 # Calculate the corresponding lower and upper bounds
@@ -579,7 +577,7 @@ bar1 = ax.bar(x[0], baseline, width, label='Baseline', yerr=[[baseline - baselin
 bar2 = ax.bar(x[1], No_Xpert, width, label='No Xpert Available', yerr=[[No_Xpert - No_Xpert_lower], [No_Xpert_upper - No_Xpert]])
 bar3 = ax.bar(x[2], No_CXR, width, label='No CXR Available', yerr=[[No_CXR - No_CXR_lower], [No_CXR_upper - No_CXR]])
 bar4 = ax.bar(x[3], CXR_scaleup, width, label='CXR Scale_up', yerr=[[CXR_scaleup - CXR_scaleup_lower], [CXR_scaleup_upper - CXR_scaleup]])
-bar7 = ax.bar(x[4], CXR_outreach, width, label='CXR_outreach', yerr=[[CXR_outreach - CXR_outreach_lower], [CXR_outreach_upper - CXR_outreach]])
+bar5 = ax.bar(x[4], CXR_outreach, width, label='CXR_outreach', yerr=[[CXR_outreach - CXR_outreach_lower], [CXR_outreach_upper - CXR_outreach]])
 
 
 # Adding labels and title
