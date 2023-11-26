@@ -1469,7 +1469,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         # baseline scenario--no change to parameters
         if scenario == 0:
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
-           # self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
             return
 
         # sets availability of xpert to nil
@@ -1485,14 +1485,14 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         #increases probability of accessing chest xray by 75%
         if scenario == 3:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.9})
-           #self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
+           self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
 
         # Introduce community Xray
         #community referral for notified cases estimated at 15% based on the NTP strategy 2016-2020
         if scenario == 4:
             self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.15
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
-           # self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
             #self.sim.modules["Tb"].parameters["WHO scaling factor"] = 1.45
 
 #######################################################################
