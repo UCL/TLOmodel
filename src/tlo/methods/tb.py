@@ -1778,7 +1778,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "Tb_Test_Screening"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '1b'
     def apply(self, person_id, squeeze_factor):
         """Do the screening and referring to next tests"""
 
@@ -2042,9 +2042,9 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
                 test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                     dx_tests_to_run="tb_clinical", hsi_event=self
                 )
-                # add another clinic appointment# testing inclusion of ""Under5OPD": 1 to remove later
+                # add another clinic appointment# testing inclusion of ""Under5OPD": 1 to remove later  "DiagRadio": 1
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                    {"Under5OPD": 1, "DiagRadio": 1}
+                    {"Under5OPD": 1}
                 )
 
             # if smear-negative, assume still some uncertainty around dx, refer for another x-ray
