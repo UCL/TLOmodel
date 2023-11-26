@@ -6,9 +6,13 @@ Limitations to note:
 """
 
 from pathlib import Path
+from datetime import datetime
 
 import pandas as pd
 import random
+import json
+import numpy as np
+import csv
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
@@ -271,6 +275,10 @@ class CervicalCancer(Module):
             size=len(women_over_15_idx), p=p['init_prev_cin_hpv_cc_stage']
         )
 
+        assert sum(p['init_prev_cin_hpv_cc_stage']) < 1.01
+        assert sum(p['init_prev_cin_hpv_cc_stage']) > 0.99
+
+
         # -------------------- symptoms, diagnosis, treatment  -----------
         # For simplicity we assume all these are null at baseline - we don't think this will influence population
         # status in the present to any significant degree
@@ -308,7 +316,7 @@ class CervicalCancer(Module):
 
         lm['hpv'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            p['r_nvp_hpv'],
+            rate_hpv,
             Predictor('va_hpv')
             .when(1, p['rr_hpv_vaccinated'])
             .when(2, p['rr_hpv_vaccinated']),
@@ -316,8 +324,11 @@ class CervicalCancer(Module):
             .when('.between(0,15)', 0.0),
             Predictor('sex').when('M', 0.0),
             Predictor('ce_hpv_cc_status').when('none', 1.0).otherwise(0.0),
+            Predictor('hv_inf', conditions_are_mutually_exclusive=True)
+            .when(False, 0.0)
+            .when(True, 1.0),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', 1.0)
+            .when('not', p['rr_progress_cc_hiv'])
             .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
             .when('on_VL_suppressed', 1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
@@ -327,8 +338,11 @@ class CervicalCancer(Module):
             LinearModelType.MULTIPLICATIVE,
             p['r_cin1_hpv'],
             Predictor('ce_hpv_cc_status').when('hpv', 1.0).otherwise(0.0),
+            Predictor('hv_inf', conditions_are_mutually_exclusive=True)
+            .when(False, 0.0)
+            .when(True, 1.0),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', 1.0)
+            .when('not', p['rr_progress_cc_hiv'])
             .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
             .when('on_VL_suppressed', 1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
@@ -338,8 +352,11 @@ class CervicalCancer(Module):
             LinearModelType.MULTIPLICATIVE,
             p['r_cin2_cin1'],
             Predictor('ce_hpv_cc_status').when('cin1', 1.0).otherwise(0.0),
+            Predictor('hv_inf', conditions_are_mutually_exclusive=True)
+            .when(False, 0.0)
+            .when(True, 1.0),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', 1.0)
+            .when('not', p['rr_progress_cc_hiv'])
             .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
             .when('on_VL_suppressed', 1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
@@ -349,8 +366,11 @@ class CervicalCancer(Module):
             LinearModelType.MULTIPLICATIVE,
             p['r_cin3_cin2'],
             Predictor('ce_hpv_cc_status').when('cin2', 1.0).otherwise(0.0),
+            Predictor('hv_inf', conditions_are_mutually_exclusive=True)
+            .when(False, 0.0)
+            .when(True, 1.0),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', 1.0)
+            .when('not', p['rr_progress_cc_hiv'])
             .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
             .when('on_VL_suppressed', 1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
@@ -360,8 +380,11 @@ class CervicalCancer(Module):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage1_cin3'],
             Predictor('ce_hpv_cc_status').when('cin3', 1.0).otherwise(0.0),
+            Predictor('hv_inf', conditions_are_mutually_exclusive=True)
+            .when(False, 0.0)
+            .when(True, 1.0),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', 1.0)
+            .when('not', p['rr_progress_cc_hiv'])
             .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
             .when('on_VL_suppressed', 1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
@@ -371,8 +394,11 @@ class CervicalCancer(Module):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage2a_stage1'],
             Predictor('ce_hpv_cc_status').when('stage1', 1.0).otherwise(0.0),
+            Predictor('hv_inf', conditions_are_mutually_exclusive=True)
+            .when(False, 0.0)
+            .when(True, 1.0),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', 1.0)
+            .when('not', p['rr_progress_cc_hiv'])
             .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
             .when('on_VL_suppressed', 1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
@@ -382,8 +408,11 @@ class CervicalCancer(Module):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage2b_stage2a'],
             Predictor('ce_hpv_cc_status').when('stage2a', 1.0).otherwise(0.0),
+            Predictor('hv_inf', conditions_are_mutually_exclusive=True)
+            .when(False, 0.0)
+            .when(True, 1.0),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', 1.0)
+            .when('not', p['rr_progress_cc_hiv'])
             .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
             .when('on_VL_suppressed', 1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
@@ -393,8 +422,11 @@ class CervicalCancer(Module):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage3_stage2b'],
             Predictor('ce_hpv_cc_status').when('stage2b', 1.0).otherwise(0.0),
+            Predictor('hv_inf', conditions_are_mutually_exclusive=True)
+            .when(False, 0.0)
+            .when(True, 1.0),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', 1.0)
+            .when('not', p['rr_progress_cc_hiv'])
             .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
             .when('on_VL_suppressed', 1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
@@ -404,8 +436,11 @@ class CervicalCancer(Module):
             LinearModelType.MULTIPLICATIVE,
             p['r_stage4_stage3'],
             Predictor('ce_hpv_cc_status').when('stage3', 1.0).otherwise(0.0),
+            Predictor('hv_inf', conditions_are_mutually_exclusive=True)
+            .when(False, 0.0)
+            .when(True, 1.0),
             Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', 1.0)
+            .when('not', p['rr_progress_cc_hiv'])
             .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
             .when('on_VL_suppressed', 1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
@@ -634,7 +669,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 #       df.loc[age9_f_idx, 'va_hpv'] = 1
 
 
-
         # -------------------- DEATH FROM cervical CANCER ---------------------------------------
         # There is a risk of death for those in stage4 only. Death is assumed to go instantly.
         stage4_idx = df.index[df.is_alive & (df.ce_hpv_cc_status == "stage4")]
@@ -658,6 +692,7 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 #  sample for HPV testing using GeneXpert.  HSI_hpv_xpert.   If CIN1 – CIN3 is detected on visual inspection
 #  or HPV is detected this leads to HSI_colposcopy_with_cin_removal.    How do we want to implement this in code ?
 #  I assume similar to how we schedule vaccinations
+
 
 class HSI_CervicalCancer_Investigation_Following_vaginal_bleeding(HSI_Event, IndividualScopeEventMixin):
     """
@@ -983,6 +1018,59 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({
             f'total_{k}': v for k, v in df.loc[df.is_alive].ce_hpv_cc_status.value_counts().items()})
 
+        # Get the day of the year
+        day_of_year = self.sim.date.timetuple().tm_yday
+
+        # Calculate the decimal year
+        decimal_year = self.sim.date.year + (day_of_year - 1) / 365.25
+        rounded_decimal_year = round(decimal_year, 2)
+
+        out.update({"rounded_decimal_year": rounded_decimal_year})
+
+        # Specify the file path for the CSV file
+        out_csv = Path("./outputs/output_data.csv")
+
+        with open(out_csv, "a", newline="") as csv_file:
+            # Create a CSV writer
+            csv_writer = csv.DictWriter(csv_file, fieldnames=out.keys())
+
+            # If the file is empty, write the header
+            if csv_file.tell() == 0:
+                csv_writer.writeheader()
+
+            # Write the data to the CSV file
+            csv_writer.writerow(out)
+
+        print(out)
+
+#       selected_columns = ['ce_hpv_cc_status', 'age_years', 'sex', 'va_hpv']
+#       selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 9)]
+#       print(selected_rows[selected_columns])
+
+
+
+
+
+
+
+
+
+
+"""
+
+        filepath = Path("./outputs/output.txt")
+
+        with open(filepath, "a") as file:
+            # Move the file pointer to the end of the file to append data
+            file.seek(0, 2)
+            # Add a newline to separate entries in the file
+            file.write("\n")
+            json.dump(out, file, indent=2)
+
+        print(out)
+
+
+
         # Current counts, undiagnosed
         out.update({f'undiagnosed_{k}': v for k, v in df.loc[df.is_alive].loc[
             pd.isnull(df.ce_date_diagnosis), 'ce_hpv_cc_status'].value_counts().items()})
@@ -1006,7 +1094,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         date_lastlog = self.sim.date - pd.DateOffset(days=29)
 
         n_ge15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
-        n_hpv = (df.is_alive & df.ce_hpv_cc_status == 'hpv').sum()
+        n_hpv = (df.is_alive & (df.ce_hpv_cc_status == 'hpv')).sum()
         p_hpv = n_hpv / n_ge15_f
 
         n_newly_diagnosed_stage1 = \
@@ -1033,21 +1121,22 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_alive = (df.is_alive).sum()
 
         out.update({
-            'diagnosed_since_last_log': df.ce_date_diagnosis.between(date_lastlog, date_now).sum(),
-            'treated_since_last_log': df.ce_date_treatment.between(date_lastlog, date_now).sum(),
-            'palliative_since_last_log': df.ce_date_palliative_care.between(date_lastlog, date_now).sum(),
-            'death_cervical_cancer_since_last_log': df.ce_date_death.between(date_lastlog, date_now).sum(),
-            'n women age 15+': n_ge15_f,
-            'n_newly_diagnosed_stage1': n_newly_diagnosed_stage1,
-            'n_newly_diagnosed_stage2a': n_newly_diagnosed_stage2a,
-            'n_newly_diagnosed_stage2b': n_newly_diagnosed_stage2b,
-            'n_newly_diagnosed_stage3': n_newly_diagnosed_stage3,
-            'n_newly_diagnosed_stage4': n_newly_diagnosed_stage4,
-            'n_diagnosed_age_15_29': n_diagnosed_age_15_29,
-            'n_diagnosed_age_30_49':  n_diagnosed_age_30_49,
-            'n_diagnosed_age_50p': n_diagnosed_age_50p,
-            'n_diagnosed': n_diagnosed,
-            'n_alive': n_alive
+            'decimal_year': rounded_decimal_year,
+            'diagnosed_since_last_log': int(df.ce_date_diagnosis.between(date_lastlog, date_now).sum()),
+            'treated_since_last_log': int(df.ce_date_treatment.between(date_lastlog, date_now).sum()),
+            'palliative_since_last_log': int(df.ce_date_palliative_care.between(date_lastlog, date_now).sum()),
+            'death_cervical_cancer_since_last_log': int(df.ce_date_death.between(date_lastlog, date_now).sum()),
+            'n women age 15+': int(n_ge15_f),
+            'n_newly_diagnosed_stage1': int(n_newly_diagnosed_stage1),
+            'n_newly_diagnosed_stage2a': int(n_newly_diagnosed_stage2a),
+            'n_newly_diagnosed_stage2b': int(n_newly_diagnosed_stage2b),
+            'n_newly_diagnosed_stage3': int(n_newly_diagnosed_stage3),
+            'n_newly_diagnosed_stage4': int(n_newly_diagnosed_stage4),
+            'n_diagnosed_age_15_29': int(n_diagnosed_age_15_29),
+            'n_diagnosed_age_30_49':  int(n_diagnosed_age_30_49),
+            'n_diagnosed_age_50p': int(n_diagnosed_age_50p),
+            'n_diagnosed': int(n_diagnosed),
+            'n_alive': int(n_alive)
         })
 
 #       df = df.rename(columns={'ce_stage_at_which_treatment_given': 'treatment_stage'})
@@ -1055,17 +1144,32 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         n_deaths_past_year = df.ce_date_death.between(date_5_years_ago, date_now).sum()
 
-        print(self.sim.date)
-        selected_columns = ['ce_hpv_cc_status', 'age_years', 'sex', 'va_hpv']
-        selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 9)]
-        print(selected_rows[selected_columns])
+#       selected_columns = ['ce_hpv_cc_status', 'age_years', 'sex', 'va_hpv']
+#       selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 9)]
+#       print(selected_rows[selected_columns])
+#       print(n_alive)
 
-        print(n_alive)
-        print(n_deaths_past_year)
-        print(p_hpv)
-
-#       df = df.rename(columns={'treatment_stage': 'ce_stage_at_which_treatment_given'})
 
         logger.info(key='summary_stats',
                     description='summary statistics for cervical cancer',
                     data=out)
+
+        print(out)
+
+"""
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

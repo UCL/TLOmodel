@@ -14,6 +14,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import json
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import make_age_grp_types, parse_log_file
@@ -42,7 +43,7 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2020, 1, 1)
+end_date = Date(2015, 1, 1)
 popsize = 17000
 
 
@@ -66,7 +67,6 @@ def run_sim(service_availability):
                  hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False)
                  )
 
-
     # Establish the logger
     logfile = sim.configure_logging(filename="LogFile")
 
@@ -76,6 +76,57 @@ def run_sim(service_availability):
 
     return logfile
 
+
+run_sim(service_availability=['*'])
+
+output_csv_file = Path("./outputs/output_data.csv")
+
+out_df = pd.read_csv(output_csv_file)
+
+out_df = out_df[['total_hpv', 'rounded_decimal_year']].dropna()
+
+# Plot the data
+plt.figure(figsize=(10, 6))
+plt.plot(out_df['rounded_decimal_year'], out_df['total_hpv'], marker='o')
+plt.title('Total HPV by Year')
+plt.xlabel('Year')
+plt.ylabel('Total HPV')
+plt.grid(True)
+plt.show()
+
+
+
+
+
+"""
+
+# Use pandas to read the JSON lines file
+output_df = pd.read_json(output_txt_file, lines=True)
+
+# Preprocess data
+output_df['rounded_decimal_year'] = pd.to_datetime(output_df['rounded_decimal_year']).dt.year
+output_df['total_hpv'] = output_df['total_hpv'].fillna(0)  # Fill NaN values with 0
+
+print(output_df['rounded_decimal_year'], output_df['total_hpv'])
+
+"""
+
+"""
+
+# Group by calendar year and sum the 'total_hpv'
+grouped_data = output_df.groupby('rounded_decimal_year')['total_hpv'].sum()
+
+# Plot the data
+plt.figure(figsize=(10, 6))
+
+"""
+
+
+
+
+
+
+"""
 
 def get_summary_stats(logfile):
     output = parse_log_file(logfile)
@@ -145,7 +196,7 @@ results_with_healthsystem = get_summary_stats(logfile_with_healthsystem)
 
 # %% Produce Summary Graphs:
 
-"""
+
 
 # Examine Counts by Stage Over Time
 counts = results_no_healthsystem['total_counts_by_stage_over_time']
@@ -155,7 +206,7 @@ plt.xlabel('Time')
 plt.ylabel('Count')
 plt.show()
 
-"""
+
 
 # Examine numbers in each stage of the cascade:
 results_with_healthsystem['counts_by_cascade'].plot(y=['udx', 'dx', 'tr', 'pc'])
@@ -165,7 +216,6 @@ plt.xlabel('Time')
 plt.legend(['Undiagnosed', 'Diagnosed', 'Ever treated', 'On Palliative Care'])
 plt.show()
 
-"""
 
 results_no_healthsystem['counts_by_cascade'].plot(y=['udx', 'dx', 'tr', 'pc'])
 plt.title('With No Health System')
@@ -184,7 +234,6 @@ plt.legend()
 plt.title("With No Health System")
 plt.show()
 
-"""
 
 # Examine Deaths (summed over whole simulation)
 deaths = results_with_healthsystem['cervical_cancer_deaths']
@@ -204,7 +253,6 @@ plt.ylabel('Total Deaths During Simulation')
 # plt.gca().get_legend().remove()
 plt.show()
 
-"""
 
 # Compare Deaths - with and without the healthsystem functioning - sum over age and time
 deaths = {
