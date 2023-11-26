@@ -503,9 +503,7 @@ print(dalys_summary.columns)
 baseline = dalys_summary.loc[:, ('Baseline', 'mean')].sum()
 No_Xpert = dalys_summary.loc[:, ('No Xpert Available', 'mean')].sum()
 No_CXR = dalys_summary.loc[:, ('No CXR Available', 'mean')].sum()
-CXR_scaleup10 = dalys_summary.loc[:, ('CXR_scale_up10', 'mean')].sum()
-CXR_scaleup20 = dalys_summary.loc[:, ('CXR scale_up20', 'mean')].sum()
-CXR_scaleup30 = dalys_summary.loc[:, ('CXR scale_up30', 'mean')].sum()
+CXR_scaleup = dalys_summary.loc[:, ('CXR scaleup', 'mean')].sum()
 CXR_outreach = dalys_summary.loc[:, ('Outreach services', 'mean')].sum()
 
 # Calculate the corresponding lower and upper bounds
@@ -518,38 +516,30 @@ No_Xpert_upper = dalys_summary.loc[:, ('No Xpert Available', 'upper')].sum()
 No_CXR_lower = dalys_summary.loc[:, ('No CXR Available', 'lower')].sum()
 No_CXR_upper = dalys_summary.loc[:, ('No CXR Available', 'upper')].sum()
 
-CXR_scaleup10_lower = dalys_summary.loc[:, ('CXR_scale_up10', 'lower')].sum()
-CXR_scaleup10_upper = dalys_summary.loc[:, ('CXR_scale_up10', 'upper')].sum()
-
-CXR_scaleup20_lower = dalys_summary.loc[:, ('CXR scale_up20', 'lower')].sum()
-CXR_scaleup20_upper = dalys_summary.loc[:, ('CXR scale_up20', 'upper')].sum()
-
-CXR_scaleup30_lower = dalys_summary.loc[:, ('CXR scale_up30', 'lower')].sum()
-CXR_scaleup30_upper = dalys_summary.loc[:, ('CXR scale_up30', 'upper')].sum()
+CXR_scaleup_lower = dalys_summary.loc[:, ('CXR_scale_up', 'lower')].sum()
+CXR_scaleup_upper = dalys_summary.loc[:, ('CXR_scale_up', 'upper')].sum()
 
 CXR_outreach_lower = dalys_summary.loc[:, ('Outreach services', 'lower')].sum()
 CXR_outreach_upper = dalys_summary.loc[:, ('Outreach services', 'upper')].sum()
 
 
 # Plotting bar graph
-x = np.arange(7)
+x = np.arange(5)
 width = 0.35
 
 fig, ax = plt.subplots(figsize=(8, 6))
 bar1 = ax.bar(x[0], baseline, width, label='Baseline', yerr=[[baseline - baseline_lower], [baseline_upper - baseline]])
 bar2 = ax.bar(x[1], No_Xpert, width, label='No Xpert Available', yerr=[[No_Xpert - No_Xpert_lower], [No_Xpert_upper - No_Xpert]])
 bar3 = ax.bar(x[2], No_CXR, width, label='No CXR Available', yerr=[[No_CXR - No_CXR_lower], [No_CXR_upper - No_CXR]])
-bar4 = ax.bar(x[3], CXR_scaleup10, width, label='CXR Scale_up', yerr=[[CXR_scaleup10 - CXR_scaleup10_lower], [CXR_scaleup10_upper - CXR_scaleup10]])
-bar5 = ax.bar(x[4], CXR_scaleup20, width, label='CXR Scale_up20', yerr=[[CXR_scaleup20 - CXR_scaleup20_lower], [CXR_scaleup20_upper - CXR_scaleup20]])
-bar6 = ax.bar(x[5], CXR_scaleup30, width, label='Outreach services', yerr=[[CXR_scaleup30 - CXR_scaleup30_lower], [CXR_scaleup30_upper - CXR_scaleup30]])
-bar7 = ax.bar(x[6], CXR_outreach, width, label='Outreach_services', yerr=[[CXR_outreach -CXR_outreach_lower], [CXR_outreach_upper - CXR_outreach]])
+bar4 = ax.bar(x[3], CXR_scaleup, width, label='CXR Scale_up', yerr=[[CXR_scaleup - CXR_scaleup_lower], [CXR_scaleup_upper - CXR_scaleup]])
+bar5 = ax.bar(x[4], CXR_outreach, width, label='Outreach_services', yerr=[[CXR_outreach -CXR_outreach_lower], [CXR_outreach_upper - CXR_outreach]])
 
 # Adding labels and title
 ax.set_xlabel('Scenarios')
 ax.set_ylabel('Total DALYs')
 ax.set_title('Cumulative TB DALYs 2010-2033')
 ax.set_xticks(x)
-ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scaleup10', 'CXR Scale_up20', 'CXR Scale_up30','CXR_outreach'])
+ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scaleup', 'CXR_outreach'])
 ax.legend()
 
 # Displaying graph
@@ -574,30 +564,22 @@ No_Xpert_upper = tb_mortality.loc[:, ('No Xpert Available', 'upper')].sum()
 No_CXR_lower = tb_mortality.loc[:, ('No CXR Available', 'lower')].sum()
 No_CXR_upper = tb_mortality.loc[:, ('No CXR Available', 'upper')].sum()
 
-CXR_scaleup_lower = tb_mortality.loc[:, ('CXR_scale_up10', 'lower')].sum()
-CXR_scaleup_upper = tb_mortality.loc[:, ('CXR_scale_up10', 'upper')].sum()
-
-CXR_scaleup20_lower = tb_mortality.loc[:, ('CXR scale_up20', 'lower')].sum()
-CXR_scaleup20_upper = tb_mortality.loc[:, ('CXR scale_up20', 'upper')].sum()
-
-CXR_scaleup30_lower = tb_mortality.loc[:, ('CXR scale_up30', 'lower')].sum()
-CXR_scaleup30_upper = tb_mortality.loc[:, ('CXR scale_up30', 'upper')].sum()
+CXR_scaleup_lower = tb_mortality.loc[:, ('CXR scaleup', 'lower')].sum()
+CXR_scaleup_upper = tb_mortality.loc[:, ('CXR scaleup', 'upper')].sum()
 
 CXR_outreach_lower = tb_mortality.loc[:, ('Outreach services', 'lower')].sum()
 CXR_outreach_upper = tb_mortality.loc[:, ('Outreach services', 'upper')].sum()
 
 # Plotting bar graph
-x = np.arange(7)
+x = np.arange(5)
 width = 0.35
 
 fig, ax = plt.subplots(figsize=(8, 6))
 bar1 = ax.bar(x[0], baseline, width, label='Baseline', yerr=[[baseline - baseline_lower], [baseline_upper - baseline]])
 bar2 = ax.bar(x[1], No_Xpert, width, label='No Xpert Available', yerr=[[No_Xpert - No_Xpert_lower], [No_Xpert_upper - No_Xpert]])
 bar3 = ax.bar(x[2], No_CXR, width, label='No CXR Available', yerr=[[No_CXR - No_CXR_lower], [No_CXR_upper - No_CXR]])
-bar4 = ax.bar(x[3], CXR_scaleup10, width, label='CXR Scale_up10', yerr=[[CXR_scaleup10 - CXR_scaleup10_lower], [CXR_scaleup10_upper - CXR_scaleup10]])
-bar5 = ax.bar(x[4], CXR_scaleup20, width, label='CXR Scale_up20', yerr=[[CXR_scaleup20 - CXR_scaleup20_lower], [CXR_scaleup20_upper - CXR_scaleup20]])
-bar6 = ax.bar(x[5], CXR_scaleup30, width, label='Outreach services', yerr=[[CXR_scaleup30 - CXR_scaleup30_lower], [CXR_scaleup30_upper - CXR_scaleup30]])
-bar7 = ax.bar(x[6], CXR_outreach, width, label='CXR_outreach', yerr=[[CXR_outreach - CXR_outreach_lower], [CXR_outreach_upper - CXR_outreach]])
+bar4 = ax.bar(x[3], CXR_scaleup, width, label='CXR Scale_up', yerr=[[CXR_scaleup - CXR_scaleup_lower], [CXR_scaleup_upper - CXR_scaleup]])
+bar7 = ax.bar(x[4], CXR_outreach, width, label='CXR_outreach', yerr=[[CXR_outreach - CXR_outreach_lower], [CXR_outreach_upper - CXR_outreach]])
 
 
 # Adding labels and title
@@ -605,7 +587,7 @@ ax.set_xlabel('Scenario')
 ax.set_ylabel('TB Mortality')
 ax.set_title('Cumulative TB Mortality 2010-2033')
 ax.set_xticks(x)
-ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scaleup10', 'CXR Scale_up20', 'CXR Scale_up30','CXR_outreach'])
+ax.set_xticklabels(['Baseline', 'No Xpert', 'No CXR', 'CXR Scaleup','CXR_outreach'])
 ax.legend()
 
 # Displaying graph
