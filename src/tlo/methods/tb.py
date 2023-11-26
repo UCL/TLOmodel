@@ -1999,8 +1999,6 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({})
         else:
             return ACTUAL_APPT_FOOTPRINT
-
-
 class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
     """
     This is the x-ray HSI
@@ -2014,8 +2012,9 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(suppress_footprint, bool)
         self.suppress_footprint = suppress_footprint
 
+        # testing inclusion of ""Under5OPD": 1 to remove later
         self.TREATMENT_ID = "Tb_Test_Xray"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1,"Under5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
     def apply(self, person_id, squeeze_factor):
 
@@ -2045,7 +2044,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
                 test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                     dx_tests_to_run="tb_clinical", hsi_event=self
                 )
-                # add another clinic appointment
+                # add another clinic appointment# testing inclusion of ""Under5OPD": 1 to remove later
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
                     {"Under5OPD": 1, "DiagRadio": 1}
                 )
@@ -2093,7 +2092,8 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = "Tb_Test_Xray"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
+        # testing inclusion of ""Under5OPD": 1 to remove later
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1, "Under5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
     def apply(self, person_id, squeeze_factor):
 
