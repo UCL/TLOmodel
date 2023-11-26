@@ -42,7 +42,7 @@ warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))
 class ImpactOfTbDaH(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 2525
+        self.seed = 2024
        # self.seed = random.randint(0, 50000),
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2013, 12, 31)
