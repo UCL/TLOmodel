@@ -1466,9 +1466,11 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         logger.debug(
             key="message", data=f"ScenarioSetupEvent: scenario {scenario}"
         )
+
         # baseline scenario--no change to parameters
         if scenario == 0:
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
             return
 
         # sets availability of xpert to nil
@@ -1479,31 +1481,18 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         # sets availability of xray to nil
         if scenario == 2:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.0})
+           self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
 
-
-        #increases probability of accessing chest xray by 75%
+        #increases probability of accessing chest xray by 90%
         if scenario == 3:
-           self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.75})
-
-
-        # increase CXR by 1000%
-        if scenario == 4:
-            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 1.0})
-
-
-        # increase CXR by 30%
-        if scenario == 5:
-            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
-            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
-            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.20
-
+           self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.90})
+           self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
 
         # Introduce community Xray
-        if scenario == 6:
-            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.60
+        if scenario == 4:
+            #self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.15
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
-
+            self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
 #######################################################################
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
@@ -1787,7 +1776,6 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "Tb_Test_Screening"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        #changed facility level to 1a as the resource file doesnt have CXR at level 1-ref
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def apply(self, person_id, squeeze_factor):
@@ -1911,20 +1899,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
                     dx_tests_to_run="tb_sputum_test_smear_negative", hsi_event=self
                 )
-                # # change facility level based on test type
-                # if test_result is None:
-                #     if test == "xpert":
-                #         self.ACCEPTED_FACILITY_LEVEL = '2'
-                #     else:
-                #         self.ACCEPTED_FACILITY_LEVEL = '1a'
-                #     ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                #         {"Over5OPD": 1, "LabTBMicro": 1}
-                #     )
-
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
                 {"Over5OPD": 1, "LabTBMicro": 1}
             )
-
         # if still no result available, rely on clinical diagnosis
         if test_result is None:
             test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
@@ -2028,8 +2005,6 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-
-
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
@@ -2107,6 +2082,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = "Tb_Test_Xray"
+        # try to include "Under5OPD": 1, to appreciate behaviour in the outputs
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
     def apply(self, person_id, squeeze_factor):
@@ -2538,33 +2514,6 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
                         priority=0,
                     )
 
-        # If anyone is selected for screening
-        # if select_for_screening.sum():
-        #     screen_idx = eligible[select_for_screening]
-        #
-        #     # Send individuals for community x-ray screening
-        #     # for person_id in screen_idx:
-        #     #     self.sim.modules["HealthSystem"].schedule_hsi_event(
-        #     #         HSI_Tb_CommunityXray(person_id=person_id, module=self.module),
-        #     #         topen=now,
-        #     #         tclose=None,
-        #     #         priority=0,
-        #     #     )
-        #
-        #         # check if patient has: cough, fever, night sweat, weight loss
-        #         # if none of the above conditions are present, no further action
-        #         for person_id in screen_idx:
-        #             persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
-        #
-        #             if any(x in self.module.symptom_list for x in persons_symptoms):
-        #                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-        #                     HSI_Tb_CommunityXray(person_id=person_id, module=self.module),
-        #                     topen=now,
-        #                     tclose=None,
-        #                     priority=0,
-        #                 )
-
-
 class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
     """
     This is a Health System Interaction Event for community chest X-ray screening.
@@ -2624,7 +2573,6 @@ class HSI_Tb_CommunityXray(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({})
         else:
             return ACTUAL_APPT_FOOTPRINT
-
 
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
     """Helper event that is used to 'decide' if someone on IPT should continue or end

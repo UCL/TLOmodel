@@ -46,10 +46,10 @@ class ImpactOfTbDaH(BaseScenario):
        # self.seed = random.randint(0, 50000),
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2015, 12, 31)
-        self.pop_size = 10000
+        self.pop_size = 3000
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 1
+        self.runs_per_draw = 2
 
     def log_configuration(self):
         return {
@@ -91,8 +91,6 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 0,
                     'probability_community_chest_xray': 0.0,
-
-
                 },
             },
             # overrides availability of Xpert to nil
@@ -100,7 +98,6 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 1,
                     'probability_community_chest_xray': 0.0,
-
                 },
             },
             # overrides availability of CXR to nil
@@ -108,36 +105,20 @@ class ImpactOfTbDaH(BaseScenario):
                 'Tb': {
                     'scenario': 2,
                     'probability_community_chest_xray': 0.0,
-
                 },
             },
-            #increase CXR by 10 percentage points
-             "CXR_scale_up10": {
+            #increase CXR by 90 percentage points
+             "CXR scaleup": {
                  'Tb': {
                      'scenario': 3,
                      'probability_community_chest_xray': 0.0,
-
-                 }
+                 },
              },
-            # increase CXR by 20 percentage points
-            "CXR scale_up20": {
-                'Tb': {
-                    'scenario': 4,
-                    'probability_community_chest_xray': 0.0,
-                }
-            },
-            # increase CXR by 30 percentage points
-            "CXR scale_up30": {
-                'Tb': {
-                    'scenario': 5,
-                    'probability_community_chest_xray': 0.0,
-                }
-            },
             #introduce outreach services
             "Outreach services": {
                 'Tb': {
-                    'scenario': 6,
-                    'probability_community_chest_xray': 0.1,
+                    'scenario': 4,
+                    'probability_community_chest_xray': 0.15,
                 }
             },
         }
