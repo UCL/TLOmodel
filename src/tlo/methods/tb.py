@@ -1777,8 +1777,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = "Tb_Test_Screening"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1,"Under5OPD": 1})
-
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
     def apply(self, person_id, squeeze_factor):
         """Do the screening and referring to next tests"""
@@ -1832,7 +1831,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         # if xray not available, HSI_Tb_Xray_level1b will refer
         if person["age_years"] < 5:
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                {"Under5OPD": 1}
+                {"Under5OPD": 1,"DiagRadio": 1}
             )
 
             # this HSI will choose relevant sensitivity/specificity depending on person's smear status
