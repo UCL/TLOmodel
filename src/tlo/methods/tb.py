@@ -1777,9 +1777,9 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = "Tb_Test_Screening"
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = {'1a', '1b'}
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1,"Under5OPD": 1})
 
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
     def apply(self, person_id, squeeze_factor):
         """Do the screening and referring to next tests"""
 
@@ -2018,8 +2018,6 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-
-
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
@@ -2043,7 +2041,6 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
 
         # if consumables not available, either refer to level 2 or use clinical diagnosis
         if test_result is None:
-
             # if smear-positive, assume symptoms strongly predictive of TB
             if smear_status:
                 test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
