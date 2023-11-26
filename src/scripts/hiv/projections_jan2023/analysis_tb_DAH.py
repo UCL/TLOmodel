@@ -30,7 +30,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #Tb_DAH_scenarios_test_run13_partial-2023-10-02T144642Z xcept for CXR scaleup and outreach
 # Tb_DAH_impactx18-2023-11-19T195232Z- works but the number of additional scenarios gives way less number of patients on treatment
 # Tb_DAH_impactx25-2023-11-20T231845Z
-results_folder = get_scenario_outputs("Tb_DAH_impactx47-2023-11-26T185810Z", outputspath)[-1]
+results_folder = get_scenario_outputs("Tb_DAH_impactx47-2023-11-26T212234Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -516,8 +516,8 @@ No_Xpert_upper = dalys_summary.loc[:, ('No Xpert Available', 'upper')].sum()
 No_CXR_lower = dalys_summary.loc[:, ('No CXR Available', 'lower')].sum()
 No_CXR_upper = dalys_summary.loc[:, ('No CXR Available', 'upper')].sum()
 
-CXR_scaleup_lower = dalys_summary.loc[:, ('CXR_scale_up', 'lower')].sum()
-CXR_scaleup_upper = dalys_summary.loc[:, ('CXR_scale_up', 'upper')].sum()
+CXR_scaleup_lower = dalys_summary.loc[:, ('CXR scaleup', 'lower')].sum()
+CXR_scaleup_upper = dalys_summary.loc[:, ('CXR scaleup', 'upper')].sum()
 
 CXR_outreach_lower = dalys_summary.loc[:, ('Outreach services', 'lower')].sum()
 CXR_outreach_upper = dalys_summary.loc[:, ('Outreach services', 'upper')].sum()
@@ -640,6 +640,3 @@ print(consumables_list)
 # Removed commented and duplicate code
 #consumables_baseline = log['tlo.methods.healthsystem.summary']['Consumables'] & params[draw]==1
 #consumables_baseline = log['tlo.methods.healthsystem.summary']['Consumables']
-
-
-
