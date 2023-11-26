@@ -2121,7 +2121,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             )
             # add another clinic appointment
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                {"Under5OPD": 1, "DiagRadio": 1}
+                {"Under5OPD": 1}
             )
 
         # if test returns positive result, refer for appropriate treatment
