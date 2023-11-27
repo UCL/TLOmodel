@@ -1487,6 +1487,8 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 3:
            self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.90})
            self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
+           self.sim.modules['HealthSystem'].item_codes_for_consumables_required['chest_xray'] = {
+               ['HealthSystem'].get_item_code_from_item_name("X-ray"): 0.9}
 
         # Introduce community Xray
         if scenario == 4:
