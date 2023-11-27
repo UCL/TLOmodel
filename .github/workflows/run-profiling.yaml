@@ -60,7 +60,7 @@ jobs:
     needs: set-variables
     uses: ./.github/workflows/run-on-comment.yml
     with:
-      runs-on: "[self-hosted, test]"
+      runs-on: '["self-hosted", "test"]'
       keyword: profiling
       commands: |
         tox -vv -e profile -- \
