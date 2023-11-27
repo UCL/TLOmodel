@@ -274,6 +274,24 @@ num_deaths_by_cause_label = summarize(
 TARGET_PERIOD = (Date(2010, 1, 1), Date(2020, 1, 1))
 
 mean_deaths_by_cause = num_deaths_by_cause_label.xs('mean', level=1, axis=1)
+mean_deaths_by_cause_lower = num_deaths_by_cause_label.xs('lower', level=1, axis=1)
+mean_deaths_by_cause_upper = num_deaths_by_cause_label.xs('upper', level=1, axis=1)
+
+
+# Function to round to the nearest 1000
+def round_to_nearest_100(x):
+    return 100 * round(x / 100)
+
+
+rounded_deaths = round_to_nearest_100(mean_deaths_by_cause)
+rounded_deaths_lower = round_to_nearest_100(mean_deaths_by_cause_lower)
+rounded_deaths_upper = round_to_nearest_100(mean_deaths_by_cause_upper)
+
+# Apply the rounding function to the entire DataFrame
+sum_deaths = round_to_nearest_100(mean_deaths_by_cause.sum(axis=0))
+
+
+
 
 
 # plot AIDS deaths by yr

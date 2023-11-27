@@ -32,7 +32,7 @@ from tlo.analysis.utils import (
 outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-# results_folder = get_scenario_outputs("effect_of_treatment_packages_combined.py", outputspath)[-1]
+# results_folder = get_scenario_outputs("remove_treatment_effects.py", outputspath)[-1]
 results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
@@ -356,9 +356,9 @@ smoothed_tb_inc = create_smoothed_lines(data_x, tb_inc) * 1000
 smoothed_mal_inc = create_smoothed_lines(data_x, mal_inc)
 
 # scaled numbers of deaths per year
-smoothed_aids_deaths = create_smoothed_lines(data_x, aids_deaths)
-smoothed_tb_deaths = create_smoothed_lines(data_x, tb_deaths)
-smoothed_malaria_deaths = create_smoothed_lines(data_x, malaria_deaths)
+smoothed_aids_deaths = create_smoothed_lines(data_x, aids_deaths) / 1000
+smoothed_tb_deaths = create_smoothed_lines(data_x, tb_deaths) / 1000
+smoothed_malaria_deaths = create_smoothed_lines(data_x, malaria_deaths) / 1000
 
 # ---------------------------------- PLOTS ---------------------------------- #
 
@@ -451,10 +451,10 @@ for i, scenario in enumerate(smoothed_aids_deaths.filter(like='lower')):
 
 ax5.grid(True, linestyle='-', color=gridcol, zorder=1)
 ax5.set(title='',
-        ylabel='Number AIDS deaths')
+        ylabel='Number AIDS deaths, thousands')
 ax5.set_xticks(xvals_for_ticks)
 ax5.set_xticklabels(xlabels_for_ticks)
-ax5.set_ylim(0, 80000)
+ax5.set_ylim(0, 80)
 ax5.tick_params(axis='x', rotation=70)
 
 # TB deaths
@@ -469,10 +469,10 @@ for i, scenario in enumerate(smoothed_tb_deaths.filter(like='lower')):
 
 ax6.grid(True, linestyle='-', color=gridcol, zorder=1)
 ax6.set(title='',
-        ylabel='Number TB deaths')
+        ylabel='Number TB deaths, thousands')
 ax6.set_xticks(xvals_for_ticks)
 ax6.set_xticklabels(xlabels_for_ticks)
-ax6.set_ylim(0, 21000)
+ax6.set_ylim(0, 21)
 ax6.tick_params(axis='x', rotation=70)
 
 # Malaria deaths
@@ -487,19 +487,19 @@ for i, scenario in enumerate(smoothed_malaria_deaths.filter(like='lower')):
 
 ax7.grid(True, linestyle='-', color=gridcol, zorder=1)
 ax7.set(title='',
-        ylabel='Number malaria deaths')
+        ylabel='Number malaria deaths, thousands')
 ax7.set_xticks(xvals_for_ticks)
 ax7.set_xticklabels(xlabels_for_ticks)
-ax7.set_ylim(0, 50000)
+ax7.set_ylim(0, 70)
 ax7.tick_params(axis='x', rotation=70)
 ax7.legend(loc='upper right',
-           labels=['Status Quo', 'HIV services excl', 'TB service excluded', 'Malaria services excl', 'Full impact'],
+           labels=['Status Quo', 'No HIV services', 'No TB services', 'No Malaria services', 'No HTM services'],
            bbox_to_anchor=(1.8, 1.0))
 
 # empty plot
 ax8.axis('off')
 
-# fig.savefig(outputspath / "Epi_outputs.png")
+# fig.savefig(outputspath / "Epi_outputs_excl_htm.png")
 
 plt.show()
 

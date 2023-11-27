@@ -32,7 +32,7 @@ from tlo.analysis.utils import (
 outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("effect_of_treatment_packages_combined.py", outputspath)[-1]
+results_folder = get_scenario_outputs("remove_treatment_effects.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -163,10 +163,12 @@ appt_types['upper'] = appt_types.quantile(0.975, axis='columns')
 # produce table for export
 output_table = appt_types[['median', 'lower', 'upper']].copy()
 
+
 # round all values to nearest 100
 # Define a custom rounding function
 def round_to_nearest_100(x):
     return round(x, -2)
+
 
 output_table = output_table.applymap(round_to_nearest_100)
 # Convert all values to integers

@@ -50,6 +50,7 @@ info = get_scenario_info(results_folder)
 
 # %% --------------------------------------------------------------
 # define the target period over which we want to estimate life expectancy
+# this should be a one-year period
 TARGET_PERIOD = (Date(2019, 1, 1), Date(2020, 1, 1))
 
 
@@ -119,11 +120,6 @@ def num_deaths_by_age_group(results_folder):
         do_scaling=True
     )
 
-
-df = log['tlo.methods.demography']['num_children']
-
-
-# todo numbers of children <5 are aggregated by sex
 
 # get population size in target period
 # get one row of log for each draw/run and compile into df
@@ -210,12 +206,6 @@ def get_population_size_by_age(results_folder):
     return t3
 
 
-# todo logged: person-years lived by single year of age in the past year.
-#  This means it will already account for deaths that have occurred
-#  extract total population-years at risk over the specified time period.
-_df = log['tlo.methods.demography']['person_years']
-
-
 def aggregate_person_years_by_age(results_folder):
     """ extract person-years for each draw/run
     calculate for men and women separately
@@ -271,11 +261,6 @@ def aggregate_person_years_by_age(results_folder):
 
 # %% GENERATE LIFE EXPECTANCY ESTIMATES
 
-# todo if death rate in interval is 0, you get errors when dividing by death rate
-# todo but if set to very small number, life expectancy shoots up
-# todo so need to collapse older age-groups to 90+ to avoid having zero deaths in this group
-
-
 def estimate_life_expectancy(person_years_at_risk, number_of_deaths_in_interval):
     """
     for a single run, estimate life expectancy for males and females
@@ -299,6 +284,9 @@ def estimate_life_expectancy(person_years_at_risk, number_of_deaths_in_interval)
         death_rate_in_interval = number_of_deaths_by_sex / person_years_by_sex
         # if no deaths or person-years, convert nan to 0
         death_rate_in_interval = death_rate_in_interval.fillna(0)
+        # if no deaths in age 90+, set death rate equal to value in age 85-89
+        if death_rate_in_interval[number_age_groups - 1] == 0:
+            death_rate_in_interval[number_age_groups - 1] = death_rate_in_interval[number_age_groups - 2]
 
         # Calculate the probability of dying in the interval
         condition = number_of_deaths_by_sex > (
@@ -355,7 +343,6 @@ def estimate_life_expectancy(person_years_at_risk, number_of_deaths_in_interval)
     return estimated_life_expectancy
 
 
-# todo add summary statistics if median=True
 # generate life expectancy estimates for all draws/runs
 def produce_life_expectancy_estimates(results_folder, median=True):
     """
@@ -415,4 +402,4 @@ def produce_life_expectancy_estimates(results_folder, median=True):
         return summary
 
 
-test = produce_life_expectancy_estimates(results_folder, median=True)
+test = produce_life_expectancy_estimates(results_folder, median=False)

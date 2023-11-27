@@ -64,8 +64,7 @@ opd = ['MaleCirc', 'FamPlan', 'VCTNegative', 'Over5OPD', 'VCTPositive', 'MinorSu
        'Under5OPD', 'NewAdult', 'Peds', 'EstNonCom', 'EPI', 'U5Malnutr',
        'ConWithDCSA', 'TBNew', 'MentOPD', 'TBFollowUp', 'AntenatalFirst',
        'ANCSubsequent', 'NormalDelivery']
-inpat = ['IPAdmission', 'InpatientDays', 'MajorSurg', 'CompDelivery', 'Csection']
-emerg = ['AccidentsandEmerg']
+inpat = ['IPAdmission', 'InpatientDays', 'MajorSurg', 'CompDelivery', 'Csection', 'AccidentsandEmerg']
 lab = ['DiagRadio', 'Tomography', 'Mammography', 'LabTBMicro', 'LabMolec']
 pharm = ['PharmDispensing']
 
@@ -104,7 +103,7 @@ def sum_appt_by_id(results_folder, module, key, column, draw):
     # groupby and sum if row is in opd
     # Create a mapping dictionary
     appointment_type_mapping = {appointment: category for category, appointments in
-                                zip(['opd', 'inpat', 'emerg', 'lab', 'pharm'], [opd, inpat, emerg, lab, pharm])
+                                zip(['opd', 'inpat', 'lab', 'pharm'], [opd, inpat, lab, pharm])
                                 for appointment in appointments}
 
     # Map values in the DataFrame column to appointment types
@@ -133,9 +132,9 @@ appt_sums3 = sum_appt_by_id(results_folder,
                            module=module, key=key, column=column, draw=3)
 appt_sums4 = sum_appt_by_id(results_folder,
                            module=module, key=key, column=column, draw=4)
-# if using remove_treatment_packages include this
-appt_sums5 = sum_appt_by_id(results_folder,
-                           module=module, key=key, column=column, draw=5)
+# # if using remove_treatment_packages include this
+# appt_sums5 = sum_appt_by_id(results_folder,
+#                            module=module, key=key, column=column, draw=5)
 
 
 
@@ -147,7 +146,7 @@ diffs0_1 = appt_sums1 - appt_sums0
 diffs0_2 = appt_sums2 - appt_sums0
 diffs0_3 = appt_sums3 - appt_sums0
 diffs0_4 = appt_sums4 - appt_sums0
-diffs0_5 = appt_sums5 - appt_sums0
+# diffs0_5 = appt_sums5 - appt_sums0
 
 # for the diffs, if value negative scenario count lower than baseline
 # if value is positive, scenario count higher than baseline
@@ -159,19 +158,19 @@ median_diffs0_1 = diffs0_1.median(axis='columns')
 median_diffs0_2 = diffs0_2.median(axis='columns')
 median_diffs0_3 = diffs0_3.median(axis='columns')
 median_diffs0_4 = diffs0_4.median(axis='columns')
-median_diffs0_5 = diffs0_5.median(axis='columns')
+# median_diffs0_5 = diffs0_5.median(axis='columns')
 
 lower_diffs0_1 = diffs0_1.quantile(0.025, axis='columns')
 lower_diffs0_2 = diffs0_2.quantile(0.025, axis='columns')
 lower_diffs0_3 = diffs0_3.quantile(0.025, axis='columns')
 lower_diffs0_4 = diffs0_4.quantile(0.025, axis='columns')
-lower_diffs0_5 = diffs0_5.quantile(0.025, axis='columns')
+# lower_diffs0_5 = diffs0_5.quantile(0.025, axis='columns')
 
 upper_diffs0_1 = diffs0_1.quantile(0.975, axis='columns')
 upper_diffs0_2 = diffs0_2.quantile(0.975, axis='columns')
 upper_diffs0_3 = diffs0_3.quantile(0.975, axis='columns')
 upper_diffs0_4 = diffs0_4.quantile(0.975, axis='columns')
-upper_diffs0_5 = diffs0_5.quantile(0.975, axis='columns')
+# upper_diffs0_5 = diffs0_5.quantile(0.975, axis='columns')
 
 
 # Create a DataFrame using the median values
@@ -191,9 +190,9 @@ out = pd.DataFrame({
     'Exclude HTM': median_diffs0_4,
     'lower_diffs0_4': lower_diffs0_4,
     'upper_diffs0_4': upper_diffs0_4,
-    'Remove HTM': median_diffs0_5,
-    'lower_diffs0_5': lower_diffs0_5,
-    'upper_diffs0_5': upper_diffs0_5
+    # 'Remove HTM': median_diffs0_5,
+    # 'lower_diffs0_5': lower_diffs0_5,
+    # 'upper_diffs0_5': upper_diffs0_5
 })
 
 def round_to_nearest_100(x):
@@ -203,7 +202,7 @@ out = out.applymap(round_to_nearest_100)
 # Convert all values to integers
 out = out.astype(int, errors='ignore')
 
-out.to_csv(outputspath / ('comparison_hs_usage' + '.csv'))
+out.to_csv(outputspath / ('comparison_hs_usage_25Nov' + '.csv'))
 
 
 

@@ -30,7 +30,7 @@ from tlo.analysis.utils import (
 outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("effect_of_treatment_packages_combined.py", outputspath)[-1]
+results_folder = get_scenario_outputs("remove_treatment_effects.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -255,8 +255,8 @@ treatment_id3 = extract_appt_details(results_folder,
                                      module=module, key=key, column=column, draw=3)
 treatment_id4 = extract_appt_details(results_folder,
                                      module=module, key=key, column=column, draw=4)
-treatment_id5 = extract_appt_details(results_folder,
-                                     module=module, key=key, column=column, draw=5)
+# treatment_id5 = extract_appt_details(results_folder,
+#                                      module=module, key=key, column=column, draw=5)
 
 # get total counts of every appt type for each scenario
 sum0 = sum_appt_by_id(results_folder,
@@ -279,14 +279,13 @@ sum4 = sum_appt_by_id(results_folder,
                       module=module, key=key, column=column, draw=4)
 sum4['mean'] = sum4.mean(axis=1) * scaling_factor.values[0][0]
 
-sum5 = sum_appt_by_id(results_folder,
-                      module=module, key=key, column=column, draw=5)
-sum5['mean'] = sum5.mean(axis=1) * scaling_factor.values[0][0]
+# sum5 = sum_appt_by_id(results_folder,
+#                       module=module, key=key, column=column, draw=5)
+# sum5['mean'] = sum5.mean(axis=1) * scaling_factor.values[0][0]
 
 
-data_output = pd.concat([sum0['mean'], sum1['mean'], sum2['mean'], sum3['mean'], sum4['mean'],
-                         sum5['mean']], axis=1)
-data_output.to_csv(outputspath / ('treatment_numbers3' + '.csv'))
+data_output = pd.concat([sum0['mean'], sum1['mean'], sum2['mean'], sum3['mean'], sum4['mean']], axis=1)
+data_output.to_csv(outputspath / ('treatment_numbers_excl_htm' + '.csv'))
 
 sum0.to_csv(outputspath / ('baseline_appt_numbers' + '.csv'))
 
@@ -364,6 +363,7 @@ prog_df.loc['Total'] = prog_df.sum()
 # Filter columns that end with 'mean'
 mean_columns = [col for col in prog_df.columns if col.endswith('mean')]
 stripped_mean_column_names = [col.replace('_mean', '') for col in mean_columns]
+stripped_mean_column_names = [col.replace('_', ' ') for col in stripped_mean_column_names]
 
 # Create a horizontal bar plot
 # Create a color list based on column name criteria

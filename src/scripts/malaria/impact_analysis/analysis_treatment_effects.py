@@ -115,7 +115,7 @@ class EffectOfProgrammes(BaseScenario):
             },
             'Hiv': {
                 # 'scenario': [0, 1, 2, 3, 5, 5, 5, 5, 5][draw_number],
-                'scenario': [5, 5, 5, 5][draw_number],
+                'scenario': [0, 0, 3, 3][draw_number],  # only remove malaria effects for tx_compl and IRS/ITN
             },
         }
 
