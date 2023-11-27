@@ -2005,8 +2005,13 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-    def apply(self, person_id, squeeze_factor):
 
+        #included the screening part so only people with TB symptoms are screened
+    def apply(self, person_id, squeeze_factor):
+        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        if not any(x in self.module.symptom_list for x in persons_symptoms):
+            print(f"Facility CXR scheduled for person {person_id} due to TB symptoms.")
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
         df = self.sim.population.props
 
         if not df.at[person_id, "is_alive"] or df.at[person_id, "tb_diagnosed"]:
@@ -2086,6 +2091,10 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
     def apply(self, person_id, squeeze_factor):
+        persons_symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        if not any(x in self.module.symptom_list for x in persons_symptoms):
+            print(f"facility CXR scheduled for person {person_id} due to TB symptoms.")
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         df = self.sim.population.props
 
@@ -2506,7 +2515,7 @@ class TbCommunityXray(RegularEvent, PopulationScopeEventMixin):
 
                 # Check if the patient has cough, fever, night sweat, or weight loss
                 if any(x in self.module.symptom_list for x in persons_symptoms):
-                    print(f"Screening scheduled for person {person_id} due to TB symptoms.")
+                    print(f"Community CXR scheduled for person {person_id} due to TB symptoms.")
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         HSI_Tb_CommunityXray(person_id=person_id, module=self.module),
                         topen=now,
