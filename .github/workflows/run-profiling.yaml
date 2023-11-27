@@ -97,7 +97,7 @@ jobs:
         run: |
           tox -vv -e profile -- \
             --html \
-            --output-dir ${{ needs.set-variables.outputs.profiling-output-dir }} \
+            --root-output-dir ${{ needs.set-variables.outputs.profiling-output-dir }} \
             --output-name ${{ needs.set-variables.outputs.profiling-filename }} \
             --additional-stats \
             sha=${{ needs.set-variables.outputs.profiling-on-sha }} \
