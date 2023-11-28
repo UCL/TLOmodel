@@ -4,7 +4,8 @@ on:
   workflow_call:
     inputs:
       runs-on:
-        description: The type of machine to run job on
+        description: |
+          The type(s) of machine to run job on. Use JSON encoded strings for sequences.
         required: false
         type: string
         default: ubuntu-latest
@@ -64,7 +65,7 @@ on:
         required: true
 jobs:
   run_test_on_keyword_and_reply_with_result:
-    runs-on: ${{ inputs.runs-on }}
+    runs-on: ${{ fromJSON(inputs.runs-on) }}
     timeout-minutes: ${{ inputs.timeout-minutes }}
     if: github.event.comment.body == format('/run {0}', inputs.keyword)
     steps:
