@@ -94,7 +94,6 @@ disable = [
     "R",
     "C",
     "W",
-    "E0611", # no-name-in-module
 ]
 
 
