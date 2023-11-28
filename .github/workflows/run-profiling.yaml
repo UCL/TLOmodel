@@ -60,7 +60,7 @@ jobs:
     needs: set-variables
     uses: ./.github/workflows/run-on-comment.yml
     with:
-      runs-on: "[self-hosted, test]"
+      runs-on: '["self-hosted", "test"]'
       keyword: profiling
       commands: |
         tox -vv -e profile -- \
@@ -97,7 +97,7 @@ jobs:
         run: |
           tox -vv -e profile -- \
             --html \
-            --output-dir ${{ needs.set-variables.outputs.profiling-output-dir }} \
+            --root-output-dir ${{ needs.set-variables.outputs.profiling-output-dir }} \
             --output-name ${{ needs.set-variables.outputs.profiling-filename }} \
             --additional-stats \
             sha=${{ needs.set-variables.outputs.profiling-on-sha }} \
