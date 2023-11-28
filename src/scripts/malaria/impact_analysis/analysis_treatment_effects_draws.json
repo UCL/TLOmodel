@@ -38,7 +38,7 @@
           "policy_name": "Naive"
         },
         "Hiv": {
-          "scenario": 5
+          "scenario": 0
         }
       }
     },
@@ -77,7 +77,7 @@
           "policy_name": "Naive"
         },
         "Hiv": {
-          "scenario": 5
+          "scenario": 0
         }
       }
     },
@@ -116,7 +116,7 @@
           "policy_name": "Naive"
         },
         "Hiv": {
-          "scenario": 5
+          "scenario": 3
         }
       }
     },
@@ -155,11 +155,11 @@
           "policy_name": "Naive"
         },
         "Hiv": {
-          "scenario": 5
+          "scenario": 3
         }
       }
     }
   ],
-  "commit": "b8d56b587645ba51b9795ad90fcc29d7c6663fe8",
-  "github": "https://github.com/UCL/TLOmodel/tree/b8d56b587645ba51b9795ad90fcc29d7c6663fe8"
+  "commit": "7f164267a6aa133a538c03a3e66da7edf3e0e3fb",
+  "github": "https://github.com/UCL/TLOmodel/tree/7f164267a6aa133a538c03a3e66da7edf3e0e3fb"
 }
