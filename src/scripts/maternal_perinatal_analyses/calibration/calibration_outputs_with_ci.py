@@ -1095,7 +1095,10 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
         plt.xlabel('Year')
         plt.ylabel("Stillbirths per 1000 Total Births")
-        plt.title(f'{group} Stillbirth Rate per Year')
+        if group == 'Total':
+            plt.title('Stillbirth Rate per Year')
+        else:
+            plt.title(f'{group} Stillbirth Rate per Year')
         plt.legend()
         plt.savefig(f'{graph_location}/{group}_sbr.png')
         plt.show()
@@ -1381,7 +1384,11 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
         plt.xlabel('Year')
         plt.ylabel("Deaths per 100 000 live births")
-        plt.title(f'{title} Maternal Mortality Ratio per Year')
+        if title == 'Total':
+            plt.title('Maternal Mortality Ratio per Year')
+        else:
+            plt.title(f'{title} Maternal Mortality Ratio per Year')
+
         plt.legend()
         plt.savefig(f'{graph_location}/{title}_mmr.png')
         plt.show()
@@ -1394,7 +1401,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     ax.bar(labels, direct_mmr_by_year[0], width, label='Direct', color='brown')
     ax.bar(labels, indirect_mmr_by_year[0], width, bottom=direct_mmr_by_year[0], label='Indirect', color='lightsalmon')
     ax.set_ylabel('Maternal Deaths per 100,000 live births')
-    ax.set_title('Total Maternal Mortality Ratio per Year')
+    ax.set_title('Maternal Mortality Ratio per Year')
     ax.legend()
     plt.savefig(f'{graph_location}/total_mmr_bar.png')
     plt.show()
@@ -1584,7 +1591,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         av_u_ci.append(ci[1])
 
     # Data is plotted against calibration targets from 2015, as such only 2015 model outputs are plotted
-    labels = ['EP', 'UR', 'APH', 'Abr.', 'SPE/E.', 'PPH', 'Sep.']
+    labels = ['Ectopic\nPreg.', 'Uterine\nRupture', 'Antepartum\nHaem.', 'Abortion.', 'Severe Pre-eclamp.\n/Eclampsia.',
+              'Postpartum\nHaem', 'Sepsis']
     model = all_values_2015
     bemonc_data = [0.1, 14, 5.3, 6.8, 18, 31, 22]  # order = ectopic,
 
@@ -1603,7 +1611,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     ax.set_xticklabels(labels)
     ax.legend(loc='upper left')
     fig.tight_layout()
-    plt.savefig(f'{graph_location}/proportions_cause_of_death_2015.png')
+    plt.xticks(fontsize=9)
+    plt.savefig(f'{graph_location}/proportions_cause_of_death_2015.png', bbox_inches="tight")
     plt.show()
 
     # --------------------------------------------- Indirect deaths by cause --------------------------------------
@@ -1792,8 +1801,8 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     fig, ax = plt.subplots()
     ax.plot(sim_years, tnmr[0], label="Model: Total NMR(95% CI)", color='deepskyblue')
     ax.fill_between(sim_years, tnmr[1], tnmr[2], color='b', alpha=.1)
-    ax.plot(sim_years, nd_nmr[0], label="Model: 'Neonatal Disorders' NMR (95% CI)", color='salmon')
-    ax.fill_between(sim_years, nd_nmr[1], nd_nmr[2], color='r', alpha=.1)
+    #ax.plot(sim_years, nd_nmr[0], label="Model: 'Neonatal Disorders' NMR (95% CI)", color='salmon')
+    #ax.fill_between(sim_years, nd_nmr[1], nd_nmr[2], color='r', alpha=.1)
 
     un_yrs = [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021]
 
@@ -1814,10 +1823,10 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     ax.plot(un_yrs, data['un']['mean'], label="UN IGCME (Uncertainty interval)", color='grey')
     ax.fill_between(un_yrs, data['un']['lq'], data['un']['uq'], color='grey', alpha=.1)
-    ax.set(ylim=(0, 40))
+    ax.set(ylim=(0, 45))
     plt.xlabel('Year')
     plt.ylabel("Neonatal Deaths per 1000 Live Births")
-    plt.title('Yearly Neonatal Mortality Rate (NMR)')
+    plt.title('Neonatal Mortality Rate per Year')
     plt.legend(loc='lower left')
     plt.savefig(f'{graph_location}/all_nmr_one_graph.png')
     plt.show()
@@ -1926,7 +1935,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     rect1 = ax.bar(x - width, all_values_2015_neo, width=width, yerr=ui, label='Model', color='cornflowerblue')
     rect2 = ax.bar(x, neo_calib_targets_fottrell, width=width, label='Fottrell (2015)', color='lightsteelblue')
     rects2 = ax.bar(x + width, neo_calib_targets_bemonc, width=width, label='EMoNC (2015)', color='forestgreen')
-    ax.set_ylabel("% of Total Neonatal Deaths")
+    ax.set_ylabel("% of Total Neonatal Deaths in 2015")
     ax.set_xlabel("Cause of Death")
     ax.set_title("Percentage of Total Neonatal Deaths by Leading Causes in 2015")
     ax.set_xticks(x)

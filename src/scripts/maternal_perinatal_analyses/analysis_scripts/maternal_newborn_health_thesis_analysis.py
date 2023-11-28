@@ -123,6 +123,11 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         ax.bar(labels, mean_vals, color=scen_colours, width=width, yerr=ci)
         ax.tick_params(axis='x', which='major', labelsize=8)
 
+        if title == 'Average Maternal Mortality Ratio by Scenario (2023-2030)':
+            plt.gca().set_ylim(bottom=0, top=450)
+        elif title == 'Average Neonatal Mortality Rate by Scenario (2023-2030)':
+            plt.gca().set_ylim(bottom=0, top=25)
+
         ax.set_ylabel(y_label)
         ax.set_xlabel('Scenario')
         ax.set_title(title)
@@ -530,13 +535,13 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
              'Total Neonatal Deaths By Scenario (2023-2030)',
              'Average Neonatal Mortality Rate by Scenario (2023-2030)'],
             ['Total Direct Maternal Deaths',
-             'Average Maternal Mortality Ratio',
+             'Maternal Deaths per 100,000 Live Births',
              'Total Indirect Maternal Deaths',
-             'Average Maternal Mortality Ratio',
+             'Maternal Deaths per 100,000 Live Births',
              'Total Maternal Deaths',
-             'Average Maternal Mortality Ratio',
+             'Maternal Deaths per 100,000 Live Births',
              'Total Neonatal Deaths',
-             'Average Neonatal Mortality Rate']):
+             'Neonatal Deaths per 1000 Live Births']):
         plot_agg_graph(death_data, data, y_lable, title, data, primary_oc_path)
 
     # Followed by line graphs showing outcomes per year of the entire simulated period
@@ -770,9 +775,9 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         zip(['avg_sbr',
              'avg_i_sbr',
              'avg_a_sbr'],
-            ['Average Total Stillbirth Rate during the Intervention Period',
-             'Average Intrapartum Stillbirth Rate during the Intervention Period',
-             'Average Antenatal Stillbirth Rate during the Intervention Period'],
+            ['Average Stillbirth Rate by Scenario (2023-2030)',
+             'Average Intrapartum Stillbirth Rate by Scenario (2023-2030)',
+             'Average Antenatal Stillbirth Rate by Scenario (2023-2030)'],
             ['Stillbirths per 1000 births',
              'Stillbirths per 1000 births',
              'Stillbirths per 1000 births']):
@@ -793,7 +798,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         ci = [(x - y) / 2 for x, y in zip(uq_vals, lq_vals)]
         ax.bar(labels, mean_vals, color=scen_colours, width=width, yerr=ci)
         ax.tick_params(axis='x', which='major', labelsize=8)
-
+        plt.gca().set_ylim(bottom=0, top=18)
         ax.set_ylabel(y_lable)
         ax.set_xlabel('Scenario')
         ax.set_title(title)
