@@ -95,7 +95,6 @@ disable = [
     "C",
     "W",
     "E0611", # no-name-in-module
-    "E1130", # bad operand type for unary ~
 ]
 
 
