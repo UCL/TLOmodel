@@ -1014,9 +1014,12 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Create dictionary for each subset, adding prefix to key name, and adding to make a flat dict for logging.
         out = {}
 
+        date_lastlog = self.sim.date - pd.DateOffset(days=29)
+
         # Current counts, total
         out.update({
-            f'total_{k}': v for k, v in df.loc[df.is_alive].ce_hpv_cc_status.value_counts().items()})
+            f'total_{k}': v for k, v in df.loc[df.is_alive & (df['sex'] == 'F') &
+                                               (df['age_years'] > 15)].ce_hpv_cc_status.value_counts().items()})
 
         # Get the day of the year
         day_of_year = self.sim.date.timetuple().tm_yday
@@ -1025,7 +1028,43 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         decimal_year = self.sim.date.year + (day_of_year - 1) / 365.25
         rounded_decimal_year = round(decimal_year, 2)
 
+        date_1_year_ago = self.sim.date - pd.DateOffset(days=365)
+        n_deaths_past_year = df.ce_date_death.between(date_1_year_ago, self.sim.date).sum()
+        n_treated_past_year = df.ce_date_treatment.between(date_1_year_ago, self.sim.date).sum()
+
+        cc = (df.is_alive & ((df.ce_hpv_cc_status == 'stage1') | (df.ce_hpv_cc_status == 'stage2a')
+                             | (df.ce_hpv_cc_status == 'stage2b') | (df.ce_hpv_cc_status == 'stage3')
+                             | (df.ce_hpv_cc_status == 'stage4'))).sum()
+        cc_hiv = (df.is_alive & df.hv_inf & ((df.ce_hpv_cc_status == 'stage1') | (df.ce_hpv_cc_status == 'stage2a')
+                             | (df.ce_hpv_cc_status == 'stage2b') | (df.ce_hpv_cc_status == 'stage3')
+                             | (df.ce_hpv_cc_status == 'stage4'))).sum()
+        prop_cc_hiv = cc_hiv / cc
+
+        n_diagnosed_past_year_stage1 = \
+            (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date) &
+             (df.ce_hpv_cc_status == 'stage1')).sum()
+        n_diagnosed_past_year_stage2a = \
+            (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date) &
+             (df.ce_hpv_cc_status == 'stage2a')).sum()
+        n_diagnosed_past_year_stage2b = \
+            (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date) &
+             (df.ce_hpv_cc_status == 'stage2b')).sum()
+        n_diagnosed_past_year_stage3 = \
+            (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date) &
+             (df.ce_hpv_cc_status == 'stage3')).sum()
+        n_diagnosed_past_year_stage4 = \
+            (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date) &
+             (df.ce_hpv_cc_status == 'stage4')).sum()
+
         out.update({"rounded_decimal_year": rounded_decimal_year})
+        out.update({"n_deaths_past_year": n_deaths_past_year})
+        out.update({"n_treated_past_year": n_treated_past_year})
+        out.update({"prop_cc_hiv": prop_cc_hiv})
+        out.update({"n_diagnosed_past_year_stage1": n_diagnosed_past_year_stage1})
+        out.update({"n_diagnosed_past_year_stage2a": n_diagnosed_past_year_stage2a})
+        out.update({"n_diagnosed_past_year_stage2b": n_diagnosed_past_year_stage2b})
+        out.update({"n_diagnosed_past_year_stage3": n_diagnosed_past_year_stage3})
+        out.update({"n_diagnosed_past_year_stage4": n_diagnosed_past_year_stage4})
 
         # Specify the file path for the CSV file
         out_csv = Path("./outputs/output_data.csv")
@@ -1097,15 +1136,15 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_hpv = (df.is_alive & (df.ce_hpv_cc_status == 'hpv')).sum()
         p_hpv = n_hpv / n_ge15_f
 
-        n_newly_diagnosed_stage1 = \
+        n_diagnosed_past_year_stage1 = \
             (df.ce_date_diagnosis.between(date_lastlog, date_now - DateOffset(days=1)) & (df.ce_hpv_cc_status == 'stage1')).sum()
-        n_newly_diagnosed_stage2a = \
+        n_diagnosed_past_year_stage2a = \
             (df.ce_date_diagnosis.between(date_lastlog, date_now - DateOffset(days=1)) & (df.ce_hpv_cc_status == 'stage2a')).sum()
-        n_newly_diagnosed_stage2b = \
+        n_diagnosed_past_year_stage2b = \
             (df.ce_date_diagnosis.between(date_lastlog, date_now - DateOffset(days=1)) & (df.ce_hpv_cc_status == 'stage2b')).sum()
-        n_newly_diagnosed_stage3 = \
+        n_diagnosed_past_year_stage3 = \
             (df.ce_date_diagnosis.between(date_lastlog, date_now - DateOffset(days=1)) & (df.ce_hpv_cc_status == 'stage3')).sum()
-        n_newly_diagnosed_stage4 = \
+        n_diagnosed_past_year_stage4 = \
             (df.ce_date_diagnosis.between(date_lastlog, date_now - DateOffset(days=1)) & (df.ce_hpv_cc_status == 'stage4')).sum()
 
 # todo: add outputs for cin,  xpert testing and via and removal of cin
@@ -1127,11 +1166,11 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             'palliative_since_last_log': int(df.ce_date_palliative_care.between(date_lastlog, date_now).sum()),
             'death_cervical_cancer_since_last_log': int(df.ce_date_death.between(date_lastlog, date_now).sum()),
             'n women age 15+': int(n_ge15_f),
-            'n_newly_diagnosed_stage1': int(n_newly_diagnosed_stage1),
-            'n_newly_diagnosed_stage2a': int(n_newly_diagnosed_stage2a),
-            'n_newly_diagnosed_stage2b': int(n_newly_diagnosed_stage2b),
-            'n_newly_diagnosed_stage3': int(n_newly_diagnosed_stage3),
-            'n_newly_diagnosed_stage4': int(n_newly_diagnosed_stage4),
+            'n_diagnosed_past_year_stage1': int(n_diagnosed_past_year_stage1),
+            'n_diagnosed_past_year_stage2a': int(n_diagnosed_past_year_stage2a),
+            'n_diagnosed_past_year_stage2b': int(n_diagnosed_past_year_stage2b),
+            'n_diagnosed_past_year_stage3': int(n_diagnosed_past_year_stage3),
+            'n_diagnosed_past_year_stage4': int(n_diagnosed_past_year_stage4),
             'n_diagnosed_age_15_29': int(n_diagnosed_age_15_29),
             'n_diagnosed_age_30_49':  int(n_diagnosed_age_30_49),
             'n_diagnosed_age_50p': int(n_diagnosed_age_50p),
