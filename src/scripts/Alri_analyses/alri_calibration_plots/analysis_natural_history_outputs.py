@@ -582,3 +582,18 @@ prob_rd_in_all_alri = df['symptoms'].apply(
     lambda x: 1 if 'respiratory_distress' in x else 0).sum() / total_alri_cases  # 0.2451
 # -------------------------------------------------------------------------------------------------------------
 
+# seek care levels
+
+seek_levels = df['symptoms'].apply(
+    lambda x: alri_module_with_perfect_diagnosis.seek_care_level(x))
+
+df_seek = seek_levels.to_frame(name='level')
+total_seek_level = df_seek.groupby('level').size()
+prop_level = total_seek_level / df_seek.groupby('level').size().sum()
+
+
+df2 = df.join(df_seek)
+
+hypox_seek_level = df2.loc[df2['oxygen_saturation'] == '<90%'].groupby('level').size()
+prop_hypox_seek_level = hypox_seek_level / hypox_seek_level.sum()
+

@@ -901,6 +901,19 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'tmp param'
                       ),
+        'base_prob_care_seeking_by_level':
+            Parameter(Types.LIST,
+                      'tmp param'
+                      ),
+        'or_care_seeking_hospital_danger_signs':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+        'or_care_seeking_hospital_respiratory_distress':
+            Parameter(Types.REAL,
+                      'tmp param'
+                      ),
+
 
         # parameters values derived from the model output
         'proportion_pneumonia_in_alri':
@@ -1529,16 +1542,32 @@ class Alri(Module):
     def seek_care_level(self, symptoms) -> str:
         """Care seeking at facility levels, based on symptom severity"""
 
-        prop_seek_level = {'2': 0.15, '1b': 0.15, '1a': 0.6, '0': 0.1}
+        prop_seek_level = {'2': self.parameters['base_prob_care_seeking_by_level'][0],
+                           '1b': self.parameters['base_prob_care_seeking_by_level'][1],
+                           '1a': self.parameters['base_prob_care_seeking_by_level'][2],
+                           '0': self.parameters['base_prob_care_seeking_by_level'][3]}
 
         # Increase seeking at higher levels if severe symptoms
-        if any(sev_symptom in ['danger_signs', 'respiratory_distress'] for sev_symptom in symptoms):
+        if any(sev_symptom in ['danger_signs', 'chest_indrawing', 'respiratory_distress'] for sev_symptom in symptoms):
+            # if 'chest_indrawing' in symptoms:
+            #     prop_seek_level.update({
+            #         '2': to_prob(to_odds(prop_seek_level['2']) * 2.4),
+            #         '1b': to_prob(to_odds(prop_seek_level['1b']) * 2.4),
+            #         '1a': to_prob(to_odds(prop_seek_level['1a']) * (1 / 2.4)),
+            #         '0': to_prob(to_odds(prop_seek_level['0']) * (1 / 2.4))})
+
             for symptom_name in ('danger_signs', 'respiratory_distress'):
                 if symptom_name in symptoms:
-                    prop_seek_level.update({'2': to_prob(to_odds(prop_seek_level['2']) * self.parameters['or_care_seeking_perceived_severe_illness']),
-                                            '1b': to_prob(to_odds(prop_seek_level['1b']) * self.parameters['or_care_seeking_perceived_severe_illness']),
-                                            '1a': to_prob(to_odds(prop_seek_level['1a']) * (1 / self.parameters['or_care_seeking_perceived_severe_illness'])),
-                                            '0': to_prob(to_odds(prop_seek_level['0']) * (1 / self.parameters['or_care_seeking_perceived_severe_illness']))})
+                    prop_seek_level.update({
+                        '2': to_prob(to_odds(prop_seek_level['2']) *
+                                     self.parameters[f'or_care_seeking_hospital_{symptom_name}']),
+                        '1b': to_prob(to_odds(prop_seek_level['1b']) *
+                                      self.parameters[f'or_care_seeking_hospital_{symptom_name}']),
+                        '1a': to_prob(to_odds(prop_seek_level['1a']) *
+                                      (1 / self.parameters[f'or_care_seeking_hospital_{symptom_name}'])),
+                        '0': to_prob(to_odds(prop_seek_level['0']) *
+                                     (1 / self.parameters[f'or_care_seeking_hospital_{symptom_name}']))})
+
             sum_of_probs = prop_seek_level['2'] + prop_seek_level['1b'] + prop_seek_level['1a'] + prop_seek_level['0']
             prop_seek_level.update({'2': prop_seek_level['2']/sum_of_probs,
                                     '1b': prop_seek_level['1b']/sum_of_probs,
@@ -1645,7 +1674,8 @@ class Alri(Module):
          the second is assumed to be a drop-in replacement with the same effectiveness etc., and is used only when the
          first is found to be not available."""
         p = self.parameters
-        referral = True  # assume 100% referrals
+        # referral = False  # assume 100% referrals
+        referral = 1.0 > self.rng.random_sample()
 
         # Change this variable when looking into the benefit of using SpO2 <93% as indication for oxygen
         oxygen_indicated = oxygen_saturation == '<90%' if p['apply_oxygen_indication_to_SpO2_measurement'] == '<90%' \
@@ -1696,7 +1726,16 @@ class Alri(Module):
         # treatment for danger signs pneumonia classification
         elif classification_for_treatment_decision == 'danger_signs_pneumonia':
             # assume that PO at inpatient care is available if oxygen systems are implemented
-            if (referral and facility_level in ('0', '1a')) or (facility_level in ('2', '1b')):
+            if referral and facility_level in ('0', '1a'):
+                return {
+                    'antibiotic_indicated': (
+                        '1st_line_IV_ampicillin_gentamicin',  # <-- # <-- First choice antibiotic
+                        '1st_line_IV_benzylpenicillin_gentamicin',  # <-- If the first choice not available
+                        '2nd_line_IV_ceftriaxone',  # <-- If the first line choices not available
+                    ),
+                    'oxygen_indicated': oxygen_indicated
+                }
+            elif facility_level in ('2', '1b'):
                 return {
                     'antibiotic_indicated': (
                         '1st_line_IV_ampicillin_gentamicin',  # <-- # <-- First choice antibiotic
@@ -1712,9 +1751,107 @@ class Alri(Module):
                     ),
                     'oxygen_indicated': False
                 }
+            # if (referral and facility_level in ('0', '1a')) or (facility_level in ('2', '1b')):
+            #     return {
+            #         'antibiotic_indicated': (
+            #             '1st_line_IV_ampicillin_gentamicin',  # <-- # <-- First choice antibiotic
+            #             '1st_line_IV_benzylpenicillin_gentamicin',  # <-- If the first choice not available
+            #             '2nd_line_IV_ceftriaxone',  # <-- If the first line choices not available
+            #         ),
+            #         'oxygen_indicated': oxygen_indicated
+            #     }
+            # else:
+            #     return {
+            #         'antibiotic_indicated': (
+            #             'Amoxicillin_tablet_or_suspension_5days',  # <-- # <-- First choice antibiotic
+            #         ),
+            #         'oxygen_indicated': False
+            #     }
 
         else:
             raise ValueError(f'Classification not recognised: {classification_for_treatment_decision}')
+
+    # # @staticmethod
+    # def _ultimate_treatment_indicated_for_patient(self, classification_for_treatment_decision, age_exact_years,
+    #                                               facility_level, oxygen_saturation, use_oximeter) -> Dict:
+    #     """Return a Dict of the form {'antibiotic_indicated': Tuple[str], 'oxygen_indicated': <>} which expresses what
+    #      the treatment is that the patient _should_ be provided with ultimately (i.e., if consumables are available and
+    #      following an admission to in-patient, if required).
+    #      For the antibiotic indicated, the first in the list is the one for which effectiveness parameters are defined;
+    #      the second is assumed to be a drop-in replacement with the same effectiveness etc., and is used only when the
+    #      first is found to be not available."""
+    #     p = self.parameters
+    #     # referral = False  # assume 100% referrals
+    #     referral = 0.5 > self.rng.random_sample()
+    #
+    #     # Change this variable when looking into the benefit of using SpO2 <93% as indication for oxygen
+    #     oxygen_indicated = oxygen_saturation == '<90%' if p['apply_oxygen_indication_to_SpO2_measurement'] == '<90%' \
+    #         else (
+    #         (not oxygen_saturation == '>=93%') if p['apply_oxygen_indication_to_SpO2_measurement'] == '<93%' else False)
+    #
+    #     # if no oximeter available, oxygen indication is determined by the heath worker's decision (ds-pneumonia)
+    #     # oxygen_indicated_without_po = \
+    #     #     p['prob_hw_decision_for_oxygen_provision_when_po_unavailable'] > self.rng.random_sample()
+    #
+    #     # treatment for cough or cold classification
+    #     if classification_for_treatment_decision == "cough_or_cold":
+    #         return {
+    #             'antibiotic_indicated': (
+    #                 '',  # <-- First choice antibiotic -- none for cough_or_cold
+    #             ),
+    #             'oxygen_indicated': False
+    #         }
+    #
+    #     # treatment for fast-breathing pneumonia classification
+    #     elif classification_for_treatment_decision == 'fast_breathing_pneumonia':
+    #         return {
+    #             'antibiotic_indicated': (
+    #                 'Amoxicillin_tablet_or_suspension_7days' if age_exact_years < 2.0 / 12.0
+    #                 else 'Amoxicillin_tablet_or_suspension_3days',  # <-- # <-- First choice antibiotic
+    #             ),
+    #             'oxygen_indicated': False
+    #         }
+    #
+    #     # treatment for chest-indrawing pneumonia classification
+    #     elif classification_for_treatment_decision == 'chest_indrawing_pneumonia':
+    #         if (referral and facility_level == '0') or (facility_level in ('2', '1b', '1a')):
+    #             return {
+    #                 'antibiotic_indicated': (
+    #                     'Amoxicillin_tablet_or_suspension_5days',  # <-- # <-- First choice antibiotic
+    #                 ),
+    #                 'oxygen_indicated': False
+    #             }
+    #         else:
+    #             return {
+    #                 'antibiotic_indicated': (
+    #                     'Amoxicillin_tablet_or_suspension_7days' if age_exact_years < 2.0 / 12.0
+    #                     else 'Amoxicillin_tablet_or_suspension_3days',  # <-- # <-- First choice antibiotic
+    #                 ),
+    #                 'oxygen_indicated': False
+    #             }
+    #
+    #     # treatment for danger signs pneumonia classification
+    #     elif classification_for_treatment_decision == 'danger_signs_pneumonia':
+    #         # assume that PO at inpatient care is available if oxygen systems are implemented
+    #         if (referral and facility_level in ('0', '1a')) or (facility_level in ('2', '1b')):
+    #             return {
+    #                 'antibiotic_indicated': (
+    #                     '1st_line_IV_ampicillin_gentamicin',  # <-- # <-- First choice antibiotic
+    #                     '1st_line_IV_benzylpenicillin_gentamicin',  # <-- If the first choice not available
+    #                     '2nd_line_IV_ceftriaxone',  # <-- If the first line choices not available
+    #                 ),
+    #                 'oxygen_indicated': oxygen_indicated
+    #             }
+    #         else:
+    #             return {
+    #                 'antibiotic_indicated': (
+    #                     'Amoxicillin_tablet_or_suspension_5days',  # <-- # <-- First choice antibiotic
+    #                 ),
+    #                 'oxygen_indicated': False
+    #             }
+    #
+    #     else:
+    #         raise ValueError(f'Classification not recognised: {classification_for_treatment_decision}')
 
 
 class Models:
@@ -3304,11 +3441,19 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             else (
             (not oxygen_saturation == '>=93%') if p['apply_oxygen_indication_to_SpO2_measurement'] == '<93%' else False)
 
-        # SpO2<90% apply severe classification to get inpatient care
-        if oxygen_needed:
+        # apply PO uncertainty for SpO2<90% policy
+        # REF - Validity of pulse oximetry in detection of hypoxaemia in children: comparison of ear, thumb and toe probe placements
+
+        if oxygen_needed and (self.module.rng.random_sample() < 0.83):
             return 'danger_signs_pneumonia'
         else:
             return ''
+
+        # # SpO2<90% apply severe classification to get inpatient care
+        # if oxygen_needed:
+        #     return 'danger_signs_pneumonia'
+        # else:
+        #     return ''
 
     def _get_classification_given_by_health_worker(self,
                                                    imci_classification_based_on_symptoms: str,
@@ -3542,7 +3687,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     classification_for_treatment_decision='fast_breathing_pneumonia',
                     age_exact_years=age_exact_years,
                     facility_level=facility_level,
-                    oxygen_saturation=oxygen_saturation,
+                    oxygen_saturation=oxygen_saturation
                 )
             )
 
@@ -3556,7 +3701,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                         classification_for_treatment_decision='chest_indrawing_pneumonia',
                         age_exact_years=age_exact_years,
                         facility_level=facility_level,
-                        oxygen_saturation=oxygen_saturation,
+                        oxygen_saturation=oxygen_saturation
                     )
                 )
 
@@ -3576,7 +3721,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                             classification_for_treatment_decision='danger_signs_pneumonia',
                             age_exact_years=age_exact_years,
                             facility_level=facility_level,
-                            oxygen_saturation=oxygen_saturation,
+                            oxygen_saturation=oxygen_saturation
                         )
                     )
 
@@ -3587,7 +3732,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                     classification_for_treatment_decision='cough_or_cold',
                     age_exact_years=age_exact_years,
                     facility_level=facility_level,
-                    oxygen_saturation=oxygen_saturation,
+                    oxygen_saturation=oxygen_saturation
                 )
             )
 
@@ -3898,7 +4043,7 @@ class AlriPropertiesOfOtherModules(Module):
     }
 
     def __init__(self, name=None, hiv_prev=0.1, art_cov=0.75, moderate_wasting=0.034, severe_wasting=0.013,
-                 va_pcv13=0, va_hib=0.875, va_measles=0.772):
+                 va_pcv13=0.4992, va_hib=0.875, va_measles=0.772):
         super().__init__(name)
         self.hiv_prev = hiv_prev
         self.art_cov = art_cov

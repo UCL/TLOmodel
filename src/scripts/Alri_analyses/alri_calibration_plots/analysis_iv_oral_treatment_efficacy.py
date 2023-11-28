@@ -244,8 +244,8 @@ def treatment_efficacy_for_each_classification(
         ultimate_treatment = alri_module._ultimate_treatment_indicated_for_patient(
             classification_for_treatment_decision=classification_for_treatment_decision,
             age_exact_years=age_exact_years,
-            use_oximeter=oximeter_available,
             oxygen_saturation=oxygen_saturation,
+            facility_level=_facility_level
         )
 
         return ultimate_treatment

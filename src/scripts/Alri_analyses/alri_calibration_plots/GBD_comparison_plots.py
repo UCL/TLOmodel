@@ -30,8 +30,8 @@ resourcefilepath = Path("./resources")
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-# log_filename = 'none'
-log_filename = outputpath / 'GBD_lri_comparison_15k_pop__2023-09-11T163954.log'
+log_filename = 'none'
+# log_filename = outputpath / 'GBD_lri_comparison_15k_pop__2023-09-11T163954.log'
 # <-- insert name of log file to avoid re-running the simulation
 
 if not os.path.exists(log_filename):
@@ -63,11 +63,12 @@ if not os.path.exists(log_filename):
         demography.Demography(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
+                                                      force_any_symptom_to_lead_to_healthcareseeking=True),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  service_availability=['*'], cons_availability='all', disable=True),
+                                  service_availability=['*'], cons_availability='default', disable=True),
         alri.Alri(resourcefilepath=resourcefilepath),
         alri.AlriPropertiesOfOtherModules()
     )
