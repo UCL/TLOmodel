@@ -722,7 +722,7 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
     maxNumberofVMs = {pool_node_count};
     pTaskSamplePerc = $PendingTasks.GetSamplePercent(120 * TimeInterval_Second);
     pTaskSample = pTaskSamplePerc < 70 ? startingNumberOfVMs : avg($PendingTasks.GetSample(120 * TimeInterval_Second));
-    $TargetDedicatedNodes=min(maxNumberofVMs, pTaskSample)
+    $TargetDedicatedNodes=min(maxNumberofVMs, pTaskSample);
     $NodeDeallocationOption = taskcompletion;
     """
 
