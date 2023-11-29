@@ -166,9 +166,8 @@ dalys_summary.to_excel(outputspath / "summarised_tb_dalys.xlsx")
 
 # secondary outcomes
 print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
-#
-# columns = ['date', 'year', 'li_wealth', 'value']  # Adjust columns as per your actual data
-# df = pd.DataFrame(columns=columns)
+#extracting dalys by SES
+
 # def get_total_num_dalys_by_wealth_and_label(_df):
 #     """
 #     Return the total number of DALYS for all years by wealth and cause label.
