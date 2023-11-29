@@ -4,7 +4,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from pandas._libs.tslibs.offsets import DateOffset
 
 from tlo import Date, Simulation, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
@@ -211,7 +210,7 @@ def test_standard_run_using_simplified_birth_module(seed):
     # Cause the 'check on configuration' of properties to run daily during the simulation.
     class CheckProperties(RegularEvent, PopulationScopeEventMixin):
         def __init__(self, module):
-            super().__init__(module, frequency=DateOffset(days=1))
+            super().__init__(module, frequency=pd.DateOffset(days=1))
 
         def apply(self, population):
             check_property_integrity(self.module.sim)

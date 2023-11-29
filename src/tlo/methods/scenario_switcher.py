@@ -58,8 +58,10 @@ class ScenarioSwitcher(Module):
                 try:
                     self.sim.modules[module].parameters[name] = updated_value
                 except KeyError:
-                    raise warnings.warn(f"A parameter could not be updated by the `ScenarioSwitcher` module: "
-                                        f"{module=}, {name=}.")
+                    warnings.warn(
+                        f"A parameter could not be updated by the `ScenarioSwitcher` module: "
+                        f"module={module}, name={name}.",
+                    )
 
     def initialise_simulation(self, sim):
         pass

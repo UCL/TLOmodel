@@ -16,8 +16,8 @@ class Playing22(BaseScenario):
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2011, 1, 1)
         self.pop_size = 200
-        self.number_of_draws = 2
-        self.runs_per_draw = 2
+        self.number_of_draws = 5
+        self.runs_per_draw = 1
 
     def log_configuration(self):
         return {

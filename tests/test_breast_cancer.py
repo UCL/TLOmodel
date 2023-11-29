@@ -264,7 +264,7 @@ def test_check_progression_through_stages_is_happening(seed):
 
     # check that there are now some people in each of the later stages:
     df = sim.population.props
-    assert not pd.isnull(df.brc_status[~pd.isna(df.date_of_birth)]).any()
+    assert not pd.isnull(df.brc_status[~pd.isna(df.date_of_birth)]).any()  # pylint: disable=E1130
     # debugging on this line below and there are women alive with breast cancer so not sure why assert is not working
     # Create variable for the condition
     # condition = df.is_alive & (df.age_years >= 15) & (df.sex == 'F')

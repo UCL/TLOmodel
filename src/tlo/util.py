@@ -203,7 +203,7 @@ class BitsetHandler:
             update. If set to ``None`` (the default) a ``column`` argument must have
             been specified when constructing the ``BitsetHandler`` object.
         """
-        self.df.loc[where, self._get_columns(columns)] &= ~self.element_repr(*elements)
+        self.df.loc[where, self._get_columns(columns)] &= ~self.element_repr(*elements)  # pylint: disable=E1130
 
     def clear(self, where, columns: Optional[Union[str, List[str]]] = None):
         """Clears all the bits for the specified rows.

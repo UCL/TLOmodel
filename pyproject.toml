@@ -56,6 +56,7 @@ dev = [
     "pylint",
     "ruff",
     # Profiling
+    "psutil",
     "pyinstrument>=4.3",
     # Building requirements files
     "pip-tools",
@@ -93,9 +94,6 @@ disable = [
     "R",
     "C",
     "W",
-    "E0611", # no-name-in-module
-    "E0702", # raising NoneType
-    "E1130", # bad operand type for unary ~
 ]
 
 

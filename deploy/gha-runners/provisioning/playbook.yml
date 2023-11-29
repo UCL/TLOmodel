@@ -2,11 +2,18 @@
   collections:
     - devsec.hardening
   vars:
+    ## GitHub Actions runner setup
     github_account: UCL
     github_repo: TLOmodel
     runner_user: gha
+    runner_user_homedir: "/home/{{ runner_user }}"
     runner_workdir: /mnt/tlo
+    python_version: "3.11"
+    ## SSH hardening
     ssh_deny_users: "{{ runner_user }}"
+    # In Azure VMs connection times out after every ~4.5 minutes, sending this
+    # signal every 2 minutes keeps the connection alive.
+    ssh_client_alive_interval: "120"
 
   tasks:
 
@@ -15,7 +22,7 @@
      ansible.builtin.user:
        name: "{{ runner_user }}"
        create_home: yes
-       home: "/home/{{ runner_user }}"
+       home: "{{ runner_user_homedir }}"
        shell: /bin/bash
 
    - name: add deadsnakes ppa
@@ -30,24 +37,17 @@
      apt:
        name:
          - acl  # https://github.com/georchestra/ansible/issues/55#issuecomment-651043423
-         - python3.8
-         - python3.8-distutils
+         - "python{{ python_version }}"
+         - "python{{ python_version }}-distutils"
+         - "python{{ python_version }}-venv"
          - python3-pip
          - glibc-tools
          - git-lfs
        state: present
 
-   - name: update-alternative select python3.8 as default
-     become: true
-     community.general.alternatives:
-       name: python
-       path: /usr/bin/python3.8
-       link: /usr/bin/python
-       state: selected
-
    - name: install tox
      become: true
-     ansible.builtin.shell: python3.8 -m pip install tox
+     ansible.builtin.shell: "python{{ python_version }} -m pip install tox"
      args:
        creates: /usr/local/bin/tox
 
@@ -59,7 +59,7 @@
        mode: '1777'
 
    - name: run github actions runner role
-     with_sequence: count="{{ n_runners }}"
+     with_sequence: count="{{ n_runners | default(1) }}"
      include_role:
        name: monolithprojects.github_actions_runner
        apply:
@@ -68,6 +68,9 @@
        runner_dir: "/opt/actions-runner/{{ item }}"
        runner_name: "{{ ansible_hostname }}-{{ item }}"
        runner_extra_config_args: "--work {{ runner_workdir }}/{{ item }}/_work"
+       # Always use hostname as label, and any other label specified on the
+       # command line with `--extra-vars '{"extra_runners_labels": [...]}'`.
+       runner_labels: "{{ (extra_runners_labels | default([])) + [ansible_hostname] }}"
        reinstall_runner: no
 
   roles:
