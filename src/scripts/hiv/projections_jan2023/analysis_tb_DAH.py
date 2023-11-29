@@ -34,7 +34,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #Tb_DAH_impactx51-2023-11-27T092206Z looks to work fine
 #Tb_DAH_impactx54-2023-11-27T142220Z based on population of 10K and run for 10 years and seems to work.
 #Tb_DAH_impactx55-2023-11-28T074721Z based on 10K and run for 2020 and appears to work except for
-
+#Tb_DAH_impactx58-2023-11-28T202627Z -based on 10k for 10 years
+# Tb_DAH_impactx59-2023-11-29T102358Z based on 10K for 2 years
 results_folder = get_scenario_outputs("Tb_DAH_impactx58-2023-11-28T202627Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
@@ -149,7 +150,7 @@ tb_dalys = extract_results(
     module="tlo.methods.healthburden",
     key="dalys",
     custom_generate_series=get_tb_dalys,
-    do_scaling=True
+    do_scaling=False
 ).pipe(set_param_names_as_column_index_level_0)
 
 # Get mean/upper/lower statistics
@@ -253,7 +254,7 @@ def tb_mortality0(results_folder):
         custom_generate_series=(
             lambda df: df.assign(year=df["date"].dt.year).groupby(["year", "cause"])["person_id"].count()
         ),
-        do_scaling=True,
+        do_scaling=False,
     ).pipe(set_param_names_as_column_index_level_0)
 
     # Select only causes AIDS_TB, AIDS_non_TB, and TB
@@ -280,7 +281,7 @@ def tb_mortality_rate(results_folder, pyears_all):
         custom_generate_series=(
             lambda df: df.assign(year=df["date"].dt.year).groupby(["year", "cause"])["person_id"].count()
         ),
-        do_scaling=True,
+        do_scaling=False,
     ).pipe(set_param_names_as_column_index_level_0)
 
     # Select only causes AIDS_TB, AIDS_non_TB, and TB
