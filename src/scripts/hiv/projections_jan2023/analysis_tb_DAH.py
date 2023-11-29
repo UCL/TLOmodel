@@ -34,8 +34,8 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 #Tb_DAH_impactx51-2023-11-27T092206Z looks to work fine
 #Tb_DAH_impactx54-2023-11-27T142220Z based on population of 10K and run for 10 years and seems to work.
 #Tb_DAH_impactx55-2023-11-28T074721Z based on 10K and run for 2020 and appears to work except for
-#Tb_DAH_impactx56-2023-11-28T150957Z
-results_folder = get_scenario_outputs("Tb_DAH_impactx57-2023-11-28T165854Z", outputspath)[-1]
+
+results_folder = get_scenario_outputs("Tb_DAH_impactx58-2023-11-28T202627Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -327,6 +327,33 @@ tb_hiv_prop.index = tb_hiv_prop.index.year
 tb_hiv_prop_with_year = pd.DataFrame(tb_hiv_prop)
 tb_hiv_prop.to_excel(outputspath / "PLHIV_tb.xlsx")
 
+#false positives
+# def get_false_positives(df_):
+#     # Get DALYs of TB
+#     years = df_['year'].value_counts().keys()
+#     false_positives = pd.Series(dtype='float64', index=years)
+#     for year in years:
+#         tot_false_positives = df_[df_['year'] == year].drop(columns='date').sum(numeric_only=True)
+#         false_positives[year] = tot_false_positives[['tbNumFalsePositiveAdults', 'tbNumFalsePositiveChildren']].sum()
+#     false_positives.sort_index(inplace=True)
+#     print(false_positives)
+#     return false_positives
+#
+# # # Extracts false positives
+# adult_false_positives = summarize(
+#     extract_results(
+#         results_folder,
+#         module="tlo.methods.tb",
+#         key="tb_false_positive",
+#        custom_generate_series=get_false_positives,
+#         do_scaling=False,
+#     ),
+#     collapse_columns=True,
+# ).pipe(set_param_names_as_column_index_level_0)
+# adult_false_positives = adult_false_positives.index.year
+# tb_false_positives_year = pd.DataFrame(adult_false_positives)
+# adult_false_positives.to_excel(outputspath / "false_positives_adults.xlsx")
+
 #MDR TB cases
 mdr_tb_cases = summarize(
     extract_results(
@@ -458,6 +485,11 @@ child_Tb_prevalence= summarize(
 
 child_Tb_prevalence.index = child_Tb_prevalence.index.year
 child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence.xlsx")
+
+#false positives
+tb_false_positive = log["tlo.methods.tb"]["tb_false_positive"]
+tb_false_positives= tb_false_positive.set_index("date")
+tb_false_positives.to_excel(outputspath / "tb_false_positives.xlsx")
 
 #properties of deceased
 properties_of_deceased_persons = log["tlo.methods.demography.detail"]["properties_of_deceased_persons"]
@@ -645,3 +677,4 @@ print(consumables_list)
 # Removed commented and duplicate code
 #consumables_baseline = log['tlo.methods.healthsystem.summary']['Consumables'] & params[draw]==1
 #consumables_baseline = log['tlo.methods.healthsystem.summary']['Consumables']
+
