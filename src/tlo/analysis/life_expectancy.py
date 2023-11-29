@@ -14,12 +14,7 @@ from pathlib import Path
 import pandas as pd
 
 from tlo import Date
-
-from tlo.analysis.utils import (
-    extract_results,
-    get_scenario_info,
-    load_pickled_dataframes,
-)
+from tlo.analysis.utils import extract_results, get_scenario_info, load_pickled_dataframes
 
 # define the target period over which we want to estimate life expectancy
 # this should be a one-year period
