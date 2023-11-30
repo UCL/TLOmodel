@@ -120,7 +120,7 @@ class ImpactOfTbDaH(BaseScenario):
             "Outreach services": {
                 'Tb': {
                     'scenario': 4,
-                    'scaling_factor_WHO': 1.35
+                    'scaling_factor_WHO': 1.44
                 }
             },
         }
