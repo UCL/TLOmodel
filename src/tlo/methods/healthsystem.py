@@ -183,7 +183,7 @@ class HSI_Event:
         self._received_info_about_bed_days = None
         self.expected_time_requests = {}
         self.facility_info = None
-        self.EQUIPMENT = None
+        self.EQUIPMENT = set()
 
     @property
     def bed_days_allocated_to_this_event(self):
@@ -401,7 +401,7 @@ class HSI_Event:
             beddays_footprint=tuple(
                 sorted((k, v) for k, v in self.BEDDAYS_FOOTPRINT.items() if v > 0)
             ),
-            equipment=(tuple(sorted(self.EQUIPMENT))) if self.EQUIPMENT is not None else None
+            equipment=(tuple(sorted(self.EQUIPMENT)))
         )
 
 
