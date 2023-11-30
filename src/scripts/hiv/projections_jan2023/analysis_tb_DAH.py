@@ -195,51 +195,13 @@ def total_num_dalys_by_wealth_and_label(results_folder):
         key="dalys_by_wealth_stacked_by_age_and_time",
         custom_generate_series=get_total_num_dalys_by_wealth_and_label,
         do_scaling=True,
-    )
-    print("Contents of SES_dalys:")
-    print(SES_dalys)
-
-    # Check if SES_dalys is None or empty
-    if SES_dalys is None or SES_dalys.empty:
-        print("No data found or an issue with data extraction.")
-        return None  # or handle it according to your needs
-
-def get_total_num_dalys_by_agegrp_and_label(_df):
-    """Return the total number of DALYS in the TARGET_PERIOD by age-group and cause label."""
-    return _df \
-        .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
-        .assign(age_group=_df['age_range']) \
-        .drop(columns=['date', 'year', 'sex', 'age_range']) \
-        .melt(id_vars=['age_group'], var_name='label', value_name='dalys') \
-        .groupby(by=['age_group', 'label'])['dalys'] \
-        .sum()
-
-total_num_dalys_by_agegrp_and_label = extract_results(
-    results_folder,
-    module="tlo.methods.healthburden",
-    key='dalys_stacked_by_age_and_time',  # <-- for stacking by age and time
-    custom_generate_series=get_total_num_dalys_by_agegrp_and_label,
-    do_scaling=True
-).pipe(set_param_names_as_column_index_level_0)
+    ).pipe(set_param_names_as_column_index_level_0)
 
     SES_dalys = SES_dalys.sort_index()
     SES_dalys1 = summarize(SES_dalys[SES_dalys.index.get_level_values('cause').isin(["AIDS_TB", "TB", "AIDS_non_TB"])]).sort_index()
     SES_dalys1["year"] = SES_dalys1.index.get_level_values("year")  # Extract the 'year' values from the index
     SES_dalys1.reset_index(drop=True, inplace=True)
 
-    # Group deaths by year
-    SES_dalysx = pd.DataFrame(SES_dalys1.groupby(["year"], as_index=False).sum())
-    SES_dalysx.set_index("year", inplace=True)
-    return SES_dalys
-
-# Print SES_dalys before writing to Excel
-print("SES_dalys before writing to Excel:")
-#print(SES_dalys)
-
-SES_dalys = total_num_dalys_by_wealth_and_label(results_folder)
-# Check if SES_dalys is None before writing to Excel
-if SES_dalys is not None:
-    SES_dalys.to_excel(outputspath / "SES_dalys.xlsx")
 
 #raw mortality
 def tb_mortality0(results_folder):
