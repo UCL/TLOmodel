@@ -22,7 +22,7 @@ from tlo.analysis.utils import (
 resourcefilepath = Path("./resources")
 outputspath = Path("./outputs/nic503@york.ac.uk")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
-
+TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 # Get basic information about the results
 #Tb_DAH_scenarios_test_run09_partial-2023-09-14T125620Z
 #tb_DAH_scenarios-2023-09-18T132119Z
@@ -54,7 +54,7 @@ def get_parameter_names_from_scenario_file() -> Tuple[str]:
     e = ImpactOfTbDaH()
     return tuple(e._scenarios.keys())
 
-TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
+
 def set_param_names_as_column_index_level_0(_df):
     """Set the columns index (level 0) as the param_names."""
     ordered_param_names_no_prefix = {i: x for i, x in enumerate(param_names)}
@@ -168,39 +168,65 @@ dalys_summary.to_excel(outputspath / "summarised_tb_dalys.xlsx")
 print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
 #extracting dalys by SES
 
- def get_total_num_dalys_by_wealth_and_label(_df):
-    """
-    Return the total number of DALYS for all years by wealth and cause label.
+# def get_total_num_dalys_by_wealth_and_label(_df):
+#     """
+#     Return the total number of DALYS for all years by wealth and cause label.
+#
+#     Parameters:
+#     - df: DataFrame containing DALY data
+#     """
+#     wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
+#
+#     value_sum = _df \
+#         .drop(columns=['date', 'year']) \
+#         .assign(
+#             li_wealth=lambda x: x['li_wealth'].map(wealth_cats).astype(
+#                 pd.CategoricalDtype(wealth_cats.values(), ordered=True))
+#         ) \
+#         .melt(id_vars=['li_wealth'], var_name='label') \
+#         .groupby(by=['li_wealth', 'label'])['value'].sum().reset_index()
+#     return value_sum
+#
+# #extracting DALY by SES
+# def total_num_dalys_by_wealth_and_label(results_folder):
+#     SES_dalys = extract_results(
+#         results_folder,
+#         module="tlo.methods.healthburden",
+#         key="dalys_by_wealth_stacked_by_age_and_time",
+#         custom_generate_series=get_total_num_dalys_by_wealth_and_label,
+#         do_scaling=True,
+#     ).pipe(set_param_names_as_column_index_level_0)
 
-    Parameters:
-    - df: DataFrame containing DALY data
-    """
-    wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
+# def get_total_num_dalys_by_wealth_and_label(_df):
+#     """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
+#     wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
+#
+#     return _df \
+#         .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
+#         .drop(columns=['date', 'year']) \
+#         .assign(
+#         li_wealth=lambda x: x['li_wealth'].map(wealth_cats)
+#         .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
+#     ) \
+#         .melt(id_vars=['li_wealth'], var_name='label') \
+#         .groupby(by=['li_wealth', 'label'])['value'] \
+#         .sum()
+#
+# total_num_dalys_by_wealth_and_label = extract_results(
+#     results_folder,
+#     module="tlo.methods.healthburden",
+#     key= "dalys_stacked",
+#     custom_generate_series=get_total_num_dalys_by_wealth_and_label,
+#     do_scaling=True
+# ).pipe(set_param_names_as_column_index_level_0)
 
-    value_sum = df \
-        .drop(columns=['date', 'year']) \
-        .assign(
-            li_wealth=lambda x: x['li_wealth'].map(wealth_cats).astype(
-                pd.CategoricalDtype(wealth_cats.values(), ordered=True))
-        ) \
-        .melt(id_vars=['li_wealth'], var_name='label') \
-        .groupby(by=['li_wealth', 'label'])['value'].sum().reset_index()
-    return value_sum
+# SES_dalys = SES_dalys.sort_index()
+# SES_dalys1 = summarize(SES_dalys[SES_dalys.index.get_level_values('cause').isin(["AIDS_TB", "TB", "AIDS_non_TB"])]).sort_index()
+# SES_dalys1["year"] = SES_dalys1.index.get_level_values("year")  # Extract the 'year' values from the index
+# SES_dalys1.reset_index(drop=True, inplace=True)
+#     #SES_dalys1 = SES_dalys(results_folder)
+#     SES_dalys1.to_excel(outputspath / "raw_SES.xlsx")
 
-#extracting DALY by SES
-def total_num_dalys_by_wealth_and_label(results_folder):
-    SES_dalys = extract_results(
-        results_folder,
-        module="tlo.methods.healthburden",
-        key="dalys_by_wealth_stacked_by_age_and_time",
-        custom_generate_series=get_total_num_dalys_by_wealth_and_label,
-        do_scaling=True,
-    ).pipe(set_param_names_as_column_index_level_0)
-
-    SES_dalys = SES_dalys.sort_index()
-    SES_dalys1 = summarize(SES_dalys[SES_dalys.index.get_level_values('cause').isin(["AIDS_TB", "TB", "AIDS_non_TB"])]).sort_index()
-    SES_dalys1["year"] = SES_dalys1.index.get_level_values("year")  # Extract the 'year' values from the index
-    SES_dalys1.reset_index(drop=True, inplace=True)
 
 
 #raw mortality
@@ -621,16 +647,16 @@ if __name__ == "__main__":
     #     resourcefilepath=args.resources_path
     # )
 
-# Removed duplicate print statements and corrected the commented-out code
-print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
-print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
-
-consumables_list = log['tlo.methods.healthsystem.summary']['Consumables']
-# Print the list of consumables
-print("List of Consumables:")
-print(consumables_list)
-
-# Removed the comma at the end of the print statement
+# # Removed duplicate print statements and corrected the commented-out code
+# print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
+# print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
+#
+# consumables_list = log['tlo.methods.healthsystem.summary']['Consumables']
+# # Print the list of consumables
+# print("List of Consumables:")
+# print(consumables_list)
+#
+# # Removed the comma at the end of the print statement
 #print(params)
 
 # Removed commented and duplicate code
