@@ -10,7 +10,7 @@ from tlo.analysis.utils import extract_results
 # Declare whether to scale the counts to Malawi population size
 # (True/False)
 do_scaling = True
-# Declare as a list by which hsi event details you want the equipment be grouped in the catalogue (choose one or more)
+# Declare as a list by which hsi event details you want the equipment be grouped in the catalogue (choose any number)
 # (event details: 'event_name', 'module_name', 'treatment_id', 'facility_level', 'appt_footprint', 'beddays_footprint')
 catalog_by_details = ['treatment_id', 'facility_level']
 # Declare which time period you want the equipment be grouped in the catalogue (choose only one)
