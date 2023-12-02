@@ -6,13 +6,23 @@ import pandas as pd
 
 from tlo.analysis.utils import extract_results
 
-# %%% TO SET %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# %%% TO SET %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Declare whether to scale the counts to Malawi population size
+# (True/False)
 do_scaling = True
-# Declare output file names
+# Declare as list by which hsi event details you want the equipment be grouped in the catalogue (choose one or more)
+# (event details: 'event_name', 'module_name', 'treatment_id', 'facility_level', 'appt_footprint', 'beddays_footprint')
+catalog_by = ['treatment_id', 'facility_level']
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+# %%% Output file names
+# detailed CSV name
 output_detailed_file_name = 'equipment_monthly_counts__all_event_details.csv'
-output_file_name = 'equipment_annual_counts__by_Year_TreatmentID_FacLevel.csv'
-# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# requested details only CSV name
+output_file_name_prefix = 'equipment_annual_counts__by_year_'
+output_file_name_suffix = '.csv'
+output_file_name_details_specified = '_'.join(catalog_by)
+output_file_name = output_file_name_prefix + output_file_name_details_specified + output_file_name_suffix
 
 
 def get_monthly_hsi_event_counts(results_folder: Path) -> pd.DataFrame:
@@ -78,7 +88,7 @@ def get_hsi_event_keys_all_runs(results_folder: Path) -> pd.DataFrame:
 
 def create_equipment_catalogues(results_folder: Path, output_folder: Path):
 
-    # %% Catalogue equipment by all HSI event details
+    # %% Catalog equipment by all HSI event details
     sim_equipment = get_monthly_hsi_event_counts(results_folder)
     sim_equipment_df = pd.DataFrame(sim_equipment)
     hsi_event_keys = get_hsi_event_keys_all_runs(results_folder)
@@ -134,15 +144,15 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
     print(f'{output_detailed_file_name} saved.')
     # ---
 
-    # %% Catalogue equipment by Treatment ID and Facility Levels
+    # %% Catalog equipment by requested details
     equipment_counts_by_date_treatment_id_level_df = final_df.copy()
 
     # Sum counts for each equipment with the same date, treatment id, and facility level (remaining indexes removed),
     # keeping only non-empty 'equipment' indexes
+    to_be_grouped_by = ['date'] + catalog_by + ['equipment']
     equipment_counts_by_date_treatment_id_level_df = equipment_counts_by_date_treatment_id_level_df.groupby(
-        ['date', 'treatment_id', 'facility_level', 'equipment'],
+        to_be_grouped_by,
         dropna=True
-        # TODO: make 'treatment_id', 'facility_level' to be an input
     ).sum()
 
     # Sum counts annually
