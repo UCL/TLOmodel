@@ -17,15 +17,6 @@ catalog_by_details = ['treatment_id', 'facility_level']
 # (periods: 'monthly', 'annual')
 catalog_by_time = 'annual'
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# TODO: verify inputs are as expected
-
-# %%% Output file names
-# detailed CSV name
-output_detailed_file_name = 'equipment_monthly_counts__all_event_details.csv'
-# requested details only CSV name
-time_index = 'year' if catalog_by_time == 'annual' else 'date'
-output_file_name = \
-    'equipment_' + catalog_by_time + '_counts__by_' + time_index + '_' + '_'.join(catalog_by_details) + '.csv'
 
 
 def get_monthly_hsi_event_counts(results_folder: Path) -> pd.DataFrame:
@@ -90,6 +81,27 @@ def get_hsi_event_keys_all_runs(results_folder: Path) -> pd.DataFrame:
 
 
 def create_equipment_catalogues(results_folder: Path, output_folder: Path):
+    # %%% Verify inputs are as expected
+    assert isinstance(do_scaling, bool), "The input parameter 'do_scaling' must be a boolean (True or False)"
+    assert isinstance(catalog_by_details, list), "The input parameter 'catalog_by_details' must be a list"
+    event_details = \
+        {'event_name', 'module_name', 'treatment_id', 'facility_level', 'appt_footprint', 'beddays_footprint'}
+    for item in catalog_by_details:
+        assert isinstance(item, str) and item in event_details, \
+            f"Each element in the input list 'catalog_by_details' must be a string and be one of the details:\n" \
+            f"{event_details}"
+    assert catalog_by_time in {'monthly', 'annual'}, \
+        "The input parameter 'catalog_by_time' must be one of the strings ('monthly' or 'annual')"
+    # ---
+
+    # %%% Set output file names
+    # detailed CSV name
+    output_detailed_file_name = 'equipment_monthly_counts__all_event_details.csv'
+    # requested details only CSV name
+    time_index = 'year' if catalog_by_time == 'annual' else 'date'
+    output_file_name = \
+        'equipment_' + catalog_by_time + '_counts__by_' + time_index + '_' + '_'.join(catalog_by_details) + '.csv'
+    # ---
 
     # %% Catalog equipment by all HSI event details
     sim_equipment = get_monthly_hsi_event_counts(results_folder)
@@ -172,7 +184,7 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
     # Save the equipment counts CSV
     equipment_counts_by_time_and_requested_details.to_csv(output_folder / output_file_name)
     print(f'{output_file_name} saved.')
-    # # ---
+    # ---
 
     return 0
 
