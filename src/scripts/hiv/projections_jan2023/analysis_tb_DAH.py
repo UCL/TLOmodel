@@ -191,31 +191,31 @@ print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography'].ke
 #     # SES_dalys1.to_excel(outputspath / "DALY_by_SES.xlsx")
 #
 # #mortality by SES
-def get_total_num_death_by_wealth_and_label(_df):
-    """Return the total number of deaths in the TARGET_PERIOD by wealth and cause label."""
-    wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
-    wealth_group = (
-        _df['li_wealth']
-        .map(wealth_cats)
-        .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
-    )
-    result = (
-        _df
-        .loc[_df['date'].between(*TARGET_PERIOD)]
-        .dropna(subset=['person_id', 'li_wealth', 'label', 'wealth_group'])
-        .groupby([wealth_group, 'label'])['person_id'].size()
-    )
-    return result
-
-# Rest of your code remains unchanged
-total_num_death_by_wealth_and_label = extract_results(
-    results_folder,
-    module="tlo.methods.demography",
-    key="death",
-    custom_generate_series=get_total_num_death_by_wealth_and_label,
-    do_scaling=True
-).pipe(set_param_names_as_column_index_level_0)
-total_num_death_by_wealth_and_label.to_excel(outputspath / "total_num_deaths_by_agegrp_and_label.xlsx")
+# def get_total_num_death_by_wealth_and_label(_df):
+#     """Return the total number of deaths in the TARGET_PERIOD by wealth and cause label."""
+#     wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
+#     wealth_group = (
+#         _df['li_wealth']
+#         .map(wealth_cats)
+#         .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
+#     )
+#     result = (
+#         _df
+#         .loc[_df['date'].between(*TARGET_PERIOD)]
+#         .dropna(subset=['person_id', 'li_wealth', 'label', 'wealth_group'])
+#         .groupby([wealth_group, 'label'])['person_id'].size()
+#     )
+#     return result
+#
+# # Rest of your code remains unchanged
+# total_num_death_by_wealth_and_label = extract_results(
+#     results_folder,
+#     module="tlo.methods.demography",
+#     key="death",
+#     custom_generate_series=get_total_num_death_by_wealth_and_label,
+#     do_scaling=True
+# ).pipe(set_param_names_as_column_index_level_0)
+# total_num_death_by_wealth_and_label.to_excel(outputspath / "total_num_deaths_by_agegrp_and_label.xlsx")
 
 #raw mortality
 def tb_mortality0(results_folder):
