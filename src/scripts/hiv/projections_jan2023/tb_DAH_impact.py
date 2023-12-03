@@ -50,7 +50,6 @@ class ImpactOfTbDaH(BaseScenario):
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
         self.runs_per_draw = 2
-
     def log_configuration(self):
         return {
             'filename': 'Tb_DAH_impactx64',
