@@ -199,11 +199,10 @@ def get_total_num_death_by_wealth_and_label(_df):
         .map(wealth_cats)
         .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
     )
-
     result = (
         _df
         .loc[_df['date'].between(*TARGET_PERIOD)]
-        .dropna(subset=['person_id', 'li_wealth', 'label', 'wealth_group'])  # Include 'wealth_group' in the dropna
+        .dropna(subset=['person_id', 'li_wealth', 'label', 'wealth_group'])
         .groupby([wealth_group, 'label'])['person_id'].size()
     )
     return result
