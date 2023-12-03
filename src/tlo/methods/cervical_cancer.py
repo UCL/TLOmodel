@@ -8,6 +8,7 @@ Limitations to note:
 from pathlib import Path
 from datetime import datetime
 
+import math
 import pandas as pd
 import random
 import json
@@ -195,6 +196,11 @@ class CervicalCancer(Module):
             Types.DATE,
             "the date of diagnosis of cervical cancer (pd.NaT if never diagnosed)"
         ),
+        "ce_stage_at_diagnosis": Property(
+            Types.CATEGORICAL,
+            "the cancer stage at which cancer diagnosis was made",
+            categories=["none", "hpv", "cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"],
+        ),
         "ce_date_via": Property(
             Types.DATE,
             "the date of last visual inspection with acetic acid (pd.NaT if never diagnosed)"
@@ -210,6 +216,14 @@ class CervicalCancer(Module):
         "ce_date_treatment": Property(
             Types.DATE,
             "date of first receiving attempted curative treatment (pd.NaT if never started treatment)"
+        ),
+        "ce_ever_treated": Property(
+            Types.BOOL,
+            "ever been treated for cc"
+        ),
+        "ce_cc_ever": Property(
+            Types.BOOL,
+            "ever had cc"
         ),
             # currently this property has levels to match ce_hov_cc_status to enable the code as written, even
             # though can only be treated when in stage 1-3
@@ -263,10 +277,15 @@ class CervicalCancer(Module):
         df.loc[df.is_alive, "ce_date_palliative_care"] = pd.NaT
         df.loc[df.is_alive, "ce_date_death"] = pd.NaT
         df.loc[df.is_alive, "ce_new_stage_this_month"] = False
+        df.loc[df.is_alive, "ce_stage_at_diagnosis"] = "none"
+        df.loc[df.is_alive, "ce_ever_treated"] = False
+        df.loc[df.is_alive, "ce_cc_ever"] = False
 
         # -------------------- ce_hpv_cc_status -----------
         # Determine who has cancer at ANY cancer stage:
         # check parameters are sensible: probability of having any cancer stage cannot exceed 1.0
+
+# todo: make prevalence at baseline depend on hiv status and perhaps age
 
         women_over_15_idx = df.index[(df["age_years"] > 15) & (df["sex"] == 'F')]
 
@@ -562,6 +581,10 @@ class CervicalCancer(Module):
         df.at[child_id, "ce_date_death"] = pd.NaT
         df.at[child_id, "ce_date_cin_removal"] = pd.NaT
         df.at[child_id, "ce_date_treatment"] = pd.NaT
+        df.at[child_id, "ce_stage_at_diagnosis"] = 'none'
+        df.at[child_id, "ce_ever_treated"] = False
+        df.at[child_id, "ce_cc_ever"] = False
+
 
     def on_hsi_alert(self, person_id, treatment_id):
         pass
@@ -651,11 +674,22 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
             df.loc[idx_gets_new_stage, 'ce_hpv_cc_status'] = stage
             df.loc[idx_gets_new_stage, 'ce_new_stage_this_month'] = True
 
+        df['ce_cc_ever'] = ((df.ce_hpv_cc_status == 'stage1') | (df.ce_hpv_cc_status == 'stage2a')
+                            | (df.ce_hpv_cc_status == 'stage2b') | (df.ce_hpv_cc_status == 'stage3') | (
+                                    df.ce_hpv_cc_status == 'stage4')
+                            | df.ce_ever_treated)
+
     # -------------------- UPDATING OF SYMPTOM OF vaginal bleeding OVER TIME --------------------------------
         # Each time this event is called (every month) individuals with cervical cancer may develop the symptom of
         # vaginal bleeding.  Once the symptom is developed it never resolves naturally. It may trigger
         # health-care-seeking behaviour.
-        onset_vaginal_bleeding = self.module.lm_onset_vaginal_bleeding.predict(df.loc[df.is_alive], rng)
+        onset_vaginal_bleeding = self.module.lm_onset_vaginal_bleeding.predict(
+            df.loc[
+                np.bitwise_and(df.is_alive, df.ce_stage_at_diagnosis == 'none')
+            ],
+            rng
+        )
+
         self.sim.modules['SymptomManager'].change_symptom(
             person_id=onset_vaginal_bleeding[onset_vaginal_bleeding].index.tolist(),
             symptom_string='vaginal_bleeding',
@@ -743,6 +777,7 @@ class HSI_CervicalCancer_Investigation_Following_vaginal_bleeding(HSI_Event, Ind
         if dx_result:
             # record date of diagnosis:
             df.at[person_id, 'ce_date_diagnosis'] = self.sim.date
+            df.at[person_id, 'ce_stage_at_diagnosis'] = df.at[person_id, 'ce_hpv_cc_status']
 
             # Check if is in stage4:
             in_stage4 = df.at[person_id, 'ce_hpv_cc_status'] == 'stage4'
@@ -825,6 +860,7 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # Record date and stage of starting treatment
         df.at[person_id, "ce_date_treatment"] = self.sim.date
+        df.at[person_id, "ce_ever_treated"] = True
         df.at[person_id, "ce_stage_at_which_treatment_given"] = df.at[person_id, "ce_hpv_cc_status"]
 
         df.at[person_id, "ce_hpv_cc_status"] = 'none'
@@ -1038,23 +1074,26 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         cc_hiv = (df.is_alive & df.hv_inf & ((df.ce_hpv_cc_status == 'stage1') | (df.ce_hpv_cc_status == 'stage2a')
                              | (df.ce_hpv_cc_status == 'stage2b') | (df.ce_hpv_cc_status == 'stage3')
                              | (df.ce_hpv_cc_status == 'stage4'))).sum()
-        prop_cc_hiv = cc_hiv / cc
+        if cc > 0:
+            prop_cc_hiv = cc_hiv / cc
+        else:
+            prop_cc_hiv = math.nan
 
         n_diagnosed_past_year_stage1 = \
             (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date) &
-             (df.ce_hpv_cc_status == 'stage1')).sum()
+             (df.ce_stage_at_diagnosis == 'stage1')).sum()
         n_diagnosed_past_year_stage2a = \
             (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date) &
-             (df.ce_hpv_cc_status == 'stage2a')).sum()
+             (df.ce_stage_at_diagnosis == 'stage2a')).sum()
         n_diagnosed_past_year_stage2b = \
             (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date) &
-             (df.ce_hpv_cc_status == 'stage2b')).sum()
+             (df.ce_stage_at_diagnosis == 'stage2b')).sum()
         n_diagnosed_past_year_stage3 = \
             (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date) &
-             (df.ce_hpv_cc_status == 'stage3')).sum()
+             (df.ce_stage_at_diagnosis == 'stage3')).sum()
         n_diagnosed_past_year_stage4 = \
             (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date) &
-             (df.ce_hpv_cc_status == 'stage4')).sum()
+             (df.ce_stage_at_diagnosis == 'stage4')).sum()
 
         out.update({"rounded_decimal_year": rounded_decimal_year})
         out.update({"n_deaths_past_year": n_deaths_past_year})
@@ -1067,142 +1106,24 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_diagnosed_past_year_stage4": n_diagnosed_past_year_stage4})
 
         # Specify the file path for the CSV file
-        out_csv = Path("./outputs/output_data.csv")
+#       out_csv = Path("./outputs/output_data.csv")
 
-        with open(out_csv, "a", newline="") as csv_file:
-            # Create a CSV writer
-            csv_writer = csv.DictWriter(csv_file, fieldnames=out.keys())
+#       with open(out_csv, "a", newline="") as csv_file:
+#           # Create a CSV writer
+#           csv_writer = csv.DictWriter(csv_file, fieldnames=out.keys())
 
-            # If the file is empty, write the header
-            if csv_file.tell() == 0:
-                csv_writer.writeheader()
+#           # If the file is empty, write the header
+#           if csv_file.tell() == 0:
+#               csv_writer.writeheader()
 
             # Write the data to the CSV file
-            csv_writer.writerow(out)
+#           csv_writer.writerow(out)
 
-        print(out)
+#       print(out)
 
-#       selected_columns = ['ce_hpv_cc_status', 'age_years', 'sex', 'va_hpv']
-#       selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 9)]
+#       selected_columns = ['sy_vaginal_bleeding', 'ce_cc_ever', 'ce_ever_treated']
+#       selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15)]
 #       print(selected_rows[selected_columns])
-
-
-
-
-
-
-
-
-
-
-"""
-
-        filepath = Path("./outputs/output.txt")
-
-        with open(filepath, "a") as file:
-            # Move the file pointer to the end of the file to append data
-            file.seek(0, 2)
-            # Add a newline to separate entries in the file
-            file.write("\n")
-            json.dump(out, file, indent=2)
-
-        print(out)
-
-
-
-        # Current counts, undiagnosed
-        out.update({f'undiagnosed_{k}': v for k, v in df.loc[df.is_alive].loc[
-            pd.isnull(df.ce_date_diagnosis), 'ce_hpv_cc_status'].value_counts().items()})
-
-        # Current counts, diagnosed
-        out.update({f'diagnosed_{k}': v for k, v in df.loc[df.is_alive].loc[
-            ~pd.isnull(df.ce_date_diagnosis), 'ce_hpv_cc_status'].value_counts().items()})
-
-        # Current counts, ever treated (excl. palliative care)
-        out.update({f'treatment_{k}': v for k, v in df.loc[df.is_alive].loc[(~pd.isnull(
-            df.ce_date_treatment) & pd.isnull(
-            df.ce_date_palliative_care)), 'ce_hpv_cc_status'].value_counts().items()})
-
-        # Current counts, on palliative care
-        out.update({f'palliative_{k}': v for k, v in df.loc[df.is_alive].loc[
-            ~pd.isnull(df.ce_date_palliative_care), 'ce_hpv_cc_status'].value_counts().items()})
-
-        # Counts of those that have been diagnosed, started treatment or started palliative care since last logging
-        # event:
-        date_now = self.sim.date
-        date_lastlog = self.sim.date - pd.DateOffset(days=29)
-
-        n_ge15_f = (df.is_alive & (df.age_years >= 15) & (df.sex == 'F')).sum()
-        n_hpv = (df.is_alive & (df.ce_hpv_cc_status == 'hpv')).sum()
-        p_hpv = n_hpv / n_ge15_f
-
-        n_diagnosed_past_year_stage1 = \
-            (df.ce_date_diagnosis.between(date_lastlog, date_now - DateOffset(days=1)) & (df.ce_hpv_cc_status == 'stage1')).sum()
-        n_diagnosed_past_year_stage2a = \
-            (df.ce_date_diagnosis.between(date_lastlog, date_now - DateOffset(days=1)) & (df.ce_hpv_cc_status == 'stage2a')).sum()
-        n_diagnosed_past_year_stage2b = \
-            (df.ce_date_diagnosis.between(date_lastlog, date_now - DateOffset(days=1)) & (df.ce_hpv_cc_status == 'stage2b')).sum()
-        n_diagnosed_past_year_stage3 = \
-            (df.ce_date_diagnosis.between(date_lastlog, date_now - DateOffset(days=1)) & (df.ce_hpv_cc_status == 'stage3')).sum()
-        n_diagnosed_past_year_stage4 = \
-            (df.ce_date_diagnosis.between(date_lastlog, date_now - DateOffset(days=1)) & (df.ce_hpv_cc_status == 'stage4')).sum()
-
-# todo: add outputs for cin,  xpert testing and via and removal of cin
-
-        n_diagnosed_age_15_29 = (df.is_alive & (df.age_years >= 15) & (df.age_years < 30)
-                                 & ~pd.isnull(df.ce_date_diagnosis)).sum()
-        n_diagnosed_age_30_49 = (df.is_alive & (df.age_years >= 30) & (df.age_years < 50)
-                                 & ~pd.isnull(df.ce_date_diagnosis)).sum()
-        n_diagnosed_age_50p = (df.is_alive & (df.age_years >= 50) & ~pd.isnull(df.ce_date_diagnosis)).sum()
-
-        n_diagnosed = (df.is_alive & ~pd.isnull(df.ce_date_diagnosis)).sum()
-
-        n_alive = (df.is_alive).sum()
-
-        out.update({
-            'decimal_year': rounded_decimal_year,
-            'diagnosed_since_last_log': int(df.ce_date_diagnosis.between(date_lastlog, date_now).sum()),
-            'treated_since_last_log': int(df.ce_date_treatment.between(date_lastlog, date_now).sum()),
-            'palliative_since_last_log': int(df.ce_date_palliative_care.between(date_lastlog, date_now).sum()),
-            'death_cervical_cancer_since_last_log': int(df.ce_date_death.between(date_lastlog, date_now).sum()),
-            'n women age 15+': int(n_ge15_f),
-            'n_diagnosed_past_year_stage1': int(n_diagnosed_past_year_stage1),
-            'n_diagnosed_past_year_stage2a': int(n_diagnosed_past_year_stage2a),
-            'n_diagnosed_past_year_stage2b': int(n_diagnosed_past_year_stage2b),
-            'n_diagnosed_past_year_stage3': int(n_diagnosed_past_year_stage3),
-            'n_diagnosed_past_year_stage4': int(n_diagnosed_past_year_stage4),
-            'n_diagnosed_age_15_29': int(n_diagnosed_age_15_29),
-            'n_diagnosed_age_30_49':  int(n_diagnosed_age_30_49),
-            'n_diagnosed_age_50p': int(n_diagnosed_age_50p),
-            'n_diagnosed': int(n_diagnosed),
-            'n_alive': int(n_alive)
-        })
-
-#       df = df.rename(columns={'ce_stage_at_which_treatment_given': 'treatment_stage'})
-        date_5_years_ago = self.sim.date - pd.DateOffset(days=1825)
-
-        n_deaths_past_year = df.ce_date_death.between(date_5_years_ago, date_now).sum()
-
-#       selected_columns = ['ce_hpv_cc_status', 'age_years', 'sex', 'va_hpv']
-#       selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 9)]
-#       print(selected_rows[selected_columns])
-#       print(n_alive)
-
-
-        logger.info(key='summary_stats',
-                    description='summary statistics for cervical cancer',
-                    data=out)
-
-        print(out)
-
-"""
-
-
-
-
-
-
-
 
 
 

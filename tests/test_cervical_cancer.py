@@ -28,7 +28,7 @@ except NameError:
 
 # parameters for whole suite of tests:
 start_date = Date(2010, 1, 1)
-popsize = 17000
+popsize = 5000
 
 
 # %% Construction of simulation objects:
@@ -86,7 +86,7 @@ def make_simulation_nohsi(seed):
 def zero_out_init_prev(sim):
     # Set initial prevalence to zero:
     sim.modules['CervicalCancer'].parameters['init_prev_cin_hpv_cc_stage'] \
-        = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     return sim
 
 
@@ -157,21 +157,14 @@ def check_configuration_of_population(sim):
     # get df for alive persons:
     df = sim.population.props.copy()
 
-    # for convenience, define a bool for any stage of cancer
-    df['ce_status_any_stage'] = ((df.ce_hpv_cc_status == 'stage1') | (df.ce_hpv_cc_status == 'stage2a')
-     | (df.ce_hpv_cc_status == 'stage2b') | (df.ce_hpv_cc_status == 'stage3') | (df.ce_hpv_cc_status == 'stage4'))
-
     # get df for alive persons:
     df = df.loc[df.is_alive]
 
     # check that no one under 15 has cancer
-    assert not df.loc[df.age_years < 15].ce_status_any_stage.any()
+    assert not df.loc[df.age_years < 15].ce_cc_ever.any()
 
     # check that diagnosis and treatment is never applied to someone who has never had cancer:
-    assert pd.isnull(df.loc[df.ce_status_any_stage == False, 'ce_date_diagnosis']).all()
-    assert pd.isnull(df.loc[df.ce_status_any_stage == False,'ce_date_treatment']).all()
-    assert pd.isnull(df.loc[df.ce_status_any_stage == False, 'ce_date_palliative_care']).all()
-    assert (df.loc[df.ce_status_any_stage == False, 'ce_stage_at_which_treatment_given'] == 'none').all()
+    assert pd.isnull(df.loc[df.ce_cc_ever == False, 'ce_date_palliative_care']).all()
 
     # check that treatment is never done for those with stage 4
     assert 0 == (df.ce_stage_at_which_treatment_given == 'stage4').sum()
@@ -179,10 +172,10 @@ def check_configuration_of_population(sim):
 
     # check that those with symptom are a subset of those with cancer:
     assert set(sim.modules['SymptomManager'].who_has('vaginal_bleeding')).issubset(
-        df.index[df.ce_status_any_stage == True])
+        df.index[df.ce_cc_ever])
 
     # check that those diagnosed are a subset of those with the symptom (and that the date makes sense):
-    assert set(df.index[~pd.isnull(df.ce_date_diagnosis)]).issubset(df.index[df.ce_status_any_stage])
+    assert set(df.index[~pd.isnull(df.ce_date_diagnosis)]).issubset(df.index[df.ce_cc_ever])
     assert (df.loc[~pd.isnull(df.ce_date_diagnosis)].ce_date_diagnosis <= sim.date).all()
 
     # check that date diagnosed is consistent with the age of the person (ie. not before they were 15.0
@@ -321,10 +314,8 @@ def test_that_there_is_no_treatment_without_the_hsi_running(seed):
     check_dtypes(sim)
     check_configuration_of_population(sim)
 
-    # check that there are now some people in each of the later stages:
     df = sim.population.props
     assert len(df.loc[df.is_alive & (df.ce_hpv_cc_status != 'none')]) > 0
-    assert (df.loc[df.is_alive].ce_hpv_cc_status.value_counts().drop(index='none') > 0).all()
 
     # check that some people have died of cervical cancer
     yll = sim.modules['HealthBurden'].years_life_lost

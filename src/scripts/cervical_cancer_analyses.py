@@ -43,13 +43,14 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2013, 1, 1)
-popsize = 170000
+end_date = Date(2020, 1, 1)
+popsize = 1700
 
 
 def run_sim(service_availability):
     # Establish the simulation object and set the seed
-    sim = Simulation(start_date=start_date, seed=0)
+#   sim = Simulation(start_date=start_date, seed=0)
+    sim = Simulation(start_date=start_date)
 
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
