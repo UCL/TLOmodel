@@ -1471,6 +1471,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 0:
             self.sim.modules['HealthSystem'].override_availability_of_consumables({175: 0.51})
             self.sim.modules['HealthSystem'].override_availability_of_consumables({187: 0.85})
+            self.sim.modules["Tb"].parameters["probability_community_chest_xray"] = 0.0
             return
 
         # sets availability of xpert to nil

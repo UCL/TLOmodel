@@ -12,10 +12,10 @@ from typing import Tuple
 from tlo import Date
 from tlo.analysis.utils import (
     extract_params,
-    extract_results,
     get_scenario_info,
     get_scenario_outputs,
     load_pickled_dataframes,
+    extract_results,
     summarize,
 )
 
@@ -144,7 +144,7 @@ tb_dalys = extract_results(
     module="tlo.methods.healthburden",
     key="dalys",
     custom_generate_series=get_tb_dalys,
-    do_scaling=False
+    do_scaling=True
 ).pipe(set_param_names_as_column_index_level_0)
 
 # Get mean/upper/lower statistics
@@ -160,68 +160,63 @@ dalys_summary.to_excel(outputspath / "summarised_tb_dalys.xlsx")
 
 # secondary outcomes
 print(f"Keys of log['tlo.methods.tb']: {log['tlo.methods.tb'].keys()}")
+print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography'].keys()}")
+
 #extracting dalys by SES
-
-# def get_total_num_dalys_by_wealth_and_label(_df):
-#     """
-#     Return the total number of DALYS for all years by wealth and cause label.
-#
-#     Parameters:
-#     - df: DataFrame containing DALY data
-#     """
-#     wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
-#
-#     value_sum = _df \
-#         .drop(columns=['date', 'year']) \
-#         .assign(
-#             li_wealth=lambda x: x['li_wealth'].map(wealth_cats).astype(
-#                 pd.CategoricalDtype(wealth_cats.values(), ordered=True))
-#         ) \
-#         .melt(id_vars=['li_wealth'], var_name='label') \
-#         .groupby(by=['li_wealth', 'label'])['value'].sum().reset_index()
-#     return value_sum
-#
-# #extracting DALY by SES
-# def total_num_dalys_by_wealth_and_label(results_folder):
-#     SES_dalys = extract_results(
-#         results_folder,
-#         module="tlo.methods.healthburden",
-#         key="dalys_by_wealth_stacked_by_age_and_time",
-#         custom_generate_series=get_total_num_dalys_by_wealth_and_label,
-#         do_scaling=True,
-#     ).pipe(set_param_names_as_column_index_level_0)
-
-# def get_total_num_dalys_by_wealth_and_label(_df):
-#     """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
-#     wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
-#
+# def get_total_num_dalys_by_agegrp_and_label(_df):
+#     """Return the total number of DALYS in the TARGET_PERIOD by age-group and cause label."""
 #     return _df \
-#         .loc[_df['year'].between(*[d.year for d in TARGET_PERIOD])] \
-#         .drop(columns=['date', 'year']) \
-#         .assign(
-#         li_wealth=lambda x: x['li_wealth'].map(wealth_cats)
-#         .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
-#     ) \
-#         .melt(id_vars=['li_wealth'], var_name='label') \
-#         .groupby(by=['li_wealth', 'label'])['value'] \
+#         .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
+#         .assign(age_group=_df['age_range']) \
+#         .drop(columns=['date', 'year', 'sex', 'age_range']) \
+#         .melt(id_vars=['age_group'], var_name='label', value_name='dalys') \
+#         .groupby(by=['age_group', 'label'])['dalys'] \
 #         .sum()
 #
-# total_num_dalys_by_wealth_and_label = extract_results(
+#
+# total_num_dalys_by_agegrp_and_label = extract_results(
 #     results_folder,
 #     module="tlo.methods.healthburden",
-#     key= "dalys_stacked",
-#     custom_generate_series=get_total_num_dalys_by_wealth_and_label,
+#     key='dalys_stacked',  # <-- for stacking by age and time
+#     custom_generate_series=get_total_num_dalys_by_agegrp_and_label,
 #     do_scaling=True
 # ).pipe(set_param_names_as_column_index_level_0)
+#
+# total_num_dalys_by_agegrp_and_label.to_excel(outputspath / "total_num_dalys_by_agegrp_and_label.xlsx")
+#
+#     # SES_dalys = SES_dalys.sort_index()
+#     # SES_dalys1 = summarize(SES_dalys[SES_dalys.index.get_level_values('cause').isin(["AIDS_TB", "TB", "AIDS_non_TB"])]).sort_index()
+#     # SES_dalys1["year"] = SES_dalys1.index.get_level_values("year")  # Extract the 'year' values from the index
+#     # SES_dalys1.reset_index(drop=True, inplace=True)
+#     # SES_dalys1.to_excel(outputspath / "DALY_by_SES.xlsx")
+#
+# #mortality by SES
+def get_total_num_death_by_wealth_and_label(_df):
+    """Return the total number of deaths in the TARGET_PERIOD by wealth and cause label."""
+    wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
+    wealth_group = (
+        _df['li_wealth']
+        .map(wealth_cats)
+        .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
+    )
 
-# SES_dalys = SES_dalys.sort_index()
-# SES_dalys1 = summarize(SES_dalys[SES_dalys.index.get_level_values('cause').isin(["AIDS_TB", "TB", "AIDS_non_TB"])]).sort_index()
-# SES_dalys1["year"] = SES_dalys1.index.get_level_values("year")  # Extract the 'year' values from the index
-# SES_dalys1.reset_index(drop=True, inplace=True)
-#     #SES_dalys1 = SES_dalys(results_folder)
-#     SES_dalys1.to_excel(outputspath / "raw_SES.xlsx")
+    result = (
+        _df
+        .loc[_df['date'].between(*TARGET_PERIOD)]
+        .dropna(subset=['person_id', 'li_wealth', 'label', 'wealth_group'])  # Include 'wealth_group' in the dropna
+        .groupby([wealth_group, 'label'])['person_id'].size()
+    )
+    return result
 
-
+# Rest of your code remains unchanged
+total_num_death_by_wealth_and_label = extract_results(
+    results_folder,
+    module="tlo.methods.demography",
+    key="death",
+    custom_generate_series=get_total_num_death_by_wealth_and_label,
+    do_scaling=True
+).pipe(set_param_names_as_column_index_level_0)
+total_num_death_by_wealth_and_label.to_excel(outputspath / "total_num_deaths_by_agegrp_and_label.xlsx")
 
 #raw mortality
 def tb_mortality0(results_folder):
@@ -232,7 +227,7 @@ def tb_mortality0(results_folder):
         custom_generate_series=(
             lambda df: df.assign(year=df["date"].dt.year).groupby(["year", "cause"])["person_id"].count()
         ),
-        do_scaling=False,
+        do_scaling=True,
     ).pipe(set_param_names_as_column_index_level_0)
 
     # Select only causes AIDS_TB, AIDS_non_TB, and TB
@@ -307,31 +302,28 @@ tb_hiv_prop_with_year = pd.DataFrame(tb_hiv_prop)
 tb_hiv_prop.to_excel(outputspath / "PLHIV_tb.xlsx")
 
 #false positives
-# def get_false_positives(df_):
-#     # Get DALYs of TB
-#     years = df_['year'].value_counts().keys()
-#     false_positives = pd.Series(dtype='float64', index=years)
-#     for year in years:
-#         tot_false_positives = df_[df_['year'] == year].drop(columns='date').sum(numeric_only=True)
-#         false_positives[year] = tot_false_positives[['tbNumFalsePositiveAdults', 'tbNumFalsePositiveChildren']].sum()
-#     false_positives.sort_index(inplace=True)
-#     print(false_positives)
-#     return false_positives
-#
-# # # Extracts false positives
-# adult_false_positives = summarize(
-#     extract_results(
-#         results_folder,
-#         module="tlo.methods.tb",
-#         key="tb_false_positive",
-#        custom_generate_series=get_false_positives,
-#         do_scaling=False,
-#     ),
-#     collapse_columns=True,
-# ).pipe(set_param_names_as_column_index_level_0)
-# adult_false_positives = adult_false_positives.index.year
-# tb_false_positives_year = pd.DataFrame(adult_false_positives)
-# adult_false_positives.to_excel(outputspath / "false_positives_adults.xlsx")
+def get_false_positives(df_):
+    years = df_['date'].dt.year.value_counts().keys()
+    false_positives = pd.Series(dtype='float64', index=years)
+    for year in years:
+        tot_false_positives = df_[df_['date'].dt.year == year].drop(columns='date').sum(numeric_only=True)
+        false_positives[year] = tot_false_positives[['tbNumFalsePositiveAdults', 'tbNumFalsePositiveChildren']].sum()
+    false_positives.sort_index(inplace=True)
+    return false_positives
+
+# Extracts false positives
+fpositives = summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.tb",
+        key="tb_false_positive",
+        custom_generate_series=get_false_positives,
+        do_scaling=True,
+    ),
+    collapse_columns=True,
+).pipe(set_param_names_as_column_index_level_0)
+
+fpositives.to_excel(outputspath / "false_positives_all.xlsx")
 
 #MDR TB cases
 mdr_tb_cases = summarize(
@@ -368,7 +360,7 @@ tb_treatment_cov = pd.DataFrame(tb_treatment)
 tb_treatment_cov.to_excel(outputspath / "tb_treatment_coverage.xlsx")
 
 ## extracts number of people screened for TB by scenario
-TARGET_PERIOD = (Date(2010, 1, 1), Date(2013, 12, 31))
+TARGET_PERIOD = (Date(2010, 1, 1), Date(2020, 12, 31))
 def get_counts_of_hsi_by_treatment_id(_df):
     """Get the counts of the TREATMENT_IDs occurring"""
     _counts_by_treatment_id = _df \
@@ -465,10 +457,7 @@ child_Tb_prevalence= summarize(
 child_Tb_prevalence.index = child_Tb_prevalence.index.year
 child_Tb_prevalence.to_excel(outputspath / "child_Tb_prevalence.xlsx")
 
-#false positives
-tb_false_positive = log["tlo.methods.tb"]["tb_false_positive"]
-tb_false_positives= tb_false_positive.set_index("date")
-tb_false_positives.to_excel(outputspath / "tb_false_positives.xlsx")
+
 
 #properties of deceased
 properties_of_deceased_persons = log["tlo.methods.demography.detail"]["properties_of_deceased_persons"]
@@ -505,7 +494,25 @@ hsi_event_counts.to_excel(outputspath / "hsi_event_counts")
 print(hsi_event_counts)
 
 # print(f"Keys of log['tlo.methods.healthsystem.summary']: {log['tlo.methods.healthsystem.summary'].keys()}")
-# print(f"Keys of log['tlo.methods.healthburden']: {log['tlo.methods.healthburden'].keys()}")
+print(f"Keys of log['tlo.methods.healthburden']: {log['tlo.methods.healthburden'].keys()}")
+keys = log['tlo.methods.healthburden'].keys()
+values = [log['tlo.methods.healthburden'][key] for key in keys]
+
+# Create a DataFrame
+df = pd.DataFrame({'Key': keys, 'Value': values})
+
+# Export the DataFrame to an Excel file
+df.to_excel(outputspath /'healthburden_keys.xlsx', index=False)
+
+print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography'].keys()}")
+keys = log['tlo.methods.demography'].keys()
+values = [log['tlo.methods.demography'][key] for key in keys]
+
+# Create a DataFrame
+df = pd.DataFrame({'Key': keys, 'Value': values})
+
+# Export the DataFrame to an Excel file
+df.to_excel(outputspath /'demography_keys.xlsx', index=False)
 # print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography.detail'].keys()}")
 #
 # #aiming to extract wealth quintiles for the dead
