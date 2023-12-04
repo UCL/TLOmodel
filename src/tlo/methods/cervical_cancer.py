@@ -281,8 +281,6 @@ class CervicalCancer(Module):
         # Determine who has cancer at ANY cancer stage:
         # check parameters are sensible: probability of having any cancer stage cannot exceed 1.0
 
-# todo: make prevalence at baseline depend on hiv status and perhaps age
-
         women_over_15_hiv_idx = df.index[(df["age_years"] > 15) & (df["sex"] == 'F') & df["hv_inf"]]
 
         df.loc[women_over_15_hiv_idx, 'ce_hpv_cc_status'] = rng.choice(
@@ -337,6 +335,8 @@ class CervicalCancer(Module):
 
         rate_hpv = p['r_nvp_hpv'] + p['r_vp_hpv']
 
+        # todo: mend hiv unsuppressed effect
+
         lm['hpv'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             rate_hpv,
@@ -348,13 +348,7 @@ class CervicalCancer(Module):
             .when('.between(50,110)', p['rr_hpv_age50plus']),
             Predictor('sex').when('M', 0.0),
             Predictor('ce_hpv_cc_status').when('none', 1.0).otherwise(0.0),
-            Predictor('hv_inf', conditions_are_mutually_exclusive=True)
-            .when(False, 0.0)
-            .when(True, 1.0),
-            Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', p['rr_progress_cc_hiv'])
-            .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
-            .when('on_VL_suppressed', 1.0),
+            Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
@@ -365,10 +359,7 @@ class CervicalCancer(Module):
             Predictor('hv_inf', conditions_are_mutually_exclusive=True)
             .when(False, 0.0)
             .when(True, 1.0),
-            Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', p['rr_progress_cc_hiv'])
-            .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
-            .when('on_VL_suppressed', 1.0),
+            Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
@@ -379,10 +370,7 @@ class CervicalCancer(Module):
             Predictor('hv_inf', conditions_are_mutually_exclusive=True)
             .when(False, 0.0)
             .when(True, 1.0),
-            Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', p['rr_progress_cc_hiv'])
-            .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
-            .when('on_VL_suppressed', 1.0),
+            Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
@@ -393,10 +381,7 @@ class CervicalCancer(Module):
             Predictor('hv_inf', conditions_are_mutually_exclusive=True)
             .when(False, 0.0)
             .when(True, 1.0),
-            Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', p['rr_progress_cc_hiv'])
-            .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
-            .when('on_VL_suppressed', 1.0),
+            Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
@@ -407,10 +392,7 @@ class CervicalCancer(Module):
             Predictor('hv_inf', conditions_are_mutually_exclusive=True)
             .when(False, 0.0)
             .when(True, 1.0),
-            Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', p['rr_progress_cc_hiv'])
-            .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
-            .when('on_VL_suppressed', 1.0),
+            Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
@@ -421,10 +403,7 @@ class CervicalCancer(Module):
             Predictor('hv_inf', conditions_are_mutually_exclusive=True)
             .when(False, 0.0)
             .when(True, 1.0),
-            Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', p['rr_progress_cc_hiv'])
-            .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
-            .when('on_VL_suppressed', 1.0),
+            Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
@@ -435,10 +414,7 @@ class CervicalCancer(Module):
             Predictor('hv_inf', conditions_are_mutually_exclusive=True)
             .when(False, 0.0)
             .when(True, 1.0),
-            Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', p['rr_progress_cc_hiv'])
-            .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
-            .when('on_VL_suppressed', 1.0),
+            Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
@@ -449,10 +425,7 @@ class CervicalCancer(Module):
             Predictor('hv_inf', conditions_are_mutually_exclusive=True)
             .when(False, 0.0)
             .when(True, 1.0),
-            Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', p['rr_progress_cc_hiv'])
-            .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
-            .when('on_VL_suppressed', 1.0),
+            Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
@@ -463,10 +436,7 @@ class CervicalCancer(Module):
             Predictor('hv_inf', conditions_are_mutually_exclusive=True)
             .when(False, 0.0)
             .when(True, 1.0),
-            Predictor('hv_art', conditions_are_mutually_exclusive=True)
-            .when('not', p['rr_progress_cc_hiv'])
-            .when('on_not_VL_suppressed', p['rr_progress_cc_hiv'])
-            .when('on_VL_suppressed', 1.0),
+            Predictor('ce_hiv_unsuppressed').when(True, p['rr_progress_cc_hiv']).otherwise(1.0),
             Predictor('ce_new_stage_this_month').when(True, 0.0).otherwise(1.0)
         )
 
@@ -665,6 +635,8 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------- ACQUISITION AND PROGRESSION OF CANCER (ce_hpv_cc_status) -----------------------------------
 
         df.ce_new_stage_this_month = False
+
+        df['ce_hiv_unsuppressed'] = ((df['hv_art'] == 'on_not_vl_suppressed') | (df['hv_art'] == 'not')) & (df['hv_inf'])
 
         # determine if the person had a treatment during this stage of cancer (nb. treatment only has an effect on
         #  reducing progression risk during the stage at which is received.

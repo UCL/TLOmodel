@@ -43,7 +43,7 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2023, 1, 1)
+end_date = Date(2016, 1, 1)
 popsize = 17000
 
 
@@ -138,7 +138,7 @@ plt.show()
 
 
 
-# plot number of deaths in past year
+# Proportion of people with cervical cancer who are HIV positive
 out_df_3 = pd.read_csv(output_csv_file)
 out_df_3 = out_df_3[['prop_cc_hiv', 'rounded_decimal_year']].dropna()
 plt.figure(figsize=(10, 6))
