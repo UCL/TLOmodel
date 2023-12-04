@@ -3,6 +3,7 @@
 This file run scenarios for assesing unavailability of TB-related Development Assistamce for Health (DAH)
 
 It can be submitted on Azure Batch by running:
+tlo batch-submit src//scripts/hiv/projections_jan2023/tb_DAH_impact.py
 
 or locally using:
 
