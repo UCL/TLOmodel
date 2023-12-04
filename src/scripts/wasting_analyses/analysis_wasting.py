@@ -52,18 +52,21 @@ class WastingAnalyses:
         w_inc_df = self.__logs_dict['wasting_incidence_count']
         w_inc_df.set_index(w_inc_df.date.dt.year, inplace=True)
         w_inc_df.drop(columns='date', inplace=True)
-        new_df = pd.DataFrame(index=w_inc_df.index, data=w_inc_df.loc[w_inc_df.index[0], '0y'])
+        # get age year. doesn't matter what wasting category you choose for they all have same age groups
+        age_years = w_inc_df.loc[w_inc_df.index[0], 'WHZ<-3'].keys()
+
         _row_counter = 0
         _col_counter = 0
         fig, axes = plt.subplots(nrows=2, ncols=3, sharex=True, sharey=True)  # plot setup
-        for _year in w_inc_df.columns:
-            for _index in range(len(new_df.index)):
-                new_df.loc[new_df.index[_index], new_df.columns] = \
-                    w_inc_df.loc[w_inc_df.index[_index], _year].values()
+        for _age in age_years:
+            new_df = pd.DataFrame()
+            for state in w_inc_df.columns:
+                new_df[state] = w_inc_df.apply(lambda row: row[state][_age], axis=1)
+
             new_df = new_df.apply(lambda _row: _row / _row.sum(), axis=1)
             # convert into proportions
             ax = new_df.plot(kind='bar', stacked=True, ax=axes[_row_counter, _col_counter],
-                             title=f"incidence of wasting in {_year} infants")
+                             title=f"incidence of wasting in {_age} infants")
             ax.legend(self.__wasting_types_desc.values(), loc='lower right')
             ax.set_xlabel('year')
             ax.set_ylabel('proportions')
@@ -72,7 +75,7 @@ class WastingAnalyses:
                 _row_counter += 1
                 _col_counter = -1
             _col_counter += 1  # increment column counter
-        plt.tight_layout()
+            plt.tight_layout()
 
         plt.show()
 
@@ -163,7 +166,7 @@ sim.register(
 sim.make_initial_population(n=pop_size)
 sim.simulate(end_date=end_date)
 
-# %% read the results
+# read the results
 output_path = sim.log_filepath
 
 # initialise the wasting class
