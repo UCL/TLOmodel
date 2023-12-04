@@ -30,7 +30,7 @@ TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 #Tb_DAH_impactx55-2023-11-28T074721Z based on 10K and run for 2020 and appears to work except for
 #Tb_DAH_impactx58-2023-11-28T202627Z and this Tb_DAH_impactx61-2023-11-29T213503Z-based on 10k for 10 years---works perfectly
 # Tb_DAH_impactx59-2023-11-29T102358Z based on 10K for 2 years
-results_folder = get_scenario_outputs("Tb_DAH_impactx63-2023-11-30T205157Z", outputspath)[-1]
+results_folder = get_scenario_outputs("Tb_DAH_impactx64-2023-12-03T192933Z", outputspath)[-1]
 log = load_pickled_dataframes(results_folder)
 info = get_scenario_info(results_folder)
 print(info)
@@ -191,30 +191,30 @@ print(f"Keys of log['tlo.methods.demography']: {log['tlo.methods.demography'].ke
 #     # SES_dalys1.to_excel(outputspath / "DALY_by_SES.xlsx")
 #
 # #mortality by SES
-def get_total_num_death_by_wealth_and_label(_df):
-    """Return the total number of deaths in the TARGET_PERIOD by wealth and cause label."""
-    wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
-    wealth_group = (
-        _df['li_wealth']
-        .map(wealth_cats)
-        .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
-    )
-    result = (
-        _df
-        .loc[_df['date'].between(*TARGET_PERIOD)]
-        .dropna(subset=['person_id', 'li_wealth', 'label', 'wealth_group'])
-        .groupby([wealth_group, 'label'])['person_id'].size()
-    )
-    return result
+# def get_total_num_death_by_wealth_and_label(_df):
+#     """Return the total number of deaths in the TARGET_PERIOD by wealth and cause label."""
+#     wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
+#     wealth_group = (
+#         _df['li_wealth']
+#         .map(wealth_cats)
+#         .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
+#     )
+#     result = (
+#         _df
+#         .loc[_df['date'].between(*TARGET_PERIOD)]
+#         .dropna(subset=['person_id', 'li_wealth', 'label', 'wealth_group'])
+#         .groupby([wealth_group, 'label'])['person_id'].size()
+#     )
+#     return result
 # Rest of your code remains unchanged
-total_num_death_by_wealth_and_label = extract_results(
-    results_folder,
-    module="tlo.methods.demography",
-    key="death",
-    custom_generate_series=get_total_num_death_by_wealth_and_label,
-    do_scaling=True
-).pipe(set_param_names_as_column_index_level_0)
-total_num_death_by_wealth_and_label.to_excel(outputspath / "total_num_deaths_by_agegrp_and_label.xlsx")
+# total_num_death_by_wealth_and_label = extract_results(
+#     results_folder,
+#     module="tlo.methods.demography",
+#     key="death",
+#     custom_generate_series=get_total_num_death_by_wealth_and_label,
+#     do_scaling=True
+# ).pipe(set_param_names_as_column_index_level_0)
+# total_num_death_by_wealth_and_label.to_excel(outputspath / "total_num_deaths_by_agegrp_and_label.xlsx")
 
 #raw mortality
 def tb_mortality0(results_folder):
