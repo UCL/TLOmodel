@@ -66,21 +66,13 @@ class CervicalCancer(Module):
     }
 
     PARAMETERS = {
-        "init_prev_cin_hpv_cc_stage": Parameter(
+        "init_prev_cin_hpv_cc_stage_hiv": Parameter(
             Types.LIST,
-            "initial proportions in hpv cancer categories"
+            "initial proportions in hpv cancer categories in women with hiv"
         ),
-        "init_prop_vaginal_bleeding_by_cc_stage": Parameter(
-            Types.LIST, "initial proportions of those with cervical cancer that have the symptom vaginal_bleeding"
-        ),
-        "init_prop_with_vaginal_bleeding_diagnosed_cervical_cancer": Parameter(
-            Types.REAL, "initial proportions of people that have vaginal bleeding that have been diagnosed"
-        ),
-        "init_prop_prev_treatment_cervical_cancer": Parameter(
-            Types.LIST, "initial proportions of people with cervical cancer previously treated"
-        ),
-        "init_prob_palliative_care": Parameter(
-            Types.REAL, "initial probability of being under palliative care if in stage 4"
+        "init_prev_cin_hpv_cc_stage_nhiv": Parameter(
+            Types.LIST,
+            "initial proportions in hpv cancer categories in women without hiv"
         ),
 # currently these two below are just added as vaccine efficacy implictly takes account of whether hpv is vaccine preventable
         "r_vp_hpv": Parameter(
@@ -131,7 +123,11 @@ class CervicalCancer(Module):
             "rate ratio for hpv if vaccinated - this is combined effect of probability the hpv is "
             "vaccine-preventable and vaccine efficacy against vaccine-preventable hpv ",
         ),
-         "prob_cure_stage1": Parameter(
+        "rr_hpv_age50plus": Parameter(
+            Types.REAL,
+            "rate ratio for hpv if age 50 plus"
+        ),
+        "prob_cure_stage1": Parameter(
             Types.REAL,
             "probability of cure if treated in stage 1 cervical cancer",
         ),
@@ -287,16 +283,24 @@ class CervicalCancer(Module):
 
 # todo: make prevalence at baseline depend on hiv status and perhaps age
 
-        women_over_15_idx = df.index[(df["age_years"] > 15) & (df["sex"] == 'F')]
+        women_over_15_hiv_idx = df.index[(df["age_years"] > 15) & (df["sex"] == 'F') & df["hv_inf"]]
 
-        df.loc[women_over_15_idx, 'ce_hpv_cc_status'] = rng.choice(
+        df.loc[women_over_15_hiv_idx, 'ce_hpv_cc_status'] = rng.choice(
             ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
-            size=len(women_over_15_idx), p=p['init_prev_cin_hpv_cc_stage']
+            size=len(women_over_15_hiv_idx), p=p['init_prev_cin_hpv_cc_stage_hiv']
         )
 
-        assert sum(p['init_prev_cin_hpv_cc_stage']) < 1.01
-        assert sum(p['init_prev_cin_hpv_cc_stage']) > 0.99
+        women_over_15_nhiv_idx = df.index[(df["age_years"] > 15) & (df["sex"] == 'F') & ~df["hv_inf"]]
 
+        df.loc[women_over_15_nhiv_idx, 'ce_hpv_cc_status'] = rng.choice(
+            ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
+            size=len(women_over_15_nhiv_idx), p=p['init_prev_cin_hpv_cc_stage_nhiv']
+        )
+
+        assert sum(p['init_prev_cin_hpv_cc_stage_hiv']) < 1.01
+        assert sum(p['init_prev_cin_hpv_cc_stage_hiv']) > 0.99
+        assert sum(p['init_prev_cin_hpv_cc_stage_nhiv']) < 1.01
+        assert sum(p['init_prev_cin_hpv_cc_stage_nhiv']) > 0.99
 
         # -------------------- symptoms, diagnosis, treatment  -----------
         # For simplicity we assume all these are null at baseline - we don't think this will influence population
@@ -340,7 +344,8 @@ class CervicalCancer(Module):
             .when(1, p['rr_hpv_vaccinated'])
             .when(2, p['rr_hpv_vaccinated']),
             Predictor('age_years', conditions_are_mutually_exclusive=True)
-            .when('.between(0,15)', 0.0),
+            .when('.between(0,15)', 0.0)
+            .when('.between(50,110)', p['rr_hpv_age50plus']),
             Predictor('sex').when('M', 0.0),
             Predictor('ce_hpv_cc_status').when('none', 1.0).otherwise(0.0),
             Predictor('hv_inf', conditions_are_mutually_exclusive=True)
@@ -1105,24 +1110,26 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_diagnosed_past_year_stage3": n_diagnosed_past_year_stage3})
         out.update({"n_diagnosed_past_year_stage4": n_diagnosed_past_year_stage4})
 
+        # comment out this below when running tests
+
         # Specify the file path for the CSV file
-#       out_csv = Path("./outputs/output_data.csv")
+        out_csv = Path("./outputs/output_data.csv")
 
-#       with open(out_csv, "a", newline="") as csv_file:
-#           # Create a CSV writer
-#           csv_writer = csv.DictWriter(csv_file, fieldnames=out.keys())
+        with open(out_csv, "a", newline="") as csv_file:
+            # Create a CSV writer
+            csv_writer = csv.DictWriter(csv_file, fieldnames=out.keys())
 
-#           # If the file is empty, write the header
-#           if csv_file.tell() == 0:
-#               csv_writer.writeheader()
+            # If the file is empty, write the header
+            if csv_file.tell() == 0:
+                csv_writer.writeheader()
 
             # Write the data to the CSV file
-#           csv_writer.writerow(out)
+            csv_writer.writerow(out)
 
-#       print(out)
+        print(out)
 
-#       selected_columns = ['sy_vaginal_bleeding', 'ce_cc_ever', 'ce_ever_treated']
-#       selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15)]
+#       selected_columns = ['sy_vaginal_bleeding', 'ce_cc_ever']
+#       selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & (df['sy_vaginal_bleeding'] == 2)]
 #       print(selected_rows[selected_columns])
 
 
