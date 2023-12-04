@@ -44,7 +44,7 @@ number_draws = info['number_of_draws']
 
 def get_parameter_names_from_scenario_file() -> Tuple[str]:
     """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-    from scripts.hiv.projections_jan2023.tb_DAH_impact import ImpactOfTbDaH
+    from scripts.hiv.projections_jan2023.tb_DAH_impact01 import ImpactOfTbDaH
     e = ImpactOfTbDaH()
     return tuple(e._scenarios.keys())
 
@@ -634,7 +634,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--results-path",
         type=Path,
-        help="Directory containing results from running src/scripts/hiv/projections_jan2023/tb_DAH_impact.py",
+        help="Directory containing results from running src/scripts/hiv/projections_jan2023/tb_DAH_impact01.py",
         default=None,
         required=False
     )
