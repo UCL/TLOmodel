@@ -20,11 +20,11 @@ from tlo.analysis.utils import (
 from tlo.methods import demography, enhanced_lifestyle, simplified_births
 
 
-def add_footnote(footnote: str):
+def add_footnote(fig: plt.Figure, footnote: str):
     """ A function that adds a footnote below each plot. Here we are explaining what a denominator for every
     graph is """
-    plt.figtext(0.5, 0.01, footnote, ha="center", fontsize=10,
-                bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
+    fig.text(0.5, 0.01, footnote, ha="center", fontsize=10,
+             bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
 
 
 class LifeStylePlots:
