@@ -5,7 +5,7 @@ gender and age groups
 # %% Import Statements
 import datetime
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional, NamedTuple
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -27,88 +27,49 @@ def add_footnote(footnote: str):
                 bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
 
 
-class LifeStylePlots:
-    """ a class for for plotting lifestyle properties by both gender and age groups """
+class PlotDescriptor(NamedTuple):
+    label: str
+    footnote_stem: str
 
-    def __init__(self, logs=None, path: str = None):
+    @property
+    def per_gender_footnote(self):
+        return f"Denominator: {self.footnote_stem} per gender"
+
+    @property
+    def per_age_group_footnote(self):
+        return f"Denominator: {self.footnote_stem} per each age-group"
+
+
+class LifeStylePlots:
+    """ a class for plotting lifestyle properties by both gender and age groups """
+
+    def __init__(self, logs=None, path: Optional[str] = None):
 
         # create a dictionary for lifestyle properties and their descriptions, to be used as plot descriptors.
         self.wealth_desc: Dict[str, str] = {'1': "highest wealth level", '5': "lowest wealth level"}
-        self.en_props = {'li_urban': ['currently urban', 'Denominator: Sum of all individuals per gender',
-                                      'Denominator: Sum of all individuals in each age-group'],
+        self.en_props = {
+            "li_urban": PlotDescriptor("currently urban", "Sum of all individuals"),
+            "li_wealth": PlotDescriptor("wealth level", "Sum of individuals in all wealth levels per urban or rural"),
+            "li_low_ex": PlotDescriptor("currently low exercise", "Sum of all individuals aged 15+"),
+            "li_tob": PlotDescriptor("current using tobacco", "Sum of all individuals aged 15+"),
+            "li_ex_alc": PlotDescriptor("current excess alcohol", "Sum of all individuals aged 15+"),
+            "li_mar_stat": PlotDescriptor("marital status", "Sum of individuals aged 15+ in all marital status"),
+            "li_in_ed": PlotDescriptor("currently in education", "Sum of individuals aged between 5-19 in education"),
+            "li_ed_lev": PlotDescriptor("education level", "Sum of individuals aged 15-49 in all education levels"),
+            "li_unimproved_sanitation": PlotDescriptor("unimproved sanitation", "Sum of all individuals "
+                                                                                "in urban or rural"),
+            "li_no_clean_drinking_water": PlotDescriptor("no clean drinking water", "Sum of all individuals per"
+                                                                                    "urban or rural"),
 
-                         'li_wealth': ['wealth level', 'Denominator: Sum of individuals in all wealth levels per urban '
-                                                       'or rural per gender',
-                                       'Denominator: Sum of all individuals in all wealth levels per urban or rural '
-                                       'per each age-group'],
-
-                         'li_low_ex': ['currently low exercise', 'Denominator: Sum of all individuals aged 15+ per '
-                                                                 'gender', 'Denominator: Sum of all individuals aged '
-                                                                           '15+ in each age-group'],
-
-                         'li_tob': ['current using tobacco', 'Denominator: Sum of all individuals aged 15+ per gender',
-                                    'Denominator: Sum of all individuals aged 15+ in each age-group'],
-
-                         'li_ex_alc': ['current excess alcohol', 'Denominator: Sum of all individuals aged 15+ per '
-                                                                 'urban or rural per gender',
-                                       'Denominator: Sum of all individuals aged 15+ per urban or rural in each '
-                                       'age-group'],
-
-                         'li_mar_stat': ['marital status', 'Denominator: Sum of individuals in all marital status '
-                                                           'categories per gender in 15+ individuals',
-                                         'Denominator: Sum  of 15+ individuals in all marital status categories per '
-                                         'each age-group'],
-
-                         'li_in_ed': ['currently in education', 'Denominator: Sum of individuals aged between '
-                                                                '5-19 per gender',
-                                      'Denominator: Sum of individuals 5-19 in education in each age-group'
-                                      ],
-
-                         'li_ed_lev': ['education level', 'Denominator: Sum of individuals aged 15-49 in all '
-                                                          'education levels per gender',
-                                       'Denominator: Sum of individuals aged 15-49 in all education levels in each '
-                                       'age-group'],
-
-                         'li_unimproved_sanitation': ['unimproved sanitation', 'Denominator: Sum of all individuals '
-                                                                               'per urban or rural per gender',
-                                                      'Denominator: Sum of individuals per rural or urban in each '
-                                                      'age-group '
-                                                      ],
-
-                         'li_no_clean_drinking_water': ['no clean drinking water', 'Denominator: Sum of all '
-                                                                                   'individuals per '
-                                                                                   'urban or rural per gender',
-                                                        'Denominator: Sum of all individuals per urban or rural in '
-                                                        'each age-group '
-                                                        ],
-                         'li_wood_burn_stove': ['wood burn stove', 'Denominator: Sum of all individuals per urban or '
-                                                                   'rural per gender',
-                                                'Denominator: Sum of all individuals per urban or rural in each '
-                                                'age-group'],
-
-                         'li_no_access_handwashing': [' no access hand washing', 'Denominator: Sum of all individuals '
-                                                                                 'per gender',
-                                                      'Denominator: Sum of all individuals in each age-group',
-                                                      ],
-
-                         'li_high_salt': ['high salt', 'Denominator: Sum of all individuals per gender',
-                                          'Denominator: Sum of individuals in each age-group'],
-
-                         'li_high_sugar': ['high sugar', 'Denominator: Sum of all individuals per gender',
-                                           'Denominator: Sum of individuals in each age-group'],
-
-                         'li_bmi': ['bmi', 'Denominator: Sum of individuals in all bmi categories in 15+ individuals '
-                                           'per urban or rural per gender',
-                                    'Denominator: Sum of individuals in all bmi categories in 15+ individuals per '
-                                    'rural or urban in age-group'
-                                    ],
-
-                         'li_is_circ': ['Male circumcision', 'Denominator: Sum of all males',
-                                        'Denominator: Sum of males in each age-group'],
-
-                         'li_is_sexworker': ['sex workers', 'Denominator: Sum of all females aged between 15-49',
-                                             'Denominator: Sum of females in each age-group ranging from 15-49'],
-                         }
+            "li_wood_burn_stove": PlotDescriptor("wood burn stove", "Sum of all individuals per urban or rural"),
+            "li_no_access_handwashing": PlotDescriptor("no access hand washing", "Sum of all individuals"),
+            "li_high_salt": PlotDescriptor("high salt", "Sum of all individuals"),
+            "li_high_sugar": PlotDescriptor("high sugar", "Sum of all individuals"),
+            "li_bmi": PlotDescriptor("bmi", "Sum of 15+ individuals in all bmi categories in  individuals "
+                                            "per urban or rural"),
+            "li_is_circ": PlotDescriptor("Male circumcision", "Sum of all males"),
+            "li_is_sexworker": PlotDescriptor("sex workers", "Sum of all females aged between 15-49"),
+        }
 
         # A dictionary to map properties and their description. Useful when setting plot legend
         self.categories_desc: dict = {
@@ -166,7 +127,7 @@ class LifeStylePlots:
         tick_labels[::12] = [item.strftime('%Y') for item in df.index[::12]]
         ax.xaxis.set_major_formatter(ticker.FixedFormatter(tick_labels))
         ax.legend(self.categories_desc[li_property] if li_property in self.categories_desc.keys()
-                  else [self.en_props[li_property][0]], loc='upper center')
+                  else [self.en_props[li_property].label], loc='upper center')
         # else [self.en_props[li_property]], bbox_to_anchor=(0.5, -0.27), loc='upper center')
         plt.gcf().autofmt_xdate()
 

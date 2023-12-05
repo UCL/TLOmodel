@@ -184,19 +184,19 @@ class Lifestyle(Module):
         'rr_high_salt_rural': Parameter(Types.REAL, 'rate ratio for high salt if rural'),
         'r_not_high_salt': Parameter(Types.REAL, 'probability per 3 months of not high salt intake'),
         'rr_not_high_salt_pop_advice_salt': Parameter(
-            Types.REAL, 'probability per 3 months of not high salt givenpopulation advice/campaign on salt'
+            Types.REAL, 'probability per 3 months of not high salt given population advice/campaign on salt'
         ),
         'r_high_sugar': Parameter(Types.REAL, 'probability per 3 months of high sugar intake'),
         'r_not_high_sugar': Parameter(Types.REAL, 'probability per 3 months of not high sugar intake'),
         'rr_not_high_sugar_pop_advice_sugar': Parameter(
-            Types.REAL, 'probability per 3 months of not high sugar givenpopulation advice/campaign on sugar'
+            Types.REAL, 'probability per 3 months of not high sugar given population advice/campaign on sugar'
         ),
         'r_low_ex': Parameter(Types.REAL, 'probability per 3 months of change from not low exercise to low exercise'),
         'r_not_low_ex': Parameter(
             Types.REAL, 'probability per 3 months of change from low exercise to not low exercie'
         ),
         'rr_not_low_ex_pop_advice_exercise': Parameter(
-            Types.REAL, 'probability per 3 months of not low exercisepopulation advice/campaign on exercise'
+            Types.REAL, 'probability per 3 months of not low exercise population advice/campaign on exercise'
         ),
         'rr_low_ex_f': Parameter(Types.REAL, 'risk ratio for becoming low exercise if female rather than male'),
         'rr_low_ex_urban': Parameter(Types.REAL, 'risk ratio for becoming low exercise if urban rather than rural'),
@@ -215,7 +215,7 @@ class Lifestyle(Module):
             Types.REAL, 'risk ratio for tobacco using per 1 higher wealth level (higher wealth level = lower wealth)'
         ),
         'rr_not_tob_pop_advice_tobacco': Parameter(
-            Types.REAL, 'probability per 3 months of quitting tobacco givenpopulation advice/campaign on tobacco'
+            Types.REAL, 'probability per 3 months of quitting tobacco given population advice/campaign on tobacco'
         ),
         'r_ex_alc': Parameter(
             Types.REAL, 'probability per 3 months of change from not excess alcohol to excess alcohol'
@@ -225,7 +225,7 @@ class Lifestyle(Module):
         ),
         'rr_ex_alc_f': Parameter(Types.REAL, 'risk ratio for becoming excess alcohol if female rather than male'),
         'rr_not_ex_alc_pop_advice_alcohol': Parameter(
-            Types.REAL, 'probability per 3 months of not excess alcohol givenpopulation advice/campaign on alcohol'
+            Types.REAL, 'probability per 3 months of not excess alcohol given population advice/campaign on alcohol'
         ),
         'r_mar': Parameter(Types.REAL, 'probability per 3 months of marriage when age 15-30'),
         'r_div_wid': Parameter(
@@ -233,7 +233,7 @@ class Lifestyle(Module):
         ),
         'r_stop_ed': Parameter(Types.REAL, 'probabilities per 3 months of stopping education if wealth level 5'),
         'rr_stop_ed_lower_wealth': Parameter(
-            Types.REAL, 'relative rate of stopping education per 1 lower wealth quintile'
+            Types.REAL, 'relative rate of stopping education per 1 lower wealth quantile'
         ),
         'p_ed_primary': Parameter(Types.REAL, 'probability at age 5 that start primary education if wealth level 5'),
         'rp_ed_primary_higher_wealth': Parameter(
@@ -256,7 +256,7 @@ class Lifestyle(Module):
             Types.REAL, 'probability per 3 months of change from wood_burn_stove true to false'
         ),
         'r_access_handwashing': Parameter(
-            Types.REAL, 'probability per 3 months of change from no_access_handwashing true to false'
+            Types.REAL, 'probability per 3 months of change from no access hand washing true to false'
         ),
         'start_date_campaign_exercise_increase': Parameter(
             Types.DATE, 'Date of campaign start for increased exercise'
@@ -342,18 +342,16 @@ class Lifestyle(Module):
 
     def read_parameters(self, data_folder):
         p = self.parameters
-        dfd = pd.read_excel(
-            Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced.xlsx', sheet_name='parameter_values'
+        dataframes = pd.read_excel(
+            Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced.xlsx',
+            sheet_name=["parameter_values", "urban_rural_by_district"],
         )
-
-        self.load_parameters_from_dataframe(dfd)
-
-        # load urban rural by district data
-        p['init_p_urban'] = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Lifestyle_Enhanced.xlsx',
-                                          sheet_name='urban_rural_by_district').drop(columns=['rural', 'urban',
-                                                                                              'prop_rural'], axis=1)
-        # convert urban rural data from dataframe to dict
-        p['init_p_urban'] = p['init_p_urban'].set_index('district').to_dict()
+        self.load_parameters_from_dataframe(dataframes["parameter_values"])
+        p['init_p_urban'] = (
+            dataframes["urban_rural_by_district"].drop(
+                columns=["rural", "urban", "prop_rural"], axis=1
+            ).set_index("district").to_dict()
+        )
 
         # Manually set dates for campaign starts for now todo - fix this
         p['start_date_campaign_exercise_increase'] = Date(2010, 7, 1)
@@ -713,10 +711,10 @@ class LifestyleModels:
 
         Urban                               |         Rural
         ------------------------------------|----------------------------------------------
-        leve 1 = 75% wealth level           |  level 1 = 11% wealth level
-        level 2 = 16% wealth level          |  level 2 = 21% wealth level
-        level 3 = 5% wealth level           |  level 3 = 23% wealth level
-        level 4 = 2% wealth level           |  level 4 = 23% wealth level
+        leve 1 = 75% wealth level           |  level 1 = 11% wealth level.
+        level 2 = 16% wealth level          |  level 2 = 21% wealth level.
+        level 3 = 5% wealth level           |  level 3 = 23% wealth level.
+        level 4 = 2% wealth level           |  level 4 = 23% wealth level.
         level 5 = 2% wealth level           |  level 5 = 23% wealth level
 
         """
@@ -733,10 +731,8 @@ class LifestyleModels:
 
             # create a new series to hold different wealth levels
             res = pd.Series(index=df.index, dtype=int)
-            res[df.li_urban] = df.loc[df.li_urban].apply(
-                lambda _: rng.choice([1, 2, 3, 4, 5], p=p['init_p_wealth_urban']), axis=1)
-            res[~df.li_urban] = df.loc[~df.li_urban].apply(
-                lambda _: rng.choice([1, 2, 3, 4, 5], p=p['init_p_wealth_rural']), axis=1)
+            res[df.li_urban] = rng.choice([1, 2, 3, 4, 5], p=p['init_p_wealth_urban'], size=sum(df.li_urban))
+            res[~df.li_urban] = rng.choice([1, 2, 3, 4, 5], p=p['init_p_wealth_rural'], size=sum(~df.li_urban))
             # return wealth level linear model
             return res
 
