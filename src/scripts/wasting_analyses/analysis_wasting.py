@@ -65,9 +65,14 @@ class WastingAnalyses:
 
             new_df = new_df.apply(lambda _row: _row / _row.sum(), axis=1)
             # convert into proportions
-            ax = new_df.plot(kind='bar', stacked=True, ax=axes[_row_counter, _col_counter],
-                             title=f"incidence of wasting in {_age} infants")
+
+            ax = new_df[["WHZ<-3", "-3<=WHZ<-2"]].plot(kind='bar', stacked=True, ax=axes[_row_counter, _col_counter],
+                                                       title=f"incidence of wasting in {_age} infants")
+
+            # ax = new_df.plot(kind='bar', stacked=True, ax=axes[_row_counter, _col_counter],
+            #                  title=f"incidence of wasting in {_age} infants")
             ax.legend(self.__wasting_types_desc.values(), loc='lower right')
+            ax.set_ylim(0, 0.04)
             ax.set_xlabel('year')
             ax.set_ylabel('proportions')
             # move to another row
@@ -96,6 +101,7 @@ class WastingAnalyses:
         fig, axs = plt.subplots(nrows=1, ncols=2, sharey=True, sharex=True)
         for _col, sex in enumerate(('M', 'F')):
             plot_df = death_compare.loc[(['2010-2014'], sex, slice(None), 'Childhood Wasting')].groupby('period').sum()
+            plot_df = plot_df.loc[['2010-2014']]
             ax = plot_df['model'].plot.bar(label='Model', ax=axs[_col], rot=0)
             ax.errorbar(x=plot_df['model'].index, y=plot_df.GBD_mean,
                         yerr=[plot_df.GBD_lower, plot_df.GBD_upper],
@@ -135,7 +141,7 @@ log_config = {
 
 # Basic arguments required for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2030, 1, 1)
+end_date = Date(2013, 1, 1)
 pop_size = 10000
 
 # Create simulation instance for this run.
@@ -168,6 +174,7 @@ sim.simulate(end_date=end_date)
 
 # read the results
 output_path = sim.log_filepath
+#output_path = Path("./outputs/wasting__2023-12-05T105434.log")
 
 # initialise the wasting class
 wasting_analyses = WastingAnalyses(output_path)

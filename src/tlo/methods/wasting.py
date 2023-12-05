@@ -670,7 +670,7 @@ class Wasting(Module):
                 # cancel death date
                 df.at[person_id, 'un_sam_death_date'] = pd.NaT
             else:
-                outcome = self.rng.choice(['remained_mam', 'death'], p=[0.32, 0.68])
+                outcome = self.rng.choice(['remained_mam', 'death'], p=[0.7, 0.3])
                 if outcome == 'death':
                     self.sim.schedule_event(
                         event=SevereAcuteMalnutritionDeathEvent(module=self, person_id=person_id),
@@ -693,7 +693,7 @@ class Wasting(Module):
                 # cancel death date
                 df.at[person_id, 'un_sam_death_date'] = pd.NaT
             else:
-                outcome = self.rng.choice(['remained_mam', 'death'], p=[0.32, 0.68])
+                outcome = self.rng.choice(['remained_mam', 'death'], p=[0.7, 0.3])
                 if outcome == 'death':
                     self.sim.schedule_event(
                         event=SevereAcuteMalnutritionDeathEvent(module=self, person_id=person_id),
