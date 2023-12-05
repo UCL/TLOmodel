@@ -1,0 +1,34 @@
+- name: Install GitHub Actions runners
+  import_playbook: playbook.yml
+
+- hosts: all
+  vars:
+    runner_user: gha
+    mount_path: /mnt/tlodev2stg/tlo-dev-fs-2
+
+  tasks:
+
+   - name: install packages from apt
+     become: true
+     apt:
+       name:
+         - nfs-common
+       state: present
+
+   - name: "Create {{ mount_path }} directory"
+     become: true
+     ansible.builtin.file:
+       path: "{{ mount_path }}"
+       state: directory
+       owner: "{{ runner_user }}"
+       group: "{{ runner_user }}"
+       mode: '755'
+
+   - name: Mount output storage
+     become: true
+     ansible.posix.mount:
+       path: "{{ mount_path }}"
+       src: tlodev2stg.file.core.windows.net:/tlodev2stg/tlo-dev-fs-2
+       fstype: nfs
+       opts: vers=4,minorversion=1,sec=sys,nconnect=4
+       state: mounted

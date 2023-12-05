@@ -194,6 +194,50 @@ def test_run_no_interventions_allowed(tmpdir, seed):
 
 
 @pytest.mark.slow
+def test_policy_has_no_effect_on_mode1(tmpdir, seed):
+    """Events ran in mode 1 should be identical regardless of policy assumed.
+    In policy "No Services", have set all HSIs to priority below lowest_priority_considered,
+    in mode 1 they should all be scheduled and delivered regardless"""
+
+    output = []
+    policy_list = ["Naive", "Test Mode 1", "", "ClinicallyVulnerable"]
+    for _, policy in enumerate(policy_list):
+        # Establish the simulation object
+        sim = Simulation(
+            start_date=start_date,
+            seed=seed,
+            log_config={
+                "filename": "log",
+                "directory": tmpdir,
+                "custom_levels": {
+                    "tlo.methods.healthsystem": logging.DEBUG,
+                }
+            }
+        )
+
+        # Register the core modules
+        sim.register(*fullmodel(resourcefilepath=resourcefilepath,
+                                module_kwargs={'HealthSystem': {'capabilities_coefficient': 1.0,
+                                                                'mode_appt_constraints': 1,
+                                                                'policy_name': policy}}))
+
+        # Run the simulation
+        sim.make_initial_population(n=popsize)
+        sim.simulate(end_date=end_date)
+        check_dtypes(sim)
+
+        print(type(parse_log_file(sim.log_filepath, level=logging.DEBUG)))
+
+        # read the results
+        output.append(parse_log_file(sim.log_filepath, level=logging.DEBUG))
+
+    # Check that the outputs are the same
+    for i in range(1, len(policy_list)):
+        pd.testing.assert_frame_equal(output[0]['tlo.methods.healthsystem']['HSI_Event'],
+                                      output[i]['tlo.methods.healthsystem']['HSI_Event'])
+
+
+@pytest.mark.slow
 def test_run_in_mode_0_with_capacity(tmpdir, seed):
     # Events should run and there be no squeeze factors
     # (Mode 0 -> No Constraints)
@@ -1665,6 +1709,7 @@ def test_policy_and_lowest_priority_and_fasttracking_enforced(seed, tmpdir):
                      disable=False,
                      randomise_queue=True,
                      ignore_priority=False,
+                     mode_appt_constraints=2,
                      policy_name="Test",  # Test policy enforcing lowest_priority_policy
                                           # assumed in this test. This allows us to check policies
                                           # are loaded correctly.
