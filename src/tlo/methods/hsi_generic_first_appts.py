@@ -184,7 +184,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
             sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
 
         if 'Wasting' in sim.modules:
-            sim.modules['Wasting'].do_when_acute_malnutrition_assessment(person_id=person_id)
+            sim.modules['Wasting'].do_when_acute_malnutrition_assessment(person_id)
 
     else:
         # ----------------------------------- ADULT -----------------------------------

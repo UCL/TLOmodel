@@ -104,7 +104,6 @@ def figure1_distribution_of_hsi_event_by_date(results_folder: Path, output_folde
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     ax.legend(ncol=2, prop={'size': 8}, loc='upper left')
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
 
@@ -123,7 +122,6 @@ def figure2_distribution_of_hsi_event_by_treatment(results_folder: Path, output_
         ax.spines['right'].set_visible(False)
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-        fig.show()
         plt.close(fig)
 
     [date, hsi_events] = format_dataframe(results_folder)
@@ -141,7 +139,6 @@ def figure2_distribution_of_hsi_event_by_treatment(results_folder: Path, output_
     ax.legend(ncol=2, prop={'size': 8}, loc='upper left')
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
     plt.ylim(0, 0.05)
-    fig.show()
     plt.close(fig)
 
     fig, ax = plt.subplots()
@@ -153,7 +150,6 @@ def figure2_distribution_of_hsi_event_by_treatment(results_folder: Path, output_
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     ax.legend(ncol=2, prop={'size': 8}, loc='upper left')
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
     create_figure('Tb over Facility Level', treatment["Tb"], hsi_events['Facility_Level'],
@@ -210,7 +206,6 @@ def figure3_appointments_used(results_folder: Path, output_folder: Path):
     ax.set_xlabel('Date')
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
 
