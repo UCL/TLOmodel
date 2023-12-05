@@ -68,9 +68,6 @@ class WastingAnalyses:
 
             ax = new_df[["WHZ<-3", "-3<=WHZ<-2"]].plot(kind='bar', stacked=True, ax=axes[_row_counter, _col_counter],
                                                        title=f"incidence of wasting in {_age} infants")
-
-            # ax = new_df.plot(kind='bar', stacked=True, ax=axes[_row_counter, _col_counter],
-            #                  title=f"incidence of wasting in {_age} infants")
             ax.legend(self.__wasting_types_desc.values(), loc='lower right')
             ax.set_ylim(0, 0.04)
             ax.set_xlabel('year')
