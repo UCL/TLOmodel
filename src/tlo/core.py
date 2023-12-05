@@ -255,7 +255,8 @@ class Module:
         - Categorical
         - Strings
         - Dates (Any numbers will be converted into dated without warnings)
-        - Booleans (Any input will be converted into a boolean without warnings)
+        - Booleans (An value in the csv '0', 0, 'False', 'false', 'FALSE', or None will be interpreted as False;
+            everything else as True)
 
         Will also make the parameter_name the index of the resource DataFrame.
 
@@ -290,6 +291,10 @@ class Module:
                 parameter_value = pd.Categorical([parameter_value], categories=categories)
             elif parameter_definition.type_.name == 'STRING':
                 parameter_value = parameter_value.strip()
+            elif parameter_definition.type_.name == 'BOOL':
+                parameter_value = False if (
+                    parameter_value in (0, '0', None, 'FALSE', 'False', 'false') or pd.isna(parameter_value)
+                ) else True
             else:
                 # All other data types, assign to the python_type defined in Parameter class
                 try:
