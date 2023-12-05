@@ -124,8 +124,8 @@ def check_configuration_of_properties(sim):
                         (df.un_clinical_acute_malnutrition == 'SAM')]).issubset(has_symptoms)
 
     # All MAM individuals should have no symptoms of wasting
-    assert not set(df.index[df.is_alive & (df.age_exact_years < 5) &
-                            (df.un_clinical_acute_malnutrition == 'MAM')]) in has_symptoms
+    assert set(df.index[df.is_alive & (df.age_exact_years < 5) &
+                            (df.un_clinical_acute_malnutrition == 'MAM')]) not in has_symptoms
 
 
 @pytest.mark.slow
