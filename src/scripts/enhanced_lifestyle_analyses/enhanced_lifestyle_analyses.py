@@ -20,10 +20,10 @@ from tlo.analysis.utils import (
 from tlo.methods import demography, enhanced_lifestyle, simplified_births
 
 
-def add_footnote(footnote: str):
+def add_footnote(fig: plt.Figure, footnote: str):
     """ A function that adds a footnote below each plot. Here we are explaining what a denominator for every
     graph is """
-    plt.figtext(0.5, 0.01, footnote, ha="center", fontsize=10,
+    fig.figtex(0.5, 0.01, footnote, ha="center", fontsize=10,
                 bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
 
 
@@ -112,10 +112,10 @@ class LifeStylePlots:
             for k, v in lifestyle_log.items() if k in self.en_props.keys()
         }
 
-    def custom_axis_formatter(self, df: pd.DataFrame, ax, li_property: str):
+    def custom_axis_formatter(self, df: pd.DataFrame, ax):
         """
         create a custom date formatter since the default pandas date formatter works well with line graphs. see an
-        accepted solution to issue https://stackoverflow.com/questions/30133280/pandas-bar-plot-changes-date-format
+        Adapted from https://stackoverflow.com/a/30135182
 
         :param df: pandas dataframe or series
         :param ax: matplotlib AxesSubplot object
@@ -126,10 +126,9 @@ class LifeStylePlots:
         # Every 12th tick label includes the year
         tick_labels[::12] = [item.strftime('%Y') for item in df.index[::12]]
         ax.xaxis.set_major_formatter(ticker.FixedFormatter(tick_labels))
-        ax.legend(self.categories_desc[li_property] if li_property in self.categories_desc.keys()
-                  else [self.en_props[li_property].label], loc='upper center')
-        # else [self.en_props[li_property]], bbox_to_anchor=(0.5, -0.27), loc='upper center')
-        plt.gcf().autofmt_xdate()
+        # ax.legend(self.categories_desc[li_property] if li_property in self.categories_desc.keys()
+        #           else [self.en_props[li_property].label], loc='upper center')
+        ax.figure.autofmt_xdate()
 
     # 1. PLOT BY GENDER
     # --------------------------------------------------------------------------------------------------------
@@ -200,11 +199,10 @@ class LifeStylePlots:
                 _cols_counter += 1
             # save and display plots
             add_footnote(f'{self.en_props[li_property][1]}')
-            plt.tight_layout()
-            plt.savefig(self.outputpath / (
+            fig.tight_layout()
+            fig.savefig(self.outputpath / (
                 li_property + '_' + self.datestamp + '.png'),
                         format='png')
-            plt.show()
 
         # 2. if property is not in a group of those that need plotting by urban and rural plot them by age category only
         else:
@@ -233,9 +231,9 @@ class LifeStylePlots:
 
                 # save and display plots for property categories by gender
                 add_footnote(f'{self.en_props[li_property][1]}')
-                plt.tight_layout()
-                plt.savefig(self.outputpath / (li_property + self.datestamp + '.png'), format='png')
-                plt.show()
+                fig.tight_layout()
+                fig.savefig(self.outputpath / (li_property + self.datestamp + '.png'), format='png')
+                # fig.show()
 
                 # PLOT EDUCATION BY WEALTH LEVELS
                 # create subplots
@@ -267,7 +265,7 @@ class LifeStylePlots:
                                                                                   f"proportions",
                                                                            xlabel="Year"
                                                                            )
-                        self.custom_axis_formatter(gc_df, ax, li_property)
+                        self.custom_axis_formatter(gc_df, ax)
                         # increase counter
                         _rows_counter += 1
                     _col_counter += 1
@@ -294,14 +292,14 @@ class LifeStylePlots:
 
             # save and display plots for property categories by gender
             add_footnote(f'{self.en_props[li_property][1]}')
-            plt.tight_layout()
-            plt.savefig(self.outputpath / (li_property + self.datestamp + '.png'), format='png')
-            plt.show()
+            fig.tight_layout()
+            fig.savefig(self.outputpath / (li_property + self.datestamp + '.png'), format='png')
+            # fig.show()
 
     def plot_non_categorical_properties_by_gender(self, _property):
-        """ a function to plot non categorical properties of lifestyle module grouped by gender
+        """ a function to plot non-categorical properties of lifestyle module grouped by gender
 
-         :param _property: any other non categorical property defined in lifestyle module """
+         :param _property: any other non-categorical property defined in lifestyle module """
         # set y-axis limit.
         y_lim: float = 0.8
         if _property in ['li_no_access_handwashing', 'li_high_salt', 'li_wood_burn_stove', 'li_in_ed']:
@@ -343,9 +341,9 @@ class LifeStylePlots:
                 _cols_counter += 1
             # save and display plots for property categories by gender
             add_footnote(f'{self.en_props[_property][1]}')
-            plt.tight_layout()
-            plt.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
-            plt.show()
+            fig.tight_layout()
+            fig.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
+            # plt.show()
 
         # if property is not in a group of those that need plotting by urban and rural plot them by age category only
         else:
@@ -374,9 +372,9 @@ class LifeStylePlots:
                     _rows_counter += 1
                 # save and display plots for property categories by gender
                 add_footnote(f'{self.en_props[_property][1]}')
-                plt.tight_layout()
-                plt.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
-                plt.show()
+                fig.tight_layout()
+                fig.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
+                # plt.show()
 
                 # PLOT EDUCATION FOR HIGHEST AND LOWEST WEALTH LEVEL
                 fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(10, 5))
@@ -429,9 +427,9 @@ class LifeStylePlots:
                     _rows_counter += 1
             # save and display plots for property categories by gender
             add_footnote(f'{self.en_props[_property][1]}')
-            plt.tight_layout()
-            plt.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
-            plt.show()
+            fig.tight_layout()
+            fig.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
+            # plt.show()
 
     def display_all_categorical_and_non_categorical_plots_by_gender(self):
         """ a function to display plots for both categorical and non categorical properties grouped by gender """
@@ -515,9 +513,9 @@ class LifeStylePlots:
                 _rows_counter += 1
             # save and display plots
             add_footnote(f'{self.en_props[_property][2]}')
-            plt.tight_layout()
-            plt.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
-            plt.show()
+            fig.tight_layout()
+            fig.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
+            # plt.show()
 
         # 2. if property is not in a group of those that need plotting by urban and rural plot them by age category only
         else:
@@ -528,6 +526,7 @@ class LifeStylePlots:
                 # GENERAL EDUCTION PLOTTING
                 cat_dict = dict()
                 # get individuals per each age group
+                fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 5))
                 for _wealth_level in ['1', '2', '3', '4', '5']:
                     edu_categories_df = pd.DataFrame()
                     for cat in categories:
@@ -551,9 +550,9 @@ class LifeStylePlots:
                 ax.legend(self.categories_desc[_property], loc='upper right')
                 # save and display plots
                 add_footnote(f'{self.en_props[_property][2]}')
-                plt.tight_layout()
-                plt.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
-                plt.show()
+                fig.tight_layout()
+                fig.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
+                # plt.show()
 
                 # EDUCATION PLOTTING BY WEALTH LEVELS
                 _rows_counter: int = 0  # a counter to set the number of rows when plotting
@@ -598,9 +597,9 @@ class LifeStylePlots:
                 ax.legend(self.categories_desc[_property], loc='upper right')
                 # save and display plots
                 add_footnote(f'{self.en_props[_property][2]}')
-            plt.tight_layout()
-            plt.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
-            plt.show()
+            fig.tight_layout()
+            fig.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
+            # plt.show()
 
     def plot_non_categorical_properties_by_age_group(self, _property: str):
         """ a function to plot non categorical properties of lifestyle module grouped by age group

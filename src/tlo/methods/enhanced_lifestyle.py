@@ -65,7 +65,7 @@ class Lifestyle(Module):
         'init_or_low_ex_rural': Parameter(Types.REAL, 'odds ratio low exercise rural'),
         'init_or_low_ex_f': Parameter(Types.REAL, 'odds ratio low exercise female'),
         'init_p_tob_age1519_m_wealth1': Parameter(
-            Types.REAL, 'initital proportion of 15-19 year old men using tobacco, wealth level 1 '
+            Types.REAL, 'initial proportion of 15-19 year old men using tobacco, wealth level 1 '
         ),
         'init_or_tob_f': Parameter(Types.REAL, 'odds ratio tobacco use females'),
         'init_or_tob_age2039_m': Parameter(Types.REAL, 'odds ratio tobacco use age2039 in men'),
@@ -311,7 +311,7 @@ class Lifestyle(Module):
         'li_tob': Property(Types.BOOL, 'current using tobacco'),
         'li_date_not_tob': Property(Types.DATE, 'date last transitioned from tob to not tob'),
         'li_exposed_to_campaign_quit_smoking': Property(
-            Types.BOOL, 'currently exposed to population campaign toquit smoking if tob'
+            Types.BOOL, 'currently exposed to population campaign to quit smoking if tob'
         ),
         'li_ex_alc': Property(Types.BOOL, 'current excess alcohol'),
         'li_exposed_to_campaign_alcohol_reduction': Property(
@@ -353,7 +353,8 @@ class Lifestyle(Module):
             ).set_index("district").to_dict()
         )
 
-        # Manually set dates for campaign starts for now todo - fix this
+        # Manually set dates for campaign starts
+        # Todo: adjust these to better represent the number of people who have transitioned
         p['start_date_campaign_exercise_increase'] = Date(2010, 7, 1)
         p['start_date_campaign_quit_smoking'] = Date(2010, 7, 1)
         p['start_date_campaign_alcohol_reduction'] = Date(2010, 7, 1)
@@ -455,8 +456,9 @@ class EduPropertyInitialiser:
         rnd_draw = pd.Series(data=rng.random_sample(size=len(age_gte5)), index=age_gte5, dtype=float)
 
         # make some predictions
-        p_some_ed = self.module.models.education_linear_models()['some_edu_linear_model'].predict(edu_pop)
-        p_ed_lev_3 = self.module.models.education_linear_models()['level_3_edu_linear_model'].predict(edu_pop)
+        education_linear_models = self.module.models.education_linear_models()
+        p_some_ed = education_linear_models['some_edu_linear_model'].predict(edu_pop)
+        p_ed_lev_3 = education_linear_models['level_3_edu_linear_model'].predict(edu_pop)
 
         dfx = pd.concat([(1 - p_ed_lev_3), (1 - p_some_ed)], axis=1)
         dfx.columns = ['cut_off_ed_levl_3', 'p_ed_lev_1']
@@ -518,8 +520,8 @@ class BmiPropertyInitialiser:
             df_lm = pd.DataFrame()
             bmi_pow = [-2, -1, 0, 1, 2]
 
-            for index_ in range(0, 5):
-                df_lm[index_ + 1] = self.module.models.bmi_linear_model(index_, bmi_pow[index_]).predict(prop_df)
+            for index, power in enumerate(bmi_pow):
+                df_lm[index + 1] = self.module.models.bmi_linear_model(index, power).predict(prop_df)
 
             dfxx = df_lm.div(df_lm.sum(axis=1), axis=0)
 
@@ -625,7 +627,7 @@ class LifestyleModels:
                 'update': self.update_bmi_categories_linear_model()
             },
             'li_is_circ': {
-                'init': self.male_circumsision_property_linear_model(),
+                'init': self.male_circumcision_property_linear_model(),
                 'update': None
             },
             'li_is_sexworker': {
@@ -730,9 +732,12 @@ class LifestyleModels:
             p = self.parameters
 
             # create a new series to hold different wealth levels
-            res = pd.Series(index=df.index, dtype=int)
-            res[df.li_urban] = rng.choice([1, 2, 3, 4, 5], p=p['init_p_wealth_urban'], size=sum(df.li_urban))
-            res[~df.li_urban] = rng.choice([1, 2, 3, 4, 5], p=p['init_p_wealth_rural'], size=sum(~df.li_urban))
+            li_wealth_dtype = df.li_wealth.dtype
+            res = pd.Series(index=df.index, dtype=li_wealth_dtype)
+            num_urban = df.li_urban.sum()
+            num_rural = len(df) - num_urban
+            res[df.li_urban] = rng.choice(li_wealth_dtype.categories, p=p['init_p_wealth_urban'], size=num_urban)
+            res[~df.li_urban] = rng.choice(li_wealth_dtype.categories, p=p['init_p_wealth_rural'], size=num_rural)
             # return wealth level linear model
             return res
 
@@ -827,23 +832,25 @@ class LifestyleModels:
             # get access to Lifestyle module parameters
             p = self.parameters
 
-            # create a new series to hold individual's marital status
-            mar_stat = pd.Series(data=1, index=df.index, dtype=int)
-
+            li_mar_stat_dtype = df.li_mar_stat.dtype
+            mar_stat = pd.Series(data=1, index=df.index, dtype=li_mar_stat_dtype )
             # select individuals of different age category
-            age_15_19 = df.index[df.age_years.between(15, 19) & df.is_alive]
-            age_20_29 = df.index[df.age_years.between(20, 29) & df.is_alive]
-            age_30_39 = df.index[df.age_years.between(30, 39) & df.is_alive]
-            age_40_49 = df.index[df.age_years.between(40, 49) & df.is_alive]
-            age_50_59 = df.index[df.age_years.between(50, 59) & df.is_alive]
-            age_gte60 = df.index[(df.age_years >= 60) & df.is_alive]
-
-            mar_stat.loc[age_15_19] = rng.choice([1, 2, 3], size=len(age_15_19), p=p['init_dist_mar_stat_age1520'])
-            mar_stat.loc[age_20_29] = rng.choice([1, 2, 3], size=len(age_20_29), p=p['init_dist_mar_stat_age2030'])
-            mar_stat.loc[age_30_39] = rng.choice([1, 2, 3], size=len(age_30_39), p=p['init_dist_mar_stat_age3040'])
-            mar_stat.loc[age_40_49] = rng.choice([1, 2, 3], size=len(age_40_49), p=p['init_dist_mar_stat_age4050'])
-            mar_stat.loc[age_50_59] = rng.choice([1, 2, 3], size=len(age_50_59), p=p['init_dist_mar_stat_age5060'])
-            mar_stat.loc[age_gte60] = rng.choice([1, 2, 3], size=len(age_gte60), p=p['init_dist_mar_stat_agege60'])
+            age_ranges = [(15, 20), (20, 30), (30, 40), (40, 50), (50, 60), (60, np.inf)]
+            for lower_age, upper_age in age_ranges:
+                subpopulation = df.index[
+                    df.age_years.between(lower_age, upper_age, inclusive="left")
+                    & df.is_alive
+                ]
+                parameters_key = (
+                    f"init_dist_mar_stat_age{lower_age}{upper_age}"
+                    if upper_age != np.inf else
+                    f"init_dist_mar_stat_agege{upper_age}"
+                )
+                mar_stat[subpopulation] = rng.choice(
+                    li_mar_stat_dtype.categories,
+                    p=p[parameters_key],
+                    size=len(subpopulation)
+                )
             # return marital status series
             return mar_stat
 
@@ -1132,7 +1139,7 @@ class LifestyleModels:
         f_sex_worker_lm = LinearModel.custom(predict_female_sex_workers, parameters=self.params)
         return f_sex_worker_lm
 
-    def male_circumsision_property_linear_model(self) -> LinearModel:
+    def male_circumcision_property_linear_model(self) -> LinearModel:
         """A function to create linear model for initialising the male circumcision property. Here, we are using
         custom linear model """
 
@@ -1157,9 +1164,9 @@ class LifestyleModels:
             male_circ = pd.Series(data=False, index=df.index, dtype=bool)
 
             # select a population of men to be circumcised
-            men = df.loc[df.is_alive & (df.sex == 'M')]
-            will_be_circ = rng.rand(len(men)) < p['proportion_of_men_circumcised_at_initiation']
-            male_circ.loc[men[will_be_circ].index] = True
+            is_alive_and_male = df.is_alive & (df.sex == 'M')
+            will_be_circ = rng.rand(is_alive_and_male.sum()) < p['proportion_of_men_circumcised_at_initiation']
+            male_circ.loc[is_alive_and_male & will_be_circ] = True
             # return male circumcision series
             return male_circ
 
@@ -1462,7 +1469,7 @@ class LifestyleModels:
             edu_trans.loc[age5[age5_in_primary], 'li_in_ed'] = True
             # ---- SECONDARY EDUCATION
 
-            # get thirteen year olds that are in primary education, any wealth level
+            # get thirteen-year-olds that are in primary education, any wealth level
             age13_in_primary = df.index[(df.age_years == 13) & df.is_alive & df.li_in_ed & (df.li_ed_lev == 2)]
 
             # they have a probability of gaining secondary education (level 3), based on wealth
@@ -1477,9 +1484,6 @@ class LifestyleModels:
             # those who did not go on to secondary education are no longer in education
             edu_trans.loc[age13_in_primary[~age13_to_secondary], 'li_in_ed'] = False
 
-            # print(f"those who did not go on to secondary education "
-            #       f"{edu_trans.loc[age13_in_primary[~age13_to_secondary], 'li_in_ed']}"
-            #       f"{len(edu_trans.loc[age13_in_primary[~age13_to_secondary], 'li_in_ed'])}")
             # ---- DROP OUT OF EDUCATION
 
             # baseline rate of leaving education then adjust for wealth level
@@ -1591,9 +1595,6 @@ class LifestyleModels:
             newly_access_handwashing_idx = no_access_handwashing_idx[random_draw < eff_rate_access_handwashing]
             trans_no_access_handwashing.loc[newly_access_handwashing_idx] = False
 
-            # setting `li_date_acquire_access_handwashing` directly here, perhaps I can do better?
-            df.loc[newly_access_handwashing_idx, 'li_date_acquire_access_handwashing'] = externals['other']
-
             # return the updated no access handwashing series
             return trans_no_access_handwashing
 
@@ -1604,7 +1605,7 @@ class LifestyleModels:
     def update_no_clean_drinking_water_linear_model(self) -> LinearModel:
         """ a function to create linear model for updating no clean drinking water property. Here we are using
         custom linear model and are looking at individuals ability to transition from no access to clean
-        drinking water to having an access to drinking water """
+        drinking water to having access to drinking water """
 
         def handle_no_clean_drinking_water_transitions(self, df, rng=None, **externals) -> pd.Series:
             """ a function that will return a series containing no clean drinking water transitions in individuals
@@ -1634,9 +1635,6 @@ class LifestyleModels:
 
             newly_clean_drinking_water_idx = no_clean_drinking_water_idx[random_draw < eff_rate_clean_drinking_water]
             trans_no_clean_drinking_water.loc[newly_clean_drinking_water_idx] = False
-
-            # setting property `li_date_acquire_clean_drinking_water` direct here. perhaps I can do better?
-            df.loc[newly_clean_drinking_water_idx, 'li_date_acquire_clean_drinking_water'] = externals['other']
 
             # probability of no clean drinking water upon moving to urban from rural
             no_clean_drinking_water_newly_urban_idx = df.index[
@@ -1696,9 +1694,6 @@ class LifestyleModels:
             newly_non_wood_burn_stove_idx = wood_burn_stove_idx[random_draw < eff_rate_non_wood_burn_stove]
             trans_wood_burn_stove.loc[newly_non_wood_burn_stove_idx] = False
 
-            # setting property `li_date_acquire_non_wood_burn_stove` directly here, perhaps I can do better?
-            df.loc[newly_non_wood_burn_stove_idx, 'li_date_acquire_non_wood_burn_stove'] = externals['other']
-
             # probability of moving to wood burn stove upon moving to urban from rural
             wood_burn_stove_newly_urban_idx = df.index[
                 df.li_wood_burn_stove & df.is_alive & (df.li_date_trans_to_urban == externals['other'])
@@ -1713,7 +1708,7 @@ class LifestyleModels:
             trans_wood_burn_stove.loc[wood_burn_stove_newly_urban_idx] = \
                 random_draw < eff_prev_wood_burn_stove_urban
 
-            # return the preffered column in the dataframe
+            # return the preferred column in the dataframe
             return trans_wood_burn_stove
 
         # return no access clean drinking water linear model
