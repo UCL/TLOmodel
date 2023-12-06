@@ -635,7 +635,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
         return results
 
-    def extract_neonatal_deaths_by_cause(results_folder, births_df, intervention_years):
+    def extract_neonatal_deaths_by_cause(results_folder, births_df, sim_years, intervention_years):
         """Generates dataframes which contain the yearly cause-specific NMR for all modelled causes across the runs
            for the entire simulation period. In addition, calculates the average cause-specific NMR across the
            intervention period"""
@@ -651,9 +651,31 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             do_scaling=True)
         neo_deaths = nd.fillna(0)
 
-        # Extract modelled causes of neonatal death from data frame index
-        n_causes = list(neo_deaths.loc[2010].index)
+        alri = neo_deaths.loc[neo_deaths.index.get_level_values(1).str.contains("ALRI")]
+        diar = neo_deaths.loc[neo_deaths.index.get_level_values(1).str.contains("Diarrhoea")]
 
+        def combine_deaths_from_external_causes(d_df, death):
+            df_list = list()
+            for year in sim_years:
+                index = pd.MultiIndex.from_tuples([(year, death)], names=["year", "cause_of_death"])
+                new_row = pd.DataFrame(columns=neo_deaths.columns, index=index)
+                new_row.loc[year, death] = d_df.loc[year].sum()
+                df_list.append(new_row)
+            final = pd.concat(df_list)
+
+            return final
+
+        alri_df = combine_deaths_from_external_causes(alri, 'ALRI')
+        diarr_df = combine_deaths_from_external_causes(diar, 'Diarrhoea')
+
+        neo_deaths = pd.concat([neo_deaths, alri_df])
+        neo_deaths = pd.concat([neo_deaths, diarr_df])
+
+        # Extract modelled causes of neonatal death from data frame index
+        n_causes = ['early_onset_sepsis', 'late_onset_sepsis', 'encephalopathy', 'preterm_other',
+                    'respiratory_distress_syndrome', 'neonatal_respiratory_depression', 'ALRI',
+                    'Diarrhoea', 'Malaria', 'Other', 'limb_or_musculoskeletal_anomaly', 'congenital_heart_anomaly',
+                    'digestive_anomaly', 'urogenital_anomaly', 'other_anomaly', 'AIDS_non_TB']
         results = dict()
 
         # For each modelled cause generate a DF containing the cause-specific NMR across the simulation period and the
@@ -691,6 +713,21 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         # Finally, plot a series of bar charts comparing the average cause-specific NMR/MMR for each complication
         # during the intervention period between the status quo and each intervention/sensitivity scenario
         labels = [lab.replace(f'_{d[0]}mr_df', '') for lab in cod_keys]
+        if d[0] == 'm':
+            reformat_labels = ['Ectopic pregnancy', 'Spontaneous abortion', 'Induced abortion',
+                               'Severe gestational hypertension', 'Severe pre-eclampsia', 'Eclampsia',
+                               'Antenatal sepsis', 'Uterine rupture', 'Intrapartum sepsis', 'Postpartum sepsis',
+                               'Postpartum haemorrhage', 'Secondary postpartum haemorrhage', 'Antepartum haemorrhage',
+                               'AIDS (non-Tb)', 'AIDS (Tb)', 'Tuberculosis', 'Malaria', 'Suicide', 'Stroke', 'Diabetes',
+                               'Chronic ischaemic heart disease', 'Heart attack', 'Chronic kidney disease']
+        else:
+            reformat_labels = ['Early-onset sepsis', 'Late-onset sepsis', 'Encephalopathy', 'Preterm (other)',
+                               'Preterm RDS', 'Other respiratory depression',
+                               'ALRI', 'Diarrhoea', 'Malaria', 'Other', 'Congenital anomaly (limb)',
+                               'Congenital anomaly (heart)','Congenital anomaly (digestive)',
+                               'Congenital anomaly (urogenital)',
+                               'Congenital anomaly (other)', 'AIDS (non-TB)']
+
         for k, colour in zip(cause_d, scen_colours):
             if 'Status Quo' not in k:
                 data = [[], [], []]
@@ -706,7 +743,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                         sq_data[1].append(cause_d['Status Quo'][key][1])
                         sq_data[2].append(cause_d['Status Quo'][key][2])
 
-                labels = labels
+                labels = reformat_labels
                 model_sq = sq_data[0]
                 model_int = data[0]
 
@@ -722,8 +759,10 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
                 if group == 'mat':
                     title_data = ['100,000', 'Maternal', 'Ratios']
+                    top = 120
                 else:
                     title_data = ['1000', 'Neonatal', 'Rates']
+                    top = 12
 
                 ax.set_ylabel(f'Deaths per {title_data[0]} Live Births')
                 ax.set_xlabel('Cause of Death')
@@ -732,8 +771,8 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                 ax.set_xticks(x)
                 ax.set_xticklabels(labels)
                 plt.xticks(rotation=90, size=7)
-                plt.gca().set_ylim(bottom=0)
-                ax.legend(loc='upper left')
+                plt.gca().set_ylim(bottom=0, top=top)
+                ax.legend(loc='upper right')
                 fig.tight_layout()
                 plt.savefig(f'{primary_oc_path}/{k}_{d[0]}mr_by_cause.png', bbox_inches='tight')
                 plt.show()
@@ -743,7 +782,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                                            intervention_years) for k in results_folders}
 
     cod_neo_data = {k: extract_neonatal_deaths_by_cause(results_folders[k], births_dict[k]['births_data_frame'],
-                                                        intervention_years) for k in results_folders}
+                                                        sim_years, intervention_years) for k in results_folders}
     save_mr_by_cause_data_and_output_graphs('mat', cod_data)
     save_mr_by_cause_data_and_output_graphs('neo', cod_neo_data)
 
