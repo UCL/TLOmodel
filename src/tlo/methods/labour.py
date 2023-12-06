@@ -2749,7 +2749,7 @@ class BirthAndPostnatalOutcomesEvent(Event, IndividualScopeEventMixin):
         # =============================================== BIRTH ====================================================
         # If the mother is alive and still pregnant OR has died but the foetus has survived we generate a child.
 
-        # Live women are scheduled to move to the postpartum event to determine if they experiences any additional
+        # Live women are scheduled to move to the postpartum event to determine if they experience any additional
         # complications
 
         if (person.is_alive and person.is_pregnant and not person.la_intrapartum_still_birth) or \

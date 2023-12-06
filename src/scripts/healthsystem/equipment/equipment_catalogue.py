@@ -1,38 +1,50 @@
 import argparse
+import warnings
 from pathlib import Path
 
 import pandas as pd
 
 from tlo.analysis.utils import extract_results
 
+# %%% TO SET %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Declare whether to scale the counts to Malawi population size
+# (True/False)
+do_scaling = True
+# Declare as a list by which hsi event details you want the equipment be grouped in the catalogue (choose any number)
+# (event details: 'event_name', 'module_name', 'treatment_id', 'facility_level', 'appt_footprint', 'beddays_footprint')
+catalog_by_details = ['treatment_id', 'facility_level']
+# Declare which time period you want the equipment be grouped in the catalogue (choose only one)
+# (periods: 'monthly', 'annual')
+catalog_by_time = 'annual'
+# %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-def get_annual_equipment_declarations_by_levels(results_folder: Path) -> pd.DataFrame:
-    """Return pd.DataFrame gives the simulated annual equipment declaration by facility levels for each simulated
-    year.
-    NB. healthsystem.summary logger required to have been set at the level INFO or higher."""
 
-    def get_equipment_declaration_by_levels(_df):
-        """Get the equipment declaration by facility levels for the year."""
+def get_monthly_hsi_event_counts(results_folder: Path) -> pd.DataFrame:
+    """Returned pd.DataFrame gives the monthly counts of all the hsi event details logged (details as keys)
+    for each simulated month.
+    NB. 'healthsystem.summary' logger required to have been set at the level INFO or higher."""
+
+    def get_hsi_event_counts(_df):
+        """Get the counts of all the hsi event details logged."""
 
         def unpack_dict_in_series(_raw: pd.Series):
             # Create an empty DataFrame to store the data
             df = pd.DataFrame()
 
             # Iterate through the dictionary items
-            for col_name, mydict in _raw.items():
+            for _, mydict in _raw.items():
                 for date, inner_dict in mydict.items():
                     # Convert the inner_dict to a list of dictionaries with 'date'
-                    data = [{'date': date, 'fac_level': inner_dict_key, 'value': inner_dict_set} for
+                    data = [{'date': date, 'event_details_key': inner_dict_key, 'count': inner_dict_set} for
                             inner_dict_key, inner_dict_set in inner_dict.items()]
                     # Create a DataFrame from the list with date & fac_level as indexes
                     temp_df = pd.DataFrame(data)
-                    temp_df.set_index(['date', 'fac_level'], inplace=True)
+                    temp_df.set_index(['date', 'event_details_key'], inplace=True)
                     temp_df.columns = [None]
 
                     # Concatenate the temporary DataFrame to the result DataFrame
                     df = pd.concat([df, temp_df])
 
-            # print(f"\ndf\n {df}")
             df.columns = [None]
 
             return df
@@ -46,47 +58,133 @@ def get_annual_equipment_declarations_by_levels(results_folder: Path) -> pd.Data
     return extract_results(
         results_folder,
         module='tlo.methods.healthsystem.summary',
-        key='Equipment',
-        custom_generate_series=get_equipment_declaration_by_levels
+        key='hsi_event_counts',
+        custom_generate_series=get_hsi_event_counts,
+        do_scaling=do_scaling
         )
 
 
-def create_equipment_catalogue(results_folder: Path, output_folder: Path):
-    # Declare path for output file from this script
-    output_file_name = 'equipment_catalogue_by_level.csv'
-    output_detailed_file_name = 'equipment_catalogue_by_date_level_sim.csv'
+def get_hsi_event_keys_all_runs(results_folder: Path) -> pd.DataFrame:
+    """Returned pd.DataFrame gives the dictionaries of hsi_event_details for each draw and run.
+    NB. 'healthsystem.summary' logger required to have been set at the level INFO or higher."""
 
-    sim_equipment = get_annual_equipment_declarations_by_levels(results_folder)
+    def get_hsi_event_keys(_df):
+        """Get the hsi_event_keys for one particular run."""
+        return _df['hsi_event_key_to_event_details']
+
+    return extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem.summary',
+        key='hsi_event_details',
+        custom_generate_series=get_hsi_event_keys
+        )
+
+
+def create_equipment_catalogues(results_folder: Path, output_folder: Path):
+    # %%% Verify inputs are as expected
+    assert isinstance(do_scaling, bool), "The input parameter 'do_scaling' must be a boolean (True or False)"
+    assert isinstance(catalog_by_details, list), "The input parameter 'catalog_by_details' must be a list"
+    event_details = \
+        {'event_name', 'module_name', 'treatment_id', 'facility_level', 'appt_footprint', 'beddays_footprint'}
+    for item in catalog_by_details:
+        assert isinstance(item, str) and item in event_details, \
+            f"Each element in the input list 'catalog_by_details' must be a string and be one of the details:\n" \
+            f"{event_details}"
+    assert catalog_by_time in {'monthly', 'annual'}, \
+        "The input parameter 'catalog_by_time' must be one of the strings ('monthly' or 'annual')"
+    # ---
+
+    # %%% Set output file names
+    # detailed CSV name
+    output_detailed_file_name = 'equipment_monthly_counts__all_event_details.csv'
+    # requested details only CSV name
+    time_index = 'year' if catalog_by_time == 'annual' else 'date'
+    output_file_name = \
+        'equipment_' + catalog_by_time + '_counts__by_' + time_index + '_' + '_'.join(catalog_by_details) + '.csv'
+    # ---
+
+    # %% Catalog equipment by all HSI event details
+    sim_equipment = get_monthly_hsi_event_counts(results_folder)
     sim_equipment_df = pd.DataFrame(sim_equipment)
-    sim_equipment_df.index.names = ['date', 'fac_level']
+    hsi_event_keys = get_hsi_event_keys_all_runs(results_folder)
 
-    # Save the detailed CSV
-    sim_equipment_df.to_csv(output_folder / output_detailed_file_name)
-    print('equipment_catalogue_by_date_level_sim.csv saved.')
+    final_df = pd.DataFrame()
 
-    # Prepare a catalogue only by facility levels
-    # Define a custom aggregation function to combine sets in columns for each row
-    def combine_sets(row):
-        combined_set = set()
-        for col in row:
-            combined_set.update(col)
-        return combined_set
+    def details_col_to_str(details_col):
+        return details_col.apply(lambda x: ', '.join(map(str, x)))
 
-    # Apply the custom aggregation function to each row
-    sim_equipment_by_level_df = sim_equipment_df.copy()
-    sim_equipment_by_level_df['equipment'] = sim_equipment_by_level_df.apply(combine_sets, axis=1)
-    # Group by 'fac_level' and join rows with the same 'fac_level' into one set
-    sim_equipment_by_level_df.reset_index(inplace=True)
-    sim_equipment_by_level_df = sim_equipment_by_level_df.groupby('fac_level')['equipment'].apply(
-        lambda x: list(set.union(*x))
-    ).reset_index()
+    for col in hsi_event_keys.columns:
+        df_col = sim_equipment_df[col].dropna()
+        decoded_keys = df_col.index.get_level_values(1).astype(str).map(hsi_event_keys.at[0, col])
 
-    # Explode the 'equipment' column to separate elements into rows
-    sim_equipment_by_level_df = sim_equipment_by_level_df.explode('equipment', ignore_index=True).set_index('fac_level')
+        # %%% Verify the keys in dictionary and dataframe for the run 'col' are same
+        # Check if all keys in hsi_event_keys_set are in the 'event_details_key' of df_col
+        hsi_event_keys_set = set(hsi_event_keys.at[0, col].keys())
+        missing_keys_df =\
+            [key for key in hsi_event_keys_set if key not in df_col.index.get_level_values('event_details_key')]
 
-    # Save the CSV equipment catalogue
-    sim_equipment_by_level_df.to_csv(output_folder / output_file_name)
-    print('equipment_catalogue_by_level.csv saved.')
+        # Check if all keys in the 'event_details_key' of df_col are in hsi_event_keys_set
+        missing_keys_dict =\
+            [key for key in df_col.index.get_level_values('event_details_key') if key not in hsi_event_keys_set]
+
+        # Warn if some keys are missing
+        if missing_keys_df:
+            warnings.warn(UserWarning(f"Keys missing in sim_equipment_df for the run {col}: {missing_keys_df}"))
+
+        if missing_keys_dict:
+            warnings.warn(UserWarning(f"Keys missing in hsi_event_keys for the run {col}: {missing_keys_dict}"))
+        # %%%
+
+        df_col = pd.concat([df_col, pd.DataFrame(decoded_keys.tolist(), index=df_col.index)], axis=1)
+        # Make values in 'appt_footprint', 'beddays_footprint' columns to be string
+        df_col['appt_footprint'] = details_col_to_str(df_col['appt_footprint'])
+        df_col['beddays_footprint'] = details_col_to_str(df_col['beddays_footprint'])
+        # Explode the 'equipment' column
+        exploded_df = df_col.explode('equipment')
+        # Remove the 'event_details_key' and replace the index with hsi event details as indexes
+        exploded_df = exploded_df.droplevel(level=1)
+        exploded_df = exploded_df.set_index(
+            ['event_name', 'module_name', 'treatment_id', 'facility_level', 'appt_footprint', 'beddays_footprint',
+             'equipment'], append=True
+        )
+        # Sum values with the same multi-index (keep also empty indexes)
+        exploded_df = exploded_df.groupby(level=exploded_df.index.names, dropna=False).sum()
+        # Add the results for the run 'col' to final_df
+        final_df = pd.concat([final_df, exploded_df], axis=1)
+
+    # Replace NaN with 0
+    final_df.fillna(0, inplace=True)
+    # Save the detailed equipment catalogue
+    final_df.to_csv(output_folder / output_detailed_file_name)
+    print(f'{output_detailed_file_name} saved.')
+    # ---
+
+    # %% Catalog equipment by requested details
+    equipment_counts_by_time_and_requested_details = final_df.copy()
+
+    # Sum counts for each equipment with the same date, treatment id, and facility level (remaining indexes removed),
+    # keeping only non-empty 'equipment' indexes
+    to_be_grouped_by = ['date'] + catalog_by_details + ['equipment']
+    equipment_counts_by_time_and_requested_details = equipment_counts_by_time_and_requested_details.groupby(
+        to_be_grouped_by,
+        dropna=True
+    ).sum()
+
+    if catalog_by_time == 'annual':
+        # Sum counts annually
+        equipment_counts_by_time_and_requested_details['year'] = \
+            equipment_counts_by_time_and_requested_details.index.get_level_values('date').year
+        equipment_counts_by_time_and_requested_details.set_index('year', append=True, inplace=True)
+        equipment_counts_by_time_and_requested_details.index.droplevel('date')
+        to_be_grouped_by = ['year'] + catalog_by_details + ['equipment']
+        equipment_counts_by_time_and_requested_details = equipment_counts_by_time_and_requested_details.groupby(
+            to_be_grouped_by
+        ).sum()
+
+    # Save the equipment counts CSV
+    equipment_counts_by_time_and_requested_details.to_csv(output_folder / output_file_name)
+    print(f'{output_file_name} saved.')
+    # ---
 
     return 0
 
@@ -96,7 +194,7 @@ if __name__ == "__main__":
     parser.add_argument("results_folder", type=Path)
     args = parser.parse_args()
 
-    create_equipment_catalogue(
+    create_equipment_catalogues(
         results_folder=args.results_folder,
         output_folder=args.results_folder,
     )
