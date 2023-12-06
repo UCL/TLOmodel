@@ -34,7 +34,7 @@ from tlo.analysis.utils import (
 outputspath = Path("./outputs")  # use for local runs
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("effect_of_treatment_packages.py", outputspath)[-1]
+results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
 
 # look at one log (so can decide what to extract)
 log = load_pickled_dataframes(results_folder)
@@ -206,57 +206,57 @@ def get_population_size_by_age(results_folder):
     return t3
 
 
-def aggregate_person_years_by_age(results_folder):
-    """ extract person-years for each draw/run
-    calculate for men and women separately
-    return a dataframe with index=age-groups and columns=person-years
-    """
-
-    # Create an empty DataFrame to store all outputs
-    output = pd.DataFrame()
-
-    for draw in range(info['number_of_draws']):
-        for run in range(info['runs_per_draw']):
-
-            _df = extract_person_years(_draw=draw, _run=run)
-
-            # create empty dataframe to store outputs from each run
-            tmp = pd.DataFrame(columns=['M', 'F'])
-
-            for sex in ['M', 'F']:
-                py = _df[sex]  # extract values for each sex
-                # create dataframe one row per year and one column per age_year
-                new_df = pd.DataFrame(py.tolist())
-                new_df.index = _df.date
-                new_df = new_df.loc[TARGET_PERIOD[0]:TARGET_PERIOD[1]]
-
-                # sum values for each age (single years)
-                py_by_single_age_years = new_df.sum(numeric_only=True, axis=0).reset_index()
-                # py_by_single_age_years = py_by_single_age_years.reset_index()
-                py_by_single_age_years = py_by_single_age_years.rename(columns={'index': 'age', 0: 'person_years'})
-
-                # convert single age years to float for mapping
-                py_by_single_age_years['age'] = py_by_single_age_years['age'].astype(float)
-                # map single age bands to age-groups
-                py_with_age_groups = map_age_to_age_group(py_by_single_age_years)
-
-                summary = py_with_age_groups.groupby(["age_group"])["person_years"].sum() * get_multiplier(_draw=draw,
-                                                                                                           _run=run)
-                tmp[sex] = summary
-
-            # then join each draw/run in a new column
-            output = pd.concat([output, pd.concat([tmp['M'], tmp['F']], ignore_index=True)], axis=1)
-
-    # Create a MultiIndex for rows using age group and 'Male' and 'Female'
-    multi_index_rows_male = pd.MultiIndex.from_product([summary.index, ['M']], names=['age_group', 'sex'])
-    multi_index_rows_female = pd.MultiIndex.from_product([summary.index, ['F']], names=['age_group', 'sex'])
-    output.index = multi_index_rows_male.append(multi_index_rows_female)
-
-    # multi-index columns
-    multi_index_columns = create_multi_index_columns()
-    output.columns = multi_index_columns
-
-    return output
+# def aggregate_person_years_by_age(results_folder):
+#     """ extract person-years for each draw/run
+#     calculate for men and women separately
+#     return a dataframe with index=age-groups and columns=person-years
+#     """
+#
+#     # Create an empty DataFrame to store all outputs
+#     output = pd.DataFrame()
+#
+#     for draw in range(info['number_of_draws']):
+#         for run in range(info['runs_per_draw']):
+#
+#             _df = extract_person_years(_draw=draw, _run=run)
+#
+#             # create empty dataframe to store outputs from each run
+#             tmp = pd.DataFrame(columns=['M', 'F'])
+#
+#             for sex in ['M', 'F']:
+#                 py = _df[sex]  # extract values for each sex
+#                 # create dataframe one row per year and one column per age_year
+#                 new_df = pd.DataFrame(py.tolist())
+#                 new_df.index = _df.date
+#                 new_df = new_df.loc[TARGET_PERIOD[0]:TARGET_PERIOD[1]]
+#
+#                 # sum values for each age (single years)
+#                 py_by_single_age_years = new_df.sum(numeric_only=True, axis=0).reset_index()
+#                 # py_by_single_age_years = py_by_single_age_years.reset_index()
+#                 py_by_single_age_years = py_by_single_age_years.rename(columns={'index': 'age', 0: 'person_years'})
+#
+#                 # convert single age years to float for mapping
+#                 py_by_single_age_years['age'] = py_by_single_age_years['age'].astype(float)
+#                 # map single age bands to age-groups
+#                 py_with_age_groups = map_age_to_age_group(py_by_single_age_years)
+#
+#                 summary = py_with_age_groups.groupby(["age_group"])["person_years"].sum() * get_multiplier(_draw=draw,
+#                                                                                                            _run=run)
+#                 tmp[sex] = summary
+#
+#             # then join each draw/run in a new column
+#             output = pd.concat([output, pd.concat([tmp['M'], tmp['F']], ignore_index=True)], axis=1)
+#
+#     # Create a MultiIndex for rows using age group and 'Male' and 'Female'
+#     multi_index_rows_male = pd.MultiIndex.from_product([summary.index, ['M']], names=['age_group', 'sex'])
+#     multi_index_rows_female = pd.MultiIndex.from_product([summary.index, ['F']], names=['age_group', 'sex'])
+#     output.index = multi_index_rows_male.append(multi_index_rows_female)
+#
+#     # multi-index columns
+#     multi_index_columns = create_multi_index_columns()
+#     output.columns = multi_index_columns
+#
+#     return output
 
 
 # %% GENERATE LIFE EXPECTANCY ESTIMATES
@@ -282,7 +282,7 @@ def estimate_life_expectancy(person_years_at_risk, number_of_deaths_in_interval)
         number_of_deaths_by_sex = number_of_deaths_in_interval.xs(key=sex, level='sex')
 
         death_rate_in_interval = number_of_deaths_by_sex / person_years_by_sex
-        # if no deaths or person-years, convert nan to 0
+        # if no deaths or person-years, produces nan
         death_rate_in_interval = death_rate_in_interval.fillna(0)
         # if no deaths in age 90+, set death rate equal to value in age 85-89
         if death_rate_in_interval[number_age_groups - 1] == 0:
@@ -337,8 +337,8 @@ def estimate_life_expectancy(person_years_at_risk, number_of_deaths_in_interval)
         observed_life_expectancy[~condition] = py_lived_beyond_start_of_interval / number_alive_at_start_of_interval
 
         # estimated life expectancy from birth
-        # estimated_life_expectancy = pd.concat(estimated_life_expectancy, observed_life_expectancy[0])
-        estimated_life_expectancy = estimated_life_expectancy.append(pd.Series([observed_life_expectancy[0]]))
+        # estimated_life_expectancy = pd.concat([estimated_life_expectancy, observed_life_expectancy[0]])
+        estimated_life_expectancy = estimated_life_expectancy._append(pd.Series([observed_life_expectancy[0]]))
 
     return estimated_life_expectancy
 
@@ -402,4 +402,31 @@ def produce_life_expectancy_estimates(results_folder, median=True):
         return summary
 
 
-test = produce_life_expectancy_estimates(results_folder, median=False)
+test = produce_life_expectancy_estimates(results_folder, median=True)
+
+
+# # output death rates by age-group
+#
+# # get death rates manually using life expectancy functions
+# death_rates = pd.DataFrame(
+#     columns=pd.MultiIndex.from_product(
+#         [
+#             death_rate_in_interval.columns.unique(level='draw'),
+#             ["median", "lower", "upper"]
+#         ],
+#         names=['draw', 'stat']),
+#     index=death_rate_in_interval.index
+# )
+#
+# death_rates.loc[:, (slice(None), "median")] = death_rate_in_interval.groupby(axis=1, by='draw').median().values
+# death_rates.loc[:, (slice(None), "lower")] = death_rate_in_interval.groupby(axis=1, by='draw').quantile(0.025).values
+# death_rates.loc[:, (slice(None), "upper")] = death_rate_in_interval.groupby(axis=1, by='draw').quantile(0.975).values
+# death_rates.to_csv(outputspath / ('death_rates_excl_htm_F' + '.csv'))
+#
+# # extract numbers of deaths
+# number_of_deaths_in_interval = num_deaths_by_age_group(results_folder)
+#
+# # extract person-years
+# person_years_at_risk = get_population_size_by_age(results_folder)
+#
+

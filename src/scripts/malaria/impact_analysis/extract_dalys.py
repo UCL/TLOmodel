@@ -29,7 +29,7 @@ from tlo.analysis.utils import (
 outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("effect_of_treatment_packages_combined.py", outputspath)[-1]
+results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -62,7 +62,6 @@ def num_dalys_by_cause(_df):
         .drop(columns=['date', 'sex', 'age_range', 'year']) \
         .sum()
 
-
 # extract dalys by cause with mean and upper/lower intervals
 # With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
 
@@ -80,4 +79,32 @@ daly_summary = summarize(
 
 daly_summary = round_to_nearest_100(daly_summary)
 daly_summary = daly_summary.astype(int)
-daly_summary.to_csv(outputspath / ('dalys_tx_ineff' + '.csv'))
+daly_summary.to_csv(outputspath / ('dalys_excl_htm' + '.csv'))
+
+
+daly=log['tlo.methods.healthburden']['dalys_stacked']
+
+sum_of_remaining = daly.drop(columns=['date', 'sex', 'age_range', 'year']).sum().sum()
+
+def total_dalys(_df):
+    """Return total number of DALYS (Stacked) (total by age-group within the TARGET_PERIOD)"""
+    return pd.Series(_df \
+        .loc[_df.year.between(*[i.year for i in TARGET_PERIOD])] \
+        .drop(columns=['date', 'sex', 'age_range', 'year']).sum().sum())
+
+
+total_daly_summary = summarize(
+    extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_stacked",
+        custom_generate_series=total_dalys,
+        do_scaling=True,
+    ),
+    only_mean=False,
+)
+
+total_daly_summary = round_to_nearest_100(total_daly_summary)
+total_daly_summary = total_daly_summary.astype(int)
+total_daly_summary.to_csv(outputspath / ('total_dalys_excl_htm' + '.csv'))
+

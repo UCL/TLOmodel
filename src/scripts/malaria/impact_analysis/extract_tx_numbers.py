@@ -229,8 +229,8 @@ def summarise_grouped_appts(results_folder, module, key, column, draw):
     # with treatment numbers for each run, group by prefix and sum
     grouped_df = out.groupby(out.index.str.split('_').str[0]).sum()
     # add back the first attendance appts separately
-    grouped_df = grouped_df.append(out.loc['FirstAttendance_Emergency'])
-    grouped_df = grouped_df.append(out.loc['FirstAttendance_NonEmergency'])
+    grouped_df = grouped_df._append(out.loc['FirstAttendance_Emergency'])
+    grouped_df = grouped_df._append(out.loc['FirstAttendance_NonEmergency'])
     grouped_df['median'] = grouped_df.iloc[:, 0:5].quantile(q=0.5, axis=1) * scaling_factor.values[0][0]
     grouped_df['lower'] = grouped_df.iloc[:, 0:5].quantile(q=0.025, axis=1) * scaling_factor.values[0][0]
     grouped_df['upper'] = grouped_df.iloc[:, 0:5].quantile(q=0.975, axis=1) * scaling_factor.values[0][0]
@@ -298,9 +298,6 @@ sum_tx0 = summarise_grouped_appts(results_folder,
 sum_tx4 = summarise_grouped_appts(results_folder,
                                   module=module, key=key, column=column, draw=4)
 
-sum_tx5 = summarise_grouped_appts(results_folder,
-                                  module=module, key=key, column=column, draw=5)
-
 
 # summary table for output
 # todo note these are scaled
@@ -311,9 +308,6 @@ output_table = pd.DataFrame({
     'sc4_median': sum_tx4['median'],
     'sc4_lower': sum_tx4['lower'],
     'sc4_upper': sum_tx4['upper'],
-    'sc5_median': sum_tx5['median'],
-    'sc5_lower': sum_tx5['lower'],
-    'sc5_upper': sum_tx5['upper']
 })
 
 
@@ -326,7 +320,7 @@ output_table = output_table.applymap(round_to_nearest_100)
 # Convert all values to integers
 output_table = output_table.astype(int, errors='ignore')
 
-output_table.to_csv(outputspath / ('tx_id_numbers' + '.csv'))
+output_table.to_csv(outputspath / ('tx_id_numbers_excl_HTM' + '.csv'))
 
 
 # ---------------------------------------------------------------------------------
@@ -419,3 +413,102 @@ def summarise_squeeze_factors(results_folder):
 
 
 squeeze_factors = summarise_squeeze_factors(results_folder)
+
+
+# ---------------------------------------------------------------------------------
+# scale appointment numbers by current population size
+# ---------------------------------------------------------------------------------
+treatment_id0.index = py0.index
+scaled_over5opd = treatment_id0['Over5OPD_mean'].divide(py0[0])
+# values are ~0.5 so 0.5 over5opd appts per person per year\
+scaled_inpat = treatment_id0['IPAdmission_mean'].divide(py0[0])
+# values are 0.2ish
+
+treatment_id4.index = py0.index
+scaled_over5opd_4 = treatment_id4['Over5OPD_mean'].divide(py0[4])
+# values are 0.2ish so fewer appts per person per year than baseline
+scaled_inpat_4 = treatment_id4['IPAdmission_mean'].divide(py0[4])
+# values are 0.2ish, similar to baseline
+
+
+
+
+#----------------------------------------------------
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Sample data
+categories = ['HIV_in', 'Excl HIV', 'HIV_opd', 'HIV_pharm',
+              'TB_in', 'Excl TB', 'TB_opd', 'TB_pharm',
+              'mal_in', 'Excl Mal', 'mal_opd', 'mal_pharm',
+              'HTM_in', 'Excl HTM', 'HTM_opd', 'HTM_pharm'
+              ]
+
+
+
+# min_values = [-96700, -936900, 569700, -5659900, -480800, -63600, -585900, 352100, -7535100,	-14400]
+# max_values = [30400, 1649600, 814700, 771200, 12660, 39400,	415800,	513400,	-512290,	69800]
+#
+# # exclude malaria and HTM
+# min_values = [-162000, 613900, -111586300, -12600, -117700, -2237100, -189744100, -581200]
+# max_values = [1577400, 747000, -109840700, 205500, 1793200, -2144200, -186755300, -181700]
+
+min_values = pd.concat([lower_percentdiffs0_1, lower_percentdiffs0_2, lower_percentdiffs0_3, lower_percentdiffs0_4])
+max_values = pd.concat([upper_percentdiffs0_1, upper_percentdiffs0_2, upper_percentdiffs0_3, upper_percentdiffs0_4])
+min_values = min_values.reset_index(drop=True)
+max_values = max_values.reset_index(drop=True)
+
+
+
+
+col = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12',
+       '#3498db', '#2ecc71', '#e74c3c', '#f39c12',
+       '#3498db', '#2ecc71', '#e74c3c', '#f39c12',
+       '#3498db', '#2ecc71', '#e74c3c', '#f39c12'
+       ]
+
+
+# Plotting the floating bars
+for i, (min_val, max_val) in enumerate(zip(min_values, max_values)):
+    plt.bar(categories[i], height=max_val - min_val, bottom=min_val, color=col[i],
+            edgecolor='grey')
+
+# Customize the plot
+
+# Calculate the position for the vertical line
+line_position = (plt.xticks()[0][3] + plt.xticks()[0][4]) / 2
+line_position2 = (plt.xticks()[0][7] + plt.xticks()[0][8]) / 2
+line_position3 = (plt.xticks()[0][11] + plt.xticks()[0][12]) / 2
+
+# Add a vertical line between 5th and 6th bars
+plt.axvline(x=line_position, color='grey', linestyle='--', linewidth=1)
+plt.axvline(x=line_position2, color='grey', linestyle='--', linewidth=1)
+plt.axvline(x=line_position3, color='grey', linestyle='--', linewidth=1)
+plt.axhline(y=0, color='grey', linestyle='-', linewidth=1)
+
+# Remove x-axis tick labels
+plt.xticks([])
+
+custom_xticks = ['', 'Excl HIV', '', '',
+                 '', 'Excl TB', '', '',
+                 '', 'Excl Mal', '', '',
+                 '', 'Excl HTM', '', '']
+plt.xticks(range(len(custom_xticks)), custom_xticks)
+
+plt.ylabel('Relative difference from baseline')
+plt.title('')
+
+# Show legend
+legend_elements = [mlines.Line2D([0], [0], marker='o', color='w',
+                                 markerfacecolor=color, markersize=10, label=label)
+                   for color, label in zip(['#3498db', '#2ecc71', '#e74c3c', '#f39c12'], ['Inpatient', 'Lab', 'OPD', 'Pharmacy'])]
+custom_legend = plt.legend(handles=legend_elements, title='', loc='lower left')
+
+
+# Add custom legend to the plot
+plt.gca().add_artist(custom_legend)
+
+plt.savefig(outputspath / "rel_diffs_appt_numbers.png")
+
+# Show the plot
+plt.show()

@@ -32,7 +32,8 @@ from tlo.analysis.utils import (
 outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("effect_of_treatment_packages_combined.py", outputspath)[-1]
+# results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
+results_folder = get_scenario_outputs("remove_treatment_effects.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -111,6 +112,7 @@ def sum_appt_by_id(results_folder, module, key, column, draw):
 
     # sum appointments for each run by appointment category
     df2 = results.groupby('AppointmentCategory').sum()
+    df2 = df2.drop('index', axis=1)
 
     return df2
 
@@ -132,10 +134,6 @@ appt_sums3 = sum_appt_by_id(results_folder,
                            module=module, key=key, column=column, draw=3)
 appt_sums4 = sum_appt_by_id(results_folder,
                            module=module, key=key, column=column, draw=4)
-# # if using remove_treatment_packages include this
-# appt_sums5 = sum_appt_by_id(results_folder,
-#                            module=module, key=key, column=column, draw=5)
-
 
 
 baseline_median = appt_sums0.median(axis='columns')
@@ -146,7 +144,25 @@ diffs0_1 = appt_sums1 - appt_sums0
 diffs0_2 = appt_sums2 - appt_sums0
 diffs0_3 = appt_sums3 - appt_sums0
 diffs0_4 = appt_sums4 - appt_sums0
-# diffs0_5 = appt_sums5 - appt_sums0
+
+
+percent_diffs0_1 = (appt_sums1 - appt_sums0)/appt_sums0
+percent_diffs0_2 = (appt_sums2 - appt_sums0)/appt_sums0
+percent_diffs0_3 = (appt_sums3 - appt_sums0)/appt_sums0
+percent_diffs0_4 = (appt_sums4 - appt_sums0)/appt_sums0
+
+lower_percentdiffs0_1 = percent_diffs0_1.quantile(0.025, axis='columns')
+lower_percentdiffs0_2 = percent_diffs0_2.quantile(0.025, axis='columns')
+lower_percentdiffs0_3 = percent_diffs0_3.quantile(0.025, axis='columns')
+lower_percentdiffs0_4 = percent_diffs0_4.quantile(0.025, axis='columns')
+
+upper_percentdiffs0_1 = percent_diffs0_1.quantile(0.975, axis='columns')
+upper_percentdiffs0_2 = percent_diffs0_2.quantile(0.975, axis='columns')
+upper_percentdiffs0_3 = percent_diffs0_3.quantile(0.975, axis='columns')
+upper_percentdiffs0_4 = percent_diffs0_4.quantile(0.975, axis='columns')
+
+
+
 
 # for the diffs, if value negative scenario count lower than baseline
 # if value is positive, scenario count higher than baseline
@@ -202,7 +218,7 @@ out = out.applymap(round_to_nearest_100)
 # Convert all values to integers
 out = out.astype(int, errors='ignore')
 
-out.to_csv(outputspath / ('comparison_hs_usage_25Nov' + '.csv'))
+out.to_csv(outputspath / ('comparison_hs_usage_excl_HTM_4Dec' + '.csv'))
 
 
 

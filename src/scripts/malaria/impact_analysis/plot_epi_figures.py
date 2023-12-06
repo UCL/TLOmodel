@@ -454,7 +454,7 @@ ax5.set(title='',
         ylabel='Number AIDS deaths, thousands')
 ax5.set_xticks(xvals_for_ticks)
 ax5.set_xticklabels(xlabels_for_ticks)
-ax5.set_ylim(0, 80)
+ax5.set_ylim(0, 120)
 ax5.tick_params(axis='x', rotation=70)
 
 # TB deaths
@@ -472,7 +472,7 @@ ax6.set(title='',
         ylabel='Number TB deaths, thousands')
 ax6.set_xticks(xvals_for_ticks)
 ax6.set_xticklabels(xlabels_for_ticks)
-ax6.set_ylim(0, 21)
+ax6.set_ylim(0, 23)
 ax6.tick_params(axis='x', rotation=70)
 
 # Malaria deaths
@@ -499,7 +499,7 @@ ax7.legend(loc='upper right',
 # empty plot
 ax8.axis('off')
 
-# fig.savefig(outputspath / "Epi_outputs_excl_htm.png")
+fig.savefig(outputspath / "Epi_outputs_excl_htm.png")
 
 plt.show()
 
