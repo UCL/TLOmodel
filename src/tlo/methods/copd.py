@@ -521,12 +521,16 @@ class HSI_Copd_TreatmentOnSevereExacerbation(HSI_Event, IndividualScopeEventMixi
         self.ACCEPTED_FACILITY_LEVEL = self.all_facility_levels[self.facility_levels_index]
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 2})
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         """What to do when someone presents for care with an exacerbation.
          * Provide treatment: whatever is available at this facility at this time (no referral).
         """
         df = self.sim.population.props
+
+        self.EQUIPMENT.update({'Oxygen cylinder, with regulator', 'Nasal Prongs', 'Drip stand', 'Infusion pump'})
+
         if not self.get_consumables(self.module.item_codes['oxygen']):
             # refer to the next higher facility if the current facility has no oxygen
             self.facility_levels_index += 1

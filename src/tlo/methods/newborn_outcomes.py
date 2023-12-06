@@ -410,8 +410,6 @@ class NewbornOutcomes(Module):
         get_list_of_items = pregnancy_helper_functions.get_list_of_items
 
         # ---------------------------------- IV DRUG ADMIN CONSUMABLE  -------------------------------------------------
-        # TODO: As we now consider both consumables and equipment, using 'equipment' when meaning consumables is
-        #  confusing
         self.item_codes_nb_consumables['iv_drug_cons'] = \
             get_list_of_items(self, ['Cannula iv  (winged with injection pot) 18_each_CMST',
                                      'Giving set iv administration + needle 15 drops/ml_each_CMST',
@@ -1480,6 +1478,7 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
 
