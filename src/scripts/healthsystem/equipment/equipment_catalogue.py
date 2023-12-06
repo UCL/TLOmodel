@@ -99,8 +99,9 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
     output_detailed_file_name = 'equipment_monthly_counts__all_event_details.csv'
     # requested details only CSV name
     time_index = 'year' if catalog_by_time == 'annual' else 'date'
-    output_file_name = \
+    output_focused_file_name = \
         'equipment_' + catalog_by_time + '_counts__by_' + time_index + '_' + '_'.join(catalog_by_details) + '.csv'
+    output_summary_file_name = 'equipment_summary__module_name_event_name_treatment_id.csv'
     # ---
 
     # %% Catalog equipment by all HSI event details
@@ -112,6 +113,12 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
 
     def details_col_to_str(details_col):
         return details_col.apply(lambda x: ', '.join(map(str, x)))
+
+    def lists_of_strings_to_strings_of_list(list_of_strings_col):
+        return list_of_strings_col.apply(lambda x: "['" + "', '".join(map(str, x)) + "']")
+
+    def strings_of_list_to_lists_of_strings(strings_of_list_col):
+        return strings_of_list_col.apply(lambda x: x.strip('][').split(', '))
 
     for col in hsi_event_keys.columns:
         df_col = sim_equipment_df[col].dropna()
@@ -136,34 +143,38 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
         # %%%
 
         df_col = pd.concat([df_col, pd.DataFrame(decoded_keys.tolist(), index=df_col.index)], axis=1)
-        # Make values in 'appt_footprint', 'beddays_footprint' columns to be string
+        # Make values in 'appt_footprint', 'beddays_footprint', and 'equipment' columns to be string
         df_col['appt_footprint'] = details_col_to_str(df_col['appt_footprint'])
         df_col['beddays_footprint'] = details_col_to_str(df_col['beddays_footprint'])
-        # Explode the 'equipment' column
-        exploded_df = df_col.explode('equipment')
-        # Remove the 'event_details_key' and replace the index with hsi event details as indexes
-        exploded_df = exploded_df.droplevel(level=1)
-        exploded_df = exploded_df.set_index(
-            ['event_name', 'module_name', 'treatment_id', 'facility_level', 'appt_footprint', 'beddays_footprint',
-             'equipment'], append=True
-        )
-        # Sum values with the same multi-index (keep also empty indexes)
-        exploded_df = exploded_df.groupby(level=exploded_df.index.names, dropna=False).sum()
-        # Add the results for the run 'col' to final_df
-        final_df = pd.concat([final_df, exploded_df], axis=1)
+        df_col['equipment'] = lists_of_strings_to_strings_of_list(df_col['equipment'])
+        df_col = (df_col.droplevel(level=1)
+                  .set_index(['module_name', 'event_name', 'treatment_id', 'facility_level', 'appt_footprint',
+                              'beddays_footprint', 'equipment'], append=True))
+        final_df = pd.concat([final_df, df_col], axis=1)
 
     # Replace NaN with 0
     final_df.fillna(0, inplace=True)
+    final_df.sort_index(inplace=True)
     # Save the detailed equipment catalogue
     final_df.to_csv(output_folder / output_detailed_file_name)
     print(f'{output_detailed_file_name} saved.')
     # ---
 
+    # %% Catalog equipment summary
+    equipment_summary = final_df.copy()
+    equipment_summary = equipment_summary.groupby(['module_name', 'event_name', 'treatment_id', 'equipment']).sum()
+    equipment_summary = \
+        equipment_summary.reset_index().set_index(['module_name', 'event_name', 'treatment_id', 'equipment'])
+    # Save the summary equipment catalogue
+    equipment_summary.index.to_frame().to_csv(output_folder / output_summary_file_name, index=False)
+    print(f'{output_summary_file_name} saved.')
+    # ---
+
     # %% Catalog equipment by requested details
     equipment_counts_by_time_and_requested_details = final_df.copy()
 
-    # Sum counts for each equipment with the same date, treatment id, and facility level (remaining indexes removed),
-    # keeping only non-empty 'equipment' indexes
+    # Sum counts for each equipment set with the same date, treatment id, and facility level
+    # (remaining indexes removed), keeping only non-empty 'equipment' indexes
     to_be_grouped_by = ['date'] + catalog_by_details + ['equipment']
     equipment_counts_by_time_and_requested_details = equipment_counts_by_time_and_requested_details.groupby(
         to_be_grouped_by,
@@ -181,9 +192,24 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
             to_be_grouped_by
         ).sum()
 
+    # Remove rows with no equipment used
+    equipment_counts_by_time_and_requested_details.drop("['']", level='equipment', axis=0, inplace=True)
+    # Split the equipment by an item per row
+    equipment_counts_by_time_and_requested_details['equipment'] = \
+        equipment_counts_by_time_and_requested_details.index.get_level_values('equipment')
+    equipment_counts_by_time_and_requested_details.index = \
+        equipment_counts_by_time_and_requested_details.index.droplevel('equipment')
+    equipment_counts_by_time_and_requested_details['equipment'] = strings_of_list_to_lists_of_strings(
+        equipment_counts_by_time_and_requested_details['equipment']
+    )
+    exploded_df = equipment_counts_by_time_and_requested_details.explode('equipment')
+    exploded_df = exploded_df.set_index(['equipment'], append=True)
+    # Sum values with the same multi-index
+    exploded_df = exploded_df.groupby(level=exploded_df.index.names).sum()
+
     # Save the equipment counts CSV
-    equipment_counts_by_time_and_requested_details.to_csv(output_folder / output_file_name)
-    print(f'{output_file_name} saved.')
+    exploded_df.to_csv(output_folder / output_focused_file_name)
+    print(f'{output_focused_file_name} saved.')
     # ---
 
     return 0
