@@ -1283,12 +1283,13 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
             _new_contraceptive = self.new_contraceptive
 
             # Update equipment
+            self.EQUIPMENT.update({'Weighing scale', 'Height Pole (Stadiometer)', 'Blood pressure machine'})
             if _new_contraceptive == 'female_sterilization':
-                # TODO: Eva's dummy example - needs to be replaced by real item(s)
-                self.EQUIPMENT.update({'Smt used to sterilize a woman'})
+                self.EQUIPMENT.update({
+                    'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise', 'Examination couch'
+                })
             elif _new_contraceptive == 'IUD':
-                # TODO: Eva's dummy example - needs to be replaced by real item(s)
-                self.EQUIPMENT.update({'Equipment used when performing IUD'})
+                self.EQUIPMENT.update({'Cusco’s/ bivalved Speculum (small, medium, large)', 'Sponge Holding Forceps',  'Examination couch'})
 
         else:
             _new_contraceptive = "not_using"
