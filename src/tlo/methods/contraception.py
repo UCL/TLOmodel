@@ -1230,6 +1230,9 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         # Record the date that Family Planning Appointment happened for this person
         self.sim.population.props.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
 
+        # Measure weight, height and BP even if contraception not administrated
+        self.EQUIPMENT.update({'Weighing scale', 'Height Pole (Stadiometer)', 'Blood pressure machine'})
+
         # Determine essential and optional items
         # TODO: we don't distinguish essential X optional for contraception methods yet, will need to update once we do
         items_essential = self.module.cons_codes[self.new_contraceptive]
@@ -1283,13 +1286,14 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
             _new_contraceptive = self.new_contraceptive
 
             # Update equipment
-            self.EQUIPMENT.update({'Weighing scale', 'Height Pole (Stadiometer)', 'Blood pressure machine'})
             if _new_contraceptive == 'female_sterilization':
                 self.EQUIPMENT.update({
                     'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise', 'Examination couch'
                 })
             elif _new_contraceptive == 'IUD':
-                self.EQUIPMENT.update({'Cusco’s/ bivalved Speculum (small, medium, large)', 'Sponge Holding Forceps',  'Examination couch'})
+                self.EQUIPMENT.update({
+                    'Cusco’s/ bivalved Speculum (small, medium, large)', 'Sponge Holding Forceps',  'Examination couch'
+                })
 
         else:
             _new_contraceptive = "not_using"
