@@ -844,7 +844,7 @@ class LifestyleModels:
                 parameters_key = (
                     f"init_dist_mar_stat_age{lower_age}{upper_age}"
                     if upper_age != np.inf else
-                    f"init_dist_mar_stat_agege{upper_age}"
+                    f"init_dist_mar_stat_agege{lower_age}"
                 )
                 mar_stat[subpopulation] = rng.choice(
                     li_mar_stat_dtype.categories,
@@ -1164,9 +1164,9 @@ class LifestyleModels:
             male_circ = pd.Series(data=False, index=df.index, dtype=bool)
 
             # select a population of men to be circumcised
-            is_alive_and_male = df.is_alive & (df.sex == 'M')
-            will_be_circ = rng.rand(is_alive_and_male.sum()) < p['proportion_of_men_circumcised_at_initiation']
-            male_circ.loc[is_alive_and_male & will_be_circ] = True
+            men = df.loc[df.is_alive & (df.sex == 'M')]
+            will_be_circ = rng.rand(len(men)) < p['proportion_of_men_circumcised_at_initiation']
+            male_circ.loc[men[will_be_circ].index] = True
             # return male circumcision series
             return male_circ
 

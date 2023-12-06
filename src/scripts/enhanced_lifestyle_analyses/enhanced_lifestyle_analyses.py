@@ -23,7 +23,7 @@ from tlo.methods import demography, enhanced_lifestyle, simplified_births
 def add_footnote(fig: plt.Figure, footnote: str):
     """ A function that adds a footnote below each plot. Here we are explaining what a denominator for every
     graph is """
-    fig.figtex(0.5, 0.01, footnote, ha="center", fontsize=10,
+    fig.figure.text(0.5, 0.01, footnote, ha="center", fontsize=10,
                 bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
 
 
@@ -189,16 +189,16 @@ class LifeStylePlots:
                     # do plotting
                     ax = gc_df.plot(kind='bar', stacked=True, ax=axes[_cols_counter, _rows_counter],
                                     title=f"{self._rural_urban_state[urban_rural]}"
-                                          f" {self.en_props[li_property][0]} categories in {desc}",
-                                    ylabel=f"{self.en_props[li_property][0]} proportions", xlabel="Year"
+                                          f" {self.en_props[li_property].label} categories in {desc}",
+                                    ylabel=f"{self.en_props[li_property].label} proportions", xlabel="Year"
                                     )
-                    self.custom_axis_formatter(gc_df, ax, li_property)
+                    self.custom_axis_formatter(gc_df, ax)
                     # increase counter
                     _rows_counter += 1
 
                 _cols_counter += 1
             # save and display plots
-            add_footnote(f'{self.en_props[li_property][1]}')
+            add_footnote(fig, f'{self.en_props[li_property].per_gender_footnote}')
             fig.tight_layout()
             fig.savefig(self.outputpath / (
                 li_property + '_' + self.datestamp + '.png'),
@@ -222,15 +222,15 @@ class LifeStylePlots:
 
                     # do plotting
                     ax = gc_df.plot(kind='bar', stacked=True, ax=axes[counter],
-                                    title=f"{desc} {self.en_props[li_property][0]}  categories",
-                                    ylabel=f"{self.en_props[li_property][0]} proportions", xlabel="Year"
+                                    title=f"{desc} {self.en_props[li_property].label}  categories",
+                                    ylabel=f"{self.en_props[li_property].label} proportions", xlabel="Year"
                                     )
-                    self.custom_axis_formatter(gc_df, ax, li_property)
+                    self.custom_axis_formatter(gc_df, ax)
                     # increase counter
                     counter += 1
 
                 # save and display plots for property categories by gender
-                add_footnote(f'{self.en_props[li_property][1]}')
+                add_footnote(fig, f'{self.en_props[li_property].per_gender_footnote}')
                 fig.tight_layout()
                 fig.savefig(self.outputpath / (li_property + self.datestamp + '.png'), format='png')
                 # fig.show()
@@ -259,9 +259,9 @@ class LifeStylePlots:
                                                                            ax=axes[_col_counter, _rows_counter],
                                                                            title=f"{desc} "
                                                                                  f"{self.wealth_desc[_wealth_level]} "
-                                                                                 f"{self.en_props[li_property][0]}  "
+                                                                                 f"{self.en_props[li_property].label}  "
                                                                                  f"categories",
-                                                                           ylabel=f"{self.en_props[li_property][0]} "
+                                                                           ylabel=f"{self.en_props[li_property].label} "
                                                                                   f"proportions",
                                                                            xlabel="Year"
                                                                            )
@@ -283,15 +283,15 @@ class LifeStylePlots:
 
                     # do plotting
                     ax = gc_df.plot(kind='bar', stacked=True, ax=axes[counter],
-                                    title=f"{desc} {self.en_props[li_property][0]}  categories",
-                                    ylabel=f"{self.en_props[li_property][0]} proportions", xlabel="Year"
+                                    title=f"{desc} {self.en_props[li_property].label}  categories",
+                                    ylabel=f"{self.en_props[li_property].label} proportions", xlabel="Year"
                                     )
-                    self.custom_axis_formatter(gc_df, ax, li_property)
+                    self.custom_axis_formatter(gc_df, ax)
                     # increase counter
                     counter += 1
 
             # save and display plots for property categories by gender
-            add_footnote(f'{self.en_props[li_property][1]}')
+            add_footnote(fig, f'{self.en_props[li_property].per_gender_footnote}')
             fig.tight_layout()
             fig.savefig(self.outputpath / (li_property + self.datestamp + '.png'), format='png')
             # fig.show()
@@ -328,22 +328,22 @@ class LifeStylePlots:
                     # do plotting
                     ax = totals_df.iloc[:, _rows_counter].plot(kind='bar', ax=axes[_cols_counter, _rows_counter],
                                                                ylim=(0, y_lim),
-                                                               ylabel=f'{self.en_props[_property][0]} proportions',
+                                                               ylabel=f'{self.en_props[_property].label} proportions',
                                                                xlabel="Year",
                                                                color='darkturquoise',
                                                                title=f"{self._rural_urban_state[urban_rural]}"
-                                                                     f" {desc} {self.en_props[_property][0]}")
+                                                                     f" {desc} {self.en_props[_property].label}")
                     # format x-axis
-                    self.custom_axis_formatter(totals_df, ax, _property)
+                    self.custom_axis_formatter(totals_df, ax)
                     # increase counter
                     _rows_counter += 1
 
                 _cols_counter += 1
             # save and display plots for property categories by gender
-            add_footnote(f'{self.en_props[_property][1]}')
+            add_footnote(fig, f'{self.en_props[_property].per_gender_footnote}')
             fig.tight_layout()
             fig.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
-            # plt.show()
+            # # plt.show()
 
         # if property is not in a group of those that need plotting by urban and rural plot them by age category only
         else:
@@ -362,19 +362,19 @@ class LifeStylePlots:
                     # do plotting
                     ax = totals_df.iloc[:, _rows_counter].plot(kind='bar', ax=axes[_rows_counter],
                                                                ylim=(0, y_lim),
-                                                               ylabel=f'{self.en_props[_property][0]} proportions',
+                                                               ylabel=f'{self.en_props[_property].label} proportions',
                                                                xlabel="Year",
                                                                color='darkturquoise',
-                                                               title=f"{desc} {self.en_props[_property][0]}")
+                                                               title=f"{desc} {self.en_props[_property].label}")
                     # format x-axis
-                    self.custom_axis_formatter(totals_df, ax, _property)
+                    self.custom_axis_formatter(totals_df, ax)
                     # increase counter
                     _rows_counter += 1
                 # save and display plots for property categories by gender
-                add_footnote(f'{self.en_props[_property][1]}')
+                add_footnote(fig, f'{self.en_props[_property].per_gender_footnote}')
                 fig.tight_layout()
                 fig.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
-                # plt.show()
+                # # plt.show()
 
                 # PLOT EDUCATION FOR HIGHEST AND LOWEST WEALTH LEVEL
                 fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(10, 5))
@@ -394,13 +394,13 @@ class LifeStylePlots:
                         # do plotting
                         ax = totals_df.iloc[:, _rows_counter].plot(kind='bar', ax=axes[_col_counter, _rows_counter],
                                                                    ylim=(0, y_lim),
-                                                                   ylabel=f'{self.en_props[_property][0]} proportions',
+                                                                   ylabel=f'{self.en_props[_property].label} proportions',
                                                                    xlabel="Year",
                                                                    color='darkturquoise',
                                                                    title=f"{desc} {_wealth_desc} "
-                                                                         f"{self.en_props[_property][0]}")
+                                                                         f"{self.en_props[_property].label}")
                         # format x-axis
-                        self.custom_axis_formatter(totals_df, ax, _property)
+                        self.custom_axis_formatter(totals_df, ax)
                         # increase counter
                         _rows_counter += 1
                     _col_counter += 1
@@ -417,19 +417,19 @@ class LifeStylePlots:
                     # do plotting
                     ax = totals_df.iloc[:, _rows_counter].plot(kind='bar', ax=axes[_rows_counter],
                                                                ylim=(0, y_lim),
-                                                               ylabel=f'{self.en_props[_property][0]} proportions',
+                                                               ylabel=f'{self.en_props[_property].label} proportions',
                                                                xlabel="Year",
                                                                color='darkturquoise',
-                                                               title=f"{desc} {self.en_props[_property][0]}")
+                                                               title=f"{desc} {self.en_props[_property].label}")
                     # format x-axis
-                    self.custom_axis_formatter(totals_df, ax, _property)
+                    self.custom_axis_formatter(totals_df, ax)
                     # increase counter
                     _rows_counter += 1
             # save and display plots for property categories by gender
-            add_footnote(f'{self.en_props[_property][1]}')
+            add_footnote(fig, f'{self.en_props[_property].per_gender_footnote}')
             fig.tight_layout()
             fig.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
-            # plt.show()
+            # # plt.show()
 
     def display_all_categorical_and_non_categorical_plots_by_gender(self):
         """ a function to display plots for both categorical and non categorical properties grouped by gender """
@@ -505,17 +505,17 @@ class LifeStylePlots:
                 new_df = new_df.apply(lambda row: row / row.sum(), axis=1)
                 # do plotting
                 ax = new_df.plot(kind='bar', stacked=True, ax=axes[_rows_counter],
-                                 title=f"{self._rural_urban_state[urban_rural]} {self.en_props[_property][0]} "
+                                 title=f"{self._rural_urban_state[urban_rural]} {self.en_props[_property].label} "
                                        f" categories (Year 2021)",
-                                 ylabel=f"{self.en_props[_property][0]} proportions", xlabel="Age Range",
+                                 ylabel=f"{self.en_props[_property].label} proportions", xlabel="Age Range",
                                  ylim=(0, 1))
                 ax.legend(self.categories_desc[_property], loc='upper right')
                 _rows_counter += 1
             # save and display plots
-            add_footnote(f'{self.en_props[_property][2]}')
+            add_footnote(fig, f'{self.en_props[_property].per_age_group_footnote}')
             fig.tight_layout()
             fig.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
-            # plt.show()
+            # # plt.show()
 
         # 2. if property is not in a group of those that need plotting by urban and rural plot them by age category only
         else:
@@ -544,15 +544,15 @@ class LifeStylePlots:
                 new_df = new_df.apply(lambda row: row / row.sum(), axis=1)
                 # do plotting
                 ax = new_df.plot(kind='bar', stacked=True,
-                                 title=f"{self.en_props[_property][0]}  categories (Year 2021)",
-                                 ylabel=f"{self.en_props[_property][0]} proportions", xlabel="Age Range"
+                                 title=f"{self.en_props[_property].label}  categories (Year 2021)",
+                                 ylabel=f"{self.en_props[_property].label} proportions", xlabel="Age Range"
                                  )
                 ax.legend(self.categories_desc[_property], loc='upper right')
                 # save and display plots
-                add_footnote(f'{self.en_props[_property][2]}')
+                add_footnote(fig, f'{self.en_props[_property].per_age_group_footnote}')
                 fig.tight_layout()
                 fig.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
-                # plt.show()
+                # # plt.show()
 
                 # EDUCATION PLOTTING BY WEALTH LEVELS
                 _rows_counter: int = 0  # a counter to set the number of rows when plotting
@@ -571,13 +571,13 @@ class LifeStylePlots:
                     new_df = new_df.apply(lambda row: row / row.sum(), axis=1)
                     # do plotting
                     ax = new_df.plot(kind='bar', stacked=True, ax=axes[_rows_counter],
-                                     title=f"{self.en_props[_property][0]} {self.wealth_desc[_wealth_level]} "
+                                     title=f"{self.en_props[_property].label} {self.wealth_desc[_wealth_level]} "
                                            f"(Year 2021)",
-                                     ylabel=f"{self.en_props[_property][0]} proportions", xlabel="Age Range"
+                                     ylabel=f"{self.en_props[_property].label} proportions", xlabel="Age Range"
                                      )
                     ax.legend(self.categories_desc[_property], loc='upper right')
                     # save and display plots
-                    add_footnote(f'{self.en_props[_property][2]}')
+                    add_footnote(fig, f'{self.en_props[_property].per_age_group_footnote}')
                     _rows_counter += 1
 
             else:
@@ -591,15 +591,15 @@ class LifeStylePlots:
                 new_df = new_df.apply(lambda row: row / row.sum(), axis=1)
                 # do plotting
                 ax = new_df.plot(kind='bar', stacked=True,
-                                 title=f"{self.en_props[_property][0]}  categories (Year 2021)",
-                                 ylabel=f"{self.en_props[_property][0]} proportions", xlabel="Age Range"
+                                 title=f"{self.en_props[_property].label}  categories (Year 2021)",
+                                 ylabel=f"{self.en_props[_property].label} proportions", xlabel="Age Range"
                                  )
                 ax.legend(self.categories_desc[_property], loc='upper right')
                 # save and display plots
-                add_footnote(f'{self.en_props[_property][2]}')
-            fig.tight_layout()
+                # add_footnote(fig, f'{self.en_props[_property][2]}')
+            # fig.tight_layout()
             fig.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
-            # plt.show()
+            # # plt.show()
 
     def plot_non_categorical_properties_by_age_group(self, _property: str):
         """ a function to plot non categorical properties of lifestyle module grouped by age group
@@ -636,20 +636,20 @@ class LifeStylePlots:
                     # do plotting
                     axes[_rows_counter].bar(age_group, get_age_group_props, color='darkturquoise')
                     axes[_rows_counter].set_title(
-                        f"{self._rural_urban_state[urban_rural]} {self.en_props[_property][0]}"
+                        f"{self._rural_urban_state[urban_rural]} {self.en_props[_property].label}"
                         f" by age groups (Year 2021)")
-                    axes[_rows_counter].set_ylabel(f"{self.en_props[_property][0]} proportions")
+                    axes[_rows_counter].set_ylabel(f"{self.en_props[_property].label} proportions")
                     axes[_rows_counter].set_ylim(0, 1.0)
-                    axes[_rows_counter].legend([self.en_props[_property][0]], loc='upper right')
+                    axes[_rows_counter].legend([self.en_props[_property].label], loc='upper right')
                 _rows_counter += 1
 
                 # to avoid overlapping of info on graph, set one x-label for both graphs
                 plt.xlabel("age groups")
             # save and display graph
-            add_footnote(f'{self.en_props[_property][2]}')
+            add_footnote(fig, f'{self.en_props[_property].per_age_group_footnote}')
             plt.tight_layout()
             plt.savefig(self.outputpath / (_property + 'by_age_group' + self.datestamp + '.png'), format='png')
-            plt.show()
+            # plt.show()
 
         # 2. if property is not in a group of those that need plotting by urban and rural plot them by age category only
         else:
@@ -679,16 +679,16 @@ class LifeStylePlots:
                 get_age_group_totals.plot.bar(color='darkturquoise')
 
                 # set plot title, labels, legends and axis limit
-                plt.title(f"{self.en_props[_property][0]} by age groups (Year 2021)")
+                plt.title(f"{self.en_props[_property].label} by age groups (Year 2021)")
                 plt.xlabel("age groups")
-                plt.ylabel(f"{self.en_props[_property][0]} proportions")
+                plt.ylabel(f"{self.en_props[_property].label} proportions")
                 plt.ylim(0, 1 if not _property == 'li_is_sexworker' else 0.04)
-                plt.legend([self.en_props[_property][0]], loc='upper right')
-                add_footnote(f'{self.en_props[_property][2]}')
+                plt.legend([self.en_props[_property].label], loc='upper right')
+                # add_footnote(fig, f'{self.en_props[_property][2]}')
 
                 plt.tight_layout()
                 plt.savefig(self.outputpath / (_property + 'by_age_group' + self.datestamp + '.png'), format='png')
-                plt.show()
+                # plt.show()
 
                 # EDUCATION PLOTTING FOR HIGHEST AND LOWEST WEALTH LEVEL
                 _col_counter: int = 0  # a counter for plotting. setting rows
@@ -715,13 +715,13 @@ class LifeStylePlots:
                     # do plotting
                     ax = get_age_group_totals.plot(kind='bar', ax=axes[_col_counter], color='darkturquoise',
                                                    xlabel="age groups",
-                                                   title=f"{self.en_props[_property][0]} "
+                                                   title=f"{self.en_props[_property].label} "
                                                          f"{self.wealth_desc[_wealth_level]} by age groups (Year 2021)",
-                                                   ylabel=f"{self.en_props[_property][0]} proportions",
+                                                   ylabel=f"{self.en_props[_property].label} proportions",
                                                    ylim=(0, 1 if not _property == 'li_is_sexworker' else 0.04))
                     # set plot title, labels, legends and axis limit
-                    ax.legend([self.en_props[_property][0]], loc='upper right')
-                    add_footnote(f'{self.en_props[_property][2]}')
+                    ax.legend([self.en_props[_property].label], loc='upper right')
+                    add_footnote(fig, f'{self.en_props[_property].per_age_group_footnote}')
                     # increase row counter
                     _col_counter += 1
 
@@ -736,16 +736,16 @@ class LifeStylePlots:
                 get_age_group_props.plot.bar(color='darkturquoise')
 
                 # set plot title, labels, legends and axis limit
-                plt.title(f"{self.en_props[_property][0]} by age groups (Year 2021)")
+                plt.title(f"{self.en_props[_property].label} by age groups (Year 2021)")
                 plt.xlabel("age groups")
-                plt.ylabel(f"{self.en_props[_property][0]} proportions")
+                plt.ylabel(f"{self.en_props[_property].label} proportions")
                 plt.ylim(0, 1 if not _property == 'li_is_sexworker' else 0.04)
-                plt.legend([self.en_props[_property][0]], loc='upper right')
-                add_footnote(f'{self.en_props[_property][2]}')
+                plt.legend([self.en_props[_property].label], loc='upper right')
+                # add_footnote(fig, f'{self.en_props[_property][2]}')
 
             plt.tight_layout()
             plt.savefig(self.outputpath / (_property + 'by_age_group' + self.datestamp + '.png'), format='png')
-            plt.show()
+            # plt.show()
 
     def display_all_categorical_and_non_categorical_plots_by_age_group(self):
         """ a function that will display plots of all enhanced lifestyle properties grouped by age group """
@@ -774,17 +774,17 @@ class LifeStylePlots:
         # get proportions per property
         totals_df = self.dfs[_property][gender]["True"].sum(axis=1) / self.dfs[_property][gender].sum(axis=1)
 
-        ax = totals_df.plot(kind='bar', ylim=(0, max_ylim), ylabel=f'{self.en_props[_property][0]} proportions',
+        ax = totals_df.plot(kind='bar', ylim=(0, max_ylim), ylabel=f'{self.en_props[_property].label} proportions',
                             xlabel="Year",
-                            color='darkturquoise', title=f"{self.en_props[_property][0]} Percentage")
+                            color='darkturquoise', title=f"{self.en_props[_property].label} Percentage")
         # format x-axis
-        self.custom_axis_formatter(totals_df, ax, _property)
+        self.custom_axis_formatter(totals_df, ax)
 
         # save and display plots
-        add_footnote(f'{self.en_props[_property][1]}')
+        # add_footnote(f'{self.en_props[_property][1]}')
         plt.tight_layout()
         plt.savefig(self.outputpath / (_property + self.datestamp + '.png'), format='png')
-        plt.show()
+        # plt.show()
 
 
 def extract_formatted_series(df):
@@ -813,7 +813,7 @@ def run():
 
     # Basic arguments required for the simulation
     start_date = Date(2010, 1, 1)
-    end_date = Date(2050, 1, 1)
+    end_date = Date(2012, 1, 1)
     pop_size = 20000
 
     # This creates the Simulation instance for this run. Because we"ve passed the `seed` and
@@ -838,14 +838,12 @@ def run():
     return sim
 
 
-# catch warnings
-# pd.set_option('mode.chained_assignment', 'raise')
-# %% Run the Simulation
+# Run the Simulation
 sim = run()
 
-# %% read the results
+# read the results
 output = parse_log_file(sim.log_filepath)
-# output = parse_log_file(Path("./outputs/enhanced_lifestyle__2023-01-23T124916.log"))
+# output = parse_log_file(Path("./outputs/enhanced_lifestyle__2023-09-29T141010.log"))
 
 # construct a dict of dataframes using lifestyle logs
 logs_df = output['tlo.methods.enhanced_lifestyle']
