@@ -54,7 +54,6 @@ def _create_multi_index_columns(results_folder: Path):
                                       names=['draw', 'run'])
 
 
-# %% extract key population data for life expectancy calculations
 def _num_deaths_by_age_group(results_folder: Path):
     """ produces dataframe with mean (+ 95% UI) number of deaths
     for each draw by age-group
