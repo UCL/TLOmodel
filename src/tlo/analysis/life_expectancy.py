@@ -239,7 +239,7 @@ def _estimate_life_expectancy(person_years_at_risk, number_of_deaths_in_interval
         observed_life_expectancy[~condition] = py_lived_beyond_start_of_interval / number_alive_at_start_of_interval
 
         # estimated life expectancy from birth
-        estimated_life_expectancy = estimated_life_expectancy.append(pd.Series([observed_life_expectancy[0]]))
+        estimated_life_expectancy = estimated_life_expectancy._append(pd.Series([observed_life_expectancy[0]]))
 
     return estimated_life_expectancy
 
