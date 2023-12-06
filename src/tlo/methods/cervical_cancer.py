@@ -74,14 +74,9 @@ class CervicalCancer(Module):
             Types.LIST,
             "initial proportions in hpv cancer categories in women without hiv"
         ),
-# currently these two below are just added as vaccine efficacy implictly takes account of whether hpv is vaccine preventable
-        "r_vp_hpv": Parameter(
+        "r_hpv": Parameter(
             Types.REAL,
-            "probabilty per month of incident vaccine preventable hpv infection",
-        ),
-        "r_nvp_hpv": Parameter(
-            Types.REAL,
-            "probabilty per month of incident non-vaccine preventable hpv infection",
+            "probabilty per month of oncogenic hpv infection",
         ),
         "r_cin1_hpv": Parameter(
             Types.REAL,
@@ -333,13 +328,11 @@ class CervicalCancer(Module):
         p = self.parameters
         lm = self.linear_models_for_progression_of_hpv_cc_status
 
-        rate_hpv = p['r_nvp_hpv'] + p['r_vp_hpv']
-
         # todo: mend hiv unsuppressed effect
 
         lm['hpv'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
-            rate_hpv,
+            p['r_hpv'],
             Predictor('va_hpv')
             .when(1, p['rr_hpv_vaccinated'])
             .when(2, p['rr_hpv_vaccinated']),
@@ -491,7 +484,7 @@ class CervicalCancer(Module):
         )
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            screening_with_xpert_for_hpv_and_cervical_cancer=DxTest(
+            screening_with_via_for_cin_and_cervical_cancer=DxTest(
                 property='ce_hpv_cc_status',
                 sensitivity=self.parameters['sensitivity_of_via_for_cin_cc'],
                 target_categories=["hpv", "cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"]
@@ -705,21 +698,103 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 #  I assume similar to how we schedule vaccinations
 
 
-class HSI_CervicalCancer_Investigation_Following_vaginal_bleeding(HSI_Event, IndividualScopeEventMixin):
+class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixin):
+
+    # todo: make this event scheduled by contraception module
     """
-    This event is scheduled by HSI_GenericFirstApptAtFacilityLevel1 following presentation for care with the symptom
-    vaginal bleeding.
-    This event begins the investigation that may result in diagnosis of cervical Cancer and the scheduling of
-    treatment or palliative care.
-    It is for people with the symptom vaginal_bleeding.
+    This event will be scheduled by family planning HSI - for now we determine at random a screening event
+    and we determine at random whether this is AceticAcidScreening or HPVXpertScreening
     """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        self.TREATMENT_ID = "CervicalCancer_AceticAcidScreening"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        person = df.loc[person_id]
+        hs = self.sim.modules["HealthSystem"]
+
+        # Ignore this event if the person is no longer alive:
+        if not person.is_alive:
+            return hs.get_blank_appt_footprint()
+
+        # Run a test to diagnose whether the person has condition:
+        dx_result = hs.dx_manager.run_dx_test(
+            dx_tests_to_run='screening_with_via_for_cin_and_cervical_cancer',
+            hsi_event=self
+        )
+
+        df.at[person_id, 'ce_date_last_via_screen'] = self.sim.date
+
+        if dx_result:
+            hs.schedule_hsi_event(
+                hsi_event=HSI_CervicalCancer_Biopsy(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+            )
+
+
+class HSI_CervicalCancer_XpertHPVcreening(HSI_Event, IndividualScopeEventMixin):
+
+    # todo: make this event scheduled by contraception module
+    """
+    This event will be scheduled by family planning HSI - for now we determine at random a screening event
+    and we determine at random whether this is AceticAcidScreening or HPVXpertScreening
+    """
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        self.TREATMENT_ID = "CervicalCancer_XpertHPVScreening"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        person = df.loc[person_id]
+        hs = self.sim.modules["HealthSystem"]
+
+        # Ignore this event if the person is no longer alive:
+        if not person.is_alive:
+            return hs.get_blank_appt_footprint()
+
+# todo add to diagnostic tests
+        # Run a test to diagnose whether the person has condition:
+        dx_result = hs.dx_manager.run_dx_test(
+            dx_tests_to_run='screening_with_xpert_for_hpv',
+            hsi_event=self
+        )
+
+        df.at[person_id, 'ce_date_last_xpert_screen'] = self.sim.date
+
+        if dx_result:
+            hs.schedule_hsi_event(
+                hsi_event=HSI_CervicalCancer_Biopsy(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+            )
+
+
+class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
 #       print(person_id, self.sim.date, 'vaginal_bleeding_hsi_called -1')
 
-        self.TREATMENT_ID = "CervicalCancer_Investigation"
+        self.TREATMENT_ID = "CervicalCancer_Biopsy"
 
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
@@ -732,27 +807,20 @@ class HSI_CervicalCancer_Investigation_Following_vaginal_bleeding(HSI_Event, Ind
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-#       print(person_id, self.sim.date, 'vaginal_bleeding_hsi_called -2')
-
-        # Check that this event has been called for someone with the symptom vaginal_bleeding
-        assert 'vaginal_bleeding' in self.sim.modules['SymptomManager'].has_what(person_id)
-
-        # If the person is already diagnosed, then take no action:
-#       if not pd.isnull(df.at[person_id, "ce_date_diagnosis"]):
-#           return hs.get_blank_appt_footprint()
-
-#       df.loc[person_id, 'ce_vaginal_bleeding_investigated'] = True
-
         # Use a biopsy to diagnose whether the person has cervical cancer
         # todo: request consumables needed for this
 
         dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='biopsy_for_cervical_cancer_given_vaginal_bleeding',
+            dx_tests_to_run='biopsy_for_cervical_cancer',
             hsi_event=self
         )
 
-        if dx_result:
-            # record date of diagnosis:
+        if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] == 'stage1'
+                        or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2a'
+                        or df.at[person_id, 'ce_hpv_cc_status'] == 'stage2b'
+                        or df.at[person_id, 'ce_hpv_cc_status'] == 'stage3'
+                        or df.at[person_id, 'ce_hpv_cc_status'] == 'stage4'):
+            # Record date of diagnosis:
             df.at[person_id, 'ce_date_diagnosis'] = self.sim.date
             df.at[person_id, 'ce_stage_at_diagnosis'] = df.at[person_id, 'ce_hpv_cc_status']
 
@@ -783,6 +851,40 @@ class HSI_CervicalCancer_Investigation_Following_vaginal_bleeding(HSI_Event, Ind
                     topen=self.sim.date,
                     tclose=None
                 )
+
+        # person has cin detected with via
+        if dx_result and (df.at[person_id, 'ce_hpv_cc_status'] == 'cin1'
+                        or df.at[person_id, 'ce_hpv_cc_status'] == 'cin2'
+                        or df.at[person_id, 'ce_hpv_cc_status'] == 'cin3'
+                        ):
+                # start treatment:
+                hs.schedule_hsi_event(
+                    hsi_event=HSI_CervicalCancer_Cryotherapy_CIN(
+                        module=self.module,
+                        person_id=person_id
+                           ),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
+                           )
+
+# todo: add condition that they are Xpert positive
+        if ~dx_result and (df.at[person_id, 'ce_hpv_cc_status'] == 'hpv'
+                        ):
+                # start treatment:
+                hs.schedule_hsi_event(
+                    hsi_event=HSI_CervicalCancer_Cryotherapy_CIN(
+                        module=self.module,
+                        person_id=person_id
+                           ),
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=None
+                           )
+
+
+# todo: define Cryotherapy HSI
+
 
 class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
@@ -1100,8 +1202,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         print(out)
 
-#       selected_columns = ['sy_vaginal_bleeding', 'ce_cc_ever']
-#       selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & (df['sy_vaginal_bleeding'] == 2)]
+#       selected_columns = ['va_hpv', 'ce_cc_ever']
+#       selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15)]
 #       print(selected_rows[selected_columns])
 
 
