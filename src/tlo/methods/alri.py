@@ -2655,11 +2655,11 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             oxygen_provided = (oxygen_available and oxygen_indicated)
 
             # todo: should equipment only be logged if consumables are available?
-            # If individual requires oxygen, log equipment
+            # If individual requires oxygen, update equipment
             if oxygen_indicated:
                 self.EQUIPMENT.update({'Oxygen cylinder, with regulator', 'Nasal Prongs'})
 
-            # If individual requires intravenous antibiotics, log equipment
+            # If individual requires intravenous antibiotics, update equipment
             if antibiotic_indicated in ('1st_line_IV_antibiotics',
                                         'Benzylpenicillin_gentamicin_therapy_for_severe_pneumonia'):
                 self.EQUIPMENT.update({'Infusion pump', 'Drip stand'})

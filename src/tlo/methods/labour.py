@@ -1865,7 +1865,7 @@ class Labour(Module):
                 sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='avd',
                                                                                            hsi_event=hsi_event)
 
-                # log equipment
+                # Update equipment
                 hsi_event.EQUIPMENT.update({'Delivery Forceps', 'Vacuum extractor'})
 
                 if avail and sf_check:
@@ -2119,7 +2119,7 @@ class Labour(Module):
 
             if avail and sf_check:
 
-                # Log equipment
+                # Update equipment
                 # Todo: link to surgical equipment package when that exsists
                 hsi_event.EQUIPMENT.update(
                     {'Infusion pump', 'Drip stand', 'Laparotomy Set', 'Blood pressure machine', 'Pulse oximeter'})
@@ -2133,7 +2133,7 @@ class Labour(Module):
                 else:
                     # If the treatment is unsuccessful then women will require a hysterectomy to stop the bleeding
 
-                    # Log equipment
+                    # Update equipment
                     # Todo: link to surgical equipment package when that exsists
                     hsi_event.EQUIPMENT.update(
                      {'Hysterectomy set'})
@@ -2147,7 +2147,7 @@ class Labour(Module):
               and sf_check and avail):
             self.pph_treatment.set(person_id, 'surgery')
 
-            # Log equipment
+            # Update equipment
             # Todo: link to surgical equipment package when that exsists
             hsi_event.EQUIPMENT.update(
                 {'Infusion pump', 'Drip stand', 'Laparotomy Set', 'Blood pressure machine', 'Pulse oximeter'})
@@ -2203,7 +2203,7 @@ class Labour(Module):
         mother = df.loc[person_id]
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        # Log equipment
+        # Update equipment
         hsi_event.EQUIPMENT.update({'Analyser, Haematology'})
 
         # Use dx_test function to assess anaemia status
@@ -3215,7 +3215,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
             if avail and sf_check or (mni[person_id]['cs_indication'] == 'other'):
 
-                # If intervention is delivered - log equipment
+                # If intervention is delivered - update equipment
                 # Todo: link to surgical equipment package when that exsists
                 self.EQUIPMENT.update(
                     {'Infusion pump', 'Drip stand', 'Laparotomy Set', 'Blood pressure machine', 'Pulse oximeter'})
