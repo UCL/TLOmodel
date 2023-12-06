@@ -105,7 +105,7 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
     output_focused_file_name = \
         'equipment_' + catalog_by_time + '_counts__by_' + time_index + '_' + '_'.join(catalog_by_details) + \
         suffix_file_names + '.csv'
-    output_summary_file_name = 'equipment_summary__module_name_event_name_treatment_id)' + suffix_file_names + '.csv'
+    output_summary_file_name = 'equipment_summary__module_name_event_name_treatment_id' + suffix_file_names + '.csv'
     # ---
 
     # %% Catalog equipment by all HSI event details
