@@ -16,6 +16,8 @@ catalog_by_details = ['treatment_id', 'facility_level']
 # Declare which time period you want the equipment be grouped in the catalogue (choose only one)
 # (periods: 'monthly', 'annual')
 catalog_by_time = 'annual'
+# Suffix for output file names
+suffix_file_names = '__5y_20Kpop_10runs'
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -96,12 +98,13 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
 
     # %%% Set output file names
     # detailed CSV name
-    output_detailed_file_name = 'equipment_monthly_counts__all_event_details.csv'
+    output_detailed_file_name = 'equipment_monthly_counts__all_event_details' + suffix_file_names + '.csv'
     # requested details only CSV name
     time_index = 'year' if catalog_by_time == 'annual' else 'date'
     output_focused_file_name = \
-        'equipment_' + catalog_by_time + '_counts__by_' + time_index + '_' + '_'.join(catalog_by_details) + '.csv'
-    output_summary_file_name = 'equipment_summary__module_name_event_name_treatment_id.csv'
+        'equipment_' + catalog_by_time + '_counts__by_' + time_index + '_' + '_'.join(catalog_by_details) + \
+        suffix_file_names + '.csv'
+    output_summary_file_name = 'equipment_summary__module_name_event_name_treatment_id)' + suffix_file_names + '.csv'
     # ---
 
     # %% Catalog equipment by all HSI event details
