@@ -18,7 +18,7 @@ from tlo.methods.breast_cancer import (
     HSI_BreastCancer_Investigation_Following_breast_lump_discernible,
 )
 from tlo.methods.cervical_cancer import (
-    HSI_CervicalCancer_Investigation_Following_vaginal_bleeding,
+    HSI_CervicalCancer_Biopsy,
 )
 from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
