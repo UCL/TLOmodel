@@ -151,37 +151,36 @@ end_date = Date(2030, 1, 2)
 pop_size = 10000
 
 # Create simulation instance for this run.
-# sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
-#
-# # Register modules for simulation
-# sim.register(
-#     demography.Demography(resourcefilepath=resources),
-#     healthsystem.HealthSystem(resourcefilepath=resources,
-#                               service_availability=['*'],
-#                               cons_availability='default'),
-#     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-#     healthburden.HealthBurden(resourcefilepath=resources),
-#     symptommanager.SymptomManager(resourcefilepath=resources),
-#     enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
-#     labour.Labour(resourcefilepath=resources),
-#     care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(
-#         resourcefilepath=resources),
-#     contraception.Contraception(resourcefilepath=resources),
-#     pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
-#     postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
-#     newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
-#     hiv.Hiv(resourcefilepath=resources),
-#     tb.Tb(resourcefilepath=resources),
-#     epi.Epi(resourcefilepath=resources),
-#     wasting.Wasting(resourcefilepath=resources),
-# )
-#
-# sim.make_initial_population(n=pop_size)
-# sim.simulate(end_date=end_date)
+sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+
+# Register modules for simulation
+sim.register(
+    demography.Demography(resourcefilepath=resources),
+    healthsystem.HealthSystem(resourcefilepath=resources,
+                              service_availability=['*'],
+                              cons_availability='default'),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
+    healthburden.HealthBurden(resourcefilepath=resources),
+    symptommanager.SymptomManager(resourcefilepath=resources),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
+    labour.Labour(resourcefilepath=resources),
+    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(
+        resourcefilepath=resources),
+    contraception.Contraception(resourcefilepath=resources),
+    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
+    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
+    newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
+    hiv.Hiv(resourcefilepath=resources),
+    tb.Tb(resourcefilepath=resources),
+    epi.Epi(resourcefilepath=resources),
+    wasting.Wasting(resourcefilepath=resources),
+)
+
+sim.make_initial_population(n=pop_size)
+sim.simulate(end_date=end_date)
 
 # read the results
-# output_path = sim.log_filepath
-output_path = Path('./outputs/wasting__2023-12-06T214307.log')
+output_path = sim.log_filepath
 
 # initialise the wasting class
 wasting_analyses = WastingAnalyses(output_path)
