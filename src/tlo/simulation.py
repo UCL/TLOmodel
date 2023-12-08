@@ -10,6 +10,12 @@ from typing import Dict, Optional, Union
 
 import numpy as np
 
+try:
+    import dill
+    DILL_AVAILABLE = True
+except ImportError:
+    DILL_AVAILABLE = False
+
 from tlo import Date, Population, logging
 from tlo.dependencies import check_dependencies_present, topologically_sort_modules
 from tlo.events import Event, IndividualScopeEventMixin
@@ -342,6 +348,21 @@ class Simulation:
                     person_events.append((date, event))
 
         return person_events
+    
+    def save_to_pickle(self, pickle_path: Path) -> None:
+        if not DILL_AVAILABLE:
+            raise RuntimeError("Cannot save to pickle as dill is not installed")
+        with open(pickle_path, "wb") as pickle_file:
+            dill.dump(self, pickle_file)
+    
+    @staticmethod
+    def load_from_pickle(pickle_path: Path) -> "Simulation":
+        if not DILL_AVAILABLE:
+            raise RuntimeError("Cannot load from pickle as dill is not installed")
+        with open(pickle_path, "rb") as pickle_file:
+            simulation = dill.load(pickle_file)
+            logging.set_simulation(simulation)
+        return simulation
 
 
 class EventQueue:
