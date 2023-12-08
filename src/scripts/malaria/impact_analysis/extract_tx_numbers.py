@@ -30,6 +30,7 @@ from tlo.analysis.utils import (
 outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
+# results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
 results_folder = get_scenario_outputs("remove_treatment_effects.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
@@ -285,7 +286,7 @@ sum4['mean'] = sum4.mean(axis=1) * scaling_factor.values[0][0]
 
 
 data_output = pd.concat([sum0['mean'], sum1['mean'], sum2['mean'], sum3['mean'], sum4['mean']], axis=1)
-data_output.to_csv(outputspath / ('treatment_numbers_excl_htm' + '.csv'))
+data_output.to_csv(outputspath / ('treatment_numbers_tx_ineff' + '.csv'))
 
 sum0.to_csv(outputspath / ('baseline_appt_numbers_27Nov' + '.csv'))
 

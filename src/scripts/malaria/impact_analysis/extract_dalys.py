@@ -81,6 +81,19 @@ daly_summary = round_to_nearest_100(daly_summary)
 daly_summary = daly_summary.astype(int)
 daly_summary.to_csv(outputspath / ('dalys_excl_htm' + '.csv'))
 
+daly_full = extract_results(
+        results_folder,
+        module="tlo.methods.healthburden",
+        key="dalys_stacked",
+        custom_generate_series=num_dalys_by_cause,
+        do_scaling=True,
+    )
+
+daly_full = round_to_nearest_100(daly_full)
+daly_full = daly_full.astype(int)
+daly_full.to_csv(outputspath / ('dalys_excl_htm_full' + '.csv'))
+
+
 
 daly=log['tlo.methods.healthburden']['dalys_stacked']
 
