@@ -25,13 +25,15 @@ from tlo.analysis.utils import (
     make_age_grp_types,
 )
 
+import seaborn as sns
+
 # outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-# results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
-results_folder = get_scenario_outputs("remove_treatment_effects.py", outputspath)[-1]
+results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
+# results_folder = get_scenario_outputs("remove_treatment_effects.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731
@@ -299,7 +301,6 @@ sum_tx0 = summarise_grouped_appts(results_folder,
 sum_tx4 = summarise_grouped_appts(results_folder,
                                   module=module, key=key, column=column, draw=4)
 
-
 # summary table for output
 # todo note these are scaled
 output_table = pd.DataFrame({
@@ -323,7 +324,6 @@ output_table = output_table.astype(int, errors='ignore')
 
 output_table.to_csv(outputspath / ('tx_id_numbers_excl_HTM' + '.csv'))
 
-
 # ---------------------------------------------------------------------------------
 # HOW MUCH HS REQUIRED FOR BIG 3 PROGRAMME DELIVERY
 # ---------------------------------------------------------------------------------
@@ -341,46 +341,89 @@ column = 'TREATMENT_ID'
 # treatment_id0 gives all appts with mean, lower and upper bounds
 # todo this is not scaled
 
-prog_appts = treatment_id0.filter(like='Hiv').columns | treatment_id0.filter(like='Malaria').columns | treatment_id0.filter(
-    like='Tb').columns
-prog_df = treatment_id0[prog_appts]
+treatment_id0 = treatment_id0.fillna(0)
 
-# add in column totals
+selected_columns = list(
+    set(treatment_id0.filter(like='Hiv').columns) | set(treatment_id0.filter(like='Tb').columns) | set(
+        treatment_id0.filter(like='Malaria').columns))
+
+prog_df = treatment_id0[selected_columns] * scaling_factor.values[0][0]
+
 prog_df.loc['Total'] = prog_df.sum()
-
-# total numbers of OPD appts
-
-
-
-
-# horizontal barplot
 
 # Filter columns that end with 'mean'
 mean_columns = [col for col in prog_df.columns if col.endswith('mean')]
+lower_columns = [col for col in prog_df.columns if col.endswith('lower')]
+upper_columns = [col for col in prog_df.columns if col.endswith('upper')]
+
+mean_data = prog_df[mean_columns]
+lower_data = prog_df[lower_columns]
+upper_data = prog_df[upper_columns]
+
+mean_data.columns = [col.replace('_mean', '') for col in mean_columns]
+lower_data.columns = [col.replace('_lower', '') for col in lower_columns]
+upper_data.columns = [col.replace('_upper', '') for col in upper_columns]
+
+# lower_error = mean_data.sub(lower_data[mean_data.columns], fill_value=0)
+# upper_error = upper_data.sub(mean_data[upper_data.columns], fill_value=0)
+
+
+lower_error = lower_data
+upper_error = upper_data
+
+
+# edit column names
 stripped_mean_column_names = [col.replace('_mean', '') for col in mean_columns]
 stripped_mean_column_names = [col.replace('_', ' ') for col in stripped_mean_column_names]
 
 # Create a horizontal bar plot
+mean_values = mean_data.iloc[10]
+lower_values = lower_error.iloc[10]
+upper_values = upper_error.iloc[10]
+
+tmp = pd.concat([mean_values, lower_values, upper_values], axis=1)
+tmp.columns = ['mean', 'lower_error', 'upper_error']
+tmp = tmp.reset_index()
+
+tmp = tmp.replace(r"_", " ", regex=True)
+tmp_sorted = tmp.sort_values(by=['index'], inplace=False, ascending=False)
+
 # Create a color list based on column name criteria
-colours = ['c' if col.startswith('Hiv') else 'm' if col.startswith('Malaria') else 'y' for col in mean_columns]
+sns.set(style="whitegrid")
+palette = sns.color_palette("muted", 3).as_hex()
+
+colours = np.where(tmp_sorted['index'].str.contains('Hiv'), palette[0],
+                   np.where(tmp_sorted['index'].str.contains('Tb'), palette[1], palette[2]))
+
 
 plt.figure(figsize=(10, 7))
 plt.subplots_adjust(left=0.25, right=0.9, top=0.9, bottom=0.1)
-plt.barh(stripped_mean_column_names, prog_df[mean_columns].iloc[10] * scaling_factor.values[0][0], color=colours)
+
+bars = plt.barh(tmp_sorted['index'],
+                tmp_sorted['mean'],
+                color=colours)#,
+    # xerr=(tmp_sorted['lower_error'], tmp_sorted['upper_error']))
+
+# Add asymmetrical error bars with the same color as the bars
+for bar, neg_err, pos_err, color in zip(bars,
+                                        tmp_sorted['lower_error'],
+                                        tmp_sorted['upper_error'], colours):
+    plt.errorbar(x=bar.get_x() + bar.get_width() / 2,
+                 y=bar.get_y() + bar.get_height() / 2,
+                 xerr=[[neg_err], [pos_err]],
+                 color=color,  # Set error bar color to the same as the bars
+                 capsize=5)
+
 plt.xscale('log')
 
 # Add labels and title
-plt.xlabel('Values')
+plt.xlabel('Log number of appointments')
 plt.ylabel('')
 plt.yticks(fontsize=10)
 plt.title('')
 
-plt.savefig(outputspath / "baseline_appt_numbers.png")
-
-# Show the plot
+plt.savefig(outputspath / "baseline_HTM_appts.png")
 plt.show()
-
-
 
 
 # ---------------------------------------------------------------------------------
@@ -415,7 +458,6 @@ def summarise_squeeze_factors(results_folder):
 
 squeeze_factors = summarise_squeeze_factors(results_folder)
 
-
 # ---------------------------------------------------------------------------------
 # scale appointment numbers by current population size
 # ---------------------------------------------------------------------------------
@@ -432,9 +474,7 @@ scaled_inpat_4 = treatment_id4['IPAdmission_mean'].divide(py0[4])
 # values are 0.2ish, similar to baseline
 
 
-
-
-#----------------------------------------------------
+# ----------------------------------------------------
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -444,8 +484,6 @@ categories = ['HIV_in', 'Excl HIV', 'HIV_opd', 'HIV_pharm',
               'mal_in', 'Excl Mal', 'mal_opd', 'mal_pharm',
               'HTM_in', 'Excl HTM', 'HTM_opd', 'HTM_pharm'
               ]
-
-
 
 # min_values = [-96700, -936900, 569700, -5659900, -480800, -63600, -585900, 352100, -7535100,	-14400]
 # max_values = [30400, 1649600, 814700, 771200, 12660, 39400,	415800,	513400,	-512290,	69800]
@@ -459,15 +497,11 @@ max_values = pd.concat([upper_percentdiffs0_1, upper_percentdiffs0_2, upper_perc
 min_values = min_values.reset_index(drop=True)
 max_values = max_values.reset_index(drop=True)
 
-
-
-
 col = ['#3498db', '#2ecc71', '#e74c3c', '#f39c12',
        '#3498db', '#2ecc71', '#e74c3c', '#f39c12',
        '#3498db', '#2ecc71', '#e74c3c', '#f39c12',
        '#3498db', '#2ecc71', '#e74c3c', '#f39c12'
        ]
-
 
 # Plotting the floating bars
 for i, (min_val, max_val) in enumerate(zip(min_values, max_values)):
@@ -502,9 +536,9 @@ plt.title('')
 # Show legend
 legend_elements = [mlines.Line2D([0], [0], marker='o', color='w',
                                  markerfacecolor=color, markersize=10, label=label)
-                   for color, label in zip(['#3498db', '#2ecc71', '#e74c3c', '#f39c12'], ['Inpatient', 'Lab', 'OPD', 'Pharmacy'])]
+                   for color, label in
+                   zip(['#3498db', '#2ecc71', '#e74c3c', '#f39c12'], ['Inpatient', 'Lab', 'OPD', 'Pharmacy'])]
 custom_legend = plt.legend(handles=legend_elements, title='', loc='lower left')
-
 
 # Add custom legend to the plot
 plt.gca().add_artist(custom_legend)
