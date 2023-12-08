@@ -47,9 +47,9 @@ class Simulation:
         self,
         *,
         start_date: Date,
-        seed: int = None,
-        log_config: dict = None,
-        show_progress_bar=False,
+        seed: Optional[int] = None,
+        log_config: Optional[dict] = None,
+        show_progress_bar: bool = False,
     ):
         """Create a new simulation.
 
@@ -210,13 +210,19 @@ class Simulation:
         end = time.time()
         logger.info(key="info", data=f"make_initial_population() {end - start} s")
 
-    def initialise(self):
+    def initialise(self, *, end_date):
+        self.date = self.start_date
+        self.end_date = end_date  # store the end_date so that others can reference it
         for module in self.modules.values():
             module.initialise_simulation(self)
 
-    def finalise(self):
+    def finalise(self, wall_clock_time: Optional[float] = None):
         for module in self.modules.values():
             module.on_simulation_end()
+        if wall_clock_time is not None:
+            logger.info(key="info", data=f"simulate() {wall_clock_time} s")
+        if self.output_file:
+            self.close_output_file()
 
     def close_output_file(self):
         # From Python logging.shutdown
@@ -229,50 +235,39 @@ class Simulation:
         finally:
             self.output_file.release()
 
-    @staticmethod
-    def _initialise_progress_bar(start_date, end_date):
-        num_simulated_days = (end_date - start_date).days
+    def _initialise_progress_bar(self, end_date):
+        num_simulated_days = (end_date - self.date).days
         progress_bar = ProgressBar(
             num_simulated_days, "Simulation progress", unit="day"
         )
         progress_bar.start()
         return progress_bar
 
-    @staticmethod
-    def _update_progress_bar(
-        progress_bar, start_date, date, population, event_queue, hsi_event_queue
-    ):
-        simulation_day = (date - start_date).days
+    def _update_progress_bar(self, progress_bar, date):
+        simulation_day = (date - self.start_date).days
         stats_dict = {
             "date": str(date.date()),
-            "dataframe size": str(len(population.props)),
-            "queued events": str(len(event_queue)),
+            "dataframe size": str(len(self.population.props)),
+            "queued events": str(len(self.event_queue)),
         }
-        if hsi_event_queue is not None:
-            stats_dict["queued HSI events"] = str(len(hsi_event_queue))
+        if "HealthSystem" in self.modules:
+            stats_dict["queued HSI events"] = str(
+                len(self.modules["HealthSystem"].HSI_EVENT_QUEUE)
+            )
         progress_bar.update(simulation_day, stats_dict=stats_dict)
 
-    def run_simulation_to(self, *, end_date: Date):
+    def run_simulation_to(self, *, to_date: Date):
+        if to_date > self.end_date:
+            msg = f"to_date {to_date} after simulation end date {self.end_date}"
+            raise ValueError(msg)
         if self.show_progress_bar:
-            progress_bar = self._initialise_progress_bar(self.start_date, end_date)
+            progress_bar = self._initialise_progress_bar(to_date)
         while self.event_queue:
             event, date = self.event_queue.next_event()
             if self.show_progress_bar:
-                hsi_event_queue = (
-                    self.modules["HealthSystem"].HSI_EVENT_QUEUE
-                    if "HealthSystem" in self.modules
-                    else None
-                )
-                self._update_progress_bar(
-                    progress_bar,
-                    self.start_date,
-                    date,
-                    self.population,
-                    self.event_queue,
-                    hsi_event_queue,
-                )
-            if date >= end_date:
-                self.date = end_date
+                self._update_progress_bar(progress_bar, date)
+            if date >= to_date:
+                self.date = to_date
                 break
             self.fire_single_event(event, date)
         # The simulation has ended.
@@ -287,13 +282,9 @@ class Simulation:
             Must be given as a keyword parameter for clarity.
         """
         start = time.time()
-        self.end_date = end_date  # store the end_date so that others can reference it
-        self.initialise()
-        self.run_simulation_to(end_date=end_date)
-        self.finalise()
-        logger.info(key="info", data=f"simulate() {time.time() - start} s")
-        if self.output_file:
-            self.close_output_file()
+        self.initialise(end_date=end_date)
+        self.run_simulation_to(to_date=end_date)
+        self.finalise(time.time() - start)
 
     def schedule_event(self, event, date):
         """Schedule an event to happen on the given future date.
