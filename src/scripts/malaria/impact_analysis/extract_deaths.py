@@ -389,3 +389,114 @@ tb_deaths = summarise_deaths_for_one_cause(results_folder, 'TB')
 malaria_deaths = summarise_deaths_for_one_cause(results_folder, 'Malaria')
 
 
+# -----------------------------------------------------------------------------------
+# plot life expectancy and numbers of deaths by cause
+
+# all cause deaths
+total_deaths = summarise_total_deaths(results_folder)
+mean_total_deaths = total_deaths.loc[:, total_deaths.columns.get_level_values(1) == 'mean']
+lower_total_deaths = total_deaths.loc[:, total_deaths.columns.get_level_values(1) == 'lower']
+upper_total_deaths = total_deaths.loc[:, total_deaths.columns.get_level_values(1) == 'upper']
+
+# deaths by cause
+mean_deaths_by_cause = num_deaths_by_cause_label.xs('mean', level=1, axis=1)
+mean_deaths_by_cause_lower = num_deaths_by_cause_label.xs('lower', level=1, axis=1)
+mean_deaths_by_cause_upper = num_deaths_by_cause_label.xs('upper', level=1, axis=1)
+
+deaths_for_plot = [mean_deaths_by_cause.loc['AIDS', 0],
+               mean_deaths_by_cause.loc['TB (non-AIDS)', 0],
+               mean_deaths_by_cause.loc['Malaria', 0],
+               mean_total_deaths[0].values[0][0],
+               mean_deaths_by_cause.loc['AIDS', 1],
+               mean_deaths_by_cause.loc['TB (non-AIDS)', 1],
+               mean_deaths_by_cause.loc['Malaria', 1],
+               mean_total_deaths[1].values[0][0],
+                mean_deaths_by_cause.loc['AIDS', 2],
+               mean_deaths_by_cause.loc['TB (non-AIDS)', 2],
+               mean_deaths_by_cause.loc['Malaria', 2],
+               mean_total_deaths[2].values[0][0],
+                mean_deaths_by_cause.loc['AIDS', 3],
+               mean_deaths_by_cause.loc['TB (non-AIDS)', 3],
+               mean_deaths_by_cause.loc['Malaria', 3],
+               mean_total_deaths[3].values[0][0],
+                mean_deaths_by_cause.loc['AIDS', 4],
+               mean_deaths_by_cause.loc['TB (non-AIDS)', 4],
+               mean_deaths_by_cause.loc['Malaria', 4],
+               mean_total_deaths[4].values[0][0],
+               ]
+
+# life expectancy
+test = produce_life_expectancy_estimates(results_folder, median=True)
+
+
+
+xvals = np.arange(1, 21)
+
+median_le = test.loc[:, test.columns.get_level_values(1) == 'median']
+median_le.columns = median_le.columns.get_level_values(0)
+lower_le = test.loc[:, test.columns.get_level_values(1) == 'lower']
+lower_le.columns = lower_le.columns.get_level_values(0)
+upper_le = test.loc[:, test.columns.get_level_values(1) == 'upper']
+upper_le.columns = upper_le.columns.get_level_values(0)
+
+
+# error bar values w/ different -/+ errors that
+# also vary with the x-position
+lower_error = median_le - lower_le
+upper_error = upper_le - median_le
+asymmetric_error_m = np.array(list(zip(lower_error.loc['M'], upper_error.loc['M']))).T
+asymmetric_error_f = np.array(list(zip(lower_error.loc['F'], upper_error.loc['F']))).T
+
+# colours = ['#0218a2', '#ffb703', '#f76f73', '#027fdc', '#07c4c5']
+colours = ['#0218a2', '#ffb703', '#f76f73', '#07c4c5']
+
+
+# plot
+fig, (ax1, ax2) = plt.subplots(2, sharex=False)
+fig.suptitle('')
+
+# life expectancy
+ax1.errorbar([0,4,8,12,16], median_le.loc['M'], yerr=asymmetric_error_m, fmt='.', ecolor='blue')
+ax1.errorbar([2,6,10,14,18], median_le.loc['F'], yerr=asymmetric_error_f, fmt='.', ecolor='red')
+ax1.set_ylim(40, 75)
+
+ax1.set_xticks([])  # Remove tick labels
+ax1.axvline(x=3.5, color='grey', linestyle='--', linewidth=1)
+ax1.axvline(x=7.25, color='grey', linestyle='--', linewidth=1)
+ax1.axvline(x=11.0, color='grey', linestyle='--', linewidth=1)
+ax1.axvline(x=14.5, color='grey', linestyle='--', linewidth=1)
+
+# Hide gridlines
+ax1.grid(visible=False)
+
+# numbers of deaths
+ax2.bar(
+    xvals,
+    deaths_for_plot,
+    # yerr=[
+    #     statistic_values["mean"] - statistic_values["lower"],
+    #     statistic_values["upper"] - statistic_values["mean"]
+    # ],
+    color=colours
+)
+ax2.set_yscale('log')
+# Hide gridlines
+ax2.grid(visible=False)
+
+for i in [4.5, 8.5, 12.5, 16.5]:
+    ax2.axvline(x=i, color='grey', linestyle='--', linewidth=1)
+
+
+# Custom tick labels for ax2
+custom_tick_labels = [
+    'Status quo',
+    'Excl HIV\nservices',
+    'Excl TB\nservices',
+    'Exclude malaria\nservices',
+    'Exclude HTM\nservices'
+]
+ax2.set_xticks([1.5, 6.0, 10.0, 14.5, 19.5])  # Set ticks at the midpoint of each group
+ax2.set_xticklabels(custom_tick_labels)
+
+
+plt.show()

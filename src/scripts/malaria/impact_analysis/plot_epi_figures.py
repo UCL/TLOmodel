@@ -372,6 +372,7 @@ font = {'family': 'sans-serif',
 
 colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
 
+
 # Set x-axis tick positions and labels at every second data point
 xvals_for_ticks = xvals[0::4]
 xlabels_for_ticks = [int(val) for val in xvals_for_ticks]
