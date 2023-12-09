@@ -447,27 +447,57 @@ upper_error = upper_le - median_le
 asymmetric_error_m = np.array(list(zip(lower_error.loc['M'], upper_error.loc['M']))).T
 asymmetric_error_f = np.array(list(zip(lower_error.loc['F'], upper_error.loc['F']))).T
 
-# colours = ['#0218a2', '#ffb703', '#f76f73', '#027fdc', '#07c4c5']
 colours = ['#0218a2', '#ffb703', '#f76f73', '#07c4c5']
+sex_col = ['#673AB7', '#00897B']
 
 
 # plot
-fig, (ax1, ax2) = plt.subplots(2, sharex=False)
+fig, (ax1, ax2) = plt.subplots(2, sharex=False,
+                               figsize=(10, 7))
 fig.suptitle('')
+plt.subplots_adjust(right=0.85)
 
 # life expectancy
-ax1.errorbar([0,4,8,12,16], median_le.loc['M'], yerr=asymmetric_error_m, fmt='.', ecolor='blue')
-ax1.errorbar([2,6,10,14,18], median_le.loc['F'], yerr=asymmetric_error_f, fmt='.', ecolor='red')
-ax1.set_ylim(40, 75)
-
-ax1.set_xticks([])  # Remove tick labels
-ax1.axvline(x=3.5, color='grey', linestyle='--', linewidth=1)
-ax1.axvline(x=7.25, color='grey', linestyle='--', linewidth=1)
-ax1.axvline(x=11.0, color='grey', linestyle='--', linewidth=1)
-ax1.axvline(x=14.5, color='grey', linestyle='--', linewidth=1)
+ax1.errorbar([0,4,8,12,16], median_le.loc['M'],
+             yerr=asymmetric_error_m, fmt='x',
+             color=sex_col[0],
+             ecolor=sex_col[0])
+ax1.errorbar([2,6,10,14,18], median_le.loc['F'],
+             yerr=asymmetric_error_f, fmt='x',
+             color=sex_col[1],
+             ecolor=sex_col[1])
 
 # Hide gridlines
 ax1.grid(visible=False)
+
+ax1.set_ylim(40, 75)
+ax1.set_ylabel('Life expectancy, years')
+
+ax1.set_xticks([])  # Remove tick labels
+
+# Set y-axis tick marks and labels for ax1
+ax1.set_yticks([45, 50, 55, 60, 65, 70])
+ax1.set_yticklabels(['45', '50', '55', '60', '65', '70'])
+
+for i in [3.5, 7.25, 10.75, 14.5]:
+    ax1.axvline(x=i, color='grey', linestyle='--', linewidth=1)
+
+
+# Custom legend handler for line
+line_male = mlines.Line2D([], [], color=sex_col[0], marker='x', linestyle='-', markersize=5, label='Males')
+line_female = mlines.Line2D([], [], color=sex_col[1], marker='x', linestyle='-', markersize=5, label='Females')
+
+# Legend for ax1
+ax1.legend(
+    handles=[line_male, line_female],
+    labels=['Males', 'Females'],
+    loc='upper right',
+    title='',
+    fontsize='10',
+    frameon=False,
+    bbox_to_anchor=(1.175, 1)
+)
+
 
 # numbers of deaths
 ax2.bar(
@@ -480,8 +510,8 @@ ax2.bar(
     color=colours
 )
 ax2.set_yscale('log')
-# Hide gridlines
-ax2.grid(visible=False)
+
+ax2.set_ylabel('Number of deaths (log)')
 
 for i in [4.5, 8.5, 12.5, 16.5]:
     ax2.axvline(x=i, color='grey', linestyle='--', linewidth=1)
@@ -490,13 +520,22 @@ for i in [4.5, 8.5, 12.5, 16.5]:
 # Custom tick labels for ax2
 custom_tick_labels = [
     'Status quo',
-    'Excl HIV\nservices',
-    'Excl TB\nservices',
+    'Exclude HIV\nservices',
+    'Exclude TB\nservices',
     'Exclude malaria\nservices',
     'Exclude HTM\nservices'
 ]
 ax2.set_xticks([1.5, 6.0, 10.0, 14.5, 19.5])  # Set ticks at the midpoint of each group
-ax2.set_xticklabels(custom_tick_labels)
+ax2.set_xticklabels(custom_tick_labels, fontsize=10)
 
+ax2.legend(
+    handles=[plt.Rectangle((0, 0), 1, 1, color=color) for color in colours],
+    labels=['AIDS', 'TB', 'Malaria', 'All causes'],
+    loc='upper right',
+    title='',
+    fontsize='10',
+    frameon=False,
+    bbox_to_anchor=(1.2, 1)
+)
 
 plt.show()
