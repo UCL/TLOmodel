@@ -247,6 +247,10 @@ class CervicalCancer(Module):
         "ce_date_cryo": Property(
             Types.BOOL,
         "date of cryotherapy for CIN"
+        ),
+        "ce_current_cc_diagnosed": Property(
+            Types.BOOL,
+            "currently has diagnosed cervical cancer (which until now has not been cured)"
         )
     }
 
@@ -286,6 +290,7 @@ class CervicalCancer(Module):
         df.loc[df.is_alive, "ce_xpert_hpv_pos"] = False
         df.loc[df.is_alive, "ce_via_cin_detected"] = False
         df.loc[df.is_alive, "ce_date_cryo"] = pd.NaT
+        df.loc[df.is_alive, 'ce_current_cc_diagnosed'] = False
 
         # -------------------- ce_hpv_cc_status -----------
         # Determine who has cancer at ANY cancer stage:
@@ -491,7 +496,7 @@ class CervicalCancer(Module):
         )
 
         self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            screening_with_xpert_for_hpv_and_cervical_cancer=DxTest(
+            screening_with_xpert_for_hpv=DxTest(
                 property='ce_hpv_cc_status',
                 sensitivity=self.parameters['sensitivity_of_xpert_for_hpv_cin_cc'],
                 target_categories=["cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"]
@@ -570,6 +575,7 @@ class CervicalCancer(Module):
         df.at[child_id, "ce_xpert_hpv_pos"] = False
         df.at[child_id, "ce_via_cin_detected"] = False
         df.at[child_id, "ce_date_cryo"] = pd.NAT
+        df.at[child_id, "ce_current_cc_diagnosed"] = False
 
     def on_hsi_alert(self, person_id, treatment_id):
         pass
@@ -670,31 +676,11 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # A subset of women aged 30-50 will receive a screening test
 
         # todo: in future this may be triggered by family planning visit
-        eligible_population = df.is_alive & (df.sex == 'F') & (df.age_years > 30) & (df.age_years < 50) \
-                              & ~df.ce_current_cc_diagnosed
+        eligible_population = df.is_alive & (df.sex == 'F') & (df.age_years > 30) & (df.age_years < 50) & ~df.ce_current_cc_diagnosed
 
+        selected_1 = eligible_population[eligible_population & (rng.random_sample(size=len(eligible_population)) < 0.1)]
 
-
-# change to like this ?
-        stage4_idx = df.index[df.is_alive & (df.ce_hpv_cc_status == "stage4")]
-        selected_to_die = stage4_idx[
-        rng.random_sample(size=len(stage4_idx)) < self.module.parameters['r_death_cervical_cancer']]
-        for person_id in selected_to_die:
-            self.sim.schedule_event(
-                InstantaneousDeath(self.module, person_id, "CervicalCancer"), self.sim.date
-            )
-
-
-
-
-        # todo: make this an input parameter - prob of via screening per month
-        test_probability_1 = 0.01
-
-        random_numbers_1 = np.random.rand(len(df[eligible_population]))
-        idx_will_test_1 = random_numbers_1 < test_probability_1
-
-        # Schedule persons for community screening before the next polling event
-        for person_id in df.index[eligible_population][idx_will_test_1]:
+        for person_id in selected_1.index:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_CervicalCancer_AceticAcidScreening(person_id=person_id, module=self.module),
                 priority=1,
@@ -702,14 +688,8 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
                 tclose=self.sim.date + self.frequency - pd.DateOffset(days=1)  # (to occur before the next polling)
             )
 
-        # todo: make this an input parameter - prob of xpert hpv screening per month
-        test_probability_2 = 0.01
-
-        random_numbers_2 = np.random.rand(len(df[eligible_population]))
-        idx_will_test_2 = random_numbers_2 < test_probability_2
-
-        # Schedule persons for community screening before the next polling event
-        for person_id in df.index[eligible_population][idx_will_test_2]:
+        selected_2 = eligible_population[rng.random_sample(size=len(eligible_population)) < 0.1]
+        for person_id in selected_2.index:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 hsi_event=HSI_CervicalCancer_XpertHPVScreening(person_id=person_id, module=self.module),
                 priority=1,
@@ -946,7 +926,7 @@ class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "CervicalCancer_AceticAcidScreening"
+        self.TREATMENT_ID = "CervicalCancer_Cryotherapy_CIN"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
@@ -977,7 +957,7 @@ class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
 
 class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     """
-    This event is scheduled by HSI_CervicalCancer_Investigation_Following_vaginal_bleeding following a diagnosis of
+    This event is scheduled by HSI_CervicalCancer_Biopsy following a diagnosis of
     cervical Cancer. It initiates the treatment of cervical Cancer.
     It is only for persons with a cancer that is not in stage4 and who have been diagnosed.
     """
@@ -985,7 +965,7 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "CervicalCancer_Treatment"
+        self.TREATMENT_ID = "CervicalCancer_StartTreatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
@@ -1085,7 +1065,7 @@ class HSI_CervicalCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
 
-        self.TREATMENT_ID = "CervicalCancer_Treatment"
+        self.TREATMENT_ID = "CervicalCancer_PostTreatmentCheck"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
 
@@ -1154,7 +1134,7 @@ class HSI_CervicalCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
     This is the event for palliative care. It does not affect the patients progress but does affect the disability
      weight and takes resources from the healthsystem.
     This event is scheduled by either:
-    * HSI_CervicalCancer_Investigation_Following_vaginal_bleeding following a diagnosis of cervical Cancer at stage4.
+    * HSI_CervicalCancer_Biopsy following a diagnosis of cervical Cancer at stage4.
     * HSI_CervicalCancer_PostTreatmentCheck following progression to stage4 during treatment.
     * Itself for the continuance of care.
     It is only for persons with a cancer in stage4.

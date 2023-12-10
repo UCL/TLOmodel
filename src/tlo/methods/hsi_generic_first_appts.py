@@ -268,9 +268,8 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
         if 'CervicalCancer' in sim.modules:
             # If the symptoms include vaginal bleeding:
             if 'vaginal_bleeding' in symptoms:
-#               print(person_id, 'Inv_Following_vaginal_bleeding')
                 schedule_hsi(
-                    HSI_CervicalCancer_Investigation_Following_vaginal_bleeding(
+                    HSI_CervicalCancer_Biopsy(
                         person_id=person_id,
                         module=sim.modules['CervicalCancer']
                     ),
@@ -278,9 +277,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     topen=sim.date,
                     tclose=None)
 
-#       if 'CervicalCancer' in sim.modules:
-#           if ('vaginal_bleeding' in symptoms):
-#               sim.modules['CervicalCancer'].do_when_present_with_vaginal_bleeding(person_id=person_id, hsi_event=hsi_event)
 
         if 'Depression' in sim.modules:
             sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
