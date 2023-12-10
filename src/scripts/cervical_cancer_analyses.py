@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import json
+import math
 
 from tlo import Date, Simulation
 from tlo.analysis.utils import make_age_grp_types, parse_log_file
@@ -44,7 +45,7 @@ resourcefilepath = Path("./resources")
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2016, 1, 1)
-popsize = 17000
+popsize = 100
 
 
 def run_sim(service_availability):

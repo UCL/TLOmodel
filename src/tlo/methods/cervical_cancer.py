@@ -165,6 +165,12 @@ class CervicalCancer(Module):
         ),
         "sensitivity_of_via_for_cin_cc": Parameter(
             Types.REAL, "sensitivity of via for cin and cervical cancer bu stage"
+        ),
+        "prob_xpert_screen": Parameter(
+            Types.REAL, "prob_xpert_screen"
+        ),
+        "prob_via_screen": Parameter(
+            Types.REAL, "prob_via_screen"
         )
     }
 
@@ -245,7 +251,7 @@ class CervicalCancer(Module):
         "cin detected on via"
         ),
         "ce_date_cryo": Property(
-            Types.BOOL,
+            Types.DATE,
         "date of cryotherapy for CIN"
         ),
         "ce_current_cc_diagnosed": Property(
@@ -574,7 +580,7 @@ class CervicalCancer(Module):
         df.at[child_id, "ce_cc_ever"] = False
         df.at[child_id, "ce_xpert_hpv_pos"] = False
         df.at[child_id, "ce_via_cin_detected"] = False
-        df.at[child_id, "ce_date_cryo"] = pd.NAT
+        df.at[child_id, "ce_date_cryo"] = pd.NaT
         df.at[child_id, "ce_current_cc_diagnosed"] = False
 
     def on_hsi_alert(self, person_id, treatment_id):
@@ -675,26 +681,37 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # -------------------------------- SCREENING FOR CERVICAL CANCER USING XPERT HPV TESTING AND VIA---------------
         # A subset of women aged 30-50 will receive a screening test
 
+        # todo: make 0.1 below a parameter read in
         # todo: in future this may be triggered by family planning visit
+
+        p = self.sim.modules['CervicalCancer'].parameters
+
         eligible_population = df.is_alive & (df.sex == 'F') & (df.age_years > 30) & (df.age_years < 50) & ~df.ce_current_cc_diagnosed
 
-        selected_1 = eligible_population[eligible_population & (rng.random_sample(size=len(eligible_population)) < 0.1)]
-
+        selected_1 = eligible_population[eligible_population & rng.random_sample(size=len(eligible_population))
+                                         < p['prob_via_screen']]
         for person_id in selected_1.index:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_CervicalCancer_AceticAcidScreening(person_id=person_id, module=self.module),
-                priority=1,
-                topen=random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=2), m.rng),
-                tclose=self.sim.date + self.frequency - pd.DateOffset(days=1)  # (to occur before the next polling)
+                hsi_event=HSI_CervicalCancer_AceticAcidScreening(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
             )
 
-        selected_2 = eligible_population[rng.random_sample(size=len(eligible_population)) < 0.1]
+        selected_2 = eligible_population[rng.random_sample(size=len(eligible_population)) < p['prob_xpert_screen']]
+
         for person_id in selected_2.index:
             self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_CervicalCancer_XpertHPVScreening(person_id=person_id, module=self.module),
-                priority=1,
-                topen=random_date(self.sim.date, self.sim.date + self.frequency - pd.DateOffset(days=2), m.rng),
-                tclose=self.sim.date + self.frequency - pd.DateOffset(days=1)  # (to occur before the next polling)
+                hsi_event=HSI_CervicalCancer_AceticAcidScreening(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
             )
 
     # -------------------- UPDATING OF SYMPTOM OF vaginal bleeding OVER TIME --------------------------------
@@ -740,6 +757,9 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixin):
 
     # todo: make this event scheduled by contraception module
+
+    # todo: revisit Warning from healthsystem.py "Couldn't find priority ranking for TREATMENT_ID"
+
     """
     This event will be scheduled by family planning HSI - for now we determine at random a screening event
     and we determine at random whether this is AceticAcidScreening or HPVXpertScreening
@@ -771,7 +791,7 @@ class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixi
 
         if dx_result:
             hs.schedule_hsi_event(
-                hsi_event=HSI_CervicalCancer_Biopsy(
+                hsi_event=HSI_CervicalCancer_Cryotherapy_CIN(
                     module=self.module,
                     person_id=person_id
                 ),
@@ -817,7 +837,7 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
 
         if dx_result:
             hs.schedule_hsi_event(
-                hsi_event=HSI_CervicalCancer_Biopsy(
+                hsi_event=HSI_CervicalCancer_Cryotherapy_CIN(
                     module=self.module,
                     person_id=person_id
                 ),
@@ -838,7 +858,7 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "CervicalCancer_Biopsy"
 
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.ACCEPTED_FACILITY_LEVEL = '2'
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -947,7 +967,6 @@ class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
         assert not df.at[person_id, "ce_hpv_cc_status"] == 'stage2b'
         assert not df.at[person_id, "ce_hpv_cc_status"] == 'stage3'
         assert not df.at[person_id, "ce_hpv_cc_status"] == 'stage4'
-        assert not pd.isnull(df.at[person_id, "ce_date_diagnosis"])
 
         # Record date and stage of starting treatment
         df.at[person_id, "ce_date_cryo"] = self.sim.date
@@ -1225,7 +1244,7 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         if cc > 0:
             prop_cc_hiv = cc_hiv / cc
         else:
-            prop_cc_hiv = math.nan
+            prop_cc_hiv = np.nan
 
         n_diagnosed_past_year_stage1 = \
             (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date) &
@@ -1271,8 +1290,14 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         print(out)
 
+        # Disable column truncation
+        pd.set_option('display.max_columns', None)
+
+        # Set the display width to a large value to fit all columns in one row
+        pd.set_option('display.width', 1000)
+
         selected_columns = ['ce_hpv_cc_status', 'ce_xpert_hpv_pos', 'ce_via_cin_detected', 'ce_date_cryo',
-                            'ce_date_diagnosis', 'ce_date_treatment', 'ce_date_palliative_care']
+                            'sy_vaginal_bleeding', 'ce_date_diagnosis', 'ce_date_treatment', 'ce_date_palliative_care']
         selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15)]
         print(selected_rows[selected_columns])
 
