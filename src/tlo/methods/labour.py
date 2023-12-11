@@ -1865,10 +1865,11 @@ class Labour(Module):
                 sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self, sf='avd',
                                                                                            hsi_event=hsi_event)
 
-                # Update equipment
-                hsi_event.EQUIPMENT.update({'Delivery Forceps', 'Vacuum extractor'})
-
                 if avail and sf_check:
+
+                    # Update equipment
+                    hsi_event.EQUIPMENT.update({'Delivery Forceps', 'Vacuum extractor'})
+
                     pregnancy_helper_functions.log_met_need(self, f'avd_{indication}', hsi_event)
 
                     # If AVD was successful then we record the mode of delivery. We use this variable to reduce

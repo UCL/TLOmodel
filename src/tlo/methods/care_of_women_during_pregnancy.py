@@ -2624,12 +2624,14 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
             self.module, self, self.module.item_codes_preg_consumables, core='post_abortion_care_core',
             optional='post_abortion_care_optional')
 
-        self.EQUIPMENT.update({'D&C set', 'Suction Curettage machine', 'Drip stand', 'Infusion pump'})
-
         # Check HCW availability to deliver surgical removal of retained products
         sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
                                                                                    sf='retained_prod',
                                                                                    hsi_event=self)
+
+        # Update equipment if intervention can happen
+        if baseline_cons and sf_check:
+            self.EQUIPMENT.update({'D&C set', 'Suction Curettage machine', 'Drip stand', 'Infusion pump'})
 
         # Then we determine if a woman gets treatment for her complication depending on availability of the baseline
         # consumables (misoprostol) or a HCW who can conduct MVA/DC (we dont model equipment) and additional

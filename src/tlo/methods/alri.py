@@ -2656,11 +2656,11 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
             # todo: should equipment only be logged if consumables are available?
             # If individual requires oxygen, update equipment
-            if oxygen_indicated:
+            if oxygen_provided:
                 self.EQUIPMENT.update({'Oxygen cylinder, with regulator', 'Nasal Prongs'})
 
             # If individual requires intravenous antibiotics, update equipment
-            if antibiotic_indicated in ('1st_line_IV_antibiotics',
+            if antibiotic_available in ('1st_line_IV_antibiotics',
                                         'Benzylpenicillin_gentamicin_therapy_for_severe_pneumonia'):
                 self.EQUIPMENT.update({'Infusion pump', 'Drip stand'})
 
@@ -2752,12 +2752,13 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         """Things to do for a patient who is having this HSI following a failure of an earlier treatment.
         A further drug will be used but this will have no effect on the chance of the person dying."""
 
-        self.EQUIPMENT.update({'Infusion pump', 'Drip stand'})
-
         if self._has_staph_aureus():
             _ = self._get_cons('2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia')
         else:
             _ = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
+
+        if _:
+            self.EQUIPMENT.update({'Infusion pump', 'Drip stand'})
 
     def apply(self, person_id, squeeze_factor):
         """Assess and attempt to treat the person."""
