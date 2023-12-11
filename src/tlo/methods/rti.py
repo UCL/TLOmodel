@@ -3121,13 +3121,21 @@ class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Rti_Imaging'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'DiagRadio': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         self.sim.population.props.at[person_id, 'rt_diagnosed'] = True
         road_traffic_injuries = self.sim.modules['RTI']
         road_traffic_injuries.rti_injury_diagnosis(person_id, self.EXPECTED_APPT_FOOTPRINT)
-        if 'Tomography' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
+
+        if 'DiagRadio'in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
+            # TODO: use xray package when available
+            # TODO: robbie did not log the 'xray consumable' here as done in other modules (Tb)
+            self.EQUIPMENT.update({'X-ray machine', 'X-ray viewer'})
+
+        elif 'Tomography' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
             self.ACCEPTED_FACILITY_LEVEL = '3'
+            self.EQUIPMENT.update({'Computed Tomography (CT machine)', 'CT scanner accessories'})
 
     def did_not_run(self, *args, **kwargs):
         pass
@@ -3187,6 +3195,7 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 8})
+        self.EQUIPMENT = set()
 
         p = module.parameters
         # Load the parameters used in this event
@@ -3428,8 +3437,14 @@ class HSI_RTI_Medical_Intervention(HSI_Event, IndividualScopeEventMixin):
         # mortality percentage = 51.2 overall, 50% for TBI admission and 49% for hemorrhage
         # determine the number of ICU days used to treat patient
 
-        # TODO: Add general ICU equipment here? What form of organ support is offered?
         if df.loc[person_id, 'rt_ISS_score'] > self.hdu_cut_off_iss_score:
+
+            # TODO: some general ICU equipment listed below? additional would need to be added dependent on severity
+            #  of illness
+            self.EQUIPMENT.update({
+                                   'Patient monitor',  'Blood pressure machine',
+                                   'Pulse oximeter', 'Trolley, emergency', 'Stethoscope'})
+
             mean_icu_days = p['mean_icu_days']
             sd_icu_days = p['sd_icu_days']
             mean_tbi_icu_days = p['mean_tbi_icu_days']
@@ -3746,9 +3761,6 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({})
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
 
-        self.EQUIPMENT.update({'Infusion pump', 'Drip stand', 'Oxygen cylinder, with regulator', 'Nasal Prongs',
-                               'Patient monitor', 'Blood pressure machine', 'Pulse oximeter'})
-
         # TODO: find a more complete list of required consumables for adults
         if is_child:
             self.module.item_codes_for_consumables_required['shock_treatment_child'] = {
@@ -3776,6 +3788,9 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
             logger.debug(key='rti_general_message',
                          data=f"Hypovolemic shock treatment available for person {person_id}")
             df.at[person_id, 'rt_in_shock'] = False
+
+            self.EQUIPMENT.update({'Infusion pump', 'Drip stand', 'Oxygen cylinder, with regulator', 'Nasal Prongs'})
+
         else:
             self.sim.modules['RTI'].schedule_hsi_event_for_tomorrow(self)
             return self.make_appt_footprint({})
@@ -3876,6 +3891,9 @@ class HSI_RTI_Fracture_Cast(HSI_Event, IndividualScopeEventMixin):
                          data=f"Fracture casts available for person %d's {fracturecastcounts + slingcounts} fractures, "
                               f"{person_id}"
                          )
+
+            self.EQUIPMENT.update({'Casting platform', 'Casting chairs', 'Bucket, 10L'})
+
             # update the property rt_med_int to indicate they are recieving treatment
             df.at[person_id, 'rt_med_int'] = True
             # Find the persons injuries
@@ -3967,6 +3985,7 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Rti_OpenFractureTreatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MinorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -4011,6 +4030,11 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
             logger.debug(key='rti_general_message',
                          data=f"Fracture casts available for person {person_id} {open_fracture_counts} open fractures"
                          )
+
+            # TODO: open fractures are usually treated surgically so more equipment is likely required.
+            #  Not immediately clear if these individuals are also scheduled to the surgical HSIs. will leave for now
+            self.EQUIPMENT.update({'Infusion pump', 'Drip stand'})
+
             person = df.loc[person_id]
             # update the dataframe to show this person is recieving treatment
             df.loc[person_id, 'rt_med_int'] = True
@@ -4080,6 +4104,7 @@ class HSI_RTI_Suture(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
             ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
@@ -4175,6 +4200,7 @@ class HSI_RTI_Burn_Management(HSI_Event, IndividualScopeEventMixin):
 
         p = self.module.parameters
         self.prob_mild_burns = p['prob_mild_burns']
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         get_item_code = self.sim.modules['HealthSystem'].get_item_code_from_item_name
@@ -4278,6 +4304,7 @@ class HSI_RTI_Tetanus_Vaccine(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Rti_TetanusVaccine'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'EPI': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -4339,6 +4366,7 @@ class HSI_RTI_Acute_Pain_Management(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
             ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -4641,6 +4669,7 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
+        self.EQUIPMENT = set()
 
         p = self.module.parameters
         self.prob_perm_disability_with_treatment_severe_TBI = p['prob_perm_disability_with_treatment_severe_TBI']
@@ -4729,6 +4758,11 @@ class HSI_RTI_Major_Surgeries(HSI_Event, IndividualScopeEventMixin):
             # RTI_Med
             assert df.loc[person_id, 'rt_diagnosed'], 'This person has not been through a and e'
             assert df.loc[person_id, 'rt_med_int'], 'This person has not been through rti med int'
+
+            # TODO: not all surgeries conducted here are laparotomies however likely to have most appropriate equipment
+            #  so should be fine for now
+            self.EQUIPMENT.update({'Laparotomy Set', 'Infusion pump', 'Drip stand'})
+
             # ------------------------ Track permanent disabilities with treatment -------------------------------------
             # --------------------------------- Perm disability from TBI -----------------------------------------------
             codes = ['133', '133a', '133b', '133c', '133d', '134', '134a', '134b', '135']
@@ -4982,6 +5016,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = 'Rti_MinorSurgeries'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MinorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = set()
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -5044,6 +5079,10 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # todo: think about consequences of certain consumables not being available for minor surgery and model health
         #  outcomes
         if request_outcome:
+            # TODO: not all surgeries conducted here are laparotomies however likely to have most appropriate equipment
+            #  so should be fine for now
+            self.EQUIPMENT.update({'Laparotomy Set', 'Infusion pump', 'Drip stand'})
+
             # create a dictionary to store the recovery times for each injury in days
             minor_surg_recov_time_days = {
                 '322': 180,
