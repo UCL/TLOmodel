@@ -2,13 +2,12 @@ from pathlib import Path
 from typing import Dict, List
 
 import numpy as np
+import pytest
 
-from tlo import logging, Date, Module, Population, Simulation
+from tlo import logging, Date, DateOffset, Module, Population, Simulation
 from tlo.simulation import EventQueue
 from tlo.methods.healthsystem import HSI_Event, HSIEventQueueItem
 from tlo.methods.fullmodel import fullmodel
-
-resource_file_path = Path(__file__).parents[1] / "resources"
 
 
 def _check_basic_simulation_attributes_equal(
@@ -20,7 +19,6 @@ def _check_basic_simulation_attributes_equal(
         "date",
         "show_progress_bar",
         "_custom_log_levels",
-        "_log_filepath",
         "_seed",
     ]:
         assert getattr(simulation_1, attribute) == getattr(simulation_2, attribute)
@@ -139,14 +137,36 @@ def _check_simulations_are_equal(
     _check_population_equal(simulation_1.population, simulation_2.population)
 
 
-def test_save_pickle(tmp_path, seed):
-    start_date = Date(2010, 1, 1)
-    to_date = Date(2010, 2, 1)
-    end_date = Date(2010, 3, 1)
+@pytest.fixture(scope="module")
+def resource_file_path():
+    return Path(__file__).parents[1] / "resources"
+
+
+@pytest.fixture(scope="module")
+def initial_population_size():
+    return 1000
+
+
+@pytest.fixture(scope="module")
+def start_date():
+    return Date(2010, 1, 1)
+
+
+@pytest.fixture(scope="module")
+def end_date(start_date):
+    return start_date + DateOffset(days=60)
+
+
+@pytest.fixture(scope="module")
+def intermediate_date(start_date, end_date):
+    return start_date + (end_date - start_date) / 2
+
+
+def _simulation_factory(output_directory, start_date, seed, resource_file_path):
     log_config = {
         "filename": "test.log",
-        "directory": tmp_path,
-        "custom_levels": {"*": logging.INFO},
+        "directory": output_directory,
+        "custom_levels": {"*": logging.CRITICAL},
     }
     simulation = Simulation(
         start_date=start_date,
@@ -156,13 +176,71 @@ def test_save_pickle(tmp_path, seed):
     simulation.register(
         *fullmodel(
             resourcefilepath=resource_file_path,
-            use_simplified_births=True,
         )
     )
-    simulation.make_initial_population(n=1000)
-    simulation.initialise(end_date=end_date)
-    simulation.run_simulation_to(to_date=to_date)
+    return simulation
+
+
+@pytest.fixture
+def simulation(tmp_path, start_date, seed, resource_file_path):
+    return _simulation_factory(tmp_path, start_date, seed, resource_file_path)
+
+
+@pytest.fixture(scope="module")
+def simulated_simulation(
+    tmp_path_factory,
+    start_date,
+    end_date,
+    seed,
+    resource_file_path,
+    initial_population_size,
+):
+    tmp_path = tmp_path_factory.mktemp("simulated_simulation")
+    simulation = _simulation_factory(tmp_path, start_date, seed, resource_file_path)
+    simulation.make_initial_population(n=initial_population_size)
+    simulation.simulate(end_date=end_date)
+    return simulation
+
+
+def test_save_to_pickle_creates_file(tmp_path, simulation):
+    pickle_path = tmp_path / "simulation.pkl"
+    simulation.save_to_pickle(pickle_path=pickle_path)
+    assert pickle_path.exists()
+
+
+def test_save_load_pickle_after_initialising(
+    tmp_path, simulation, initial_population_size
+):
+    simulation.make_initial_population(n=initial_population_size)
+    simulation.initialise(end_date=simulation.start_date)
     pickle_path = tmp_path / "simulation.pkl"
     simulation.save_to_pickle(pickle_path=pickle_path)
     loaded_simulation = Simulation.load_from_pickle(pickle_path)
     _check_simulations_are_equal(simulation, loaded_simulation)
+
+
+def test_save_load_pickle_after_simulating(tmp_path, simulated_simulation):
+    pickle_path = tmp_path / "simulation.pkl"
+    simulated_simulation.save_to_pickle(pickle_path=pickle_path)
+    loaded_simulation = Simulation.load_from_pickle(pickle_path)
+    _check_simulations_are_equal(simulated_simulation, loaded_simulation)
+
+
+def test_continuous_and_interrupted_simulations_equal(
+    tmp_path,
+    simulation,
+    simulated_simulation,
+    initial_population_size,
+    intermediate_date,
+    end_date,
+):
+    simulation.make_initial_population(n=initial_population_size)
+    simulation.initialise(end_date=end_date)
+    simulation.run_simulation_to(to_date=intermediate_date)
+    pickle_path = tmp_path / "simulation.pkl"
+    simulation.save_to_pickle(pickle_path=pickle_path)
+    simulation.close_output_file()
+    interrupted_simulation = Simulation.load_from_pickle(pickle_path)
+    interrupted_simulation.run_simulation_to(to_date=end_date)
+    interrupted_simulation.finalise()
+    _check_simulations_are_equal(simulated_simulation, interrupted_simulation)
