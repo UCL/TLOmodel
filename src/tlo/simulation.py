@@ -6,7 +6,7 @@ import itertools
 import time
 from collections import OrderedDict
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Tuple, Union
 
 import numpy as np
 
@@ -268,15 +268,14 @@ class Simulation:
             raise ValueError(msg)
         if self.show_progress_bar:
             progress_bar = self._initialise_progress_bar(to_date)
-        while self.event_queue:
-            event, date = self.event_queue.next_event()
+        while (
+            len(self.event_queue) > 0 and self.event_queue.date_of_next_event <= to_date
+        ):
+            event, date = self.event_queue.pop_next_event_and_date()
             if self.show_progress_bar:
                 self._update_progress_bar(progress_bar, date)
-            if date >= to_date:
-                self.date = to_date
-                break
             self.fire_single_event(event, date)
-        # The simulation has ended.
+        self.date = to_date
         if self.show_progress_bar:
             progress_bar.stop()
 
@@ -377,7 +376,7 @@ class EventQueue:
         self.counter = itertools.count()
         self.queue = []
 
-    def schedule(self, event, date):
+    def schedule(self, event: Event, date: Date) -> None:
         """Schedule a new event.
 
         :param event: the event to schedule
@@ -386,14 +385,23 @@ class EventQueue:
         entry = (date, event.priority, next(self.counter), event)
         heapq.heappush(self.queue, entry)
 
-    def next_event(self):
-        """Get the earliest event in the queue.
+    def pop_next_event_and_date(self) -> Tuple[Event, Date]:
+        """Get and remove the earliest event and corresponding date in the queue.
 
         :returns: an (event, date) pair
         """
         date, _, _, event = heapq.heappop(self.queue)
         return event, date
+    
+    @property
+    def date_of_next_event(self) -> Date:
+        """Get the date of the earliest event in queue without removing from queue.
+        
+        :returns: Date of next event in queue.
+        """
+        date, *_ = self.queue[0]
+        return date
 
-    def __len__(self):
+    def __len__(self) -> int:
         """:return: the length of the queue"""
         return len(self.queue)
