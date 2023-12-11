@@ -217,13 +217,24 @@ class Simulation:
         end = time.time()
         logger.info(key="info", data=f"make_initial_population() {end - start} s")
 
-    def initialise(self, *, end_date):
+    def initialise(self, *, end_date: Date) -> None:
+        """Initialise all modules in simulation.
+
+        :param end_date: Date to end simulation on - accessible to modules to allow
+            initialising data structures which may depend (in size for example) on the
+            date range being simulated.
+        """
         self.date = self.start_date
         self.end_date = end_date  # store the end_date so that others can reference it
         for module in self.modules.values():
             module.initialise_simulation(self)
 
-    def finalise(self, wall_clock_time: Optional[float] = None):
+    def finalise(self, wall_clock_time: Optional[float] = None) -> None:
+        """Finalise all modules in simulation and close logging file if open.
+
+        :param wall_clock_time: Optional argument specifying total time taken to
+            simulate, to be written out to log before closing.
+        """
         for module in self.modules.values():
             module.on_simulation_end()
         if wall_clock_time is not None:
@@ -264,6 +275,15 @@ class Simulation:
         progress_bar.update(simulation_day, stats_dict=stats_dict)
 
     def run_simulation_to(self, *, to_date: Date):
+        """Run simulation up to a specified date.
+
+        Unlike :py:meth:`simulate` this method does not initialise or finalise
+        simulation and the date simulated to can be any date before or equal to
+        simulation end date.
+
+        :param to_date: Date to simulate to - must be before or equal to simulation
+            end date specified in call to :py:meth:`initialise`.
+        """
         if to_date > self.end_date:
             msg = f"to_date {to_date} after simulation end date {self.end_date}"
             raise ValueError(msg)
@@ -350,6 +370,12 @@ class Simulation:
         return person_events
 
     def save_to_pickle(self, pickle_path: Path) -> None:
+        """Save simulation state to a pickle file using :py:mod:`dill`.
+
+        Requires :py:mod:`dill` to be importable.
+
+        :param pickle_path: File path to save simulation state to.
+        """
         if not DILL_AVAILABLE:
             raise RuntimeError("Cannot save to pickle as dill is not installed")
         with open(pickle_path, "wb") as pickle_file:
@@ -357,6 +383,14 @@ class Simulation:
 
     @staticmethod
     def load_from_pickle(pickle_path: Path) -> "Simulation":
+        """Load simulation state from a pickle file using :py:mod:`dill`.
+
+        Requires :py:mod:`dill` to be importable.
+
+        :param pickle_path: File path to load simulation state from.
+
+        :returns: Loaded :py:class:`Simulation` object.
+        """
         if not DILL_AVAILABLE:
             raise RuntimeError("Cannot load from pickle as dill is not installed")
         with open(pickle_path, "rb") as pickle_file:
