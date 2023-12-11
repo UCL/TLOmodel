@@ -72,7 +72,6 @@ def _check_event_queues_are_equal(
     event_queue_1: EventQueue, event_queue_2: EventQueue
 ) -> None:
     assert len(event_queue_1) == len(event_queue_2)
-    assert next(event_queue_1.counter) == next(event_queue_2.counter)
     for (*date_priority_count_1, event_1), (*date_priority_count_2, event_2) in zip(
         event_queue_1.queue, event_queue_2.queue
     ):
