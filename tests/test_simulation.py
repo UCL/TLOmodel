@@ -4,14 +4,14 @@ from typing import Dict, List
 import numpy as np
 import pytest
 
-from tlo import logging, Date, DateOffset, Module, Population, Simulation
+from tlo import Date, DateOffset, Module, Population, Simulation, logging
+from tlo.methods.fullmodel import fullmodel
+from tlo.methods.healthsystem import HSI_Event, HSIEventQueueItem
 from tlo.simulation import (
     EventQueue,
     SimulationNotInitialisedError,
     SimulationPreviouslyInitialisedError,
 )
-from tlo.methods.healthsystem import HSI_Event, HSIEventQueueItem
-from tlo.methods.fullmodel import fullmodel
 
 
 def _check_basic_simulation_attributes_equal(
