@@ -81,7 +81,7 @@ def _check_event_queues_are_equal(
         else:
             assert event_1.target == event_2.target
         assert event_1.priority == event_1.priority
-        assert event_1.module.name == event_2.module.name
+        assert type(event_1.module) is type(event_2.module)  # noqa: E721
 
 
 def _check_hsi_events_are_equal(hsi_event_1: HSI_Event, hsi_event_2: HSI_Event) -> None:
@@ -161,12 +161,15 @@ def end_date(start_date):
 def intermediate_date(start_date, end_date):
     return start_date + (end_date - start_date) / 2
 
+@pytest.fixture(scope="module")
+def logging_custom_levels():
+    return {"*": logging.CRITICAL}
 
-def _simulation_factory(output_directory, start_date, seed, resource_file_path):
+def _simulation_factory(output_directory, start_date, seed, resource_file_path, logging_custom_levels):
     log_config = {
-        "filename": "test.log",
+        "filename": "test",
         "directory": output_directory,
-        "custom_levels": {"*": logging.CRITICAL},
+        "custom_levels": logging_custom_levels
     }
     simulation = Simulation(
         start_date=start_date,
@@ -182,8 +185,8 @@ def _simulation_factory(output_directory, start_date, seed, resource_file_path):
 
 
 @pytest.fixture
-def simulation(tmp_path, start_date, seed, resource_file_path):
-    return _simulation_factory(tmp_path, start_date, seed, resource_file_path)
+def simulation(tmp_path, start_date, seed, resource_file_path, logging_custom_levels):
+    return _simulation_factory(tmp_path, start_date, seed, resource_file_path, logging_custom_levels)
 
 
 @pytest.fixture(scope="module")
@@ -194,9 +197,10 @@ def simulated_simulation(
     seed,
     resource_file_path,
     initial_population_size,
+    logging_custom_levels,
 ):
     tmp_path = tmp_path_factory.mktemp("simulated_simulation")
-    simulation = _simulation_factory(tmp_path, start_date, seed, resource_file_path)
+    simulation = _simulation_factory(tmp_path, start_date, seed, resource_file_path, logging_custom_levels)
     simulation.make_initial_population(n=initial_population_size)
     simulation.simulate(end_date=end_date)
     return simulation
@@ -233,14 +237,17 @@ def test_continuous_and_interrupted_simulations_equal(
     initial_population_size,
     intermediate_date,
     end_date,
+    logging_custom_levels,
 ):
     simulation.make_initial_population(n=initial_population_size)
     simulation.initialise(end_date=end_date)
     simulation.run_simulation_to(to_date=intermediate_date)
     pickle_path = tmp_path / "simulation.pkl"
     simulation.save_to_pickle(pickle_path=pickle_path)
-    simulation.close_output_file()
     interrupted_simulation = Simulation.load_from_pickle(pickle_path)
+    interrupted_simulation.configure_logging(
+        "test_continued", tmp_path, custom_levels=logging_custom_levels
+    )
     interrupted_simulation.run_simulation_to(to_date=end_date)
     interrupted_simulation.finalise()
     _check_simulations_are_equal(simulated_simulation, interrupted_simulation)

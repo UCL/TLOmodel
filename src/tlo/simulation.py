@@ -12,6 +12,7 @@ import numpy as np
 
 try:
     import dill
+
     DILL_AVAILABLE = True
 except ImportError:
     DILL_AVAILABLE = False
@@ -347,21 +348,19 @@ class Simulation:
                     person_events.append((date, event))
 
         return person_events
-    
+
     def save_to_pickle(self, pickle_path: Path) -> None:
         if not DILL_AVAILABLE:
             raise RuntimeError("Cannot save to pickle as dill is not installed")
         with open(pickle_path, "wb") as pickle_file:
             dill.dump(self, pickle_file)
-    
+
     @staticmethod
     def load_from_pickle(pickle_path: Path) -> "Simulation":
         if not DILL_AVAILABLE:
             raise RuntimeError("Cannot load from pickle as dill is not installed")
         with open(pickle_path, "rb") as pickle_file:
             simulation = dill.load(pickle_file)
-            simulation.output_file = logging.set_output_file(simulation._log_filepath)
-            logging.set_simulation(simulation)
         return simulation
 
 
@@ -392,11 +391,11 @@ class EventQueue:
         """
         date, _, _, event = heapq.heappop(self.queue)
         return event, date
-    
+
     @property
     def date_of_next_event(self) -> Date:
         """Get the date of the earliest event in queue without removing from queue.
-        
+
         :returns: Date of next event in queue.
         """
         date, *_ = self.queue[0]
