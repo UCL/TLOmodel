@@ -31,9 +31,13 @@ jobs:
     strategy:
       fail-fast: false
     outputs:
+      # Environment variables can be passed to following steps within the same job by adding
+      # them to `GITHUB_ENV`, but to pass data to other jobs we have to necessarily use
+      # `GITHUB_OUTPUT`.
       environment_path: ${{ steps.vars.outputs.environment_path }}
       worktree_path: ${{ steps.vars.outputs.worktree_path }}
       output_dir: ${{ steps.out-dir.outputs.output_dir }}
+      skip_tasks: ${{ steps.tasks.outputs.skip_tasks }}
       tasks: ${{ steps.tasks.outputs.tasks }}
     steps:
       - name: Generate environment variables
@@ -97,10 +101,16 @@ jobs:
       - name: Generate list of tasks
         id: tasks
         run: |
+          SKIP_TASKS="false"
           if [[ -d "${output_dir}" ]]; then
-              echo "Output directory ${output_dir} already exists, setting RUNS_NUMBER to 0"
-              RUNS_NUMBER=0
+              echo "Output directory ${output_dir} already exists, setting RUNS_NUMBER to 1 and skipping further task runs"
+              RUNS_NUMBER=1
+              # Set variable to make task job run, but exit immediately, so that
+              # the build doesn't fail.
+              SKIP_TASKS="true"
           fi
+          echo "SKIP_TASKS=${SKIP_TASKS}"
+          echo "skip_tasks=${SKIP_TASKS}" >> "${GITHUB_OUTPUT}"
           RUNS="["
           for run in $(seq 0 $((${RUNS_NUMBER} - 1))); do
               RUNS="${RUNS}\"${run}\","
@@ -122,6 +132,10 @@ jobs:
     steps:
       - name: Run the task
         run: |
+          if [[ "${{ needs.setup.outputs.skip_tasks }}" == true ]]; then
+              echo "Nothing to be done, exiting..."
+              exit 0
+          fi
           source "${{ needs.setup.outputs.environment_path }}/bin/activate"
           draw=0
           task_output_dir="${{ needs.setup.outputs.output_dir }}/${RUN_NAME}/${draw}/${{ matrix.index }}"
@@ -140,6 +154,10 @@ jobs:
     steps:
       - name: Run post-processing
         run: |
+          if [[ "${{ needs.setup.outputs.skip_tasks }}" == true ]]; then
+              echo "Nothing to be done, exiting..."
+              exit 0
+          fi
           source "${{ needs.setup.outputs.environment_path }}/bin/activate"
           task_output_dir="${{ needs.setup.outputs.output_dir }}/${PROCESS_NAME}"
           mkdir -p "${task_output_dir}"
