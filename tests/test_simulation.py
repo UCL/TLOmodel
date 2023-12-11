@@ -5,7 +5,11 @@ import numpy as np
 import pytest
 
 from tlo import logging, Date, DateOffset, Module, Population, Simulation
-from tlo.simulation import EventQueue
+from tlo.simulation import (
+    EventQueue,
+    SimulationNotInitialisedError,
+    SimulationPreviouslyInitialisedError,
+)
 from tlo.methods.healthsystem import HSI_Event, HSIEventQueueItem
 from tlo.methods.fullmodel import fullmodel
 
@@ -20,6 +24,7 @@ def _check_basic_simulation_attributes_equal(
         "show_progress_bar",
         "_custom_log_levels",
         "_seed",
+        "_initialised",
     ]:
         assert getattr(simulation_1, attribute) == getattr(simulation_2, attribute)
 
@@ -268,3 +273,20 @@ def test_run_simulation_to_past_end_date_raises(
     simulation.initialise(end_date=end_date)
     with pytest.raises(ValueError, match="after simulation end date"):
         simulation.run_simulation_to(to_date=end_date + DateOffset(days=1))
+
+
+def test_run_simulation_without_initialisation_raises(
+    simulation, initial_population_size, end_date
+):
+    simulation.make_initial_population(n=initial_population_size)
+    with pytest.raises(SimulationNotInitialisedError):
+        simulation.run_simulation_to(to_date=end_date)
+
+
+def test_initialise_simulation_twice_raises(
+    simulation, initial_population_size, end_date
+):
+    simulation.make_initial_population(n=initial_population_size)
+    simulation.initialise(end_date=end_date)
+    with pytest.raises(SimulationPreviouslyInitialisedError):
+        simulation.initialise(end_date=end_date)

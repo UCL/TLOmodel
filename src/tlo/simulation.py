@@ -26,6 +26,14 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
+class SimulationPreviouslyInitialisedError(Exception):
+    """Exception raised when trying to initialise an already initialised simulation."""
+
+
+class SimulationNotInitialisedError(Exception):
+    """Exception raised when trying to run simulation before initialising."""
+
+
 class Simulation:
     """The main control centre for a simulation.
 
@@ -93,6 +101,9 @@ class Simulation:
             data=f"Simulation RNG {seed_from} entropy = {self._seed_seq.entropy}",
         )
         self.rng = np.random.RandomState(np.random.MT19937(self._seed_seq))
+
+        # Whether simulation has been initialised
+        self._initialised = False
 
     def configure_logging(
         self,
@@ -224,10 +235,14 @@ class Simulation:
             initialising data structures which may depend (in size for example) on the
             date range being simulated.
         """
+        if self._initialised:
+            msg = "initialise method should only be called once"
+            raise SimulationPreviouslyInitialisedError(msg)
         self.date = self.start_date
         self.end_date = end_date  # store the end_date so that others can reference it
         for module in self.modules.values():
             module.initialise_simulation(self)
+        self._initialised = True
 
     def finalise(self, wall_clock_time: Optional[float] = None) -> None:
         """Finalise all modules in simulation and close logging file if open.
@@ -284,6 +299,9 @@ class Simulation:
         :param to_date: Date to simulate to - must be before or equal to simulation
             end date specified in call to :py:meth:`initialise`.
         """
+        if not self._initialised:
+            msg = "Simulation must be initialised before calling run_simulation_to"
+            raise SimulationNotInitialisedError(msg)
         if to_date > self.end_date:
             msg = f"to_date {to_date} after simulation end date {self.end_date}"
             raise ValueError(msg)
