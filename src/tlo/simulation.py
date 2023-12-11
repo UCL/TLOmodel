@@ -361,6 +361,7 @@ class Simulation:
             raise RuntimeError("Cannot load from pickle as dill is not installed")
         with open(pickle_path, "rb") as pickle_file:
             simulation = dill.load(pickle_file)
+            simulation.output_file = logging.set_output_file(simulation._log_filepath)
             logging.set_simulation(simulation)
         return simulation
 
