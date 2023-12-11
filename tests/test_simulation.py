@@ -161,15 +161,19 @@ def end_date(start_date):
 def intermediate_date(start_date, end_date):
     return start_date + (end_date - start_date) / 2
 
+
 @pytest.fixture(scope="module")
 def logging_custom_levels():
     return {"*": logging.CRITICAL}
 
-def _simulation_factory(output_directory, start_date, seed, resource_file_path, logging_custom_levels):
+
+def _simulation_factory(
+    output_directory, start_date, seed, resource_file_path, logging_custom_levels
+):
     log_config = {
         "filename": "test",
         "directory": output_directory,
-        "custom_levels": logging_custom_levels
+        "custom_levels": logging_custom_levels,
     }
     simulation = Simulation(
         start_date=start_date,
@@ -186,7 +190,9 @@ def _simulation_factory(output_directory, start_date, seed, resource_file_path, 
 
 @pytest.fixture
 def simulation(tmp_path, start_date, seed, resource_file_path, logging_custom_levels):
-    return _simulation_factory(tmp_path, start_date, seed, resource_file_path, logging_custom_levels)
+    return _simulation_factory(
+        tmp_path, start_date, seed, resource_file_path, logging_custom_levels
+    )
 
 
 @pytest.fixture(scope="module")
@@ -200,7 +206,9 @@ def simulated_simulation(
     logging_custom_levels,
 ):
     tmp_path = tmp_path_factory.mktemp("simulated_simulation")
-    simulation = _simulation_factory(tmp_path, start_date, seed, resource_file_path, logging_custom_levels)
+    simulation = _simulation_factory(
+        tmp_path, start_date, seed, resource_file_path, logging_custom_levels
+    )
     simulation.make_initial_population(n=initial_population_size)
     simulation.simulate(end_date=end_date)
     return simulation
@@ -251,3 +259,12 @@ def test_continuous_and_interrupted_simulations_equal(
     interrupted_simulation.run_simulation_to(to_date=end_date)
     interrupted_simulation.finalise()
     _check_simulations_are_equal(simulated_simulation, interrupted_simulation)
+
+
+def test_run_simulation_to_past_end_date_raises(
+    simulation, initial_population_size, end_date
+):
+    simulation.make_initial_population(n=initial_population_size)
+    simulation.initialise(end_date=end_date)
+    with pytest.raises(ValueError, match="after simulation end date"):
+        simulation.run_simulation_to(to_date=end_date + DateOffset(days=1))
