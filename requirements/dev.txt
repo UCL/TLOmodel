@@ -162,6 +162,8 @@ pluggy==1.3.0
     #   tox
 portalocker==2.8.2
     # via msal-extensions
+psutil==5.9.5
+    # via tlo (pyproject.toml)
 pycparser==2.21
     # via cffi
 pyinstrument==4.5.3
