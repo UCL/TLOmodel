@@ -7,7 +7,12 @@ import pandas as pd
 from scipy.stats import norm
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import (
+    Event,
+    IndividualScopeEventMixin,
+    PopulationScopeEventMixin,
+    RegularEvent
+)
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -985,12 +990,14 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
                         df.un_WHZ_category == '-3<=WHZ<-2')]
         progression_severe_wasting = \
             self.module.wasting_models.get_wasting_progression().predict(
-                progression_sev_wasting, rng)
+                progression_sev_wasting)
 
-        progression_sev_wasting_idx = progression_sev_wasting.index
+        progression_severe_wasting = rng.random_sample(len(
+            progression_sev_wasting)) < progression_severe_wasting
         # determine those individuals who will progress to severe wasting
         # and time of progression
-        for person in progression_sev_wasting_idx[progression_severe_wasting]:
+        for person in progression_sev_wasting.index[
+             progression_severe_wasting]:
             outcome_date = self.module.date_of_outcome_for_untreated_am(
                 person_id=person, duration_am='MAM')
             # schedule severe wasting WHZ<-3 onset
@@ -1010,7 +1017,8 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # # # # # # #MODERATE WASTING NATURAL RECOVERY # # # # # # # # # # # #
 
         # moderate wasting not progressed to severe, schedule recovery
-        for person in progression_sev_wasting_idx[~progression_severe_wasting]:
+        for person in progression_sev_wasting.index[
+                ~progression_severe_wasting]:
             outcome_date = self.module.date_of_outcome_for_untreated_am(
                 person_id=person, duration_am='MAM')
             if outcome_date <= self.sim.date:

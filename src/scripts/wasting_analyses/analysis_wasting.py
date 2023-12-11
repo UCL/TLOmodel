@@ -57,7 +57,10 @@ class WastingAnalyses:
         w_inc_df.drop(columns='date', inplace=True)
         # get age year. doesn't matter what wasting category you choose for
         # they all have same age groups
-        age_years = w_inc_df.loc[w_inc_df.index[0], 'WHZ<-3'].keys()
+        age_years = list(w_inc_df.loc[w_inc_df.index[0], 'WHZ<-3'].keys(
+
+        ))
+        age_years.remove('5+y')
 
         _row_counter = 0
         _col_counter = 0
@@ -85,6 +88,7 @@ class WastingAnalyses:
                 _col_counter = -1
             _col_counter += 1  # increment column counter
             fig.tight_layout()
+        plt.show()
 
     def plot_wasting_prevalence(self):
         w_prev_df = self.__logs_dict['wasting_prevalence_count']
@@ -96,6 +100,7 @@ class WastingAnalyses:
                        ylabel='proportions',
                        xlabel='year'
                        )
+        plt.show()
 
     def plot_modal_gbd_deaths_by_gender(self):
         """ compare modal and GBD deaths by gender """
@@ -121,6 +126,8 @@ class WastingAnalyses:
             outputs / ('modal_gbd_deaths_by_gender' + datestamp + ".pdf"),
             format="pdf"
         )
+
+        plt.show()
 
 
 seed = 1
