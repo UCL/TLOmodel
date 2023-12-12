@@ -208,7 +208,6 @@ def _setup_simulation_for_dx_algorithm_test(sim):
 
             self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
             self.ACCEPTED_FACILITY_LEVEL = '1a'
-            self.ALERT_OTHER_DISEASES = []
 
         def apply(self, person_id, squeeze_factor):
             pass
