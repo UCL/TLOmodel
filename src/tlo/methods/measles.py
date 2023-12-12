@@ -437,13 +437,15 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
         # for measles with pneumonia
         if "respiratory_symptoms" in symptoms:
             item_codes.append(self.module.consumables['severe_pneumonia'])
-            # Update equipment
-            self.EQUIPMENT.update({'Oxygen concentrator', 'Oxygen cylinder, with regulator'})
 
         # request the treatment
         if self.get_consumables(item_codes):
             logger.debug(key="HSI_Measles_Treatment",
                          data=f"HSI_Measles_Treatment: giving required measles treatment to person {person_id}")
+
+            if "respiratory_symptoms" in symptoms:
+                # Update equipment
+                self.EQUIPMENT.update({'Oxygen concentrator', 'Oxygen cylinder, with regulator'})
 
             # modify person property which is checked when scheduled death occurs (or shouldn't occur)
             df.at[person_id, "me_on_treatment"] = True
