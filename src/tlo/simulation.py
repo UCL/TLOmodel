@@ -296,8 +296,8 @@ class Simulation:
         simulation and the date simulated to can be any date before or equal to
         simulation end date.
 
-        :param to_date: Date to simulate to - must be before or equal to simulation
-            end date specified in call to :py:meth:`initialise`.
+        :param to_date: Date to simulate up to but not including - must be before or
+            equal to simulation end date specified in call to :py:meth:`initialise`.
         """
         if not self._initialised:
             msg = "Simulation must be initialised before calling run_simulation_to"
@@ -308,7 +308,7 @@ class Simulation:
         if self.show_progress_bar:
             progress_bar = self._initialise_progress_bar(to_date)
         while (
-            len(self.event_queue) > 0 and self.event_queue.date_of_next_event <= to_date
+            len(self.event_queue) > 0 and self.event_queue.date_of_next_event < to_date
         ):
             event, date = self.event_queue.pop_next_event_and_date()
             if self.show_progress_bar:
