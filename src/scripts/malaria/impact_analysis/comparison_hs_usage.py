@@ -140,6 +140,11 @@ baseline_median = appt_sums0.median(axis='columns')
 baseline_lower = appt_sums0.quantile(0.025, axis='columns')
 baseline_upper = appt_sums0.quantile(0.975, axis='columns')
 
+sc4_median = appt_sums4.median(axis='columns')
+sc4_lower = appt_sums4.quantile(0.025, axis='columns')
+sc4_upper = appt_sums4.quantile(0.975, axis='columns')
+
+
 diffs0_1 = appt_sums1 - appt_sums0
 diffs0_2 = appt_sums2 - appt_sums0
 diffs0_3 = appt_sums3 - appt_sums0

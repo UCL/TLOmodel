@@ -267,9 +267,9 @@ def summarise_aids_deaths(results_folder):
 
     # get median and UI
     tmp2 = pd.concat({
-        'median': tmp.groupby(level=0, axis=1).median(0.5),
-        'lower': tmp.groupby(level=0, axis=1).quantile(0.025),
-        'upper': tmp.groupby(level=0, axis=1).quantile(0.975)
+        'median': tmp.iloc[:, 1:].groupby(level=0, axis=1).median(0.5),
+        'lower': tmp.iloc[:, 1:].groupby(level=0, axis=1).quantile(0.025),
+        'upper': tmp.iloc[:, 1:].groupby(level=0, axis=1).quantile(0.975)
     }, axis=1).swaplevel(axis=1)
 
     return tmp2
@@ -300,9 +300,9 @@ def summarise_deaths_for_one_cause(results_folder, cause):
     # get mean for each draw
     # get median and UI
     tmp2 = pd.concat({
-        'median': tmp.groupby(level=0, axis=1).median(0.5),
-        'lower': tmp.groupby(level=0, axis=1).quantile(0.025),
-        'upper': tmp.groupby(level=0, axis=1).quantile(0.975)
+        'median': tmp.iloc[:, 1:].groupby(level=0, axis=1).median(0.5),
+        'lower': tmp.iloc[:, 1:].groupby(level=0, axis=1).quantile(0.025),
+        'upper': tmp.iloc[:, 1:].groupby(level=0, axis=1).quantile(0.975)
     }, axis=1).swaplevel(axis=1)
 
     return tmp2
@@ -494,7 +494,8 @@ ax7.set_xticklabels(xlabels_for_ticks)
 ax7.set_ylim(0, 70)
 ax7.tick_params(axis='x', rotation=70)
 ax7.legend(loc='upper right',
-           labels=['Status Quo', 'No HIV services', 'No TB services', 'No Malaria services', 'No HTM services'],
+           labels=['Status Quo', 'Exclude HIV services', 'Exclude TB services',
+                   'Exclude Malaria services', 'Exclude HTM services'],
            bbox_to_anchor=(1.8, 1.0))
 
 # empty plot

@@ -425,6 +425,59 @@ deaths_for_plot = [mean_deaths_by_cause.loc['AIDS', 0],
                mean_total_deaths[4].values[0][0],
                ]
 
+lower_deaths_for_plot = [mean_deaths_by_cause_lower.loc['AIDS', 0],
+               mean_deaths_by_cause_lower.loc['TB (non-AIDS)', 0],
+               mean_deaths_by_cause_lower.loc['Malaria', 0],
+               lower_total_deaths[0].values[0][0],
+               mean_deaths_by_cause_lower.loc['AIDS', 1],
+               mean_deaths_by_cause_lower.loc['TB (non-AIDS)', 1],
+               mean_deaths_by_cause_lower.loc['Malaria', 1],
+               lower_total_deaths[1].values[0][0],
+                mean_deaths_by_cause_lower.loc['AIDS', 2],
+               mean_deaths_by_cause_lower.loc['TB (non-AIDS)', 2],
+               mean_deaths_by_cause_lower.loc['Malaria', 2],
+               lower_total_deaths[2].values[0][0],
+                mean_deaths_by_cause_lower.loc['AIDS', 3],
+               mean_deaths_by_cause_lower.loc['TB (non-AIDS)', 3],
+               mean_deaths_by_cause_lower.loc['Malaria', 3],
+               lower_total_deaths[3].values[0][0],
+                mean_deaths_by_cause_lower.loc['AIDS', 4],
+               mean_deaths_by_cause_lower.loc['TB (non-AIDS)', 4],
+               mean_deaths_by_cause_lower.loc['Malaria', 4],
+               lower_total_deaths[4].values[0][0],
+               ]
+
+upper_deaths_for_plot = [mean_deaths_by_cause_upper.loc['AIDS', 0],
+               mean_deaths_by_cause_upper.loc['TB (non-AIDS)', 0],
+               mean_deaths_by_cause_upper.loc['Malaria', 0],
+               upper_total_deaths[0].values[0][0],
+               mean_deaths_by_cause_upper.loc['AIDS', 1],
+               mean_deaths_by_cause_upper.loc['TB (non-AIDS)', 1],
+               mean_deaths_by_cause_upper.loc['Malaria', 1],
+               upper_total_deaths[1].values[0][0],
+                mean_deaths_by_cause_upper.loc['AIDS', 2],
+               mean_deaths_by_cause_upper.loc['TB (non-AIDS)', 2],
+               mean_deaths_by_cause_upper.loc['Malaria', 2],
+               upper_total_deaths[2].values[0][0],
+                mean_deaths_by_cause_upper.loc['AIDS', 3],
+               mean_deaths_by_cause_upper.loc['TB (non-AIDS)', 3],
+               mean_deaths_by_cause_upper.loc['Malaria', 3],
+               upper_total_deaths[3].values[0][0],
+                mean_deaths_by_cause_upper.loc['AIDS', 4],
+               mean_deaths_by_cause_upper.loc['TB (non-AIDS)', 4],
+               mean_deaths_by_cause_upper.loc['Malaria', 4],
+               upper_total_deaths[4].values[0][0],
+               ]
+
+# Convert lists to numpy arrays
+array1 = np.array(deaths_for_plot)
+array2 = np.array(lower_deaths_for_plot)
+array3 = np.array(upper_deaths_for_plot)
+
+
+
+
+
 # life expectancy
 test = produce_life_expectancy_estimates(results_folder, median=True)
 
@@ -500,15 +553,20 @@ ax1.legend(
 
 
 # numbers of deaths
-ax2.bar(
+bars = ax2.bar(
     xvals,
     deaths_for_plot,
-    # yerr=[
-    #     statistic_values["mean"] - statistic_values["lower"],
-    #     statistic_values["upper"] - statistic_values["mean"]
-    # ],
     color=colours
 )
+for bar, neg_err, pos_err, color in zip(bars,
+                                        array2,
+                                        array3, colours*5):
+    plt.errorbar(x=bar.get_x() + bar.get_width() / 2,
+                 y=bar.get_y() + bar.get_height() / 2,
+                 yerr=[[neg_err], [pos_err]],
+                 color=color,  # Set error bar color to the same as the bars
+                 capsize=5)
+
 ax2.set_yscale('log')
 
 ax2.set_ylabel('Number of deaths (log)')
@@ -537,5 +595,7 @@ ax2.legend(
     frameon=False,
     bbox_to_anchor=(1.2, 1)
 )
+
+fig.savefig(outputspath / "Death_life_expect_exclHTM.png")
 
 plt.show()
