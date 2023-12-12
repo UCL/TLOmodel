@@ -190,43 +190,44 @@ def test_schedule_rdt_for_all(sim):
     assert sum(df["ma_clinical_counter"]) > 0
 
 
-def test_dx_algorithm_for_malaria_outcomes(sim):
-    """Create a person and check if the functions in dx_algorithm_child return the correct diagnosis"""
+def _setup_simulation_for_dx_algorithm_test(sim):
+    popsize = 200  # smallest population size that works
 
-    def make_blank_simulation():
-        popsize = 200  # smallest population size that works
+    sim.make_initial_population(n=popsize)
+    sim.modules['Malaria'].parameters['sensitivity_rdt'] = 1.0
+    sim.simulate(end_date=start_date)
 
-        sim.make_initial_population(n=popsize)
-        sim.modules['Malaria'].parameters['sensitivity_rdt'] = 1.0
-        sim.simulate(end_date=start_date)
+    # Create the HSI event that is notionally doing the call on diagnostic algorithm
+    class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'DummyHSIEvent'
 
-        # Create the HSI event that is notionally doing the call on diagnostic algorithm
-        class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
-            def __init__(self, module, person_id):
-                super().__init__(module, person_id=person_id)
-                self.TREATMENT_ID = 'DummyHSIEvent'
+            the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+            the_appt_footprint["Under5OPD"] = 1  # This requires one out patient
 
-                the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-                the_appt_footprint["Under5OPD"] = 1  # This requires one out patient
+            self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
+            self.ALERT_OTHER_DISEASES = []
 
-                self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-                self.ACCEPTED_FACILITY_LEVEL = '1a'
-                self.ALERT_OTHER_DISEASES = []
+        def apply(self, person_id, squeeze_factor):
+            pass
 
-            def apply(self, person_id, squeeze_factor):
-                pass
+    hsi_event = DummyHSIEvent(module=sim.modules['Malaria'], person_id=0)
 
-        hsi_event = DummyHSIEvent(module=sim.modules['Malaria'], person_id=0)
+    # check that the queue of events is empty
+    assert 0 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
 
-        # check that the queue of events is empty
-        assert 0 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
+    return sim, hsi_event
 
-        return sim, hsi_event
 
-    # ----------------- Person with clinical malaria -----------------
-    #
+def test_dx_algorithm_for_malaria_outcomes_clinical(sim):
+    """
+    Create a person with clinical malaria and check if the functions in 
+    dx_algorithm_child return the correct diagnosis.
+    """
     # Set up the simulation:
-    sim, hsi_event = make_blank_simulation()
+    sim, hsi_event = _setup_simulation_for_dx_algorithm_test(sim)
 
     # Set up the person - clinical malaria and aged <5 years:
     df = sim.population.props
@@ -254,10 +255,14 @@ def test_dx_algorithm_for_malaria_outcomes(sim):
         hsi_event=hsi_event
     ) == "clinical_malaria"
 
-    # ----------------- Person with severe malaria -----------------
-    #
+
+def test_dx_algorithm_for_malaria_outcomes_severe(sim):
+    """
+    Create a person with severe malaria and check if the functions in 
+    dx_algorithm_child return the correct diagnosis.
+    """
     # Set up the simulation:
-    sim, hsi_event = make_blank_simulation()
+    sim, hsi_event = _setup_simulation_for_dx_algorithm_test(sim)
 
     # Set up the person - clinical malaria and aged <5 years:
     df = sim.population.props
