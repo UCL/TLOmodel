@@ -342,7 +342,7 @@ if __name__ == "__main__":
         "--simulation-years",
         type=int,
         help="Number of years to simulate for (plus --simulation-months months)",
-        default=20,
+        default=5,
     )
     parser.add_argument(
         "-m",

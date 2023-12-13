@@ -1,15 +1,15 @@
 name: Calibration
 
 on:
-  push:
-    branches: "master"
   workflow_dispatch:
     inputs:
       commit:
-        description: 'Commit'
+        description: '40-character commit hash'
         required: true
         default: ""
         type: string
+  schedule:
+    - cron: 31 2 * * *
 
 env:
   REPO_PATH:       /mnt/tlo/TLOmodel
@@ -45,7 +45,15 @@ jobs:
               SHA=${{ github.sha }}
           fi
           ENV="/mnt/tlo/env-${SHA}"
+          if [[ -d "${ENV}" ]]; then
+              echo "Virtual environment directory ${ENV} already exists, leaving..."
+              exit 1
+          fi
           WORKTREE_PATH="/mnt/tlo/${SHA}"
+          if [[ -d "${WORKTREE_PATH}" ]]; then
+              echo "Worktree directory ${WORKTREE_PATH} already exists, leaving..."
+              exit 1
+          fi
           echo "SHA=${SHA}"
           echo "SHA=${SHA}" >> "${GITHUB_ENV}"
           echo "ENV=${ENV}"
@@ -82,12 +90,17 @@ jobs:
           commit_dir=$(git show -s --date=format:'%Y-%m-%d_%H%M%S' --format=%cd_%h "${SHA}")
           output_dir="${OUTPUT_ROOT}/${commit_dir}"
           echo "output_dir=${output_dir}"
+          echo "output_dir=${output_dir}" >> "${GITHUB_ENV}"
           echo "output_dir=${output_dir}" >> "${GITHUB_OUTPUT}"
         working-directory: "${{ env.WORKTREE_PATH }}"
 
       - name: Generate list of tasks
         id: tasks
         run: |
+          if [[ -d "${output_dir}" ]]; then
+              echo "Output directory ${output_dir} already exists, setting RUNS_NUMBER to 0"
+              RUNS_NUMBER=0
+          fi
           RUNS="["
           for run in $(seq 0 $((${RUNS_NUMBER} - 1))); do
               RUNS="${RUNS}\"${run}\","
@@ -137,12 +150,12 @@ jobs:
   # Cleanup stage, to remove temporary directories and such
   cleanup:
     name: Cleanup job
-    # It depends on all the previous jobs, but it always runs, regardless of
-    # their success (or maybe check that only `setup` was
-    # successful?)
-    if: ${{ always() }}
     timeout-minutes: 10
     needs: [setup, tasks, postprocess]
+    # `always()` to run even if tasks and postprocess are skipped, but make sure
+    # `setup` was successful, to avoid cleaning up existing worktrees and
+    # environments used by other builds.
+    if: ${{ always() && needs.setup.result == 'success' }}
     runs-on: [tlo-dev-vm-1]
     strategy:
       fail-fast: false
