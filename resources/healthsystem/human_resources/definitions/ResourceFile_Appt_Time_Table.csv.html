@@ -1,0 +1,2300 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Appt Time Table (.csv) &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../../../../_static/favicon.png"/>
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../../_static/documentation_options.js?v=cc9389db"></script>
+        <script src="../../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+    <link rel="next" title="Appt Types Table (.csv)" href="ResourceFile_Appt_Types_Table.csv.html" />
+    <link rel="prev" title="ApptType By FacLevel (.csv)" href="ResourceFile_ApptType_By_FacLevel.csv.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+              <div class="version">
+                0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../../../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../../index.html">Resource files</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../../../cmd/index.html">cmd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../demography/index.html">demography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../epilepsy/index.html">epilepsy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../gbd/index.html">gbd</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../../index.html">healthsystem</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="../../consumables/index.html">consumables</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="../index.html">human_resources</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="../actual/index.html">actual</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="index.html">definitions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../funded/index.html">funded</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../funded_plus/index.html">funded_plus</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../../infrastructure_and_equipment/index.html">infrastructure_and_equipment</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../organisation/index.html">organisation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../priority_policies/index.html">priority_policies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../real_appt_usage_data/index.html">real_appt_usage_data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../ResourceFile_HealthSystem_parameters.csv.html">HealthSystem parameters (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../../../.ResourceFile_Consumables.csv.un~.html">.ResourceFile Consumables.csv (.un~)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_AbortionAndMiscarriage.xlsx.html">AbortionAndMiscarriage (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_Alri.xlsx.html">Alri (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_AntenatalCare.xlsx.html">AntenatalCare (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_Bladder_Cancer.xlsx.html">Bladder Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_Breast_Cancer.xlsx.html">Breast Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_Childhood_Pneumonia.xlsx.html">Childhood Pneumonia (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_Contraception.xlsx.html">Contraception (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_ContraceptionAnalysisParams.csv.html">ContraceptionAnalysisParams (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_ContraceptionParams.csv.html">ContraceptionParams (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_Depression.xlsx.html">Depression (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_Diarrhoea.xlsx.html">Diarrhoea (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_EPI_WHO_estimates.xlsx.html">EPI WHO estimates (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_Example_Paracetamol_DataFrame.csv.html">Example Paracetamol DataFrame (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_HIV.xlsx.html">HIV (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_HypertensiveDisordersOfPregnancy.xlsx.html">HypertensiveDisordersOfPregnancy (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx.html">Improved Healthsystem And Healthcare Seeking (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_LMIS_2018.csv.html">LMIS 2018 (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_LabourSkilledBirthAttendance.xlsx.html">LabourSkilledBirthAttendance (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_Lifestyle_Enhanced.xlsx.html">Lifestyle Enhanced (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_Measles.xlsx.html">Measles (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_NCDs.xlsx.html">NCDs (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_NCDs_condition_death.xlsx.html">NCDs condition death (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_NCDs_condition_onset.xlsx.html">NCDs condition onset (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_NCDs_condition_prevalence.xlsx.html">NCDs condition prevalence (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_NCDs_condition_removal.xlsx.html">NCDs condition removal (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_NCDs_events.xlsx.html">NCDs events (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_NCDs_events_death.xlsx.html">NCDs events death (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_NewbornOutcomes.xlsx.html">NewbornOutcomes (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_Oesophageal_Cancer.xlsx.html">Oesophageal Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_Other_Adult_Cancers.xlsx.html">Other Adult Cancers (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_PostnatalSupervisor.xlsx.html">PostnatalSupervisor (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_PregnancySupervisor.xlsx.html">PregnancySupervisor (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_Prostate_Cancer.xlsx.html">Prostate Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_RTI.xlsx.html">TI (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_Schisto.xlsx.html">Schisto (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_Stunting.xlsx.html">Stunting (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_TB.xlsx.html">TB (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_consumable_availability.csv.html">nsumable availability (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_consumables_matched.csv.html">nsumables matched (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_hhfa_consumables.xlsx.html">hhfa consumables (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_malaria.xlsx.html">malaria (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_malaria_ClinInc.csv.html">malaria ClinInc (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_malaria_ClinInc_expanded.csv.html">malaria ClinInc expanded (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_malaria_InfInc.csv.html">malaria InfInc (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_malaria_InfInc_expanded.csv.html">malaria InfInc expanded (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_malaria_SevInc.csv.html">malaria SevInc (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_malaria_SevInc_expanded.csv.html">malaria SevInc expanded (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_mwi_admbnda_adm0_nso_20181016.dbf.html">mwi admbnda adm0 nso 20181016 (.dbf)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_mwi_admbnda_adm0_nso_20181016.shp.html">mwi admbnda adm0 nso 20181016 (.shp)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_mwi_admbnda_adm0_nso_20181016.shx.html">mwi admbnda adm0 nso 20181016 (.shx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_mwi_admbnda_adm1_nso_20181016.dbf.html">mwi admbnda adm1 nso 20181016 (.dbf)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_mwi_admbnda_adm1_nso_20181016.shp.html">mwi admbnda adm1 nso 20181016 (.shp)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_mwi_admbnda_adm1_nso_20181016.shx.html">mwi admbnda adm1 nso 20181016 (.shx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_mwi_admbnda_adm2_nso_20181016.dbf.html">mwi admbnda adm2 nso 20181016 (.dbf)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_mwi_admbnda_adm2_nso_20181016.shp.html">mwi admbnda adm2 nso 20181016 (.shp)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../../../ResourceFile_mwi_admbnda_adm2_nso_20181016.shx.html">mwi admbnda adm2 nso 20181016 (.shx)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../background.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Resource files</a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">healthsystem</a></li>
+          <li class="breadcrumb-item"><a href="../index.html">human_resources</a></li>
+          <li class="breadcrumb-item"><a href="index.html">definitions</a></li>
+      <li class="breadcrumb-item active">Appt Time Table (.csv)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../../_sources/resources/healthsystem/human_resources/definitions/ResourceFile_Appt_Time_Table.csv.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="appt-time-table-csv">
+<h1>Appt Time Table (.csv)<a class="headerlink" href="#appt-time-table-csv" title="Link to this heading"></a></h1>
+<p><a class="reference download external" download="" href="https://github.com/UCL/TLOmodel/raw/master/resources/healthsystem/human_resources/definitions/ResourceFile_Appt_Time_Table.csv"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">original</span> <span class="pre">.csv</span> <span class="pre">file</span> <span class="pre">from</span> <span class="pre">GitHub</span></code></a></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>Appt_Type_Code</p></th>
+<th class="head"><p>Facility_Level</p></th>
+<th class="head"><p>Officer_Category</p></th>
+<th class="head"><p>Time_Taken_Mins</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>ANCSubsequent</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>ANCSubsequent</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>18</p></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>ANCSubsequent</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>ANCSubsequent</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>ANCSubsequent</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>ANCSubsequent</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>ANCSubsequent</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>ANCSubsequent</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>11</p></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>ANCSubsequent</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>0.4</p></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>ANCSubsequent</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>ANCSubsequent</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>17</p></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>ANCSubsequent</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>AccidentsandEmerg</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>42</p></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>AccidentsandEmerg</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>58.5</p></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>AccidentsandEmerg</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>AccidentsandEmerg</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>36</p></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>AccidentsandEmerg</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>25</p></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>AccidentsandEmerg</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>4.1</p></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p>AccidentsandEmerg</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>33.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>AccidentsandEmerg</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>30.5</p></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>AccidentsandEmerg</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>AccidentsandEmerg</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>54</p></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>AccidentsandEmerg</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>48</p></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>AccidentsandEmerg</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p>AntenatalFirst</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>19</p></td>
+</tr>
+<tr class="row-odd"><td><p>25</p></td>
+<td><p>AntenatalFirst</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>0.5</p></td>
+</tr>
+<tr class="row-even"><td><p>26</p></td>
+<td><p>AntenatalFirst</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>9</p></td>
+</tr>
+<tr class="row-odd"><td><p>27</p></td>
+<td><p>AntenatalFirst</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>30</p></td>
+</tr>
+<tr class="row-even"><td><p>28</p></td>
+<td><p>AntenatalFirst</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>29</p></td>
+<td><p>AntenatalFirst</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>12.75</p></td>
+</tr>
+<tr class="row-even"><td><p>30</p></td>
+<td><p>AntenatalFirst</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>0.25</p></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td><p>AntenatalFirst</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>19</p></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td><p>AntenatalFirst</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>0.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td><p>CompDelivery</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>120</p></td>
+</tr>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>CompDelivery</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>66</p></td>
+</tr>
+<tr class="row-odd"><td><p>35</p></td>
+<td><p>CompDelivery</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>2.5</p></td>
+</tr>
+<tr class="row-even"><td><p>36</p></td>
+<td><p>CompDelivery</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>30</p></td>
+</tr>
+<tr class="row-odd"><td><p>37</p></td>
+<td><p>CompDelivery</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>30</p></td>
+</tr>
+<tr class="row-even"><td><p>38</p></td>
+<td><p>CompDelivery</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>4.1</p></td>
+</tr>
+<tr class="row-odd"><td><p>39</p></td>
+<td><p>CompDelivery</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>16</p></td>
+</tr>
+<tr class="row-even"><td><p>40</p></td>
+<td><p>CompDelivery</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>37</p></td>
+</tr>
+<tr class="row-odd"><td><p>41</p></td>
+<td><p>CompDelivery</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>2.5</p></td>
+</tr>
+<tr class="row-even"><td><p>42</p></td>
+<td><p>CompDelivery</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>30</p></td>
+</tr>
+<tr class="row-odd"><td><p>43</p></td>
+<td><p>CompDelivery</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>72</p></td>
+</tr>
+<tr class="row-even"><td><p>44</p></td>
+<td><p>CompDelivery</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>2.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>45</p></td>
+<td><p>ConWithDCSA</p></td>
+<td><p>0</p></td>
+<td><p>DCSA</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-even"><td><p>46</p></td>
+<td><p>Csection</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>60</p></td>
+</tr>
+<tr class="row-odd"><td><p>47</p></td>
+<td><p>Csection</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>81</p></td>
+</tr>
+<tr class="row-even"><td><p>48</p></td>
+<td><p>Csection</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-odd"><td><p>49</p></td>
+<td><p>Csection</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>45</p></td>
+</tr>
+<tr class="row-even"><td><p>50</p></td>
+<td><p>Csection</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>50</p></td>
+</tr>
+<tr class="row-odd"><td><p>51</p></td>
+<td><p>Csection</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-even"><td><p>52</p></td>
+<td><p>Csection</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>27</p></td>
+</tr>
+<tr class="row-odd"><td><p>53</p></td>
+<td><p>Csection</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>36</p></td>
+</tr>
+<tr class="row-even"><td><p>54</p></td>
+<td><p>Csection</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>55</p></td>
+<td><p>Csection</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>60</p></td>
+</tr>
+<tr class="row-even"><td><p>56</p></td>
+<td><p>Csection</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>81</p></td>
+</tr>
+<tr class="row-odd"><td><p>57</p></td>
+<td><p>Csection</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-even"><td><p>58</p></td>
+<td><p>DentAccidEmerg</p></td>
+<td><p>2</p></td>
+<td><p>Dental</p></td>
+<td><p>65</p></td>
+</tr>
+<tr class="row-odd"><td><p>59</p></td>
+<td><p>DentAccidEmerg</p></td>
+<td><p>3</p></td>
+<td><p>Dental</p></td>
+<td><p>105</p></td>
+</tr>
+<tr class="row-even"><td><p>60</p></td>
+<td><p>DentAccidEmerg</p></td>
+<td><p>1a</p></td>
+<td><p>Dental</p></td>
+<td><p>47.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>61</p></td>
+<td><p>DentAccidEmerg</p></td>
+<td><p>1b</p></td>
+<td><p>Dental</p></td>
+<td><p>30</p></td>
+</tr>
+<tr class="row-even"><td><p>62</p></td>
+<td><p>DentSurg</p></td>
+<td><p>2</p></td>
+<td><p>Dental</p></td>
+<td><p>100</p></td>
+</tr>
+<tr class="row-odd"><td><p>63</p></td>
+<td><p>DentSurg</p></td>
+<td><p>3</p></td>
+<td><p>Dental</p></td>
+<td><p>190</p></td>
+</tr>
+<tr class="row-even"><td><p>64</p></td>
+<td><p>DentalO5</p></td>
+<td><p>2</p></td>
+<td><p>Dental</p></td>
+<td><p>30</p></td>
+</tr>
+<tr class="row-odd"><td><p>65</p></td>
+<td><p>DentalO5</p></td>
+<td><p>3</p></td>
+<td><p>Dental</p></td>
+<td><p>75</p></td>
+</tr>
+<tr class="row-even"><td><p>66</p></td>
+<td><p>DentalO5</p></td>
+<td><p>1a</p></td>
+<td><p>Dental</p></td>
+<td><p>37</p></td>
+</tr>
+<tr class="row-odd"><td><p>67</p></td>
+<td><p>DentalO5</p></td>
+<td><p>1b</p></td>
+<td><p>Dental</p></td>
+<td><p>39</p></td>
+</tr>
+<tr class="row-even"><td><p>68</p></td>
+<td><p>DentalU5</p></td>
+<td><p>2</p></td>
+<td><p>Dental</p></td>
+<td><p>25</p></td>
+</tr>
+<tr class="row-odd"><td><p>69</p></td>
+<td><p>DentalU5</p></td>
+<td><p>3</p></td>
+<td><p>Dental</p></td>
+<td><p>80</p></td>
+</tr>
+<tr class="row-even"><td><p>70</p></td>
+<td><p>DentalU5</p></td>
+<td><p>1a</p></td>
+<td><p>Dental</p></td>
+<td><p>48.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>71</p></td>
+<td><p>DentalU5</p></td>
+<td><p>1b</p></td>
+<td><p>Dental</p></td>
+<td><p>52</p></td>
+</tr>
+<tr class="row-even"><td><p>72</p></td>
+<td><p>DiagRadio</p></td>
+<td><p>2</p></td>
+<td><p>Radiography</p></td>
+<td><p>18</p></td>
+</tr>
+<tr class="row-odd"><td><p>73</p></td>
+<td><p>DiagRadio</p></td>
+<td><p>3</p></td>
+<td><p>Radiography</p></td>
+<td><p>45</p></td>
+</tr>
+<tr class="row-even"><td><p>74</p></td>
+<td><p>DiagRadio</p></td>
+<td><p>1b</p></td>
+<td><p>Radiography</p></td>
+<td><p>18</p></td>
+</tr>
+<tr class="row-odd"><td><p>75</p></td>
+<td><p>EPI</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>0.12</p></td>
+</tr>
+<tr class="row-even"><td><p>76</p></td>
+<td><p>EPI</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>2.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>77</p></td>
+<td><p>EPI</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>1.68</p></td>
+</tr>
+<tr class="row-even"><td><p>78</p></td>
+<td><p>EPI</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>0.06</p></td>
+</tr>
+<tr class="row-odd"><td><p>79</p></td>
+<td><p>EPI</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>4</p></td>
+</tr>
+<tr class="row-even"><td><p>80</p></td>
+<td><p>EPI</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>1.68</p></td>
+</tr>
+<tr class="row-odd"><td><p>81</p></td>
+<td><p>EPI</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>0.12</p></td>
+</tr>
+<tr class="row-even"><td><p>82</p></td>
+<td><p>EPI</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>2.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>83</p></td>
+<td><p>EPI</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>1.68</p></td>
+</tr>
+<tr class="row-even"><td><p>84</p></td>
+<td><p>EstMedCom</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>111</p></td>
+</tr>
+<tr class="row-odd"><td><p>85</p></td>
+<td><p>EstMedCom</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>24</p></td>
+</tr>
+<tr class="row-even"><td><p>86</p></td>
+<td><p>EstMedCom</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>87</p></td>
+<td><p>EstMedCom</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>19.5</p></td>
+</tr>
+<tr class="row-even"><td><p>88</p></td>
+<td><p>EstMedCom</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>16.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>89</p></td>
+<td><p>EstMedCom</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>90</p></td>
+<td><p>EstMedCom</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>52</p></td>
+</tr>
+<tr class="row-odd"><td><p>91</p></td>
+<td><p>EstMedCom</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-even"><td><p>92</p></td>
+<td><p>EstMedCom</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>99</p></td>
+</tr>
+<tr class="row-odd"><td><p>93</p></td>
+<td><p>EstMedCom</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>24</p></td>
+</tr>
+<tr class="row-even"><td><p>94</p></td>
+<td><p>EstMedCom</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>95</p></td>
+<td><p>EstNonCom</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>96</p></td>
+<td><p>EstNonCom</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>10.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>97</p></td>
+<td><p>EstNonCom</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>98</p></td>
+<td><p>EstNonCom</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>14</p></td>
+</tr>
+<tr class="row-odd"><td><p>99</p></td>
+<td><p>EstNonCom</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-even"><td><p>100</p></td>
+<td><p>EstNonCom</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>2.4</p></td>
+</tr>
+<tr class="row-odd"><td><p>101</p></td>
+<td><p>EstNonCom</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>2.5</p></td>
+</tr>
+<tr class="row-even"><td><p>102</p></td>
+<td><p>EstNonCom</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>8.75</p></td>
+</tr>
+<tr class="row-odd"><td><p>103</p></td>
+<td><p>EstNonCom</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>104</p></td>
+<td><p>EstNonCom</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>105</p></td>
+<td><p>EstNonCom</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>10.5</p></td>
+</tr>
+<tr class="row-even"><td><p>106</p></td>
+<td><p>EstNonCom</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-odd"><td><p>107</p></td>
+<td><p>FamPlan</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>108</p></td>
+<td><p>FamPlan</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>24</p></td>
+</tr>
+<tr class="row-odd"><td><p>109</p></td>
+<td><p>FamPlan</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>1.5</p></td>
+</tr>
+<tr class="row-even"><td><p>110</p></td>
+<td><p>FamPlan</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>23</p></td>
+</tr>
+<tr class="row-odd"><td><p>111</p></td>
+<td><p>FamPlan</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>112</p></td>
+<td><p>FamPlan</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>26</p></td>
+</tr>
+<tr class="row-odd"><td><p>113</p></td>
+<td><p>IPAdmission</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>42</p></td>
+</tr>
+<tr class="row-even"><td><p>114</p></td>
+<td><p>IPAdmission</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>39</p></td>
+</tr>
+<tr class="row-odd"><td><p>115</p></td>
+<td><p>IPAdmission</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>9.5</p></td>
+</tr>
+<tr class="row-even"><td><p>116</p></td>
+<td><p>IPAdmission</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>16.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>117</p></td>
+<td><p>IPAdmission</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>20</p></td>
+</tr>
+<tr class="row-even"><td><p>118</p></td>
+<td><p>IPAdmission</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>119</p></td>
+<td><p>IPAdmission</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>33</p></td>
+</tr>
+<tr class="row-even"><td><p>120</p></td>
+<td><p>IPAdmission</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>24</p></td>
+</tr>
+<tr class="row-odd"><td><p>121</p></td>
+<td><p>IPAdmission</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>122</p></td>
+<td><p>IPAdmission</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>42</p></td>
+</tr>
+<tr class="row-odd"><td><p>123</p></td>
+<td><p>IPAdmission</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>33</p></td>
+</tr>
+<tr class="row-even"><td><p>124</p></td>
+<td><p>IPAdmission</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-odd"><td><p>125</p></td>
+<td><p>InpatientDays</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>13</p></td>
+</tr>
+<tr class="row-even"><td><p>126</p></td>
+<td><p>InpatientDays</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>36</p></td>
+</tr>
+<tr class="row-odd"><td><p>127</p></td>
+<td><p>InpatientDays</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5.5</p></td>
+</tr>
+<tr class="row-even"><td><p>128</p></td>
+<td><p>InpatientDays</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>20</p></td>
+</tr>
+<tr class="row-odd"><td><p>129</p></td>
+<td><p>InpatientDays</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>40</p></td>
+</tr>
+<tr class="row-even"><td><p>130</p></td>
+<td><p>InpatientDays</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>131</p></td>
+<td><p>InpatientDays</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>14</p></td>
+</tr>
+<tr class="row-even"><td><p>132</p></td>
+<td><p>InpatientDays</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>21.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>133</p></td>
+<td><p>InpatientDays</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>4.1</p></td>
+</tr>
+<tr class="row-even"><td><p>134</p></td>
+<td><p>InpatientDays</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>16</p></td>
+</tr>
+<tr class="row-odd"><td><p>135</p></td>
+<td><p>InpatientDays</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>33</p></td>
+</tr>
+<tr class="row-even"><td><p>136</p></td>
+<td><p>InpatientDays</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>137</p></td>
+<td><p>LabBiochem</p></td>
+<td><p>2</p></td>
+<td><p>Laboratory</p></td>
+<td><p>16</p></td>
+</tr>
+<tr class="row-even"><td><p>138</p></td>
+<td><p>LabBiochem</p></td>
+<td><p>3</p></td>
+<td><p>Laboratory</p></td>
+<td><p>16</p></td>
+</tr>
+<tr class="row-odd"><td><p>139</p></td>
+<td><p>LabBiochem</p></td>
+<td><p>1a</p></td>
+<td><p>Laboratory</p></td>
+<td><p>16</p></td>
+</tr>
+<tr class="row-even"><td><p>140</p></td>
+<td><p>LabBiochem</p></td>
+<td><p>1b</p></td>
+<td><p>Laboratory</p></td>
+<td><p>16</p></td>
+</tr>
+<tr class="row-odd"><td><p>141</p></td>
+<td><p>LabCyto</p></td>
+<td><p>2</p></td>
+<td><p>Laboratory</p></td>
+<td><p>18</p></td>
+</tr>
+<tr class="row-even"><td><p>142</p></td>
+<td><p>LabCyto</p></td>
+<td><p>3</p></td>
+<td><p>Laboratory</p></td>
+<td><p>18</p></td>
+</tr>
+<tr class="row-odd"><td><p>143</p></td>
+<td><p>LabCyto</p></td>
+<td><p>1a</p></td>
+<td><p>Laboratory</p></td>
+<td><p>18</p></td>
+</tr>
+<tr class="row-even"><td><p>144</p></td>
+<td><p>LabCyto</p></td>
+<td><p>1b</p></td>
+<td><p>Laboratory</p></td>
+<td><p>18</p></td>
+</tr>
+<tr class="row-odd"><td><p>145</p></td>
+<td><p>LabHaem</p></td>
+<td><p>2</p></td>
+<td><p>Laboratory</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-even"><td><p>146</p></td>
+<td><p>LabHaem</p></td>
+<td><p>3</p></td>
+<td><p>Laboratory</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-odd"><td><p>147</p></td>
+<td><p>LabHaem</p></td>
+<td><p>1a</p></td>
+<td><p>Laboratory</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-even"><td><p>148</p></td>
+<td><p>LabHaem</p></td>
+<td><p>1b</p></td>
+<td><p>Laboratory</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-odd"><td><p>149</p></td>
+<td><p>LabMicrobio</p></td>
+<td><p>2</p></td>
+<td><p>Laboratory</p></td>
+<td><p>22</p></td>
+</tr>
+<tr class="row-even"><td><p>150</p></td>
+<td><p>LabMicrobio</p></td>
+<td><p>3</p></td>
+<td><p>Laboratory</p></td>
+<td><p>22</p></td>
+</tr>
+<tr class="row-odd"><td><p>151</p></td>
+<td><p>LabMicrobio</p></td>
+<td><p>1a</p></td>
+<td><p>Laboratory</p></td>
+<td><p>22</p></td>
+</tr>
+<tr class="row-even"><td><p>152</p></td>
+<td><p>LabMicrobio</p></td>
+<td><p>1b</p></td>
+<td><p>Laboratory</p></td>
+<td><p>22</p></td>
+</tr>
+<tr class="row-odd"><td><p>153</p></td>
+<td><p>LabMolec</p></td>
+<td><p>2</p></td>
+<td><p>Laboratory</p></td>
+<td><p>20</p></td>
+</tr>
+<tr class="row-even"><td><p>154</p></td>
+<td><p>LabMolec</p></td>
+<td><p>3</p></td>
+<td><p>Laboratory</p></td>
+<td><p>20</p></td>
+</tr>
+<tr class="row-odd"><td><p>155</p></td>
+<td><p>LabMolec</p></td>
+<td><p>1a</p></td>
+<td><p>Laboratory</p></td>
+<td><p>20</p></td>
+</tr>
+<tr class="row-even"><td><p>156</p></td>
+<td><p>LabMolec</p></td>
+<td><p>1b</p></td>
+<td><p>Laboratory</p></td>
+<td><p>20</p></td>
+</tr>
+<tr class="row-odd"><td><p>157</p></td>
+<td><p>LabPOC</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>158</p></td>
+<td><p>LabPOC</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>159</p></td>
+<td><p>LabPOC</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>1</p></td>
+</tr>
+<tr class="row-even"><td><p>160</p></td>
+<td><p>LabPOC</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>9</p></td>
+</tr>
+<tr class="row-odd"><td><p>161</p></td>
+<td><p>LabPOC</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>162</p></td>
+<td><p>LabPOC</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>163</p></td>
+<td><p>LabPOC</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>164</p></td>
+<td><p>LabPOC</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>165</p></td>
+<td><p>LabParasit</p></td>
+<td><p>2</p></td>
+<td><p>Laboratory</p></td>
+<td><p>16</p></td>
+</tr>
+<tr class="row-even"><td><p>166</p></td>
+<td><p>LabParasit</p></td>
+<td><p>3</p></td>
+<td><p>Laboratory</p></td>
+<td><p>16</p></td>
+</tr>
+<tr class="row-odd"><td><p>167</p></td>
+<td><p>LabParasit</p></td>
+<td><p>1a</p></td>
+<td><p>Laboratory</p></td>
+<td><p>16</p></td>
+</tr>
+<tr class="row-even"><td><p>168</p></td>
+<td><p>LabParasit</p></td>
+<td><p>1b</p></td>
+<td><p>Laboratory</p></td>
+<td><p>16</p></td>
+</tr>
+<tr class="row-odd"><td><p>169</p></td>
+<td><p>LabSero</p></td>
+<td><p>2</p></td>
+<td><p>Laboratory</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-even"><td><p>170</p></td>
+<td><p>LabSero</p></td>
+<td><p>3</p></td>
+<td><p>Laboratory</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-odd"><td><p>171</p></td>
+<td><p>LabSero</p></td>
+<td><p>1a</p></td>
+<td><p>Laboratory</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-even"><td><p>172</p></td>
+<td><p>LabSero</p></td>
+<td><p>1b</p></td>
+<td><p>Laboratory</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-odd"><td><p>173</p></td>
+<td><p>LabTBMicro</p></td>
+<td><p>2</p></td>
+<td><p>Laboratory</p></td>
+<td><p>17</p></td>
+</tr>
+<tr class="row-even"><td><p>174</p></td>
+<td><p>LabTBMicro</p></td>
+<td><p>3</p></td>
+<td><p>Laboratory</p></td>
+<td><p>17</p></td>
+</tr>
+<tr class="row-odd"><td><p>175</p></td>
+<td><p>LabTBMicro</p></td>
+<td><p>1a</p></td>
+<td><p>Laboratory</p></td>
+<td><p>17</p></td>
+</tr>
+<tr class="row-even"><td><p>176</p></td>
+<td><p>LabTBMicro</p></td>
+<td><p>1b</p></td>
+<td><p>Laboratory</p></td>
+<td><p>17</p></td>
+</tr>
+<tr class="row-odd"><td><p>177</p></td>
+<td><p>LabTrans</p></td>
+<td><p>2</p></td>
+<td><p>Laboratory</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-even"><td><p>178</p></td>
+<td><p>LabTrans</p></td>
+<td><p>3</p></td>
+<td><p>Laboratory</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-odd"><td><p>179</p></td>
+<td><p>LabTrans</p></td>
+<td><p>1a</p></td>
+<td><p>Laboratory</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-even"><td><p>180</p></td>
+<td><p>LabTrans</p></td>
+<td><p>1b</p></td>
+<td><p>Laboratory</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-odd"><td><p>181</p></td>
+<td><p>MRI</p></td>
+<td><p>2</p></td>
+<td><p>Radiography</p></td>
+<td><p>40</p></td>
+</tr>
+<tr class="row-even"><td><p>182</p></td>
+<td><p>MRI</p></td>
+<td><p>3</p></td>
+<td><p>Radiography</p></td>
+<td><p>40</p></td>
+</tr>
+<tr class="row-odd"><td><p>183</p></td>
+<td><p>MajorSurg</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>360</p></td>
+</tr>
+<tr class="row-even"><td><p>184</p></td>
+<td><p>MajorSurg</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>180</p></td>
+</tr>
+<tr class="row-odd"><td><p>185</p></td>
+<td><p>MajorSurg</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>4</p></td>
+</tr>
+<tr class="row-even"><td><p>186</p></td>
+<td><p>MajorSurg</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>362</p></td>
+</tr>
+<tr class="row-odd"><td><p>187</p></td>
+<td><p>MajorSurg</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>172</p></td>
+</tr>
+<tr class="row-even"><td><p>188</p></td>
+<td><p>MajorSurg</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-odd"><td><p>189</p></td>
+<td><p>MajorSurg</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>96</p></td>
+</tr>
+<tr class="row-even"><td><p>190</p></td>
+<td><p>MajorSurg</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>96</p></td>
+</tr>
+<tr class="row-odd"><td><p>191</p></td>
+<td><p>MajorSurg</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>4</p></td>
+</tr>
+<tr class="row-even"><td><p>192</p></td>
+<td><p>MaleCirc</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>20</p></td>
+</tr>
+<tr class="row-odd"><td><p>193</p></td>
+<td><p>MaleCirc</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>16</p></td>
+</tr>
+<tr class="row-even"><td><p>194</p></td>
+<td><p>MaleCirc</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>18.75</p></td>
+</tr>
+<tr class="row-odd"><td><p>195</p></td>
+<td><p>MaleCirc</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>6</p></td>
+</tr>
+<tr class="row-even"><td><p>196</p></td>
+<td><p>MaleCirc</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>37.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>197</p></td>
+<td><p>MaleCirc</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>14</p></td>
+</tr>
+<tr class="row-even"><td><p>198</p></td>
+<td><p>Mammography</p></td>
+<td><p>3</p></td>
+<td><p>Radiography</p></td>
+<td><p>60</p></td>
+</tr>
+<tr class="row-odd"><td><p>199</p></td>
+<td><p>MentClinic</p></td>
+<td><p>2</p></td>
+<td><p>Mental</p></td>
+<td><p>25</p></td>
+</tr>
+<tr class="row-even"><td><p>200</p></td>
+<td><p>MentClinic</p></td>
+<td><p>3</p></td>
+<td><p>Mental</p></td>
+<td><p>25</p></td>
+</tr>
+<tr class="row-odd"><td><p>201</p></td>
+<td><p>MentClinic</p></td>
+<td><p>4</p></td>
+<td><p>Mental</p></td>
+<td><p>25</p></td>
+</tr>
+<tr class="row-even"><td><p>202</p></td>
+<td><p>MentClinic</p></td>
+<td><p>1b</p></td>
+<td><p>Mental</p></td>
+<td><p>25</p></td>
+</tr>
+<tr class="row-odd"><td><p>203</p></td>
+<td><p>MentOPD</p></td>
+<td><p>2</p></td>
+<td><p>Mental</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-even"><td><p>204</p></td>
+<td><p>MentOPD</p></td>
+<td><p>3</p></td>
+<td><p>Mental</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-odd"><td><p>205</p></td>
+<td><p>MentOPD</p></td>
+<td><p>4</p></td>
+<td><p>Mental</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-even"><td><p>206</p></td>
+<td><p>MentOPD</p></td>
+<td><p>1b</p></td>
+<td><p>Mental</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-odd"><td><p>207</p></td>
+<td><p>MinorSurg</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>84</p></td>
+</tr>
+<tr class="row-even"><td><p>208</p></td>
+<td><p>MinorSurg</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>40</p></td>
+</tr>
+<tr class="row-odd"><td><p>209</p></td>
+<td><p>MinorSurg</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>4</p></td>
+</tr>
+<tr class="row-even"><td><p>210</p></td>
+<td><p>MinorSurg</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>140</p></td>
+</tr>
+<tr class="row-odd"><td><p>211</p></td>
+<td><p>MinorSurg</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>60</p></td>
+</tr>
+<tr class="row-even"><td><p>212</p></td>
+<td><p>MinorSurg</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>213</p></td>
+<td><p>MinorSurg</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>4</p></td>
+</tr>
+<tr class="row-even"><td><p>214</p></td>
+<td><p>MinorSurg</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-odd"><td><p>215</p></td>
+<td><p>MinorSurg</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-even"><td><p>216</p></td>
+<td><p>MinorSurg</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>84</p></td>
+</tr>
+<tr class="row-odd"><td><p>217</p></td>
+<td><p>MinorSurg</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>64</p></td>
+</tr>
+<tr class="row-even"><td><p>218</p></td>
+<td><p>MinorSurg</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>4</p></td>
+</tr>
+<tr class="row-odd"><td><p>219</p></td>
+<td><p>NewAdult</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>54.75</p></td>
+</tr>
+<tr class="row-even"><td><p>220</p></td>
+<td><p>NewAdult</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>67.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>221</p></td>
+<td><p>NewAdult</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>12</p></td>
+</tr>
+<tr class="row-even"><td><p>222</p></td>
+<td><p>NewAdult</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>12</p></td>
+</tr>
+<tr class="row-odd"><td><p>223</p></td>
+<td><p>NewAdult</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>1.45</p></td>
+</tr>
+<tr class="row-even"><td><p>224</p></td>
+<td><p>NewAdult</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>47.25</p></td>
+</tr>
+<tr class="row-odd"><td><p>225</p></td>
+<td><p>NewAdult</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>45</p></td>
+</tr>
+<tr class="row-even"><td><p>226</p></td>
+<td><p>NewAdult</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>58.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>227</p></td>
+<td><p>NewAdult</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>67.5</p></td>
+</tr>
+<tr class="row-even"><td><p>228</p></td>
+<td><p>NormalDelivery</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>60</p></td>
+</tr>
+<tr class="row-odd"><td><p>229</p></td>
+<td><p>NormalDelivery</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>156</p></td>
+</tr>
+<tr class="row-even"><td><p>230</p></td>
+<td><p>NormalDelivery</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>231</p></td>
+<td><p>NormalDelivery</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>118</p></td>
+</tr>
+<tr class="row-even"><td><p>232</p></td>
+<td><p>NormalDelivery</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>233</p></td>
+<td><p>NormalDelivery</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>18</p></td>
+</tr>
+<tr class="row-even"><td><p>234</p></td>
+<td><p>NormalDelivery</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>132</p></td>
+</tr>
+<tr class="row-odd"><td><p>235</p></td>
+<td><p>NormalDelivery</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>236</p></td>
+<td><p>NormalDelivery</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>36</p></td>
+</tr>
+<tr class="row-odd"><td><p>237</p></td>
+<td><p>NormalDelivery</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>144</p></td>
+</tr>
+<tr class="row-even"><td><p>238</p></td>
+<td><p>NormalDelivery</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>2.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>239</p></td>
+<td><p>Over5OPD</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>33</p></td>
+</tr>
+<tr class="row-even"><td><p>240</p></td>
+<td><p>Over5OPD</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-odd"><td><p>241</p></td>
+<td><p>Over5OPD</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>11.9</p></td>
+</tr>
+<tr class="row-even"><td><p>242</p></td>
+<td><p>Over5OPD</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>8.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>243</p></td>
+<td><p>Over5OPD</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>244</p></td>
+<td><p>Over5OPD</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>245</p></td>
+<td><p>Over5OPD</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>27</p></td>
+</tr>
+<tr class="row-even"><td><p>246</p></td>
+<td><p>Over5OPD</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>18</p></td>
+</tr>
+<tr class="row-odd"><td><p>247</p></td>
+<td><p>Over5OPD</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>9.45</p></td>
+</tr>
+<tr class="row-even"><td><p>248</p></td>
+<td><p>Over5OPD</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>27</p></td>
+</tr>
+<tr class="row-odd"><td><p>249</p></td>
+<td><p>Over5OPD</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>18</p></td>
+</tr>
+<tr class="row-even"><td><p>250</p></td>
+<td><p>Over5OPD</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>11.2</p></td>
+</tr>
+<tr class="row-odd"><td><p>251</p></td>
+<td><p>PMTCT</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>252</p></td>
+<td><p>PMTCT</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>10.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>253</p></td>
+<td><p>PMTCT</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>254</p></td>
+<td><p>PMTCT</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>14</p></td>
+</tr>
+<tr class="row-odd"><td><p>255</p></td>
+<td><p>PMTCT</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-even"><td><p>256</p></td>
+<td><p>PMTCT</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>2.4</p></td>
+</tr>
+<tr class="row-odd"><td><p>257</p></td>
+<td><p>PMTCT</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>2.5</p></td>
+</tr>
+<tr class="row-even"><td><p>258</p></td>
+<td><p>PMTCT</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>8.75</p></td>
+</tr>
+<tr class="row-odd"><td><p>259</p></td>
+<td><p>PMTCT</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>260</p></td>
+<td><p>PMTCT</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>261</p></td>
+<td><p>PMTCT</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>10.5</p></td>
+</tr>
+<tr class="row-even"><td><p>262</p></td>
+<td><p>PMTCT</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-odd"><td><p>263</p></td>
+<td><p>Peds</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>264</p></td>
+<td><p>Peds</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>10.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>265</p></td>
+<td><p>Peds</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>266</p></td>
+<td><p>Peds</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-odd"><td><p>267</p></td>
+<td><p>Peds</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-even"><td><p>268</p></td>
+<td><p>Peds</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>2.4</p></td>
+</tr>
+<tr class="row-odd"><td><p>269</p></td>
+<td><p>Peds</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>2.5</p></td>
+</tr>
+<tr class="row-even"><td><p>270</p></td>
+<td><p>Peds</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>8.75</p></td>
+</tr>
+<tr class="row-odd"><td><p>271</p></td>
+<td><p>Peds</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>272</p></td>
+<td><p>Peds</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>273</p></td>
+<td><p>Peds</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>10.5</p></td>
+</tr>
+<tr class="row-even"><td><p>274</p></td>
+<td><p>Peds</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-odd"><td><p>275</p></td>
+<td><p>PharmDispensing</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>276</p></td>
+<td><p>PharmDispensing</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>277</p></td>
+<td><p>PharmDispensing</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>278</p></td>
+<td><p>PharmDispensing</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>279</p></td>
+<td><p>Radiotherapy</p></td>
+<td><p>3</p></td>
+<td><p>Radiography</p></td>
+<td><p>30</p></td>
+</tr>
+<tr class="row-even"><td><p>280</p></td>
+<td><p>STI</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>11</p></td>
+</tr>
+<tr class="row-odd"><td><p>281</p></td>
+<td><p>STI</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>282</p></td>
+<td><p>STI</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-odd"><td><p>283</p></td>
+<td><p>STI</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>20</p></td>
+</tr>
+<tr class="row-even"><td><p>284</p></td>
+<td><p>STI</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>1.7</p></td>
+</tr>
+<tr class="row-odd"><td><p>285</p></td>
+<td><p>STI</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>11.5</p></td>
+</tr>
+<tr class="row-even"><td><p>286</p></td>
+<td><p>STI</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>2.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>287</p></td>
+<td><p>STI</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>288</p></td>
+<td><p>STI</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>11</p></td>
+</tr>
+<tr class="row-odd"><td><p>289</p></td>
+<td><p>STI</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>290</p></td>
+<td><p>TBFollowUp</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>8</p></td>
+</tr>
+<tr class="row-odd"><td><p>291</p></td>
+<td><p>TBFollowUp</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>292</p></td>
+<td><p>TBFollowUp</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>293</p></td>
+<td><p>TBFollowUp</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>11</p></td>
+</tr>
+<tr class="row-even"><td><p>294</p></td>
+<td><p>TBFollowUp</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-odd"><td><p>295</p></td>
+<td><p>TBFollowUp</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>4</p></td>
+</tr>
+<tr class="row-even"><td><p>296</p></td>
+<td><p>TBFollowUp</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>8</p></td>
+</tr>
+<tr class="row-odd"><td><p>297</p></td>
+<td><p>TBFollowUp</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-even"><td><p>298</p></td>
+<td><p>TBFollowUp</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p>299</p></td>
+<td><p>TBNew</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>20.5</p></td>
+</tr>
+<tr class="row-even"><td><p>300</p></td>
+<td><p>TBNew</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>20</p></td>
+</tr>
+<tr class="row-odd"><td><p>301</p></td>
+<td><p>TBNew</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>7.5</p></td>
+</tr>
+<tr class="row-even"><td><p>302</p></td>
+<td><p>TBNew</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>4.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>303</p></td>
+<td><p>TBNew</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>3.5</p></td>
+</tr>
+<tr class="row-even"><td><p>304</p></td>
+<td><p>TBNew</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>15.25</p></td>
+</tr>
+<tr class="row-odd"><td><p>305</p></td>
+<td><p>TBNew</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>8.75</p></td>
+</tr>
+<tr class="row-even"><td><p>306</p></td>
+<td><p>TBNew</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>307</p></td>
+<td><p>TBNew</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>20.5</p></td>
+</tr>
+<tr class="row-even"><td><p>308</p></td>
+<td><p>TBNew</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>20</p></td>
+</tr>
+<tr class="row-odd"><td><p>309</p></td>
+<td><p>TBNew</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>7.5</p></td>
+</tr>
+<tr class="row-even"><td><p>310</p></td>
+<td><p>Tomography</p></td>
+<td><p>3</p></td>
+<td><p>Radiography</p></td>
+<td><p>20</p></td>
+</tr>
+<tr class="row-odd"><td><p>311</p></td>
+<td><p>U5Malnutr</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-even"><td><p>312</p></td>
+<td><p>U5Malnutr</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>9</p></td>
+</tr>
+<tr class="row-odd"><td><p>313</p></td>
+<td><p>U5Malnutr</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>1.25</p></td>
+</tr>
+<tr class="row-even"><td><p>314</p></td>
+<td><p>U5Malnutr</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>5.1</p></td>
+</tr>
+<tr class="row-odd"><td><p>315</p></td>
+<td><p>U5Malnutr</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-even"><td><p>316</p></td>
+<td><p>U5Malnutr</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>7.5</p></td>
+</tr>
+<tr class="row-odd"><td><p>317</p></td>
+<td><p>U5Malnutr</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>8.5</p></td>
+</tr>
+<tr class="row-even"><td><p>318</p></td>
+<td><p>U5Malnutr</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>0.25</p></td>
+</tr>
+<tr class="row-odd"><td><p>319</p></td>
+<td><p>U5Malnutr</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-even"><td><p>320</p></td>
+<td><p>U5Malnutr</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>9</p></td>
+</tr>
+<tr class="row-odd"><td><p>321</p></td>
+<td><p>U5Malnutr</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>1.5</p></td>
+</tr>
+<tr class="row-even"><td><p>322</p></td>
+<td><p>Ultrasound</p></td>
+<td><p>2</p></td>
+<td><p>Radiography</p></td>
+<td><p>25</p></td>
+</tr>
+<tr class="row-odd"><td><p>323</p></td>
+<td><p>Ultrasound</p></td>
+<td><p>3</p></td>
+<td><p>Radiography</p></td>
+<td><p>25</p></td>
+</tr>
+<tr class="row-even"><td><p>324</p></td>
+<td><p>Ultrasound</p></td>
+<td><p>1b</p></td>
+<td><p>Radiography</p></td>
+<td><p>25</p></td>
+</tr>
+<tr class="row-odd"><td><p>325</p></td>
+<td><p>Under5OPD</p></td>
+<td><p>2</p></td>
+<td><p>Clinical</p></td>
+<td><p>28</p></td>
+</tr>
+<tr class="row-even"><td><p>326</p></td>
+<td><p>Under5OPD</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>16</p></td>
+</tr>
+<tr class="row-odd"><td><p>327</p></td>
+<td><p>Under5OPD</p></td>
+<td><p>2</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>6</p></td>
+</tr>
+<tr class="row-even"><td><p>328</p></td>
+<td><p>Under5OPD</p></td>
+<td><p>3</p></td>
+<td><p>Clinical</p></td>
+<td><p>10.6</p></td>
+</tr>
+<tr class="row-odd"><td><p>329</p></td>
+<td><p>Under5OPD</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>7</p></td>
+</tr>
+<tr class="row-even"><td><p>330</p></td>
+<td><p>Under5OPD</p></td>
+<td><p>3</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>331</p></td>
+<td><p>Under5OPD</p></td>
+<td><p>1a</p></td>
+<td><p>Clinical</p></td>
+<td><p>13</p></td>
+</tr>
+<tr class="row-even"><td><p>332</p></td>
+<td><p>Under5OPD</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>6.7</p></td>
+</tr>
+<tr class="row-odd"><td><p>333</p></td>
+<td><p>Under5OPD</p></td>
+<td><p>1a</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5.5</p></td>
+</tr>
+<tr class="row-even"><td><p>334</p></td>
+<td><p>Under5OPD</p></td>
+<td><p>1b</p></td>
+<td><p>Clinical</p></td>
+<td><p>32</p></td>
+</tr>
+<tr class="row-odd"><td><p>335</p></td>
+<td><p>Under5OPD</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>21</p></td>
+</tr>
+<tr class="row-even"><td><p>336</p></td>
+<td><p>Under5OPD</p></td>
+<td><p>1b</p></td>
+<td><p>Pharmacy</p></td>
+<td><p>5</p></td>
+</tr>
+<tr class="row-odd"><td><p>337</p></td>
+<td><p>VCTNegative</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>20</p></td>
+</tr>
+<tr class="row-even"><td><p>338</p></td>
+<td><p>VCTNegative</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>20</p></td>
+</tr>
+<tr class="row-odd"><td><p>339</p></td>
+<td><p>VCTNegative</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>20</p></td>
+</tr>
+<tr class="row-even"><td><p>340</p></td>
+<td><p>VCTNegative</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>20</p></td>
+</tr>
+<tr class="row-odd"><td><p>341</p></td>
+<td><p>VCTPositive</p></td>
+<td><p>2</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>35</p></td>
+</tr>
+<tr class="row-even"><td><p>342</p></td>
+<td><p>VCTPositive</p></td>
+<td><p>3</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>35</p></td>
+</tr>
+<tr class="row-odd"><td><p>343</p></td>
+<td><p>VCTPositive</p></td>
+<td><p>1a</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>35</p></td>
+</tr>
+<tr class="row-even"><td><p>344</p></td>
+<td><p>VCTPositive</p></td>
+<td><p>1b</p></td>
+<td><p>Nursing_and_Midwifery</p></td>
+<td><p>35</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ResourceFile_ApptType_By_FacLevel.csv.html" class="btn btn-neutral float-left" title="ApptType By FacLevel (.csv)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ResourceFile_Appt_Types_Table.csv.html" class="btn btn-neutral float-right" title="Appt Types Table (.csv)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+      <span class="lastupdated">Last updated on Dec 13, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

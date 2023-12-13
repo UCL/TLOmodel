@@ -73,13 +73,13 @@ tlo.methods.measles module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Measles': <tlo.methods.causes.Cause object at 0x7ff65098e550>}
+     CAUSES_OF_DEATH : {'Measles': <tlo.methods.causes.Cause object at 0x12dd99610>}
 
-     CAUSES_OF_DISABILITY : {'Measles': <tlo.methods.causes.Cause object at 0x7ff65098e5b0>}
+     CAUSES_OF_DISABILITY : {'Measles': <tlo.methods.causes.Cause object at 0x12dd99710>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Demography'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'Demography', 'HealthSystem'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -112,6 +112,11 @@ tlo.methods.measles module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class MeaslesEvent):**
 
@@ -209,6 +214,11 @@ tlo.methods.measles module
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
      **Functions (defined or overridden in class MeaslesLoggingEvent):**
 
      .. automethod:: __init__
@@ -227,6 +237,11 @@ tlo.methods.measles module
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
      **Functions (defined or overridden in class MeaslesLoggingFortnightEvent):**
 
      .. automethod:: __init__
@@ -244,6 +259,11 @@ tlo.methods.measles module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class MeaslesLoggingAnnualEvent):**
 

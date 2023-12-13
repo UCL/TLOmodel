@@ -1,12 +1,15 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.population module &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <title>tlo.population module &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
@@ -14,9 +17,9 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
-        <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -36,7 +39,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -54,6 +57,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
@@ -87,11 +91,11 @@
            <div itemprop="articleBody">
              
   <section id="module-tlo.population">
-<span id="tlo-population-module"></span><h1>tlo.population module<a class="headerlink" href="#module-tlo.population" title="Permalink to this heading"></a></h1>
+<span id="tlo-population-module"></span><h1>tlo.population module<a class="headerlink" href="#module-tlo.population" title="Link to this heading"></a></h1>
 <p>The Person and Population classes.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.population.Population">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/population.html#Population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.population.Population" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">append_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/population.html#Population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.population.Population" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>A complete population of individuals.</p>
 <p>Useful properties of a population:</p>
@@ -103,32 +107,32 @@
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.population.Population.initial_size">
-<span class="sig-name descname"><span class="pre">initial_size</span></span><a class="headerlink" href="#tlo.population.Population.initial_size" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initial_size</span></span><a class="headerlink" href="#tlo.population.Population.initial_size" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.population.Population.props">
-<span class="sig-name descname"><span class="pre">props</span></span><a class="headerlink" href="#tlo.population.Population.props" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">props</span></span><a class="headerlink" href="#tlo.population.Population.props" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.population.Population.new_row">
-<span class="sig-name descname"><span class="pre">new_row</span></span><a class="headerlink" href="#tlo.population.Population.new_row" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">new_row</span></span><a class="headerlink" href="#tlo.population.Population.new_row" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.population.Population.new_rows">
-<span class="sig-name descname"><span class="pre">new_rows</span></span><a class="headerlink" href="#tlo.population.Population.new_rows" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">new_rows</span></span><a class="headerlink" href="#tlo.population.Population.new_rows" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.population.Population.next_person_id">
-<span class="sig-name descname"><span class="pre">next_person_id</span></span><a class="headerlink" href="#tlo.population.Population.next_person_id" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">next_person_id</span></span><a class="headerlink" href="#tlo.population.Population.next_person_id" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.population.Population.do_birth">
-<span class="sig-name descname"><span class="pre">do_birth</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/population.html#Population.do_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.population.Population.do_birth" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">do_birth</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/population.html#Population.do_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.population.Population.do_birth" title="Link to this definition"></a></dt>
 <dd><p>Create a new person within the population.</p>
 <p>TODO: This will over-allocate capacity in the population dataframe for efficiency.</p>
 <dl class="field-list simple">
@@ -140,7 +144,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.population.Population.make_test_property">
-<span class="sig-name descname"><span class="pre">make_test_property</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/population.html#Population.make_test_property"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.population.Population.make_test_property" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">make_test_property</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type_</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/population.html#Population.make_test_property"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.population.Population.make_test_property" title="Link to this definition"></a></dt>
 <dd><p>Create a new property for test purposes.</p>
 <p>When testing a particular method in isolation, it’s helpful to be able to define
 the properties it reads that would normally be provided by other methods. That is
@@ -174,7 +178,7 @@ the property</p></li>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

@@ -1,0 +1,11 @@
+human_resources
+===============
+
+.. toctree::
+    :maxdepth: 1
+
+    actual/index.rst
+    definitions/index.rst
+    funded/index.rst
+    funded_plus/index.rst
+

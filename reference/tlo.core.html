@@ -1,12 +1,15 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.core module &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <title>tlo.core module &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
@@ -14,9 +17,9 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
-        <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -36,7 +39,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -54,6 +57,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
@@ -87,14 +91,14 @@
            <div itemprop="articleBody">
              
   <section id="module-tlo.core">
-<span id="tlo-core-module"></span><h1>tlo.core module<a class="headerlink" href="#module-tlo.core" title="Permalink to this heading"></a></h1>
+<span id="tlo-core-module"></span><h1>tlo.core module<a class="headerlink" href="#module-tlo.core" title="Link to this heading"></a></h1>
 <p>Core framework classes.</p>
 <p>This contains things that didn’t obviously go in their own file, such as
 specification for parameters and properties, and the base Module class for
 disease modules.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.core.Types">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Types</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Types"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Types" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Types</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">module</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">qualname</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Types"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Types" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
 <p>Possible types for parameters and properties.</p>
 <p>This lets us hide the details of numpy &amp; Pandas dtype strings and give
@@ -104,80 +108,80 @@ sex where there are a fixed number of options to choose from. The LIST type is u
 for properties where the value is a collection, e.g. the set of children of a person.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Types.DATE">
-<span class="sig-name descname"><span class="pre">DATE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#tlo.core.Types.DATE" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">DATE</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em><a class="headerlink" href="#tlo.core.Types.DATE" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Types.BOOL">
-<span class="sig-name descname"><span class="pre">BOOL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#tlo.core.Types.BOOL" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">BOOL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em><a class="headerlink" href="#tlo.core.Types.BOOL" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Types.INT">
-<span class="sig-name descname"><span class="pre">INT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#tlo.core.Types.INT" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">INT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em><a class="headerlink" href="#tlo.core.Types.INT" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Types.REAL">
-<span class="sig-name descname"><span class="pre">REAL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#tlo.core.Types.REAL" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">REAL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em><a class="headerlink" href="#tlo.core.Types.REAL" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Types.CATEGORICAL">
-<span class="sig-name descname"><span class="pre">CATEGORICAL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></em><a class="headerlink" href="#tlo.core.Types.CATEGORICAL" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">CATEGORICAL</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></em><a class="headerlink" href="#tlo.core.Types.CATEGORICAL" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Types.LIST">
-<span class="sig-name descname"><span class="pre">LIST</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">6</span></em><a class="headerlink" href="#tlo.core.Types.LIST" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">LIST</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">6</span></em><a class="headerlink" href="#tlo.core.Types.LIST" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Types.SERIES">
-<span class="sig-name descname"><span class="pre">SERIES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">7</span></em><a class="headerlink" href="#tlo.core.Types.SERIES" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">SERIES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">7</span></em><a class="headerlink" href="#tlo.core.Types.SERIES" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Types.DATA_FRAME">
-<span class="sig-name descname"><span class="pre">DATA_FRAME</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">8</span></em><a class="headerlink" href="#tlo.core.Types.DATA_FRAME" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">DATA_FRAME</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">8</span></em><a class="headerlink" href="#tlo.core.Types.DATA_FRAME" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Types.STRING">
-<span class="sig-name descname"><span class="pre">STRING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">9</span></em><a class="headerlink" href="#tlo.core.Types.STRING" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">STRING</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">9</span></em><a class="headerlink" href="#tlo.core.Types.STRING" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Types.DICT">
-<span class="sig-name descname"><span class="pre">DICT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></em><a class="headerlink" href="#tlo.core.Types.DICT" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">DICT</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></em><a class="headerlink" href="#tlo.core.Types.DICT" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.core.Specifiable">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Specifiable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Specifiable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Specifiable" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Specifiable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Specifiable"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Specifiable" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Base class for Parameter and Property.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Specifiable.PANDAS_TYPE_MAP">
-<span class="sig-name descname"><span class="pre">PANDAS_TYPE_MAP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{&lt;Types.DATE:</span> <span class="pre">1&gt;:</span> <span class="pre">'datetime64[ns]',</span> <span class="pre">&lt;Types.BOOL:</span> <span class="pre">2&gt;:</span> <span class="pre">&lt;class</span> <span class="pre">'bool'&gt;,</span> <span class="pre">&lt;Types.INT:</span> <span class="pre">3&gt;:</span> <span class="pre">'int64',</span> <span class="pre">&lt;Types.REAL:</span> <span class="pre">4&gt;:</span> <span class="pre">&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">&lt;Types.CATEGORICAL:</span> <span class="pre">5&gt;:</span> <span class="pre">'category',</span> <span class="pre">&lt;Types.LIST:</span> <span class="pre">6&gt;:</span> <span class="pre">&lt;class</span> <span class="pre">'object'&gt;,</span> <span class="pre">&lt;Types.SERIES:</span> <span class="pre">7&gt;:</span> <span class="pre">&lt;class</span> <span class="pre">'object'&gt;,</span> <span class="pre">&lt;Types.DATA_FRAME:</span> <span class="pre">8&gt;:</span> <span class="pre">&lt;class</span> <span class="pre">'object'&gt;,</span> <span class="pre">&lt;Types.STRING:</span> <span class="pre">9&gt;:</span> <span class="pre">&lt;class</span> <span class="pre">'object'&gt;,</span> <span class="pre">&lt;Types.DICT:</span> <span class="pre">10&gt;:</span> <span class="pre">&lt;class</span> <span class="pre">'object'&gt;}</span></em><a class="headerlink" href="#tlo.core.Specifiable.PANDAS_TYPE_MAP" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">PANDAS_TYPE_MAP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{Types.BOOL:</span> <span class="pre">&lt;class</span> <span class="pre">'bool'&gt;,</span> <span class="pre">Types.CATEGORICAL:</span> <span class="pre">'category',</span> <span class="pre">Types.DATA_FRAME:</span> <span class="pre">&lt;class</span> <span class="pre">'object'&gt;,</span> <span class="pre">Types.DATE:</span> <span class="pre">'datetime64[ns]',</span> <span class="pre">Types.DICT:</span> <span class="pre">&lt;class</span> <span class="pre">'object'&gt;,</span> <span class="pre">Types.INT:</span> <span class="pre">'int64',</span> <span class="pre">Types.LIST:</span> <span class="pre">&lt;class</span> <span class="pre">'object'&gt;,</span> <span class="pre">Types.REAL:</span> <span class="pre">&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">Types.SERIES:</span> <span class="pre">&lt;class</span> <span class="pre">'object'&gt;,</span> <span class="pre">Types.STRING:</span> <span class="pre">&lt;class</span> <span class="pre">'object'&gt;}</span></em><a class="headerlink" href="#tlo.core.Specifiable.PANDAS_TYPE_MAP" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Specifiable.PYTHON_TYPE_MAP">
-<span class="sig-name descname"><span class="pre">PYTHON_TYPE_MAP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{&lt;Types.DATE:</span> <span class="pre">1&gt;:</span> <span class="pre">&lt;class</span> <span class="pre">'pandas._libs.tslibs.timestamps.Timestamp'&gt;,</span> <span class="pre">&lt;Types.BOOL:</span> <span class="pre">2&gt;:</span> <span class="pre">&lt;class</span> <span class="pre">'bool'&gt;,</span> <span class="pre">&lt;Types.INT:</span> <span class="pre">3&gt;:</span> <span class="pre">&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">&lt;Types.REAL:</span> <span class="pre">4&gt;:</span> <span class="pre">&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">&lt;Types.CATEGORICAL:</span> <span class="pre">5&gt;:</span> <span class="pre">&lt;class</span> <span class="pre">'pandas.core.arrays.categorical.Categorical'&gt;,</span> <span class="pre">&lt;Types.LIST:</span> <span class="pre">6&gt;:</span> <span class="pre">&lt;class</span> <span class="pre">'list'&gt;,</span> <span class="pre">&lt;Types.SERIES:</span> <span class="pre">7&gt;:</span> <span class="pre">&lt;class</span> <span class="pre">'pandas.core.series.Series'&gt;,</span> <span class="pre">&lt;Types.DATA_FRAME:</span> <span class="pre">8&gt;:</span> <span class="pre">&lt;class</span> <span class="pre">'pandas.core.frame.DataFrame'&gt;,</span> <span class="pre">&lt;Types.STRING:</span> <span class="pre">9&gt;:</span> <span class="pre">&lt;class</span> <span class="pre">'object'&gt;,</span> <span class="pre">&lt;Types.DICT:</span> <span class="pre">10&gt;:</span> <span class="pre">&lt;class</span> <span class="pre">'dict'&gt;}</span></em><a class="headerlink" href="#tlo.core.Specifiable.PYTHON_TYPE_MAP" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">PYTHON_TYPE_MAP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{Types.BOOL:</span> <span class="pre">&lt;class</span> <span class="pre">'bool'&gt;,</span> <span class="pre">Types.CATEGORICAL:</span> <span class="pre">&lt;class</span> <span class="pre">'pandas.core.arrays.categorical.Categorical'&gt;,</span> <span class="pre">Types.DATA_FRAME:</span> <span class="pre">&lt;class</span> <span class="pre">'pandas.core.frame.DataFrame'&gt;,</span> <span class="pre">Types.DATE:</span> <span class="pre">&lt;class</span> <span class="pre">'pandas._libs.tslibs.timestamps.Timestamp'&gt;,</span> <span class="pre">Types.DICT:</span> <span class="pre">&lt;class</span> <span class="pre">'dict'&gt;,</span> <span class="pre">Types.INT:</span> <span class="pre">&lt;class</span> <span class="pre">'int'&gt;,</span> <span class="pre">Types.LIST:</span> <span class="pre">&lt;class</span> <span class="pre">'list'&gt;,</span> <span class="pre">Types.REAL:</span> <span class="pre">&lt;class</span> <span class="pre">'float'&gt;,</span> <span class="pre">Types.SERIES:</span> <span class="pre">&lt;class</span> <span class="pre">'pandas.core.series.Series'&gt;,</span> <span class="pre">Types.STRING:</span> <span class="pre">&lt;class</span> <span class="pre">'object'&gt;}</span></em><a class="headerlink" href="#tlo.core.Specifiable.PYTHON_TYPE_MAP" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="tlo.core.Specifiable.python_type">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">python_type</span></span><a class="headerlink" href="#tlo.core.Specifiable.python_type" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">python_type</span></span><a class="headerlink" href="#tlo.core.Specifiable.python_type" title="Link to this definition"></a></dt>
 <dd><p>Return the Python type corresponding to this Specifiable.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="tlo.core.Specifiable.pandas_type">
-<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pandas_type</span></span><a class="headerlink" href="#tlo.core.Specifiable.pandas_type" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">pandas_type</span></span><a class="headerlink" href="#tlo.core.Specifiable.pandas_type" title="Link to this definition"></a></dt>
 <dd><p>Return the Pandas type corresponding to this Specifiable.</p>
 </dd></dl>
 
@@ -185,24 +189,24 @@ for properties where the value is a collection, e.g. the set of children of a pe
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.core.Parameter">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Parameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Parameter" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Parameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Parameter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Parameter" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tlo.core.Specifiable" title="tlo.core.Specifiable"><code class="xref py py-class docutils literal notranslate"><span class="pre">Specifiable</span></code></a></p>
 <p>Used to specify parameters for disease modules etc.</p>
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.core.Property">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Property</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ordered</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Property"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Property" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Property</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">type_</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ordered</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Property"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Property" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="#tlo.core.Specifiable" title="tlo.core.Specifiable"><code class="xref py py-class docutils literal notranslate"><span class="pre">Specifiable</span></code></a></p>
 <p>Used to specify properties of individuals.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Property.PANDAS_TYPE_DEFAULT_VALUE_MAP">
-<span class="sig-name descname"><span class="pre">PANDAS_TYPE_DEFAULT_VALUE_MAP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'datetime64[ns]':</span> <span class="pre">NaT,</span> <span class="pre">&lt;class</span> <span class="pre">'bool'&gt;:</span> <span class="pre">False,</span> <span class="pre">'int64':</span> <span class="pre">0,</span> <span class="pre">&lt;class</span> <span class="pre">'float'&gt;:</span> <span class="pre">nan,</span> <span class="pre">'category':</span> <span class="pre">nan,</span> <span class="pre">&lt;class</span> <span class="pre">'object'&gt;:</span> <span class="pre">nan}</span></em><a class="headerlink" href="#tlo.core.Property.PANDAS_TYPE_DEFAULT_VALUE_MAP" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">PANDAS_TYPE_DEFAULT_VALUE_MAP</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'category':</span> <span class="pre">nan,</span> <span class="pre">'datetime64[ns]':</span> <span class="pre">NaT,</span> <span class="pre">'int64':</span> <span class="pre">0,</span> <span class="pre">&lt;class</span> <span class="pre">'bool'&gt;:</span> <span class="pre">False,</span> <span class="pre">&lt;class</span> <span class="pre">'float'&gt;:</span> <span class="pre">nan,</span> <span class="pre">&lt;class</span> <span class="pre">'object'&gt;:</span> <span class="pre">nan}</span></em><a class="headerlink" href="#tlo.core.Property.PANDAS_TYPE_DEFAULT_VALUE_MAP" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.core.Property.create_series">
-<span class="sig-name descname"><span class="pre">create_series</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Property.create_series"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Property.create_series" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">create_series</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Property.create_series"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Property.create_series" title="Link to this definition"></a></dt>
 <dd><p>Create a Pandas Series for this property.</p>
 <p>The values will be left uninitialised.</p>
 <dl class="field-list simple">
@@ -219,7 +223,7 @@ for properties where the value is a collection, e.g. the set of children of a pe
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.core.Module">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Module"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Module" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Module</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Module"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Module" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>The base class for disease modules.</p>
 <p>This declares the methods which individual modules must implement, and contains the
@@ -239,57 +243,57 @@ It’s an instance of <cite>numpy.random.RandomState</cite></p>
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Module.INIT_DEPENDENCIES">
-<span class="sig-name descname"><span class="pre">INIT_DEPENDENCIES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({})</span></em><a class="headerlink" href="#tlo.core.Module.INIT_DEPENDENCIES" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">INIT_DEPENDENCIES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({})</span></em><a class="headerlink" href="#tlo.core.Module.INIT_DEPENDENCIES" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Module.OPTIONAL_INIT_DEPENDENCIES">
-<span class="sig-name descname"><span class="pre">OPTIONAL_INIT_DEPENDENCIES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({})</span></em><a class="headerlink" href="#tlo.core.Module.OPTIONAL_INIT_DEPENDENCIES" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">OPTIONAL_INIT_DEPENDENCIES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({})</span></em><a class="headerlink" href="#tlo.core.Module.OPTIONAL_INIT_DEPENDENCIES" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Module.ADDITIONAL_DEPENDENCIES">
-<span class="sig-name descname"><span class="pre">ADDITIONAL_DEPENDENCIES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({})</span></em><a class="headerlink" href="#tlo.core.Module.ADDITIONAL_DEPENDENCIES" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">ADDITIONAL_DEPENDENCIES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({})</span></em><a class="headerlink" href="#tlo.core.Module.ADDITIONAL_DEPENDENCIES" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Module.ALTERNATIVE_TO">
-<span class="sig-name descname"><span class="pre">ALTERNATIVE_TO</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({})</span></em><a class="headerlink" href="#tlo.core.Module.ALTERNATIVE_TO" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">ALTERNATIVE_TO</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({})</span></em><a class="headerlink" href="#tlo.core.Module.ALTERNATIVE_TO" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Module.METADATA">
-<span class="sig-name descname"><span class="pre">METADATA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#tlo.core.Module.METADATA" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">METADATA</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#tlo.core.Module.METADATA" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Module.CAUSES_OF_DEATH">
-<span class="sig-name descname"><span class="pre">CAUSES_OF_DEATH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#tlo.core.Module.CAUSES_OF_DEATH" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">CAUSES_OF_DEATH</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#tlo.core.Module.CAUSES_OF_DEATH" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Module.CAUSES_OF_DISABILITY">
-<span class="sig-name descname"><span class="pre">CAUSES_OF_DISABILITY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#tlo.core.Module.CAUSES_OF_DISABILITY" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">CAUSES_OF_DISABILITY</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#tlo.core.Module.CAUSES_OF_DISABILITY" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Module.PARAMETERS">
-<span class="sig-name descname"><span class="pre">PARAMETERS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#tlo.core.Module.PARAMETERS" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">PARAMETERS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#tlo.core.Module.PARAMETERS" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Module.PROPERTIES">
-<span class="sig-name descname"><span class="pre">PROPERTIES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#tlo.core.Module.PROPERTIES" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">PROPERTIES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{}</span></em><a class="headerlink" href="#tlo.core.Module.PROPERTIES" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.core.Module.parameters">
-<span class="sig-name descname"><span class="pre">parameters</span></span><a class="headerlink" href="#tlo.core.Module.parameters" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">parameters</span></span><a class="headerlink" href="#tlo.core.Module.parameters" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.core.Module.load_parameters_from_dataframe">
-<span class="sig-name descname"><span class="pre">load_parameters_from_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Module.load_parameters_from_dataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Module.load_parameters_from_dataframe" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">load_parameters_from_dataframe</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">resource</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Module.load_parameters_from_dataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Module.load_parameters_from_dataframe" title="Link to this definition"></a></dt>
 <dd><p>Automatically load parameters from resource dataframe, updating the class parameter dictionary</p>
 <p>Goes through parameters dict self.PARAMETERS and updates the self.parameters with values
 Automatically updates the values of data types:
@@ -313,7 +317,7 @@ Automatically updates the values of data types:
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.core.Module.read_parameters">
-<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Module.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Module.read_parameters" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Module.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Module.read_parameters" title="Link to this definition"></a></dt>
 <dd><p>Read parameter values from file, if required.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -326,7 +330,7 @@ Typically, modules would read a particular file within here.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.core.Module.initialise_population">
-<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Module.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Module.initialise_population" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Module.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Module.initialise_population" title="Link to this definition"></a></dt>
 <dd><p>Set our property values for the initial population.</p>
 <p>Must be implemented by subclasses.</p>
 <p>This method is called by the simulation when creating the initial population, and is
@@ -343,7 +347,7 @@ simulation knows what order to initialise modules in!</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.core.Module.initialise_simulation">
-<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Module.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Module.initialise_simulation" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Module.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Module.initialise_simulation" title="Link to this definition"></a></dt>
 <dd><p>Get ready for simulation start.</p>
 <p>Must be implemented by subclasses.</p>
 <p>This method is called just before the main simulation loop begins, and after all
@@ -353,7 +357,7 @@ It is a good place to add initial events to the event queue.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.core.Module.pre_initialise_population">
-<span class="sig-name descname"><span class="pre">pre_initialise_population</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Module.pre_initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Module.pre_initialise_population" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">pre_initialise_population</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Module.pre_initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Module.pre_initialise_population" title="Link to this definition"></a></dt>
 <dd><p>Carry out any work before any populations have been initialised</p>
 <p>This optional method allows access to all other registered modules, before any of
 the modules have initialised a population. This is expected to be useful for
@@ -362,7 +366,7 @@ when a module’s properties rely upon information from other modules.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.core.Module.on_birth">
-<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Module.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Module.on_birth" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Module.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Module.on_birth" title="Link to this definition"></a></dt>
 <dd><p>Initialise our properties for a newborn individual.</p>
 <p>Must be implemented by subclasses.</p>
 <p>This is called by the simulation whenever a new person is born.</p>
@@ -378,7 +382,7 @@ when a module’s properties rely upon information from other modules.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.core.Module.on_simulation_end">
-<span class="sig-name descname"><span class="pre">on_simulation_end</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Module.on_simulation_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Module.on_simulation_end" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_simulation_end</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/core.html#Module.on_simulation_end"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.core.Module.on_simulation_end" title="Link to this definition"></a></dt>
 <dd><p>This is called after the simulation has ended.
 Modules do not need to declare this.</p>
 </dd></dl>
@@ -399,7 +403,7 @@ Modules do not need to declare this.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.measles &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <title>tlo.methods.measles &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
@@ -13,9 +16,9 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../../../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -33,7 +36,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -51,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
@@ -100,7 +104,9 @@
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="Measles"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles">[docs]</a><span class="k">class</span> <span class="nc">Measles</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="Measles">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles">[docs]</a>
+<span class="k">class</span> <span class="nc">Measles</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This module represents measles infections and disease.&quot;&quot;&quot;</span>
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthSystem&#39;</span><span class="p">,</span> <span class="s1">&#39;SymptomManager&#39;</span><span class="p">}</span>
@@ -158,7 +164,9 @@
         <span class="s2">&quot;me_on_treatment&quot;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s2">&quot;Currently on treatment for measles complications&quot;</span><span class="p">),</span>
     <span class="p">}</span>
 
-<div class="viewcode-block" id="Measles.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Measles.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
@@ -177,7 +185,10 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">consumables</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># (will store item_codes for consumables used in HSI)</span></div>
 
-<div class="viewcode-block" id="Measles.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Measles.read_parameters">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.read_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read parameter values from file</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -217,10 +228,16 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">register_symptom</span><span class="p">(</span><span class="n">Symptom</span><span class="o">.</span><span class="n">emergency</span><span class="p">(</span><span class="s1">&#39;encephalitis&#39;</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="Measles.pre_initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.pre_initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Measles.pre_initialise_population">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.pre_initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">process_parameters</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="Measles.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Measles.initialise_population">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set our property values for the initial population.</span>
 <span class="sd">        set whole population to measles-free for 1st jan</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -230,7 +247,10 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s2">&quot;me_date_measles&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s2">&quot;me_on_treatment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="Measles.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Measles.initialise_simulation">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.initialise_simulation">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Schedule measles event to start straight away. Each month it will assign new infections&quot;&quot;&quot;</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MeaslesEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MeaslesLoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
@@ -248,7 +268,10 @@
                                                                               <span class="s2">&quot;oxygen cylinders&quot;</span><span class="p">)</span>
         <span class="p">}</span></div>
 
-<div class="viewcode-block" id="Measles.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Measles.on_birth">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.on_birth">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual</span>
 <span class="sd">        assume all newborns are uninfected</span>
 
@@ -260,7 +283,10 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;me_date_measles&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s2">&quot;me_on_treatment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="Measles.report_daly_values"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.report_daly_values">[docs]</a>    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Measles.report_daly_values">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.report_daly_values">[docs]</a>
+    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been</span>
         <span class="c1"># experienced by persons in the previous month. Only rows for alive-persons must be returned.</span>
         <span class="c1"># The names of the series of columns is taken to be the label of the cause of this disability.</span>
@@ -275,7 +301,10 @@
 
         <span class="k">return</span> <span class="n">health_values</span></div>
 
-<div class="viewcode-block" id="Measles.process_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.process_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">process_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Measles.process_parameters">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.Measles.process_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Process the parameters (following being read-in) prior to the simulation starting.</span>
 <span class="sd">        Make `self.symptom_probs` to be a dictionary keyed by age, with values of dictionaries keyed by symptoms and</span>
 <span class="sd">        the probability of symptom onset.&quot;&quot;&quot;</span>
@@ -286,21 +315,30 @@
         <span class="c1"># up to and including age 30</span>
         <span class="k">for</span> <span class="n">_age</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">30</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
             <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symptoms</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symptom_probs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_age</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-            <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="mf">1.0</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symptom_probs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_age</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span></div></div>
+            <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="mf">1.0</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symptom_probs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_age</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span></div>
+</div>
 
 
-<div class="viewcode-block" id="MeaslesEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesEvent">[docs]</a><span class="k">class</span> <span class="nc">MeaslesEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MeaslesEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">MeaslesEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; MeaslesEvent runs every month and creates a number of new infections which are scattered across the month.</span>
 <span class="sd">    * Seasonality is captured by the risk of infection changing according to the month.</span>
 <span class="sd">    * Vaccination lowers an individual&#39;s likelihood of getting the infection (one dose will be 85% protective and two</span>
 <span class="sd">      doses will be 99% protective).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="MeaslesEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="MeaslesEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Measles</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="MeaslesEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MeaslesEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span>
@@ -334,14 +372,23 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span>
                     <span class="n">MeaslesOnsetEvent</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person_index</span><span class="p">),</span>
                     <span class="n">random_date</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
-                <span class="p">)</span></div></div>
+                <span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="MeaslesOnsetEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesOnsetEvent">[docs]</a><span class="k">class</span> <span class="nc">MeaslesOnsetEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-<div class="viewcode-block" id="MeaslesOnsetEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesOnsetEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MeaslesOnsetEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesOnsetEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">MeaslesOnsetEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="MeaslesOnsetEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesOnsetEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="MeaslesOnsetEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesOnsetEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MeaslesOnsetEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesOnsetEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Onset a case of Measles&quot;&quot;&quot;</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>  <span class="c1"># shortcut to the dataframe</span>
@@ -382,7 +429,10 @@
             <span class="n">symp_resolve</span> <span class="o">=</span> <span class="n">symp_onset</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="mi">14</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MeaslesSymptomResolveEvent</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">),</span> <span class="n">symp_resolve</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="MeaslesOnsetEvent.assign_symptoms"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesOnsetEvent.assign_symptoms">[docs]</a>    <span class="k">def</span> <span class="nf">assign_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_age</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MeaslesOnsetEvent.assign_symptoms">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesOnsetEvent.assign_symptoms">[docs]</a>
+    <span class="k">def</span> <span class="nf">assign_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_age</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Assign symptoms for this case and returns the date on which symptom onset.</span>
 <span class="sd">        (Parameter values specify that everybody gets rash, fever and eye complain.)&quot;&quot;&quot;</span>
 
@@ -408,17 +458,29 @@
 
         <span class="k">return</span> <span class="n">date_of_symp_onset</span></div>
 
-<div class="viewcode-block" id="MeaslesOnsetEvent.get_prob_death"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesOnsetEvent.get_prob_death">[docs]</a>    <span class="k">def</span> <span class="nf">get_prob_death</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_age</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MeaslesOnsetEvent.get_prob_death">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesOnsetEvent.get_prob_death">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_prob_death</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_age</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the probability of death for this person based on their age and whether they have untreated HIV.&quot;&quot;&quot;</span>
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span>
-        <span class="k">return</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;case_fatality_rate&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_age</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;case_fatality_rate&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_age</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="MeaslesSymptomResolveEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesSymptomResolveEvent">[docs]</a><span class="k">class</span> <span class="nc">MeaslesSymptomResolveEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
-<div class="viewcode-block" id="MeaslesSymptomResolveEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesSymptomResolveEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MeaslesSymptomResolveEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesSymptomResolveEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">MeaslesSymptomResolveEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="MeaslesSymptomResolveEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesSymptomResolveEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="MeaslesSymptomResolveEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesSymptomResolveEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MeaslesSymptomResolveEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesSymptomResolveEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; this event is called by MeaslesOnsetEvent and HSI_Measles_Treatment</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -438,18 +500,27 @@
 
             <span class="c1"># change treatment status if needed</span>
             <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;me_on_treatment&quot;</span><span class="p">]:</span>
-                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;me_on_treatment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div></div>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;me_on_treatment&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
+</div>
 
 
-<div class="viewcode-block" id="MeaslesDeathEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesDeathEvent">[docs]</a><span class="k">class</span> <span class="nc">MeaslesDeathEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MeaslesDeathEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesDeathEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">MeaslesDeathEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Performs the Death operation on an individual and logs it.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="MeaslesDeathEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesDeathEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<div class="viewcode-block" id="MeaslesDeathEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesDeathEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="MeaslesDeathEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesDeathEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MeaslesDeathEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesDeathEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;is_alive&quot;</span><span class="p">]:</span>
@@ -481,7 +552,9 @@
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_death</span><span class="p">(</span><span class="n">individual_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
                                                         <span class="n">cause</span><span class="o">=</span><span class="s2">&quot;Measles&quot;</span><span class="p">,</span>
-                                                        <span class="n">originating_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">)</span></div></div>
+                                                        <span class="n">originating_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">)</span></div>
+</div>
+
 
 
 <span class="c1"># ---------------------------------------------------------------------------------</span>
@@ -489,13 +562,17 @@
 <span class="c1"># ---------------------------------------------------------------------------------</span>
 
 
-<div class="viewcode-block" id="HSI_Measles_Treatment"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.HSI_Measles_Treatment">[docs]</a><span class="k">class</span> <span class="nc">HSI_Measles_Treatment</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Measles_Treatment">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.HSI_Measles_Treatment">[docs]</a>
+<span class="k">class</span> <span class="nc">HSI_Measles_Treatment</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Health System Interaction Event</span>
 <span class="sd">    It is the event when a person with diagnosed measles receives treatment</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="HSI_Measles_Treatment.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.HSI_Measles_Treatment.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Measles_Treatment.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.HSI_Measles_Treatment.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Measles</span><span class="p">)</span>
 
@@ -504,7 +581,10 @@
             <span class="p">(</span><span class="s1">&#39;Under5OPD&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;age_years&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">5</span> <span class="k">else</span> <span class="s1">&#39;Over5OPD&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span></div>
 
-<div class="viewcode-block" id="HSI_Measles_Treatment.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.HSI_Measles_Treatment.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Measles_Treatment.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.HSI_Measles_Treatment.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;HSI_Measles_Treatment&quot;</span><span class="p">,</span>
                      <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;HSI_Measles_Treatment: treat person </span><span class="si">{</span><span class="n">person_id</span><span class="si">}</span><span class="s2"> for measles&quot;</span><span class="p">)</span>
 
@@ -534,23 +614,35 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">MeaslesSymptomResolveEvent</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">),</span>
                                     <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="HSI_Measles_Treatment.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.HSI_Measles_Treatment.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Measles_Treatment.did_not_run">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.HSI_Measles_Treatment.did_not_run">[docs]</a>
+    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;HSI_Measles_Treatment&quot;</span><span class="p">,</span>
                      <span class="n">data</span><span class="o">=</span><span class="s2">&quot;HSI_Measles_Treatment: did not run&quot;</span>
                      <span class="p">)</span>
-        <span class="k">pass</span></div></div>
+        <span class="k">pass</span></div>
+</div>
+
 
 
 <span class="c1"># ---------------------------------------------------------------------------------</span>
 <span class="c1"># Logging Events</span>
 <span class="c1"># ---------------------------------------------------------------------------------</span>
 
-<div class="viewcode-block" id="MeaslesLoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesLoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">MeaslesLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-<div class="viewcode-block" id="MeaslesLoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesLoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="MeaslesLoggingEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesLoggingEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">MeaslesLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="MeaslesLoggingEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesLoggingEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="MeaslesLoggingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesLoggingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MeaslesLoggingEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesLoggingEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Log Summary Statistics Monthly&quot;&quot;&quot;</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -576,15 +668,24 @@
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;incidence&quot;</span><span class="p">,</span>
                     <span class="n">data</span><span class="o">=</span><span class="n">incidence_summary</span><span class="p">,</span>
-                    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;summary of measles incidence per 1000 people per month&quot;</span><span class="p">)</span></div></div>
+                    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;summary of measles incidence per 1000 people per month&quot;</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="MeaslesLoggingFortnightEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesLoggingFortnightEvent">[docs]</a><span class="k">class</span> <span class="nc">MeaslesLoggingFortnightEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-<div class="viewcode-block" id="MeaslesLoggingFortnightEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesLoggingFortnightEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MeaslesLoggingFortnightEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesLoggingFortnightEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">MeaslesLoggingFortnightEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="MeaslesLoggingFortnightEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesLoggingFortnightEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="mi">2</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">weeks</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="MeaslesLoggingFortnightEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesLoggingFortnightEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MeaslesLoggingFortnightEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesLoggingFortnightEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Log Summary Statistics Every Two Weeks&quot;&quot;&quot;</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -617,15 +718,24 @@
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;measles_symptoms&quot;</span><span class="p">,</span>
                     <span class="n">data</span><span class="o">=</span><span class="n">symptom_output</span><span class="p">,</span>
-                    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;summary of measles symptoms each month&quot;</span><span class="p">)</span></div></div>
+                    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;summary of measles symptoms each month&quot;</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="MeaslesLoggingAnnualEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesLoggingAnnualEvent">[docs]</a><span class="k">class</span> <span class="nc">MeaslesLoggingAnnualEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-<div class="viewcode-block" id="MeaslesLoggingAnnualEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesLoggingAnnualEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MeaslesLoggingAnnualEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesLoggingAnnualEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">MeaslesLoggingAnnualEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="MeaslesLoggingAnnualEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesLoggingAnnualEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="MeaslesLoggingAnnualEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesLoggingAnnualEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MeaslesLoggingAnnualEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.measles.html#tlo.methods.measles.MeaslesLoggingAnnualEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Log Summary Statistics Annually&quot;&quot;&quot;</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -653,7 +763,9 @@
             <span class="n">prop_infected_by_age</span> <span class="o">=</span> <span class="n">infected_age_counts</span>  <span class="c1"># just output the series of zeros by age group</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;measles_incidence_age_range&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">prop_infected_by_age</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
-                    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;measles incidence by age group&quot;</span><span class="p">)</span></div></div>
+                    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;measles incidence by age group&quot;</span><span class="p">)</span></div>
+</div>
+
 </pre></div>
 
            </div>
@@ -664,7 +776,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

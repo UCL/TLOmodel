@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>md event incidence (.xlsx) &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../../_static/favicon.png"/>
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=cc9389db"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="md event prevalence (.xlsx)" href="ResourceFile_cmd_event_prevalence.xlsx.html" />
+    <link rel="prev" title="md condition testing (.xlsx)" href="ResourceFile_cmd_condition_testing.xlsx.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+              <div class="version">
+                0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Resource files</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="index.html">cmd</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_cmd_condition_and_events_incidence.xlsx.html">md condition and events incidence (.xlsx)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_cmd_condition_death.xlsx.html">md condition death (.xlsx)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_cmd_condition_hsi.xlsx.html">md condition hsi (.xlsx)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_cmd_condition_incidence.xlsx.html">md condition incidence (.xlsx)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_cmd_condition_onset.xlsx.html">md condition onset (.xlsx)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_cmd_condition_prevalence.xlsx.html">md condition prevalence (.xlsx)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_cmd_condition_removal.xlsx.html">md condition removal (.xlsx)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_cmd_condition_symptoms.xlsx.html">md condition symptoms (.xlsx)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_cmd_condition_testing.xlsx.html">md condition testing (.xlsx)</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">md event incidence (.xlsx)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_cmd_event_prevalence.xlsx.html">md event prevalence (.xlsx)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_cmd_events.xlsx.html">md events (.xlsx)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_cmd_events_death.xlsx.html">md events death (.xlsx)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_cmd_events_hsi.xlsx.html">md events hsi (.xlsx)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_cmd_events_symptoms.xlsx.html">md events symptoms (.xlsx)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="ResourceFile_cmd_parameters.csv.html">md parameters (.csv)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../demography/index.html">demography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../epilepsy/index.html">epilepsy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../gbd/index.html">gbd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../healthsystem/index.html">healthsystem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../.ResourceFile_Consumables.csv.un~.html">.ResourceFile Consumables.csv (.un~)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AbortionAndMiscarriage.xlsx.html">AbortionAndMiscarriage (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Alri.xlsx.html">Alri (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_AntenatalCare.xlsx.html">AntenatalCare (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Bladder_Cancer.xlsx.html">Bladder Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Breast_Cancer.xlsx.html">Breast Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Childhood_Pneumonia.xlsx.html">Childhood Pneumonia (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Contraception.xlsx.html">Contraception (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_ContraceptionAnalysisParams.csv.html">ContraceptionAnalysisParams (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_ContraceptionParams.csv.html">ContraceptionParams (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Depression.xlsx.html">Depression (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Diarrhoea.xlsx.html">Diarrhoea (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_WHO_estimates.xlsx.html">EPI WHO estimates (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Example_Paracetamol_DataFrame.csv.html">Example Paracetamol DataFrame (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HIV.xlsx.html">HIV (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_HypertensiveDisordersOfPregnancy.xlsx.html">HypertensiveDisordersOfPregnancy (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx.html">Improved Healthsystem And Healthcare Seeking (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_LMIS_2018.csv.html">LMIS 2018 (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_LabourSkilledBirthAttendance.xlsx.html">LabourSkilledBirthAttendance (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Lifestyle_Enhanced.xlsx.html">Lifestyle Enhanced (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Measles.xlsx.html">Measles (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NCDs.xlsx.html">NCDs (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NCDs_condition_death.xlsx.html">NCDs condition death (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NCDs_condition_onset.xlsx.html">NCDs condition onset (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NCDs_condition_prevalence.xlsx.html">NCDs condition prevalence (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NCDs_condition_removal.xlsx.html">NCDs condition removal (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NCDs_events.xlsx.html">NCDs events (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NCDs_events_death.xlsx.html">NCDs events death (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_NewbornOutcomes.xlsx.html">NewbornOutcomes (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Oesophageal_Cancer.xlsx.html">Oesophageal Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Other_Adult_Cancers.xlsx.html">Other Adult Cancers (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PostnatalSupervisor.xlsx.html">PostnatalSupervisor (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_PregnancySupervisor.xlsx.html">PregnancySupervisor (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Prostate_Cancer.xlsx.html">Prostate Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_RTI.xlsx.html">TI (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Schisto.xlsx.html">Schisto (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_Stunting.xlsx.html">Stunting (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_TB.xlsx.html">TB (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_consumable_availability.csv.html">nsumable availability (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_consumables_matched.csv.html">nsumables matched (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_hhfa_consumables.xlsx.html">hhfa consumables (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_malaria.xlsx.html">malaria (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_malaria_ClinInc.csv.html">malaria ClinInc (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_malaria_ClinInc_expanded.csv.html">malaria ClinInc expanded (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_malaria_InfInc.csv.html">malaria InfInc (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_malaria_InfInc_expanded.csv.html">malaria InfInc expanded (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_malaria_SevInc.csv.html">malaria SevInc (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_malaria_SevInc_expanded.csv.html">malaria SevInc expanded (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_mwi_admbnda_adm0_nso_20181016.dbf.html">mwi admbnda adm0 nso 20181016 (.dbf)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_mwi_admbnda_adm0_nso_20181016.shp.html">mwi admbnda adm0 nso 20181016 (.shp)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_mwi_admbnda_adm0_nso_20181016.shx.html">mwi admbnda adm0 nso 20181016 (.shx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_mwi_admbnda_adm1_nso_20181016.dbf.html">mwi admbnda adm1 nso 20181016 (.dbf)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_mwi_admbnda_adm1_nso_20181016.shp.html">mwi admbnda adm1 nso 20181016 (.shp)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_mwi_admbnda_adm1_nso_20181016.shx.html">mwi admbnda adm1 nso 20181016 (.shx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_mwi_admbnda_adm2_nso_20181016.dbf.html">mwi admbnda adm2 nso 20181016 (.dbf)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_mwi_admbnda_adm2_nso_20181016.shp.html">mwi admbnda adm2 nso 20181016 (.shp)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../ResourceFile_mwi_admbnda_adm2_nso_20181016.shx.html">mwi admbnda adm2 nso 20181016 (.shx)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../background.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Resource files</a></li>
+          <li class="breadcrumb-item"><a href="index.html">cmd</a></li>
+      <li class="breadcrumb-item active">md event incidence (.xlsx)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/resources/cmd/ResourceFile_cmd_event_incidence.xlsx.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="md-event-incidence-xlsx">
+<h1><a class="toc-backref" href="#id1" role="doc-backlink">md event incidence (.xlsx)</a><a class="headerlink" href="#md-event-incidence-xlsx" title="Link to this heading"></a></h1>
+<p><a class="reference download external" download="" href="https://github.com/UCL/TLOmodel/raw/master/resources/cmd/ResourceFile_cmd_event_incidence.xlsx"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">original</span> <span class="pre">.xlsx</span> <span class="pre">file</span> <span class="pre">from</span> <span class="pre">GitHub</span></code></a></p>
+<nav class="contents" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#md-event-incidence-xlsx" id="id1">md event incidence (.xlsx)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#info" id="id2">info</a></p></li>
+<li><p><a class="reference internal" href="#ever-stroke" id="id3">ever_stroke</a></p></li>
+<li><p><a class="reference internal" href="#ever-heart-attack" id="id4">ever_heart_attack</a></p></li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="info">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">info</a><a class="headerlink" href="#info" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>ResourceFile_cmd_event_incidence</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>Created by Britta Jewell on 25 March 2021</p></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>This file reads in parameters for the prevalence of each event annually in the CMD module in the TLO model. Each tab represents one condition modelled.</p></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>Event prevalence is reported as incidence (i.e., prevalent strokes or prevalent heart attacks occurring among individuals who have had at least one prior event).</p></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>Event prevalence is not listed for “ever_heart_attack” because it is not listed as a separate source of death and disability in the GBD.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="ever-stroke">
+<h2><a class="toc-backref" href="#id3" role="doc-backlink">ever_stroke</a><a class="headerlink" href="#ever-stroke" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>parameter_name</p></th>
+<th class="head"><p>value</p></th>
+<th class="head"><p>lower</p></th>
+<th class="head"><p>upper</p></th>
+<th class="head"><p>Source: GBD</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>m_0-4</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>m_5-9</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>m_10-14</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>m_15-19</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>m_20-24</p></td>
+<td><p>16.7476</p></td>
+<td><p>23.7838</p></td>
+<td><p>12.0117</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>m_25-29</p></td>
+<td><p>22.4906</p></td>
+<td><p>32.2483</p></td>
+<td><p>16.3354</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>m_30-34</p></td>
+<td><p>33.9703</p></td>
+<td><p>43.6043</p></td>
+<td><p>26.9898</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>m_35-39</p></td>
+<td><p>51.1864</p></td>
+<td><p>65.2409</p></td>
+<td><p>39.7404</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>m_40-44</p></td>
+<td><p>99.2193</p></td>
+<td><p>116.277</p></td>
+<td><p>83.7903</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>m_45-49</p></td>
+<td><p>178.066</p></td>
+<td><p>216.284</p></td>
+<td><p>144.163</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>m_50-54</p></td>
+<td><p>264.912</p></td>
+<td><p>309.559</p></td>
+<td><p>227.29</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>m_55-59</p></td>
+<td><p>359.753</p></td>
+<td><p>438.671</p></td>
+<td><p>291.402</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>m_60-64</p></td>
+<td><p>496.357</p></td>
+<td><p>591.186</p></td>
+<td><p>415.707</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>m_65-69</p></td>
+<td><p>674.694</p></td>
+<td><p>870.896</p></td>
+<td><p>513.328</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>m_70-74</p></td>
+<td><p>854.489</p></td>
+<td><p>1056.66</p></td>
+<td><p>693.73</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>m_75-79</p></td>
+<td><p>1035.75</p></td>
+<td><p>1276.01</p></td>
+<td><p>822.291</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>m_80-84</p></td>
+<td><p>1272.57</p></td>
+<td><p>1554.73</p></td>
+<td><p>1038.56</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>m_85-89</p></td>
+<td><p>1564.97</p></td>
+<td><p>1846.87</p></td>
+<td><p>1339.42</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p>m_90-94</p></td>
+<td><p>1857.32</p></td>
+<td><p>2293.7</p></td>
+<td><p>1501.8</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>m_95-99</p></td>
+<td><p>2149.63</p></td>
+<td><p>2748.84</p></td>
+<td><p>1634.42</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>m_100+</p></td>
+<td><p>2149.63</p></td>
+<td><p>2748.84</p></td>
+<td><p>1634.42</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>f_0-4</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>f_5-9</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>f_10-14</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p>f_15-19</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td><p>0</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>25</p></td>
+<td><p>f_20-24</p></td>
+<td><p>12.1366</p></td>
+<td><p>18.9426</p></td>
+<td><p>7.3603</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>26</p></td>
+<td><p>f_25-29</p></td>
+<td><p>16.2399</p></td>
+<td><p>25.8731</p></td>
+<td><p>9.95317</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>27</p></td>
+<td><p>f_30-34</p></td>
+<td><p>25.3977</p></td>
+<td><p>35.033</p></td>
+<td><p>18.3501</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>28</p></td>
+<td><p>f_35-39</p></td>
+<td><p>39.6096</p></td>
+<td><p>53.8319</p></td>
+<td><p>29.1428</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>29</p></td>
+<td><p>f_40-44</p></td>
+<td><p>71.5397</p></td>
+<td><p>87.0429</p></td>
+<td><p>58.3077</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>30</p></td>
+<td><p>f_45-49</p></td>
+<td><p>121.187</p></td>
+<td><p>153.892</p></td>
+<td><p>95.8104</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td><p>f_50-54</p></td>
+<td><p>192.134</p></td>
+<td><p>226.638</p></td>
+<td><p>161.247</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td><p>f_55-59</p></td>
+<td><p>284.377</p></td>
+<td><p>348.92</p></td>
+<td><p>230.494</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td><p>f_60-64</p></td>
+<td><p>418.978</p></td>
+<td><p>493.703</p></td>
+<td><p>352.664</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>f_65-69</p></td>
+<td><p>595.904</p></td>
+<td><p>757.116</p></td>
+<td><p>467.916</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>35</p></td>
+<td><p>f_70-74</p></td>
+<td><p>750.88</p></td>
+<td><p>911.972</p></td>
+<td><p>619.778</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>36</p></td>
+<td><p>f_75-79</p></td>
+<td><p>883.932</p></td>
+<td><p>1092.95</p></td>
+<td><p>694.309</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>37</p></td>
+<td><p>f_80-84</p></td>
+<td><p>1148.24</p></td>
+<td><p>1394.51</p></td>
+<td><p>941.631</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>38</p></td>
+<td><p>f_85-89</p></td>
+<td><p>1543.73</p></td>
+<td><p>1828.49</p></td>
+<td><p>1325.37</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>39</p></td>
+<td><p>f_90-94</p></td>
+<td><p>1939.13</p></td>
+<td><p>2378.83</p></td>
+<td><p>1588.89</p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>40</p></td>
+<td><p>f_95-99</p></td>
+<td><p>2334.45</p></td>
+<td><p>2954.98</p></td>
+<td><p>1809.22</p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>41</p></td>
+<td><p>f_100+</p></td>
+<td><p>2334.45</p></td>
+<td><p>2954.98</p></td>
+<td><p>1809.22</p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="ever-heart-attack">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">ever_heart_attack</a><a class="headerlink" href="#ever-heart-attack" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>parameter_name</p></th>
+<th class="head"><p>value</p></th>
+<th class="head"><p>lower</p></th>
+<th class="head"><p>upper</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>m_0-4</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>m_5-9</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>m_10-14</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>m_15-19</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>m_20-24</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>m_25-29</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>m_30-34</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>m_35-39</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>m_40-44</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>m_45-49</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>m_50-54</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>m_55-59</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>m_60-64</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>m_65-69</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>m_70-74</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>m_75-79</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>m_80-84</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>m_85-89</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p>m_90-94</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>m_95-99</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>m_100+</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>f_0-4</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>f_5-9</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>f_10-14</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p>f_15-19</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>25</p></td>
+<td><p>f_20-24</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>26</p></td>
+<td><p>f_25-29</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>27</p></td>
+<td><p>f_30-34</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>28</p></td>
+<td><p>f_35-39</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>29</p></td>
+<td><p>f_40-44</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>30</p></td>
+<td><p>f_45-49</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td><p>f_50-54</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td><p>f_55-59</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td><p>f_60-64</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>f_65-69</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>35</p></td>
+<td><p>f_70-74</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>36</p></td>
+<td><p>f_75-79</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>37</p></td>
+<td><p>f_80-84</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>38</p></td>
+<td><p>f_85-89</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>39</p></td>
+<td><p>f_90-94</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>40</p></td>
+<td><p>f_95-99</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>41</p></td>
+<td><p>f_100+</p></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ResourceFile_cmd_condition_testing.xlsx.html" class="btn btn-neutral float-left" title="md condition testing (.xlsx)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ResourceFile_cmd_event_prevalence.xlsx.html" class="btn btn-neutral float-right" title="md event prevalence (.xlsx)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+      <span class="lastupdated">Last updated on Dec 13, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

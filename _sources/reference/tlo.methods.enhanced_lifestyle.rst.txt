@@ -531,6 +531,11 @@ tlo.methods.enhanced_lifestyle module
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
      **Functions (defined or overridden in class LifestyleEvent):**
 
      .. automethod:: __init__
@@ -548,6 +553,11 @@ tlo.methods.enhanced_lifestyle module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class LifestylesLoggingEvent):**
 

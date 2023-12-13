@@ -130,13 +130,13 @@ tlo.methods.prostate_cancer module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'ProstateCancer': <tlo.methods.causes.Cause object at 0x7ff6509c1640>}
+     CAUSES_OF_DEATH : {'ProstateCancer': <tlo.methods.causes.Cause object at 0x12ddab610>}
 
-     CAUSES_OF_DISABILITY : {'ProstateCancer': <tlo.methods.causes.Cause object at 0x7ff6509c16d0>}
+     CAUSES_OF_DISABILITY : {'ProstateCancer': <tlo.methods.causes.Cause object at 0x12ddab750>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Demography'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'Demography', 'HealthSystem'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -167,6 +167,11 @@ tlo.methods.prostate_cancer module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class ProstateCancerMainPollingEvent):**
 
@@ -293,6 +298,11 @@ tlo.methods.prostate_cancer module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class ProstateCancerLoggingEvent):**
 

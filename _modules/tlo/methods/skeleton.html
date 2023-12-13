@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.skeleton &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <title>tlo.methods.skeleton &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
@@ -13,9 +16,9 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../../../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -33,7 +36,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -51,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
@@ -101,7 +105,9 @@
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="Skeleton"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton">[docs]</a><span class="k">class</span> <span class="nc">Skeleton</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="Skeleton">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton">[docs]</a>
+<span class="k">class</span> <span class="nc">Skeleton</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    One line summary goes here...</span>
 
@@ -175,20 +181,28 @@
     <span class="c1"># You should not declare symptoms that are generic here (i.e. in the generic list of symptoms)</span>
     <span class="n">SYMPTOMS</span> <span class="o">=</span> <span class="p">{}</span>
 
-<div class="viewcode-block" id="Skeleton.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Skeleton.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="c1"># NB. Parameters passed to the module can be inserted in the __init__ definition.</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">store</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Proportion_infected&#39;</span><span class="p">:</span> <span class="p">[]}</span></div>
 
-<div class="viewcode-block" id="Skeleton.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Skeleton.read_parameters">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton.read_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read parameter values from file, if required.</span>
 <span class="sd">        To access files use: Path(self.resourcefilepath) / file_name</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="Skeleton.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Skeleton.initialise_population">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton.initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set our property values for the initial population.</span>
 
 <span class="sd">        This method is called by the simulation when creating the initial population, and is</span>
@@ -199,7 +213,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
-<div class="viewcode-block" id="Skeleton.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Skeleton.initialise_simulation">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton.initialise_simulation">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get ready for simulation start.</span>
 
 <span class="sd">        This method is called just before the main simulation loop begins, and after all</span>
@@ -209,7 +226,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
-<div class="viewcode-block" id="Skeleton.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Skeleton.on_birth">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton.on_birth">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual.</span>
 
 <span class="sd">        This is called by the simulation whenever a new person is born.</span>
@@ -219,7 +239,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
-<div class="viewcode-block" id="Skeleton.report_daly_values"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton.report_daly_values">[docs]</a>    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Skeleton.report_daly_values">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton.report_daly_values">[docs]</a>
+    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been</span>
 <span class="sd">        experienced by persons in the previous month. Only rows for alive-persons must be returned.</span>
@@ -233,12 +256,17 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
-<div class="viewcode-block" id="Skeleton.on_hsi_alert"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton.on_hsi_alert">[docs]</a>    <span class="k">def</span> <span class="nf">on_hsi_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Skeleton.on_hsi_alert">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton.on_hsi_alert">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_hsi_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is called whenever there is an HSI event commissioned by one of the other disease modules.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</div>
+
 
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
@@ -249,7 +277,9 @@
 <span class="c1">#   that represent disease events for particular persons.</span>
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
-<div class="viewcode-block" id="Skeleton_Event"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton_Event">[docs]</a><span class="k">class</span> <span class="nc">Skeleton_Event</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="Skeleton_Event">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton_Event">[docs]</a>
+<span class="k">class</span> <span class="nc">Skeleton_Event</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A skeleton class for an event</span>
 
 <span class="sd">    Regular events automatically reschedule themselves at a fixed frequency,</span>
@@ -257,7 +287,9 @@
 <span class="sd">    specified when calling the base class constructor in our __init__ method.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="Skeleton_Event.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton_Event.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="Skeleton_Event.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton_Event.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;One line summary here</span>
 
 <span class="sd">        We need to pass the frequency at which we want to occur to the base class</span>
@@ -269,12 +301,17 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Skeleton</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Skeleton_Event.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton_Event.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Skeleton_Event.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton_Event.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply this event to the population.</span>
 
 <span class="sd">        :param population: the current population</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
+</div>
+
 
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
@@ -284,8 +321,12 @@
 <span class="c1">#   population. There may also be a logging event that is driven by particular events.</span>
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
-<div class="viewcode-block" id="Skeleton_LoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton_LoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">Skeleton_LoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-<div class="viewcode-block" id="Skeleton_LoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton_LoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="Skeleton_LoggingEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton_LoggingEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">Skeleton_LoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="Skeleton_LoggingEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton_LoggingEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Produce a summary of the numbers of people with respect to the action of this module.</span>
 <span class="sd">        This is a regular event that can output current states of people or cumulative events since last logging event.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -295,7 +336,10 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat</span><span class="p">))</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Skeleton</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Skeleton_LoggingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton_LoggingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Skeleton_LoggingEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.Skeleton_LoggingEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="c1"># Make some summary statistics</span>
 
         <span class="n">dict_to_output</span> <span class="o">=</span> <span class="p">{</span>
@@ -303,7 +347,9 @@
             <span class="s1">&#39;Metric_Two&#39;</span><span class="p">:</span> <span class="mf">2.0</span>
         <span class="p">}</span>
 
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;summary_12m&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dict_to_output</span><span class="p">)</span></div></div>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;summary_12m&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">dict_to_output</span><span class="p">)</span></div>
+</div>
+
 
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
@@ -312,13 +358,17 @@
 <span class="c1">#   Here are all the different Health System Interactions Events that this module will use.</span>
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
-<div class="viewcode-block" id="HSI_Skeleton_Example_Interaction"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.HSI_Skeleton_Example_Interaction">[docs]</a><span class="k">class</span> <span class="nc">HSI_Skeleton_Example_Interaction</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Skeleton_Example_Interaction">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.HSI_Skeleton_Example_Interaction">[docs]</a>
+<span class="k">class</span> <span class="nc">HSI_Skeleton_Example_Interaction</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a Health System Interaction Event. An interaction with the healthsystem are encapsulated in events</span>
 <span class="sd">    like this.</span>
 <span class="sd">    It must begin HSI_&lt;Module_Name&gt;_Description</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="HSI_Skeleton_Example_Interaction.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.HSI_Skeleton_Example_Interaction.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Skeleton_Example_Interaction.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.HSI_Skeleton_Example_Interaction.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Skeleton</span><span class="p">)</span>
 
@@ -336,7 +386,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="n">the_accepted_facility_level</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ALERT_OTHER_DISEASES</span> <span class="o">=</span> <span class="p">[]</span></div>
 
-<div class="viewcode-block" id="HSI_Skeleton_Example_Interaction.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.HSI_Skeleton_Example_Interaction.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Skeleton_Example_Interaction.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.HSI_Skeleton_Example_Interaction.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Do the action that take place in this health system interaction, in light of prevailing conditions in the</span>
 <span class="sd">        healthcare system:</span>
@@ -352,7 +405,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="HSI_Skeleton_Example_Interaction.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.HSI_Skeleton_Example_Interaction.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Skeleton_Example_Interaction.did_not_run">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.HSI_Skeleton_Example_Interaction.did_not_run">[docs]</a>
+    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Do any action that is necessary each time when the health system interaction is not run.</span>
 <span class="sd">        This is called each day that the HSI is &#39;due&#39; but not run due to insufficient health system capabilities.</span>
@@ -361,14 +417,19 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="HSI_Skeleton_Example_Interaction.never_ran"><a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.HSI_Skeleton_Example_Interaction.never_ran">[docs]</a>    <span class="k">def</span> <span class="nf">never_ran</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Skeleton_Example_Interaction.never_ran">
+<a class="viewcode-back" href="../../../reference/tlo.methods.skeleton.html#tlo.methods.skeleton.HSI_Skeleton_Example_Interaction.never_ran">[docs]</a>
+    <span class="k">def</span> <span class="nf">never_ran</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Do any action that is necessary when it is clear that the HSI event will never be run. This will occur if it</span>
 <span class="sd">        has not run and the simulation date has passed the date &#39;tclose&#39; by which the event was scheduled to have</span>
 <span class="sd">        occurred.</span>
 <span class="sd">        Do not return anything.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span></div></div>
+        <span class="k">pass</span></div>
+</div>
+
 </pre></div>
 
            </div>
@@ -379,7 +440,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

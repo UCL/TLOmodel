@@ -130,9 +130,9 @@ tlo.methods.stunting module
 
      **Class attributes:**
 
-     INIT_DEPENDENCIES : {'NewbornOutcomes', 'Hiv', 'Diarrhoea', 'Wasting', 'Demography'}
+     INIT_DEPENDENCIES : {'Hiv', 'Demography', 'Diarrhoea', 'Wasting', 'NewbornOutcomes'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      **Functions (defined or overridden in class Stunting):**
 
@@ -170,6 +170,11 @@ tlo.methods.stunting module
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
      **Functions (defined or overridden in class StuntingPollingEvent):**
 
      .. automethod:: __init__
@@ -189,6 +194,11 @@ tlo.methods.stunting module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class StuntingLoggingEvent):**
 
@@ -267,7 +277,7 @@ tlo.methods.stunting module
 
      **Class attributes:**
 
-     ALTERNATIVE_TO : {'Diarrhoea', 'Wasting', 'Hiv'}
+     ALTERNATIVE_TO : {'Wasting', 'Diarrhoea', 'Hiv'}
 
      INIT_DEPENDENCIES : {'Demography'}
 

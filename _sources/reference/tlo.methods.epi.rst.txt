@@ -109,7 +109,7 @@ tlo.methods.epi module
 
      **Class attributes:**
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Demography'}
+     INIT_DEPENDENCIES : {'Demography', 'HealthSystem'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 
@@ -143,6 +143,11 @@ tlo.methods.epi module
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
      **Functions (defined or overridden in class HpvScheduleEvent):**
 
      .. automethod:: __init__
@@ -164,7 +169,7 @@ tlo.methods.epi module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x7ff64ef7cbd0>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x11cb99300>
 
      **Functions (defined or overridden in class HsiBaseVaccine):**
 
@@ -329,6 +334,11 @@ tlo.methods.epi module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class EpiLoggingEvent):**
 

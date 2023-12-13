@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.malaria &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <title>tlo.methods.malaria &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
@@ -13,9 +16,9 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../../../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -33,7 +36,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -51,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
@@ -107,8 +111,12 @@
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="Malaria"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria">[docs]</a><span class="k">class</span> <span class="nc">Malaria</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
-<div class="viewcode-block" id="Malaria.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Malaria">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria">[docs]</a>
+<span class="k">class</span> <span class="nc">Malaria</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="Malaria.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create instance of Malaria module</span>
 
 <span class="sd">        :param name: Name of this module (optional, defaults to name of class)</span>
@@ -121,6 +129,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">itn_irs</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">all_inc</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span></div>
+
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;Contraception&#39;</span><span class="p">,</span> <span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthSystem&#39;</span><span class="p">,</span> <span class="s1">&#39;SymptomManager&#39;</span>
@@ -256,7 +265,9 @@
         <span class="s1">&#39;ma_iptp&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;if woman has IPTp in current pregnancy&#39;</span><span class="p">),</span>
     <span class="p">}</span>
 
-<div class="viewcode-block" id="Malaria.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+<div class="viewcode-block" id="Malaria.read_parameters">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.read_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
         <span class="n">workbook</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_malaria.xlsx&#39;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">load_parameters_from_dataframe</span><span class="p">(</span><span class="n">workbook</span><span class="p">[</span><span class="s1">&#39;parameters&#39;</span><span class="p">])</span>
 
@@ -337,7 +348,10 @@
             <span class="n">Symptom</span><span class="o">.</span><span class="n">emergency</span><span class="p">(</span><span class="s1">&#39;severe_malaria&#39;</span><span class="p">),</span>  <span class="c1"># emergency</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="Malaria.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Malaria.initialise_population">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
         <span class="c1"># ----------------------------------- INITIALISE THE POPULATION-----------------------------------</span>
@@ -357,7 +371,10 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;ma_clinical_preg_counter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;ma_iptp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="Malaria.malaria_poll2"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.malaria_poll2">[docs]</a>    <span class="k">def</span> <span class="nf">malaria_poll2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Malaria.malaria_poll2">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.malaria_poll2">[docs]</a>
+    <span class="k">def</span> <span class="nf">malaria_poll2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
         <span class="n">now</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
@@ -388,7 +405,9 @@
         <span class="k">def</span> <span class="nf">_draw_incidence_for</span><span class="p">(</span><span class="n">_col</span><span class="p">,</span> <span class="n">_where</span><span class="p">):</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;a helper function to perform random draw for selected individuals on column of probabilities&quot;&quot;&quot;</span>
             <span class="c1"># create an index from the individuals to lookup entries in the current incidence table</span>
-            <span class="n">district_age_lookup</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">_where</span><span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">([</span><span class="s1">&#39;district_num_of_residence&#39;</span><span class="p">,</span> <span class="s1">&#39;ma_age_edited&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">district_age_subset</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">_where</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;district_num_of_residence&#39;</span><span class="p">,</span> <span class="s1">&#39;ma_age_edited&#39;</span><span class="p">]]</span>
+            <span class="n">district_age_subset</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">district_age_subset</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_list</span><span class="p">(),</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">district_age_lookup</span> <span class="o">=</span> <span class="n">district_age_subset</span><span class="o">.</span><span class="n">index</span>
             <span class="c1"># get the monthly incidence probabilities for these individuals</span>
             <span class="n">monthly_prob</span> <span class="o">=</span> <span class="n">curr_inc</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">district_age_lookup</span><span class="p">,</span> <span class="n">_col</span><span class="p">]</span>
             <span class="c1"># update the index so it&#39;s the same as the original population dataframe for these individuals</span>
@@ -477,7 +496,10 @@
                 <span class="n">death_event</span><span class="p">,</span> <span class="n">date_death</span>
             <span class="p">)</span>  <span class="c1"># schedule the death</span></div>
 
-<div class="viewcode-block" id="Malaria.general_population_rdt_scheduler"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.general_population_rdt_scheduler">[docs]</a>    <span class="k">def</span> <span class="nf">general_population_rdt_scheduler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Malaria.general_population_rdt_scheduler">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.general_population_rdt_scheduler">[docs]</a>
+    <span class="k">def</span> <span class="nf">general_population_rdt_scheduler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        schedule rdt for general population - performed in the community by DCSAs</span>
 <span class="sd">        independent of any current symptoms</span>
@@ -511,7 +533,10 @@
                 <span class="n">tclose</span><span class="o">=</span><span class="n">date_test</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">),</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="Malaria.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Malaria.initialise_simulation">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.initialise_simulation">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        * 1) Schedule the Main Regular Polling Events</span>
 <span class="sd">        * 2) Define the DxTests</span>
@@ -583,7 +608,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes_for_consumables_required</span><span class="p">[</span><span class="s1">&#39;malaria_iptp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_code</span><span class="p">(</span>
             <span class="s1">&#39;Sulfamethoxazole + trimethropin, tablet 400 mg + 80 mg&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Malaria.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Malaria.on_birth">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.on_birth">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;ma_is_infected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;ma_date_infected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
@@ -603,7 +631,10 @@
         <span class="k">if</span> <span class="n">mother_id</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c1"># exclude direct births</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;ma_iptp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="Malaria.report_daly_values"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.report_daly_values">[docs]</a>    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Malaria.report_daly_values">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.report_daly_values">[docs]</a>
+    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been</span>
         <span class="c1"># experienced by persons in the previous month. Only rows for alive-persons must be returned.</span>
         <span class="c1"># The names of the series of columns is taken to be the label of the cause of this disability.</span>
@@ -627,7 +658,10 @@
 
         <span class="k">return</span> <span class="n">health_values</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">]</span>  <span class="c1"># returns the series</span></div>
 
-<div class="viewcode-block" id="Malaria.check_if_fever_is_caused_by_malaria"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.check_if_fever_is_caused_by_malaria">[docs]</a>    <span class="k">def</span> <span class="nf">check_if_fever_is_caused_by_malaria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Malaria.check_if_fever_is_caused_by_malaria">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.check_if_fever_is_caused_by_malaria">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_if_fever_is_caused_by_malaria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Run by an HSI when an adult presents with fever&quot;&quot;&quot;</span>
 
         <span class="c1"># Call the DxTest RDT to diagnose malaria</span>
@@ -662,7 +696,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="s1">&#39;negative_malaria_test&#39;</span></div>
 
-<div class="viewcode-block" id="Malaria.do_for_suspected_malaria_case"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.do_for_suspected_malaria_case">[docs]</a>    <span class="k">def</span> <span class="nf">do_for_suspected_malaria_case</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Malaria.do_for_suspected_malaria_case">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.do_for_suspected_malaria_case">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_for_suspected_malaria_case</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :param person_id:</span>
 <span class="sd">        :param hsi_event:</span>
@@ -698,7 +735,10 @@
                     <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
                     <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Malaria.do_on_emergency_presentation_with_severe_malaria"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.do_on_emergency_presentation_with_severe_malaria">[docs]</a>    <span class="k">def</span> <span class="nf">do_on_emergency_presentation_with_severe_malaria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Malaria.do_on_emergency_presentation_with_severe_malaria">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.Malaria.do_on_emergency_presentation_with_severe_malaria">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_on_emergency_presentation_with_severe_malaria</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;This is called for a person (of any age) that attends an emergency generic HSI and has a fever.</span>
 <span class="sd">        (Quick diagnosis algorithm - just perfectly recognises the symptoms of severe malaria.)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -719,36 +759,54 @@
                         <span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">),</span>
                     <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                     <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
-                <span class="p">)</span></div></div>
+                <span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="MalariaPollingEventDistrict"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaPollingEventDistrict">[docs]</a><span class="k">class</span> <span class="nc">MalariaPollingEventDistrict</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MalariaPollingEventDistrict">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaPollingEventDistrict">[docs]</a>
+<span class="k">class</span> <span class="nc">MalariaPollingEventDistrict</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    this calls functions to assign new malaria infections</span>
 <span class="sd">    and schedules rdt at a community level (non-symptom driven)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-<div class="viewcode-block" id="MalariaPollingEventDistrict.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaPollingEventDistrict.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="MalariaPollingEventDistrict.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaPollingEventDistrict.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="MalariaPollingEventDistrict.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaPollingEventDistrict.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MalariaPollingEventDistrict.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaPollingEventDistrict.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;MalariaEvent: tracking the disease progression of the population&#39;</span><span class="p">)</span>
 
         <span class="c1"># assigns new malaria infections</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">malaria_poll2</span><span class="p">(</span><span class="n">population</span><span class="p">)</span>
 
         <span class="c1"># schedule rdt for general population, rate increases over time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">general_population_rdt_scheduler</span><span class="p">(</span><span class="n">population</span><span class="p">)</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">general_population_rdt_scheduler</span><span class="p">(</span><span class="n">population</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="MalariaIPTp"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaIPTp">[docs]</a><span class="k">class</span> <span class="nc">MalariaIPTp</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MalariaIPTp">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaIPTp">[docs]</a>
+<span class="k">class</span> <span class="nc">MalariaIPTp</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    malaria prophylaxis for pregnant women</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="MalariaIPTp.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaIPTp.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="MalariaIPTp.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaIPTp.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="MalariaIPTp.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaIPTp.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MalariaIPTp.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaIPTp.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">now</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
 
@@ -762,19 +820,28 @@
             <span class="n">event</span> <span class="o">=</span> <span class="n">HSI_MalariaIPTp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_index</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
                 <span class="n">event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span>
-            <span class="p">)</span></div></div>
+            <span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="MalariaDeathEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaDeathEvent">[docs]</a><span class="k">class</span> <span class="nc">MalariaDeathEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MalariaDeathEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaDeathEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">MalariaDeathEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Performs the Death operation on an individual and logs it.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="MalariaDeathEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaDeathEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">,</span> <span class="n">cause</span><span class="p">):</span>
+<div class="viewcode-block" id="MalariaDeathEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaDeathEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">,</span> <span class="n">cause</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cause</span> <span class="o">=</span> <span class="n">cause</span></div>
 
-<div class="viewcode-block" id="MalariaDeathEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaDeathEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MalariaDeathEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaDeathEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;ma_inf_type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">):</span>
@@ -808,7 +875,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_death</span><span class="p">(</span>
                 <span class="n">individual_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">,</span> <span class="n">cause</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cause</span><span class="p">,</span> <span class="n">originating_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">)</span>
 
-            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;ma_date_death&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span></div></div>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;ma_date_death&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span></div>
+</div>
+
 
 
 <span class="c1"># ---------------------------------------------------------------------------------</span>
@@ -816,13 +885,17 @@
 <span class="c1"># ---------------------------------------------------------------------------------</span>
 
 
-<div class="viewcode-block" id="HSI_Malaria_rdt"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_rdt">[docs]</a><span class="k">class</span> <span class="nc">HSI_Malaria_rdt</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Malaria_rdt">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_rdt">[docs]</a>
+<span class="k">class</span> <span class="nc">HSI_Malaria_rdt</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    this is a point-of-care malaria rapid diagnostic test, with results within 2 minutes</span>
 <span class="sd">    default facility level is 1a unless specified</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="HSI_Malaria_rdt.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_rdt.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">facility_level</span><span class="o">=</span><span class="s1">&#39;1a&#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Malaria_rdt.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_rdt.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">facility_level</span><span class="o">=</span><span class="s1">&#39;1a&#39;</span><span class="p">):</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Malaria</span><span class="p">)</span>
@@ -837,7 +910,10 @@
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span> <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">facility_level</span> <span class="o">==</span> <span class="s1">&#39;1a&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;1b&#39;</span></div>
 
-<div class="viewcode-block" id="HSI_Malaria_rdt.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_rdt.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Malaria_rdt.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_rdt.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">hs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span>
@@ -914,10 +990,14 @@
             <span class="c1"># Test was not possible, set blank footprint and schedule another test</span>
             <span class="n">ACTUAL_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({})</span>
 
-            <span class="k">return</span> <span class="n">ACTUAL_APPT_FOOTPRINT</span></div></div>
+            <span class="k">return</span> <span class="n">ACTUAL_APPT_FOOTPRINT</span></div>
+</div>
 
 
-<div class="viewcode-block" id="HSI_Malaria_rdt_community"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_rdt_community">[docs]</a><span class="k">class</span> <span class="nc">HSI_Malaria_rdt_community</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Malaria_rdt_community">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_rdt_community">[docs]</a>
+<span class="k">class</span> <span class="nc">HSI_Malaria_rdt_community</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    this is a point-of-care malaria rapid diagnostic test, with results within 2 minutes</span>
 <span class="sd">    this is performed in the community at facility level 0 by a DCSA</span>
@@ -925,7 +1005,9 @@
 <span class="sd">    where a confirmatory rdt will be performed and treatment will be scheduled</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="HSI_Malaria_rdt_community.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_rdt_community.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Malaria_rdt_community.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_rdt_community.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Malaria</span><span class="p">)</span>
@@ -934,7 +1016,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;ConWithDCSA&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;0&#39;</span></div>
 
-<div class="viewcode-block" id="HSI_Malaria_rdt_community.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_rdt_community.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Malaria_rdt_community.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_rdt_community.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">hs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span>
@@ -968,15 +1053,21 @@
                 <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                 <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
                 <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
-            <span class="p">)</span></div></div>
+            <span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="HSI_Malaria_Treatment"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_Treatment">[docs]</a><span class="k">class</span> <span class="nc">HSI_Malaria_Treatment</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Malaria_Treatment">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_Treatment">[docs]</a>
+<span class="k">class</span> <span class="nc">HSI_Malaria_Treatment</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    this is anti-malarial treatment for all ages. Includes treatment plus one rdt</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="HSI_Malaria_Treatment.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_Treatment.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Malaria_Treatment.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_Treatment.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Malaria</span><span class="p">)</span>
 
@@ -986,7 +1077,10 @@
             <span class="p">(</span><span class="s1">&#39;Under5OPD&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s2">&quot;age_years&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">5</span> <span class="k">else</span> <span class="s1">&#39;Over5OPD&#39;</span><span class="p">):</span> <span class="mi">1</span><span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span></div>
 
-<div class="viewcode-block" id="HSI_Malaria_Treatment.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_Treatment.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Malaria_Treatment.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_Treatment.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">person</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">]</span>
@@ -1022,7 +1116,10 @@
                 <span class="p">}</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rdt_log&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">person_details_for_test</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HSI_Malaria_Treatment.get_drugs"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_Treatment.get_drugs">[docs]</a>    <span class="k">def</span> <span class="nf">get_drugs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">age_of_person</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Malaria_Treatment.get_drugs">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_Treatment.get_drugs">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_drugs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">age_of_person</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :param age_of_person:</span>
 <span class="sd">        :return:</span>
@@ -1057,18 +1154,27 @@
 
         <span class="k">return</span> <span class="n">drugs_available</span></div>
 
-<div class="viewcode-block" id="HSI_Malaria_Treatment.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_Treatment.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Malaria_Treatment.did_not_run">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_Treatment.did_not_run">[docs]</a>
+    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span>
                      <span class="n">data</span><span class="o">=</span><span class="s1">&#39;HSI_Malaria_Treatment: did not run&#39;</span><span class="p">)</span>
-        <span class="k">pass</span></div></div>
+        <span class="k">pass</span></div>
+</div>
 
 
-<div class="viewcode-block" id="HSI_Malaria_Treatment_Complicated"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_Treatment_Complicated">[docs]</a><span class="k">class</span> <span class="nc">HSI_Malaria_Treatment_Complicated</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Malaria_Treatment_Complicated">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_Treatment_Complicated">[docs]</a>
+<span class="k">class</span> <span class="nc">HSI_Malaria_Treatment_Complicated</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    this is anti-malarial treatment for complicated malaria in all ages</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="HSI_Malaria_Treatment_Complicated.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_Treatment_Complicated.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Malaria_Treatment_Complicated.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_Treatment_Complicated.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Malaria</span><span class="p">)</span>
 
@@ -1078,7 +1184,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_beddays_footprint</span><span class="p">({</span><span class="s1">&#39;general_bed&#39;</span><span class="p">:</span> <span class="mi">5</span><span class="p">})</span></div>
 
-<div class="viewcode-block" id="HSI_Malaria_Treatment_Complicated.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_Treatment_Complicated.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Malaria_Treatment_Complicated.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_Treatment_Complicated.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ma_tx&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
@@ -1113,17 +1222,26 @@
                 <span class="p">}</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;rdt_log&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">person_details_for_test</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HSI_Malaria_Treatment_Complicated.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_Treatment_Complicated.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Malaria_Treatment_Complicated.did_not_run">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_Treatment_Complicated.did_not_run">[docs]</a>
+    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span>
-                     <span class="n">data</span><span class="o">=</span><span class="s1">&#39;HSI_Malaria_Treatment_Complicated: did not run&#39;</span><span class="p">)</span></div></div>
+                     <span class="n">data</span><span class="o">=</span><span class="s1">&#39;HSI_Malaria_Treatment_Complicated: did not run&#39;</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="HSI_MalariaIPTp"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_MalariaIPTp">[docs]</a><span class="k">class</span> <span class="nc">HSI_MalariaIPTp</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_MalariaIPTp">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_MalariaIPTp">[docs]</a>
+<span class="k">class</span> <span class="nc">HSI_MalariaIPTp</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    this is IPTp for pregnant women</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="HSI_MalariaIPTp.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_MalariaIPTp.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_MalariaIPTp.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_MalariaIPTp.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Malaria</span><span class="p">)</span>
 
@@ -1131,7 +1249,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;Over5OPD&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span></div>
 
-<div class="viewcode-block" id="HSI_MalariaIPTp.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_MalariaIPTp.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_MalariaIPTp.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_MalariaIPTp.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
@@ -1159,21 +1280,33 @@
                     <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span> <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span>
                 <span class="p">)</span></div>
 
-<div class="viewcode-block" id="HSI_MalariaIPTp.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_MalariaIPTp.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_MalariaIPTp.did_not_run">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.HSI_MalariaIPTp.did_not_run">[docs]</a>
+    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span>
                      <span class="n">data</span><span class="o">=</span><span class="s1">&#39;HSI_MalariaIPTp: did not run&#39;</span><span class="p">)</span>
-        <span class="k">pass</span></div></div>
+        <span class="k">pass</span></div>
+</div>
+
 
 
 <span class="c1"># ---------------------------------------------------------------------------------</span>
 <span class="c1"># Recovery Events</span>
 <span class="c1"># ---------------------------------------------------------------------------------</span>
-<div class="viewcode-block" id="MalariaUpdateEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaUpdateEvent">[docs]</a><span class="k">class</span> <span class="nc">MalariaUpdateEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-<div class="viewcode-block" id="MalariaUpdateEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaUpdateEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="MalariaUpdateEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaUpdateEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">MalariaUpdateEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="MalariaUpdateEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaUpdateEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="MalariaUpdateEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaUpdateEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MalariaUpdateEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaUpdateEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        this is a regular event for clinical and severe cases which:</span>
 <span class="sd">        * assigns symptoms</span>
@@ -1288,14 +1421,23 @@
         <span class="p">)</span>
 
         <span class="c1"># change properties</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">clinical_not_treated</span><span class="p">,</span> <span class="s1">&#39;ma_inf_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;asym&#39;</span></div></div>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">clinical_not_treated</span><span class="p">,</span> <span class="s1">&#39;ma_inf_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;asym&#39;</span></div>
+</div>
 
 
-<div class="viewcode-block" id="MalariaParasiteClearanceEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaParasiteClearanceEvent">[docs]</a><span class="k">class</span> <span class="nc">MalariaParasiteClearanceEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-<div class="viewcode-block" id="MalariaParasiteClearanceEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaParasiteClearanceEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MalariaParasiteClearanceEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaParasiteClearanceEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">MalariaParasiteClearanceEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="MalariaParasiteClearanceEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaParasiteClearanceEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mf">30.5</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="MalariaParasiteClearanceEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaParasiteClearanceEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MalariaParasiteClearanceEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaParasiteClearanceEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;message&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;MalariaParasiteClearanceEvent: parasite clearance for malaria cases&#39;</span><span class="p">)</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -1307,19 +1449,28 @@
                             <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ma_date_infected</span> <span class="o">&lt;</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">-</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">p</span><span class="p">[</span><span class="s1">&#39;dur_asym&#39;</span><span class="p">])))]</span>
 
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">asym_inf</span><span class="p">,</span> <span class="s1">&#39;ma_inf_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">asym_inf</span><span class="p">,</span> <span class="s1">&#39;ma_is_infected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div></div>
+        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">asym_inf</span><span class="p">,</span> <span class="s1">&#39;ma_is_infected&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
+</div>
+
 
 
 <span class="c1"># ---------------------------------------------------------------------------------</span>
 <span class="c1"># Logging</span>
 <span class="c1"># ---------------------------------------------------------------------------------</span>
 
-<div class="viewcode-block" id="MalariaLoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaLoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">MalariaLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-<div class="viewcode-block" id="MalariaLoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaLoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="MalariaLoggingEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaLoggingEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">MalariaLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="MalariaLoggingEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaLoggingEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="mi">12</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="MalariaLoggingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaLoggingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MalariaLoggingEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaLoggingEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="c1"># get some summary statistics</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">now</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
@@ -1415,15 +1566,24 @@
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;prevalence&#39;</span><span class="p">,</span>
                     <span class="n">data</span><span class="o">=</span><span class="n">prev</span><span class="p">,</span>
-                    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Prevalence malaria cases&#39;</span><span class="p">)</span></div></div>
+                    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Prevalence malaria cases&#39;</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="MalariaTxLoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaTxLoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">MalariaTxLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-<div class="viewcode-block" id="MalariaTxLoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaTxLoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MalariaTxLoggingEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaTxLoggingEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">MalariaTxLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="MalariaTxLoggingEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaTxLoggingEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="mi">12</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="MalariaTxLoggingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaTxLoggingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MalariaTxLoggingEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaTxLoggingEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="c1"># get some summary statistics</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
@@ -1457,15 +1617,24 @@
         <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ma_clinical_counter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ma_tx_counter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ma_dx_counter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ma_clinical_preg_counter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span></div></div>
+        <span class="n">df</span><span class="p">[</span><span class="s1">&#39;ma_clinical_preg_counter&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span></div>
+</div>
 
 
-<div class="viewcode-block" id="MalariaPrevDistrictLoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaPrevDistrictLoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">MalariaPrevDistrictLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-<div class="viewcode-block" id="MalariaPrevDistrictLoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaPrevDistrictLoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MalariaPrevDistrictLoggingEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaPrevDistrictLoggingEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">MalariaPrevDistrictLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="MalariaPrevDistrictLoggingEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaPrevDistrictLoggingEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="MalariaPrevDistrictLoggingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaPrevDistrictLoggingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="MalariaPrevDistrictLoggingEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.malaria.html#tlo.methods.malaria.MalariaPrevDistrictLoggingEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="c1"># get some summary statistics</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
@@ -1485,7 +1654,9 @@
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;pop_district&#39;</span><span class="p">,</span>
                     <span class="n">data</span><span class="o">=</span><span class="n">pop</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
-                    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;District population sizes&#39;</span><span class="p">)</span></div></div>
+                    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;District population sizes&#39;</span><span class="p">)</span></div>
+</div>
+
 </pre></div>
 
            </div>
@@ -1496,7 +1667,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

@@ -279,13 +279,13 @@ tlo.methods.cardio_metabolic_disorders module
 
      ADDITIONAL_DEPENDENCIES : {'Depression'}
 
-     CAUSES_OF_DEATH : {'diabetes': <tlo.methods.causes.Cause object at 0x7ff650dabbe0>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x7ff650dabc40>, 'ever_heart_attack': <tlo.methods.causes.Cause object at 0x7ff650dabca0>, 'ever_stroke': <tlo.methods.causes.Cause object at 0x7ff650dabd00>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x7ff650dabd60>}
+     CAUSES_OF_DEATH : {'diabetes': <tlo.methods.causes.Cause object at 0x12df45b10>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x12df45e50>, 'ever_heart_attack': <tlo.methods.causes.Cause object at 0x12df46ad0>, 'ever_stroke': <tlo.methods.causes.Cause object at 0x12df467d0>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x12df44250>}
 
-     CAUSES_OF_DISABILITY : {'diabetes': <tlo.methods.causes.Cause object at 0x7ff650dabdc0>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x7ff650dabe20>, 'heart_attack': <tlo.methods.causes.Cause object at 0x7ff650dabe80>, 'stroke': <tlo.methods.causes.Cause object at 0x7ff650dabee0>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x7ff650dabf40>, 'lower_back_pain': <tlo.methods.causes.Cause object at 0x7ff650dabfa0>}
+     CAUSES_OF_DISABILITY : {'diabetes': <tlo.methods.causes.Cause object at 0x12e3861d0>, 'chronic_ischemic_hd': <tlo.methods.causes.Cause object at 0x12e3855d0>, 'heart_attack': <tlo.methods.causes.Cause object at 0x12e387210>, 'stroke': <tlo.methods.causes.Cause object at 0x12e385dd0>, 'chronic_kidney_disease': <tlo.methods.causes.Cause object at 0x12e385490>, 'lower_back_pain': <tlo.methods.causes.Cause object at 0x12e3853d0>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Lifestyle', 'Demography'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Demography', 'Lifestyle'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -375,6 +375,11 @@ tlo.methods.cardio_metabolic_disorders module
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
      **Functions (defined or overridden in class CardioMetabolicDisorders_MainPollingEvent):**
 
      .. automethod:: __init__
@@ -448,6 +453,11 @@ tlo.methods.cardio_metabolic_disorders module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class CardioMetabolicDisorders_LoggingEvent):**
 

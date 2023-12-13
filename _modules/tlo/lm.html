@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.lm &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <title>tlo.lm &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
@@ -13,9 +16,9 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -33,7 +36,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -51,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
@@ -99,7 +103,9 @@
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="Predictor"><a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.Predictor">[docs]</a><span class="k">class</span> <span class="nc">Predictor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="Predictor">
+<a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.Predictor">[docs]</a>
+<span class="k">class</span> <span class="nc">Predictor</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -147,21 +153,30 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">conditions_are_mutually_exclusive</span> <span class="o">=</span> <span class="n">conditions_are_mutually_exclusive</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">conditions_are_exhaustive</span> <span class="o">=</span> <span class="n">conditions_are_exhaustive</span>
 
-<div class="viewcode-block" id="Predictor.when"><a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.Predictor.when">[docs]</a>    <span class="k">def</span> <span class="nf">when</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">],</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Predictor&#39;</span><span class="p">:</span>
+<div class="viewcode-block" id="Predictor.when">
+<a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.Predictor.when">[docs]</a>
+    <span class="k">def</span> <span class="nf">when</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">condition</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">bool</span><span class="p">],</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Predictor&#39;</span><span class="p">:</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Can&#39;t use `when` on Predictor with function&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coeff</span><span class="p">(</span><span class="n">condition</span><span class="o">=</span><span class="n">condition</span><span class="p">,</span> <span class="n">coefficient</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Predictor.otherwise"><a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.Predictor.otherwise">[docs]</a>    <span class="k">def</span> <span class="nf">otherwise</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Predictor&#39;</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Predictor.otherwise">
+<a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.Predictor.otherwise">[docs]</a>
+    <span class="k">def</span> <span class="nf">otherwise</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Predictor&#39;</span><span class="p">:</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">property_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Can&#39;t use `otherwise` condition on unnamed Predictor&quot;</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Can&#39;t use `otherwise` on Predictor with function&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_coeff</span><span class="p">(</span><span class="n">coefficient</span><span class="o">=</span><span class="n">value</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Predictor.apply"><a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.Predictor.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s1">&#39;Predictor&#39;</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Predictor.apply">
+<a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.Predictor.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">callback</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s1">&#39;Predictor&#39;</span><span class="p">:</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">property_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Can&#39;t use `apply` on unnamed Predictor&quot;</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conditions</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;Can&#39;t specify `apply` on Predictor with when/otherwise conditions&quot;</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Can&#39;t specify more than one callback for a Predictor&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">callback</span> <span class="o">=</span> <span class="n">callback</span>
         <span class="k">return</span> <span class="bp">self</span></div>
+
 
     <span class="k">def</span> <span class="nf">_coeff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">coefficient</span><span class="p">,</span> <span class="n">condition</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Predictor&#39;</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Adds the coefficient for the Predictor. The arguments can be two:</span>
@@ -221,7 +236,10 @@
         <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="LinearModelType"><a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.LinearModelType">[docs]</a><span class="k">class</span> <span class="nc">LinearModelType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+
+<div class="viewcode-block" id="LinearModelType">
+<a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.LinearModelType">[docs]</a>
+<span class="k">class</span> <span class="nc">LinearModelType</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The type of model specifies how the results from the predictor are combined:</span>
 <span class="sd">    &#39;additive&#39; -&gt; adds the effect_sizes from the predictors</span>
@@ -237,7 +255,10 @@
     <span class="n">CUSTOM</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
 
 
-<div class="viewcode-block" id="LinearModel"><a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.LinearModel">[docs]</a><span class="k">class</span> <span class="nc">LinearModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<div class="viewcode-block" id="LinearModel">
+<a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.LinearModel">[docs]</a>
+<span class="k">class</span> <span class="nc">LinearModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -287,7 +308,9 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The predictors used in calculating the model output.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_predictors</span>
 
-<div class="viewcode-block" id="LinearModel.multiplicative"><a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.LinearModel.multiplicative">[docs]</a>    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="LinearModel.multiplicative">
+<a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.LinearModel.multiplicative">[docs]</a>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">multiplicative</span><span class="p">(</span><span class="o">*</span><span class="n">predictors</span><span class="p">:</span> <span class="n">Predictor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns a multplicative LinearModel with intercept=1.0</span>
 
@@ -295,7 +318,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">LinearModel</span><span class="p">(</span><span class="n">LinearModelType</span><span class="o">.</span><span class="n">MULTIPLICATIVE</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">*</span><span class="n">predictors</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="LinearModel.custom"><a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.LinearModel.custom">[docs]</a>    <span class="nd">@staticmethod</span>
+
+<div class="viewcode-block" id="LinearModel.custom">
+<a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.LinearModel.custom">[docs]</a>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">custom</span><span class="p">(</span><span class="n">predict_function</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Define a linear model using the supplied function</span>
 
@@ -326,6 +352,7 @@
                 <span class="sa">f</span><span class="s2">&quot;Cannot store argument &#39;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&#39; as name already exists; change name.&quot;</span><span class="p">)</span>
             <span class="nb">setattr</span><span class="p">(</span><span class="n">custom_model</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">custom_model</span></div>
+
 
     <span class="k">def</span> <span class="nf">_parse_predictors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set model string, callback predictors and predictor names from predictors.</span>
@@ -463,7 +490,9 @@
             <span class="n">column_resolvers</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;__</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">__&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">column_resolvers</span>
 
-<div class="viewcode-block" id="LinearModel.predict"><a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.LinearModel.predict">[docs]</a>    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span>
+<div class="viewcode-block" id="LinearModel.predict">
+<a class="viewcode-back" href="../../reference/tlo.lm.html#tlo.lm.LinearModel.predict">[docs]</a>
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
         <span class="n">rng</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -546,6 +575,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">result</span></div>
 
+
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">out</span> <span class="o">=</span> <span class="s2">&quot;LinearModel(</span><span class="se">\n</span><span class="s2">&quot;</span>\
               <span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">lm_type</span><span class="si">}</span><span class="s2">,</span><span class="se">\n</span><span class="s2">&quot;</span>\
@@ -554,6 +584,7 @@
             <span class="n">out</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;  </span><span class="si">{</span><span class="n">predictor</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
         <span class="n">out</span> <span class="o">+=</span> <span class="s2">&quot;)&quot;</span>
         <span class="k">return</span> <span class="n">out</span></div>
+
 </pre></div>
 
            </div>
@@ -564,7 +595,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

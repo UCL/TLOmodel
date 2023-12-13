@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.util &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <title>tlo.util &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
@@ -13,9 +16,9 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -33,7 +36,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -51,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
@@ -97,7 +101,9 @@
 <span class="n">DEFAULT_MOTHER_ID</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1e7</span>
 
 
-<div class="viewcode-block" id="create_age_range_lookup"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.create_age_range_lookup">[docs]</a><span class="k">def</span> <span class="nf">create_age_range_lookup</span><span class="p">(</span><span class="n">min_age</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_age</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">range_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]):</span>
+<div class="viewcode-block" id="create_age_range_lookup">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.create_age_range_lookup">[docs]</a>
+<span class="k">def</span> <span class="nf">create_age_range_lookup</span><span class="p">(</span><span class="n">min_age</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_age</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">range_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Create age-range categories and a dictionary that will map all whole years to age-range categories</span>
 
 <span class="sd">    If the minimum age is not zero then a below minimum age category will be made,</span>
@@ -145,7 +151,10 @@
     <span class="k">return</span> <span class="n">age_categories</span><span class="p">,</span> <span class="n">lookup</span></div>
 
 
-<div class="viewcode-block" id="transition_states"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.transition_states">[docs]</a><span class="k">def</span> <span class="nf">transition_states</span><span class="p">(</span><span class="n">initial_series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">prob_matrix</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+
+<div class="viewcode-block" id="transition_states">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.transition_states">[docs]</a>
+<span class="k">def</span> <span class="nf">transition_states</span><span class="p">(</span><span class="n">initial_series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">prob_matrix</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Transition a series of states based on probability matrix</span>
 
 <span class="sd">    This should carry out all state transitions for a Series (i.e. column in DataFrame)</span>
@@ -175,7 +184,10 @@
     <span class="k">return</span> <span class="n">final_states</span></div>
 
 
-<div class="viewcode-block" id="sample_outcome"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.sample_outcome">[docs]</a><span class="k">def</span> <span class="nf">sample_outcome</span><span class="p">(</span><span class="n">probs</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">):</span>
+
+<div class="viewcode-block" id="sample_outcome">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.sample_outcome">[docs]</a>
+<span class="k">def</span> <span class="nf">sample_outcome</span><span class="p">(</span><span class="n">probs</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; Helper function to randomly sample an outcome for each individual in a population from a set of probabilities</span>
 <span class="sd">    that are specific to each individual.</span>
 <span class="sd">    :param probs: Each row of this dataframe represents the person and the columns are the possible outcomes. The</span>
@@ -202,7 +214,10 @@
     <span class="k">return</span> <span class="n">outcome</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">outcome</span> <span class="o">!=</span> <span class="s1">&#39;_&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span></div>
 
 
-<div class="viewcode-block" id="BitsetHandler"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler">[docs]</a><span class="k">class</span> <span class="nc">BitsetHandler</span><span class="p">:</span>
+
+<div class="viewcode-block" id="BitsetHandler">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler">[docs]</a>
+<span class="k">class</span> <span class="nc">BitsetHandler</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Provides methods to operate on int column(s) in the population dataframe as a bitset&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">:</span> <span class="n">Population</span><span class="p">,</span> <span class="n">column</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">elements</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
@@ -234,11 +249,16 @@
     <span class="k">def</span> <span class="nf">df</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_population</span><span class="o">.</span><span class="n">props</span>
 
-<div class="viewcode-block" id="BitsetHandler.element_repr"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.element_repr">[docs]</a>    <span class="k">def</span> <span class="nf">element_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">elements</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">:</span>
+<div class="viewcode-block" id="BitsetHandler.element_repr">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.element_repr">[docs]</a>
+    <span class="k">def</span> <span class="nf">element_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">elements</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns integer representation of the specified element(s)&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_element_to_int_map</span><span class="p">[</span><span class="n">el</span><span class="p">]</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="BitsetHandler.to_strings"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.to_strings">[docs]</a>    <span class="k">def</span> <span class="nf">to_strings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">integer</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="BitsetHandler.to_strings">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.to_strings">[docs]</a>
+    <span class="k">def</span> <span class="nf">to_strings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">integer</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Given an integer value, returns the corresponding set of strings.</span>
 
 <span class="sd">        :param integer: The integer value for the bitset.</span>
@@ -250,6 +270,7 @@
             <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">bit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="n">bin_repr</span><span class="p">))</span> <span class="k">if</span> <span class="n">bit</span> <span class="o">==</span> <span class="s1">&#39;1&#39;</span>
         <span class="p">}</span></div>
 
+
     <span class="k">def</span> <span class="nf">_get_columns</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">columns</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">columns</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -257,7 +278,9 @@
             <span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_column</span> <span class="k">if</span> <span class="n">columns</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">columns</span>
 
-<div class="viewcode-block" id="BitsetHandler.set"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.set">[docs]</a>    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="o">*</span><span class="n">elements</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="BitsetHandler.set">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.set">[docs]</a>
+    <span class="k">def</span> <span class="nf">set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="o">*</span><span class="n">elements</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set (i.e. set to True) the bits corersponding to the specified elements.</span>
 
 <span class="sd">        The where argument is used verbatim as the first item in a `df.loc[x, y]` call.</span>
@@ -273,7 +296,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">where</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_columns</span><span class="p">(</span><span class="n">columns</span><span class="p">)]</span> <span class="o">|=</span> <span class="bp">self</span><span class="o">.</span><span class="n">element_repr</span><span class="p">(</span><span class="o">*</span><span class="n">elements</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="BitsetHandler.unset"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.unset">[docs]</a>    <span class="k">def</span> <span class="nf">unset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="o">*</span><span class="n">elements</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="BitsetHandler.unset">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.unset">[docs]</a>
+    <span class="k">def</span> <span class="nf">unset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="o">*</span><span class="n">elements</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Unset (i.e. set to False) the bits corresponding the specified elements.</span>
 
 <span class="sd">        The where argument is used verbatim as the first item in a `df.loc[x, y]` call.</span>
@@ -287,9 +313,12 @@
 <span class="sd">            update. If set to ``None`` (the default) a ``column`` argument must have</span>
 <span class="sd">            been specified when constructing the ``BitsetHandler`` object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">where</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_columns</span><span class="p">(</span><span class="n">columns</span><span class="p">)]</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">element_repr</span><span class="p">(</span><span class="o">*</span><span class="n">elements</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">where</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_columns</span><span class="p">(</span><span class="n">columns</span><span class="p">)]</span> <span class="o">&amp;=</span> <span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">element_repr</span><span class="p">(</span><span class="o">*</span><span class="n">elements</span><span class="p">)</span>  <span class="c1"># pylint: disable=E1130</span></div>
 
-<div class="viewcode-block" id="BitsetHandler.clear"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.clear">[docs]</a>    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="BitsetHandler.clear">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.clear">[docs]</a>
+    <span class="k">def</span> <span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">where</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Clears all the bits for the specified rows.</span>
 
 <span class="sd">        :param where: Condition to filter rows that will cleared.</span>
@@ -299,7 +328,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">where</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_columns</span><span class="p">(</span><span class="n">columns</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">0</span></div>
 
-<div class="viewcode-block" id="BitsetHandler.has"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.has">[docs]</a>    <span class="k">def</span> <span class="nf">has</span><span class="p">(</span>
+
+<div class="viewcode-block" id="BitsetHandler.has">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.has">[docs]</a>
+    <span class="k">def</span> <span class="nf">has</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">where</span><span class="p">,</span>
         <span class="n">element</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -321,7 +353,10 @@
         <span class="n">matched</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">where</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_columns</span><span class="p">(</span><span class="n">columns</span><span class="p">)]</span> <span class="o">&amp;</span> <span class="n">int_repr</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
         <span class="k">return</span> <span class="n">matched</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">first</span> <span class="k">else</span> <span class="n">matched</span></div>
 
-<div class="viewcode-block" id="BitsetHandler.has_all"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.has_all">[docs]</a>    <span class="k">def</span> <span class="nf">has_all</span><span class="p">(</span>
+
+<div class="viewcode-block" id="BitsetHandler.has_all">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.has_all">[docs]</a>
+    <span class="k">def</span> <span class="nf">has_all</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">where</span><span class="p">,</span>
         <span class="o">*</span><span class="n">elements</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -348,7 +383,10 @@
         <span class="n">matched</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">where</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_columns</span><span class="p">(</span><span class="n">columns</span><span class="p">)]</span> <span class="o">&amp;</span> <span class="n">int_repr</span><span class="p">)</span> <span class="o">==</span> <span class="n">int_repr</span>
         <span class="k">return</span> <span class="n">matched</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">first</span> <span class="k">else</span> <span class="n">matched</span></div>
 
-<div class="viewcode-block" id="BitsetHandler.has_any"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.has_any">[docs]</a>    <span class="k">def</span> <span class="nf">has_any</span><span class="p">(</span>
+
+<div class="viewcode-block" id="BitsetHandler.has_any">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.has_any">[docs]</a>
+    <span class="k">def</span> <span class="nf">has_any</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">where</span><span class="p">,</span>
         <span class="o">*</span><span class="n">elements</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
@@ -375,7 +413,10 @@
         <span class="n">matched</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">where</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_columns</span><span class="p">(</span><span class="n">columns</span><span class="p">)]</span> <span class="o">&amp;</span> <span class="n">int_repr</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
         <span class="k">return</span> <span class="n">matched</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">first</span> <span class="k">else</span> <span class="n">matched</span></div>
 
-<div class="viewcode-block" id="BitsetHandler.get"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.get">[docs]</a>    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span>
+
+<div class="viewcode-block" id="BitsetHandler.get">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.get">[docs]</a>
+    <span class="k">def</span> <span class="nf">get</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">where</span><span class="p">,</span>
         <span class="n">first</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -403,7 +444,10 @@
             <span class="n">sets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">where</span><span class="p">,</span> <span class="n">columns</span><span class="p">]</span><span class="o">.</span><span class="n">applymap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_strings</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">sets</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">first</span> <span class="k">else</span> <span class="n">sets</span></div>
 
-<div class="viewcode-block" id="BitsetHandler.uncompress"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.uncompress">[docs]</a>    <span class="k">def</span> <span class="nf">uncompress</span><span class="p">(</span>
+
+<div class="viewcode-block" id="BitsetHandler.uncompress">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.uncompress">[docs]</a>
+    <span class="k">def</span> <span class="nf">uncompress</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">where</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">columns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -437,7 +481,10 @@
             <span class="n">uncompressed</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">collect</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">uncompressed</span><span class="p">[</span><span class="n">columns</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">columns</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">uncompressed</span></div>
 
-<div class="viewcode-block" id="BitsetHandler.not_empty"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.not_empty">[docs]</a>    <span class="k">def</span> <span class="nf">not_empty</span><span class="p">(</span>
+
+<div class="viewcode-block" id="BitsetHandler.not_empty">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.not_empty">[docs]</a>
+    <span class="k">def</span> <span class="nf">not_empty</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">where</span><span class="p">,</span>
         <span class="n">first</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -457,7 +504,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">is_empty</span><span class="p">(</span><span class="n">where</span><span class="p">,</span> <span class="n">first</span><span class="o">=</span><span class="n">first</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="BitsetHandler.is_empty"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.is_empty">[docs]</a>    <span class="k">def</span> <span class="nf">is_empty</span><span class="p">(</span>
+
+<div class="viewcode-block" id="BitsetHandler.is_empty">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.BitsetHandler.is_empty">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_empty</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">where</span><span class="p">,</span>
         <span class="n">first</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -476,16 +526,23 @@
 <span class="sd">        :return: Boolean value(s) indicating whether all elements bits are not set.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">empty</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">where</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_columns</span><span class="p">(</span><span class="n">columns</span><span class="p">)]</span> <span class="o">==</span> <span class="mi">0</span>
-        <span class="k">return</span> <span class="n">empty</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">first</span> <span class="k">else</span> <span class="n">empty</span></div></div>
+        <span class="k">return</span> <span class="n">empty</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">first</span> <span class="k">else</span> <span class="n">empty</span></div>
+</div>
 
 
-<div class="viewcode-block" id="random_date"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.random_date">[docs]</a><span class="k">def</span> <span class="nf">random_date</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
+
+<div class="viewcode-block" id="random_date">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.random_date">[docs]</a>
+<span class="k">def</span> <span class="nf">random_date</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">start</span> <span class="o">&gt;=</span> <span class="n">end</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;End date equal to or earlier than start date&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">start</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">end</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span><span class="o">.</span><span class="n">days</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="hash_dataframe"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.hash_dataframe">[docs]</a><span class="k">def</span> <span class="nf">hash_dataframe</span><span class="p">(</span><span class="n">dataframe</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+
+<div class="viewcode-block" id="hash_dataframe">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.hash_dataframe">[docs]</a>
+<span class="k">def</span> <span class="nf">hash_dataframe</span><span class="p">(</span><span class="n">dataframe</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">coerce_lists_to_tuples</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Coerce columns in a pd.DataFrame that are lists to tuples. This step is needed before hashing a pd.DataFrame</span>
 <span class="sd">        as list are not hashable.&quot;&quot;&quot;</span>
@@ -494,7 +551,10 @@
     <span class="k">return</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha1</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">hash_pandas_object</span><span class="p">(</span><span class="n">coerce_lists_to_tuples</span><span class="p">(</span><span class="n">dataframe</span><span class="p">))</span><span class="o">.</span><span class="n">values</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span></div>
 
 
-<div class="viewcode-block" id="get_person_id_to_inherit_from"><a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.get_person_id_to_inherit_from">[docs]</a><span class="k">def</span> <span class="nf">get_person_id_to_inherit_from</span><span class="p">(</span><span class="n">child_id</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">population_dataframe</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
+
+<div class="viewcode-block" id="get_person_id_to_inherit_from">
+<a class="viewcode-back" href="../../reference/tlo.util.html#tlo.util.get_person_id_to_inherit_from">[docs]</a>
+<span class="k">def</span> <span class="nf">get_person_id_to_inherit_from</span><span class="p">(</span><span class="n">child_id</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">population_dataframe</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get index of person to inherit properties from.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -509,6 +569,7 @@
         <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="n">mother_id</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">mother_id</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">mother_id</span></div>
+
 </pre></div>
 
            </div>
@@ -519,7 +580,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

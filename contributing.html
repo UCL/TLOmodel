@@ -1,12 +1,15 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Contributing &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <title>Contributing &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
@@ -14,9 +17,9 @@
   
         <script src="_static/jquery.js?v=5d32c60e"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=2389946f"></script>
+        <script src="_static/documentation_options.js?v=cc9389db"></script>
         <script src="_static/doctools.js?v=888ff710"></script>
-        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -35,7 +38,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -53,6 +56,7 @@
 <li class="toctree-l1"><a class="reference internal" href="readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contributors.html">Contributors</a></li>
@@ -84,10 +88,10 @@
            <div itemprop="articleBody">
              
   <section id="contributing">
-<h1>Contributing<a class="headerlink" href="#contributing" title="Permalink to this heading"></a></h1>
+<h1>Contributing<a class="headerlink" href="#contributing" title="Link to this heading"></a></h1>
 <p>We welcome the usage of the modelling framework by all those interested and encourage them to work with us to develop it further.</p>
 <section id="bug-reports">
-<h2>Bug reports<a class="headerlink" href="#bug-reports" title="Permalink to this heading"></a></h2>
+<h2>Bug reports<a class="headerlink" href="#bug-reports" title="Link to this heading"></a></h2>
 <p>When <a class="reference external" href="https://github.com/UCL/TLOmodel/issues">reporting a bug</a> please include:</p>
 <blockquote>
 <div><ul class="simple">
@@ -98,7 +102,7 @@
 </div></blockquote>
 </section>
 <section id="development">
-<h2>Development<a class="headerlink" href="#development" title="Permalink to this heading"></a></h2>
+<h2>Development<a class="headerlink" href="#development" title="Link to this heading"></a></h2>
 <p>To set up <cite>TLOmodel</cite> for local development:</p>
 <ol class="arabic">
 <li><p>Fork <a class="reference external" href="https://github.com/UCL/TLOmodel">TLOmodel</a>
@@ -131,7 +135,7 @@ it directly in step 2.</p></li>
 <li><p>Submit a pull request through the GitHub website.</p></li>
 </ol>
 <section id="pull-request-guidelines">
-<h3>Pull Request Guidelines<a class="headerlink" href="#pull-request-guidelines" title="Permalink to this heading"></a></h3>
+<h3>Pull Request Guidelines<a class="headerlink" href="#pull-request-guidelines" title="Link to this heading"></a></h3>
 <p>If you need some code review or feedback while you’re developing the code just make the pull request.</p>
 <p>For merging, you should:</p>
 <ol class="arabic simple">
@@ -140,7 +144,7 @@ it directly in step 2.</p></li>
 <li><p>Add yourself to <code class="docutils literal notranslate"><span class="pre">authors.rst</span></code>.</p></li>
 </ol>
 <aside class="footnote-list brackets">
-<aside class="footnote brackets" id="id2" role="note">
+<aside class="footnote brackets" id="id2" role="doc-footnote">
 <span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
 <p>If you don’t have all the necessary python versions available locally you can rely on GitHub Actions - it will
 <a class="reference external" href="https://github.com/UCL/TLOmodel/actions?query=workflow%3ACI">run the tests</a> for each change you add in the pull request.</p>
@@ -149,7 +153,7 @@ it directly in step 2.</p></li>
 </aside>
 </section>
 <section id="tips">
-<h3>Tips<a class="headerlink" href="#tips" title="Permalink to this heading"></a></h3>
+<h3>Tips<a class="headerlink" href="#tips" title="Link to this heading"></a></h3>
 <p>To run a subset of tests:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tox</span> <span class="o">-</span><span class="n">e</span> <span class="n">py36</span> <span class="o">--</span> <span class="n">pytest</span> <span class="o">-</span><span class="n">k</span> <span class="n">test_myfeature</span>
 </pre></div>
@@ -173,7 +177,7 @@ it directly in step 2.</p></li>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

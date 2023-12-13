@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.simulation &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <title>tlo.simulation &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
@@ -13,9 +16,9 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -33,7 +36,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -51,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
@@ -103,7 +107,9 @@
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="Simulation"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation">[docs]</a><span class="k">class</span> <span class="nc">Simulation</span><span class="p">:</span>
+<div class="viewcode-block" id="Simulation">
+<a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation">[docs]</a>
+<span class="k">class</span> <span class="nc">Simulation</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The main control centre for a simulation.</span>
 
 <span class="sd">    This class contains the core simulation logic and event queue, and holds</span>
@@ -165,7 +171,9 @@
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">MT19937</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_seed_seq</span><span class="p">))</span>
 
-<div class="viewcode-block" id="Simulation.configure_logging"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.configure_logging">[docs]</a>    <span class="k">def</span> <span class="nf">configure_logging</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">directory</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;./outputs&quot;</span><span class="p">,</span>
+<div class="viewcode-block" id="Simulation.configure_logging">
+<a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.configure_logging">[docs]</a>
+    <span class="k">def</span> <span class="nf">configure_logging</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">directory</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;./outputs&quot;</span><span class="p">,</span>
                           <span class="n">custom_levels</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">suppress_stdout</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Configure logging, can write logging to a logfile in addition the default of stdout.</span>
 
@@ -204,12 +212,15 @@
 
         <span class="k">return</span> <span class="kc">None</span></div>
 
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">log_filepath</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;The path to the log file, if one has been set.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_log_filepath</span>
 
-<div class="viewcode-block" id="Simulation.register"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.register">[docs]</a>    <span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">modules</span><span class="p">,</span> <span class="n">sort_modules</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check_all_dependencies</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="Simulation.register">
+<a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.register">[docs]</a>
+    <span class="k">def</span> <span class="nf">register</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">modules</span><span class="p">,</span> <span class="n">sort_modules</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">check_all_dependencies</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Register one or more disease modules with the simulation.</span>
 
 <span class="sd">        :param modules: the disease module(s) to use as part of this simulation.</span>
@@ -254,7 +265,10 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_custom_log_levels</span><span class="p">:</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">set_logging_levels</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_custom_log_levels</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Simulation.make_initial_population"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.make_initial_population">[docs]</a>    <span class="k">def</span> <span class="nf">make_initial_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Simulation.make_initial_population">
+<a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.make_initial_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">make_initial_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the initial population to simulate.</span>
 
 <span class="sd">        :param n: the number of individuals to create; must be given as</span>
@@ -276,7 +290,10 @@
         <span class="n">end</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;info&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;make_initial_population() </span><span class="si">{</span><span class="n">end</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">start</span><span class="si">}</span><span class="s1"> s&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Simulation.simulate"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.simulate">[docs]</a>    <span class="k">def</span> <span class="nf">simulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">end_date</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Simulation.simulate">
+<a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.simulate">[docs]</a>
+    <span class="k">def</span> <span class="nf">simulate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">end_date</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Simulation until the given end date</span>
 
 <span class="sd">        :param end_date: when to stop simulating. Only events strictly before this</span>
@@ -284,10 +301,12 @@
 <span class="sd">            Must be given as a keyword parameter for clarity.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">start</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="n">end_date</span>  <span class="c1"># store the end_date so that others can reference it</span>
 
-        <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
-            <span class="n">module</span><span class="o">.</span><span class="n">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">date</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_date</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">end_date</span> <span class="o">=</span> <span class="n">end_date</span>  <span class="c1"># store the end_date so that others can reference it</span>
+
+            <span class="k">for</span> <span class="n">module</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">module</span><span class="o">.</span><span class="n">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
         <span class="n">progress_bar</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_progress_bar</span><span class="p">:</span>
@@ -337,7 +356,10 @@
             <span class="k">finally</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">output_file</span><span class="o">.</span><span class="n">release</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="Simulation.schedule_event"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.schedule_event">[docs]</a>    <span class="k">def</span> <span class="nf">schedule_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">date</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Simulation.schedule_event">
+<a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.schedule_event">[docs]</a>
+    <span class="k">def</span> <span class="nf">schedule_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">date</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Schedule an event to happen on the given future date.</span>
 
 <span class="sd">        :param event: the Event to schedule</span>
@@ -353,7 +375,10 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">event_queue</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span><span class="n">event</span><span class="o">=</span><span class="n">event</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="n">date</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Simulation.fire_single_event"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.fire_single_event">[docs]</a>    <span class="k">def</span> <span class="nf">fire_single_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">date</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Simulation.fire_single_event">
+<a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.fire_single_event">[docs]</a>
+    <span class="k">def</span> <span class="nf">fire_single_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">date</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Fires the event once for the given date</span>
 
 <span class="sd">        :param event: :py:class:`Event` to fire</span>
@@ -362,7 +387,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">date</span> <span class="o">=</span> <span class="n">date</span>
         <span class="n">event</span><span class="o">.</span><span class="n">run</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="Simulation.do_birth"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.do_birth">[docs]</a>    <span class="k">def</span> <span class="nf">do_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Simulation.do_birth">
+<a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.do_birth">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new child person.</span>
 
 <span class="sd">        We create a new person in the population and then call the `on_birth` method in</span>
@@ -376,7 +404,10 @@
             <span class="n">module</span><span class="o">.</span><span class="n">on_birth</span><span class="p">(</span><span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">child_id</span></div>
 
-<div class="viewcode-block" id="Simulation.find_events_for_person"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.find_events_for_person">[docs]</a>    <span class="k">def</span> <span class="nf">find_events_for_person</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Simulation.find_events_for_person">
+<a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.Simulation.find_events_for_person">[docs]</a>
+    <span class="k">def</span> <span class="nf">find_events_for_person</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Find the events in the queue for a particular person.</span>
 <span class="sd">        :param person_id: the person_id of interest</span>
 <span class="sd">        :returns list of tuples (date_of_event, event) for that person_id in the queue.</span>
@@ -390,10 +421,14 @@
                 <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">target</span> <span class="o">==</span> <span class="n">person_id</span><span class="p">:</span>
                     <span class="n">person_events</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">date</span><span class="p">,</span> <span class="n">event</span><span class="p">))</span>
 
-        <span class="k">return</span> <span class="n">person_events</span></div></div>
+        <span class="k">return</span> <span class="n">person_events</span></div>
+</div>
 
 
-<div class="viewcode-block" id="EventQueue"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.EventQueue">[docs]</a><span class="k">class</span> <span class="nc">EventQueue</span><span class="p">:</span>
+
+<div class="viewcode-block" id="EventQueue">
+<a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.EventQueue">[docs]</a>
+<span class="k">class</span> <span class="nc">EventQueue</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A simple priority queue for events.</span>
 
 <span class="sd">    This doesn&#39;t really care what events and dates are, provided dates are comparable.</span>
@@ -404,7 +439,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">counter</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="p">[]</span>
 
-<div class="viewcode-block" id="EventQueue.schedule"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.EventQueue.schedule">[docs]</a>    <span class="k">def</span> <span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">date</span><span class="p">):</span>
+<div class="viewcode-block" id="EventQueue.schedule">
+<a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.EventQueue.schedule">[docs]</a>
+    <span class="k">def</span> <span class="nf">schedule</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">date</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Schedule a new event.</span>
 
 <span class="sd">        :param event: the event to schedule</span>
@@ -413,7 +450,10 @@
         <span class="n">entry</span> <span class="o">=</span> <span class="p">(</span><span class="n">date</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">priority</span><span class="p">,</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">counter</span><span class="p">),</span> <span class="n">event</span><span class="p">)</span>
         <span class="n">heapq</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">,</span> <span class="n">entry</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="EventQueue.next_event"><a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.EventQueue.next_event">[docs]</a>    <span class="k">def</span> <span class="nf">next_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="EventQueue.next_event">
+<a class="viewcode-back" href="../../reference/tlo.simulation.html#tlo.simulation.EventQueue.next_event">[docs]</a>
+    <span class="k">def</span> <span class="nf">next_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the earliest event in the queue.</span>
 
 <span class="sd">        :returns: an (event, date) pair</span>
@@ -421,9 +461,11 @@
         <span class="n">date</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">event</span> <span class="o">=</span> <span class="n">heapq</span><span class="o">.</span><span class="n">heappop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">event</span><span class="p">,</span> <span class="n">date</span></div>
 
+
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;:return: the length of the queue&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">)</span></div>
+
 </pre></div>
 
            </div>
@@ -434,7 +476,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

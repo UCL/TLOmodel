@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.docs &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <title>tlo.docs &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
@@ -13,9 +16,9 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -33,7 +36,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -51,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
@@ -93,7 +97,9 @@
 <span class="kn">from</span> <span class="nn">tlo.methods.healthsystem</span> <span class="kn">import</span> <span class="n">HSI_Event</span>
 
 
-<div class="viewcode-block" id="get_package_name"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.get_package_name">[docs]</a><span class="k">def</span> <span class="nf">get_package_name</span><span class="p">(</span><span class="n">dirpath</span><span class="p">):</span>
+<div class="viewcode-block" id="get_package_name">
+<a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.get_package_name">[docs]</a>
+<span class="k">def</span> <span class="nf">get_package_name</span><span class="p">(</span><span class="n">dirpath</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Given a file path to a TLO package, return the name in dot form.</span>
 
@@ -117,7 +123,10 @@
     <span class="k">return</span> <span class="n">package_name</span></div>
 
 
-<div class="viewcode-block" id="generate_module_dict"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.generate_module_dict">[docs]</a><span class="k">def</span> <span class="nf">generate_module_dict</span><span class="p">(</span><span class="n">topdir</span><span class="p">):</span>
+
+<div class="viewcode-block" id="generate_module_dict">
+<a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.generate_module_dict">[docs]</a>
+<span class="k">def</span> <span class="nf">generate_module_dict</span><span class="p">(</span><span class="n">topdir</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Given a root directory topdir, iterates recursively</span>
 <span class="sd">    over top dir and the files and subdirectories within it.</span>
@@ -148,7 +157,10 @@
     <span class="k">return</span> <span class="n">data</span></div>
 
 
-<div class="viewcode-block" id="get_classes_in_module"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.get_classes_in_module">[docs]</a><span class="k">def</span> <span class="nf">get_classes_in_module</span><span class="p">(</span><span class="n">fqn</span><span class="p">,</span> <span class="n">module_obj</span><span class="p">):</span>
+
+<div class="viewcode-block" id="get_classes_in_module">
+<a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.get_classes_in_module">[docs]</a>
+<span class="k">def</span> <span class="nf">get_classes_in_module</span><span class="p">(</span><span class="n">fqn</span><span class="p">,</span> <span class="n">module_obj</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generate a list of lists of the classes *defined* in</span>
 <span class="sd">    the required module (file), in the order in which they</span>
@@ -192,7 +204,10 @@
     <span class="k">return</span> <span class="n">classes</span></div>
 
 
-<div class="viewcode-block" id="get_fully_qualified_name"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.get_fully_qualified_name">[docs]</a><span class="k">def</span> <span class="nf">get_fully_qualified_name</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+
+<div class="viewcode-block" id="get_fully_qualified_name">
+<a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.get_fully_qualified_name">[docs]</a>
+<span class="k">def</span> <span class="nf">get_fully_qualified_name</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Given a file name and a context</span>
 <span class="sd">    return the fully-qualified name of the *module*</span>
@@ -213,7 +228,10 @@
         <span class="k">return</span> <span class="n">fqname</span></div>
 
 
-<div class="viewcode-block" id="write_rst_file"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.write_rst_file">[docs]</a><span class="k">def</span> <span class="nf">write_rst_file</span><span class="p">(</span><span class="n">rst_dir</span><span class="p">,</span> <span class="n">fqn</span><span class="p">,</span> <span class="n">mobj</span><span class="p">):</span>
+
+<div class="viewcode-block" id="write_rst_file">
+<a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.write_rst_file">[docs]</a>
+<span class="k">def</span> <span class="nf">write_rst_file</span><span class="p">(</span><span class="n">rst_dir</span><span class="p">,</span> <span class="n">fqn</span><span class="p">,</span> <span class="n">mobj</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    We want to write one .rst file per module in ./src/tlo/methods</span>
 
@@ -243,12 +261,15 @@
             <span class="c1"># c is [class name, class object, line number]</span>
             <span class="n">mystr</span> <span class="o">=</span> <span class="n">get_class_output_string</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
             <span class="n">out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">mystr</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
         <span class="c1"># Example of use in .rst file:</span>
         <span class="c1"># out.write(&quot;.. class:: Noodle\n\n&quot;)</span>
         <span class="c1"># out.write(&quot;   Noodle&#39;s docstring.\n&quot;)</span>
 
 
-<div class="viewcode-block" id="get_class_output_string"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.get_class_output_string">[docs]</a><span class="k">def</span> <span class="nf">get_class_output_string</span><span class="p">(</span><span class="n">classinfo</span><span class="p">):</span>
+<div class="viewcode-block" id="get_class_output_string">
+<a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.get_class_output_string">[docs]</a>
+<span class="k">def</span> <span class="nf">get_class_output_string</span><span class="p">(</span><span class="n">classinfo</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate output string for a single class to be written to an rst file.</span>
 
 <span class="sd">    :param classinfo: a list with [class name, class object, line number]</span>
@@ -412,7 +433,10 @@
     <span class="k">return</span> <span class="n">mystr</span></div>
 
 
-<div class="viewcode-block" id="which_functions_to_print"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.which_functions_to_print">[docs]</a><span class="k">def</span> <span class="nf">which_functions_to_print</span><span class="p">(</span><span class="n">clazz</span><span class="p">):</span>
+
+<div class="viewcode-block" id="which_functions_to_print">
+<a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.which_functions_to_print">[docs]</a>
+<span class="k">def</span> <span class="nf">which_functions_to_print</span><span class="p">(</span><span class="n">clazz</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Which functions do we want to print?</span>
 
@@ -472,7 +496,10 @@
     <span class="k">return</span> <span class="n">ok_to_print</span></div>
 
 
-<div class="viewcode-block" id="extract_bases"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.extract_bases">[docs]</a><span class="k">def</span> <span class="nf">extract_bases</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="n">class_obj</span><span class="p">,</span> <span class="n">spacer</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+
+<div class="viewcode-block" id="extract_bases">
+<a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.extract_bases">[docs]</a>
+<span class="k">def</span> <span class="nf">extract_bases</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="n">class_obj</span><span class="p">,</span> <span class="n">spacer</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Document which classes this class inherits from,</span>
 <span class="sd">    except for the object class or this class itself.</span>
@@ -519,7 +546,10 @@
     <span class="k">return</span> <span class="n">out</span><span class="p">,</span> <span class="n">relevant_bases</span></div>
 
 
-<div class="viewcode-block" id="get_base_string"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.get_base_string">[docs]</a><span class="k">def</span> <span class="nf">get_base_string</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="n">class_obj</span><span class="p">,</span> <span class="n">base_obj</span><span class="p">):</span>
+
+<div class="viewcode-block" id="get_base_string">
+<a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.get_base_string">[docs]</a>
+<span class="k">def</span> <span class="nf">get_base_string</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="n">class_obj</span><span class="p">,</span> <span class="n">base_obj</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    For this object, representing a base class,</span>
 <span class="sd">    extract its name and add a hyperlink to it.</span>
@@ -578,7 +608,10 @@
     <span class="k">return</span> <span class="n">mystr</span></div>
 
 
-<div class="viewcode-block" id="get_link"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.get_link">[docs]</a><span class="k">def</span> <span class="nf">get_link</span><span class="p">(</span><span class="n">base_fqn</span><span class="p">,</span> <span class="n">base_obj</span><span class="p">):</span>
+
+<div class="viewcode-block" id="get_link">
+<a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.get_link">[docs]</a>
+<span class="k">def</span> <span class="nf">get_link</span><span class="p">(</span><span class="n">base_fqn</span><span class="p">,</span> <span class="n">base_obj</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Given a name like Mockitis and a base_string like</span>
 <span class="sd">    tlo.core.Module, create a link to the latter&#39;s doc page.</span>
 
@@ -610,7 +643,10 @@
     <span class="k">return</span> <span class="n">link_to_base</span></div>
 
 
-<div class="viewcode-block" id="create_table"><a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.create_table">[docs]</a><span class="k">def</span> <span class="nf">create_table</span><span class="p">(</span><span class="n">mydict</span><span class="p">):</span>
+
+<div class="viewcode-block" id="create_table">
+<a class="viewcode-back" href="../../reference/tlo.docs.html#tlo.docs.create_table">[docs]</a>
+<span class="k">def</span> <span class="nf">create_table</span><span class="p">(</span><span class="n">mydict</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Dynamically create a table of arbitrary length</span>
 <span class="sd">    from a PROPERTIES or PARAMETERS dictionary.</span>
@@ -657,6 +693,7 @@
             <span class="n">examplestr</span> <span class="o">+=</span> <span class="n">row</span>
     <span class="n">mylist</span> <span class="o">=</span> <span class="n">examplestr</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">mylist</span></div>
+
 </pre></div>
 
            </div>
@@ -667,7 +704,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

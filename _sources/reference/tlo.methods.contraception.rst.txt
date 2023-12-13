@@ -76,8 +76,8 @@ tlo.methods.contraception module
           - INT
           - The maximum delay (in days) between the decision for a contraceptive to change and the `topen` date of the HSI that is scheduled to effect the change (when using the healthsystem).
         * - use_interventions
-          - STRING
-          - if 'On': FP interventions (pop & ppfp) are simulated since 'interventions_start_date', if 'Off': FP interventions (pop & ppfp) are not simulated.
+          - BOOL
+          - if True: FP interventions (pop & ppfp) are simulated from the date 'interventions_start_date', if False: FP interventions (pop & ppfp) are not simulated.
         * - interventions_start_date
           - DATE
           - The date since which the FP interventions (pop & ppfp) are implemented, if at all (ie, if use_interventions==True
@@ -120,9 +120,9 @@ tlo.methods.contraception module
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthSystem'}
 
-     all_contraception_states : {'injections', 'withdrawal', 'other_modern', 'pill', 'other_traditional', 'not_using', 'implant', 'periodic_abstinence', 'male_condom', 'female_sterilization', 'IUD'}
+     all_contraception_states : {'pill', 'not_using', 'male_condom', 'IUD', 'female_sterilization', 'implant', 'periodic_abstinence', 'other_traditional', 'withdrawal', 'other_modern', 'injections'}
 
-     contraceptives_initiated_with_additional_items : {'injections', 'pill', 'implant', 'female_sterilization', 'IUD'}
+     contraceptives_initiated_with_additional_items : {'pill', 'IUD', 'injections', 'female_sterilization', 'implant'}
 
      **Functions (defined or overridden in class Contraception):**
 
@@ -186,6 +186,11 @@ tlo.methods.contraception module
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
      **Functions (defined or overridden in class ContraceptionPoll):**
 
      .. automethod:: __init__
@@ -218,6 +223,11 @@ tlo.methods.contraception module
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
      **Functions (defined or overridden in class ContraceptionLoggingEvent):**
 
      .. automethod:: __init__
@@ -239,7 +249,7 @@ tlo.methods.contraception module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x7ff650c9fe00>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x12e146fc0>
 
      **Functions (defined or overridden in class HSI_Contraception_FamilyPlanningAppt):**
 
@@ -264,6 +274,11 @@ tlo.methods.contraception module
 
      Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class StartInterventions):**
 

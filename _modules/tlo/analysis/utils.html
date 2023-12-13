@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.analysis.utils &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <title>tlo.analysis.utils &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
@@ -13,9 +16,9 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../../../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -33,7 +36,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -51,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
@@ -128,7 +132,9 @@
     <span class="k">return</span> <span class="n">output_logs</span>
 
 
-<div class="viewcode-block" id="parse_log_file"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.parse_log_file">[docs]</a><span class="k">def</span> <span class="nf">parse_log_file</span><span class="p">(</span><span class="n">log_filepath</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">):</span>
+<div class="viewcode-block" id="parse_log_file">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.parse_log_file">[docs]</a>
+<span class="k">def</span> <span class="nf">parse_log_file</span><span class="p">(</span><span class="n">log_filepath</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parses logged output from a TLO run, split it into smaller logfiles and returns a class containing paths to</span>
 <span class="sd">    these split logfiles.</span>
 
@@ -170,7 +176,10 @@
     <span class="k">return</span> <span class="n">LogsDict</span><span class="p">({</span><span class="n">name</span><span class="p">:</span> <span class="n">handle</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">handle</span> <span class="ow">in</span> <span class="n">module_name_to_filehandle</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span> <span class="n">level</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="write_log_to_excel"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.write_log_to_excel">[docs]</a><span class="k">def</span> <span class="nf">write_log_to_excel</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">log_dataframes</span><span class="p">):</span>
+
+<div class="viewcode-block" id="write_log_to_excel">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.write_log_to_excel">[docs]</a>
+<span class="k">def</span> <span class="nf">write_log_to_excel</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">log_dataframes</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Takes the output of parse_log_file() and creates an Excel file from dataframes&quot;&quot;&quot;</span>
     <span class="n">metadata</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
     <span class="n">sheet_count</span> <span class="o">=</span> <span class="mi">0</span>
@@ -180,20 +189,21 @@
                 <span class="n">sheet_count</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="n">metadata</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">module</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">sheet_count</span><span class="p">,</span> <span class="n">dataframes</span><span class="p">[</span><span class="s1">&#39;_metadata&#39;</span><span class="p">][</span><span class="n">module</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;description&#39;</span><span class="p">]])</span>
 
-    <span class="n">writer</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">ExcelWriter</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-    <span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">,</span> <span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="s1">&#39;sheet&#39;</span><span class="p">,</span> <span class="s1">&#39;description&#39;</span><span class="p">])</span>
-    <span class="n">index</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="s1">&#39;Index&#39;</span><span class="p">)</span>
-
-    <span class="n">sheet_count</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">module</span><span class="p">,</span> <span class="n">dataframes</span> <span class="ow">in</span> <span class="n">log_dataframes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">dataframes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s1">&#39;_metadata&#39;</span><span class="p">:</span>
-                <span class="n">sheet_count</span> <span class="o">+=</span> <span class="mi">1</span>
-                <span class="n">df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Sheet </span><span class="si">{</span><span class="n">sheet_count</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
-    <span class="n">writer</span><span class="o">.</span><span class="n">save</span><span class="p">()</span></div>
+    <span class="k">with</span> <span class="n">pd</span><span class="o">.</span><span class="n">ExcelWriter</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">writer</span><span class="p">:</span>  <span class="c1"># https://github.com/PyCQA/pylint/issues/3060 pylint: disable=E0110</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">,</span> <span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="s1">&#39;sheet&#39;</span><span class="p">,</span> <span class="s1">&#39;description&#39;</span><span class="p">])</span>
+        <span class="n">index</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="s1">&#39;Index&#39;</span><span class="p">)</span>
+        <span class="n">sheet_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">module</span><span class="p">,</span> <span class="n">dataframes</span> <span class="ow">in</span> <span class="n">log_dataframes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">dataframes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s1">&#39;_metadata&#39;</span><span class="p">:</span>
+                    <span class="n">sheet_count</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;Sheet </span><span class="si">{</span><span class="n">sheet_count</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="make_calendar_period_lookup"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.make_calendar_period_lookup">[docs]</a><span class="k">def</span> <span class="nf">make_calendar_period_lookup</span><span class="p">():</span>
+
+<div class="viewcode-block" id="make_calendar_period_lookup">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.make_calendar_period_lookup">[docs]</a>
+<span class="k">def</span> <span class="nf">make_calendar_period_lookup</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a dictionary mapping calendar year (in years) to five year period</span>
 <span class="sd">    i.e. { 1950: &#39;1950-1954&#39;, 1951: &#39;1950-1954, ...}</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -210,7 +220,10 @@
     <span class="k">return</span> <span class="n">ranges</span><span class="p">,</span> <span class="n">lookup</span></div>
 
 
-<div class="viewcode-block" id="make_calendar_period_type"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.make_calendar_period_type">[docs]</a><span class="k">def</span> <span class="nf">make_calendar_period_type</span><span class="p">():</span>
+
+<div class="viewcode-block" id="make_calendar_period_type">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.make_calendar_period_type">[docs]</a>
+<span class="k">def</span> <span class="nf">make_calendar_period_type</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Make an ordered categorical type for calendar periods</span>
 <span class="sd">    Returns CategoricalDType</span>
@@ -219,14 +232,20 @@
     <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">(</span><span class="n">categories</span><span class="o">=</span><span class="n">keys</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="make_age_grp_lookup"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.make_age_grp_lookup">[docs]</a><span class="k">def</span> <span class="nf">make_age_grp_lookup</span><span class="p">():</span>
+
+<div class="viewcode-block" id="make_age_grp_lookup">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.make_age_grp_lookup">[docs]</a>
+<span class="k">def</span> <span class="nf">make_age_grp_lookup</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns a dictionary mapping age (in years) to five year period</span>
 <span class="sd">    i.e. { 0: &#39;0-4&#39;, 1: &#39;0-4&#39;, ..., 119: &#39;100+&#39;, 120: &#39;100+&#39; }</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">create_age_range_lookup</span><span class="p">(</span><span class="n">min_age</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_age</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">range_size</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="make_age_grp_types"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.make_age_grp_types">[docs]</a><span class="k">def</span> <span class="nf">make_age_grp_types</span><span class="p">():</span>
+
+<div class="viewcode-block" id="make_age_grp_types">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.make_age_grp_types">[docs]</a>
+<span class="k">def</span> <span class="nf">make_age_grp_types</span><span class="p">():</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Make an ordered categorical type for age-groups</span>
 <span class="sd">    Returns CategoricalDType</span>
@@ -235,13 +254,19 @@
     <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">CategoricalDtype</span><span class="p">(</span><span class="n">categories</span><span class="o">=</span><span class="n">keys</span><span class="p">,</span> <span class="n">ordered</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="to_age_group"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.to_age_group">[docs]</a><span class="k">def</span> <span class="nf">to_age_group</span><span class="p">(</span><span class="n">_ages</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+
+<div class="viewcode-block" id="to_age_group">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.to_age_group">[docs]</a>
+<span class="k">def</span> <span class="nf">to_age_group</span><span class="p">(</span><span class="n">_ages</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a pd.Series with age-group formatted as a categorical type, created from a pd.Series with exact age.&quot;&quot;&quot;</span>
     <span class="n">_</span><span class="p">,</span> <span class="n">agegrplookup</span> <span class="o">=</span> <span class="n">make_age_grp_lookup</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">_ages</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">agegrplookup</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">make_age_grp_types</span><span class="p">())</span></div>
 
 
-<div class="viewcode-block" id="get_scenario_outputs"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_scenario_outputs">[docs]</a><span class="k">def</span> <span class="nf">get_scenario_outputs</span><span class="p">(</span><span class="n">scenario_filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">outputs_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+
+<div class="viewcode-block" id="get_scenario_outputs">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_scenario_outputs">[docs]</a>
+<span class="k">def</span> <span class="nf">get_scenario_outputs</span><span class="p">(</span><span class="n">scenario_filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">outputs_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns paths of folders associated with a batch_file, in chronological order.&quot;&quot;&quot;</span>
     <span class="n">stub</span> <span class="o">=</span> <span class="n">scenario_filename</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;.py&#39;</span><span class="p">)</span>
     <span class="n">folders</span> <span class="o">=</span> <span class="p">[</span><span class="n">Path</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">path</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">scandir</span><span class="p">(</span><span class="n">outputs_dir</span><span class="p">)</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span> <span class="ow">and</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">stub</span><span class="p">)]</span>
@@ -249,7 +274,10 @@
     <span class="k">return</span> <span class="n">folders</span></div>
 
 
-<div class="viewcode-block" id="get_scenario_info"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_scenario_info">[docs]</a><span class="k">def</span> <span class="nf">get_scenario_info</span><span class="p">(</span><span class="n">scenario_output_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+
+<div class="viewcode-block" id="get_scenario_info">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_scenario_info">[docs]</a>
+<span class="k">def</span> <span class="nf">get_scenario_info</span><span class="p">(</span><span class="n">scenario_output_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Utility function to get the the number draws and the number of runs in a batch set.</span>
 
 <span class="sd">    TODO: read the JSON file to get further information</span>
@@ -265,7 +293,10 @@
     <span class="k">return</span> <span class="n">info</span></div>
 
 
-<div class="viewcode-block" id="load_pickled_dataframes"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.load_pickled_dataframes">[docs]</a><span class="k">def</span> <span class="nf">load_pickled_dataframes</span><span class="p">(</span><span class="n">results_folder</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">draw</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+
+<div class="viewcode-block" id="load_pickled_dataframes">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.load_pickled_dataframes">[docs]</a>
+<span class="k">def</span> <span class="nf">load_pickled_dataframes</span><span class="p">(</span><span class="n">results_folder</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">draw</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Utility function to create a dict contaning all the logs from the specified run within a batch set&quot;&quot;&quot;</span>
     <span class="n">folder</span> <span class="o">=</span> <span class="n">results_folder</span> <span class="o">/</span> <span class="nb">str</span><span class="p">(</span><span class="n">draw</span><span class="p">)</span> <span class="o">/</span> <span class="nb">str</span><span class="p">(</span><span class="n">run</span><span class="p">)</span>
     <span class="n">p</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">DirEntry</span>
@@ -282,7 +313,10 @@
     <span class="k">return</span> <span class="n">output</span></div>
 
 
-<div class="viewcode-block" id="extract_params"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.extract_params">[docs]</a><span class="k">def</span> <span class="nf">extract_params</span><span class="p">(</span><span class="n">results_folder</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="extract_params">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.extract_params">[docs]</a>
+<span class="k">def</span> <span class="nf">extract_params</span><span class="p">(</span><span class="n">results_folder</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Utility function to get overridden parameters from scenario runs</span>
 
 <span class="sd">    Returns dateframe summarizing parameters that change across the draws. It produces a dataframe with index of draw</span>
@@ -316,7 +350,10 @@
         <span class="k">return</span> <span class="kc">None</span></div>
 
 
-<div class="viewcode-block" id="extract_results"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.extract_results">[docs]</a><span class="k">def</span> <span class="nf">extract_results</span><span class="p">(</span><span class="n">results_folder</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
+
+<div class="viewcode-block" id="extract_results">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.extract_results">[docs]</a>
+<span class="k">def</span> <span class="nf">extract_results</span><span class="p">(</span><span class="n">results_folder</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
                     <span class="n">module</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
                     <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
                     <span class="n">column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -349,19 +386,21 @@
                                            <span class="p">)[</span><span class="s1">&#39;tlo.methods.population&#39;</span><span class="p">][</span><span class="s1">&#39;scaling_factor&#39;</span><span class="p">][</span><span class="s1">&#39;scaling_factor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">custom_generate_series</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># If there is no `custom_generate_series` provided, it implies that function required selects a the specified</span>
+        <span class="c1"># If there is no `custom_generate_series` provided, it implies that function required selects the specified</span>
         <span class="c1"># column from the dataframe.</span>
         <span class="k">assert</span> <span class="n">column</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Must specify which column to extract&quot;</span>
-
-        <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">_gen_series</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">_df</span><span class="p">:</span> <span class="n">_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">index</span><span class="p">)[</span><span class="n">column</span><span class="p">]</span>  <span class="c1"># noqa: 731</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">_gen_series</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">_df</span><span class="p">:</span> <span class="n">_df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="n">column</span><span class="p">]</span>  <span class="c1"># noqa: 731</span>
-
     <span class="k">else</span><span class="p">:</span>
         <span class="k">assert</span> <span class="n">index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Cannot specify an index if using custom_generate_series&quot;</span>
         <span class="k">assert</span> <span class="n">column</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Cannot specify a column if using custom_generate_series&quot;</span>
-        <span class="n">_gen_series</span> <span class="o">=</span> <span class="n">custom_generate_series</span>
+
+    <span class="k">def</span> <span class="nf">generate_series</span><span class="p">(</span><span class="n">dataframe</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">custom_generate_series</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="n">index</span><span class="p">)[</span><span class="n">column</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">dataframe</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="n">column</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">custom_generate_series</span><span class="p">(</span><span class="n">dataframe</span><span class="p">)</span>
 
     <span class="c1"># get number of draws and numbers of runs</span>
     <span class="n">info</span> <span class="o">=</span> <span class="n">get_scenario_info</span><span class="p">(</span><span class="n">results_folder</span><span class="p">)</span>
@@ -375,7 +414,7 @@
 
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="n">load_pickled_dataframes</span><span class="p">(</span><span class="n">results_folder</span><span class="p">,</span> <span class="n">draw</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span> <span class="n">module</span><span class="p">)[</span><span class="n">module</span><span class="p">][</span><span class="n">key</span><span class="p">]</span>
-                <span class="n">output_from_eval</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="n">_gen_series</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+                <span class="n">output_from_eval</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">=</span> <span class="n">generate_series</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
                 <span class="k">assert</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span> <span class="o">==</span> <span class="nb">type</span><span class="p">(</span><span class="n">output_from_eval</span><span class="p">),</span> <span class="s1">&#39;Custom command does not generate a pd.Series&#39;</span>
                 <span class="n">res</span><span class="p">[</span><span class="n">draw_run</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_from_eval</span> <span class="o">*</span> <span class="n">get_multiplier</span><span class="p">(</span><span class="n">draw</span><span class="p">,</span> <span class="n">run</span><span class="p">)</span>
 
@@ -389,7 +428,10 @@
     <span class="k">return</span> <span class="n">_concat</span></div>
 
 
-<div class="viewcode-block" id="summarize"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.summarize">[docs]</a><span class="k">def</span> <span class="nf">summarize</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">only_mean</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">collapse_columns</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+
+<div class="viewcode-block" id="summarize">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.summarize">[docs]</a>
+<span class="k">def</span> <span class="nf">summarize</span><span class="p">(</span><span class="n">results</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">only_mean</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">collapse_columns</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Utility function to compute summary statistics</span>
 
 <span class="sd">    Finds mean value and 95% interval across the runs for each draw.</span>
@@ -426,7 +468,10 @@
         <span class="k">return</span> <span class="n">summary</span></div>
 
 
-<div class="viewcode-block" id="get_grid"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_grid">[docs]</a><span class="k">def</span> <span class="nf">get_grid</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">res</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+
+<div class="viewcode-block" id="get_grid">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_grid">[docs]</a>
+<span class="k">def</span> <span class="nf">get_grid</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">res</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Utility function to create the arrays needed to plot a heatmap.</span>
 
 <span class="sd">    :param pd.DataFrame params: the dataframe of parameters with index=draw (made using `extract_params()`).</span>
@@ -443,7 +488,10 @@
     <span class="k">return</span> <span class="n">grid</span></div>
 
 
-<div class="viewcode-block" id="format_gbd"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.format_gbd">[docs]</a><span class="k">def</span> <span class="nf">format_gbd</span><span class="p">(</span><span class="n">gbd_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+
+<div class="viewcode-block" id="format_gbd">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.format_gbd">[docs]</a>
+<span class="k">def</span> <span class="nf">format_gbd</span><span class="p">(</span><span class="n">gbd_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Format GBD data to give standarize categories for age_group and period&quot;&quot;&quot;</span>
 
     <span class="c1"># Age-groups:</span>
@@ -456,7 +504,10 @@
     <span class="k">return</span> <span class="n">gbd_df</span></div>
 
 
-<div class="viewcode-block" id="create_pickles_locally"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.create_pickles_locally">[docs]</a><span class="k">def</span> <span class="nf">create_pickles_locally</span><span class="p">(</span><span class="n">scenario_output_dir</span><span class="p">,</span> <span class="n">compressed_file_name_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="create_pickles_locally">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.create_pickles_locally">[docs]</a>
+<span class="k">def</span> <span class="nf">create_pickles_locally</span><span class="p">(</span><span class="n">scenario_output_dir</span><span class="p">,</span> <span class="n">compressed_file_name_prefix</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;For a run from the Batch system that has not resulted in the creation of the pickles, reconstruct the pickles</span>
 <span class="sd">     locally.&quot;&quot;&quot;</span>
 
@@ -493,7 +544,10 @@
             <span class="n">turn_log_into_pickles</span><span class="p">(</span><span class="n">logfile</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="compare_number_of_deaths"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.compare_number_of_deaths">[docs]</a><span class="k">def</span> <span class="nf">compare_number_of_deaths</span><span class="p">(</span><span class="n">logfile</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+
+<div class="viewcode-block" id="compare_number_of_deaths">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.compare_number_of_deaths">[docs]</a>
+<span class="k">def</span> <span class="nf">compare_number_of_deaths</span><span class="p">(</span><span class="n">logfile</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to produce tables summarising deaths in the model run (given be a logfile) and the corresponding</span>
 <span class="sd">    number of deaths in the GBD dataset.</span>
 <span class="sd">    NB.</span>
@@ -555,7 +609,10 @@
     <span class="k">return</span> <span class="n">gbd</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;period&#39;</span><span class="p">,</span> <span class="s1">&#39;sex&#39;</span><span class="p">,</span> <span class="s1">&#39;age_grp&#39;</span><span class="p">,</span> <span class="s1">&#39;label&#39;</span><span class="p">],</span> <span class="n">how</span><span class="o">=</span><span class="s1">&#39;left&#39;</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="flatten_multi_index_series_into_dict_for_logging"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.flatten_multi_index_series_into_dict_for_logging">[docs]</a><span class="k">def</span> <span class="nf">flatten_multi_index_series_into_dict_for_logging</span><span class="p">(</span><span class="n">ser</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+
+<div class="viewcode-block" id="flatten_multi_index_series_into_dict_for_logging">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.flatten_multi_index_series_into_dict_for_logging">[docs]</a>
+<span class="k">def</span> <span class="nf">flatten_multi_index_series_into_dict_for_logging</span><span class="p">(</span><span class="n">ser</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function that converts a pd.Series with multi-index into a dict format that is suitable for logging.</span>
 <span class="sd">    It does this by converting the multi-index into keys of type `str` in a format that later be used to reconstruct</span>
 <span class="sd">    the multi-index (using `unflatten_flattened_multi_index_in_logging`).&quot;&quot;&quot;</span>
@@ -571,7 +628,10 @@
     <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">flat_index</span><span class="p">,</span> <span class="n">ser</span><span class="o">.</span><span class="n">values</span><span class="p">))</span></div>
 
 
-<div class="viewcode-block" id="unflatten_flattened_multi_index_in_logging"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.unflatten_flattened_multi_index_in_logging">[docs]</a><span class="k">def</span> <span class="nf">unflatten_flattened_multi_index_in_logging</span><span class="p">(</span><span class="n">_x</span><span class="p">:</span> <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="unflatten_flattened_multi_index_in_logging">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.unflatten_flattened_multi_index_in_logging">[docs]</a>
+<span class="k">def</span> <span class="nf">unflatten_flattened_multi_index_in_logging</span><span class="p">(</span><span class="n">_x</span><span class="p">:</span> <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function that recreate the multi-index of logged results from a pd.DataFrame that is generated by</span>
 <span class="sd">    `parse_log`.</span>
 
@@ -599,7 +659,10 @@
         <span class="k">return</span> <span class="n">gen_mutli_index</span><span class="p">(</span><span class="n">_x</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="LogsDict"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.LogsDict">[docs]</a><span class="k">class</span> <span class="nc">LogsDict</span><span class="p">(</span><span class="n">Mapping</span><span class="p">):</span>
+
+<div class="viewcode-block" id="LogsDict">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.LogsDict">[docs]</a>
+<span class="k">class</span> <span class="nc">LogsDict</span><span class="p">(</span><span class="n">Mapping</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parses module-specific log files and returns Pandas dataframes.</span>
 
 <span class="sd">        The dictionary returned has the format::</span>
@@ -651,11 +714,14 @@
         <span class="c1"># if key k is a valid logfile entry</span>
         <span class="k">return</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span>
 
-<div class="viewcode-block" id="LogsDict.items"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.LogsDict.items">[docs]</a>    <span class="k">def</span> <span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="LogsDict.items">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.LogsDict.items">[docs]</a>
+    <span class="k">def</span> <span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># parse module-specific log file and return results as a generator</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">module_specific_logs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="k">yield</span> <span class="n">key</span><span class="p">,</span> <span class="n">module_specific_logs</span></div>
+
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">repr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="p">)</span>
@@ -663,15 +729,21 @@
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="p">)</span>
 
-<div class="viewcode-block" id="LogsDict.keys"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.LogsDict.keys">[docs]</a>    <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="LogsDict.keys">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.LogsDict.keys">[docs]</a>
+    <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># return dictionary keys</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="LogsDict.values"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.LogsDict.values">[docs]</a>    <span class="k">def</span> <span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="LogsDict.values">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.LogsDict.values">[docs]</a>
+    <span class="k">def</span> <span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># parse module-specific log file and yield the results</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">module_specific_logs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
             <span class="k">yield</span> <span class="n">module_specific_logs</span></div>
+
 
     <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">iter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_logfile_names_and_paths</span><span class="p">)</span>
@@ -683,7 +755,10 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span></div>
 
 
-<div class="viewcode-block" id="get_filtered_treatment_ids"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_filtered_treatment_ids">[docs]</a><span class="k">def</span> <span class="nf">get_filtered_treatment_ids</span><span class="p">(</span><span class="n">depth</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="get_filtered_treatment_ids">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_filtered_treatment_ids">[docs]</a>
+<span class="k">def</span> <span class="nf">get_filtered_treatment_ids</span><span class="p">(</span><span class="n">depth</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return a list of treatment_ids that are defined in the model, filtered to a specified depth.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">filter_treatments</span><span class="p">(</span><span class="n">_treatments</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
@@ -706,7 +781,10 @@
     <span class="k">return</span> <span class="n">filter_treatments</span><span class="p">(</span><span class="n">hsi_event_details</span><span class="p">[</span><span class="s1">&#39;treatment_id&#39;</span><span class="p">],</span> <span class="n">depth</span><span class="o">=</span><span class="n">depth</span> <span class="k">if</span> <span class="n">depth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="colors_in_matplotlib"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.colors_in_matplotlib">[docs]</a><span class="k">def</span> <span class="nf">colors_in_matplotlib</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
+
+<div class="viewcode-block" id="colors_in_matplotlib">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.colors_in_matplotlib">[docs]</a>
+<span class="k">def</span> <span class="nf">colors_in_matplotlib</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return tuple of the strings for all the colours defined in Matplotlib.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span>
         <span class="nb">set</span><span class="p">()</span><span class="o">.</span><span class="n">union</span><span class="p">(</span>
@@ -715,6 +793,7 @@
             <span class="n">mcolors</span><span class="o">.</span><span class="n">CSS4_COLORS</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
         <span class="p">)</span>
     <span class="p">)</span></div>
+
 
 
 <span class="n">APPT_TYPE_TO_COARSE_APPT_TYPE_MAP</span> <span class="o">=</span> <span class="n">MappingProxyType</span><span class="p">({</span>
@@ -788,12 +867,17 @@
 <span class="p">})</span>
 
 
-<div class="viewcode-block" id="get_coarse_appt_type"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_coarse_appt_type">[docs]</a><span class="k">def</span> <span class="nf">get_coarse_appt_type</span><span class="p">(</span><span class="n">appt_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<div class="viewcode-block" id="get_coarse_appt_type">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_coarse_appt_type">[docs]</a>
+<span class="k">def</span> <span class="nf">get_coarse_appt_type</span><span class="p">(</span><span class="n">appt_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the `coarser` categorization of appt_types for a given appt_type.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">APPT_TYPE_TO_COARSE_APPT_TYPE_MAP</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">appt_type</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="order_of_coarse_appt"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.order_of_coarse_appt">[docs]</a><span class="k">def</span> <span class="nf">order_of_coarse_appt</span><span class="p">(</span><span class="n">_coarse_appt</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="order_of_coarse_appt">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.order_of_coarse_appt">[docs]</a>
+<span class="k">def</span> <span class="nf">order_of_coarse_appt</span><span class="p">(</span><span class="n">_coarse_appt</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Define a standard order for the coarse appointment types.&quot;&quot;&quot;</span>
     <span class="n">ordered_coarse_appts</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">COARSE_APPT_TYPE_TO_COLOR_MAP</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">_coarse_appt</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
@@ -802,7 +886,10 @@
         <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">(</span><span class="n">ordered_coarse_appts</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">_coarse_appt</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="get_color_coarse_appt"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_color_coarse_appt">[docs]</a><span class="k">def</span> <span class="nf">get_color_coarse_appt</span><span class="p">(</span><span class="n">coarse_appt_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+
+<div class="viewcode-block" id="get_color_coarse_appt">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_color_coarse_appt">[docs]</a>
+<span class="k">def</span> <span class="nf">get_color_coarse_appt</span><span class="p">(</span><span class="n">coarse_appt_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the colour (as matplotlib string) assigned to this appointment type.</span>
 
 <span class="sd">    Returns `np.nan` if appointment-type is not recognised.</span>
@@ -810,6 +897,7 @@
 <span class="sd">    Names of colors are selected with reference to: https://i.stack.imgur.com/lFZum.png</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">COARSE_APPT_TYPE_TO_COLOR_MAP</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">coarse_appt_type</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span></div>
+
 
 
 <span class="n">SHORT_TREATMENT_ID_TO_COLOR_MAP</span> <span class="o">=</span> <span class="n">MappingProxyType</span><span class="p">({</span>
@@ -855,7 +943,9 @@
     <span class="k">return</span> <span class="n">short_treatment_id</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_*&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;*&#39;</span>
 
 
-<div class="viewcode-block" id="order_of_short_treatment_ids"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.order_of_short_treatment_ids">[docs]</a><span class="k">def</span> <span class="nf">order_of_short_treatment_ids</span><span class="p">(</span>
+<div class="viewcode-block" id="order_of_short_treatment_ids">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.order_of_short_treatment_ids">[docs]</a>
+<span class="k">def</span> <span class="nf">order_of_short_treatment_ids</span><span class="p">(</span>
     <span class="n">short_treatment_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Define a standard order for short treatment_ids.&quot;&quot;&quot;</span>
@@ -871,7 +961,10 @@
         <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="get_color_short_treatment_id"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_color_short_treatment_id">[docs]</a><span class="k">def</span> <span class="nf">get_color_short_treatment_id</span><span class="p">(</span><span class="n">short_treatment_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+
+<div class="viewcode-block" id="get_color_short_treatment_id">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_color_short_treatment_id">[docs]</a>
+<span class="k">def</span> <span class="nf">get_color_short_treatment_id</span><span class="p">(</span><span class="n">short_treatment_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the colour (as matplotlib string) assigned to this shorted TREATMENT_ID.</span>
 
 <span class="sd">    Returns `np.nan` if treatment_id is not recognised.</span>
@@ -879,6 +972,7 @@
     <span class="k">return</span> <span class="n">SHORT_TREATMENT_ID_TO_COLOR_MAP</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
         <span class="n">_standardize_short_treatment_id</span><span class="p">(</span><span class="n">short_treatment_id</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
     <span class="p">)</span></div>
+
 
 
 <span class="n">CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP</span> <span class="o">=</span> <span class="n">MappingProxyType</span><span class="p">({</span>
@@ -918,7 +1012,9 @@
 <span class="p">})</span>
 
 
-<div class="viewcode-block" id="order_of_cause_of_death_or_daly_label"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.order_of_cause_of_death_or_daly_label">[docs]</a><span class="k">def</span> <span class="nf">order_of_cause_of_death_or_daly_label</span><span class="p">(</span>
+<div class="viewcode-block" id="order_of_cause_of_death_or_daly_label">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.order_of_cause_of_death_or_daly_label">[docs]</a>
+<span class="k">def</span> <span class="nf">order_of_cause_of_death_or_daly_label</span><span class="p">(</span>
     <span class="n">cause_of_death_label</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Define a standard order for Cause-of-Death labels.&quot;&quot;&quot;</span>
@@ -931,7 +1027,10 @@
         <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="get_color_cause_of_death_or_daly_label"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_color_cause_of_death_or_daly_label">[docs]</a><span class="k">def</span> <span class="nf">get_color_cause_of_death_or_daly_label</span><span class="p">(</span><span class="n">cause_of_death_label</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+
+<div class="viewcode-block" id="get_color_cause_of_death_or_daly_label">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_color_cause_of_death_or_daly_label">[docs]</a>
+<span class="k">def</span> <span class="nf">get_color_cause_of_death_or_daly_label</span><span class="p">(</span><span class="n">cause_of_death_label</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the colour (as matplotlib string) assigned to this Cause-of-Death Label.</span>
 
 <span class="sd">    Returns `np.nan` if label is not recognised.</span>
@@ -939,7 +1038,10 @@
     <span class="k">return</span> <span class="n">CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cause_of_death_label</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="squarify_neat"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.squarify_neat">[docs]</a><span class="k">def</span> <span class="nf">squarify_neat</span><span class="p">(</span><span class="n">sizes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">colormap</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">numlabels</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+<div class="viewcode-block" id="squarify_neat">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.squarify_neat">[docs]</a>
+<span class="k">def</span> <span class="nf">squarify_neat</span><span class="p">(</span><span class="n">sizes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">label</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">,</span> <span class="n">colormap</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">numlabels</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Pass through to squarify, with some customisation: ...</span>
 <span class="sd">     * Apply the colormap specified</span>
 <span class="sd">     * Only give label a selection of the segments</span>
@@ -951,12 +1053,15 @@
     <span class="n">squarify</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
         <span class="n">sizes</span><span class="o">=</span><span class="n">sizes</span><span class="p">,</span>
         <span class="n">label</span><span class="o">=</span><span class="p">[</span><span class="n">_label</span> <span class="k">if</span> <span class="n">_label</span> <span class="ow">in</span> <span class="n">to_label</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span> <span class="k">for</span> <span class="n">_label</span> <span class="ow">in</span> <span class="n">label</span><span class="p">],</span>
-        <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="n">colormap</span><span class="p">(</span><span class="n">_x</span><span class="p">)</span> <span class="k">for</span> <span class="n">_x</span> <span class="ow">in</span> <span class="n">label</span><span class="p">],</span>
+        <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="n">colormap</span><span class="p">(</span><span class="n">_x</span><span class="p">)</span> <span class="k">for</span> <span class="n">_x</span> <span class="ow">in</span> <span class="n">label</span><span class="p">]</span> <span class="k">if</span> <span class="n">colormap</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="get_root_path"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_root_path">[docs]</a><span class="k">def</span> <span class="nf">get_root_path</span><span class="p">(</span><span class="n">starter_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+
+<div class="viewcode-block" id="get_root_path">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_root_path">[docs]</a>
+<span class="k">def</span> <span class="nf">get_root_path</span><span class="p">(</span><span class="n">starter_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the absolute path of the top level of the repository. `starter_path` optionally gives a reference</span>
 <span class="sd">    location from which to begin search; if omitted the location of this file is used.&quot;&quot;&quot;</span>
 
@@ -974,7 +1079,10 @@
         <span class="k">raise</span> <span class="ne">OSError</span><span class="p">(</span><span class="s2">&quot;File Not Found&quot;</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="bin_hsi_event_details"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.bin_hsi_event_details">[docs]</a><span class="k">def</span> <span class="nf">bin_hsi_event_details</span><span class="p">(</span>
+
+<div class="viewcode-block" id="bin_hsi_event_details">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.bin_hsi_event_details">[docs]</a>
+<span class="k">def</span> <span class="nf">bin_hsi_event_details</span><span class="p">(</span>
     <span class="n">results_folder</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
     <span class="n">get_counter_from_event_details</span><span class="p">:</span> <span class="nb">callable</span><span class="p">,</span>
     <span class="n">start_date</span><span class="p">:</span> <span class="n">Date</span><span class="p">,</span>
@@ -1033,7 +1141,10 @@
     <span class="k">return</span> <span class="n">binned_counts_by_draw_and_run</span></div>
 
 
-<div class="viewcode-block" id="compute_mean_across_runs"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.compute_mean_across_runs">[docs]</a><span class="k">def</span> <span class="nf">compute_mean_across_runs</span><span class="p">(</span>
+
+<div class="viewcode-block" id="compute_mean_across_runs">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.compute_mean_across_runs">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_mean_across_runs</span><span class="p">(</span>
     <span class="n">counters_by_draw_and_run</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">Counter</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Counter</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute mean across scenario runs of dict of counters keyed by draw and run.</span>
@@ -1057,7 +1168,10 @@
     <span class="p">}</span></div>
 
 
-<div class="viewcode-block" id="plot_stacked_bar_chart"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.plot_stacked_bar_chart">[docs]</a><span class="k">def</span> <span class="nf">plot_stacked_bar_chart</span><span class="p">(</span>
+
+<div class="viewcode-block" id="plot_stacked_bar_chart">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.plot_stacked_bar_chart">[docs]</a>
+<span class="k">def</span> <span class="nf">plot_stacked_bar_chart</span><span class="p">(</span>
     <span class="n">ax</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">Axes</span><span class="p">,</span>
     <span class="n">binned_counts</span><span class="p">:</span> <span class="n">Counter</span><span class="p">,</span>
     <span class="n">inner_group_cmap</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1104,7 +1218,10 @@
     <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span></div>
 
 
-<div class="viewcode-block" id="plot_clustered_stacked"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.plot_clustered_stacked">[docs]</a><span class="k">def</span> <span class="nf">plot_clustered_stacked</span><span class="p">(</span><span class="n">dfall</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">color_for_column_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scaled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">legends</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">H</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+<div class="viewcode-block" id="plot_clustered_stacked">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.plot_clustered_stacked">[docs]</a>
+<span class="k">def</span> <span class="nf">plot_clustered_stacked</span><span class="p">(</span><span class="n">dfall</span><span class="p">,</span> <span class="n">ax</span><span class="p">,</span> <span class="n">color_for_column_map</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">scaled</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">legends</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">H</span><span class="o">=</span><span class="s2">&quot;/&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Given a dict of dataframes, with identical columns and index, create a clustered stacked bar plot.</span>
 <span class="sd">    * H is the hatch used for identification of the different dataframe.</span>
 <span class="sd">    * color_for_column_map should return a color for every column in the dataframes</span>
@@ -1150,7 +1267,10 @@
         <span class="n">ax</span><span class="o">.</span><span class="n">add_artist</span><span class="p">(</span><span class="n">l1</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="get_mappers_in_fullmodel"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_mappers_in_fullmodel">[docs]</a><span class="k">def</span> <span class="nf">get_mappers_in_fullmodel</span><span class="p">(</span><span class="n">resourcefilepath</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">outputpath</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+
+<div class="viewcode-block" id="get_mappers_in_fullmodel">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_mappers_in_fullmodel">[docs]</a>
+<span class="k">def</span> <span class="nf">get_mappers_in_fullmodel</span><span class="p">(</span><span class="n">resourcefilepath</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">outputpath</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the cause-of-death, cause-of-disability and cause-of-DALYS mappers that are created in a run of the</span>
 <span class="sd">    fullmodel.&quot;&quot;&quot;</span>
 
@@ -1180,7 +1300,10 @@
     <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span> <span class="n">extract_mapper</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">}</span></div>
 
 
-<div class="viewcode-block" id="get_parameters_for_status_quo"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_parameters_for_status_quo">[docs]</a><span class="k">def</span> <span class="nf">get_parameters_for_status_quo</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+
+<div class="viewcode-block" id="get_parameters_for_status_quo">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_parameters_for_status_quo">[docs]</a>
+<span class="k">def</span> <span class="nf">get_parameters_for_status_quo</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns a dictionary of parameters and their updated values to indicate</span>
 <span class="sd">    the &quot;Status Quo&quot; scenario. This is the configuration that is the target</span>
@@ -1212,7 +1335,10 @@
     <span class="p">}</span></div>
 
 
-<div class="viewcode-block" id="get_parameters_for_improved_healthsystem_and_healthcare_seeking"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_parameters_for_improved_healthsystem_and_healthcare_seeking">[docs]</a><span class="k">def</span> <span class="nf">get_parameters_for_improved_healthsystem_and_healthcare_seeking</span><span class="p">(</span>
+
+<div class="viewcode-block" id="get_parameters_for_improved_healthsystem_and_healthcare_seeking">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.get_parameters_for_improved_healthsystem_and_healthcare_seeking">[docs]</a>
+<span class="k">def</span> <span class="nf">get_parameters_for_improved_healthsystem_and_healthcare_seeking</span><span class="p">(</span>
     <span class="n">resourcefilepath</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span>
     <span class="n">max_healthsystem_function</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">max_healthcare_seeking</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -1299,7 +1425,10 @@
     <span class="k">return</span> <span class="n">params</span></div>
 
 
-<div class="viewcode-block" id="mix_scenarios"><a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.mix_scenarios">[docs]</a><span class="k">def</span> <span class="nf">mix_scenarios</span><span class="p">(</span><span class="o">*</span><span class="n">dicts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+
+<div class="viewcode-block" id="mix_scenarios">
+<a class="viewcode-back" href="../../../reference/tlo.analysis.utils.html#tlo.analysis.utils.mix_scenarios">[docs]</a>
+<span class="k">def</span> <span class="nf">mix_scenarios</span><span class="p">(</span><span class="o">*</span><span class="n">dicts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to combine a Dicts that show which parameters should be over-written.</span>
 <span class="sd">     * Warnings are generated if a parameter appears in more than one Dict with a different value;</span>
 <span class="sd">     * Items under the same top-level key (i.e., for the Module) are merged rather than being over-written.&quot;&quot;&quot;</span>
@@ -1316,6 +1445,7 @@
                 <span class="n">d</span><span class="p">[</span><span class="n">mod</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="n">param</span><span class="p">:</span> <span class="n">value</span><span class="p">})</span>
 
     <span class="k">return</span> <span class="n">d</span></div>
+
 </pre></div>
 
            </div>
@@ -1326,7 +1456,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

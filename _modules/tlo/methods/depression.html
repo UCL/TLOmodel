@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.depression &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <title>tlo.methods.depression &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
@@ -13,9 +16,9 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../../../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -33,7 +36,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -51,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
@@ -108,10 +112,15 @@
 <span class="c1">#   MODULE DEFINITIONS</span>
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
-<div class="viewcode-block" id="Depression"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression">[docs]</a><span class="k">class</span> <span class="nc">Depression</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
-<div class="viewcode-block" id="Depression.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Depression">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression">[docs]</a>
+<span class="k">class</span> <span class="nc">Depression</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="Depression.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span></div>
+
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;Contraception&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthSystem&#39;</span><span class="p">,</span> <span class="s1">&#39;Lifestyle&#39;</span><span class="p">,</span> <span class="s1">&#39;SymptomManager&#39;</span>
@@ -297,7 +306,9 @@
                                                      <span class="s1">&#39;or had a last pregnancy less than one year ago&#39;</span><span class="p">)</span>
     <span class="p">}</span>
 
-<div class="viewcode-block" id="Depression.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+<div class="viewcode-block" id="Depression.read_parameters">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.read_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
         <span class="s2">&quot;read parameters, register disease module with healthsystem and register symptoms&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">load_parameters_from_dataframe</span><span class="p">(</span>
             <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Depression.xlsx&#39;</span><span class="p">,</span>
@@ -416,7 +427,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">register_symptom</span><span class="p">(</span><span class="n">Symptom</span><span class="o">.</span><span class="n">emergency</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Injuries_From_Self_Harm&#39;</span><span class="p">,</span>
                                                                               <span class="n">which</span><span class="o">=</span><span class="s1">&#39;adults&#39;</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="Depression.apply_linear_model"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.apply_linear_model">[docs]</a>    <span class="k">def</span> <span class="nf">apply_linear_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lm</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Depression.apply_linear_model">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.apply_linear_model">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_linear_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lm</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Helper function will apply the linear model (lm) on the dataframe (df) to get a probability of some event</span>
 <span class="sd">        happening to each individual. It then returns a series with same index with bools indicating the outcome based</span>
@@ -427,7 +441,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">))</span> <span class="o">&lt;</span> <span class="n">lm</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">df</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Depression.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Depression.initialise_population">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">df</span><span class="p">[</span><span class="s1">&#39;de_depr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="p">[</span><span class="s1">&#39;de_ever_depr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
@@ -497,7 +514,10 @@
                 <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;is_alive&#39;</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;de_depr&#39;</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;de_ever_diagnosed_depression&#39;</span><span class="p">]]</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="Depression.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Depression.initialise_simulation">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.initialise_simulation">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Launch the main polling event and the logging event.</span>
 <span class="sd">        Schedule the refill prescriptions for those on antidepressants.</span>
@@ -533,7 +553,10 @@
                     <span class="n">tclose</span><span class="o">=</span><span class="n">date_of_next_appt_scheduled</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
                 <span class="p">)</span></div>
 
-<div class="viewcode-block" id="Depression.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Depression.on_birth">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.on_birth">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual -- they will not have depression or any history of it.</span>
 <span class="sd">        :param mother_id: the mother for this child</span>
 <span class="sd">        :param child_id: the new child</span>
@@ -551,13 +574,19 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;de_recently_pregnant&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;de_cc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="Depression.on_hsi_alert"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.on_hsi_alert">[docs]</a>    <span class="k">def</span> <span class="nf">on_hsi_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Depression.on_hsi_alert">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.on_hsi_alert">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_hsi_alert</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">treatment_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Nothing happens if this module is alerted to a person attending an HSI</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="Depression.report_daly_values"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.report_daly_values">[docs]</a>    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Depression.report_daly_values">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.report_daly_values">[docs]</a>
+    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Report DALYs based status in the previous month.</span>
 <span class="sd">        A DALY weight is attached to a status of depression for as long as the depression lasted in the previous month.</span>
@@ -592,7 +621,10 @@
 
         <span class="k">return</span> <span class="n">av_daly_wt_last_month</span></div>
 
-<div class="viewcode-block" id="Depression.do_on_presentation_to_care"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.do_on_presentation_to_care">[docs]</a>    <span class="k">def</span> <span class="nf">do_on_presentation_to_care</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Depression.do_on_presentation_to_care">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.do_on_presentation_to_care">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_on_presentation_to_care</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;This member function is called when a person is in an HSI, and there may need to be screening for depression.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -621,7 +653,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
-<div class="viewcode-block" id="Depression.do_when_suspected_depression"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.do_when_suspected_depression">[docs]</a>    <span class="k">def</span> <span class="nf">do_when_suspected_depression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Depression.do_when_suspected_depression">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.Depression.do_when_suspected_depression">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_when_suspected_depression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is called by the a generic HSI event when depression is suspected or otherwise investigated.</span>
 <span class="sd">        :param person_id:</span>
@@ -648,14 +683,18 @@
                 <span class="n">hsi_event</span><span class="o">=</span><span class="n">HSI_Depression_Start_Antidepressant</span><span class="p">(</span><span class="n">module</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">),</span>
                 <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                 <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
-            <span class="p">)</span></div></div>
+            <span class="p">)</span></div>
+</div>
+
 
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 <span class="c1">#   DISEASE MODULE EVENTS</span>
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
-<div class="viewcode-block" id="DepressionPollingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionPollingEvent">[docs]</a><span class="k">class</span> <span class="nc">DepressionPollingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="DepressionPollingEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionPollingEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">DepressionPollingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    The regular event that actually changes individuals&#39; depression status.</span>
 <span class="sd">    It occurs every 3 months and this cannot be changed.</span>
@@ -663,10 +702,15 @@
 <span class="sd">    all persons. Individual level events (HSI, self-harm/suicide events) may occur at other times.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="DepressionPollingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionPollingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="DepressionPollingEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionPollingEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">3</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="DepressionPollingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionPollingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="DepressionPollingEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionPollingEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="c1"># Create some shortcuts</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span>
@@ -733,19 +777,28 @@
         <span class="p">)</span>
         <span class="k">for</span> <span class="n">person_id</span> <span class="ow">in</span> <span class="n">will_suicide_in_next_3mo</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">will_suicide_in_next_3mo</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">DepressionSuicideEvent</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">),</span>
-                                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">90</span><span class="p">)))</span></div></div>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">90</span><span class="p">)))</span></div>
+</div>
 
 
-<div class="viewcode-block" id="DepressionSelfHarmEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionSelfHarmEvent">[docs]</a><span class="k">class</span> <span class="nc">DepressionSelfHarmEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="DepressionSelfHarmEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionSelfHarmEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">DepressionSelfHarmEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is a Self-Harm event. It has been scheduled to occur by the DepressionPollingEvent.</span>
 <span class="sd">    It imposes the Injuries_From_Self_Harm symptom, which will lead to emergency care being sought</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="DepressionSelfHarmEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionSelfHarmEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<div class="viewcode-block" id="DepressionSelfHarmEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionSelfHarmEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="DepressionSelfHarmEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionSelfHarmEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="DepressionSelfHarmEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionSelfHarmEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span>
 
@@ -758,19 +811,28 @@
             <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span>
             <span class="n">add_or_remove</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
             <span class="n">symptom_string</span><span class="o">=</span><span class="s1">&#39;Injuries_From_Self_Harm&#39;</span>
-        <span class="p">)</span></div></div>
+        <span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="DepressionSuicideEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionSuicideEvent">[docs]</a><span class="k">class</span> <span class="nc">DepressionSuicideEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="DepressionSuicideEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionSuicideEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">DepressionSuicideEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is a Suicide event. It has been scheduled to occur by the DepressionPollingEvent.</span>
 <span class="sd">    It causes the immediate death of the person.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="DepressionSuicideEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionSuicideEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<div class="viewcode-block" id="DepressionSuicideEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionSuicideEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="DepressionSuicideEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionSuicideEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="DepressionSuicideEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionSuicideEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;is_alive&#39;</span><span class="p">]:</span>
             <span class="k">return</span>
 
@@ -778,25 +840,34 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">do_death</span><span class="p">(</span>
             <span class="n">individual_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">,</span>
             <span class="n">cause</span><span class="o">=</span><span class="s1">&#39;Suicide&#39;</span><span class="p">,</span>
-            <span class="n">originating_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">)</span></div></div>
+            <span class="n">originating_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">)</span></div>
+</div>
+
 
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 <span class="c1">#   LOGGING EVENTS</span>
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
-<div class="viewcode-block" id="DepressionLoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionLoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">DepressionLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="DepressionLoggingEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionLoggingEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">DepressionLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is the LoggingEvent for Depression. It runs every 3 months and gives:</span>
 <span class="sd">    * population summaries for statuses for Depression at that time.</span>
 <span class="sd">    * counts of events of self-harm and suicide that have occurred in the 3 months prior</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="DepressionLoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionLoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="DepressionLoggingEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionLoggingEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="mi">3</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="DepressionLoggingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionLoggingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="DepressionLoggingEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.DepressionLoggingEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
         <span class="c1"># 1) Produce summary statistics for the current states</span>
@@ -851,20 +922,26 @@
                           <span class="p">})</span>
 
         <span class="c1"># Reset the EventTracker</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">eventsTracker</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;SelfHarmEvents&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;SuicideEvents&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">eventsTracker</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;SelfHarmEvents&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;SuicideEvents&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span></div>
+</div>
+
 
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 <span class="c1">#   HEALTH SYSTEM INTERACTION EVENTS</span>
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
-<div class="viewcode-block" id="HSI_Depression_TalkingTherapy"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_TalkingTherapy">[docs]</a><span class="k">class</span> <span class="nc">HSI_Depression_TalkingTherapy</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Depression_TalkingTherapy">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_TalkingTherapy">[docs]</a>
+<span class="k">class</span> <span class="nc">HSI_Depression_TalkingTherapy</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This is a Health System Interaction Event in which a person receives a session of talking therapy. It is one</span>
 <span class="sd">    of a course of 5 sessions (at months 0, 6, 12, 18, 24). If one of these HSI does not happen</span>
 <span class="sd">    then no further sessions occur. Sessions after the first have no direct effect, as the only property affected is</span>
 <span class="sd">    reflects ever having had one session of talking therapy.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="HSI_Depression_TalkingTherapy.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_TalkingTherapy.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Depression_TalkingTherapy.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_TalkingTherapy.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;Depression_TalkingTherapy&#39;</span>
@@ -872,7 +949,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_of_sessions_had</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># A counter for the number of sessions of talking therapy had</span></div>
 
-<div class="viewcode-block" id="HSI_Depression_TalkingTherapy.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_TalkingTherapy.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Depression_TalkingTherapy.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_TalkingTherapy.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the property `de_ever_talk_ther` to be True and schedule the next session in the course if the person</span>
 <span class="sd">        has not yet had 5 sessions.&quot;&quot;&quot;</span>
 
@@ -888,23 +968,32 @@
                 <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">6</span><span class="p">),</span>
                 <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                 <span class="n">priority</span><span class="o">=</span><span class="mi">1</span>
-            <span class="p">)</span></div></div>
+            <span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="HSI_Depression_Start_Antidepressant"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_Start_Antidepressant">[docs]</a><span class="k">class</span> <span class="nc">HSI_Depression_Start_Antidepressant</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Depression_Start_Antidepressant">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_Start_Antidepressant">[docs]</a>
+<span class="k">class</span> <span class="nc">HSI_Depression_Start_Antidepressant</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is a Health System Interaction Event in which a person is started on anti-depressants.</span>
 <span class="sd">    The facility_level is modified as a input parameter.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="HSI_Depression_Start_Antidepressant.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_Start_Antidepressant.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Depression_Start_Antidepressant.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_Start_Antidepressant.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;Depression_Treatment&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;MentOPD&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span></div>
 
-<div class="viewcode-block" id="HSI_Depression_Start_Antidepressant.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_Start_Antidepressant.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Depression_Start_Antidepressant.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_Start_Antidepressant.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
         <span class="c1"># If person is already on anti-depressants, do not do anything</span>
@@ -927,10 +1016,14 @@
                 <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                 <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
                 <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
-            <span class="p">)</span></div></div>
+            <span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="HSI_Depression_Refill_Antidepressant"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_Refill_Antidepressant">[docs]</a><span class="k">class</span> <span class="nc">HSI_Depression_Refill_Antidepressant</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Depression_Refill_Antidepressant">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_Refill_Antidepressant">[docs]</a>
+<span class="k">class</span> <span class="nc">HSI_Depression_Refill_Antidepressant</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is a Health System Interaction Event in which a person seeks a refill prescription of anti-depressants.</span>
 <span class="sd">    The next refill of anti-depressants is also scheduled.</span>
@@ -938,14 +1031,19 @@
 <span class="sd">    If it does not run, then person ceases to be on anti-depressants and no further refill HSI are scheduled.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="HSI_Depression_Refill_Antidepressant.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_Refill_Antidepressant.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Depression_Refill_Antidepressant.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_Refill_Antidepressant.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;Depression_Treatment&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;Over5OPD&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span></div>
 
-<div class="viewcode-block" id="HSI_Depression_Refill_Antidepressant.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_Refill_Antidepressant.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Depression_Refill_Antidepressant.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_Refill_Antidepressant.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
         <span class="k">assert</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;de_ever_diagnosed_depression&#39;</span><span class="p">],</span> <span class="s2">&quot;The person is not diagnosed and so should not be &quot;</span> \
@@ -970,10 +1068,15 @@
             <span class="c1"># If medication was not available, the persons ceases to be taking antidepressants</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;de_on_antidepr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="HSI_Depression_Refill_Antidepressant.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_Refill_Antidepressant.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Depression_Refill_Antidepressant.did_not_run">
+<a class="viewcode-back" href="../../../reference/tlo.methods.depression.html#tlo.methods.depression.HSI_Depression_Refill_Antidepressant.did_not_run">[docs]</a>
+    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># If this HSI event did not run, then the persons ceases to be taking antidepressants</span>
         <span class="n">person_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;de_on_antidepr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;de_on_antidepr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
+</div>
+
 
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
@@ -1067,7 +1170,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

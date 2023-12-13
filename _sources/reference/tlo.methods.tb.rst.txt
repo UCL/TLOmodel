@@ -298,15 +298,15 @@ tlo.methods.tb module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'TB': <tlo.methods.causes.Cause object at 0x7ff650938760>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x7ff650938f10>}
+     CAUSES_OF_DEATH : {'TB': <tlo.methods.causes.Cause object at 0x12dd451d0>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x12dd452d0>}
 
-     CAUSES_OF_DISABILITY : {'TB': <tlo.methods.causes.Cause object at 0x7ff650952040>}
+     CAUSES_OF_DISABILITY : {'TB': <tlo.methods.causes.Cause object at 0x12dd45110>}
 
-     INIT_DEPENDENCIES : {'Epi', 'SymptomManager', 'Lifestyle', 'HealthSystem', 'Demography'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Demography', 'Lifestyle', 'Epi'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'Hiv', 'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden', 'Hiv'}
 
      SYMPTOMS : {'fatigue', 'night_sweats'}
 
@@ -356,6 +356,11 @@ tlo.methods.tb module
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
      **Functions (defined or overridden in class ScenarioSetupEvent):**
 
      .. automethod:: __init__
@@ -373,6 +378,11 @@ tlo.methods.tb module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class TbActiveCasePoll):**
 
@@ -392,6 +402,11 @@ tlo.methods.tb module
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
      **Functions (defined or overridden in class TbTreatmentAndRelapseEvents):**
 
      .. automethod:: __init__
@@ -410,6 +425,11 @@ tlo.methods.tb module
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
      **Functions (defined or overridden in class TbActiveEvent):**
 
      .. automethod:: __init__
@@ -427,6 +447,11 @@ tlo.methods.tb module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class TbSelfCureEvent):**
 
@@ -521,7 +546,7 @@ tlo.methods.tb module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x7ff650963a90>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x12dd63240>
 
      **Functions (defined or overridden in class HSI_Tb_StartTreatment):**
 
@@ -617,6 +642,11 @@ tlo.methods.tb module
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
      **Functions (defined or overridden in class TbLoggingEvent):**
 
      .. automethod:: __init__
@@ -634,6 +664,11 @@ tlo.methods.tb module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class TbCheckPropertiesEvent):**
 

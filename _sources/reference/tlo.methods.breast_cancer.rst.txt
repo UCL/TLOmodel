@@ -133,13 +133,13 @@ tlo.methods.breast_cancer module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'BreastCancer': <tlo.methods.causes.Cause object at 0x7ff64efe4280>}
+     CAUSES_OF_DEATH : {'BreastCancer': <tlo.methods.causes.Cause object at 0x11cc5bc90>}
 
-     CAUSES_OF_DISABILITY : {'BreastCancer': <tlo.methods.causes.Cause object at 0x7ff64efe4310>}
+     CAUSES_OF_DISABILITY : {'BreastCancer': <tlo.methods.causes.Cause object at 0x11cc5bd10>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Demography'}
+     INIT_DEPENDENCIES : {'SymptomManager', 'Demography', 'HealthSystem'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -170,6 +170,11 @@ tlo.methods.breast_cancer module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class BreastCancerMainPollingEvent):**
 
@@ -260,6 +265,11 @@ tlo.methods.breast_cancer module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class BreastCancerLoggingEvent):**
 

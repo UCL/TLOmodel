@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.stunting &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <title>tlo.methods.stunting &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
@@ -13,9 +16,9 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../../../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -33,7 +36,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -51,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
@@ -117,7 +121,9 @@
 <span class="c1">#   MODULE DEFINITION</span>
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
-<div class="viewcode-block" id="Stunting"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting">[docs]</a><span class="k">class</span> <span class="nc">Stunting</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="Stunting">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting">[docs]</a>
+<span class="k">class</span> <span class="nc">Stunting</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This is the disease module for Stunting&quot;&quot;&quot;</span>
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;Wasting&#39;</span><span class="p">,</span> <span class="s1">&#39;NewbornOutcomes&#39;</span><span class="p">,</span> <span class="s1">&#39;Diarrhoea&#39;</span><span class="p">,</span> <span class="s1">&#39;Hiv&#39;</span><span class="p">}</span>
@@ -221,19 +227,27 @@
                                     <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;HAZ&lt;-3&#39;</span><span class="p">,</span> <span class="s1">&#39;-3&lt;=HAZ&lt;-2&#39;</span><span class="p">,</span> <span class="s1">&#39;HAZ&gt;=-2&#39;</span><span class="p">]),</span>
     <span class="p">}</span>
 
-<div class="viewcode-block" id="Stunting.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Stunting.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># (Will store the models used in the module)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># (Will store consumable item codes)</span></div>
 
-<div class="viewcode-block" id="Stunting.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Stunting.read_parameters">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.read_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">load_parameters_from_dataframe</span><span class="p">(</span>
             <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span>
                 <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Stunting.xlsx&#39;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="s1">&#39;Parameter_values&#39;</span><span class="p">)</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="Stunting.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Stunting.initialise_population">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set initial prevalence of stunting according to distributions provided in parameters&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
@@ -314,7 +328,10 @@
             <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">stunted_but_not_severe_idx</span><span class="p">,</span> <span class="s2">&quot;un_HAZ_category&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;-3&lt;=HAZ&lt;-2&#39;</span>
             <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">severely_stunted_idx</span><span class="p">,</span> <span class="s2">&quot;un_HAZ_category&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;HAZ&lt;-3&#39;</span></div>
 
-<div class="viewcode-block" id="Stunting.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Stunting.initialise_simulation">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.initialise_simulation">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare for simulation to start&quot;&quot;&quot;</span>
         <span class="c1"># Establish the models</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">models</span> <span class="o">=</span> <span class="n">Models</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -328,11 +345,17 @@
         <span class="c1"># Look-up consumable item codes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">look_up_consumable_item_codes</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="Stunting.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Stunting.on_birth">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.on_birth">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set that on birth there is no stunting&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;un_HAZ_category&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;HAZ&gt;=-2&#39;</span></div>
 
-<div class="viewcode-block" id="Stunting.look_up_consumable_item_codes"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.look_up_consumable_item_codes">[docs]</a>    <span class="k">def</span> <span class="nf">look_up_consumable_item_codes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Stunting.look_up_consumable_item_codes">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.look_up_consumable_item_codes">[docs]</a>
+    <span class="k">def</span> <span class="nf">look_up_consumable_item_codes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Look up the item codes that used in the HSI in the module&quot;&quot;&quot;</span>
         <span class="n">get_item_codes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span>
 
@@ -341,17 +364,26 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">cons_item_codes</span><span class="p">[</span><span class="s1">&#39;education_for_supplementary_feeding&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_item_codes</span><span class="p">(</span>
             <span class="s1">&#39;Complementary feeding--education only drugs/supplies to service a client&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Stunting.do_onset"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.do_onset">[docs]</a>    <span class="k">def</span> <span class="nf">do_onset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Stunting.do_onset">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.do_onset">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_onset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Represent the onset of stunting for the person_id given in `idx`&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="s1">&#39;un_HAZ_category&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;-3&lt;=HAZ&lt;-2&#39;</span></div>
 
-<div class="viewcode-block" id="Stunting.do_progression"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.do_progression">[docs]</a>    <span class="k">def</span> <span class="nf">do_progression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Stunting.do_progression">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.do_progression">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_progression</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Represent the progression to severe stunting for the person_id given in `idx`&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="s1">&#39;un_HAZ_category&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;HAZ&lt;-3&#39;</span></div>
 
-<div class="viewcode-block" id="Stunting.do_recovery"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.do_recovery">[docs]</a>    <span class="k">def</span> <span class="nf">do_recovery</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">]):</span>
+
+<div class="viewcode-block" id="Stunting.do_recovery">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.do_recovery">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_recovery</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Represent the recovery from stunting for the person_id given in `idx`. Recovery causes the person to move</span>
 <span class="sd">        &#39;up&#39; one level: i.e. &#39;HAZ&lt;-3&#39; --&gt; &#39;-3&lt;=HAZ&lt;-2&#39; or &#39;-3&lt;=HAZ&lt;-2&#39; --&gt; &#39;HAZ&gt;=-2&#39;&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -360,7 +392,10 @@
             <span class="s1">&#39;-3&lt;=HAZ&lt;-2&#39;</span><span class="p">:</span> <span class="s1">&#39;HAZ&gt;=-2&#39;</span>
         <span class="p">})</span></div>
 
-<div class="viewcode-block" id="Stunting.do_routine_assessment_for_chronic_undernutrition"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.do_routine_assessment_for_chronic_undernutrition">[docs]</a>    <span class="k">def</span> <span class="nf">do_routine_assessment_for_chronic_undernutrition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Stunting.do_routine_assessment_for_chronic_undernutrition">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.do_routine_assessment_for_chronic_undernutrition">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_routine_assessment_for_chronic_undernutrition</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;This is called by the a generic HSI event for every child aged less than 5 years. It assesses stunting</span>
 <span class="sd">        and schedules an HSI as needed.&quot;&quot;&quot;</span>
 
@@ -379,11 +414,16 @@
                 <span class="n">priority</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>  <span class="c1"># &lt;-- lower priority that for wasting and most other HSI</span>
                 <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Stunting.do_treatment"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.do_treatment">[docs]</a>    <span class="k">def</span> <span class="nf">do_treatment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">prob_success</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Stunting.do_treatment">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.Stunting.do_treatment">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_treatment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">prob_success</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Represent the treatment with supplementary feeding. If treatment is successful, effect the recovery</span>
 <span class="sd">        of the person immediately.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">prob_success</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">():</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">do_recovery</span><span class="p">([</span><span class="n">person_id</span><span class="p">])</span></div></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">do_recovery</span><span class="p">([</span><span class="n">person_id</span><span class="p">])</span></div>
+</div>
+
 
 
 <span class="k">class</span> <span class="nc">Models</span><span class="p">:</span>
@@ -505,14 +545,21 @@
 <span class="c1">#   NATURAL HISTORY EVENTS</span>
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
-<div class="viewcode-block" id="StuntingPollingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPollingEvent">[docs]</a><span class="k">class</span> <span class="nc">StuntingPollingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="StuntingPollingEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPollingEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">StuntingPollingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Regular event that controls the onset of stunting, progression to severe stunting and natural recovery.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="StuntingPollingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPollingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="StuntingPollingEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPollingEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Stunting</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="StuntingPollingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPollingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="StuntingPollingEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPollingEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        * Determine who will be onset for stunting (among those not stunted) and effect that change;</span>
 <span class="sd">        * Determine who will be onset for recovery (among those stunted) and effect that change.</span>
@@ -557,7 +604,10 @@
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">do_progression</span><span class="p">(</span><span class="n">idx_will_progress</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="StuntingPollingEvent.apply_model"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPollingEvent.apply_model">[docs]</a>    <span class="k">def</span> <span class="nf">apply_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">days_exposed_to_risk</span><span class="p">):</span>
+
+<div class="viewcode-block" id="StuntingPollingEvent.apply_model">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPollingEvent.apply_model">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">days_exposed_to_risk</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the person_ids selected for an event of occur to in a given period (in days), as specified by a</span>
 <span class="sd">        LinearModel that provides the annual risk of the event.</span>
 <span class="sd">        * Looks-up annual probability of the event using a linear model supplied in `model` to a population masked with</span>
@@ -573,7 +623,9 @@
         <span class="n">cum_prob_over_days_exposed</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">annual_prob</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="n">days_exposed_to_risk</span> <span class="o">/</span> <span class="n">DAYS_IN_YEAR</span><span class="p">)</span>
 
         <span class="k">assert</span> <span class="n">pd</span><span class="o">.</span><span class="n">notnull</span><span class="p">(</span><span class="n">cum_prob_over_days_exposed</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">mask</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">cum_prob_over_days_exposed</span> <span class="o">&gt;</span> <span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">())]</span></div></div>
+        <span class="k">return</span> <span class="n">mask</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">cum_prob_over_days_exposed</span> <span class="o">&gt;</span> <span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">())]</span></div>
+</div>
+
 
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
@@ -581,14 +633,21 @@
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
 
-<div class="viewcode-block" id="StuntingLoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingLoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">StuntingLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="StuntingLoggingEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingLoggingEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">StuntingLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Logging event occurring every year&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="StuntingLoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingLoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="StuntingLoggingEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingLoggingEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Stunting</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="StuntingLoggingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingLoggingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="StuntingLoggingEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingLoggingEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Log the current distribution of stunting classification by age&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
@@ -602,24 +661,33 @@
             <span class="n">key</span><span class="o">=</span><span class="s1">&#39;prevalence&#39;</span><span class="p">,</span>
             <span class="n">data</span><span class="o">=</span><span class="n">convert_keys_to_string</span><span class="p">(</span><span class="n">d_to_log</span><span class="p">),</span>
             <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Current number of children in each stunting category by single year of age.&#39;</span>
-        <span class="p">)</span></div></div>
+        <span class="p">)</span></div>
+</div>
+
 
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 <span class="c1">#   HSI</span>
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
-<div class="viewcode-block" id="HSI_Stunting_ComplementaryFeeding"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.HSI_Stunting_ComplementaryFeeding">[docs]</a><span class="k">class</span> <span class="nc">HSI_Stunting_ComplementaryFeeding</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Stunting_ComplementaryFeeding">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.HSI_Stunting_ComplementaryFeeding">[docs]</a>
+<span class="k">class</span> <span class="nc">HSI_Stunting_ComplementaryFeeding</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;HSI for complementary feeding, either with the provision of supplementary foods or with education only.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="HSI_Stunting_ComplementaryFeeding.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.HSI_Stunting_ComplementaryFeeding.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Stunting_ComplementaryFeeding.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.HSI_Stunting_ComplementaryFeeding.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;Undernutrition_Feeding&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;U5Malnutr&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1a&#39;</span></div>
 
-<div class="viewcode-block" id="HSI_Stunting_ComplementaryFeeding.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.HSI_Stunting_ComplementaryFeeding.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Stunting_ComplementaryFeeding.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.HSI_Stunting_ComplementaryFeeding.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">person</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">]</span>
@@ -649,14 +717,18 @@
                 <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
                 <span class="n">priority</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>  <span class="c1"># &lt;-- lower priority that for wasting and most other HSI</span>
                 <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
-            <span class="p">)</span></div></div>
+            <span class="p">)</span></div>
+</div>
+
 
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 <span class="c1">#   ACCESSORIES FOR TESTING</span>
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
-<div class="viewcode-block" id="StuntingPropertiesOfOtherModules"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPropertiesOfOtherModules">[docs]</a><span class="k">class</span> <span class="nc">StuntingPropertiesOfOtherModules</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="StuntingPropertiesOfOtherModules">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPropertiesOfOtherModules">[docs]</a>
+<span class="k">class</span> <span class="nc">StuntingPropertiesOfOtherModules</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;For the purpose of the testing, this module generates the properties upon which the Stunting module relies&quot;&quot;&quot;</span>
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">}</span>
@@ -685,13 +757,21 @@
         <span class="s1">&#39;gi_number_of_episodes&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s1">&#39;temporary property&#39;</span><span class="p">)</span>
     <span class="p">}</span>
 
-<div class="viewcode-block" id="StuntingPropertiesOfOtherModules.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPropertiesOfOtherModules.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="StuntingPropertiesOfOtherModules.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPropertiesOfOtherModules.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="StuntingPropertiesOfOtherModules.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPropertiesOfOtherModules.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+
+<div class="viewcode-block" id="StuntingPropertiesOfOtherModules.read_parameters">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPropertiesOfOtherModules.read_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
         <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="StuntingPropertiesOfOtherModules.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPropertiesOfOtherModules.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="StuntingPropertiesOfOtherModules.initialise_population">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPropertiesOfOtherModules.initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;hv_inf&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;hv_art&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not&#39;</span>
@@ -703,10 +783,16 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;un_ever_wasted&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;gi_number_of_episodes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span></div>
 
-<div class="viewcode-block" id="StuntingPropertiesOfOtherModules.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPropertiesOfOtherModules.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+
+<div class="viewcode-block" id="StuntingPropertiesOfOtherModules.initialise_simulation">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPropertiesOfOtherModules.initialise_simulation">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
         <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="StuntingPropertiesOfOtherModules.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPropertiesOfOtherModules.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother</span><span class="p">,</span> <span class="n">child</span><span class="p">):</span>
+
+<div class="viewcode-block" id="StuntingPropertiesOfOtherModules.on_birth">
+<a class="viewcode-back" href="../../../reference/tlo.methods.stunting.html#tlo.methods.stunting.StuntingPropertiesOfOtherModules.on_birth">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother</span><span class="p">,</span> <span class="n">child</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child</span><span class="p">,</span> <span class="s1">&#39;hv_inf&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child</span><span class="p">,</span> <span class="s1">&#39;hv_art&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not&#39;</span>
@@ -716,7 +802,9 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child</span><span class="p">,</span> <span class="s1">&#39;nb_early_preterm&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child</span><span class="p">,</span> <span class="s1">&#39;nb_breastfeeding_status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;exclusive&#39;</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child</span><span class="p">,</span> <span class="s1">&#39;un_ever_wasted&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child</span><span class="p">,</span> <span class="s1">&#39;gi_number_of_episodes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span></div></div>
+        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child</span><span class="p">,</span> <span class="s1">&#39;gi_number_of_episodes&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span></div>
+</div>
+
 </pre></div>
 
            </div>
@@ -727,7 +815,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

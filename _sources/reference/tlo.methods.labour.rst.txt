@@ -649,15 +649,15 @@ tlo.methods.labour module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes', 'CareOfWomenDuringPregnancy', 'Lifestyle', 'PregnancySupervisor', 'Contraception', 'HealthSystem', 'PostnatalSupervisor'}
+     ADDITIONAL_DEPENDENCIES : {'Contraception', 'HealthSystem', 'NewbornOutcomes', 'Lifestyle', 'CareOfWomenDuringPregnancy', 'PostnatalSupervisor', 'PregnancySupervisor'}
 
-     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x7ff6508e0ca0>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x7ff6508fcdc0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7ff6508fce20>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x7ff6508fce80>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7ff6508fcee0>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x7ff6508fcf40>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x7ff6508fcfa0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x7ff6508fe040>}
+     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x12dd16190>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x12dd161d0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12dd16210>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x12dd16250>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12dd16290>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12dd162d0>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x12dd16310>, 'eclampsia': <tlo.methods.causes.Cause object at 0x12dd16350>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x7ff6508fe0a0>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x12dd163d0>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'Stunting'}
 
@@ -921,6 +921,11 @@ tlo.methods.labour module
      Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
      **Functions (defined or overridden in class LabourAndPostnatalCareAnalysisEvent):**
 
      .. automethod:: __init__
@@ -938,6 +943,11 @@ tlo.methods.labour module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class LabourLoggingEvent):**
 

@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.logging.reader &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <title>tlo.logging.reader &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
@@ -13,9 +16,9 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../../../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -33,7 +36,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -51,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
@@ -91,7 +95,9 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 
-<div class="viewcode-block" id="LogData"><a class="viewcode-back" href="../../../reference/tlo.logging.reader.html#tlo.logging.reader.LogData">[docs]</a><span class="k">class</span> <span class="nc">LogData</span><span class="p">:</span>
+<div class="viewcode-block" id="LogData">
+<a class="viewcode-back" href="../../../reference/tlo.logging.reader.html#tlo.logging.reader.LogData">[docs]</a>
+<span class="k">class</span> <span class="nc">LogData</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Builds up log data for export as dictionary with dataframes&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -99,7 +105,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">allowed_logs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">uuid_to_module</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
 
-<div class="viewcode-block" id="LogData.parse_log_line"><a class="viewcode-back" href="../../../reference/tlo.logging.reader.html#tlo.logging.reader.LogData.parse_log_line">[docs]</a>    <span class="k">def</span> <span class="nf">parse_log_line</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+<div class="viewcode-block" id="LogData.parse_log_line">
+<a class="viewcode-back" href="../../../reference/tlo.logging.reader.html#tlo.logging.reader.LogData.parse_log_line">[docs]</a>
+    <span class="k">def</span> <span class="nf">parse_log_line</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_line</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">level</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Parse LogRow at desired level</span>
 
@@ -121,7 +129,10 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">log_data</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">]][</span><span class="n">log_data</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]][</span><span class="s1">&#39;dates&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log_data</span><span class="p">[</span><span class="s1">&#39;date&#39;</span><span class="p">])</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">log_data</span><span class="p">[</span><span class="s1">&#39;module&#39;</span><span class="p">]][</span><span class="n">log_data</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]][</span><span class="s1">&#39;values&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">log_data</span><span class="p">[</span><span class="s1">&#39;values&#39;</span><span class="p">])</span></div>
 
-<div class="viewcode-block" id="LogData.get_log_dataframes"><a class="viewcode-back" href="../../../reference/tlo.logging.reader.html#tlo.logging.reader.LogData.get_log_dataframes">[docs]</a>    <span class="k">def</span> <span class="nf">get_log_dataframes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DefaultDict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]:</span>
+
+<div class="viewcode-block" id="LogData.get_log_dataframes">
+<a class="viewcode-back" href="../../../reference/tlo.logging.reader.html#tlo.logging.reader.LogData.get_log_dataframes">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_log_dataframes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DefaultDict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Converts parsed logs of dictionaries to dataframes and then returns all logs</span>
 
@@ -150,7 +161,10 @@
                         <span class="n">output_logs</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="n">n</span><span class="p">]</span> <span class="o">=</span> <span class="n">output_logs</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">key</span><span class="p">][</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">output_logs</span></div>
 
-<div class="viewcode-block" id="LogData.parse_logged_dataframe"><a class="viewcode-back" href="../../../reference/tlo.logging.reader.html#tlo.logging.reader.LogData.parse_logged_dataframe">[docs]</a>    <span class="k">def</span> <span class="nf">parse_logged_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]],</span> <span class="n">dates</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+
+<div class="viewcode-block" id="LogData.parse_logged_dataframe">
+<a class="viewcode-back" href="../../../reference/tlo.logging.reader.html#tlo.logging.reader.LogData.parse_logged_dataframe">[docs]</a>
+    <span class="k">def</span> <span class="nf">parse_logged_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]],</span> <span class="n">dates</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Converts log data for an entire dataframe being logged into a mutli-indexed dataframe</span>
 <span class="sd">        :param values: logged values</span>
@@ -170,7 +184,9 @@
         <span class="n">log_date</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">set_names</span><span class="p">(</span><span class="s2">&quot;log_row&quot;</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="n">logged_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">indexed_data</span><span class="p">,</span> <span class="n">orient</span><span class="o">=</span><span class="s1">&#39;index&#39;</span><span class="p">)</span>
         <span class="n">logged_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">set_names</span><span class="p">([</span><span class="s1">&#39;log_row&#39;</span><span class="p">,</span> <span class="s1">&#39;df_row&#39;</span><span class="p">],</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">log_date</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">logged_df</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">log_date</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">logged_df</span><span class="p">)</span></div>
+</div>
+
 </pre></div>
 
            </div>
@@ -181,7 +197,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

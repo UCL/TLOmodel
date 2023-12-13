@@ -42,13 +42,13 @@ tlo.methods.skeleton module
 
      ADDITIONAL_DEPENDENCIES : {'HealthSystem'}
 
-     CAUSES_OF_DEATH : {'tlo_name_of_a_cause_of_death_in_this_module': <tlo.methods.causes.Cause object at 0x7ff650aaa820>}
+     CAUSES_OF_DEATH : {'tlo_name_of_a_cause_of_death_in_this_module': <tlo.methods.causes.Cause object at 0x120b476d0>}
 
-     CAUSES_OF_DISABILITY : {'tlo_name_of_a_cause_of_disability_in_this_module': <tlo.methods.causes.Cause object at 0x7ff650aaa880>}
+     CAUSES_OF_DISABILITY : {'tlo_name_of_a_cause_of_disability_in_this_module': <tlo.methods.causes.Cause object at 0x120b47a90>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -82,6 +82,11 @@ tlo.methods.skeleton module
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
      **Functions (defined or overridden in class Skeleton_Event):**
 
      .. automethod:: __init__
@@ -99,6 +104,11 @@ tlo.methods.skeleton module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class Skeleton_LoggingEvent):**
 

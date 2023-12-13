@@ -80,6 +80,11 @@ tlo.methods.healthburden module
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
      **Functions (defined or overridden in class Get_Current_DALYS):**
 
      .. automethod:: __init__
@@ -97,6 +102,11 @@ tlo.methods.healthburden module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class Healthburden_WriteToLog):**
 

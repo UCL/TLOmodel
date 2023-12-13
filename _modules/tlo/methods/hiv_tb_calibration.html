@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.hiv_tb_calibration &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <title>tlo.methods.hiv_tb_calibration &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
@@ -13,9 +16,9 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../../../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -33,7 +36,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -51,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
@@ -101,13 +105,17 @@
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="Deviance"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance">[docs]</a><span class="k">class</span> <span class="nc">Deviance</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="Deviance">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance">[docs]</a>
+<span class="k">class</span> <span class="nc">Deviance</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This module reads in logged outputs from HIV, TB and demography and compares them with reported data</span>
 <span class="sd">    a deviance measure is calculated and returned on simulation end</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="Deviance.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Deviance.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
 
@@ -117,6 +125,7 @@
         <span class="c1"># Initialise empty dict (with factory method of list) to store lists containing information about each death</span>
         <span class="c1"># that is used by the `Deviance` module</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__demog_outputs__</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span></div>
+
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;Hiv&#39;</span><span class="p">,</span> <span class="s1">&#39;Tb&#39;</span><span class="p">}</span>
 
@@ -129,19 +138,33 @@
     <span class="c1"># No properties to declare</span>
     <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{}</span>
 
-<div class="viewcode-block" id="Deviance.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+<div class="viewcode-block" id="Deviance.read_parameters">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.read_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
         <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="Deviance.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Deviance.initialise_population">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="Deviance.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Deviance.initialise_simulation">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.initialise_simulation">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
         <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="Deviance.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Deviance.on_birth">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.on_birth">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
         <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="Deviance.read_data_files"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.read_data_files">[docs]</a>    <span class="k">def</span> <span class="nf">read_data_files</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Deviance.read_data_files">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.read_data_files">[docs]</a>
+    <span class="k">def</span> <span class="nf">read_data_files</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Make a dict of all data to be used in calculating calibration score&quot;&quot;&quot;</span>
 
         <span class="c1"># # HIV read in resource files for data</span>
@@ -198,7 +221,10 @@
             <span class="p">(</span><span class="n">data_tb_who</span><span class="o">.</span><span class="n">year</span> <span class="o">&gt;=</span> <span class="mi">2010</span><span class="p">),</span> <span class="s2">&quot;mortality_tb_excl_hiv_per_100k&quot;</span>
         <span class="p">]</span></div>
 
-<div class="viewcode-block" id="Deviance.read_model_outputs"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.read_model_outputs">[docs]</a>    <span class="k">def</span> <span class="nf">read_model_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Deviance.read_model_outputs">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.read_model_outputs">[docs]</a>
+    <span class="k">def</span> <span class="nf">read_model_outputs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">hiv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Hiv&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">hiv_outputs</span>
         <span class="n">tb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Tb&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">tb_outputs</span>
         <span class="n">demog</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__demog_outputs__</span>
@@ -254,7 +280,10 @@
         <span class="c1"># tb mortality rates per 100k person-years</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;TB_mortality_per_100k&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">tot_tb_non_hiv_deaths</span> <span class="o">/</span> <span class="n">pop</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100000</span></div>
 
-<div class="viewcode-block" id="Deviance.weighted_mean"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.weighted_mean">[docs]</a>    <span class="k">def</span> <span class="nf">weighted_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_dict</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Deviance.weighted_mean">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.weighted_mean">[docs]</a>
+    <span class="k">def</span> <span class="nf">weighted_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_dict</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">):</span>
         <span class="c1"># assert model_output is not empty</span>
 
         <span class="c1"># return calibration score (weighted mean deviance)</span>
@@ -456,14 +485,20 @@
 
         <span class="k">return</span> <span class="n">return_values</span></div>
 
-<div class="viewcode-block" id="Deviance.record_death"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.record_death">[docs]</a>    <span class="k">def</span> <span class="nf">record_death</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">age_years</span><span class="p">,</span> <span class="n">sex</span><span class="p">,</span> <span class="n">cause</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Deviance.record_death">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.record_death">[docs]</a>
+    <span class="k">def</span> <span class="nf">record_death</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">year</span><span class="p">,</span> <span class="n">age_years</span><span class="p">,</span> <span class="n">sex</span><span class="p">,</span> <span class="n">cause</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Save outputs about one death&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__demog_outputs__</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="n">year</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__demog_outputs__</span><span class="p">[</span><span class="s2">&quot;age&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="n">age_years</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__demog_outputs__</span><span class="p">[</span><span class="s2">&quot;sex&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="n">sex</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">__demog_outputs__</span><span class="p">[</span><span class="s2">&quot;cause&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">[</span><span class="n">cause</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="Deviance.on_simulation_end"><a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.on_simulation_end">[docs]</a>    <span class="k">def</span> <span class="nf">on_simulation_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Deviance.on_simulation_end">
+<a class="viewcode-back" href="../../../reference/tlo.methods.hiv_tb_calibration.html#tlo.methods.hiv_tb_calibration.Deviance.on_simulation_end">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_simulation_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">year</span> <span class="o">&gt;=</span> <span class="mi">2020</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">read_data_files</span><span class="p">()</span>
@@ -477,7 +512,9 @@
                       <span class="s2">&quot;hiv_transmission_rate&quot;</span><span class="p">:</span> <span class="n">deviance_measure</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
                       <span class="s2">&quot;tb_scaling_factor_WHO&quot;</span><span class="p">:</span> <span class="n">deviance_measure</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
                       <span class="p">}</span>
-            <span class="p">)</span></div></div>
+            <span class="p">)</span></div>
+</div>
+
 </pre></div>
 
            </div>
@@ -488,7 +525,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.enhanced_lifestyle &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <title>tlo.methods.enhanced_lifestyle &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
@@ -13,9 +16,9 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../../../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -33,7 +36,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -51,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
@@ -104,15 +108,20 @@
 <span class="c1"># todo: module is coded.</span>
 
 
-<div class="viewcode-block" id="Lifestyle"><a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.Lifestyle">[docs]</a><span class="k">class</span> <span class="nc">Lifestyle</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="Lifestyle">
+<a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.Lifestyle">[docs]</a>
+<span class="k">class</span> <span class="nc">Lifestyle</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Lifestyle module provides properties that are used by all disease modules if they are affected</span>
 <span class="sd">    by urban/rural, wealth, tobacco usage etc.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="Lifestyle.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.Lifestyle.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Lifestyle.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.Lifestyle.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">:</span> <span class="n">Path</span> <span class="o">=</span> <span class="n">resourcefilepath</span></div>
+
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">}</span>
 
@@ -420,7 +429,9 @@
         <span class="s2">&quot;li_is_circ&quot;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s2">&quot;Is the person circumcised if they are male (False for all females)&quot;</span><span class="p">),</span>
     <span class="p">}</span>
 
-<div class="viewcode-block" id="Lifestyle.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.Lifestyle.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+<div class="viewcode-block" id="Lifestyle.read_parameters">
+<a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.Lifestyle.read_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
         <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
         <span class="n">dfd</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span>
             <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Lifestyle_Enhanced.xlsx&#39;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="s1">&#39;parameter_values&#39;</span>
@@ -432,7 +443,10 @@
         <span class="n">p</span><span class="p">[</span><span class="s1">&#39;start_date_campaign_quit_smoking&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Date</span><span class="p">(</span><span class="mi">2010</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">p</span><span class="p">[</span><span class="s1">&#39;start_date_campaign_alcohol_reduction&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Date</span><span class="p">(</span><span class="mi">2010</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Lifestyle.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.Lifestyle.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Lifestyle.initialise_population">
+<a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.Lifestyle.initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set our property values for the initial population.</span>
 <span class="sd">        :param population: the population of individuals</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -856,7 +870,10 @@
         <span class="n">will_be_circ</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">men</span><span class="p">))</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;proportion_of_men_circumcised_at_initiation&#39;</span><span class="p">]</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">men</span><span class="p">[</span><span class="n">will_be_circ</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;li_is_circ&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
 
-<div class="viewcode-block" id="Lifestyle.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.Lifestyle.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Lifestyle.initialise_simulation">
+<a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.Lifestyle.initialise_simulation">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add lifestyle events to the simulation</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">event</span> <span class="o">=</span> <span class="n">LifestyleEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -865,7 +882,10 @@
         <span class="n">event</span> <span class="o">=</span> <span class="n">LifestylesLoggingEvent</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="Lifestyle.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.Lifestyle.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Lifestyle.on_birth">
+<a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.Lifestyle.on_birth">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise properties for a newborn individual.</span>
 <span class="sd">        :param mother_id: the mother for this child</span>
 <span class="sd">        :param child_id: the new child</span>
@@ -910,7 +930,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;proportion_of_men_that_are_assumed_to_be_circumcised_at_birth&#39;</span><span class="p">]</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="Lifestyle.determine_who_will_be_sexworker"><a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.Lifestyle.determine_who_will_be_sexworker">[docs]</a>    <span class="k">def</span> <span class="nf">determine_who_will_be_sexworker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">months_since_last_poll</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Lifestyle.determine_who_will_be_sexworker">
+<a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.Lifestyle.determine_who_will_be_sexworker">[docs]</a>
+    <span class="k">def</span> <span class="nf">determine_who_will_be_sexworker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">months_since_last_poll</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Determine which women will be sex workers.</span>
 <span class="sd">        This is called by initialise_population and the LifestyleEvent.</span>
 <span class="sd">        Subject to the constraints:</span>
@@ -957,7 +980,10 @@
             <span class="c1"># make is_sexworker for selected women:</span>
             <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">will_start_sw_idx</span><span class="p">,</span> <span class="s1">&#39;li_is_sexworker&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
 
-<div class="viewcode-block" id="Lifestyle.compute_bmi_proportions_of_interest"><a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.Lifestyle.compute_bmi_proportions_of_interest">[docs]</a>    <span class="k">def</span> <span class="nf">compute_bmi_proportions_of_interest</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Lifestyle.compute_bmi_proportions_of_interest">
+<a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.Lifestyle.compute_bmi_proportions_of_interest">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_bmi_proportions_of_interest</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;This is called by the logger and computes summary statistics about the bmi&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
@@ -1058,15 +1084,21 @@
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
                 <span class="n">bmi_proportions</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-        <span class="k">return</span> <span class="n">bmi_proportions</span></div></div>
+        <span class="k">return</span> <span class="n">bmi_proportions</span></div>
+</div>
 
 
-<div class="viewcode-block" id="LifestyleEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.LifestyleEvent">[docs]</a><span class="k">class</span> <span class="nc">LifestyleEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="LifestyleEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.LifestyleEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">LifestyleEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Regular event that updates all lifestyle properties for population</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="LifestyleEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.LifestyleEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="LifestyleEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.LifestyleEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;schedule to run every 3 months</span>
 <span class="sd">        note: if change this offset from 3 months need to consider code conditioning on age.years_exact</span>
 <span class="sd">        :param module: the module that created this event</span>
@@ -1075,7 +1107,10 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat_months</span><span class="p">))</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Lifestyle</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="LifestyleEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.LifestyleEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="LifestyleEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.LifestyleEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply this event to the population.</span>
 <span class="sd">        :param population: the current population</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1436,20 +1471,29 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">all_idx_campaign_weight_reduction</span><span class="p">,</span> <span class="s1">&#39;li_exposed_to_campaign_weight_reduction&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
         <span class="c1"># --- FSW ---</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">determine_who_will_be_sexworker</span><span class="p">(</span><span class="n">months_since_last_poll</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat_months</span><span class="p">)</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">determine_who_will_be_sexworker</span><span class="p">(</span><span class="n">months_since_last_poll</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat_months</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="LifestylesLoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.LifestylesLoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">LifestylesLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="LifestylesLoggingEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.LifestylesLoggingEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">LifestylesLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Handles lifestyle logging&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="LifestylesLoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.LifestylesLoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="LifestylesLoggingEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.LifestylesLoggingEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;schedule logging to repeat every 3 months</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="mi">3</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat</span><span class="p">))</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Lifestyle</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="LifestylesLoggingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.LifestylesLoggingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="LifestylesLoggingEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.enhanced_lifestyle.html#tlo.methods.enhanced_lifestyle.LifestylesLoggingEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply this event to the population.</span>
 <span class="sd">        :param population: the current population</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1499,7 +1543,9 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="n">key</span><span class="o">=</span><span class="s1">&#39;proportion_1549_women_sexworker&#39;</span><span class="p">,</span>
                 <span class="n">data</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="p">)</span></div></div>
+            <span class="p">)</span></div>
+</div>
+
 </pre></div>
 
            </div>
@@ -1510,7 +1556,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

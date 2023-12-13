@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Depression (.xlsx) &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
+
+  
+    <link rel="shortcut icon" href="../_static/favicon.png"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=cc9389db"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Diarrhoea (.xlsx)" href="ResourceFile_Diarrhoea.xlsx.html" />
+    <link rel="prev" title="DALY Weights (.csv)" href="ResourceFile_DALY_Weights.csv.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            TLOmodel
+          </a>
+              <div class="version">
+                0.1
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../index.html">Welcome</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aims.html">Aims &amp; Objectives</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../writeups.html">Model Documentation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data Sources</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../readme.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../reference/index.html">Reference</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Resource files</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="cmd/index.html">cmd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="demography/index.html">demography</a></li>
+<li class="toctree-l2"><a class="reference internal" href="epilepsy/index.html">epilepsy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="gbd/index.html">gbd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="healthsystem/index.html">healthsystem</a></li>
+<li class="toctree-l2"><a class="reference internal" href=".ResourceFile_Consumables.csv.un~.html">.ResourceFile Consumables.csv (.un~)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_AbortionAndMiscarriage.xlsx.html">AbortionAndMiscarriage (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_Alri.xlsx.html">Alri (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_AntenatalCare.xlsx.html">AntenatalCare (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_Bladder_Cancer.xlsx.html">Bladder Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_Breast_Cancer.xlsx.html">Breast Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_Childhood_Pneumonia.xlsx.html">Childhood Pneumonia (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_Contraception.xlsx.html">Contraception (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_ContraceptionAnalysisParams.csv.html">ContraceptionAnalysisParams (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_ContraceptionParams.csv.html">ContraceptionParams (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_Copd.csv.html">Copd (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_DALY_Weights.csv.html">DALY Weights (.csv)</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Depression (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_Diarrhoea.xlsx.html">Diarrhoea (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_EPI_WHO_estimates.xlsx.html">EPI WHO estimates (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_EPI_vaccine_coverage.csv.html">EPI vaccine coverage (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_Example_Paracetamol_DataFrame.csv.html">Example Paracetamol DataFrame (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_GenericSymptoms_and_HealthSeeking.csv.html">GenericSymptoms and HealthSeeking (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_HIV.xlsx.html">HIV (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_HealthSeekingBehaviour.csv.html">HealthSeekingBehaviour (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_HypertensiveDisordersOfPregnancy.xlsx.html">HypertensiveDisordersOfPregnancy (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx.html">Improved Healthsystem And Healthcare Seeking (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_LMIS_2018.csv.html">LMIS 2018 (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_LabourSkilledBirthAttendance.xlsx.html">LabourSkilledBirthAttendance (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_Lifestyle_Enhanced.xlsx.html">Lifestyle Enhanced (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_Measles.xlsx.html">Measles (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_NCDs.xlsx.html">NCDs (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_NCDs_condition_death.xlsx.html">NCDs condition death (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_NCDs_condition_onset.xlsx.html">NCDs condition onset (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_NCDs_condition_prevalence.xlsx.html">NCDs condition prevalence (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_NCDs_condition_removal.xlsx.html">NCDs condition removal (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_NCDs_events.xlsx.html">NCDs events (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_NCDs_events_death.xlsx.html">NCDs events death (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_NewbornOutcomes.xlsx.html">NewbornOutcomes (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_Oesophageal_Cancer.xlsx.html">Oesophageal Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_Other_Adult_Cancers.xlsx.html">Other Adult Cancers (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_PostnatalSupervisor.xlsx.html">PostnatalSupervisor (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_PregnancySupervisor.xlsx.html">PregnancySupervisor (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_Prostate_Cancer.xlsx.html">Prostate Cancer (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_RTI.xlsx.html">TI (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_Schisto.xlsx.html">Schisto (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_Stunting.xlsx.html">Stunting (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_SymptomManager.csv.html">SymptomManager (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_TB.xlsx.html">TB (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_consumable_availability.csv.html">nsumable availability (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_consumables_matched.csv.html">nsumables matched (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_hhfa_consumables.xlsx.html">hhfa consumables (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_malaria.xlsx.html">malaria (.xlsx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_malaria_ClinInc.csv.html">malaria ClinInc (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_malaria_ClinInc_expanded.csv.html">malaria ClinInc expanded (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_malaria_InfInc.csv.html">malaria InfInc (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_malaria_InfInc_expanded.csv.html">malaria InfInc expanded (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_malaria_SevInc.csv.html">malaria SevInc (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_malaria_SevInc_expanded.csv.html">malaria SevInc expanded (.csv)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_mwi_admbnda_adm0_nso_20181016.dbf.html">mwi admbnda adm0 nso 20181016 (.dbf)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_mwi_admbnda_adm0_nso_20181016.shp.html">mwi admbnda adm0 nso 20181016 (.shp)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_mwi_admbnda_adm0_nso_20181016.shx.html">mwi admbnda adm0 nso 20181016 (.shx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_mwi_admbnda_adm1_nso_20181016.dbf.html">mwi admbnda adm1 nso 20181016 (.dbf)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_mwi_admbnda_adm1_nso_20181016.shp.html">mwi admbnda adm1 nso 20181016 (.shp)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_mwi_admbnda_adm1_nso_20181016.shx.html">mwi admbnda adm1 nso 20181016 (.shx)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_mwi_admbnda_adm2_nso_20181016.dbf.html">mwi admbnda adm2 nso 20181016 (.dbf)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_mwi_admbnda_adm2_nso_20181016.shp.html">mwi admbnda adm2 nso 20181016 (.shp)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="ResourceFile_mwi_admbnda_adm2_nso_20181016.shx.html">mwi admbnda adm2 nso 20181016 (.shx)</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../background.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">TLOmodel</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Resource files</a></li>
+      <li class="breadcrumb-item active">Depression (.xlsx)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/resources/ResourceFile_Depression.xlsx.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="depression-xlsx">
+<h1><a class="toc-backref" href="#id1" role="doc-backlink">Depression (.xlsx)</a><a class="headerlink" href="#depression-xlsx" title="Link to this heading"></a></h1>
+<p><a class="reference download external" download="" href="https://github.com/UCL/TLOmodel/raw/master/resources/ResourceFile_Depression.xlsx"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">original</span> <span class="pre">.xlsx</span> <span class="pre">file</span> <span class="pre">from</span> <span class="pre">GitHub</span></code></a></p>
+<nav class="contents" id="contents">
+<p class="topic-title">Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#depression-xlsx" id="id1">Depression (.xlsx)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#parameter-values" id="id2">parameter_values</a></p></li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="parameter-values">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">parameter_values</a><a class="headerlink" href="#parameter-values" title="Link to this heading"></a></h2>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"></th>
+<th class="head"><p>parameter_name</p></th>
+<th class="head"><p>value</p></th>
+<th class="head"><p>Unnamed: 2</p></th>
+<th class="head"><p>Justification</p></th>
+<th class="head"><p>Unnamed: 4</p></th>
+<th class="head"><p>Unnamed: 5</p></th>
+<th class="head"><p>Unnamed: 6</p></th>
+<th class="head"><p>Unnamed: 7</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>0</p></td>
+<td><p>init_pr_depr_m_age1519_no_cc_wealth123</p></td>
+<td><p>0.06</p></td>
+<td></td>
+<td><p>None</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>1</p></td>
+<td><p>init_rp_depr_f_not_rec_preg</p></td>
+<td><p>1.5</p></td>
+<td></td>
+<td><p>None</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>2</p></td>
+<td><p>init_rp_depr_f_rec_preg</p></td>
+<td><p>3</p></td>
+<td></td>
+<td><p>None</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>3</p></td>
+<td><p>init_rp_depr_age2059</p></td>
+<td><p>1</p></td>
+<td></td>
+<td><p>None</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>4</p></td>
+<td><p>init_rp_depr_agege60</p></td>
+<td><p>3</p></td>
+<td></td>
+<td><p>None</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>5</p></td>
+<td><p>init_rp_depr_cc</p></td>
+<td><p>1</p></td>
+<td></td>
+<td><p>None</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>6</p></td>
+<td><p>init_rp_depr_wealth45</p></td>
+<td><p>1</p></td>
+<td></td>
+<td><p>None</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>7</p></td>
+<td><p>init_rp_ever_depr_per_year_older_m</p></td>
+<td><p>0.004</p></td>
+<td></td>
+<td><p>None</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>8</p></td>
+<td><p>init_rp_ever_depr_per_year_older_f</p></td>
+<td><p>0.006</p></td>
+<td></td>
+<td><p>None</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>9</p></td>
+<td><p>init_pr_antidepr_curr_depr</p></td>
+<td><p>0.11</p></td>
+<td></td>
+<td><p>None</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>10</p></td>
+<td><p>init_rp_antidepr_ever_depr_not_curr</p></td>
+<td><p>0.5</p></td>
+<td></td>
+<td><p>None</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>11</p></td>
+<td><p>init_pr_ever_diagnosed_depression</p></td>
+<td><p>0.2</p></td>
+<td></td>
+<td><p>None</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>12</p></td>
+<td><p>init_pr_ever_talking_therapy_if_diagnosed</p></td>
+<td><p>1</p></td>
+<td></td>
+<td><p>We assume that talking therapy happens as part of diagnosis</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>13</p></td>
+<td><p>init_pr_ever_self_harmed_if_ever_depr</p></td>
+<td><p>0.004</p></td>
+<td></td>
+<td><p>consistent with rate of incident self harm</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>14</p></td>
+<td><p>base_3m_prob_depr</p></td>
+<td><p>0.0021</p></td>
+<td></td>
+<td><p>Rate is derived indirectly based on prevalence of depression that model produces as an output (Abas et al, 1997; Marwick et al, 2010; Udedi et al, 2014; This is much higher than incidence in Todd et al 1999 (approx 0.16 in 2 months) but that is inconsistent with prevalence unless extremely short duration. )</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>15</p></td>
+<td><p>rr_depr_wealth45</p></td>
+<td><p>3</p></td>
+<td></td>
+<td><p>Abas et al, 1997; Todd et al 1999; Chibanda et al, 2012;</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>16</p></td>
+<td><p>rr_depr_cc</p></td>
+<td><p>1.25</p></td>
+<td></td>
+<td><p>HIV:  Cohen et al Rwanda 2009; Brandt 2009; hypertension: no association in SA  Grimsrud et al 2009.  Likely the association is with chronic symptoms rather than diagnosis of a chronic condition.</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>17</p></td>
+<td><p>rr_depr_pregnancy</p></td>
+<td><p>3</p></td>
+<td></td>
+<td><p>could not identify any estimates for African countries; although clear that pregnancy prevalence is relatively high in pregnancy and post-partum (it is clear the relative rate is &gt; 1).  Suggest use value of 3 until we have more data.</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>18</p></td>
+<td><p>rr_depr_female</p></td>
+<td><p>1.5</p></td>
+<td></td>
+<td><p>Kohler et al 2017</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>19</p></td>
+<td><p>rr_depr_prev_epis</p></td>
+<td><p>50</p></td>
+<td></td>
+<td><p>No data identified from Malawi or other close countries, but likely to be a large person-specific effect.  Consider data on proportion of people with depression ever.</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>20</p></td>
+<td><p>rr_depr_on_antidepr</p></td>
+<td><p>30</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>21</p></td>
+<td><p>rr_depr_age1519</p></td>
+<td><p>1</p></td>
+<td></td>
+<td><p>Kim et al 2015;</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>22</p></td>
+<td><p>rr_depr_agege60</p></td>
+<td><p>3</p></td>
+<td></td>
+<td><p>Kohler et al 2017;</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>23</p></td>
+<td><p>depr_resolution_rates</p></td>
+<td><p>[0.2, 0.3, 0.5, 0.7, 0.95]</p></td>
+<td></td>
+<td><p>Abas et al, 1997; Dow et al 2014;</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>24</p></td>
+<td><p>rr_resol_depr_cc</p></td>
+<td><p>0.5</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>25</p></td>
+<td><p>rr_resol_depr_on_antidepr</p></td>
+<td><p>1.5</p></td>
+<td></td>
+<td><p>Hengartner 2017; Cipriani et al 2018; Furukawa et al 2016;Faria et 2017; Kirsch 2014;</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>26</p></td>
+<td><p>rr_resol_depr_current_talk_ther</p></td>
+<td><p>1.1</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>27</p></td>
+<td><p>prob_3m_stop_antidepr</p></td>
+<td><p>0.7</p></td>
+<td></td>
+<td><p>None</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>28</p></td>
+<td><p>prob_3m_default_antidepr</p></td>
+<td><p>0.2</p></td>
+<td></td>
+<td><p>None</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>29</p></td>
+<td><p>prob_3m_suicide_depr_m</p></td>
+<td><p>0.0005</p></td>
+<td></td>
+<td><p>Chasimpha et al 2015   to be infered based on overall suicide rate and prevalence of depression (assume depression a pre-requisite for suicide) Suicide rate in adults in Karonga study 26.1 per 100,000 person years in adult men (age ge 15) and 8.0 per 100,000 person years in adult women.  Chasimpha et al BMC Public Health 2015</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>30</p></td>
+<td><p>rr_suicide_depr_f</p></td>
+<td><p>0.333</p></td>
+<td></td>
+<td><p>Chasimpha et al 2015</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>31</p></td>
+<td><p>prob_3m_selfharm_depr</p></td>
+<td><p>0.0005</p></td>
+<td></td>
+<td><p>None</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>32</p></td>
+<td><p>sensitivity_of_assessment_of_depression</p></td>
+<td><p>0.75</p></td>
+<td></td>
+<td><p>None</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>33</p></td>
+<td><p>pr_assessed_for_depression_in_generic_appt_level1</p></td>
+<td><p>0.01</p></td>
+<td></td>
+<td><p>No available reference found, but co-calibrated with pr_assessed_for_depression_for_perinatal_female for a better Model/Data ratio on mental health service usage.</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>34</p></td>
+<td><p>anti_depressant_medication_item_code</p></td>
+<td><p>267</p></td>
+<td></td>
+<td><p>First line treatment (Amitriptyline 25mg_100_CMST)</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>35</p></td>
+<td><p>pr_assessed_for_depression_for_perinatal_female</p></td>
+<td><p>0.01</p></td>
+<td></td>
+<td><p>No available reference found, but co-calibrated with pr_assessed_for_depression_in_generic_appt_level1 for a better Model/Data ratio on mental health service usage.</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="ResourceFile_DALY_Weights.csv.html" class="btn btn-neutral float-left" title="DALY Weights (.csv)" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ResourceFile_Diarrhoea.xlsx.html" class="btn btn-neutral float-right" title="Diarrhoea (.xlsx)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+      <span class="lastupdated">Last updated on Dec 13, 2023.
+      </span></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

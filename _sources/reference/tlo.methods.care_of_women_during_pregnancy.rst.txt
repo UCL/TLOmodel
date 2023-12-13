@@ -20,22 +20,22 @@ tlo.methods.care_of_women_during_pregnancy module
           - Description
         * - prob_seek_anc2
           - LIST
-          - Probability a women who is not predicted to attended four or more ANC visits will attend ANC2
+          - Probability a woman who is not predicted to attended four or more ANC visits will attend ANC2
         * - prob_seek_anc3
           - LIST
-          - Probability a women who is not predicted to attended four or more ANC visits will attend ANC3
+          - Probability a woman who is not predicted to attended four or more ANC visits will attend ANC3
         * - prob_seek_anc5
           - LIST
-          - Probability a women who is predicted to attend four or more ANC visits will attend ANC5
+          - Probability a woman who is predicted to attend four or more ANC visits will attend ANC5
         * - prob_seek_anc6
           - LIST
-          - Probability a women who is predicted to attend four or more ANC visits will attend ANC6
+          - Probability a woman who is predicted to attend four or more ANC visits will attend ANC6
         * - prob_seek_anc7
           - LIST
-          - Probability a women who is predicted to attend four or more ANC visits will attend ANC7
+          - Probability a woman who is predicted to attend four or more ANC visits will attend ANC7
         * - prob_seek_anc8
           - LIST
-          - Probability a women who is predicted to attend four or more ANC visits will attend ANC8
+          - Probability a woman who is predicted to attend four or more ANC visits will attend ANC8
         * - effect_of_ifa_for_resolving_anaemia
           - LIST
           - treatment effectiveness of starting iron and folic acid on resolving anaemia
@@ -171,7 +171,7 @@ tlo.methods.care_of_women_during_pregnancy module
 
      ADDITIONAL_DEPENDENCIES : {'Labour', 'Contraception', 'Lifestyle'}
 
-     INIT_DEPENDENCIES : {'PregnancySupervisor', 'HealthSystem', 'Demography'}
+     INIT_DEPENDENCIES : {'PregnancySupervisor', 'Demography', 'HealthSystem'}
 
      METADATA : {<Metadata.USES_HEALTHSYSTEM: 3>}
 
@@ -592,6 +592,11 @@ tlo.methods.care_of_women_during_pregnancy module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class CareOfWomenDuringPregnancyLoggingEvent):**
 

@@ -70,7 +70,7 @@ tlo.methods.simplified_births module
 
      **Class attributes:**
 
-     ALTERNATIVE_TO : {'NewbornOutcomes', 'Labour', 'PregnancySupervisor', 'Contraception', 'PostnatalSupervisor'}
+     ALTERNATIVE_TO : {'Contraception', 'Labour', 'NewbornOutcomes', 'PostnatalSupervisor', 'PregnancySupervisor'}
 
      INIT_DEPENDENCIES : {'Demography'}
 
@@ -99,6 +99,11 @@ tlo.methods.simplified_births module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class SimplifiedBirthsPoll):**
 

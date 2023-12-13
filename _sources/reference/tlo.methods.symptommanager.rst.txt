@@ -85,6 +85,11 @@ tlo.methods.symptommanager module
      Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
      **Functions (defined or overridden in class SymptomManager_AutoOnsetEvent):**
 
      .. automethod:: __init__
@@ -103,6 +108,11 @@ tlo.methods.symptommanager module
      Bases: :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
 
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
      **Functions (defined or overridden in class SymptomManager_AutoResolveEvent):**
 
      .. automethod:: __init__
@@ -120,6 +130,11 @@ tlo.methods.symptommanager module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class SymptomManager_SpuriousSymptomOnset):**
 
@@ -140,6 +155,11 @@ tlo.methods.symptommanager module
 
      Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
 
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
 
      **Functions (defined or overridden in class SymptomManager_SpuriousSymptomResolve):**
 

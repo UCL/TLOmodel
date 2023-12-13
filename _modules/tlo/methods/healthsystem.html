@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.healthsystem &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <title>tlo.methods.healthsystem &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
@@ -13,9 +16,9 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../../../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -33,7 +36,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -51,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
@@ -233,14 +237,18 @@
     <span class="n">hsi_event</span><span class="p">:</span> <span class="s1">&#39;HSI_Event&#39;</span>
 
 
-<div class="viewcode-block" id="HSI_Event"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event">[docs]</a><span class="k">class</span> <span class="nc">HSI_Event</span><span class="p">:</span>
+<div class="viewcode-block" id="HSI_Event">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event">[docs]</a>
+<span class="k">class</span> <span class="nc">HSI_Event</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Base HSI event class, from which all others inherit.</span>
 
 <span class="sd">    Concrete subclasses should also inherit from one of the EventMixin classes</span>
 <span class="sd">    defined below, and implement at least an `apply` and `did_not_run` method.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="HSI_Event.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Event.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new event.</span>
 
 <span class="sd">        Note that just creating an event does not schedule it to happen; that</span>
@@ -268,6 +276,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">expected_time_requests</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">facility_info</span> <span class="o">=</span> <span class="kc">None</span></div>
 
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">bed_days_allocated_to_this_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_received_info_about_bed_days</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -276,7 +285,9 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_received_info_about_bed_days</span>
 
-<div class="viewcode-block" id="HSI_Event.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Event.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply this event to the population.</span>
 
 <span class="sd">        Must be implemented by subclasses.</span>
@@ -284,19 +295,28 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
-<div class="viewcode-block" id="HSI_Event.did_not_run"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.did_not_run">[docs]</a>    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Event.did_not_run">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.did_not_run">[docs]</a>
+    <span class="k">def</span> <span class="nf">did_not_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True</span>
 <span class="sd">        to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: did not run.&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">True</span></div>
 
-<div class="viewcode-block" id="HSI_Event.never_ran"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.never_ran">[docs]</a>    <span class="k">def</span> <span class="nf">never_ran</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Event.never_ran">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.never_ran">[docs]</a>
+    <span class="k">def</span> <span class="nf">never_ran</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Called when this event is was entered to the HSI Event Queue, but was never run.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: was never run.&quot;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HSI_Event.post_apply_hook"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.post_apply_hook">[docs]</a>    <span class="k">def</span> <span class="nf">post_apply_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Event.post_apply_hook">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.post_apply_hook">[docs]</a>
+    <span class="k">def</span> <span class="nf">post_apply_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Impose the bed-days footprint (if target of the HSI is a person_id)&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">impose_beddays_footprint</span><span class="p">(</span>
@@ -304,13 +324,19 @@
                 <span class="n">footprint</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bed_days_allocated_to_this_event</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="HSI_Event.run"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Event.run">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.run">[docs]</a>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Make the event happen.&quot;&quot;&quot;</span>
         <span class="n">updated_appt_footprint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">post_apply_hook</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">updated_appt_footprint</span></div>
 
-<div class="viewcode-block" id="HSI_Event.get_consumables"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.get_consumables">[docs]</a>    <span class="k">def</span> <span class="nf">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+
+<div class="viewcode-block" id="HSI_Event.get_consumables">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.get_consumables">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_consumables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                         <span class="n">item_codes</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                         <span class="n">optional_item_codes</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">set</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
                         <span class="n">to_log</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -383,7 +409,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">rtn</span></div>
 
-<div class="viewcode-block" id="HSI_Event.make_beddays_footprint"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.make_beddays_footprint">[docs]</a>    <span class="k">def</span> <span class="nf">make_beddays_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dict_of_beddays</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Event.make_beddays_footprint">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.make_beddays_footprint">[docs]</a>
+    <span class="k">def</span> <span class="nf">make_beddays_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dict_of_beddays</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper function to make a correctly-formed &#39;bed-days footprint&#39;&quot;&quot;&quot;</span>
 
         <span class="c1"># get blank footprint</span>
@@ -400,13 +429,19 @@
 
         <span class="k">return</span> <span class="n">footprint</span></div>
 
-<div class="viewcode-block" id="HSI_Event.is_all_beddays_allocated"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.is_all_beddays_allocated">[docs]</a>    <span class="k">def</span> <span class="nf">is_all_beddays_allocated</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Event.is_all_beddays_allocated">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.is_all_beddays_allocated">[docs]</a>
+    <span class="k">def</span> <span class="nf">is_all_beddays_allocated</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if the entire footprint requested is allocated&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">all</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">bed_days_allocated_to_this_event</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="HSI_Event.make_appt_footprint"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.make_appt_footprint">[docs]</a>    <span class="k">def</span> <span class="nf">make_appt_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dict_of_appts</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Event.make_appt_footprint">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.make_appt_footprint">[docs]</a>
+    <span class="k">def</span> <span class="nf">make_appt_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dict_of_appts</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper function to make appointment footprint in format expected downstream.</span>
 
 <span class="sd">        Should be passed a dictionary keyed by appointment type codes with non-negative</span>
@@ -422,7 +457,10 @@
             <span class="s2">&quot;values&quot;</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="HSI_Event.initialise"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.initialise">[docs]</a>    <span class="k">def</span> <span class="nf">initialise</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Event.initialise">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.initialise">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise the HSI:</span>
 <span class="sd">        * Set the facility_info</span>
 <span class="sd">        * Compute appt-footprint time requirements</span>
@@ -438,7 +476,7 @@
             <span class="c1"># If there are bed-days specified, add (if needed) the in-patient admission and in-patient day Appointment</span>
             <span class="c1"># Types.</span>
             <span class="c1"># (HSI that require a bed for one or more days always need such appointments, but this may have been</span>
-            <span class="c1"># missed in the declaration of the `EXPECTED_APPPT_FOOTPRINT` in the HSI.)</span>
+            <span class="c1"># missed in the declaration of the `EXPECTED_APPT_FOOTPRINT` in the HSI.)</span>
             <span class="c1"># NB. The in-patient day Appointment time is automatically applied on subsequent days.</span>
             <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="n">health_system</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">add_first_day_inpatient_appts_to_footprint</span><span class="p">(</span>
@@ -453,7 +491,10 @@
         <span class="c1"># Do checks</span>
         <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_if_appt_footprint_can_run</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="HSI_Event._check_if_appt_footprint_can_run"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event._check_if_appt_footprint_can_run">[docs]</a>    <span class="k">def</span> <span class="nf">_check_if_appt_footprint_can_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Event._check_if_appt_footprint_can_run">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event._check_if_appt_footprint_can_run">[docs]</a>
+    <span class="k">def</span> <span class="nf">_check_if_appt_footprint_can_run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check that event (if individual level) is able to run with this configuration of officers (i.e. check that</span>
 <span class="sd">        this does not demand officers that are _never_ available), and issue warning if not.&quot;&quot;&quot;</span>
         <span class="n">health_system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span>
@@ -468,7 +509,10 @@
                 <span class="p">)</span>
                 <span class="k">return</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="HSI_Event.as_namedtuple"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.as_namedtuple">[docs]</a>    <span class="k">def</span> <span class="nf">as_namedtuple</span><span class="p">(</span>
+
+<div class="viewcode-block" id="HSI_Event.as_namedtuple">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event.as_namedtuple">[docs]</a>
+    <span class="k">def</span> <span class="nf">as_namedtuple</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">actual_appt_footprint</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HSIEventDetails</span><span class="p">:</span>
         <span class="n">appt_footprint</span> <span class="o">=</span> <span class="p">(</span>
@@ -484,10 +528,14 @@
             <span class="n">beddays_footprint</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span>
                 <span class="nb">sorted</span><span class="p">((</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">BEDDAYS_FOOTPRINT</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
             <span class="p">)</span>
-        <span class="p">)</span></div></div>
+        <span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="HSIEventWrapper"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSIEventWrapper">[docs]</a><span class="k">class</span> <span class="nc">HSIEventWrapper</span><span class="p">(</span><span class="n">Event</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSIEventWrapper">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSIEventWrapper">[docs]</a>
+<span class="k">class</span> <span class="nc">HSIEventWrapper</span><span class="p">(</span><span class="n">Event</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This is wrapper that contains an HSI event.</span>
 
 <span class="sd">    It is used:</span>
@@ -499,13 +547,18 @@
 <span class="sd">     3) When an HSI has been submitted to `schedule_hsi_event` but the service is not available.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="HSIEventWrapper.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSIEventWrapper.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="n">run_hsi</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="HSIEventWrapper.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSIEventWrapper.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="n">run_hsi</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hsi_event</span> <span class="o">=</span> <span class="n">hsi_event</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">run_hsi</span> <span class="o">=</span> <span class="n">run_hsi</span>  <span class="c1"># True to call the HSI&#39;s `run` method; False to call the HSI&#39;s `never_ran` method</span></div>
 
-<div class="viewcode-block" id="HSIEventWrapper.run"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSIEventWrapper.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSIEventWrapper.run">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSIEventWrapper.run">[docs]</a>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Do the appropriate action on the HSI event&quot;&quot;&quot;</span>
 
         <span class="c1"># Check that the person is still alive (this check normally happens in the HealthSystemScheduler and silently</span>
@@ -522,7 +575,9 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">call_and_record_never_ran_hsi_event</span><span class="p">(</span>
                       <span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hsi_event</span><span class="p">,</span>
                       <span class="n">priority</span><span class="o">=-</span><span class="mi">1</span>
-                     <span class="p">)</span></div></div>
+                     <span class="p">)</span></div>
+</div>
+
 
 
 <span class="k">def</span> <span class="nf">_accepts_argument</span><span class="p">(</span><span class="n">function</span><span class="p">:</span> <span class="nb">callable</span><span class="p">,</span> <span class="n">argument</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -544,7 +599,9 @@
     <span class="k">return</span> <span class="n">argument</span> <span class="ow">in</span> <span class="n">function</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_varnames</span><span class="p">[:</span><span class="n">function</span><span class="o">.</span><span class="vm">__code__</span><span class="o">.</span><span class="n">co_argcount</span><span class="p">]</span>
 
 
-<div class="viewcode-block" id="HealthSystem"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem">[docs]</a><span class="k">class</span> <span class="nc">HealthSystem</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="HealthSystem">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem">[docs]</a>
+<span class="k">class</span> <span class="nc">HealthSystem</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is the Health System Module.</span>
 <span class="sd">    The execution of all health systems interactions are controlled through this module.</span>
@@ -617,10 +674,8 @@
 
         <span class="s1">&#39;policy_name&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="s2">&quot;Name of priority policy assumed to have been adopted until policy switch&quot;</span><span class="p">),</span>
-        <span class="s1">&#39;policy_name_post_switch&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="s2">&quot;Name of priority policy to be adopted from policy switch year onwards&quot;</span><span class="p">),</span>
-        <span class="s1">&#39;year_policy_switch&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s2">&quot;Year in which priority policy switch in enforced&quot;</span><span class="p">),</span>
+        <span class="s1">&#39;year_mode_switch&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s2">&quot;Year in which mode switch in enforced&quot;</span><span class="p">),</span>
 
         <span class="s1">&#39;priority_rank&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">DICT</span><span class="p">,</span> <span class="s2">&quot;Data on the priority ranking of each of the Treatment_IDs to be adopted by &quot;</span>
@@ -644,8 +699,7 @@
                        <span class="s1">&#39; to the module initialiser.&#39;</span><span class="p">,</span>
         <span class="p">),</span>
         <span class="s1">&#39;mode_appt_constraints_postSwitch&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s1">&#39;If considering a mode switch alongside priority policy switch, specify in this parameter. &#39;</span>
-                       <span class="s1">&#39;The switch occcurs in the year given in `year_policy_switch`.&#39;</span><span class="p">)</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s1">&#39;Mode considered after a mode switch in year_mode_switch.&#39;</span><span class="p">)</span>
     <span class="p">}</span>
 
     <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{</span>
@@ -654,7 +708,9 @@
         <span class="p">),</span>
     <span class="p">}</span>
 
-<div class="viewcode-block" id="HealthSystem.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+<div class="viewcode-block" id="HealthSystem.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">resourcefilepath</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -745,7 +801,7 @@
         <span class="c1"># Check that the name of policy being evaluated is included</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">priority_policy</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">policy_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">policy_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;Default&#39;</span><span class="p">,</span> <span class="s1">&#39;Test&#39;</span><span class="p">,</span> <span class="s1">&#39;Random&#39;</span><span class="p">,</span> <span class="s1">&#39;Naive&#39;</span><span class="p">,</span> <span class="s1">&#39;RMNCH&#39;</span><span class="p">,</span>
+            <span class="k">assert</span> <span class="n">policy_name</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="s1">&#39;Default&#39;</span><span class="p">,</span> <span class="s1">&#39;Test&#39;</span><span class="p">,</span> <span class="s1">&#39;Test Mode 1&#39;</span><span class="p">,</span> <span class="s1">&#39;Random&#39;</span><span class="p">,</span> <span class="s1">&#39;Naive&#39;</span><span class="p">,</span> <span class="s1">&#39;RMNCH&#39;</span><span class="p">,</span>
                                        <span class="s1">&#39;VerticalProgrammes&#39;</span><span class="p">,</span> <span class="s1">&#39;ClinicallyVulnerable&#39;</span><span class="p">,</span> <span class="s1">&#39;EHP_III&#39;</span><span class="p">,</span>
                                        <span class="s1">&#39;LCOA_EHP&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">arg_policy_name</span> <span class="o">=</span> <span class="n">policy_name</span>
@@ -757,7 +813,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">list_fasttrack</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># provided so that there is a default even before simulation is run</span>
 
         <span class="c1"># Store the argument provided for service_availability</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">arg_service_availabily</span> <span class="o">=</span> <span class="n">service_availability</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arg_service_availability</span> <span class="o">=</span> <span class="n">service_availability</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">service_availability</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;*&#39;</span><span class="p">]</span>  <span class="c1"># provided so that there is a default even before simulation is run</span>
 
         <span class="c1"># Check that the capabilities coefficient is correct</span>
@@ -833,7 +889,10 @@
                 <span class="s2">&quot;&#39;year&#39;, &#39;simulation&#39; or None.&quot;</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.read_parameters">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.read_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
 
         <span class="n">path_to_resourcefiles_for_healthsystem</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;healthsystem&#39;</span>
 
@@ -882,7 +941,10 @@
                                                          <span class="s1">&#39;ResourceFile_PriorityRanking_ALLPOLICIES.xlsx&#39;</span><span class="p">,</span>
                                                          <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.pre_initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.pre_initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.pre_initialise_population">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.pre_initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate the accessory classes used by the HealthSystem and pass to them the data that has been read.&quot;&quot;&quot;</span>
         <span class="c1"># Create dedicated RNGs for separate functions done by the HealthSystem module</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rng_for_hsi_queue</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">RandomState</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
@@ -918,15 +980,20 @@
         <span class="c1"># Ensure name of policy we want to consider before/after switch is among the policies loaded</span>
         <span class="c1"># in the self.parameters[&#39;priority_rank&#39;]</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;policy_name&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;priority_rank&#39;</span><span class="p">]</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;policy_name_post_switch&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;priority_rank&#39;</span><span class="p">]</span>
 
         <span class="c1"># Set up framework for considering a priority policy</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">setup_priority_policy</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="HealthSystem.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.initialise_population">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">initialise_population</span><span class="p">(</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.initialise_simulation">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.initialise_simulation">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
         <span class="c1"># If capabilities coefficient was not explicitly specified, use initial population scaling factor</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities_coefficient</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">capabilities_coefficient</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">initial_model_to_data_popsize_ratio</span>
@@ -961,14 +1028,20 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">healthsystemscheduler</span> <span class="o">=</span> <span class="n">HealthSystemScheduler</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
             <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">healthsystemscheduler</span><span class="p">,</span> <span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
 
-        <span class="c1"># Schedule priority policy and mode_appt_constraints change</span>
-        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">HealthSystemChangePriorityPolicyAndMode</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
-                           <span class="n">Date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;year_policy_switch&quot;</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span></div>
+        <span class="c1"># Schedule a mode_appt_constraints change</span>
+        <span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">HealthSystemChangeMode</span><span class="p">(</span><span class="bp">self</span><span class="p">),</span>
+                           <span class="n">Date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;year_mode_switch&quot;</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="HealthSystem.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.on_birth">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.on_birth">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.on_simulation_end"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.on_simulation_end">[docs]</a>    <span class="k">def</span> <span class="nf">on_simulation_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.on_simulation_end">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.on_simulation_end">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_simulation_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Put out to the log the information from the tracker of the last day of the simulation&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">on_simulation_end</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">consumables</span><span class="o">.</span><span class="n">on_simulation_end</span><span class="p">()</span>
@@ -995,7 +1068,10 @@
                 <span class="p">}</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.setup_priority_policy"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.setup_priority_policy">[docs]</a>    <span class="k">def</span> <span class="nf">setup_priority_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.setup_priority_policy">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.setup_priority_policy">[docs]</a>
+    <span class="k">def</span> <span class="nf">setup_priority_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="c1"># Determine name of policy to be considered **at the start of the simulation**.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">priority_policy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_priority_policy_initial</span><span class="p">()</span>
@@ -1018,7 +1094,10 @@
         <span class="k">if</span> <span class="s1">&#39;Tb&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">list_fasttrack</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s1">&#39;tb_diagnosed&#39;</span><span class="p">,</span> <span class="s1">&#39;FT_if_tbdiagnosed&#39;</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="HealthSystem.process_human_resources_files"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.process_human_resources_files">[docs]</a>    <span class="k">def</span> <span class="nf">process_human_resources_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_funded_or_actual_staffing</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.process_human_resources_files">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.process_human_resources_files">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_human_resources_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_funded_or_actual_staffing</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create the data-structures needed from the information read into the parameters.&quot;&quot;&quot;</span>
 
         <span class="c1"># * Define Facility Levels</span>
@@ -1120,7 +1199,10 @@
         <span class="c1"># never available.)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_officers_with_availability</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_daily_capabilities</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_daily_capabilities</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">])</span></div>
 
-<div class="viewcode-block" id="HealthSystem.format_daily_capabilities"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.format_daily_capabilities">[docs]</a>    <span class="k">def</span> <span class="nf">format_daily_capabilities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_funded_or_actual_staffing</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HealthSystem.format_daily_capabilities">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.format_daily_capabilities">[docs]</a>
+    <span class="k">def</span> <span class="nf">format_daily_capabilities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_funded_or_actual_staffing</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This will updates the dataframe for the self.parameters[&#39;Daily_Capabilities&#39;] so as to include</span>
 <span class="sd">        every permutation of officer_type_code and facility_id, with zeros against permutations where no capacity</span>
@@ -1186,7 +1268,10 @@
         <span class="c1"># return the pd.Series of `Total_Minutes_Per_Day&#39; indexed for each type of officer at each facility</span>
         <span class="k">return</span> <span class="n">capabilities_ex</span><span class="p">[</span><span class="s1">&#39;Total_Minutes_Per_Day&#39;</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="HealthSystem.update_consumables_availability_to_represent_merging_of_levels_1b_and_2"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.update_consumables_availability_to_represent_merging_of_levels_1b_and_2">[docs]</a>    <span class="k">def</span> <span class="nf">update_consumables_availability_to_represent_merging_of_levels_1b_and_2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_original</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.update_consumables_availability_to_represent_merging_of_levels_1b_and_2">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.update_consumables_availability_to_represent_merging_of_levels_1b_and_2">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_consumables_availability_to_represent_merging_of_levels_1b_and_2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_original</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;To represent that facility levels &#39;1b&#39; and &#39;2&#39; are merged together under the label &#39;2&#39;, we replace the</span>
 <span class="sd">        availability of consumables at level 2 with new values.&quot;&quot;&quot;</span>
 
@@ -1243,14 +1328,17 @@
 
         <span class="k">return</span> <span class="n">df_updated</span></div>
 
-<div class="viewcode-block" id="HealthSystem.get_service_availability"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_service_availability">[docs]</a>    <span class="k">def</span> <span class="nf">get_service_availability</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="HealthSystem.get_service_availability">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_service_availability">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_service_availability</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns service availability. (Should be equal to what is specified by the parameter, but overwrite with what</span>
 <span class="sd">        was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)&quot;&quot;&quot;</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_service_availabily</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_service_availability</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">service_availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Service_Availability&#39;</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">service_availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_service_availabily</span>
+            <span class="n">service_availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_service_availability</span>
 
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">service_availability</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
 
@@ -1261,7 +1349,10 @@
                     <span class="p">)</span>
         <span class="k">return</span> <span class="n">service_availability</span></div>
 
-<div class="viewcode-block" id="HealthSystem.get_cons_availability"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_cons_availability">[docs]</a>    <span class="k">def</span> <span class="nf">get_cons_availability</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HealthSystem.get_cons_availability">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_cons_availability">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_cons_availability</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns consumables availability. (Should be equal to what is specified by the parameter, but overwrite with</span>
 <span class="sd">        what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)&quot;&quot;&quot;</span>
 
@@ -1278,7 +1369,10 @@
 
         <span class="k">return</span> <span class="n">_cons_availability</span></div>
 
-<div class="viewcode-block" id="HealthSystem.get_beds_availability"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_beds_availability">[docs]</a>    <span class="k">def</span> <span class="nf">get_beds_availability</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HealthSystem.get_beds_availability">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_beds_availability">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_beds_availability</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns beds availability. (Should be equal to what is specified by the parameter, but overwrite with</span>
 <span class="sd">        what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)&quot;&quot;&quot;</span>
 
@@ -1300,18 +1394,27 @@
 
         <span class="k">return</span> <span class="n">_beds_availability</span></div>
 
-<div class="viewcode-block" id="HealthSystem.schedule_to_call_never_ran_on_date"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.schedule_to_call_never_ran_on_date">[docs]</a>    <span class="k">def</span> <span class="nf">schedule_to_call_never_ran_on_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">:</span> <span class="s1">&#39;HSI_Event&#39;</span><span class="p">,</span> <span class="n">tdate</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.schedule_to_call_never_ran_on_date">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.schedule_to_call_never_ran_on_date">[docs]</a>
+    <span class="k">def</span> <span class="nf">schedule_to_call_never_ran_on_date</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">:</span> <span class="s1">&#39;HSI_Event&#39;</span><span class="p">,</span> <span class="n">tdate</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Function to schedule never_ran being called on a given date&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">schedule_event</span><span class="p">(</span><span class="n">HSIEventWrapper</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span> <span class="n">run_hsi</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span> <span class="n">tdate</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.get_mode_appt_constraints"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_mode_appt_constraints">[docs]</a>    <span class="k">def</span> <span class="nf">get_mode_appt_constraints</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HealthSystem.get_mode_appt_constraints">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_mode_appt_constraints">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_mode_appt_constraints</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns `mode_appt_constraints`. (Should be equal to what is specified by the parameter, but overwrite with</span>
 <span class="sd">        what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;mode_appt_constraints&#39;</span><span class="p">]</span> \
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_mode_appt_constraints</span> <span class="ow">is</span> <span class="kc">None</span> \
             <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_mode_appt_constraints</span></div>
 
-<div class="viewcode-block" id="HealthSystem.get_use_funded_or_actual_staffing"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_use_funded_or_actual_staffing">[docs]</a>    <span class="k">def</span> <span class="nf">get_use_funded_or_actual_staffing</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HealthSystem.get_use_funded_or_actual_staffing">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_use_funded_or_actual_staffing">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_use_funded_or_actual_staffing</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns `use_funded_or_actual_staffing`. (Should be equal to what is specified by the parameter, but</span>
 <span class="sd">        overwrite with what was provided in argument if an argument was specified -- provided for backward</span>
 <span class="sd">        compatibility/debugging.)&quot;&quot;&quot;</span>
@@ -1319,7 +1422,10 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_use_funded_or_actual_staffing</span> <span class="ow">is</span> <span class="kc">None</span> \
             <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_use_funded_or_actual_staffing</span></div>
 
-<div class="viewcode-block" id="HealthSystem.get_priority_policy_initial"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_priority_policy_initial">[docs]</a>    <span class="k">def</span> <span class="nf">get_priority_policy_initial</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HealthSystem.get_priority_policy_initial">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_priority_policy_initial">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_priority_policy_initial</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns `priority_policy`. (Should be equal to what is specified by the parameter, but</span>
 <span class="sd">        overwrite with what was provided in argument if an argument was specified -- provided for backward</span>
 <span class="sd">        compatibility/debugging.)&quot;&quot;&quot;</span>
@@ -1327,7 +1433,10 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_policy_name</span> <span class="ow">is</span> <span class="kc">None</span> \
             <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_policy_name</span></div>
 
-<div class="viewcode-block" id="HealthSystem.load_priority_policy"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.load_priority_policy">[docs]</a>    <span class="k">def</span> <span class="nf">load_priority_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">policy</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.load_priority_policy">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.load_priority_policy">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_priority_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">policy</span><span class="p">):</span>
 
         <span class="k">if</span> <span class="n">policy</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">:</span>
             <span class="c1"># Select the chosen policy from dictionary of all possible policies</span>
@@ -1345,7 +1454,10 @@
                 <span class="n">Policy_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s2">&quot;Treatment&quot;</span><span class="p">,</span> <span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">orient</span><span class="o">=</span><span class="s2">&quot;index&quot;</span><span class="p">)</span>
             <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">priority_rank_dict</span><span class="p">[</span><span class="s2">&quot;lowest_priority_considered&quot;</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="HealthSystem.schedule_hsi_event"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.schedule_hsi_event">[docs]</a>    <span class="k">def</span> <span class="nf">schedule_hsi_event</span><span class="p">(</span>
+
+<div class="viewcode-block" id="HealthSystem.schedule_hsi_event">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.schedule_hsi_event">[docs]</a>
+    <span class="k">def</span> <span class="nf">schedule_hsi_event</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">hsi_event</span><span class="p">:</span> <span class="s1">&#39;HSI_Event&#39;</span><span class="p">,</span>
         <span class="n">priority</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1398,8 +1510,8 @@
         <span class="c1"># Check that priority is in valid range</span>
         <span class="k">assert</span> <span class="n">priority</span> <span class="o">&gt;=</span> <span class="mi">0</span>
 
-        <span class="c1"># If priority of HSI_Event lower than the lowest one considered, ignore event in scheduling</span>
-        <span class="k">if</span> <span class="n">priority</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">lowest_priority_considered</span><span class="p">:</span>
+        <span class="c1"># If priority of HSI_Event lower than the lowest one considered, ignore event in scheduling under mode 2</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">priority</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">lowest_priority_considered</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">schedule_to_call_never_ran_on_date</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">,</span> <span class="n">tdate</span><span class="o">=</span><span class="n">tclose</span><span class="p">)</span>  <span class="c1"># Call this on tclose</span>
             <span class="k">return</span>
 
@@ -1434,7 +1546,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_add_hsi_event_queue_item_to_hsi_event_queue</span><span class="p">(</span>
                 <span class="n">priority</span><span class="o">=</span><span class="n">priority</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="n">topen</span><span class="p">,</span> <span class="n">tclose</span><span class="o">=</span><span class="n">tclose</span><span class="p">,</span> <span class="n">hsi_event</span><span class="o">=</span><span class="n">hsi_event</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem._add_hsi_event_queue_item_to_hsi_event_queue"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem._add_hsi_event_queue_item_to_hsi_event_queue">[docs]</a>    <span class="k">def</span> <span class="nf">_add_hsi_event_queue_item_to_hsi_event_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">priority</span><span class="p">,</span> <span class="n">topen</span><span class="p">,</span> <span class="n">tclose</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HealthSystem._add_hsi_event_queue_item_to_hsi_event_queue">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem._add_hsi_event_queue_item_to_hsi_event_queue">[docs]</a>
+    <span class="k">def</span> <span class="nf">_add_hsi_event_queue_item_to_hsi_event_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">priority</span><span class="p">,</span> <span class="n">topen</span><span class="p">,</span> <span class="n">tclose</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Add an event to the HSI_EVENT_QUEUE.&quot;&quot;&quot;</span>
         <span class="c1"># Create HSIEventQueue Item, including a counter for the number of HSI_Events, to assist with sorting in the</span>
         <span class="c1"># queue (NB. the sorting is done ascending and by the order of the items in the tuple).</span>
@@ -1453,8 +1568,11 @@
         <span class="c1"># Add to queue:</span>
         <span class="n">hp</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">HSI_EVENT_QUEUE</span><span class="p">,</span> <span class="n">_new_item</span><span class="p">)</span></div>
 
+
     <span class="c1"># This is where the priority policy is enacted</span>
-<div class="viewcode-block" id="HealthSystem.enforce_priority_policy"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.enforce_priority_policy">[docs]</a>    <span class="k">def</span> <span class="nf">enforce_priority_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<div class="viewcode-block" id="HealthSystem.enforce_priority_policy">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.enforce_priority_policy">[docs]</a>
+    <span class="k">def</span> <span class="nf">enforce_priority_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return priority for HSI_Event based on policy under consideration &quot;&quot;&quot;</span>
 
         <span class="n">pr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">priority_rank_dict</span>
@@ -1495,7 +1613,10 @@
                                       <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lowest_priority_considered</span></div>
 
-<div class="viewcode-block" id="HealthSystem.check_hsi_event_is_valid"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.check_hsi_event_is_valid">[docs]</a>    <span class="k">def</span> <span class="nf">check_hsi_event_is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.check_hsi_event_is_valid">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.check_hsi_event_is_valid">[docs]</a>
+    <span class="k">def</span> <span class="nf">check_hsi_event_is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check the integrity of an HSI_Event.&quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hsi_event</span><span class="p">,</span> <span class="n">HSI_Event</span><span class="p">)</span>
 
@@ -1531,7 +1652,10 @@
                 <span class="sa">f</span><span class="s2">&quot;which it is not possible: TREATMENT_ID=</span><span class="si">{</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">TREATMENT_ID</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.is_treatment_id_allowed"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.is_treatment_id_allowed">[docs]</a>    <span class="nd">@staticmethod</span>
+
+<div class="viewcode-block" id="HealthSystem.is_treatment_id_allowed">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.is_treatment_id_allowed">[docs]</a>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">is_treatment_id_allowed</span><span class="p">(</span><span class="n">treatment_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">service_availability</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Determine if a treatment_id (specified as a string) can be run (i.e., is within the allowable set of</span>
 <span class="sd">         treatments, given by `self.service_availability`. The rules are as follows:</span>
@@ -1582,7 +1706,10 @@
                 <span class="k">return</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="kc">False</span></div>
 
-<div class="viewcode-block" id="HealthSystem.schedule_batch_of_individual_hsi_events"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.schedule_batch_of_individual_hsi_events">[docs]</a>    <span class="k">def</span> <span class="nf">schedule_batch_of_individual_hsi_events</span><span class="p">(</span>
+
+<div class="viewcode-block" id="HealthSystem.schedule_batch_of_individual_hsi_events">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.schedule_batch_of_individual_hsi_events">[docs]</a>
+    <span class="k">def</span> <span class="nf">schedule_batch_of_individual_hsi_events</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event_class</span><span class="p">,</span> <span class="n">person_ids</span><span class="p">,</span> <span class="n">priority</span><span class="p">,</span> <span class="n">topen</span><span class="p">,</span> <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">event_kwargs</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Schedule a batch of individual-scoped HSI events of the same type.</span>
@@ -1621,7 +1748,10 @@
                 <span class="n">do_hsi_event_checks</span><span class="o">=</span><span class="p">(</span><span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.appt_footprint_is_valid"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.appt_footprint_is_valid">[docs]</a>    <span class="k">def</span> <span class="nf">appt_footprint_is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">appt_footprint</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.appt_footprint_is_valid">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.appt_footprint_is_valid">[docs]</a>
+    <span class="k">def</span> <span class="nf">appt_footprint_is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">appt_footprint</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Checks an appointment footprint to ensure it is in the correct format.</span>
 <span class="sd">        :param appt_footprint: Appointment footprint to check.</span>
@@ -1632,6 +1762,7 @@
             <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_appointment_types</span> <span class="ow">and</span> <span class="n">v</span> <span class="o">&gt;=</span> <span class="mi">0</span>
             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">appt_footprint</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
         <span class="p">)</span></div>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">capabilities_today</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
@@ -1648,7 +1779,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_daily_capabilities</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">capabilities_coefficient</span>
 
-<div class="viewcode-block" id="HealthSystem.get_blank_appt_footprint"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_blank_appt_footprint">[docs]</a>    <span class="k">def</span> <span class="nf">get_blank_appt_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="HealthSystem.get_blank_appt_footprint">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_blank_appt_footprint">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_blank_appt_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is a helper function so that disease modules can easily create their appt_footprints.</span>
 <span class="sd">        It returns an empty Counter instance.</span>
@@ -1656,14 +1789,20 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">Counter</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="HealthSystem.get_facility_info"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_facility_info">[docs]</a>    <span class="k">def</span> <span class="nf">get_facility_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FacilityInfo</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HealthSystem.get_facility_info">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_facility_info">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_facility_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FacilityInfo</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper function to find the facility at which an HSI event will take place based on their district of</span>
 <span class="sd">        residence and the level of the facility of the HSI.&quot;&quot;&quot;</span>
         <span class="n">the_district</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">hsi_event</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="s1">&#39;district_of_residence&#39;</span><span class="p">]</span>
         <span class="n">the_level</span> <span class="o">=</span> <span class="n">hsi_event</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_facilities_for_each_district</span><span class="p">[</span><span class="n">the_level</span><span class="p">][</span><span class="n">the_district</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="HealthSystem.get_appt_footprint_as_time_request"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_appt_footprint_as_time_request">[docs]</a>    <span class="k">def</span> <span class="nf">get_appt_footprint_as_time_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">facility_info</span><span class="p">:</span> <span class="n">FacilityInfo</span><span class="p">,</span> <span class="n">appt_footprint</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.get_appt_footprint_as_time_request">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_appt_footprint_as_time_request">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_appt_footprint_as_time_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">facility_info</span><span class="p">:</span> <span class="n">FacilityInfo</span><span class="p">,</span> <span class="n">appt_footprint</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This will take an APPT_FOOTPRINT and return the required appointments in terms of the</span>
 <span class="sd">        time required of each Officer Type in each Facility ID.</span>
@@ -1693,7 +1832,10 @@
 
         <span class="k">return</span> <span class="n">appt_footprint_times</span></div>
 
-<div class="viewcode-block" id="HealthSystem.get_squeeze_factors"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_squeeze_factors">[docs]</a>    <span class="k">def</span> <span class="nf">get_squeeze_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">footprints_per_event</span><span class="p">,</span> <span class="n">total_footprint</span><span class="p">,</span> <span class="n">current_capabilities</span><span class="p">,</span>
+
+<div class="viewcode-block" id="HealthSystem.get_squeeze_factors">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_squeeze_factors">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_squeeze_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">footprints_per_event</span><span class="p">,</span> <span class="n">total_footprint</span><span class="p">,</span> <span class="n">current_capabilities</span><span class="p">,</span>
                             <span class="n">compute_squeeze_factor_to_district_level</span><span class="p">:</span> <span class="nb">bool</span>
                             <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1800,7 +1942,10 @@
 
         <span class="k">return</span> <span class="n">squeeze_factor_per_hsi_event</span></div>
 
-<div class="viewcode-block" id="HealthSystem.record_hsi_event"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.record_hsi_event">[docs]</a>    <span class="k">def</span> <span class="nf">record_hsi_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="n">actual_appt_footprint</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">did_run</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.record_hsi_event">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.record_hsi_event">[docs]</a>
+    <span class="k">def</span> <span class="nf">record_hsi_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="n">actual_appt_footprint</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">did_run</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Record the processing of an HSI event.</span>
 <span class="sd">        If this is an individual-level HSI_Event, it will also record the actual appointment footprint</span>
@@ -1831,7 +1976,10 @@
                 <span class="n">priority</span><span class="o">=</span><span class="n">priority</span><span class="p">,</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.write_to_hsi_log"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.write_to_hsi_log">[docs]</a>    <span class="k">def</span> <span class="nf">write_to_hsi_log</span><span class="p">(</span>
+
+<div class="viewcode-block" id="HealthSystem.write_to_hsi_log">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.write_to_hsi_log">[docs]</a>
+    <span class="k">def</span> <span class="nf">write_to_hsi_log</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">event_details</span><span class="p">:</span> <span class="n">HSIEventDetails</span><span class="p">,</span>
         <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1870,7 +2018,10 @@
                 <span class="n">level</span><span class="o">=</span><span class="n">event_details</span><span class="o">.</span><span class="n">facility_level</span><span class="p">,</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.call_and_record_never_ran_hsi_event"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.call_and_record_never_ran_hsi_event">[docs]</a>    <span class="k">def</span> <span class="nf">call_and_record_never_ran_hsi_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.call_and_record_never_ran_hsi_event">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.call_and_record_never_ran_hsi_event">[docs]</a>
+    <span class="k">def</span> <span class="nf">call_and_record_never_ran_hsi_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Record the fact that an HSI event was never ran.</span>
 <span class="sd">        If this is an individual-level HSI_Event, it will also record the actual appointment footprint</span>
@@ -1895,7 +2046,10 @@
                  <span class="n">priority</span><span class="o">=</span><span class="n">priority</span><span class="p">,</span>
                  <span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.write_to_never_ran_hsi_log"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.write_to_never_ran_hsi_log">[docs]</a>    <span class="k">def</span> <span class="nf">write_to_never_ran_hsi_log</span><span class="p">(</span>
+
+<div class="viewcode-block" id="HealthSystem.write_to_never_ran_hsi_log">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.write_to_never_ran_hsi_log">[docs]</a>
+    <span class="k">def</span> <span class="nf">write_to_never_ran_hsi_log</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">event_details</span><span class="p">:</span> <span class="n">HSIEventDetails</span><span class="p">,</span>
         <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1928,7 +2082,10 @@
             <span class="n">level</span><span class="o">=</span><span class="n">event_details</span><span class="o">.</span><span class="n">facility_level</span><span class="p">,</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.log_current_capabilities_and_usage"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.log_current_capabilities_and_usage">[docs]</a>    <span class="k">def</span> <span class="nf">log_current_capabilities_and_usage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.log_current_capabilities_and_usage">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.log_current_capabilities_and_usage">[docs]</a>
+    <span class="k">def</span> <span class="nf">log_current_capabilities_and_usage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This will log the percentage of the current capabilities that is used at each Facility Type, according the</span>
 <span class="sd">        `runnning_total_footprint`.</span>
@@ -1979,11 +2136,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_summary_counter</span><span class="o">.</span><span class="n">record_hs_status</span><span class="p">(</span>
             <span class="n">fraction_time_used_across_all_facilities</span><span class="o">=</span><span class="n">fraction_time_used_overall</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.remove_beddays_footprint"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.remove_beddays_footprint">[docs]</a>    <span class="k">def</span> <span class="nf">remove_beddays_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.remove_beddays_footprint">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.remove_beddays_footprint">[docs]</a>
+    <span class="k">def</span> <span class="nf">remove_beddays_footprint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="c1"># removing bed_days from a particular individual if any</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">remove_beddays_footprint</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.find_events_for_person"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.find_events_for_person">[docs]</a>    <span class="k">def</span> <span class="nf">find_events_for_person</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.find_events_for_person">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.find_events_for_person">[docs]</a>
+    <span class="k">def</span> <span class="nf">find_events_for_person</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Find the events in the HSI_EVENT_QUEUE for a particular person.</span>
 <span class="sd">        :param person_id: the person_id of interest</span>
 <span class="sd">        :returns list of tuples (date_of_event, event) for that person_id in the HSI_EVENT_QUEUE.</span>
@@ -2001,28 +2164,43 @@
 
         <span class="k">return</span> <span class="n">list_of_events</span></div>
 
-<div class="viewcode-block" id="HealthSystem.reset_queue"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.reset_queue">[docs]</a>    <span class="k">def</span> <span class="nf">reset_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem.reset_queue">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.reset_queue">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset_queue</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the HSI event queue to be empty&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">HSI_EVENT_QUEUE</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hsi_event_queue_counter</span> <span class="o">=</span> <span class="mi">0</span></div>
 
-<div class="viewcode-block" id="HealthSystem.get_item_codes_from_package_name"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_item_codes_from_package_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_item_codes_from_package_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">package</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HealthSystem.get_item_codes_from_package_name">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_item_codes_from_package_name">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_item_codes_from_package_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">package</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper function to provide the item codes and quantities in a dict of the form {&lt;item_code&gt;:&lt;quantity&gt;} for</span>
 <span class="sd">         a given package name.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">get_item_codes_from_package_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;item_and_package_code_lookups&#39;</span><span class="p">],</span> <span class="n">package</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.get_item_code_from_item_name"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_item_code_from_item_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_item_code_from_item_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HealthSystem.get_item_code_from_item_name">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_item_code_from_item_name">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_item_code_from_item_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper function to provide the item_code (an int) when provided with the name of the item&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;item_and_package_code_lookups&#39;</span><span class="p">],</span> <span class="n">item</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.override_availability_of_consumables"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.override_availability_of_consumables">[docs]</a>    <span class="k">def</span> <span class="nf">override_availability_of_consumables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_codes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HealthSystem.override_availability_of_consumables">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.override_availability_of_consumables">[docs]</a>
+    <span class="k">def</span> <span class="nf">override_availability_of_consumables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_codes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Over-ride the availability (for all months and all facilities) of certain consumables item_codes.</span>
 <span class="sd">        :param item_codes: Dictionary of the form {&lt;item_code&gt;: probability_that_item_is_available}</span>
 <span class="sd">        :return: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">consumables</span><span class="o">.</span><span class="n">override_availability</span><span class="p">(</span><span class="n">item_codes</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem._write_hsi_event_counts_to_log_and_reset"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem._write_hsi_event_counts_to_log_and_reset">[docs]</a>    <span class="k">def</span> <span class="nf">_write_hsi_event_counts_to_log_and_reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem._write_hsi_event_counts_to_log_and_reset">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem._write_hsi_event_counts_to_log_and_reset">[docs]</a>
+    <span class="k">def</span> <span class="nf">_write_hsi_event_counts_to_log_and_reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">logger_summary</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="n">key</span><span class="o">=</span><span class="s2">&quot;hsi_event_counts&quot;</span><span class="p">,</span>
             <span class="n">description</span><span class="o">=</span><span class="p">(</span>
@@ -2035,7 +2213,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_hsi_event_counts_cumulative</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hsi_event_counts_log_period</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_hsi_event_counts_log_period</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="HealthSystem._write_never_ran_hsi_event_counts_to_log_and_reset"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem._write_never_ran_hsi_event_counts_to_log_and_reset">[docs]</a>    <span class="k">def</span> <span class="nf">_write_never_ran_hsi_event_counts_to_log_and_reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystem._write_never_ran_hsi_event_counts_to_log_and_reset">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem._write_never_ran_hsi_event_counts_to_log_and_reset">[docs]</a>
+    <span class="k">def</span> <span class="nf">_write_never_ran_hsi_event_counts_to_log_and_reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">logger_summary</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="n">key</span><span class="o">=</span><span class="s2">&quot;never_ran_hsi_event_counts&quot;</span><span class="p">,</span>
             <span class="n">description</span><span class="o">=</span><span class="p">(</span>
@@ -2048,20 +2229,29 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_never_ran_hsi_event_counts_cumulative</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_never_ran_hsi_event_counts_log_period</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_never_ran_hsi_event_counts_log_period</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="HealthSystem.on_end_of_day"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.on_end_of_day">[docs]</a>    <span class="k">def</span> <span class="nf">on_end_of_day</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HealthSystem.on_end_of_day">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.on_end_of_day">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_end_of_day</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Do jobs to be done at the end of the day (after all HSI run)&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">on_end_of_day</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hsi_event_count_log_period</span> <span class="o">==</span> <span class="s2">&quot;day&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_write_hsi_event_counts_to_log_and_reset</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_write_never_ran_hsi_event_counts_to_log_and_reset</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="HealthSystem.on_end_of_month"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.on_end_of_month">[docs]</a>    <span class="k">def</span> <span class="nf">on_end_of_month</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HealthSystem.on_end_of_month">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.on_end_of_month">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_end_of_month</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Do jobs to be done at the end of the month (after all HSI run)&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hsi_event_count_log_period</span> <span class="o">==</span> <span class="s2">&quot;month&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_write_hsi_event_counts_to_log_and_reset</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_write_never_ran_hsi_event_counts_to_log_and_reset</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="HealthSystem.on_end_of_year"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.on_end_of_year">[docs]</a>    <span class="k">def</span> <span class="nf">on_end_of_year</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HealthSystem.on_end_of_year">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.on_end_of_year">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_end_of_year</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Write to log the current states of the summary counters and reset them.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_summary_counter</span><span class="o">.</span><span class="n">write_to_log_and_reset_counters</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">consumables</span><span class="o">.</span><span class="n">on_end_of_year</span><span class="p">()</span>
@@ -2070,7 +2260,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_write_hsi_event_counts_to_log_and_reset</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_write_never_ran_hsi_event_counts_to_log_and_reset</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="HealthSystem.run_population_level_events"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.run_population_level_events">[docs]</a>    <span class="k">def</span> <span class="nf">run_population_level_events</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_list_of_population_hsi_event_tuples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">HSIEventQueueItem</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HealthSystem.run_population_level_events">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.run_population_level_events">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_population_level_events</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_list_of_population_hsi_event_tuples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">HSIEventQueueItem</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Run a list of population level events.&quot;&quot;&quot;</span>
         <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">_list_of_population_hsi_event_tuples</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">pop_level_hsi_event_tuple</span> <span class="o">=</span> <span class="n">_list_of_population_hsi_event_tuples</span><span class="o">.</span><span class="n">pop</span><span class="p">()</span>
@@ -2078,10 +2271,13 @@
             <span class="n">pop_level_hsi_event</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">squeeze_factor</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">record_hsi_event</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="n">pop_level_hsi_event</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystem.run_individual_level_events_in_mode_0_or_1"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.run_individual_level_events_in_mode_0_or_1">[docs]</a>    <span class="k">def</span> <span class="nf">run_individual_level_events_in_mode_0_or_1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+
+<div class="viewcode-block" id="HealthSystem.run_individual_level_events_in_mode_0_or_1">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.run_individual_level_events_in_mode_0_or_1">[docs]</a>
+    <span class="k">def</span> <span class="nf">run_individual_level_events_in_mode_0_or_1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                                                    <span class="n">_list_of_individual_hsi_event_tuples</span><span class="p">:</span>
                                                    <span class="n">List</span><span class="p">[</span><span class="n">HSIEventQueueItem</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run a list of individual level events. Returns: list of events that did not run (maybe an empty a list).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run a list of individual level events. Returns: list of events that did not run (maybe an empty list).&quot;&quot;&quot;</span>
         <span class="n">_to_be_held_over</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
@@ -2198,7 +2394,7 @@
                     <span class="c1"># add to the hold-over queue.</span>
                     <span class="c1"># Otherwise (disease module returns &quot;FALSE&quot;) the event is not rescheduled and will not run.</span>
 
-                    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">rtn_from_did_not_run</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">rtn_from_did_not_run</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
                         <span class="c1"># reschedule event</span>
                         <span class="n">hp</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="n">_to_be_held_over</span><span class="p">,</span> <span class="n">_list_of_individual_hsi_event_tuples</span><span class="p">[</span><span class="n">ev_num</span><span class="p">])</span>
 
@@ -2212,6 +2408,7 @@
                     <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">_to_be_held_over</span></div>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">hsi_event_counts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Counter</span><span class="p">:</span>
@@ -2262,7 +2459,10 @@
             <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="HealthSystemScheduler"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler">[docs]</a><span class="k">class</span> <span class="nc">HealthSystemScheduler</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystemScheduler">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler">[docs]</a>
+<span class="k">class</span> <span class="nc">HealthSystemScheduler</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is the HealthSystemScheduler. It is an event that occurs every day and must be the LAST event of the day.</span>
 <span class="sd">    It inspects the calls on the healthsystem and commissions event to occur that are consistent with the</span>
@@ -2279,25 +2479,36 @@
 
 <span class="sd">    If the event is to be run, then the following events occur:</span>
 <span class="sd">        * The HSI event itself is run.</span>
-<span class="sd">        * The occurence of the event is logged</span>
+<span class="sd">        * The occurrence of the event is logged</span>
 <span class="sd">        * The resources used are &#39;occupied&#39; (if individual level HSI event)</span>
-<span class="sd">        * Other disease modules are alerted of the occurence of the HSI event (if individual level HSI event)</span>
+<span class="sd">        * Other disease modules are alerted of the occurrence of the HSI event (if individual level HSI event)</span>
 
 <span class="sd">    Here is where we can have multiple types of assumption regarding how these capabilities are modelled.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="HealthSystemScheduler.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">HealthSystem</span><span class="p">):</span>
+<div class="viewcode-block" id="HealthSystemScheduler.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">HealthSystem</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="n">priority</span><span class="o">=</span><span class="n">Priority</span><span class="o">.</span><span class="n">END_OF_DAY</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystemScheduler._is_last_day_of_the_year"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler._is_last_day_of_the_year">[docs]</a>    <span class="nd">@staticmethod</span>
+
+<div class="viewcode-block" id="HealthSystemScheduler._is_last_day_of_the_year">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler._is_last_day_of_the_year">[docs]</a>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_is_last_day_of_the_year</span><span class="p">(</span><span class="n">date</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">month</span> <span class="o">==</span> <span class="mi">12</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">date</span><span class="o">.</span><span class="n">day</span> <span class="o">==</span> <span class="mi">31</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystemScheduler._is_last_day_of_the_month"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler._is_last_day_of_the_month">[docs]</a>    <span class="nd">@staticmethod</span>
+
+<div class="viewcode-block" id="HealthSystemScheduler._is_last_day_of_the_month">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler._is_last_day_of_the_month">[docs]</a>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_is_last_day_of_the_month</span><span class="p">(</span><span class="n">date</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">date</span><span class="o">.</span><span class="n">month</span> <span class="o">!=</span> <span class="p">(</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">month</span></div>
 
-<div class="viewcode-block" id="HealthSystemScheduler._get_events_due_today"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler._get_events_due_today">[docs]</a>    <span class="k">def</span> <span class="nf">_get_events_due_today</span><span class="p">(</span><span class="bp">self</span><span class="p">,)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">List</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="HealthSystemScheduler._get_events_due_today">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler._get_events_due_today">[docs]</a>
+    <span class="k">def</span> <span class="nf">_get_events_due_today</span><span class="p">(</span><span class="bp">self</span><span class="p">,)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">List</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Interrogate the HSI_EVENT queue object to remove from it the events due today, and to return these in two</span>
 <span class="sd">        lists:</span>
 <span class="sd">         * list_of_individual_hsi_event_tuples_due_today</span>
@@ -2345,12 +2556,6 @@
                 <span class="c1"># The event is not yet due (before topen)</span>
                 <span class="n">hp</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="n">_list_of_events_not_due_today</span><span class="p">,</span> <span class="n">next_event_tuple</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">next_event_tuple</span><span class="o">.</span><span class="n">priority</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">lowest_priority_considered</span><span class="p">:</span>
-                    <span class="c1"># Check the priority</span>
-                    <span class="c1"># If the next event is not due and has lowest allowed priority, then stop looking</span>
-                    <span class="c1"># through the heapq as all other events will also not be due.</span>
-                    <span class="k">break</span>
-
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># The event is now due to run today and the person is confirmed to be still alive</span>
                 <span class="c1"># Add it to the list of events due today (individual or population level)</span>
@@ -2368,7 +2573,10 @@
 
         <span class="k">return</span> <span class="n">_list_of_individual_hsi_event_tuples_due_today</span><span class="p">,</span> <span class="n">_list_of_population_hsi_event_tuples_due_today</span></div>
 
-<div class="viewcode-block" id="HealthSystemScheduler.process_events_mode_0_and_1"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler.process_events_mode_0_and_1">[docs]</a>    <span class="k">def</span> <span class="nf">process_events_mode_0_and_1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hold_over</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">HSIEventQueueItem</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HealthSystemScheduler.process_events_mode_0_and_1">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler.process_events_mode_0_and_1">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_events_mode_0_and_1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hold_over</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">HSIEventQueueItem</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
             <span class="c1"># Get the events that are due today:</span>
             <span class="p">(</span>
@@ -2391,13 +2599,16 @@
             <span class="p">)</span>
             <span class="n">hold_over</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_to_be_held_over</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystemScheduler.process_events_mode_2"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler.process_events_mode_2">[docs]</a>    <span class="k">def</span> <span class="nf">process_events_mode_2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hold_over</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">HSIEventQueueItem</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+<div class="viewcode-block" id="HealthSystemScheduler.process_events_mode_2">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler.process_events_mode_2">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_events_mode_2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hold_over</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">HSIEventQueueItem</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 
         <span class="n">capabilities_monitor</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">capabilities_today</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
         <span class="n">set_capabilities_still_available</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">capabilities_monitor</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="o">&gt;</span> <span class="mf">0.0</span><span class="p">}</span>
 
         <span class="c1"># Here use different approach for appt_mode_constraints = 2: rather than collecting events</span>
-        <span class="c1"># due today all at once, run event immediately at time of querying. This ensure that no</span>
+        <span class="c1"># due today all at once, run event immediately at time of querying. This ensures that no</span>
         <span class="c1"># artificial &quot;midday effects&quot; are introduced when evaluating priority policies.</span>
 
         <span class="c1"># To avoid repeated dataframe accesses in subsequent loop, assemble set of alive</span>
@@ -2450,15 +2661,14 @@
 
                     <span class="k">if</span> <span class="n">next_event_tuple</span><span class="o">.</span><span class="n">priority</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">lowest_priority_considered</span><span class="p">:</span>
                         <span class="c1"># Check the priority</span>
-                        <span class="c1"># If the next event is not due and has lowest allowed priority, then stop looking</span>
+                        <span class="c1"># If the next event is not due and has the lowest allowed priority, then stop looking</span>
                         <span class="c1"># through the heapq as all other events will also not be due.</span>
                         <span class="k">break</span>
 
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="c1"># The event is now due to run today and the person is confirmed to be still alive</span>
+                    <span class="c1"># The event is now due to run today and the person is confirmed to be still alive.</span>
                     <span class="c1"># Add it to the list of events due today if at population level.</span>
                     <span class="c1"># Otherwise, run event immediately.</span>
-
                     <span class="n">is_pop_level_hsi_event</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">tlo</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">Population</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">is_pop_level_hsi_event</span><span class="p">:</span>
                         <span class="n">list_of_population_hsi_event_tuples_due_today</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_event_tuple</span><span class="p">)</span>
@@ -2471,7 +2681,7 @@
                         <span class="c1"># based on queue information, and we assume no squeeze ever takes place.</span>
                         <span class="n">squeeze_factor</span> <span class="o">=</span> <span class="mf">0.</span>
 
-                        <span class="c1"># Check if any of the officers required have ran out.</span>
+                        <span class="c1"># Check if any of the officers required have run out.</span>
                         <span class="n">out_of_resources</span> <span class="o">=</span> <span class="kc">False</span>
                         <span class="k">for</span> <span class="n">officer</span><span class="p">,</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">original_call</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                             <span class="c1"># If any of the officers are not available, then out of resources</span>
@@ -2493,7 +2703,7 @@
                             <span class="c1"># Otherwise (disease module returns &quot;FALSE&quot;) the event is not rescheduled and</span>
                             <span class="c1"># will not run.</span>
 
-                            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">rtn_from_did_not_run</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">):</span>
+                            <span class="k">if</span> <span class="n">rtn_from_did_not_run</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
                                 <span class="c1"># reschedule event</span>
                                 <span class="c1"># Add the event to the queue:</span>
                                 <span class="n">hp</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="n">hold_over</span><span class="p">,</span> <span class="n">next_event_tuple</span><span class="p">)</span>
@@ -2551,7 +2761,7 @@
                             <span class="c1"># Subtract this from capabilities used so-far today</span>
                             <span class="n">capabilities_monitor</span><span class="o">.</span><span class="n">subtract</span><span class="p">(</span><span class="n">updated_call</span><span class="p">)</span>
 
-                            <span class="c1"># If any of the officers have ran out of time by performing this hsi,</span>
+                            <span class="c1"># If any of the officers have run out of time by performing this hsi,</span>
                             <span class="c1"># remove them from list of available officers.</span>
                             <span class="k">for</span> <span class="n">officer</span><span class="p">,</span> <span class="n">call</span> <span class="ow">in</span> <span class="n">updated_call</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                                 <span class="k">if</span> <span class="n">capabilities_monitor</span><span class="p">[</span><span class="n">officer</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
@@ -2564,7 +2774,7 @@
                                                   <span class="sa">f</span><span class="s2">&quot;officers than expected_footprint.&quot;</span><span class="p">)</span>
                                         <span class="p">)</span>
 
-                            <span class="c1"># Update today&#39;s footprint based on actuall call and squeeze factor</span>
+                            <span class="c1"># Update today&#39;s footprint based on actual call and squeeze factor</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">running_total_footprint</span> <span class="o">-=</span> <span class="n">original_call</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">running_total_footprint</span> <span class="o">+=</span> <span class="n">updated_call</span>
 
@@ -2582,13 +2792,13 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">break</span>
 
-        <span class="c1"># Traverse the queue again to check all appts which have expired are removed from the queue,</span>
-        <span class="c1"># and call did_not_run() for all those that were postponed.</span>
         <span class="c1"># In previous iteration, we stopped querying the queue once capabilities</span>
-        <span class="c1"># were exhausted, so here ensure if any events expired were left unchecked they are properly</span>
-        <span class="c1"># removed from the queue, and did_not_run() is invoked for all postponed events.</span>
-        <span class="c1"># (This should still be more efficient than querying the queue as done in mode_appt_constraints</span>
-        <span class="c1">#  = 0 and 1 while ensuring mid-day effects are avoided.)</span>
+        <span class="c1"># were exhausted, so here we traverse the queue again to ensure that if any events expired were</span>
+        <span class="c1"># left unchecked they are properly removed from the queue, and did_not_run() is invoked for all</span>
+        <span class="c1"># postponed events. (This should still be more efficient than querying the queue as done in</span>
+        <span class="c1"># mode_appt_constraints = 0 and 1 while ensuring mid-day effects are avoided.)</span>
+        <span class="c1"># We also schedule a call_never_run for any HSI below the lowest_priority_considered,</span>
+        <span class="c1"># in case any of them where left in the queue due to a transition from mode 0/1 to mode 2</span>
         <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">HSI_EVENT_QUEUE</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
 
             <span class="n">next_event_tuple</span> <span class="o">=</span> <span class="n">hp</span><span class="o">.</span><span class="n">heappop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">HSI_EVENT_QUEUE</span><span class="p">)</span>
@@ -2596,7 +2806,15 @@
 
             <span class="n">event</span> <span class="o">=</span> <span class="n">next_event_tuple</span><span class="o">.</span><span class="n">hsi_event</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">&gt;</span> <span class="n">next_event_tuple</span><span class="o">.</span><span class="n">tclose</span><span class="p">:</span>
+            <span class="c1"># If the priority of the event is lower than lowest_priority_considered, schedule a call_never_ran</span>
+            <span class="c1"># on tclose regardless of whether appt is due today or any other time. (Although in mode 2 HSIs with</span>
+            <span class="c1"># priority &gt; lowest_priority_considered are never added to the queue, some such HSIs may still be present</span>
+            <span class="c1"># in the queue if mode 2 was preceded by a period in mode 1).</span>
+            <span class="k">if</span> <span class="n">next_event_tuple</span><span class="o">.</span><span class="n">priority</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">lowest_priority_considered</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">schedule_to_call_never_ran_on_date</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="n">event</span><span class="p">,</span>
+                                                               <span class="n">tdate</span><span class="o">=</span><span class="n">next_event_tuple</span><span class="o">.</span><span class="n">tclose</span><span class="p">)</span>
+
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">&gt;</span> <span class="n">next_event_tuple</span><span class="o">.</span><span class="n">tclose</span><span class="p">:</span>
                 <span class="c1"># The event has expired (after tclose) having never been run. Call the &#39;never_ran&#39; function</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">call_and_record_never_ran_hsi_event</span><span class="p">(</span>
                       <span class="n">hsi_event</span><span class="o">=</span><span class="n">event</span><span class="p">,</span>
@@ -2612,25 +2830,19 @@
                 <span class="k">pass</span>
 
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">&lt;</span> <span class="n">next_event_tuple</span><span class="o">.</span><span class="n">topen</span><span class="p">:</span>
-                <span class="c1"># The event is not yet due (before topen)</span>
+                <span class="c1"># The event is not yet due (before topen). Do not stop querying the queue here if we have</span>
+                <span class="c1"># reached the lowest_priority_considered, as we want to make sure HSIs with lower priority</span>
+                <span class="c1"># (which may have been scheduled during a prior mode 0/1 period) are flushed from the queue.</span>
                 <span class="n">hp</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="n">list_of_events_not_due_today</span><span class="p">,</span> <span class="n">next_event_tuple</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="n">next_event_tuple</span><span class="o">.</span><span class="n">priority</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">lowest_priority_considered</span><span class="p">:</span>
-                    <span class="c1"># Check the priority</span>
-                    <span class="c1"># If the next event is not due and has lowest allowed priority, then stop looking</span>
-                    <span class="c1"># through the heapq as all other events will also not be due.</span>
-                    <span class="k">break</span>
-
             <span class="k">else</span><span class="p">:</span>
-                <span class="c1"># The event is now due to run today and the person is confirmed to be still alive</span>
                 <span class="c1"># Add it to the list of events due today if at population level.</span>
                 <span class="c1"># Otherwise, run event immediately.</span>
-
                 <span class="n">is_pop_level_hsi_event</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">tlo</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">Population</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">is_pop_level_hsi_event</span><span class="p">:</span>
                     <span class="n">list_of_population_hsi_event_tuples_due_today</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">next_event_tuple</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="c1"># In previous iteration, have already ran all the events for today that could run</span>
+                    <span class="c1"># In previous iteration, have already run all the events for today that could run</span>
                     <span class="c1"># given capabilities available, so put back any remaining events due today to the</span>
                     <span class="c1"># hold_over queue as it would not be possible to run them today.</span>
 
@@ -2643,7 +2855,7 @@
                     <span class="c1"># Otherwise (disease module returns &quot;FALSE&quot;) the event is not rescheduled and</span>
                     <span class="c1"># will not run.</span>
 
-                    <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">rtn_from_did_not_run</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">rtn_from_did_not_run</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">:</span>
                         <span class="c1"># reschedule event</span>
                         <span class="c1"># Add the event to the queue:</span>
                         <span class="n">hp</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="n">hold_over</span><span class="p">,</span> <span class="n">next_event_tuple</span><span class="p">)</span>
@@ -2664,7 +2876,10 @@
         <span class="c1"># Run the list of population-level HSI events</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">run_population_level_events</span><span class="p">(</span><span class="n">list_of_population_hsi_event_tuples_due_today</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystemScheduler.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystemScheduler.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 
         <span class="c1"># Refresh information ready for new day:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">on_start_of_day</span><span class="p">()</span>
@@ -2729,7 +2944,9 @@
 
         <span class="c1"># Do activities that are required at end of year (if last day of the year)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_last_day_of_the_year</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">on_end_of_year</span><span class="p">()</span></div></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">on_end_of_year</span><span class="p">()</span></div>
+</div>
+
 
 <span class="c1"># ---------------------------------------------------------------------------</span>
 <span class="c1">#   Logging</span>
@@ -2748,13 +2965,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_treatment_ids</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>  <span class="c1"># Running record of the `TREATMENT_ID`s of `HSI_Event`s</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_appts</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>  <span class="c1"># Running record of the Appointments of `HSI_Event`s that have run</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_appts_by_level</span> <span class="o">=</span> <span class="p">{</span><span class="n">_level</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">_level</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="s1">&#39;1a&#39;</span><span class="p">,</span> <span class="s1">&#39;1b&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="s1">&#39;4&#39;</span><span class="p">)}</span>
+        <span class="c1"># &lt;--Same as `self._appts` but also split by facility_level</span>
 
         <span class="c1"># Log HSI_Events that never ran to monitor shortcoming of Health System</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_never_ran_treatment_ids</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>  <span class="c1"># As above, but for `HSI_Event`s that never ran</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_never_ran_appts</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>  <span class="c1"># As above, but for `HSI_Event`s that have never ran</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_never_ran_appts_by_level</span> <span class="o">=</span> <span class="p">{</span><span class="n">_level</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">_level</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;0&#39;</span><span class="p">,</span> <span class="s1">&#39;1a&#39;</span><span class="p">,</span> <span class="s1">&#39;1b&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="s1">&#39;4&#39;</span><span class="p">)}</span>
 
-        <span class="c1"># &lt;--Same as `self._appts` but also split by facility_level</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_frac_time_used_overall</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Running record of the usage of the healthcare system</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_squeeze_factor_by_hsi_event_name</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>  <span class="c1"># Running record the squeeze-factor applying to each</span>
         <span class="c1">#                                                           treatment_id. Key is of the form:</span>
@@ -2847,7 +3064,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_reset_internal_stores</span><span class="p">()</span>
 
 
-<div class="viewcode-block" id="HealthSystemChangeParameters"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeParameters">[docs]</a><span class="k">class</span> <span class="nc">HealthSystemChangeParameters</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="HealthSystemChangeParameters">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeParameters">[docs]</a>
+<span class="k">class</span> <span class="nc">HealthSystemChangeParameters</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Event that causes certain internal parameters of the HealthSystem to be changed; specifically:</span>
 <span class="sd">        * `mode_appt_constraints`</span>
 <span class="sd">        * `ignore_priority`</span>
@@ -2856,12 +3075,17 @@
 <span class="sd">        * `beds_availability`</span>
 <span class="sd">    Note that no checking is done here on the suitability of values of each parameter.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="HealthSystemChangeParameters.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeParameters.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">HealthSystem</span><span class="p">,</span> <span class="n">parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">):</span>
+<div class="viewcode-block" id="HealthSystemChangeParameters.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeParameters.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">:</span> <span class="n">HealthSystem</span><span class="p">,</span> <span class="n">parameters</span><span class="p">:</span> <span class="n">Dict</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span> <span class="o">=</span> <span class="n">parameters</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">HealthSystem</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HealthSystemChangeParameters.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeParameters.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystemChangeParameters.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeParameters.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="k">if</span> <span class="s1">&#39;mode_appt_constraints&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s1">&#39;mode_appt_constraints&#39;</span><span class="p">]</span>
 
@@ -2878,34 +3102,38 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">consumables</span><span class="o">.</span><span class="n">on_start_of_day</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="s1">&#39;beds_availability&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s1">&#39;beds_availability&#39;</span><span class="p">]</span></div></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">bed_days</span><span class="o">.</span><span class="n">availability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parameters</span><span class="p">[</span><span class="s1">&#39;beds_availability&#39;</span><span class="p">]</span></div>
+</div>
 
 
-<div class="viewcode-block" id="HealthSystemChangePriorityPolicyAndMode"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangePriorityPolicyAndMode">[docs]</a><span class="k">class</span> <span class="nc">HealthSystemChangePriorityPolicyAndMode</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystemChangeMode">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeMode">[docs]</a>
+<span class="k">class</span> <span class="nc">HealthSystemChangeMode</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; This event exists to change the priority policy adopted by the</span>
 <span class="sd">    HealthSystem at a given year.    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="HealthSystemChangePriorityPolicyAndMode.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangePriorityPolicyAndMode.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="HealthSystemChangeMode.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeMode.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">years</span><span class="o">=</span><span class="mi">100</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="HealthSystemChangePriorityPolicyAndMode.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangePriorityPolicyAndMode.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HealthSystemChangeMode.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeMode.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 
         <span class="c1"># Change mode_appt_constraints</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">mode_appt_constraints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;mode_appt_constraints_postSwitch&quot;</span><span class="p">]</span>
 
-        <span class="c1"># If policy has changed, update it</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;policy_name&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;policy_name_post_switch&quot;</span><span class="p">]:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">priority_policy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;policy_name_post_switch&quot;</span><span class="p">]</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">load_priority_policy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">priority_policy</span><span class="p">)</span>
-
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;message&quot;</span><span class="p">,</span>
-                    <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Switched policy at sim date: &quot;</span>
+                    <span class="n">data</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Switched mode at sim date: &quot;</span>
                          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="si">}</span><span class="s2">&quot;</span>
-                         <span class="sa">f</span><span class="s2">&quot;Now using policy: &quot;</span>
-                         <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">priority_policy</span><span class="si">}</span><span class="s2">&quot;</span>
-                         <span class="sa">f</span><span class="s2">&quot;and mode: &quot;</span>
+                         <span class="sa">f</span><span class="s2">&quot;Now using mode: &quot;</span>
                          <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">mode_appt_constraints</span><span class="si">}</span><span class="s2">&quot;</span>
-                    <span class="p">)</span></div></div>
+                    <span class="p">)</span></div>
+</div>
+
 </pre></div>
 
            </div>
@@ -2916,7 +3144,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

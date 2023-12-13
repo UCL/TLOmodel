@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.epilepsy &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <title>tlo.methods.epilepsy &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
@@ -13,9 +16,9 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../../../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -33,7 +36,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -51,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
@@ -101,11 +105,16 @@
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="Epilepsy"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy">[docs]</a><span class="k">class</span> <span class="nc">Epilepsy</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
-<div class="viewcode-block" id="Epilepsy.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Epilepsy">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy">[docs]</a>
+<span class="k">class</span> <span class="nc">Epilepsy</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="Epilepsy.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span></div>
+
 
     <span class="n">INIT_DEPENDENCIES</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Demography&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthBurden&#39;</span><span class="p">,</span> <span class="s1">&#39;HealthSystem&#39;</span><span class="p">,</span> <span class="s1">&#39;SymptomManager&#39;</span><span class="p">}</span>
 
@@ -212,7 +221,9 @@
     <span class="c1"># Declaration of how we will refer to any treatments that are related to this disease.</span>
     <span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s1">&#39;antiepileptic&#39;</span>
 
-<div class="viewcode-block" id="Epilepsy.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+<div class="viewcode-block" id="Epilepsy.read_parameters">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.read_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read parameter values from file, if required.</span>
 
 <span class="sd">        Here we just assign parameter values explicitly.</span>
@@ -237,7 +248,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;SymptomManager&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">register_symptom</span><span class="p">(</span>
             <span class="n">Symptom</span><span class="o">.</span><span class="n">emergency</span><span class="p">(</span><span class="s2">&quot;seizures&quot;</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="Epilepsy.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Epilepsy.initialise_population">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set our property values for the initial population.</span>
 
 <span class="sd">        This method is called by the simulation when creating the initial population, and is</span>
@@ -277,7 +291,10 @@
         <span class="n">allocate_antiepileptic</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_antiepileptic_seiz_stat_2&#39;</span><span class="p">])</span>
         <span class="n">allocate_antiepileptic</span><span class="p">(</span><span class="s1">&#39;3&#39;</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;init_prop_antiepileptic_seiz_stat_3&#39;</span><span class="p">])</span></div>
 
-<div class="viewcode-block" id="Epilepsy.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Epilepsy.initialise_simulation">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.initialise_simulation">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get ready for simulation start.</span>
 
 <span class="sd">        This method is called just before the main simulation loop begins, and after all</span>
@@ -300,7 +317,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;carbamazepine&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s1">&#39;Carbamazepine 200mg_1000_CMST&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">item_codes</span><span class="p">[</span><span class="s1">&#39;phenytoin&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">hs</span><span class="o">.</span><span class="n">get_item_code_from_item_name</span><span class="p">(</span><span class="s1">&#39;Phenytoin sodium 100mg_1000_CMST&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Epilepsy.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Epilepsy.on_birth">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.on_birth">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual.</span>
 
 <span class="sd">        This is called by the simulation whenever a new person is born.</span>
@@ -316,11 +336,17 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;ep_epi_death&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;ep_disability&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span></div>
 
-<div class="viewcode-block" id="Epilepsy.report_daly_values"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.report_daly_values">[docs]</a>    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Epilepsy.report_daly_values">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.report_daly_values">[docs]</a>
+    <span class="k">def</span> <span class="nf">report_daly_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>  <span class="c1"># shortcut to population properties dataframe</span>
         <span class="k">return</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;ep_disability&#39;</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="Epilepsy.transition_seizure_stat"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.transition_seizure_stat">[docs]</a>    <span class="k">def</span> <span class="nf">transition_seizure_stat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Epilepsy.transition_seizure_stat">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.transition_seizure_stat">[docs]</a>
+    <span class="k">def</span> <span class="nf">transition_seizure_stat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This function handles all transitions in epilepsy seizure status, for those on and off anti epileptics. The</span>
 <span class="sd">        function determines the current seizure status of those with epilepsy and based on their original status,</span>
@@ -443,12 +469,18 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">changing_3_1</span><span class="p">,</span> <span class="s1">&#39;ep_seiz_stat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">changing_3_2</span><span class="p">,</span> <span class="s1">&#39;ep_seiz_stat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;2&#39;</span></div>
 
-<div class="viewcode-block" id="Epilepsy.stop_antiep"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.stop_antiep">[docs]</a>    <span class="k">def</span> <span class="nf">stop_antiep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">probability</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Epilepsy.stop_antiep">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.stop_antiep">[docs]</a>
+    <span class="k">def</span> <span class="nf">stop_antiep</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">probability</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;stop individuals on antiep with given probability&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">indices</span><span class="p">,</span> <span class="s1">&#39;ep_antiep&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">probability</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="Epilepsy.get_best_available_medicine"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.get_best_available_medicine">[docs]</a>    <span class="k">def</span> <span class="nf">get_best_available_medicine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+
+<div class="viewcode-block" id="Epilepsy.get_best_available_medicine">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.Epilepsy.get_best_available_medicine">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_best_available_medicine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hsi_event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Returns the best available medicine (as string), or None if none are available&quot;&quot;&quot;</span>
         <span class="c1"># Check what drugs are available. (`to_log` is set to false in order to not actually request the consumables</span>
         <span class="c1"># from the health system before we know what is available)</span>
@@ -475,10 +507,14 @@
             <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">possible_treatments</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="n">best_option_index</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># None of the treatment is available: return None</span>
-            <span class="k">return</span> <span class="kc">None</span></div></div>
+            <span class="k">return</span> <span class="kc">None</span></div>
+</div>
 
 
-<div class="viewcode-block" id="EpilepsyEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.EpilepsyEvent">[docs]</a><span class="k">class</span> <span class="nc">EpilepsyEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="EpilepsyEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.EpilepsyEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">EpilepsyEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The regular event that actually changes individuals&#39; epilepsy status</span>
 
 <span class="sd">    Regular events automatically reschedule themselves at a fixed frequency,</span>
@@ -486,7 +522,9 @@
 <span class="sd">    specified when calling the base class constructor in our __init__ method.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="EpilepsyEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.EpilepsyEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="EpilepsyEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.EpilepsyEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a new depr event.</span>
 
 <span class="sd">        We need to pass the frequency at which we want to occur to the base class</span>
@@ -508,7 +546,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">daly_wt_epilepsy_less_severe</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;daly_wt_epilepsy_less_severe&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">daly_wt_epilepsy_seizure_free</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="s1">&#39;daly_wt_epilepsy_seizure_free&#39;</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="EpilepsyEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.EpilepsyEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="EpilepsyEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.EpilepsyEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply this event to the population.</span>
 
 <span class="sd">        For efficiency, we use pandas operations to scan the entire population in bulk.</span>
@@ -611,16 +652,25 @@
             <span class="n">symptom_string</span><span class="o">=</span><span class="s1">&#39;seizures&#39;</span><span class="p">,</span>
             <span class="n">add_or_remove</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span>
             <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span>
-        <span class="p">)</span></div></div>
+        <span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="EpilepsyLoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.EpilepsyLoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">EpilepsyLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-<div class="viewcode-block" id="EpilepsyLoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.EpilepsyLoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+
+<div class="viewcode-block" id="EpilepsyLoggingEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.EpilepsyLoggingEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">EpilepsyLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="EpilepsyLoggingEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.EpilepsyLoggingEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="c1"># run this event every 3 month</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">repeat</span> <span class="o">=</span> <span class="mi">3</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="EpilepsyLoggingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.EpilepsyLoggingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="EpilepsyLoggingEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.EpilepsyLoggingEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get some summary statistics and log them&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
@@ -660,15 +710,21 @@
                         <span class="s1">&#39;n_seiz_stat_1_3&#39;</span><span class="p">:</span> <span class="n">n_seiz_stat_1_3</span><span class="p">,</span>
                         <span class="s1">&#39;n_seiz_stat_2_3&#39;</span><span class="p">:</span> <span class="n">n_seiz_stat_2_3</span><span class="p">,</span>
                         <span class="s1">&#39;n_antiep&#39;</span><span class="p">:</span> <span class="n">n_antiep</span>
-                    <span class="p">})</span></div></div>
+                    <span class="p">})</span></div>
+</div>
 
 
-<div class="viewcode-block" id="HSI_Epilepsy_Start_Anti_Epileptic"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.HSI_Epilepsy_Start_Anti_Epileptic">[docs]</a><span class="k">class</span> <span class="nc">HSI_Epilepsy_Start_Anti_Epileptic</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Epilepsy_Start_Anti_Epileptic">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.HSI_Epilepsy_Start_Anti_Epileptic">[docs]</a>
+<span class="k">class</span> <span class="nc">HSI_Epilepsy_Start_Anti_Epileptic</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is a Health System Interaction Event.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="HSI_Epilepsy_Start_Anti_Epileptic.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.HSI_Epilepsy_Start_Anti_Epileptic.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Epilepsy_Start_Anti_Epileptic.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.HSI_Epilepsy_Start_Anti_Epileptic.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
         <span class="c1"># Define the necessary information for an HSI</span>
@@ -676,7 +732,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">EXPECTED_APPT_FOOTPRINT</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_appt_footprint</span><span class="p">({</span><span class="s1">&#39;Over5OPD&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span></div>
 
-<div class="viewcode-block" id="HSI_Epilepsy_Start_Anti_Epileptic.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.HSI_Epilepsy_Start_Anti_Epileptic.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Epilepsy_Start_Anti_Epileptic.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.HSI_Epilepsy_Start_Anti_Epileptic.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">hs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span>
 
@@ -705,12 +764,18 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
                                                                        <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
                                                                        <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                                                                       <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div></div>
+                                                                       <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="HSI_Epilepsy_Follow_Up"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.HSI_Epilepsy_Follow_Up">[docs]</a><span class="k">class</span> <span class="nc">HSI_Epilepsy_Follow_Up</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 
-<div class="viewcode-block" id="HSI_Epilepsy_Follow_Up.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.HSI_Epilepsy_Follow_Up.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Epilepsy_Follow_Up">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.HSI_Epilepsy_Follow_Up">[docs]</a>
+<span class="k">class</span> <span class="nc">HSI_Epilepsy_Follow_Up</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Epilepsy_Follow_Up.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.HSI_Epilepsy_Follow_Up.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_MAX_NUMBER_OF_FAILED_ATTEMPTS_BEFORE_DEFAULTING</span> <span class="o">=</span> <span class="mi">2</span>
@@ -722,7 +787,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="s1">&#39;1b&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_counter_of_failed_attempts_due_to_unavailable_medicines</span> <span class="o">=</span> <span class="mi">0</span></div>
 
-<div class="viewcode-block" id="HSI_Epilepsy_Follow_Up.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.HSI_Epilepsy_Follow_Up.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Epilepsy_Follow_Up.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.epilepsy.html#tlo.methods.epilepsy.HSI_Epilepsy_Follow_Up.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">hs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;HealthSystem&quot;</span><span class="p">]</span>
 
@@ -770,7 +838,9 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># No medicine is available and the maximum number of repeats has been reached: The person will default</span>
             <span class="c1"># to being off the anti-epileptics and no further follow-ups are scheduled.</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ep_antiep&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div></div>
+            <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;ep_antiep&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
+</div>
+
 </pre></div>
 
            </div>
@@ -781,7 +851,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

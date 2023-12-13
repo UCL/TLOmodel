@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.symptommanager &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <title>tlo.methods.symptommanager &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
@@ -13,9 +16,9 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../../../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -33,7 +36,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -51,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
@@ -248,7 +252,9 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="s2">&quot;A symptom with this name has been registered already but with different properties&quot;</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="SymptomManager"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager">[docs]</a><span class="k">class</span> <span class="nc">SymptomManager</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="SymptomManager">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager">[docs]</a>
+<span class="k">class</span> <span class="nc">SymptomManager</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This module is used to track the symptoms of persons. The addition and removal of symptoms by disease modules is</span>
 <span class="sd">     handled here. This module can also causes symptoms that are not related to any disease module (representing those</span>
@@ -270,7 +276,9 @@
                         <span class="s1">&#39;NB. This is over-ridden if a module key-word argument is provided.&#39;</span><span class="p">),</span>
     <span class="p">}</span>
 
-<div class="viewcode-block" id="SymptomManager.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">spurious_symptoms</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="SymptomManager.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">spurious_symptoms</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spurious_symptoms</span> <span class="o">=</span> <span class="kc">None</span>
@@ -300,18 +308,27 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">recognised_module_names</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">spurious_symptom_resolve_event</span> <span class="o">=</span> <span class="kc">None</span></div>
 
-<div class="viewcode-block" id="SymptomManager.get_column_name_for_symptom"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.get_column_name_for_symptom">[docs]</a>    <span class="k">def</span> <span class="nf">get_column_name_for_symptom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symptom_name</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager.get_column_name_for_symptom">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.get_column_name_for_symptom">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_column_name_for_symptom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symptom_name</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;get the column name that corresponds to the symptom_name&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;sy_</span><span class="si">{</span><span class="n">symptom_name</span><span class="si">}</span><span class="s1">&#39;</span></div>
 
-<div class="viewcode-block" id="SymptomManager.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager.read_parameters">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.read_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read in the generic symptoms and register them&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;generic_symptoms_spurious_occurrence&#39;</span><span class="p">]</span> <span class="o">=</span> \
             <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_GenericSymptoms_and_HealthSeeking.csv&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">load_parameters_from_dataframe</span><span class="p">(</span>
             <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_SymptomManager.csv&#39;</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="SymptomManager.register_symptom"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.register_symptom">[docs]</a>    <span class="k">def</span> <span class="nf">register_symptom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">symptoms_to_register</span><span class="p">:</span> <span class="n">Symptom</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager.register_symptom">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.register_symptom">[docs]</a>
+    <span class="k">def</span> <span class="nf">register_symptom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">symptoms_to_register</span><span class="p">:</span> <span class="n">Symptom</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Stores the symptom classes that are passed. Registration must be done before &#39;pre-initialise population&#39; is</span>
 <span class="sd">        called.</span>
@@ -327,7 +344,10 @@
             <span class="k">elif</span> <span class="n">symptom</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_registered_symptoms</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="n">DuplicateSymptomWithNonIdenticalPropertiesError</span></div>
 
-<div class="viewcode-block" id="SymptomManager.register_generic_symptoms"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.register_generic_symptoms">[docs]</a>    <span class="k">def</span> <span class="nf">register_generic_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager.register_generic_symptoms">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.register_generic_symptoms">[docs]</a>
+    <span class="k">def</span> <span class="nf">register_generic_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Register the genric symptoms, using information read in from the ResourceFile.&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;generic_symptoms_spurious_occurrence&#39;</span><span class="p">]</span>
 
@@ -347,7 +367,10 @@
         <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">_r</span> <span class="ow">in</span> <span class="n">symptoms_to_register</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">register_symptom</span><span class="p">(</span><span class="n">Symptom</span><span class="p">(</span><span class="o">**</span><span class="n">_r</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()))</span></div>
 
-<div class="viewcode-block" id="SymptomManager.pre_initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.pre_initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager.pre_initialise_population">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.pre_initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Register the generic symptoms and define the properties for each symptom&quot;&quot;&quot;</span>
 
         <span class="c1"># Register Generic Symptoms</span>
@@ -359,7 +382,10 @@
             <span class="n">symptom_column_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_column_name_for_symptom</span><span class="p">(</span><span class="n">symptom_name</span><span class="p">)</span>
             <span class="n">SymptomManager</span><span class="o">.</span><span class="n">PROPERTIES</span><span class="p">[</span><span class="n">symptom_column_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;Presence of symptom </span><span class="si">{</span><span class="n">symptom_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SymptomManager.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager.initialise_population">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Establish the Properties and the BitSetHandler for each of the symptoms:</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -386,7 +412,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">spurious_symptoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;spurious_symptoms&#39;</span><span class="p">]</span> \
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_spurious_symptoms</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">arg_spurious_symptoms</span></div>
 
-<div class="viewcode-block" id="SymptomManager.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager.initialise_simulation">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.initialise_simulation">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Schedule SpuriousSymptomsOnset/Resolve if the parameter &#39;spurious_symptoms&#39; is True&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">spurious_symptoms</span><span class="p">:</span>
             <span class="c1"># Create and schedule the Onset Event</span>
@@ -402,7 +431,10 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="SymptomManager.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager.on_birth">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.on_birth">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Give a value of 0 for each symptom.</span>
 <span class="sd">        NB. This will over-write any symptom that has already been set on the child, so is only safe is SymptomManager</span>
 <span class="sd">        is registered before any Disease Module.&quot;&quot;&quot;</span>
@@ -410,7 +442,10 @@
         <span class="k">for</span> <span class="nb">property</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">PROPERTIES</span><span class="p">:</span>
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="nb">property</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span></div>
 
-<div class="viewcode-block" id="SymptomManager.change_symptom"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.change_symptom">[docs]</a>    <span class="k">def</span> <span class="nf">change_symptom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">symptom_string</span><span class="p">,</span> <span class="n">add_or_remove</span><span class="p">,</span> <span class="n">disease_module</span><span class="p">,</span>
+
+<div class="viewcode-block" id="SymptomManager.change_symptom">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.change_symptom">[docs]</a>
+    <span class="k">def</span> <span class="nf">change_symptom</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">symptom_string</span><span class="p">,</span> <span class="n">add_or_remove</span><span class="p">,</span> <span class="n">disease_module</span><span class="p">,</span>
                        <span class="n">duration_in_days</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">date_of_onset</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is how disease module report that a person has developed a new symptom or an existing symptom has resolved.</span>
@@ -497,7 +532,10 @@
             <span class="c1"># Do the remove:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">bsh</span><span class="o">.</span><span class="n">unset</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="n">disease_module</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">sy_columns</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SymptomManager.who_has"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.who_has">[docs]</a>    <span class="k">def</span> <span class="nf">who_has</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_of_symptoms</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager.who_has">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.who_has">[docs]</a>
+    <span class="k">def</span> <span class="nf">who_has</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_of_symptoms</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is a helper function to look up who has a particular symptom or set of symptoms.</span>
 <span class="sd">        It returns a list of indicies for person that have all of the symptoms specified</span>
@@ -522,7 +560,10 @@
         <span class="n">has_all_symptoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bsh</span><span class="o">.</span><span class="n">not_empty</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">sy_columns</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">has_all_symptoms</span><span class="p">[</span><span class="n">has_all_symptoms</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="SymptomManager.who_not_have"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.who_not_have">[docs]</a>    <span class="k">def</span> <span class="nf">who_not_have</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symptom_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">:</span>
+
+<div class="viewcode-block" id="SymptomManager.who_not_have">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.who_not_have">[docs]</a>
+    <span class="k">def</span> <span class="nf">who_not_have</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symptom_string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Get person IDs of individuals who are alive and do not have a symptom.</span>
 
@@ -544,7 +585,10 @@
             <span class="p">)</span>
         <span class="p">]</span></div>
 
-<div class="viewcode-block" id="SymptomManager.has_what"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.has_what">[docs]</a>    <span class="k">def</span> <span class="nf">has_what</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">disease_module</span><span class="p">:</span> <span class="n">Module</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager.has_what">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.has_what">[docs]</a>
+    <span class="k">def</span> <span class="nf">has_what</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">disease_module</span><span class="p">:</span> <span class="n">Module</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is a helper function that will give a list of strings for the symptoms that a _single_ person</span>
 <span class="sd">        is currently experiencing.</span>
@@ -569,9 +613,13 @@
             <span class="p">)</span>
             <span class="k">return</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symptom_names</span> <span class="k">if</span> <span class="n">person_has</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;sy_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symptom_names</span> <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;sy_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span></div>
+            <span class="n">symptom_cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;sy_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symptom_names</span><span class="p">]]</span>
+            <span class="k">return</span> <span class="n">symptom_cols</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">symptom_cols</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">removeprefix</span><span class="p">(</span><span class="s2">&quot;sy_&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="SymptomManager.have_what"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.have_what">[docs]</a>    <span class="k">def</span> <span class="nf">have_what</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_ids</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
+
+<div class="viewcode-block" id="SymptomManager.have_what">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.have_what">[docs]</a>
+    <span class="k">def</span> <span class="nf">have_what</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_ids</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Find the set of symptoms for a list of person_ids.</span>
 <span class="sd">        NB. This is a fast implementation without the same amount checking as &#39;has_what&#39;&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -579,7 +627,10 @@
             <span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symptom_names</span> <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;sy_</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">result_type</span><span class="o">=</span><span class="s1">&#39;reduce&#39;</span>
         <span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s1">&#39;symptoms&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SymptomManager.causes_of"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.causes_of">[docs]</a>    <span class="k">def</span> <span class="nf">causes_of</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">symptom_string</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager.causes_of">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.causes_of">[docs]</a>
+    <span class="k">def</span> <span class="nf">causes_of</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">symptom_string</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        This is a helper function that will give a list of the disease modules causing a particular symptom for</span>
 <span class="sd">        a particular person.</span>
@@ -602,7 +653,10 @@
             <span class="p">)</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="SymptomManager.clear_symptoms"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.clear_symptoms">[docs]</a>    <span class="k">def</span> <span class="nf">clear_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">disease_module</span><span class="p">:</span> <span class="n">Module</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager.clear_symptoms">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.clear_symptoms">[docs]</a>
+    <span class="k">def</span> <span class="nf">clear_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">disease_module</span><span class="p">:</span> <span class="n">Module</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Remove all the symptoms for one or more persons caused by a specified disease module</span>
 
@@ -620,7 +674,10 @@
         <span class="n">sy_columns</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">get_column_name_for_symptom</span><span class="p">(</span><span class="n">sym</span><span class="p">)</span> <span class="k">for</span> <span class="n">sym</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symptom_names</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bsh</span><span class="o">.</span><span class="n">unset</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="n">disease_module</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">sy_columns</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SymptomManager.caused_by"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.caused_by">[docs]</a>    <span class="k">def</span> <span class="nf">caused_by</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">disease_module</span><span class="p">:</span> <span class="n">Module</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager.caused_by">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.caused_by">[docs]</a>
+    <span class="k">def</span> <span class="nf">caused_by</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">disease_module</span><span class="p">:</span> <span class="n">Module</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Find the persons experiencing symptoms due to a particular module.</span>
 <span class="sd">        Returns a dict of the form {&lt;&lt;person_id&gt;&gt;, &lt;&lt;list_of_symptoms&gt;&gt;}.&quot;&quot;&quot;</span>
 
@@ -632,24 +689,36 @@
 
         <span class="k">return</span> <span class="n">symptoms_for_each_person</span></div>
 
-<div class="viewcode-block" id="SymptomManager.get_persons_with_newly_onset_symptoms"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.get_persons_with_newly_onset_symptoms">[docs]</a>    <span class="k">def</span> <span class="nf">get_persons_with_newly_onset_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager.get_persons_with_newly_onset_symptoms">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.get_persons_with_newly_onset_symptoms">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_persons_with_newly_onset_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_persons_with_newly_onset_symptoms</span></div>
 
-<div class="viewcode-block" id="SymptomManager.reset_persons_with_newly_onset_symptoms"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.reset_persons_with_newly_onset_symptoms">[docs]</a>    <span class="k">def</span> <span class="nf">reset_persons_with_newly_onset_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_persons_with_newly_onset_symptoms</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div></div>
+
+<div class="viewcode-block" id="SymptomManager.reset_persons_with_newly_onset_symptoms">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager.reset_persons_with_newly_onset_symptoms">[docs]</a>
+    <span class="k">def</span> <span class="nf">reset_persons_with_newly_onset_symptoms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_persons_with_newly_onset_symptoms</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
+</div>
+
 
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 <span class="c1">#   EVENTS</span>
 <span class="c1"># ---------------------------------------------------------------------------------------------------------</span>
 
 
-<div class="viewcode-block" id="SymptomManager_AutoOnsetEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_AutoOnsetEvent">[docs]</a><span class="k">class</span> <span class="nc">SymptomManager_AutoOnsetEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="SymptomManager_AutoOnsetEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_AutoOnsetEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">SymptomManager_AutoOnsetEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This utility function will add symptoms. It is scheduled by the SymptomManager to let symptoms &#39;auto-onset&#39; on a</span>
 <span class="sd">    particular date.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="SymptomManager_AutoOnsetEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_AutoOnsetEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">symptom_string</span><span class="p">,</span> <span class="n">disease_module</span><span class="p">,</span> <span class="n">duration_in_days</span><span class="p">):</span>
+<div class="viewcode-block" id="SymptomManager_AutoOnsetEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_AutoOnsetEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">symptom_string</span><span class="p">,</span> <span class="n">disease_module</span><span class="p">,</span> <span class="n">duration_in_days</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">SymptomManager</span><span class="p">)</span>
 
@@ -661,20 +730,29 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">disease_module</span> <span class="o">=</span> <span class="n">disease_module</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">duration_in_days</span> <span class="o">=</span> <span class="n">duration_in_days</span></div>
 
-<div class="viewcode-block" id="SymptomManager_AutoOnsetEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_AutoOnsetEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager_AutoOnsetEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_AutoOnsetEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">change_symptom</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">person_id</span><span class="p">,</span>
                                    <span class="n">symptom_string</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">symptom_string</span><span class="p">,</span>
                                    <span class="n">add_or_remove</span><span class="o">=</span><span class="s1">&#39;+&#39;</span><span class="p">,</span>
                                    <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">disease_module</span><span class="p">,</span>
-                                   <span class="n">duration_in_days</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">duration_in_days</span><span class="p">)</span></div></div>
+                                   <span class="n">duration_in_days</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">duration_in_days</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="SymptomManager_AutoResolveEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_AutoResolveEvent">[docs]</a><span class="k">class</span> <span class="nc">SymptomManager_AutoResolveEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager_AutoResolveEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_AutoResolveEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">SymptomManager_AutoResolveEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This utility function will remove symptoms. It is scheduled by the SymptomManager to let symptoms &#39;auto-resolve&#39;</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="SymptomManager_AutoResolveEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_AutoResolveEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">symptom_string</span><span class="p">,</span> <span class="n">disease_module</span><span class="p">):</span>
+<div class="viewcode-block" id="SymptomManager_AutoResolveEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_AutoResolveEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">symptom_string</span><span class="p">,</span> <span class="n">disease_module</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">SymptomManager</span><span class="p">)</span>
 
@@ -685,18 +763,27 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">symptom_string</span> <span class="o">=</span> <span class="n">symptom_string</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">disease_module</span> <span class="o">=</span> <span class="n">disease_module</span></div>
 
-<div class="viewcode-block" id="SymptomManager_AutoResolveEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_AutoResolveEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager_AutoResolveEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_AutoResolveEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">change_symptom</span><span class="p">(</span><span class="n">person_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">person_id</span><span class="p">,</span>
                                    <span class="n">symptom_string</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">symptom_string</span><span class="p">,</span>
                                    <span class="n">add_or_remove</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span>
-                                   <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">disease_module</span><span class="p">)</span></div></div>
+                                   <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">disease_module</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="SymptomManager_SpuriousSymptomOnset"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomOnset">[docs]</a><span class="k">class</span> <span class="nc">SymptomManager_SpuriousSymptomOnset</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager_SpuriousSymptomOnset">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomOnset">[docs]</a>
+<span class="k">class</span> <span class="nc">SymptomManager_SpuriousSymptomOnset</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; This event gives the occurrence of generic symptoms that are not caused by a disease module in the TLO model.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="SymptomManager_SpuriousSymptomOnset.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomOnset.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="SymptomManager_SpuriousSymptomOnset.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomOnset.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;This event occurs every day&quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
@@ -705,7 +792,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;generic_symptoms_spurious_occurrence&#39;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rand</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">rand</span></div>
 
-<div class="viewcode-block" id="SymptomManager_SpuriousSymptomOnset.get_generic_symptoms_dict"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomOnset.get_generic_symptoms_dict">[docs]</a>    <span class="k">def</span> <span class="nf">get_generic_symptoms_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generic_sympoms_df</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager_SpuriousSymptomOnset.get_generic_symptoms_dict">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomOnset.get_generic_symptoms_dict">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_generic_symptoms_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">generic_sympoms_df</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper function to store contents of the generic_symptoms dataframe as dicts&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">generic_sympoms_df</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;name&#39;</span><span class="p">)</span>
 
@@ -720,7 +810,10 @@
             <span class="p">}</span>
         <span class="p">}</span></div>
 
-<div class="viewcode-block" id="SymptomManager_SpuriousSymptomOnset.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomOnset.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager_SpuriousSymptomOnset.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomOnset.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Determine who will be onset which which symptoms today&quot;&quot;&quot;</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -758,14 +851,20 @@
                     <span class="n">person_id</span><span class="o">=</span><span class="n">persons_to_onset_with_this_symptom</span><span class="p">,</span>
                     <span class="n">symptom_string</span><span class="o">=</span><span class="n">symp</span><span class="p">,</span>
                     <span class="n">date_of_resolution</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">dur</span><span class="p">))</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
-                <span class="p">)</span></div></div>
+                <span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="SymptomManager_SpuriousSymptomResolve"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomResolve">[docs]</a><span class="k">class</span> <span class="nc">SymptomManager_SpuriousSymptomResolve</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager_SpuriousSymptomResolve">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomResolve">[docs]</a>
+<span class="k">class</span> <span class="nc">SymptomManager_SpuriousSymptomResolve</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot; This event resolves the generic symptoms that have been onset by this module.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="SymptomManager_SpuriousSymptomResolve.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomResolve.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="SymptomManager_SpuriousSymptomResolve.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomResolve.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;This event occurs every day&quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">SymptomManager</span><span class="p">)</span>
@@ -775,11 +874,17 @@
         <span class="k">for</span> <span class="n">symp</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">generic_symptoms</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">to_resolve</span><span class="p">[</span><span class="n">symp</span><span class="p">]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SymptomManager_SpuriousSymptomResolve.schedule_symptom_resolve"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomResolve.schedule_symptom_resolve">[docs]</a>    <span class="k">def</span> <span class="nf">schedule_symptom_resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">date_of_resolution</span><span class="p">,</span> <span class="n">symptom_string</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager_SpuriousSymptomResolve.schedule_symptom_resolve">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomResolve.schedule_symptom_resolve">[docs]</a>
+    <span class="k">def</span> <span class="nf">schedule_symptom_resolve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">date_of_resolution</span><span class="p">,</span> <span class="n">symptom_string</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Store information to allow symptoms to be resolved for groups of persons each day&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">to_resolve</span><span class="p">[</span><span class="n">symptom_string</span><span class="p">][</span><span class="n">date_of_resolution</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SymptomManager_SpuriousSymptomResolve.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomResolve.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SymptomManager_SpuriousSymptomResolve.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.symptommanager.html#tlo.methods.symptommanager.SymptomManager_SpuriousSymptomResolve.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve the symptoms when due; a whole group of persons with the same symptoms at once&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">date_today</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
@@ -794,7 +899,9 @@
                     <span class="n">add_or_remove</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">,</span>
                     <span class="n">symptom_string</span><span class="o">=</span><span class="n">symp</span><span class="p">,</span>
                     <span class="n">disease_module</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span>
-                <span class="p">)</span></div></div>
+                <span class="p">)</span></div>
+</div>
+
 </pre></div>
 
            </div>
@@ -805,7 +912,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

@@ -1,12 +1,15 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Using Azure Batch &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <title>Using Azure Batch &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
@@ -14,9 +17,9 @@
   
         <script src="_static/jquery.js?v=5d32c60e"></script>
         <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js?v=2389946f"></script>
+        <script src="_static/documentation_options.js?v=cc9389db"></script>
         <script src="_static/doctools.js?v=888ff710"></script>
-        <script src="_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -36,7 +39,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -54,6 +57,7 @@
 <li class="toctree-l1"><a class="reference internal" href="readme.html">Getting Started</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contributors.html">Contributors</a></li>
@@ -85,12 +89,12 @@
            <div itemprop="articleBody">
              
   <section id="using-azure-batch">
-<h1>Using Azure Batch<a class="headerlink" href="#using-azure-batch" title="Permalink to this heading"></a></h1>
+<h1>Using Azure Batch<a class="headerlink" href="#using-azure-batch" title="Link to this heading"></a></h1>
 <p>Scenarios configure TLOmodel simulations. Simulations are configured as subclasses of
 <code class="docutils literal notranslate"><span class="pre">tlo.scenario.BaseScenario</span></code>. The <code class="docutils literal notranslate"><span class="pre">tlo</span></code> command-line tool is used to submit simulation scenarios to run on
 Azure Batch.</p>
 <section id="setup">
-<h2>Setup<a class="headerlink" href="#setup" title="Permalink to this heading"></a></h2>
+<h2>Setup<a class="headerlink" href="#setup" title="Link to this heading"></a></h2>
 <ol class="arabic">
 <li><p><a class="reference external" href="https://docs.microsoft.com/en-us/cli/azure/install-azure-cli">Install the Azure command line interface</a></p></li>
 <li><p>If you have not already done so ensure you have followed the instructions to set up a <code class="docutils literal notranslate"><span class="pre">tlo</span></code> <a class="reference external" href="https://docs.conda.io/en/latest/">Conda</a> environment in <a class="reference internal" href="readme.html"><span class="doc">Getting Started</span></a>.</p></li>
@@ -116,7 +120,7 @@ Azure Batch.</p>
 </ol>
 </section>
 <section id="creating-a-scenario">
-<h2>Creating a Scenario<a class="headerlink" href="#creating-a-scenario" title="Permalink to this heading"></a></h2>
+<h2>Creating a Scenario<a class="headerlink" href="#creating-a-scenario" title="Link to this heading"></a></h2>
 <ol class="arabic">
 <li><p>Checkout a new branch for your scenario</p></li>
 <li><p>Create a file <code class="docutils literal notranslate"><span class="pre">src/scripts/&lt;your</span> <span class="pre">directory&gt;/&lt;a</span> <span class="pre">unique</span> <span class="pre">filename&gt;.py</span></code>. The filename will serve as the job identifier.</p></li>
@@ -174,7 +178,7 @@ Azure Batch.</p>
 <li><p>Commit the scenario file and push to Github</p></li>
 </ol>
 <section id="interacting-with-azure-batch">
-<h3>Interacting with Azure Batch<a class="headerlink" href="#interacting-with-azure-batch" title="Permalink to this heading"></a></h3>
+<h3>Interacting with Azure Batch<a class="headerlink" href="#interacting-with-azure-batch" title="Link to this heading"></a></h3>
 <p>Each of the subcommands of <code class="docutils literal notranslate"><span class="pre">tlo</span></code> has a <code class="docutils literal notranslate"><span class="pre">--help</span></code> flag for further information e.g. <code class="docutils literal notranslate"><span class="pre">tlo</span> <span class="pre">batch-submit</span> <span class="pre">--help</span></code></p>
 <p><em>Submit scenario to Azure Batch</em>:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">tlo</span> <span class="n">batch</span><span class="o">-</span><span class="n">submit</span> <span class="n">src</span><span class="o">/</span><span class="n">scripts</span><span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">tlo_q1_demo</span><span class="o">.</span><span class="n">py</span>
@@ -212,7 +216,7 @@ Azure Batch.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

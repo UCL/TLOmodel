@@ -1,0 +1,8 @@
+infrastructure_and_equipment
+============================
+
+.. toctree::
+    :maxdepth: 1
+
+    ResourceFile_Bed_Capacity.csv
+

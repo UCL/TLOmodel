@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.contraception &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <title>tlo.methods.contraception &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../../../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../../../_static/js/html5shiv.min.js"></script>
@@ -13,9 +16,9 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../../../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" /> 
@@ -33,7 +36,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
@@ -51,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../contributors.html">Contributors</a></li>
@@ -99,7 +103,9 @@
 <span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="Contraception"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception">[docs]</a><span class="k">class</span> <span class="nc">Contraception</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="Contraception">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception">[docs]</a>
+<span class="k">class</span> <span class="nc">Contraception</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Contraception module covering baseline contraception methods use, failure (i.e., pregnancy),</span>
 <span class="sd">    Switching contraceptive methods, and discontinuation rates by age.</span>
 <span class="sd">    Calibration is done in two stages:</span>
@@ -181,11 +187,9 @@
             <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s2">&quot;The maximum delay (in days) between the decision for a contraceptive to change and the `topen` &quot;</span>
                        <span class="s2">&quot;date of the HSI that is scheduled to effect the change (when using the healthsystem).&quot;</span><span class="p">),</span>
 
-        <span class="c1"># TODO: needs to be fixed to be BOOL parameter (together with resolving the temporary fix below)</span>
         <span class="s1">&#39;use_interventions&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">STRING</span><span class="p">,</span> <span class="s2">&quot;if &#39;On&#39;: FP interventions (pop &amp; ppfp) are simulated since &#39;interventions_start_date&#39;,&quot;</span>
-                          <span class="s2">&quot; if &#39;Off&#39;: FP interventions (pop &amp; ppfp) are not simulated.&quot;</span><span class="p">),</span>
-
+            <span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s2">&quot;if True: FP interventions (pop &amp; ppfp) are simulated from the date &#39;interventions_start_date&#39;,&quot;</span>
+                        <span class="s2">&quot; if False: FP interventions (pop &amp; ppfp) are not simulated.&quot;</span><span class="p">),</span>
         <span class="s1">&#39;interventions_start_date&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">DATE</span><span class="p">,</span> <span class="s2">&quot;The date since which the FP interventions (pop &amp; ppfp) are implemented, if at all (ie, if &quot;</span>
                         <span class="s2">&quot;use_interventions==True&quot;</span><span class="p">)</span>
@@ -222,7 +226,9 @@
                                             <span class="p">)</span>
     <span class="p">}</span>
 
-<div class="viewcode-block" id="Contraception.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_healthsystem</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">run_update_contraceptive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="Contraception.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">resourcefilepath</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_healthsystem</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">run_update_contraceptive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">=</span> <span class="n">resourcefilepath</span>
 
@@ -245,9 +251,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">rng2</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># (Will be a second random number generator, used for things to do with scheduling HSI)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_women_ids_sterilized_below30</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># The ids of women who had female sterilization initiated when they</span></div>
+
         <span class="c1">#                                             were less than 30 years old.</span>
 
-<div class="viewcode-block" id="Contraception.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+<div class="viewcode-block" id="Contraception.read_parameters">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.read_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters</span>
 <span class="sd">        (CSV ResourceFile).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -278,41 +287,33 @@
             <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_ContraceptionParams.csv&#39;</span>
         <span class="p">))</span>
 
-        <span class="c1"># Temporary fix of loading the boolean  parameter &#39;use_interventions&#39;:</span>
-        <span class="n">co_params</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
-            <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_ContraceptionParams.csv&#39;</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;use_interventions_loaded&#39;</span><span class="p">]</span> <span class="o">=</span>\
-            <span class="n">co_params</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">co_params</span><span class="p">[</span><span class="s1">&#39;parameter_name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;use_interventions&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;use_interventions&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;use_interventions_loaded&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;On&#39;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;use_interventions_loaded&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;On&#39;</span><span class="p">,</span> <span class="s1">&#39;Off&#39;</span><span class="p">):</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="ne">UserWarning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;use_intervention&#39; parameter set to &#39;Off&#39; (=False) as the given value &quot;</span>
-                                      <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;use_interventions_loaded&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> was not recognised.&quot;</span><span class="p">))</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="n">key</span><span class="o">=</span><span class="s2">&quot;use_intervention&quot;</span><span class="p">,</span>
-                <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;input_given&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;use_interventions_loaded&#39;</span><span class="p">],</span>
-                      <span class="s2">&quot;value_used&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;use_interventions&#39;</span><span class="p">]</span>
-                      <span class="p">},</span>
-                <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Unrecognised value given for use_intervention parameter replaced.&#39;</span>
-            <span class="p">)</span>
-
         <span class="c1"># Import the Age-specific fertility rate data from WPP</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;age_specific_fertility_rates&#39;</span><span class="p">]</span> <span class="o">=</span> \
             <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;demography&#39;</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_ASFR_WPP.csv&#39;</span><span class="p">)</span>
 
         <span class="c1"># Import 2010 pop and count numbs of women 15-49 &amp; 30-49</span>
-        <span class="n">pop_2010</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;Demography&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;pop_2010&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">pop_2010</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s2">&quot;Demography&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;pop_2010&quot;</span><span class="p">]</span>
+        <span class="n">n_females_aged_15_to_49_in_2010</span> <span class="o">=</span> <span class="n">pop_2010</span><span class="p">[</span>
+            <span class="p">(</span><span class="n">pop_2010</span><span class="o">.</span><span class="n">Sex</span> <span class="o">==</span> <span class="s2">&quot;F&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">pop_2010</span><span class="o">.</span><span class="n">Age</span> <span class="o">&gt;=</span> <span class="mi">15</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">pop_2010</span><span class="o">.</span><span class="n">Age</span> <span class="o">&lt;=</span> <span class="mi">49</span><span class="p">)</span>
+        <span class="p">]</span><span class="o">.</span><span class="n">Count</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">n_females_aged_30_to_49_in_2010</span> <span class="o">=</span> <span class="n">pop_2010</span><span class="p">[</span>
+            <span class="p">(</span><span class="n">pop_2010</span><span class="o">.</span><span class="n">Sex</span> <span class="o">==</span> <span class="s2">&quot;F&quot;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">pop_2010</span><span class="o">.</span><span class="n">Age</span> <span class="o">&gt;=</span> <span class="mi">30</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">pop_2010</span><span class="o">.</span><span class="n">Age</span> <span class="o">&lt;=</span> <span class="mi">49</span><span class="p">)</span>
+        <span class="p">]</span><span class="o">.</span><span class="n">Count</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ratio_n_females_30_49_to_15_49_in_2010</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">n_females_aged_30_to_49_in_2010</span> <span class="o">/</span> <span class="n">n_females_aged_15_to_49_in_2010</span>
+        <span class="p">)</span></div>
 
-        <span class="n">female1549_in_2010</span> <span class="o">=</span> \
-            <span class="n">pop_2010</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">pop_2010</span><span class="o">.</span><span class="n">Sex</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">pop_2010</span><span class="o">.</span><span class="n">Age</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">49</span><span class="p">),</span> <span class="p">[</span><span class="s1">&#39;Age&#39;</span><span class="p">,</span> <span class="s1">&#39;Count&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;Age&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_female1549_in_2010</span> <span class="o">=</span> <span class="n">female1549_in_2010</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_female3049_in_2010</span> <span class="o">=</span> <span class="n">female1549_in_2010</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">female1549_in_2010</span><span class="o">.</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="mi">30</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="Contraception.pre_initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.pre_initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Contraception.pre_initialise_population">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.pre_initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Process parameters before initialising population and simulation&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">processed_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_params</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="Contraception.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Contraception.initialise_population">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set initial values for properties&quot;&quot;&quot;</span>
 
         <span class="c1"># 1) Set default values for properties</span>
@@ -344,7 +345,10 @@
             <span class="p">)</span>
         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="Contraception.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Contraception.initialise_simulation">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.initialise_simulation">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        * Schedule the ContraceptionPoll and ContraceptionLoggingEvent</span>
 <span class="sd">        * Retrieve the consumables codes for the consumables used</span>
@@ -380,7 +384,10 @@
                         <span class="n">description</span><span class="o">=</span><span class="s1">&#39;The date when parameters are updated to enable the FP interventions.&#39;</span>
                         <span class="p">)</span></div>
 
-<div class="viewcode-block" id="Contraception.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Contraception.on_birth">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.on_birth">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        * 1) Formally end the pregnancy</span>
 <span class="sd">        * 2) Initialise properties for the newborn</span>
@@ -400,7 +407,10 @@
         <span class="p">}</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="n">new_properties</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span> <span class="o">=</span> <span class="n">new_properties</span><span class="o">.</span><span class="n">values</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="Contraception.end_pregnancy"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.end_pregnancy">[docs]</a>    <span class="k">def</span> <span class="nf">end_pregnancy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Contraception.end_pregnancy">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.end_pregnancy">[docs]</a>
+    <span class="k">def</span> <span class="nf">end_pregnancy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;End the pregnancy. Reset pregnancy status and may initiate a contraceptive method.</span>
 <span class="sd">        This is called by `on_birth` in this module and by Labour/Pregnancy modules for births that do result in live</span>
 <span class="sd">        birth.&quot;&quot;&quot;</span>
@@ -413,7 +423,10 @@
         <span class="n">person_age</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;age_years&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">select_contraceptive_following_birth</span><span class="p">(</span><span class="n">person_id</span><span class="p">,</span> <span class="n">person_age</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Contraception.process_params"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.process_params">[docs]</a>    <span class="k">def</span> <span class="nf">process_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Contraception.process_params">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.process_params">[docs]</a>
+    <span class="k">def</span> <span class="nf">process_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Process parameters that have been read-in.&quot;&quot;&quot;</span>
 
         <span class="n">processed_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
@@ -453,9 +466,10 @@
 
             <span class="c1"># Increase prob of &#39;female_sterilization&#39; in older women accordingly</span>
             <span class="n">probs_30plus</span> <span class="o">=</span> <span class="n">probs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-            <span class="n">probs_30plus</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">]</span> <span class="o">=</span> \
-                <span class="n">probs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">]</span> <span class="o">/</span> \
-                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_female3049_in_2010</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_female1549_in_2010</span><span class="p">)</span>
+            <span class="n">probs_30plus</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">probs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">]</span> <span class="o">/</span> 
+                <span class="bp">self</span><span class="o">.</span><span class="n">ratio_n_females_30_49_to_15_49_in_2010</span>
+            <span class="p">)</span>
             <span class="c1"># Scale so that the probability of all outcomes sum to 1.0</span>
             <span class="n">probs_30plus</span> <span class="o">=</span> <span class="n">probs_30plus</span> <span class="o">/</span> <span class="n">probs_30plus</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
             <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">probs_30plus</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
@@ -529,10 +543,10 @@
             <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">switching_matrix_below30</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
 
             <span class="c1"># Increase prob of &#39;female_sterilization&#39; in older women accordingly</span>
-            <span class="n">new_fs_probs_30plus</span> <span class="o">=</span> <span class="n">switching_matrix</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">,</span> <span class="p">:]</span> <span class="o">/</span>\
-                <span class="nb">float</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">n_female3049_in_2010</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_female1549_in_2010</span>
-                <span class="p">)</span>
+            <span class="n">new_fs_probs_30plus</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">switching_matrix</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">,</span> <span class="p">:]</span> <span class="o">/</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ratio_n_females_30_49_to_15_49_in_2010</span>
+            <span class="p">)</span>
             <span class="n">switching_matrix_except_fs</span> <span class="o">=</span> <span class="n">switching_matrix</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">switching_matrix</span><span class="o">.</span><span class="n">index</span> <span class="o">!=</span> <span class="s1">&#39;female_sterilization&#39;</span><span class="p">]</span>
             <span class="n">switching_matrix_30plus</span> <span class="o">=</span> <span class="n">switching_matrix_except_fs</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">col</span><span class="p">:</span> <span class="n">col</span> <span class="o">/</span> <span class="n">col</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
             <span class="n">switching_matrix_30plus</span> <span class="o">=</span> <span class="n">switching_matrix_30plus</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">new_fs_probs_30plus</span><span class="p">)</span>
@@ -665,7 +679,7 @@
                 <span class="n">columns</span><span class="o">=</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_contraception_states</span> <span class="o">-</span> <span class="p">{</span><span class="s2">&quot;not_using&quot;</span><span class="p">})</span>
             <span class="p">)</span>
             <span class="n">p_pregnancy_with_contraception_per_month</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">15</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">p_pregnancy_by_method_per_month</span>
-            <span class="n">p_pregnancy_with_contraception_per_month</span> <span class="o">=</span> <span class="n">p_pregnancy_with_contraception_per_month</span><span class="o">.</span><span class="n">ffill</span><span class="p">()</span>
+            <span class="n">p_pregnancy_with_contraception_per_month</span><span class="o">.</span><span class="n">ffill</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">p_pregnancy_with_contraception_per_month</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span>
                 <span class="n">p_pregnancy_with_contraception_per_month</span><span class="o">.</span><span class="n">index</span> <span class="o">&lt;</span> <span class="mi">25</span>
                 <span class="p">]</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;rr_fail_under25&#39;</span><span class="p">]</span>
@@ -691,7 +705,10 @@
 
         <span class="k">return</span> <span class="n">processed_params</span></div>
 
-<div class="viewcode-block" id="Contraception.update_params_for_interventions"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.update_params_for_interventions">[docs]</a>    <span class="k">def</span> <span class="nf">update_params_for_interventions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Contraception.update_params_for_interventions">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.update_params_for_interventions">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_params_for_interventions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Updates process parameters to enable FP interventions.&quot;&quot;&quot;</span>
 
         <span class="n">processed_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processed_params</span>
@@ -732,9 +749,10 @@
 
             <span class="c1"># Increase prob of &#39;female_sterilization&#39; in older women accordingly</span>
             <span class="n">probs_30plus</span> <span class="o">=</span> <span class="n">probs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-            <span class="n">probs_30plus</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">]</span> <span class="o">=</span> \
-                <span class="n">probs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">]</span> <span class="o">/</span> \
-                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_female3049_in_2010</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_female1549_in_2010</span><span class="p">)</span>
+            <span class="n">probs_30plus</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">probs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">]</span> <span class="o">/</span> 
+                <span class="bp">self</span><span class="o">.</span><span class="n">ratio_n_females_30_49_to_15_49_in_2010</span>
+            <span class="p">)</span>
             <span class="c1"># Scale so that the probability of all outcomes sum to 1.0</span>
             <span class="n">probs_30plus</span> <span class="o">=</span> <span class="n">probs_30plus</span> <span class="o">/</span> <span class="n">probs_30plus</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
             <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">probs_30plus</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
@@ -814,7 +832,10 @@
 
         <span class="k">return</span> <span class="n">processed_params</span></div>
 
-<div class="viewcode-block" id="Contraception.select_contraceptive_following_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.select_contraceptive_following_birth">[docs]</a>    <span class="k">def</span> <span class="nf">select_contraceptive_following_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">mother_age</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Contraception.select_contraceptive_following_birth">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.select_contraceptive_following_birth">[docs]</a>
+    <span class="k">def</span> <span class="nf">select_contraceptive_following_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">mother_age</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initiation of mother&#39;s contraception after birth.&quot;&quot;&quot;</span>
 
         <span class="c1"># Allocate the woman to a contraceptive status</span>
@@ -828,13 +849,17 @@
         <span class="c1"># Do the change in contraceptive</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">schedule_batch_of_contraceptive_changes</span><span class="p">(</span><span class="n">ids</span><span class="o">=</span><span class="p">[</span><span class="n">mother_id</span><span class="p">],</span> <span class="n">old</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;not_using&#39;</span><span class="p">],</span> <span class="n">new</span><span class="o">=</span><span class="p">[</span><span class="n">new_contraceptive</span><span class="p">])</span></div>
 
-<div class="viewcode-block" id="Contraception.get_item_code_for_each_contraceptive"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.get_item_code_for_each_contraceptive">[docs]</a>    <span class="k">def</span> <span class="nf">get_item_code_for_each_contraceptive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Contraception.get_item_code_for_each_contraceptive">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.get_item_code_for_each_contraceptive">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_item_code_for_each_contraceptive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the item_code for each contraceptive and for contraceptive initiation.&quot;&quot;&quot;</span>
         <span class="c1"># TODO: update with optional items (currently all considered essential)</span>
 
         <span class="n">get_items_from_pkg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_item_codes_from_package_name</span>
 
         <span class="n">_cons_codes</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="c1"># items for each method that requires an HSI to switch to</span>
         <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;pill&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_items_from_pkg</span><span class="p">(</span><span class="s1">&#39;Pill&#39;</span><span class="p">)</span>
         <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;male_condom&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_items_from_pkg</span><span class="p">(</span><span class="s1">&#39;Male condom&#39;</span><span class="p">)</span>
         <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;other_modern&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_items_from_pkg</span><span class="p">(</span><span class="s1">&#39;Female Condom&#39;</span><span class="p">)</span>
@@ -844,11 +869,15 @@
         <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;implant&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_items_from_pkg</span><span class="p">(</span><span class="s1">&#39;Implant&#39;</span><span class="p">)</span>
         <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_items_from_pkg</span><span class="p">(</span><span class="s1">&#39;Female sterilization&#39;</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">_cons_codes</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">states_that_may_require_HSI_to_switch_to</span><span class="p">)</span>
+        <span class="c1"># items used when initiating a modern reliable method after not using or switching from non-reliable method</span>
         <span class="n">_cons_codes</span><span class="p">[</span><span class="s1">&#39;co_initiation&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_items_from_pkg</span><span class="p">(</span><span class="s1">&#39;Contraception initiation&#39;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">_cons_codes</span></div>
 
-<div class="viewcode-block" id="Contraception.schedule_batch_of_contraceptive_changes"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.schedule_batch_of_contraceptive_changes">[docs]</a>    <span class="k">def</span> <span class="nf">schedule_batch_of_contraceptive_changes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ids</span><span class="p">,</span> <span class="n">old</span><span class="p">,</span> <span class="n">new</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Contraception.schedule_batch_of_contraceptive_changes">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.schedule_batch_of_contraceptive_changes">[docs]</a>
+    <span class="k">def</span> <span class="nf">schedule_batch_of_contraceptive_changes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ids</span><span class="p">,</span> <span class="n">old</span><span class="p">,</span> <span class="n">new</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Enact the change in contraception, either through editing properties instantaneously or by scheduling HSI.</span>
 <span class="sd">        ids: pd.Index of the woman for whom the contraceptive state is changing</span>
 <span class="sd">        old: iterable giving the corresponding contraceptive state being switched from</span>
@@ -905,7 +934,10 @@
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">pass</span>  <span class="c1"># No need to do anything if the old is the same as the new and no HSI needed.</span></div>
 
-<div class="viewcode-block" id="Contraception.do_and_log_individual_contraception_change"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.do_and_log_individual_contraception_change">[docs]</a>    <span class="k">def</span> <span class="nf">do_and_log_individual_contraception_change</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">woman_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">old</span><span class="p">,</span> <span class="n">new</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Contraception.do_and_log_individual_contraception_change">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.do_and_log_individual_contraception_change">[docs]</a>
+    <span class="k">def</span> <span class="nf">do_and_log_individual_contraception_change</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">woman_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">old</span><span class="p">,</span> <span class="n">new</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Implement and then log a start / stop / switch of contraception. &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="n">old</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_contraception_states</span>
         <span class="k">assert</span> <span class="n">new</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">all_contraception_states</span>
@@ -926,7 +958,10 @@
                     <span class="n">description</span><span class="o">=</span><span class="s1">&#39;All changes in contraception use&#39;</span>
                     <span class="p">)</span></div>
 
-<div class="viewcode-block" id="Contraception.schedule_births_for_first_9_months"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.schedule_births_for_first_9_months">[docs]</a>    <span class="k">def</span> <span class="nf">schedule_births_for_first_9_months</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Contraception.schedule_births_for_first_9_months">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.schedule_births_for_first_9_months">[docs]</a>
+    <span class="k">def</span> <span class="nf">schedule_births_for_first_9_months</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Schedule births to occur during the first 9 months of the simulation. This is necessary because at initiation</span>
 <span class="sd">        no women are pregnant, so the first births generated endogenously (through pregnancy -&gt; gestation -&gt; labour)</span>
 <span class="sd">        occur after 9 months of simulation time. This method examines age-specific fertility rate data and causes there</span>
@@ -955,7 +990,10 @@
                                     <span class="n">random_date</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">9</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
                                     <span class="p">)</span></div>
 
-<div class="viewcode-block" id="Contraception.on_simulation_end"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.on_simulation_end">[docs]</a>    <span class="k">def</span> <span class="nf">on_simulation_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Contraception.on_simulation_end">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.Contraception.on_simulation_end">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_simulation_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Do tasks at the end of the simulation: Raise warning and enter to log about women_ids who are sterilized</span>
 <span class="sd">        when under 30 years old.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_women_ids_sterilized_below30</span><span class="p">:</span>
@@ -964,27 +1002,42 @@
             <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="n">key</span><span class="o">=</span><span class="s2">&quot;women_ids_sterilized_below30&quot;</span><span class="p">,</span>
                 <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;ids&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_women_ids_sterilized_below30</span><span class="p">}</span>
-            <span class="p">)</span></div></div>
+            <span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="DirectBirth"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.DirectBirth">[docs]</a><span class="k">class</span> <span class="nc">DirectBirth</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="DirectBirth">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.DirectBirth">[docs]</a>
+<span class="k">class</span> <span class="nc">DirectBirth</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Do birth, with the mother_id set to person_id*(-1) to reflect that this was a `DirectBirth`.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="DirectBirth.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.DirectBirth.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+<div class="viewcode-block" id="DirectBirth.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.DirectBirth.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="DirectBirth.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.DirectBirth.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="DirectBirth.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.DirectBirth.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
         <span class="k">assert</span> <span class="n">person_id</span> <span class="o">&lt;</span> <span class="mi">0</span>  <span class="c1"># check that mother is correctly logged as direct birth mother</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">do_birth</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>  <span class="c1"># use actual id for mother</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">do_birth</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>  <span class="c1"># use actual id for mother</span></div>
+</div>
 
 
-<div class="viewcode-block" id="ContraceptionPoll"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll">[docs]</a><span class="k">class</span> <span class="nc">ContraceptionPoll</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ContraceptionPoll">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll">[docs]</a>
+<span class="k">class</span> <span class="nc">ContraceptionPoll</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The regular poll (monthly) for the Contraceptive Module:</span>
 <span class="sd">    * Determines contraceptive start / stops / switches</span>
 <span class="sd">    * Determines the onset of pregnancy</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="ContraceptionPoll.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">run_do_pregnancy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">run_update_contraceptive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<div class="viewcode-block" id="ContraceptionPoll.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">run_do_pregnancy</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">run_update_contraceptive</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">age_low</span> <span class="o">=</span> <span class="mi">15</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">age_high</span> <span class="o">=</span> <span class="mi">49</span>
@@ -992,7 +1045,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">run_do_pregnancy</span> <span class="o">=</span> <span class="n">run_do_pregnancy</span>  <span class="c1"># (Provided for testing only)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">run_update_contraceptive</span> <span class="o">=</span> <span class="n">run_update_contraceptive</span>  <span class="c1"># (Provided for testing only)</span></div>
 
-<div class="viewcode-block" id="ContraceptionPoll.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ContraceptionPoll.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Determine who will become pregnant and update contraceptive method.&quot;&quot;&quot;</span>
 
         <span class="c1"># Determine who will become pregnant, given current contraceptive method</span>
@@ -1003,7 +1059,10 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_update_contraceptive</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">update_contraceptive</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="ContraceptionPoll.update_contraceptive"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll.update_contraceptive">[docs]</a>    <span class="k">def</span> <span class="nf">update_contraceptive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ContraceptionPoll.update_contraceptive">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll.update_contraceptive">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_contraceptive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot; Determine women that will start, stop or switch contraceptive method.&quot;&quot;&quot;</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -1031,7 +1090,10 @@
             <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">co_contraception</span> <span class="o">!=</span> <span class="s1">&#39;not_using&#39;</span><span class="p">),</span>
             <span class="s1">&#39;co_contraception&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;not_using&#39;</span></div>
 
-<div class="viewcode-block" id="ContraceptionPoll.initiate"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll.initiate">[docs]</a>    <span class="k">def</span> <span class="nf">initiate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individuals_not_using</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ContraceptionPoll.initiate">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll.initiate">[docs]</a>
+    <span class="k">def</span> <span class="nf">initiate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individuals_not_using</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check all females not using contraception to determine if contraception starts</span>
 <span class="sd">        (i.e. category change from &#39;not_using&#39; to something else).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1063,7 +1125,10 @@
                 <span class="n">new</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">will_initiate</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="ContraceptionPoll.discontinue_switch_or_continue"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll.discontinue_switch_or_continue">[docs]</a>    <span class="k">def</span> <span class="nf">discontinue_switch_or_continue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individuals_using</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ContraceptionPoll.discontinue_switch_or_continue">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll.discontinue_switch_or_continue">[docs]</a>
+    <span class="k">def</span> <span class="nf">discontinue_switch_or_continue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individuals_using</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Index</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Check all females currently using contraception to determine if they discontinue it, switch to a different</span>
 <span class="sd">        one, or keep using the same one.&quot;&quot;&quot;</span>
 
@@ -1134,7 +1199,10 @@
                 <span class="n">new</span><span class="o">=</span><span class="n">current_contraception</span>
             <span class="p">)</span></div>
 
-<div class="viewcode-block" id="ContraceptionPoll.update_pregnancy"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll.update_pregnancy">[docs]</a>    <span class="k">def</span> <span class="nf">update_pregnancy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ContraceptionPoll.update_pregnancy">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll.update_pregnancy">[docs]</a>
+    <span class="k">def</span> <span class="nf">update_pregnancy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Determine who will become pregnant&quot;&quot;&quot;</span>
 
         <span class="c1"># Determine pregnancy for those on a contraceptive (&quot;unintentional pregnancy&quot;)</span>
@@ -1143,7 +1211,10 @@
         <span class="c1"># Determine pregnancy for those not on contraceptive (&quot;intentional pregnancy&quot;)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pregnancy_for_those_not_on_contraceptive</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="ContraceptionPoll.pregnancy_for_those_on_contraceptive"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll.pregnancy_for_those_on_contraceptive">[docs]</a>    <span class="k">def</span> <span class="nf">pregnancy_for_those_on_contraceptive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ContraceptionPoll.pregnancy_for_those_on_contraceptive">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll.pregnancy_for_those_on_contraceptive">[docs]</a>
+    <span class="k">def</span> <span class="nf">pregnancy_for_those_on_contraceptive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Look across all women who are using a contraception method to determine if they become pregnant (i.e., the</span>
 <span class="sd">         method fails).&quot;&quot;&quot;</span>
 
@@ -1181,7 +1252,10 @@
             <span class="c1"># Effect these women to be pregnant</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">set_new_pregnancy</span><span class="p">(</span><span class="n">women_id</span><span class="o">=</span><span class="n">idx_failure</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ContraceptionPoll.pregnancy_for_those_not_on_contraceptive"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll.pregnancy_for_those_not_on_contraceptive">[docs]</a>    <span class="k">def</span> <span class="nf">pregnancy_for_those_not_on_contraceptive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ContraceptionPoll.pregnancy_for_those_not_on_contraceptive">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll.pregnancy_for_those_not_on_contraceptive">[docs]</a>
+    <span class="k">def</span> <span class="nf">pregnancy_for_those_not_on_contraceptive</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Look across all woman who are not using a contraceptive to determine who will become pregnant.&quot;&quot;&quot;</span>
 
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
@@ -1215,7 +1289,10 @@
             <span class="c1"># Effect these women to be pregnant</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">set_new_pregnancy</span><span class="p">(</span><span class="n">women_id</span><span class="o">=</span><span class="n">idx_pregnant</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ContraceptionPoll.set_new_pregnancy"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll.set_new_pregnancy">[docs]</a>    <span class="k">def</span> <span class="nf">set_new_pregnancy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">women_id</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ContraceptionPoll.set_new_pregnancy">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionPoll.set_new_pregnancy">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_new_pregnancy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">women_id</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Effect that these women are now pregnancy and enter to the log&quot;&quot;&quot;</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
@@ -1248,15 +1325,24 @@
                             <span class="s1">&#39;contraception&#39;</span><span class="p">:</span> <span class="n">method_before_pregnancy</span><span class="p">,</span>
                             <span class="s1">&#39;unintended&#39;</span><span class="p">:</span> <span class="n">unintended</span>
                         <span class="p">},</span>
-                        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;pregnancy following the failure of contraceptive method&#39;</span><span class="p">)</span></div></div>
+                        <span class="n">description</span><span class="o">=</span><span class="s1">&#39;pregnancy following the failure of contraceptive method&#39;</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="ContraceptionLoggingEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionLoggingEvent">[docs]</a><span class="k">class</span> <span class="nc">ContraceptionLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
-<div class="viewcode-block" id="ContraceptionLoggingEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionLoggingEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ContraceptionLoggingEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionLoggingEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">ContraceptionLoggingEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+<div class="viewcode-block" id="ContraceptionLoggingEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionLoggingEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Logs state of contraceptive usage in the population at a point in time.&quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">frequency</span><span class="o">=</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="ContraceptionLoggingEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionLoggingEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ContraceptionLoggingEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.ContraceptionLoggingEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
         <span class="c1"># Log summary of usage of contraceptives (without age-breakdown)</span>
@@ -1274,14 +1360,20 @@
                             <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">sex</span> <span class="o">==</span> <span class="s1">&#39;F&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">age_years</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">49</span><span class="p">)</span>
                             <span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;co_contraception&#39;</span><span class="p">,</span> <span class="s1">&#39;age_range&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
                     <span class="p">),</span>
-                    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Counts of women, by age-range, on each type of contraceptive at a point in time.&#39;</span><span class="p">)</span></div></div>
+                    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Counts of women, by age-range, on each type of contraceptive at a point in time.&#39;</span><span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="HSI_Contraception_FamilyPlanningAppt"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt">[docs]</a><span class="k">class</span> <span class="nc">HSI_Contraception_FamilyPlanningAppt</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Contraception_FamilyPlanningAppt">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt">[docs]</a>
+<span class="k">class</span> <span class="nc">HSI_Contraception_FamilyPlanningAppt</span><span class="p">(</span><span class="n">HSI_Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;HSI event for the starting a contraceptive method, maintaining use of a method of a contraceptive, or switching</span>
 <span class="sd">     between contraceptives.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="HSI_Contraception_FamilyPlanningAppt.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">new_contraceptive</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Contraception_FamilyPlanningAppt.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">new_contraceptive</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
 
         <span class="n">_facility_level</span> <span class="o">=</span> <span class="s1">&#39;2&#39;</span> <span class="k">if</span> <span class="n">new_contraceptive</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;implant&#39;</span><span class="p">,</span> <span class="s1">&#39;female_sterilization&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="s1">&#39;1a&#39;</span>
@@ -1291,6 +1383,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">TREATMENT_ID</span> <span class="o">=</span> <span class="s2">&quot;Contraception_Routine&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ACCEPTED_FACILITY_LEVEL</span> <span class="o">=</span> <span class="n">_facility_level</span></div>
+
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">EXPECTED_APPT_FOOTPRINT</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1314,7 +1407,9 @@
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="ne">UserWarning</span><span class="p">(</span><span class="s2">&quot;Assumed empty footprint for Contraception Routine appt because couldn&#39;t find&quot;</span>
                                       <span class="s2">&quot;actual case.&quot;</span><span class="p">))</span>
 
-<div class="viewcode-block" id="HSI_Contraception_FamilyPlanningAppt.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
+<div class="viewcode-block" id="HSI_Contraception_FamilyPlanningAppt.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">squeeze_factor</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;If the relevant consumable is available, do change in contraception and log it&quot;&quot;&quot;</span>
 
         <span class="n">person</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">person_id</span><span class="p">]</span>
@@ -1394,17 +1489,26 @@
         <span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">reschedule</span><span class="p">()</span></div>
 
-<div class="viewcode-block" id="HSI_Contraception_FamilyPlanningAppt.post_apply_hook"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.post_apply_hook">[docs]</a>    <span class="k">def</span> <span class="nf">post_apply_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Contraception_FamilyPlanningAppt.post_apply_hook">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.post_apply_hook">[docs]</a>
+    <span class="k">def</span> <span class="nf">post_apply_hook</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_number_of_times_run</span> <span class="o">+=</span> <span class="mi">1</span></div>
 
-<div class="viewcode-block" id="HSI_Contraception_FamilyPlanningAppt.reschedule"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.reschedule">[docs]</a>    <span class="k">def</span> <span class="nf">reschedule</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Contraception_FamilyPlanningAppt.reschedule">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.reschedule">[docs]</a>
+    <span class="k">def</span> <span class="nf">reschedule</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Schedule for this same HSI_Event to occur tomorrow.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span><span class="n">hsi_event</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>
                                                                    <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
                                                                    <span class="n">tclose</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
                                                                    <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="HSI_Contraception_FamilyPlanningAppt.never_ran"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.never_ran">[docs]</a>    <span class="k">def</span> <span class="nf">never_ran</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="HSI_Contraception_FamilyPlanningAppt.never_ran">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.HSI_Contraception_FamilyPlanningAppt.never_ran">[docs]</a>
+    <span class="k">def</span> <span class="nf">never_ran</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;If this HSI never ran, the person defaults to &quot;not_using&quot; a contraceptive.&quot;&quot;&quot;</span>
         <span class="n">person</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">]</span>
 
@@ -1415,23 +1519,34 @@
             <span class="n">woman_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="p">,</span>
             <span class="n">old</span><span class="o">=</span><span class="n">person</span><span class="o">.</span><span class="n">co_contraception</span><span class="p">,</span>  <span class="c1"># Current Method</span>
             <span class="n">new</span><span class="o">=</span><span class="s2">&quot;not_using&quot;</span>
-        <span class="p">)</span></div></div>
+        <span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="StartInterventions"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.StartInterventions">[docs]</a><span class="k">class</span> <span class="nc">StartInterventions</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="StartInterventions">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.StartInterventions">[docs]</a>
+<span class="k">class</span> <span class="nc">StartInterventions</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This event is run by Contraception module exactly once when interventions are introduced, or never if interventions</span>
 <span class="sd">    are not used. If run, it updates parameters changed to reflect the FP interventions to be used from now on.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="StartInterventions.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.StartInterventions.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<div class="viewcode-block" id="StartInterventions.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.StartInterventions.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">Contraception</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="StartInterventions.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.StartInterventions.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="StartInterventions.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.StartInterventions.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 
         <span class="c1"># Update module parameters to enable interventions</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">processed_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">update_params_for_interventions</span><span class="p">()</span></div></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">processed_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">update_params_for_interventions</span><span class="p">()</span></div>
+</div>
+
 
 
 <span class="c1"># -----------------------------------------------------------------------------------------------------------</span>
@@ -1442,7 +1557,9 @@
 <span class="c1"># -----------------------------------------------------------------------------------------------------------</span>
 <span class="c1"># -----------------------------------------------------------------------------------------------------------</span>
 
-<div class="viewcode-block" id="SimplifiedPregnancyAndLabour"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour">[docs]</a><span class="k">class</span> <span class="nc">SimplifiedPregnancyAndLabour</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="SimplifiedPregnancyAndLabour">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour">[docs]</a>
+<span class="k">class</span> <span class="nc">SimplifiedPregnancyAndLabour</span><span class="p">(</span><span class="n">Module</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Simplified module to replace `Labour`, &#39;PregnancySupervisor` and other associated module, for use in</span>
 <span class="sd">    testing/calibrating the Contraception Module. The module calls itself Labour and provides the method</span>
 <span class="sd">    `set_date_of_labour`, which is called by the Contraception Module at the onset of pregnancy. It schedules an event</span>
@@ -1470,33 +1587,50 @@
                                          <span class="p">)</span>
     <span class="p">}</span>
 
-<div class="viewcode-block" id="SimplifiedPregnancyAndLabour.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+<div class="viewcode-block" id="SimplifiedPregnancyAndLabour.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Labour&#39;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SimplifiedPregnancyAndLabour.read_parameters"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SimplifiedPregnancyAndLabour.read_parameters">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.read_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="n">parameter_dataframe</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Contraception&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">/</span>
                                             <span class="s1">&#39;ResourceFile_Contraception.xlsx&#39;</span><span class="p">,</span>
                                             <span class="n">sheet_name</span><span class="o">=</span><span class="s1">&#39;simplified_labour_parameters&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">load_parameters_from_dataframe</span><span class="p">(</span><span class="n">parameter_dataframe</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="SimplifiedPregnancyAndLabour.initialise_population"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SimplifiedPregnancyAndLabour.initialise_population">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;la_currently_in_labour&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;la_has_had_hysterectomy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;la_is_postpartum&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;ps_ectopic_pregnancy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">NAN</span></div>
 
-<div class="viewcode-block" id="SimplifiedPregnancyAndLabour.initialise_simulation"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SimplifiedPregnancyAndLabour.initialise_simulation">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.initialise_simulation">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="SimplifiedPregnancyAndLabour.on_birth"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SimplifiedPregnancyAndLabour.on_birth">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.on_birth">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;la_currently_in_labour&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;la_has_had_hysterectomy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;la_is_postpartum&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;ps_ectopic_pregnancy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">NAN</span></div>
 
-<div class="viewcode-block" id="SimplifiedPregnancyAndLabour.set_date_of_labour"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.set_date_of_labour">[docs]</a>    <span class="k">def</span> <span class="nf">set_date_of_labour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="SimplifiedPregnancyAndLabour.set_date_of_labour">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.set_date_of_labour">[docs]</a>
+    <span class="k">def</span> <span class="nf">set_date_of_labour</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;This is a drop-in replacement for the method in Labour that triggers the processes that determine the outcome</span>
 <span class="sd">        of a pregnancy.&quot;&quot;&quot;</span>
 
@@ -1508,23 +1642,34 @@
                                     <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span> <span class="o">-</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">14</span><span class="p">),</span>
                                     <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">months</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">14</span><span class="p">),</span>
                                     <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="p">)</span>
-                                <span class="p">)</span></div></div>
+                                <span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="EndOfPregnancyEvent"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.EndOfPregnancyEvent">[docs]</a><span class="k">class</span> <span class="nc">EndOfPregnancyEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="EndOfPregnancyEvent">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.EndOfPregnancyEvent">[docs]</a>
+<span class="k">class</span> <span class="nc">EndOfPregnancyEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;This event signals the end of the pregnancy, which may or may not result in a live-birth&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="EndOfPregnancyEvent.__init__"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.EndOfPregnancyEvent.__init__">[docs]</a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">live_birth</span><span class="p">):</span>
+<div class="viewcode-block" id="EndOfPregnancyEvent.__init__">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.EndOfPregnancyEvent.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="p">,</span> <span class="n">live_birth</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">live_birth</span> <span class="o">=</span> <span class="n">live_birth</span></div>
 
-<div class="viewcode-block" id="EndOfPregnancyEvent.apply"><a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.EndOfPregnancyEvent.apply">[docs]</a>    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="EndOfPregnancyEvent.apply">
+<a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.EndOfPregnancyEvent.apply">[docs]</a>
+    <span class="k">def</span> <span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;End pregnancy and do live birth if needed&quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">live_birth</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">do_birth</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Contraception&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">end_pregnancy</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span></div></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Contraception&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">end_pregnancy</span><span class="p">(</span><span class="n">person_id</span><span class="p">)</span></div>
+</div>
+
 
 
 <span class="c1"># -----------------------------------------------------------------------------------------------------------</span>
@@ -1576,7 +1721,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

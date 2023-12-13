@@ -1,12 +1,15 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.test.random_death module &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <title>tlo.test.random_death module &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
@@ -14,9 +17,9 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
-        <script src="../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
@@ -36,7 +39,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -54,6 +57,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
@@ -88,7 +92,7 @@
            <div itemprop="articleBody">
              
   <section id="module-tlo.test.random_death">
-<span id="tlo-test-random-death-module"></span><h1>tlo.test.random_death module<a class="headerlink" href="#module-tlo.test.random_death" title="Permalink to this heading"></a></h1>
+<span id="tlo-test-random-death-module"></span><h1>tlo.test.random_death module<a class="headerlink" href="#module-tlo.test.random_death" title="Link to this heading"></a></h1>
 <p>A simple test module for demonstration purposes.</p>
 <p>It polls the population each month, randomly killing people with a fixed probability.
 The probability may be set as a module parameter.</p>
@@ -96,7 +100,7 @@ The probability may be set as a module parameter.</p>
 getting distracted by modelling details.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.test.random_death.RandomDeath">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RandomDeath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/test/random_death.html#RandomDeath"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.test.random_death.RandomDeath" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RandomDeath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/test/random_death.html#RandomDeath"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.test.random_death.RandomDeath" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></a></p>
 <p>Randomly kill individuals with fixed probability.</p>
 <p>All disease modules need to be implemented as a class inheriting from Module.
@@ -108,17 +112,17 @@ framework:
 * <cite>on_birth(mother, child)</cite></p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.test.random_death.RandomDeath.PARAMETERS">
-<span class="sig-name descname"><span class="pre">PARAMETERS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'death_probability':</span> <span class="pre">REAL</span> <span class="pre">===</span> <span class="pre">Fixed</span> <span class="pre">probability</span> <span class="pre">of</span> <span class="pre">death</span> <span class="pre">each</span> <span class="pre">month}</span></em><a class="headerlink" href="#tlo.test.random_death.RandomDeath.PARAMETERS" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">PARAMETERS</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'death_probability':</span> <span class="pre">REAL</span> <span class="pre">===</span> <span class="pre">Fixed</span> <span class="pre">probability</span> <span class="pre">of</span> <span class="pre">death</span> <span class="pre">each</span> <span class="pre">month}</span></em><a class="headerlink" href="#tlo.test.random_death.RandomDeath.PARAMETERS" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.test.random_death.RandomDeath.PROPERTIES">
-<span class="sig-name descname"><span class="pre">PROPERTIES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'date_of_death':</span> <span class="pre">DATE</span> <span class="pre">===</span> <span class="pre">When</span> <span class="pre">the</span> <span class="pre">individual</span> <span class="pre">died</span> <span class="pre">(if</span> <span class="pre">they</span> <span class="pre">have),</span> <span class="pre">'is_alive':</span> <span class="pre">BOOL</span> <span class="pre">===</span> <span class="pre">Whether</span> <span class="pre">each</span> <span class="pre">individual</span> <span class="pre">is</span> <span class="pre">currently</span> <span class="pre">alive}</span></em><a class="headerlink" href="#tlo.test.random_death.RandomDeath.PROPERTIES" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">PROPERTIES</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'date_of_death':</span> <span class="pre">DATE</span> <span class="pre">===</span> <span class="pre">When</span> <span class="pre">the</span> <span class="pre">individual</span> <span class="pre">died</span> <span class="pre">(if</span> <span class="pre">they</span> <span class="pre">have),</span> <span class="pre">'is_alive':</span> <span class="pre">BOOL</span> <span class="pre">===</span> <span class="pre">Whether</span> <span class="pre">each</span> <span class="pre">individual</span> <span class="pre">is</span> <span class="pre">currently</span> <span class="pre">alive}</span></em><a class="headerlink" href="#tlo.test.random_death.RandomDeath.PROPERTIES" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.test.random_death.RandomDeath.read_parameters">
-<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/test/random_death.html#RandomDeath.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.test.random_death.RandomDeath.read_parameters" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">read_parameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_folder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/test/random_death.html#RandomDeath.read_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.test.random_death.RandomDeath.read_parameters" title="Link to this definition"></a></dt>
 <dd><p>Read parameter values from file, if required.</p>
 <p>Here we do nothing.</p>
 <dl class="field-list simple">
@@ -131,7 +135,7 @@ Typically modules would read a particular file within here.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.test.random_death.RandomDeath.initialise_population">
-<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/test/random_death.html#RandomDeath.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.test.random_death.RandomDeath.initialise_population" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialise_population</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/test/random_death.html#RandomDeath.initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.test.random_death.RandomDeath.initialise_population" title="Link to this definition"></a></dt>
 <dd><p>Set our property values for the initial population.</p>
 <p>This method is called by the simulation when creating the initial population, and is
 responsible for assigning initial values, for every individual, of those properties
@@ -147,7 +151,7 @@ simulation knows what order to initialise modules in!</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.test.random_death.RandomDeath.initialise_simulation">
-<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/test/random_death.html#RandomDeath.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.test.random_death.RandomDeath.initialise_simulation" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">initialise_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/test/random_death.html#RandomDeath.initialise_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.test.random_death.RandomDeath.initialise_simulation" title="Link to this definition"></a></dt>
 <dd><p>Get ready for simulation start.</p>
 <p>This method is called just before the main simulation loop begins, and after all
 modules have read their parameters and the initial population has been created.
@@ -157,7 +161,7 @@ It is a good place to add initial events to the event queue.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.test.random_death.RandomDeath.on_birth">
-<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/test/random_death.html#RandomDeath.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.test.random_death.RandomDeath.on_birth" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">on_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/test/random_death.html#RandomDeath.on_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.test.random_death.RandomDeath.on_birth" title="Link to this definition"></a></dt>
 <dd><p>Initialise our properties for a newborn individual.</p>
 <p>This is called by the simulation whenever a new person is born.</p>
 <dl class="field-list simple">
@@ -172,14 +176,14 @@ It is a good place to add initial events to the event queue.</p>
 
 <dl class="py attribute">
 <dt class="sig sig-object py" id="tlo.test.random_death.RandomDeath.parameters">
-<span class="sig-name descname"><span class="pre">parameters</span></span><a class="headerlink" href="#tlo.test.random_death.RandomDeath.parameters" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">parameters</span></span><a class="headerlink" href="#tlo.test.random_death.RandomDeath.parameters" title="Link to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.test.random_death.RandomDeathEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RandomDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">death_probability</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/test/random_death.html#RandomDeathEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.test.random_death.RandomDeathEvent" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RandomDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">death_probability</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/test/random_death.html#RandomDeathEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.test.random_death.RandomDeathEvent" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">PopulationScopeEventMixin</span></code></a></p>
 <p>The regular event that actually kills people.</p>
 <p>Regular events automatically reschedule themselves at a fixed frequency,
@@ -187,7 +191,7 @@ and thus implement discrete timestep type behaviour. The frequency is
 specified when calling the base class constructor in our __init__ method.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.test.random_death.RandomDeathEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/test/random_death.html#RandomDeathEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.test.random_death.RandomDeathEvent.apply" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/test/random_death.html#RandomDeathEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.test.random_death.RandomDeathEvent.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the population.</p>
 <p>For efficiency, we use pandas operations to scan the entire population
 and kill individuals at random.</p>
@@ -214,7 +218,7 @@ and kill individuals at random.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 

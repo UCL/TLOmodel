@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="../../">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.core &mdash; TLOmodel 0.1.0 documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <title>tlo.core &mdash; TLOmodel 0.1.dev2336+g47d4544.d20231213 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d10597a4" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=19f00094" />
+      <link rel="stylesheet" type="text/css" href="../../_static/theme_overrides.css?v=6ea10ece" />
+
+  
     <link rel="shortcut icon" href="../../_static/favicon.png"/>
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
@@ -13,9 +16,9 @@
   
         <script src="../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js?v=2389946f"></script>
+        <script src="../../_static/documentation_options.js?v=cc9389db"></script>
         <script src="../../_static/doctools.js?v=888ff710"></script>
-        <script src="../../_static/sphinx_highlight.js?v=4825356b"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" /> 
@@ -33,7 +36,7 @@
             TLOmodel
           </a>
               <div class="version">
-                0.1.0
+                0.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
@@ -51,6 +54,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../readme.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../reference/index.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../resources/index.html">Resource files</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../background.html">Background</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../contributors.html">Contributors</a></li>
@@ -96,7 +100,9 @@
 <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 
 
-<div class="viewcode-block" id="Types"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Types">[docs]</a><span class="k">class</span> <span class="nc">Types</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<div class="viewcode-block" id="Types">
+<a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Types">[docs]</a>
+<span class="k">class</span> <span class="nc">Types</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Possible types for parameters and properties.</span>
 
 <span class="sd">    This lets us hide the details of numpy &amp; Pandas dtype strings and give</span>
@@ -118,7 +124,10 @@
     <span class="n">DICT</span> <span class="o">=</span> <span class="n">auto</span><span class="p">()</span></div>
 
 
-<div class="viewcode-block" id="Specifiable"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Specifiable">[docs]</a><span class="k">class</span> <span class="nc">Specifiable</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Specifiable">
+<a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Specifiable">[docs]</a>
+<span class="k">class</span> <span class="nc">Specifiable</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for Parameter and Property.&quot;&quot;&quot;</span>
 
     <span class="c1"># Map our Types to pandas dtype specifications</span>
@@ -189,11 +198,17 @@
         <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">type_</span><span class="o">.</span><span class="n">name</span><span class="si">}{</span><span class="n">delimiter</span><span class="si">}{</span><span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="si">}</span><span class="s1">&#39;</span></div>
 
 
-<div class="viewcode-block" id="Parameter"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Parameter">[docs]</a><span class="k">class</span> <span class="nc">Parameter</span><span class="p">(</span><span class="n">Specifiable</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Parameter">
+<a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Parameter">[docs]</a>
+<span class="k">class</span> <span class="nc">Parameter</span><span class="p">(</span><span class="n">Specifiable</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Used to specify parameters for disease modules etc.&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="Property"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Property">[docs]</a><span class="k">class</span> <span class="nc">Property</span><span class="p">(</span><span class="n">Specifiable</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Property">
+<a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Property">[docs]</a>
+<span class="k">class</span> <span class="nc">Property</span><span class="p">(</span><span class="n">Specifiable</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Used to specify properties of individuals.&quot;&quot;&quot;</span>
 
     <span class="c1"># Default values to use for Series of different Pandas dtypes</span>
@@ -226,7 +241,9 @@
     <span class="k">def</span> <span class="nf">_default_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">PANDAS_TYPE_DEFAULT_VALUE_MAP</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pandas_type</span><span class="p">]</span>
 
-<div class="viewcode-block" id="Property.create_series"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Property.create_series">[docs]</a>    <span class="k">def</span> <span class="nf">create_series</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+<div class="viewcode-block" id="Property.create_series">
+<a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Property.create_series">[docs]</a>
+    <span class="k">def</span> <span class="nf">create_series</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a Pandas Series for this property.</span>
 
 <span class="sd">        The values will be left uninitialised.</span>
@@ -247,10 +264,14 @@
             <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
             <span class="n">index</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="n">size</span><span class="p">),</span>
             <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span>
-        <span class="p">)</span></div></div>
+        <span class="p">)</span></div>
+</div>
 
 
-<div class="viewcode-block" id="Module"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module">[docs]</a><span class="k">class</span> <span class="nc">Module</span><span class="p">:</span>
+
+<div class="viewcode-block" id="Module">
+<a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module">[docs]</a>
+<span class="k">class</span> <span class="nc">Module</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;The base class for disease modules.</span>
 
 <span class="sd">    This declares the methods which individual modules must implement, and contains the</span>
@@ -328,7 +349,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span> <span class="o">=</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="Module.load_parameters_from_dataframe"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.load_parameters_from_dataframe">[docs]</a>    <span class="k">def</span> <span class="nf">load_parameters_from_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resource</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+<div class="viewcode-block" id="Module.load_parameters_from_dataframe">
+<a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.load_parameters_from_dataframe">[docs]</a>
+    <span class="k">def</span> <span class="nf">load_parameters_from_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resource</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Automatically load parameters from resource dataframe, updating the class parameter dictionary</span>
 
 <span class="sd">        Goes through parameters dict self.PARAMETERS and updates the self.parameters with values</span>
@@ -389,7 +412,10 @@
             <span class="c1"># Save the values to the parameters</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">parameter_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">parameter_value</span></div>
 
-<div class="viewcode-block" id="Module.read_parameters"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.read_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Module.read_parameters">
+<a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.read_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_folder</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Read parameter values from file, if required.</span>
 
 <span class="sd">        Must be implemented by subclasses.</span>
@@ -399,7 +425,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
-<div class="viewcode-block" id="Module.initialise_population"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Module.initialise_population">
+<a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">population</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Set our property values for the initial population.</span>
 
 <span class="sd">        Must be implemented by subclasses.</span>
@@ -415,7 +444,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
-<div class="viewcode-block" id="Module.initialise_simulation"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.initialise_simulation">[docs]</a>    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Module.initialise_simulation">
+<a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.initialise_simulation">[docs]</a>
+    <span class="k">def</span> <span class="nf">initialise_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sim</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get ready for simulation start.</span>
 
 <span class="sd">        Must be implemented by subclasses.</span>
@@ -426,7 +458,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
-<div class="viewcode-block" id="Module.pre_initialise_population"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.pre_initialise_population">[docs]</a>    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Module.pre_initialise_population">
+<a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.pre_initialise_population">[docs]</a>
+    <span class="k">def</span> <span class="nf">pre_initialise_population</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Carry out any work before any populations have been initialised</span>
 
 <span class="sd">        This optional method allows access to all other registered modules, before any of</span>
@@ -434,7 +469,10 @@
 <span class="sd">        when a module&#39;s properties rely upon information from other modules.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
-<div class="viewcode-block" id="Module.on_birth"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.on_birth">[docs]</a>    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Module.on_birth">
+<a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.on_birth">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_birth</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mother_id</span><span class="p">,</span> <span class="n">child_id</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialise our properties for a newborn individual.</span>
 
 <span class="sd">        Must be implemented by subclasses.</span>
@@ -446,9 +484,14 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
-<div class="viewcode-block" id="Module.on_simulation_end"><a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.on_simulation_end">[docs]</a>    <span class="k">def</span> <span class="nf">on_simulation_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+<div class="viewcode-block" id="Module.on_simulation_end">
+<a class="viewcode-back" href="../../reference/tlo.core.html#tlo.core.Module.on_simulation_end">[docs]</a>
+    <span class="k">def</span> <span class="nf">on_simulation_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;This is called after the simulation has ended.</span>
-<span class="sd">        Modules do not need to declare this.&quot;&quot;&quot;</span></div></div>
+<span class="sd">        Modules do not need to declare this.&quot;&quot;&quot;</span></div>
+</div>
+
 </pre></div>
 
            </div>
@@ -459,7 +502,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Oct 30, 2023.
+      <span class="lastupdated">Last updated on Dec 13, 2023.
       </span></p>
   </div>
 
