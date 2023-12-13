@@ -1,5 +1,5 @@
-md parameters (.csv)
-====================
+cmd parameters (.csv)
+=====================
 
 :download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/cmd/ResourceFile_cmd_parameters.csv>`
 

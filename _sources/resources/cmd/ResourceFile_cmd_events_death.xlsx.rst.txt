@@ -1,5 +1,5 @@
-md events death (.xlsx)
-=======================
+cmd events death (.xlsx)
+========================
 
 :download:`Download original .xlsx file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/cmd/ResourceFile_cmd_events_death.xlsx>`
 

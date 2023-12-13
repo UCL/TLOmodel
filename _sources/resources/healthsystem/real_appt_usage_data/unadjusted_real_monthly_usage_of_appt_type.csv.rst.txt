@@ -1,5 +1,5 @@
-nadjusted real monthly usage of appt type (.csv)
-================================================
+unadjusted real monthly usage of appt type (.csv)
+=================================================
 
 :download:`Download original .csv file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/healthsystem/real_appt_usage_data/unadjusted_real_monthly_usage_of_appt_type.csv>`
 

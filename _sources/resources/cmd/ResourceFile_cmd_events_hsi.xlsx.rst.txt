@@ -1,5 +1,5 @@
-md events hsi (.xlsx)
-=====================
+cmd events hsi (.xlsx)
+======================
 
 :download:`Download original .xlsx file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/cmd/ResourceFile_cmd_events_hsi.xlsx>`
 

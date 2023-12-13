@@ -1,5 +1,5 @@
-md event prevalence (.xlsx)
-===========================
+cmd event prevalence (.xlsx)
+============================
 
 :download:`Download original .xlsx file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/cmd/ResourceFile_cmd_event_prevalence.xlsx>`
 

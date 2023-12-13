@@ -1,5 +1,5 @@
-md condition incidence (.xlsx)
-==============================
+cmd condition incidence (.xlsx)
+===============================
 
 :download:`Download original .xlsx file from GitHub <https://github.com/UCL/TLOmodel/raw/master/resources/cmd/ResourceFile_cmd_condition_incidence.xlsx>`
 
