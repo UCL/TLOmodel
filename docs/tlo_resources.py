@@ -23,9 +23,17 @@ def rst_header(title: str, level: int = 0) -> str:
     return title + "\n" + (separator_character * len(title)) + "\n\n"
 
 
+def _remove_prefix(text, prefix):
+    """Remove prefix if present from text.
+
+    Equivalent to str.removeprefix method present in Python 3.9+.
+    """
+    return text[len(prefix) :] if text.startswith(prefix) else text
+
+
 def rst_resource_file_header(resource_file_path: Path) -> str:
     resource_file_name = (
-        resource_file_path.stem.lstrip("ResourceFile_").replace("_", " ")
+        _remove_prefix(resource_file_path.stem, "ResourceFile_").replace("_", " ")
         + f" ({resource_file_path.suffix})"
     )
     return (
