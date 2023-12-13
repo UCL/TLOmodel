@@ -53,7 +53,7 @@ info = get_scenario_info(results_folder)
 # HELPER FUNCTIONS
 
 
-def map_age_to_age_group(dataframe):
+def _map_age_to_age_group(_df):
     """
     Maps ages to age-groups in 5-year intervals and adds a new column 'age-group' to the DataFrame.
 
@@ -67,19 +67,19 @@ def map_age_to_age_group(dataframe):
     age_groups = ['0'] + ['1-4'] + [f'{start}-{start + 4}' for start in range(5, 90, 5)] + ['90']
 
     # Create a new column 'age-group' based on the age-to-age-group mapping
-    dataframe['age_group'] = pd.cut(dataframe['age'], bins=[0] + [1] + list(range(5, 95, 5)) + [float('inf')],
+    _df['age_group'] = pd.cut(_df['age'], bins=[0] + [1] + list(range(5, 95, 5)) + [float('inf')],
                                     labels=age_groups, right=False)
 
-    return pd.Series(dataframe['age_group'])
+    return pd.Series(_df['age_group'])
 
 
-def get_multiplier(_draw, _run):
+def _get_multiplier(_draw, _run):
     """Helper function to get the multiplier from the simulation."""
     return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.population'
                                    )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
 
 
-def extract_person_years(results_folder, _draw, _run):
+def _extract_person_years(results_folder, _draw, _run):
     """Helper function to get the multiplier from the simulation
     Note that if the scaling factor cannot be found a `KeyError` is thrown."""
 
@@ -87,14 +87,14 @@ def extract_person_years(results_folder, _draw, _run):
                                    'tlo.methods.demography')['tlo.methods.demography']['person_years']
 
 
-def create_multi_index_columns():
+def _create_multi_index_columns():
     return pd.MultiIndex.from_product([range(info['number_of_draws']),
                                        range(info['runs_per_draw'])],
                                       names=['draw', 'run'])
 
 
 
-def num_deaths_by_age_group(results_folder, target_period):
+def _num_deaths_by_age_group(results_folder, target_period):
     """ produces dataframe with mean (+ 95% UI) number of deaths
     for each draw by age-group
     dataframe returned: rows=age-gp, columns=draw median, draw lower, draw upper
@@ -103,7 +103,7 @@ def num_deaths_by_age_group(results_folder, target_period):
 
     def extract_deaths_by_age_group(df: pd.DataFrame) -> pd.Series:
         # Call the function to add the 'age-group' column
-        df['age_group'] = map_age_to_age_group(df)
+        df['age_group'] = _map_age_to_age_group(df)
 
         return df.loc[pd.to_datetime(df.date).between(*TARGET_PERIOD)].groupby(["age_group", "sex"])[
             "person_id"].count()
@@ -202,7 +202,7 @@ def num_deaths_by_age_group(results_folder, target_period):
 #     return t3
 
 
-def aggregate_person_years_by_age(results_folder, target_period):
+def _aggregate_person_years_by_age(results_folder, target_period):
     """ extract person-years for each draw/run
     calculate for men and women separately
     return a dataframe with index=age-groups and columns=person-years
@@ -216,7 +216,7 @@ def aggregate_person_years_by_age(results_folder, target_period):
     for draw in range(info['number_of_draws']):
         for run in range(info['runs_per_draw']):
 
-            _df = extract_person_years(results_folder, _draw=draw, _run=run)
+            _df = _extract_person_years(results_folder, _draw=draw, _run=run)
 
             # create empty dataframe to store outputs from each run
             tmp = pd.DataFrame(columns=['M', 'F'])
@@ -251,7 +251,7 @@ def aggregate_person_years_by_age(results_folder, target_period):
     output.index = multi_index_rows_male.append(multi_index_rows_female)
 
     # multi-index columns
-    multi_index_columns = create_multi_index_columns()
+    multi_index_columns = _create_multi_index_columns()
     output.columns = multi_index_columns
 
     return output
@@ -259,7 +259,7 @@ def aggregate_person_years_by_age(results_folder, target_period):
 
 # %% GENERATE LIFE EXPECTANCY ESTIMATES
 
-def estimate_life_expectancy(person_years_at_risk, number_of_deaths_in_interval):
+def _estimate_life_expectancy(_person_years_at_risk, _number_of_deaths_in_interval):
     """
     for a single run, estimate life expectancy for males and females
     return: pd.Series
@@ -268,33 +268,32 @@ def estimate_life_expectancy(person_years_at_risk, number_of_deaths_in_interval)
     estimated_life_expectancy = pd.Series(dtype=float)
 
     # first age-group is 0, then 1-4, 5-9, 10-14 etc. 22 categories in total
-    level_0_values = person_years_at_risk.index.get_level_values('age_group').unique()
+    level_0_values = _person_years_at_risk.index.get_level_values('age_group').unique()
     # interval_width = pd.Series([1] + [4] + [5] * 18, index=level_0_values)
 
     # Extract interval width
-    numerical_intervals = [int(interval.split('-')[1]) - int(interval.split('-')[0]) + 1 if '-' in interval
-                           else 1 for interval in level_0_values.categories]
-
-    # replace value for 90+ with interval=5 years
-
-
+    interval_width = [5 if '90' in interval else int(interval.split('-')[1]) - int(interval.split('-')[0]) + 1
+        if '-' in interval else 1 for interval in level_0_values.categories]
 
     fraction_of_last_age_survived = 0.5
     number_age_groups = 20
 
     # separate male and female data
     for sex in ['M', 'F']:
-        person_years_by_sex = person_years_at_risk.xs(key=sex, level='sex')
-        number_of_deaths_by_sex = number_of_deaths_in_interval.xs(key=sex, level='sex')
+        person_years_by_sex = _person_years_at_risk.xs(key=sex, level='sex')
+        number_of_deaths_by_sex = _number_of_deaths_in_interval.xs(key=sex, level='sex')
 
         death_rate_in_interval = number_of_deaths_by_sex / person_years_by_sex
         # if no deaths or person-years, produces nan
         death_rate_in_interval = death_rate_in_interval.fillna(0)
         # if no deaths in age 90+, set death rate equal to value in age 85-89
-        if death_rate_in_interval[number_age_groups - 1] == 0:
-            death_rate_in_interval[number_age_groups - 1] = death_rate_in_interval[number_age_groups - 2]
+        if death_rate_in_interval.loc['90'] == 0:
+            death_rate_in_interval.loc['90'] = death_rate_in_interval.loc['85-89']
 
         # Calculate the probability of dying in the interval
+        # condition checks whether the observed number deaths is significantly higher than would be expected
+        # based on population years at risk and survival fraction
+        # if true, suggests very high mortality rates and returns value 1
         condition = number_of_deaths_by_sex > (
             person_years_by_sex / interval_width / fraction_of_last_age_survived)
         probability_of_dying_in_interval = pd.Series(index=number_of_deaths_by_sex.index, dtype=float)
@@ -302,7 +301,7 @@ def estimate_life_expectancy(person_years_at_risk, number_of_deaths_in_interval)
         probability_of_dying_in_interval[~condition] = interval_width * death_rate_in_interval / (
             1 + interval_width * (1 - fraction_of_last_age_survived) * death_rate_in_interval)
         # all those surviving to final interval die during this interval
-        probability_of_dying_in_interval[number_age_groups - 1] = 1
+        probability_of_dying_in_interval.loc['90'] = 1
 
         # number_alive_at_start_of_interval
         # keep dtype as float in case using aggregated outputs
@@ -337,6 +336,7 @@ def estimate_life_expectancy(person_years_at_risk, number_of_deaths_in_interval)
             py_lived_beyond_start_of_interval[i] = py_lived_beyond_start_of_interval[i + 1] + py_lived_in_interval[i]
 
         # calculate observed life expectancy at start of interval
+        # if number of people alive at start of interval=0, condition returns true and observed life expectancy=0
         condition = number_alive_at_start_of_interval == 0
         observed_life_expectancy = pd.Series(index=range(number_age_groups), dtype=float)
         observed_life_expectancy[condition] = 0
@@ -373,11 +373,11 @@ def produce_life_expectancy_estimates(results_folder, target_period: Tuple[datet
     output = pd.DataFrame()
 
     # extract numbers of deaths
-    deaths = num_deaths_by_age_group(results_folder, target_period)
+    deaths = _num_deaths_by_age_group(results_folder, target_period)
 
     # extract person-years
     # person_years = get_population_size_by_age(results_folder)
-    person_years = aggregate_person_years_by_age(results_folder, target_period)
+    person_years = _aggregate_person_years_by_age(results_folder, target_period)
 
     # Initialize an empty list to collect life expectancies
     le_list = []
@@ -385,9 +385,9 @@ def produce_life_expectancy_estimates(results_folder, target_period: Tuple[datet
     for draw in range(info['number_of_draws']):
         for run in range(info['runs_per_draw']):
             # select column
-            le = estimate_life_expectancy(
-                number_of_deaths_in_interval=deaths.loc[:, (draw, run)],
-                person_years_at_risk=person_years.loc[:, (draw, run)])
+            le = _estimate_life_expectancy(
+                _number_of_deaths_in_interval=deaths.loc[:, (draw, run)],
+                _person_years_at_risk=person_years.loc[:, (draw, run)])
 
             # Append the life expectancy to the list
             le_list.append(le)
@@ -395,7 +395,7 @@ def produce_life_expectancy_estimates(results_folder, target_period: Tuple[datet
     # Concatenate the list of life expectancies into a DataFrame
     output = pd.concat(le_list, axis=1)
 
-    multi_index_columns = create_multi_index_columns()
+    multi_index_columns = _create_multi_index_columns()
     output.columns = multi_index_columns
     output.index = ['M', 'F']
 
