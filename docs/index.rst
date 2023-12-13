@@ -44,6 +44,7 @@ Contents
    readme
    azure_batch
    reference/index
+   resources/index
    background
    publications
    contributors
