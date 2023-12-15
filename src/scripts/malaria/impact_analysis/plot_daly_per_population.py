@@ -295,4 +295,16 @@ plt.show()
 
 
 
+####################
+# add column totals
+# d0.loc['Total']= d0.sum()
+# d4.loc['Total']= d4.sum()
 
+
+# plot population size for baseline and Excl HTM
+
+plt.plot(d0.year, d0.py, label='Line 1', color='blue', marker='o')
+plt.plot(d4.year, d4.py, label='Line 2', color='orange', marker='s')
+plt.ylabel('Population size')
+plt.legend(labels=['Status quo', 'Excluding HTM'])
+plt.show()
