@@ -9,9 +9,15 @@ from typing import Dict, List, Literal, Optional, Tuple, Union
 import numpy as np
 from psutil import disk_io_counters
 from pyinstrument import Profiler
-from pyinstrument.renderers import HTMLRenderer
+from pyinstrument.renderers import ConsoleRenderer, HTMLRenderer
 from pyinstrument.session import Session
 from scale_run import save_arguments_to_json, scale_run
+
+try:
+    from ansi2html import Ansi2HTMLConverter
+    ANSI2HTML_AVAILABLE = True
+except ImportError:
+    ANSI2HTML_AVAILABLE = False
 
 from tlo import Simulation
 
@@ -176,6 +182,7 @@ def run_profiling(
     output_name: str = "profiling",
     write_html: bool = False,
     write_pyisession: bool = False,
+    write_flat_html: bool = True,
     interval: float = 1e-1,
     initial_population: int = 50000,
     simulation_years: int = 5,
@@ -279,6 +286,24 @@ def run_profiling(
         print(f"Writing {output_ipysession_file}", end="...", flush=True)
         scale_run_session.save(output_ipysession_file)
         print("done")
+        
+    if write_flat_html:
+        if not ANSI2HTML_AVAILABLE:
+            raise ValueError("ansi2html required for flat HTML output.")
+        output_html_file = output_dir / f"{output_name}.flat.html"
+        console_renderer = ConsoleRenderer(
+            show_all=False,
+            timeline=False,
+            color=True,
+            flat=True,
+            processor_options={"show_regex": ".*/tlo/.*", "hide_regex": ".*/pandas/.*"}
+        )
+        converter = Ansi2HTMLConverter(title=output_name)
+        print(f"Writing {output_html_file}", end="...", flush=True)
+        with open(output_html_file, "w") as f:
+            f.write(converter.convert(console_renderer.render(scale_run_session)))
+        print("done")
+        additional_stats["flat_html_output"] = str(output_html_file.name)
 
     # Write the statistics file, main output
     output_stat_file = output_dir / f"{output_name}.stats.json"
@@ -332,6 +357,12 @@ if __name__ == "__main__":
         help="Write raw profiler pyisession output.",
         action="store_true",
         dest="write_pyisession",
+    )
+    parser.add_argument(
+        "--flat-html",
+        action="store_true",
+        help="Write flat HTML output in addition to statistics output.",
+        dest="write_flat_html",
     )
     parser.add_argument(
         "-i",
