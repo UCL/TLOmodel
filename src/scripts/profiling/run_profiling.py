@@ -253,7 +253,11 @@ def run_profiling(
         # Renderer initialisation options:
         # show_all: removes library calls where identifiable
         # timeline: if true, samples are left in chronological order rather than total time
-        html_renderer = HTMLRenderer(show_all=False, timeline=False)
+        html_renderer = HTMLRenderer(
+            show_all=False,
+            timeline=False,
+            processor_options={"show_regex": ".*/tlo/.*", "hide_regex": ".*/pandas/.*"}
+        )
         print(f"Writing {output_html_file}", end="...", flush=True)
         with open(output_html_file, "w") as f:
             f.write(html_renderer.render(scale_run_session))
