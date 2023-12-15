@@ -268,7 +268,7 @@ def run_profiling(
                 f"\tWas        : {additional_stats['html_output']}"
                 f"\tReplaced by: {output_html_file}"
             )
-        additional_stats["html_output"] = str(output_html_file)
+        additional_stats["html_output"] = str(output_html_file.name)
 
     if write_pyisession:
         output_ipysession_file = output_dir / f"{output_name}.pyisession"
