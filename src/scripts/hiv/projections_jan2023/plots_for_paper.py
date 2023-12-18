@@ -1915,6 +1915,8 @@ cons_full = pd.merge(cons_availability, master_fac,
 # groupby item code & facility level -> average availability by facility level for all items
 average_cons_availability = cons_full.groupby(["item_code", "Facility_Level"])["available_prop"].mean().reset_index()
 
+overall_cons_availability = cons_full.groupby(["item_code"])["available_prop"].mean().reset_index()
+
 
 def get_item_codes_from_package_name(lookup_df: pd.DataFrame, package: str) -> dict:
 
@@ -1944,6 +1946,7 @@ item_codes_dict["tb_ipt"] = get_item_code_from_item_name(items_list, "Isoniazid/
 
 # select item codes from item_codes_dict
 selected_cons_availability = average_cons_availability[average_cons_availability["item_code"].isin(item_codes_dict.values())]
+# selected_cons_availability = overall_cons_availability[overall_cons_availability["item_code"].isin(item_codes_dict.values())]
 # remove level 0
 selected_cons_availability = selected_cons_availability.loc[selected_cons_availability.Facility_Level != "0"]
 # remove level 4
@@ -2081,7 +2084,7 @@ item_codes_dict["tb_tx_adult"] = get_item_code_from_item_name(items_list, "Cat. 
 item_codes_dict["tb_tx_child"] = get_item_code_from_item_name(items_list, "Cat. I & III Patient Kit B")
 item_codes_dict["tb_retx_adult"] = get_item_code_from_item_name(items_list, "Cat. II Patient Kit A1")
 item_codes_dict["tb_retx_child"] = get_item_code_from_item_name(items_list, "Cat. II Patient Kit A2")
-item_codes_dict["tb_mdrtx"] = get_item_code_from_item_name(items_list, "Category IV")
+item_codes_dict["tb_mdrtx"] = get_item_code_from_item_name(items_list, "Treatment: second-line drugs")
 item_codes_dict["tb_ipt"] = get_item_code_from_item_name(items_list, "Isoniazid/Pyridoxine, tablet 300 mg")
 
 # select item codes from item_codes_dict
@@ -2099,7 +2102,7 @@ selected_cons_availability.loc[selected_cons_availability.item_code == 176, "ite
 selected_cons_availability.loc[selected_cons_availability.item_code == 178, "item_code"] = "Child treatment"
 selected_cons_availability.loc[selected_cons_availability.item_code == 177, "item_code"] = "Adult retreatment"
 selected_cons_availability.loc[selected_cons_availability.item_code == 179, "item_code"] = "Child retreatment"
-selected_cons_availability.loc[selected_cons_availability.item_code == 180, "item_code"] = "MDR treatment"
+selected_cons_availability.loc[selected_cons_availability.item_code == 181, "item_code"] = "MDR treatment"
 selected_cons_availability.loc[selected_cons_availability.item_code == 192, "item_code"] = "IPT"
 
 df_heatmap = selected_cons_availability.pivot_table(
@@ -2113,7 +2116,7 @@ plt.tight_layout()
 
 plt.xlabel('Facility level')
 plt.ylabel('')
-plt.savefig(outputspath / "tb_cons_availability_dec.png", bbox_inches='tight')
+# plt.savefig(outputspath / "tb_cons_availability_dec.png", bbox_inches='tight')
 plt.show()
 
 

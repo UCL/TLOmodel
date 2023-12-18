@@ -1455,8 +1455,10 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
                     self.sim.modules['HealthSystem'], parameters=new_parameters),
                 self.sim.date)
 
-            # self.sim.modules['HealthSystem'].override_availability_of_consumables(
-            #     {item_code: updated_probability_of_being_available.})
+            # HIV tx
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {2671: 0.94, 2672: 0.88, 2673: 0.78,
+                 204: 0.93, 162: 0.85, 202: 0.43})
 
         # set all cons to available, reset only HIV prevention to default
         if scenario == 4:
@@ -1468,8 +1470,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
                     self.sim.modules['HealthSystem'], parameters=new_parameters),
                 self.sim.date)
 
-            # self.sim.modules['HealthSystem'].override_availability_of_consumables(
-            #     {item_code: updated_probability_of_being_available.})
+            # HIV prevention
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {196: 0.91, 197: 0.91, 1191: 0.88, 198: 0.78})
 
         # set all cons to available, reset only TB tx to default
         if scenario == 5:
@@ -1481,8 +1484,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
                     self.sim.modules['HealthSystem'], parameters=new_parameters),
                 self.sim.date)
 
-            # self.sim.modules['HealthSystem'].override_availability_of_consumables(
-            #     {item_code: updated_probability_of_being_available.})
+            # Tb tx
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {176: 0.75, 178: 0.66, 177: 0.60, 179: 0.60, 181: 0.28})
 
         # set all cons to available, reset only TB prevention to default
         if scenario == 6:
@@ -1494,8 +1498,10 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
                     self.sim.modules['HealthSystem'], parameters=new_parameters),
                 self.sim.date)
 
-            # self.sim.modules['HealthSystem'].override_availability_of_consumables(
-            #     {item_code: updated_probability_of_being_available.})
+            # Tb prevention
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {192: 0.59})
+
 
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
@@ -2053,7 +2059,8 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
                 )
 
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+                    HSI_Tb_StartTreatment(person_id=person_id, module=self.module,
+                                          facility_level='1a'),
                     topen=now,
                     tclose=None,
                     priority=0,
@@ -2119,7 +2126,8 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+                HSI_Tb_StartTreatment(person_id=person_id, module=self.module,
+                                      facility_level='1a'),
                 topen=self.sim.date,
                 tclose=None,
                 priority=0,
@@ -2190,7 +2198,8 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+                HSI_Tb_StartTreatment(person_id=person_id, module=self.module,
+                                      facility_level='1a'),
                 topen=self.sim.date,
                 tclose=None,
                 priority=0,
@@ -2211,13 +2220,16 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
 
 
 class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, facility_level='1a'):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
+
+        self.facility_level = facility_level
 
         self.TREATMENT_ID = "Tb_Treatment"
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.number_of_occurrences = 0
+        self.ACCEPTED_FACILITY_LEVEL = '1a' if (self.facility_level == '1a') else '2'
 
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
@@ -2251,6 +2263,19 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             item_codes=self.module.item_codes_for_consumables_required[treatment_regimen]
         )
 
+        # if require MDR treatment, and not currently at level 2, refer to level 2
+        if (treatment_regimen == "tb_mdrtx") and (self.facility_level != '2'):
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Tb_StartTreatment(
+                    person_id=person_id, module=self.module,
+                    facility_level='2'
+                ),
+                topen=self.sim.date + DateOffset(days=1),
+                tclose=None,
+                priority=0,
+            )
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
         if treatment_available:
             # start person on tb treatment - update properties
             df.at[person_id, "tb_on_treatment"] = True
@@ -2282,8 +2307,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             if self.number_of_occurrences <= self.module.parameters["tb_healthseekingbehaviour_cap"]:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Tb_StartTreatment(
-                        person_id=person_id, module=self.module,
-                    ),
+                        person_id=person_id, module=self.module, facility_level='1a'),
                     topen=self.sim.date + DateOffset(weeks=1),
                     tclose=None,
                     priority=0,
