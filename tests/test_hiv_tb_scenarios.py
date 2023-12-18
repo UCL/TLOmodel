@@ -124,8 +124,8 @@ def test_scenario_ipt_expansion(seed):
     list_of_events = list()
 
     for ev_tuple in sim.modules['HealthSystem'].HSI_EVENT_QUEUE:
-        date = ev_tuple[1]  # this is the 'topen' value
-        event = ev_tuple[4]
+        date = ev_tuple.topen  # this is the 'topen' value
+        event = ev_tuple.hsi_event
         if isinstance(event, tb.HSI_Tb_Start_or_Continue_Ipt):
             list_of_events.append((date, event, event.target))
 
@@ -162,12 +162,12 @@ def test_check_tb_test_under_each_scenario(seed):
     hiv_pos_person = 1
     both_people = [hiv_neg_person, hiv_pos_person]
 
-    df.at[both_people, 'tb_inf'] = 'active'
-    df.at[both_people, 'tb_strain'] = 'ds'
-    df.at[both_people, 'tb_date_active'] = sim.date
-    df.at[both_people, 'tb_smear'] = True
-    df.at[both_people, 'age_exact_years'] = 20
-    df.at[both_people, 'age_years'] = 20
+    df.loc[both_people, 'tb_inf'] = 'active'
+    df.loc[both_people, 'tb_strain'] = 'ds'
+    df.loc[both_people, 'tb_date_active'] = sim.date
+    df.loc[both_people, 'tb_smear'] = True
+    df.loc[both_people, 'age_exact_years'] = 20
+    df.loc[both_people, 'age_years'] = 20
 
     # set HIV status
     df.at[hiv_neg_person, 'hv_inf'] = False
@@ -236,12 +236,12 @@ def test_check_tb_test_under_each_scenario(seed):
     hiv_pos_person = 1
     both_people = [hiv_neg_person, hiv_pos_person]
 
-    df.at[both_people, 'tb_inf'] = 'active'
-    df.at[both_people, 'tb_strain'] = 'ds'
-    df.at[both_people, 'tb_date_active'] = sim.date
-    df.at[both_people, 'tb_smear'] = True
-    df.at[both_people, 'age_exact_years'] = 20
-    df.at[both_people, 'age_years'] = 20
+    df.loc[both_people, 'tb_inf'] = 'active'
+    df.loc[both_people, 'tb_strain'] = 'ds'
+    df.loc[both_people, 'tb_date_active'] = sim.date
+    df.loc[both_people, 'tb_smear'] = True
+    df.loc[both_people, 'age_exact_years'] = 20
+    df.loc[both_people, 'age_years'] = 20
     # set HIV status
     df.at[hiv_neg_person, 'hv_inf'] = False
     df.at[hiv_pos_person, 'hv_inf'] = True

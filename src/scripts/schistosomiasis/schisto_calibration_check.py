@@ -28,7 +28,8 @@ resourcefilepath = Path("./resources")
 outputpath = Path("./outputs")
 
 # Declare path for output graphs from this script
-make_graph_file_name = lambda name: outputpath / f"Schisto_{name}.png"  # noqa: E73
+def make_graph_file_name(name):
+    return outputpath / f"Schisto_{name}.png"
 
 # Districts that are high prevalence and for which this model has been calibrated:
 fitted_districts = ['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe']
@@ -98,7 +99,7 @@ def get_model_prevalence_by_district(spec: str):
     """Get the prevalence of a particular species at end of 2010 (???) for a particular species. """
     _df = dfs[f'infection_status_{spec}']
     t = _df.loc[_df.index.year == 2010].iloc[-1]
-    counts = t.unstack(level=1).sum(level=0).T
+    counts = t.unstack(level=1).groupby(level=0).sum().T
     return ((counts['High-infection'] + counts['Low-infection']) / counts.sum(axis=1)).to_dict()
 
 

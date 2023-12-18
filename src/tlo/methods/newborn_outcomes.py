@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, demography, newborn_outcomes_lm, pregnancy_helper_functions
@@ -27,7 +27,6 @@ class NewbornOutcomes(Module):
     HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth and interventions delivered as part of postnatal care
     via HSI_NewbornOutcomes_ReceivesPostnatalCheck.
     """
-
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
@@ -428,10 +427,6 @@ class NewbornOutcomes(Module):
         self.item_codes_nb_consumables['eye_care'] = get_list_of_items(
             self, ['Tetracycline eye ointment, 1 %, tube 5 mg'])
 
-        # -------------------------------------------- RESUSCITATION ------------------------------------------
-        self.item_codes_nb_consumables['resuscitation'] = \
-            get_list_of_items(self, ['Infant resuscitator, clear plastic + mask + bag_each_CMST'])
-
         # ------------------------------------- SEPSIS - FULL SUPPORTIVE CARE ---------------------------------------
         self.item_codes_nb_consumables['sepsis_supportive_care_core'] = \
             get_list_of_items(self, ['Benzylpenicillin 1g (1MU), PFR_Each_CMST',
@@ -446,7 +441,7 @@ class NewbornOutcomes(Module):
                                      'Disposables gloves, powder free, 100 pieces per box'])
 
         # ---------------------------------------- SEPSIS - ANTIBIOTICS ---------------------------------------------
-        self.item_codes_nb_consumables['sepsis_abx'] = \
+        self.item_codes_nb_consumables['sepsis_abx'] =\
             get_list_of_items(self, ['Benzylpenicillin 1g (1MU), PFR_Each_CMST',
                                      'Gentamicin 40mg/ml, 2ml_each_CMST'])
 
@@ -738,17 +733,16 @@ class NewbornOutcomes(Module):
             # align with GBD estimates
             elif 'anomaly' in potential_cause_of_death:
 
-                days_per_year = 365.25
                 # Generate the minimum and maximum number of days within the age group to allow for random
                 # distribution within each group
                 days_per_age_group = \
                     {'early_n': [0, 6],
                      'late_n': [7, 28],
                      'post_n': [29, 364],
-                     '1-4': [days_per_year, ((5 * days_per_year) - 1)],
-                     '5-9': [(5 * days_per_year), ((10 * days_per_year) - 1)],
-                     '10-14': [(10 * days_per_year), ((15 * days_per_year) - 1)],
-                     '15-69': [(15 * days_per_year), ((70 * days_per_year) - 1)]}
+                     '1-4': [DAYS_IN_YEAR, ((5 * DAYS_IN_YEAR) - 1)],
+                     '5-9': [(5 * DAYS_IN_YEAR), ((10 * DAYS_IN_YEAR) - 1)],
+                     '10-14': [(10 * DAYS_IN_YEAR), ((15 * DAYS_IN_YEAR) - 1)],
+                     '15-69': [(15 * DAYS_IN_YEAR), ((70 * DAYS_IN_YEAR) - 1)]}
 
                 random_draw = self.rng.choice(list(days_per_age_group.keys()), p=params['prob_cba_death_by_age_group'])
 
@@ -780,8 +774,7 @@ class NewbornOutcomes(Module):
         mother_id = df.loc[individual_id, 'mother_id']
         if not df.at[mother_id, 'is_alive']:
             if (mother_id in mni and (not df.at[mother_id, 'ps_multiple_pregnancy'] or
-                                      (df.at[mother_id, 'ps_multiple_pregnancy'] and (
-                                          mni[mother_id]['twin_count'] == 2)))):
+               (df.at[mother_id, 'ps_multiple_pregnancy'] and (mni[mother_id]['twin_count'] == 2)))):
                 del mni[mother_id]
 
     def set_disability_status(self, individual_id):
@@ -936,7 +929,8 @@ class NewbornOutcomes(Module):
         person_id = hsi_event.target
 
         if (df.at[person_id, 'nb_low_birth_weight_status'] != 'normal_birth_weight') or \
-                (df.at[person_id, 'nb_low_birth_weight_status'] != 'macrosomia'):
+           (df.at[person_id, 'nb_low_birth_weight_status'] != 'macrosomia'):
+
             # Store treatment as a property of the newborn used to apply treatment effect
             df.at[person_id, 'nb_kangaroo_mother_care'] = True
 
@@ -954,7 +948,7 @@ class NewbornOutcomes(Module):
             # schedule test if child not already diagnosed and mother is known hiv+
             self.sim.modules['Hiv'].decide_whether_hiv_test_for_infant(mother_id, child_id)
 
-    def assessment_and_initiation_of_neonatal_resus(self, hsi_event):
+    def apply_effect_of_neonatal_resus(self, person_id):
         """
         This function manages the diagnosis of failure to transition/encephalopathy and the administration of neonatal
         resuscitation for neonates delivered in a facility. It is called by the HSI_NewbornOutcomes_CareOfTheNewborn
@@ -963,24 +957,17 @@ class NewbornOutcomes(Module):
         (HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant)
         """
         df = self.sim.population.props
-        person_id = hsi_event.target
+        mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
+        mother_id = df.at[person_id, 'mother_id']
+
+        if mni[mother_id]['delivery_setting'] == 'home_birth':
+            logger.info(key='error', data=f'Child {person_id} has received resuscitation despite their '
+                                          f'mother delivering at home')
 
         if df.at[person_id, 'nb_not_breathing_at_birth']:
-
-            # check consumables
-            avail = pregnancy_helper_functions.return_cons_avail(
-                self, hsi_event, self.item_codes_nb_consumables, core='resuscitation')
-
-            # Run HCW check
-            sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
-                                                                                       sf='neo_resus',
-                                                                                       hsi_event=hsi_event)
-
-            # Then, if the consumables are available,resuscitation is started. We assume this is delayed in
-            # deliveries that are not attended
-            if avail and sf_check:
+            if mni[mother_id]['neo_will_receive_resus_if_needed']:
                 df.at[person_id, 'nb_received_neonatal_resus'] = True
-                pregnancy_helper_functions.log_met_need(self, 'neo_resus', hsi_event)
+                # pregnancy_helper_functions.log_met_need(self, 'neo_resus', hsi_event)
             else:
                 self.apply_risk_of_encephalopathy(person_id, timing='after_birth')
 
@@ -1000,8 +987,8 @@ class NewbornOutcomes(Module):
         # We assume that only hospitals are able to deliver full supportive care for neonatal sepsis, full supportive
         # care evokes a stronger treatment effect than injectable antibiotics alone
 
-        if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or df.at[person_id, 'pn_sepsis_late_neonatal'] or \
-                df.at[person_id, 'pn_sepsis_early_neonatal']:
+        if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or df.at[person_id, 'pn_sepsis_late_neonatal'] or\
+           df.at[person_id, 'pn_sepsis_early_neonatal']:
 
             # Run HCW check
             sf_check = pregnancy_helper_functions.check_emonc_signal_function_will_run(self.sim.modules['Labour'],
@@ -1081,8 +1068,8 @@ class NewbornOutcomes(Module):
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 early_event, priority=0,
-                topen=self.sim.date,
-                tclose=self.sim.date + pd.DateOffset(days=1))
+                topen=self.sim.date + pd.DateOffset(days=1),
+                tclose=self.sim.date + pd.DateOffset(days=2))
 
         else:
             # 'Late' PNC is scheduled in the postnatal supevervisor module
@@ -1173,9 +1160,9 @@ class NewbornOutcomes(Module):
         # Set the childs birthweight, decided in the labour module, and log accordingly
         df.at[child_id, 'nb_low_birth_weight_status'] = mni[mother_id]['birth_weight']
 
-        if (df.at[child_id, 'nb_low_birth_weight_status'] == 'low_birth_weight') or \
-            (df.at[child_id, 'nb_low_birth_weight_status'] == 'very_low_birth_weight') or \
-                (df.at[child_id, 'nb_low_birth_weight_status'] == 'extremely_low_birth_weight'):
+        if (df.at[child_id, 'nb_low_birth_weight_status'] == 'low_birth_weight') or\
+            (df.at[child_id, 'nb_low_birth_weight_status'] == 'very_low_birth_weight') or\
+           (df.at[child_id, 'nb_low_birth_weight_status'] == 'extremely_low_birth_weight'):
             logger.info(key='newborn_complication', data={'newborn': child_id, 'type': 'low_birth_weight'})
 
         elif df.at[child_id, 'nb_low_birth_weight_status'] == 'macrosomia':
@@ -1249,6 +1236,7 @@ class NewbornOutcomes(Module):
             # Next, for all preterm newborns we apply a risk of retinopathy of prematurity
             if df.at[child_id, 'nb_early_preterm'] or df.at[child_id, 'nb_late_preterm']:
                 if self.rng.random_sample() < params['prob_retinopathy_preterm']:
+
                     # For newborns with retinopathy we then use a weighted random draw to determine the severity of the
                     # retinopathy to map to DALY weights
                     random_draw = self.rng.choice(['mild', 'moderate', 'severe', 'blindness'],
@@ -1270,20 +1258,16 @@ class NewbornOutcomes(Module):
             # ===================================== HSI SCHEDULING ====================================================
             # If delivered in a health facility schedule immediate post-delivery care
             if m['delivery_setting'] != 'home_birth':
-                if m['delivery_setting'] == 'health_centre':
-                    f_level = '1a'
-                elif m['delivery_setting'] == 'hospital':
-                    f_level = self.rng.choice(['1a', '1b'])
 
-                event = HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(
-                    self, person_id=child_id, facility_level_of_this_hsi=f_level)
-                self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0,
-                                                                    topen=self.sim.date,
-                                                                    tclose=self.sim.date + DateOffset(days=1))
-
-                # Followed by a full postnatal check up
+                # Check if PNC will occur
                 if (self.rng.random_sample() < params['prob_pnc_check_newborn']) or (m['pnc_twin_one'] != 'none'):
                     self.schedule_pnc(child_id)
+
+                # Apply effect of resus for those who both required and received this intervention
+                self.apply_effect_of_neonatal_resus(child_id)
+
+                if not nci[child_id]['will_receive_pnc'] == 'early':
+                    self.set_death_status(child_id)
 
             # If delivered at home, determine if a postnatal check will be sought for this newborn- with the probability
             # being higher if complications have occurred
@@ -1292,7 +1276,7 @@ class NewbornOutcomes(Module):
                 if df.at[child_id, 'nb_early_onset_neonatal_sepsis'] or \
                     (df.at[child_id, 'nb_encephalopathy'] != 'none') or \
                     df.at[child_id, 'nb_early_preterm'] or \
-                        df.at[child_id, 'nb_late_preterm']:
+                   df.at[child_id, 'nb_late_preterm']:
 
                     care_seeking = params['prob_care_seeking_for_complication']
 
@@ -1305,13 +1289,14 @@ class NewbornOutcomes(Module):
 
                 # If this child will not receive any early care following delivery we determine if they will die
                 # following any complications immediately after birth
-                if nci[child_id]['will_receive_pnc'] != 'early':
+                if not nci[child_id]['will_receive_pnc'] == 'early':
                     self.set_death_status(child_id)
 
         # Finally we call the following functions to conduct logging/update variables related to pregnancy
-        if not df.at[mother_id, 'ps_multiple_pregnancy'] or \
+        if not df.at[mother_id, 'ps_multiple_pregnancy'] or\
             (df.at[mother_id, 'ps_multiple_pregnancy'] and (m['twin_count'] == 2)) or \
-                (df.at[mother_id, 'ps_multiple_pregnancy'] and m['single_twin_still_birth']):
+           (df.at[mother_id, 'ps_multiple_pregnancy'] and m['single_twin_still_birth']):
+
             self.sim.modules['PregnancySupervisor'].further_on_birth_pregnancy_supervisor(mother_id)
             self.sim.modules['PostnatalSupervisor'].further_on_birth_postnatal_supervisor(mother_id)
             self.sim.modules['CareOfWomenDuringPregnancy'].further_on_birth_care_of_women_in_pregnancy(mother_id)
@@ -1332,8 +1317,8 @@ class NewbornOutcomes(Module):
 
         # Disability properties are mapped to DALY weights and stored for the health burden module
         health_values_1 = df.loc[df.is_alive, 'nb_retinopathy_prem'].map(
-            {'none': 0, 'mild': p['mild_vision_rptb'], 'moderate': p['moderate_vision_rptb'],
-             'severe': p['severe_vision_rptb'], 'blindness': p['blindness_rptb']})
+                    {'none': 0, 'mild': p['mild_vision_rptb'], 'moderate': p['moderate_vision_rptb'],
+                     'severe': p['severe_vision_rptb'], 'blindness': p['blindness_rptb']})
         health_values_1.name = 'Retinopathy of Prematurity'
         health_values_1 = pd.to_numeric(health_values_1)
 
@@ -1356,7 +1341,7 @@ class NewbornOutcomes(Module):
         health_values_4 = pd.to_numeric(health_values_4)
 
         health_values_df = pd.concat([health_values_1.loc[df.is_alive], health_values_2.loc[df.is_alive],
-                                      health_values_3.loc[df.is_alive], health_values_4.loc[df.is_alive]], axis=1)
+                                     health_values_3.loc[df.is_alive], health_values_4.loc[df.is_alive]], axis=1)
 
         scaling_factor = (health_values_df.sum(axis=1).clip(lower=0, upper=1) /
                           health_values_df.sum(axis=1)).fillna(1.0)
@@ -1364,23 +1349,6 @@ class NewbornOutcomes(Module):
         health_values_df = health_values_df.multiply(scaling_factor, axis=0)
 
         return health_values_df
-
-    def run_if_care_of_the_newborn_by_skilled_attendant_at_birth_cant_run(self, hsi_event):
-        """
-        This function is called by HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth if the HSI is unable to
-        run on the date it has been scheduled for. Risk of death is applied to newborns as this would have been applied
-         within the event
-        :param hsi_event: HSI event in which the function has been called:
-        """
-        person_id = hsi_event.target
-        nci = self.newborn_care_info
-
-        logger.debug(key='message', data=f'NewbornOutcomes_CareOfTheNewbornBySkilledAttendant did not run for '
-                                         f'{person_id}')
-
-        if person_id in nci:
-            if not nci[person_id]['will_receive_pnc'] == 'early':
-                self.set_death_status(person_id)
 
     def run_if_care_of_the_receives_postnatal_check_cant_run(self, hsi_event):
         """
@@ -1395,59 +1363,6 @@ class NewbornOutcomes(Module):
                                          f'{person_id}')
         if person_id in nci:
             self.set_death_status(person_id)
-
-
-class HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth. It is scheduled by on_birth for any newborns
-    who were delivered in a health facility. Currently it applies the effect of interventions that would reasonably be
-    delivered as part of the process of birth (i.e. resuscitation of a flat newborn) but is not a full postnatal
-    check
-    """
-
-    def __init__(self, module, person_id, facility_level_of_this_hsi):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, NewbornOutcomes)
-
-        self.TREATMENT_ID = 'DeliveryCare_Neonatal'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-        self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 1})
-
-    def apply(self, person_id, squeeze_factor):
-        nci = self.module.newborn_care_info
-        df = self.sim.population.props
-        params = self.module.current_parameters
-
-        # Run some checks on the individual
-        if (not self.sim.date == df.at[person_id, 'date_of_birth'] or
-            df.at[person_id, 'nb_death_after_birth'] or
-                nci[person_id]['delivery_setting'] == 'home_birth'):
-            logger.info(key='error', data=f'Child {person_id} arrived at CareOfTheNewbornBySkilledAttendantAtBirth '
-                                          f'when they shouldnt have')
-            return
-
-        if not df.at[person_id, 'is_alive']:
-            return
-
-        # Check for delay due to high squeeze
-        if squeeze_factor > params['squeeze_threshold_for_delay_three_nb_care']:
-            nci[person_id]['third_delay'] = True
-
-        self.module.assessment_and_initiation_of_neonatal_resus(self)
-
-        if not nci[person_id]['will_receive_pnc'] == 'early':
-            self.module.set_death_status(person_id)
-
-    def never_ran(self):
-        self.module.run_if_care_of_the_newborn_by_skilled_attendant_at_birth_cant_run(self)
-
-    def did_not_run(self):
-        self.module.run_if_care_of_the_newborn_by_skilled_attendant_at_birth_cant_run(self)
-        return False
-
-    def not_available(self):
-        self.module.run_if_care_of_the_newborn_by_skilled_attendant_at_birth_cant_run(self)
 
 
 class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
@@ -1475,7 +1390,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
             return
 
         if (nci[person_id]['will_receive_pnc'] == 'early') and not nci[person_id]['passed_through_week_one']:
-            if not self.sim.date < (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2)):
+            if not self.sim.date <= (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2)):
                 logger.info(key='error', data=f'Child {person_id} arrived at early PNC too late')
 
             if not df.at[person_id, 'nb_pnc_check'] == 0:
@@ -1516,11 +1431,12 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
 
         # Surviving neonates with complications on day 1 are admitted to the inpatient event which lives in the
         # Postnatal Supervisor module
-        if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or (df.at[person_id, 'nb_encephalopathy'] != 'none') \
-            or df.at[person_id, 'nb_early_preterm'] or df.at[person_id, 'nb_late_preterm'] or \
-                df.at[person_id, 'nb_kangaroo_mother_care']:
+        if df.at[person_id, 'nb_early_onset_neonatal_sepsis'] or (df.at[person_id, 'nb_encephalopathy'] != 'none')\
+            or df.at[person_id, 'nb_early_preterm'] or df.at[person_id, 'nb_late_preterm'] or\
+           df.at[person_id, 'nb_kangaroo_mother_care']:
+
             event = HSI_NewbornOutcomes_NeonatalWardInpatientCare(
-                self.module, person_id=person_id)
+                    self.module, person_id=person_id)
             self.sim.modules['HealthSystem'].schedule_hsi_event(event, priority=0, topen=self.sim.date, tclose=None)
 
     def never_ran(self):
@@ -1557,6 +1473,7 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
 
     def apply(self, person_id, squeeze_factor):
+
         logger.debug(key='message', data='HSI_PostnatalSupervisor_NeonatalWardInpatientCare now running to capture '
                                          'inpatient time for an unwell newborn')
 

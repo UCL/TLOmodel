@@ -258,19 +258,19 @@ class Schisto(Module):
                             'prob_sent_to_lab_test_adults',
                             'PZQ_efficacy',
                             ):
-            parameters[_param_name] = param_list[_param_name]
+            parameters[_param_name] = float(param_list[_param_name])
 
         # MDA coverage - historic
         historical_mda = workbook['MDA_historical_Coverage'].set_index(['District', 'Year'])[
             ['Coverage PSAC', 'Coverage SAC', 'Coverage Adults']]
         historical_mda.columns = historical_mda.columns.str.replace('Coverage ', '')
-        parameters['MDA_coverage_historical'] = historical_mda
+        parameters['MDA_coverage_historical'] = historical_mda.astype(float)
 
         # MDA coverage - prognosed
         prognosed_mda = workbook['MDA_prognosed_Coverage'].set_index(['District', 'Frequency'])[
             ['Coverage PSAC', 'Coverage SAC', 'Coverage Adults']]
         prognosed_mda.columns = prognosed_mda.columns.str.replace('Coverage ', '')
-        parameters['MDA_coverage_prognosed'] = prognosed_mda
+        parameters['MDA_coverage_prognosed'] = prognosed_mda.astype(float)
 
         return parameters
 
@@ -567,7 +567,9 @@ class SchistoSpecies:
         #  person has two infections causing 'High-infection' and one is reduced below 'High-infection', symptoms will
         #  persist as if the person still had two causes of 'High-infection'. The symptoms would not be removed until
         #  both the aggregate worm burden of both species is reduced.
-        cols_of_infection_status_for_other_species = set(cols_of_infection_status) - {prop('infection_status')}
+        cols_of_infection_status_for_other_species = [
+            col for col in cols_of_infection_status if col != prop('infection_status')
+        ]
         high_infection_any_other_species = (
             df.loc[idx, cols_of_infection_status_for_other_species] == 'High-infection').any(axis=1)
         no_longer_high_infection = idx[

@@ -4,16 +4,18 @@ graft tests
 graft requirements
 
 include README.rst
-include .bumpversion.cfg
-include .coveragerc
 include tox.ini
 include tlo.example.conf
+include CITATION.cff
+include LICENSE.txt
+include contributors.yaml
 
 exclude .editorconfig
 recursive-exclude .ci *
 recursive-exclude deploy *
 recursive-exclude outputs *
 recursive-exclude resources *
+recursive-exclude profiling_results *
 
 # some files inside of docs are generated
 recursive-exclude docs/reference tlo.*.rst
@@ -21,5 +23,6 @@ exclude docs/reference/tlo.rst
 exclude docs/reference/modules.rst
 exclude docs/_*.rst
 exclude docs/hsi_events.csv
+exclude docs/_contributors_list.html
 
 global-exclude *.py[cod] __pycache__ *.so *.dylib .ipynb_checkpoints/** *~

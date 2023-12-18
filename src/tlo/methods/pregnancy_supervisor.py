@@ -3,7 +3,18 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging, util
+from tlo import (
+    DAYS_IN_MONTH,
+    DAYS_IN_YEAR,
+    Date,
+    DateOffset,
+    Module,
+    Parameter,
+    Property,
+    Types,
+    logging,
+    util,
+)
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, labour, pregnancy_helper_functions, pregnancy_supervisor_lm
@@ -218,7 +229,7 @@ class PregnancySupervisor(Module):
         'rr_preterm_labour_multiple_pregnancy': Parameter(
             Types.LIST, 'relative risk of early labour onset in women pregnant with twins'),
 
-        # ANTENATAL STILLBIRTH
+        # ANTENATAL STILLBIRTH...
         'prob_still_birth_per_month': Parameter(
             Types.LIST, 'underlying risk of stillbirth per month without the impact of risk factors'),
         'rr_still_birth_ga_41': Parameter(
@@ -370,21 +381,21 @@ class PregnancySupervisor(Module):
     }
 
     PROPERTIES = {
-        'ps_gestational_age_in_weeks': Property(Types.REAL, 'current gestational age, in weeks, of a womans '
+        'ps_gestational_age_in_weeks': Property(Types.REAL, 'current gestational age, in weeks, of a woman '
                                                             'pregnancy'),
         'ps_date_of_anc1': Property(Types.DATE, 'Date first ANC visit is scheduled for'),
-        'ps_ectopic_pregnancy': Property(Types.CATEGORICAL, 'Whether a womans is experiencing ectopic pregnancy and'
+        'ps_ectopic_pregnancy': Property(Types.CATEGORICAL, 'Whether a woman is experiencing ectopic pregnancy and'
                                                             ' its current state',
                                          categories=['none', 'not_ruptured', 'ruptured']),
-        'ps_multiple_pregnancy': Property(Types.BOOL, 'Whether a womans is pregnant with multiple fetuses'),
-        'ps_placenta_praevia': Property(Types.BOOL, 'Whether a womans pregnancy will be complicated by placenta'
+        'ps_multiple_pregnancy': Property(Types.BOOL, 'Whether a woman is pregnant with multiple fetuses'),
+        'ps_placenta_praevia': Property(Types.BOOL, 'Whether a woman pregnancy will be complicated by placenta'
                                                     'praevia'),
-        'ps_syphilis': Property(Types.BOOL, 'Whether a womans has syphilis during pregnancy'),
+        'ps_syphilis': Property(Types.BOOL, 'Whether a woman has syphilis during pregnancy'),
         'ps_anaemia_in_pregnancy': Property(Types.CATEGORICAL, 'Whether a woman has anaemia in pregnancy and its '
                                                                'severity',
                                             categories=['none', 'mild', 'moderate', 'severe']),
 
-        'ps_anc4': Property(Types.BOOL, 'Whether this womans is predicted to attend 4 or more antenatal care visits '
+        'ps_anc4': Property(Types.BOOL, 'Whether this woman is predicted to attend 4 or more antenatal care visits '
                                         'during her pregnancy'),
         'ps_abortion_complications': Property(Types.INT, 'Bitset column holding types of abortion complication'),
         'ps_prev_spont_abortion': Property(Types.BOOL, 'Whether this woman has had any previous pregnancies end in '
@@ -402,13 +413,13 @@ class PregnancySupervisor(Module):
         'ps_prev_gest_diab': Property(Types.BOOL, 'whether this woman has ever suffered from gestational diabetes '
                                                   'during a previous pregnancy'),
         'ps_placental_abruption': Property(Types.BOOL, 'Whether this woman is experiencing placental abruption'),
-        'ps_antepartum_haemorrhage': Property(Types.CATEGORICAL, 'severity of this womans antepartum haemorrhage',
+        'ps_antepartum_haemorrhage': Property(Types.CATEGORICAL, 'severity of this woman antepartum haemorrhage',
                                               categories=['none', 'mild_moderate', 'severe']),
         'ps_premature_rupture_of_membranes': Property(Types.BOOL, 'whether this woman has experience rupture of '
                                                                   'membranes before the onset of labour. If this is '
                                                                   '<37 weeks from gestation the woman has preterm '
                                                                   'premature rupture of membranes'),
-        'ps_chorioamnionitis': Property(Types.BOOL, 'Whether a womans is experiencing chorioamnionitis'),
+        'ps_chorioamnionitis': Property(Types.BOOL, 'Whether a woman is experiencing chorioamnionitis'),
         'ps_emergency_event': Property(Types.BOOL, 'signifies a woman in undergoing an acute emergency event in her '
                                                    'pregnancy- used to consolidated care seeking in the instance of '
                                                    'multiple complications')
@@ -530,7 +541,7 @@ class PregnancySupervisor(Module):
             'ectopic_pregnancy_death': LinearModel.custom(pregnancy_supervisor_lm.ectopic_pregnancy_death,
                                                           parameters=params),
 
-            # This equation determines the monthly probability of a women experiencing a miscarriage prior to 28 weeks
+            # This equation determines the monthly probability of a woman experiencing a miscarriage prior to 28 weeks
             # gestation
             'spontaneous_abortion': LinearModel.custom(pregnancy_supervisor_lm.spontaneous_abortion, parameters=params),
 
@@ -545,7 +556,7 @@ class PregnancySupervisor(Module):
             # This equation determines the monthly probability of a woman determining anaemia during her pregnancy
             'maternal_anaemia': LinearModel.custom(pregnancy_supervisor_lm.maternal_anaemia, module=self),
 
-            # This equation determines the monthly probability of a women going into labour before reaching term
+            # This equation determines the monthly probability of a woman going into labour before reaching term
             # gestation (i.e. 37 weeks or more)
             'early_onset_labour': LinearModel.custom(pregnancy_supervisor_lm.preterm_labour, module=self),
 
@@ -557,20 +568,20 @@ class PregnancySupervisor(Module):
             # pregnancy which is a strong predictor of antenatal bleeding
             'placental_abruption': LinearModel.custom(pregnancy_supervisor_lm.placental_abruption, parameters=params),
 
-            # This equation determines the monthly probability of a women developing antepartum haemorrhage. Haemorrhage
+            # This equation determines the monthly probability of a woman developing antepartum haemorrhage. Haemorrhage
             # may only occur in the presence of either praevia or abruption
             'antepartum_haem': LinearModel.custom(pregnancy_supervisor_lm.antepartum_haem, parameters=params),
 
-            # This equation determines the monthly probability of a women developing gestational diabetes
+            # This equation determines the monthly probability of a woman developing gestational diabetes
             'gest_diab': LinearModel.custom(pregnancy_supervisor_lm.gest_diab, parameters=params),
 
-            # This equation determines the monthly probability of a women developing gestational hypertension
+            # This equation determines the monthly probability of a woman developing gestational hypertension
             'gest_htn': LinearModel.custom(pregnancy_supervisor_lm.gest_htn, parameters=params),
 
-            # This equation determines the monthly probability of a women developing mild pre-eclampsia
+            # This equation determines the monthly probability of a woman developing mild pre-eclampsia
             'pre_eclampsia': LinearModel.custom(pregnancy_supervisor_lm.pre_eclampsia, module=self),
 
-            # This equation determines the monthly probability of a women experiencing an antenatal stillbirth,
+            # This equation determines the monthly probability of a woman experiencing an antenatal stillbirth,
             # pregnancy loss following 28 weeks gestation
             'antenatal_stillbirth': LinearModel.custom(pregnancy_supervisor_lm.antenatal_stillbirth, module=self),
         }
@@ -631,7 +642,7 @@ class PregnancySupervisor(Module):
 
         if df.at[mother_id, 'is_alive']:
 
-            # We reset all womans gestational age when they deliver as they are no longer pregnant
+            # We reset all women gestational age when they deliver as they are no longer pregnant
             df.at[mother_id, 'ps_gestational_age_in_weeks'] = 0
             df.at[mother_id, 'ps_date_of_anc1'] = pd.NaT
 
@@ -668,7 +679,6 @@ class PregnancySupervisor(Module):
 
         logger.debug(key='message', data='This is PregnancySupervisor reporting my health values')
         monthly_daly = dict()
-        days_per_year = 365.25
 
         # First we define a function that calculates disability associated with 'acute' complications of pregnancy
         def acute_daly_calculation(person, complication):
@@ -700,7 +710,7 @@ class PregnancySupervisor(Module):
             # months disability
             if pd.isnull(mni[person][f'{complication}_resolution']):
                 if mni[person][f'{complication}_onset'] < (self.sim.date - DateOffset(months=1)):
-                    weight = (p[f'{complication}'] / days_per_year) * (days_per_year / 12)
+                    weight = (p[f'{complication}'] / DAYS_IN_YEAR) * (DAYS_IN_YEAR / 12)
                     monthly_daly[person] += weight
 
                 # Otherwise, if the complication started this month she gets a daly weight relative to the number of
@@ -709,7 +719,7 @@ class PregnancySupervisor(Module):
                      f'{complication}_onset'] <= self.sim.date:
                     days_since_onset = pd.Timedelta((self.sim.date - mni[person][f'{complication}_onset']),
                                                     unit='d')
-                    daly_weight = days_since_onset.days * (p[f'{complication}'] / days_per_year)
+                    daly_weight = days_since_onset.days * (p[f'{complication}'] / DAYS_IN_YEAR)
 
                     monthly_daly[person] += daly_weight
 
@@ -726,15 +736,14 @@ class PregnancySupervisor(Module):
                         return
 
                     # Calculate daily weight and how many days this woman hasnt had the complication
-                    daily_weight = p[f'{complication}'] / days_per_year
+                    daily_weight = p[f'{complication}'] / DAYS_IN_YEAR
                     days_without_complication = pd.Timedelta((
                         mni[person][f'{complication}_onset'] - mni[person][f'{complication}_resolution']),
                         unit='d')
 
                     # Use the average days in a month to calculate how many days shes had the complication this
                     # month
-                    avg_days_in_month = days_per_year / 12
-                    days_with_comp = avg_days_in_month - days_without_complication.days
+                    days_with_comp = DAYS_IN_MONTH - days_without_complication.days
 
                     monthly_daly[person] += daily_weight * days_with_comp
 
@@ -757,7 +766,7 @@ class PregnancySupervisor(Module):
                                                                 unit='d')
                     mid_way_calc = (self.sim.date - DateOffset(months=1)) + days_free_of_comp_this_month
                     days_with_comp_this_month = pd.Timedelta((self.sim.date - mid_way_calc), unit='d')
-                    daly_weight = days_with_comp_this_month.days * (p[f'{complication}'] / days_per_year)
+                    daly_weight = days_with_comp_this_month.days * (p[f'{complication}'] / DAYS_IN_YEAR)
                     monthly_daly[person] += daly_weight
 
                     if not monthly_daly[person] >= 0:
@@ -1503,7 +1512,7 @@ class PregnancySupervisor(Module):
         # who are post term)
         non_care_seekers = df.loc[care_seekers.loc[~care_seekers].index]
         still_birth_risk = self.ps_linear_models['antenatal_stillbirth'].predict(non_care_seekers)
-        weeks_per_month = (365.25/12) / 7
+        weeks_per_month = (DAYS_IN_YEAR / 12) / 7
         weekly_risk = still_birth_risk / weeks_per_month
         still_birth = self.rng.random_sample(len(weekly_risk)) < weekly_risk
 
@@ -1532,12 +1541,10 @@ class PregnancySupervisor(Module):
 
             # We assume women will seek care via HSI_GenericEmergencyFirstApptAtFacilityLevel1 and will be admitted for
             # care in CareOfWomenDuringPregnancy module
-            from tlo.methods.hsi_generic_first_appts import (
-                HSI_GenericEmergencyFirstApptAtFacilityLevel1,
-            )
+            from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
 
-            event = HSI_GenericEmergencyFirstApptAtFacilityLevel1(self.sim.modules['PregnancySupervisor'],
-                                                                  person_id=individual_id)
+            event = HSI_GenericEmergencyFirstAppt(self.sim.modules['PregnancySupervisor'],
+                                                  person_id=individual_id)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(event,
                                                                 priority=0,
@@ -1843,13 +1850,13 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
                 pregnancy_helper_functions.check_if_delayed_careseeking(self.module, person)
 
                 from tlo.methods.care_of_women_during_pregnancy import (
-                    HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment,
+                    HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare,
                 )
 
-                acute_pregnancy_hsi = HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(
+                inpatient_pregnancy_hsi = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
                     self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person)
 
-                self.sim.modules['HealthSystem'].schedule_hsi_event(acute_pregnancy_hsi, priority=0,
+                self.sim.modules['HealthSystem'].schedule_hsi_event(inpatient_pregnancy_hsi, priority=0,
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=1))
             else:
@@ -2138,19 +2145,13 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
                 params['prob_anc1_months_2_to_4'] = [1.0, 0, 0]
                 params['prob_late_initiation_anc4'] = 0
 
-                # Finally, remove squeeze factor threshold for ANC attendance to ensure that higher levels of ANC
-                # coverage can  be reached with current logic
-                self.sim.modules['CareOfWomenDuringPregnancy'].current_parameters['squeeze_factor_threshold_anc'] = \
-                    10_000
-
             if params['alternative_anc_quality']:
 
                 # Override the availability of IPTp consumables with the set level of coverage
                 if 'Malaria' in self.sim.modules:
                     iptp = self.sim.modules['Malaria'].item_codes_for_consumables_required['malaria_iptp']
-                    ic = list(iptp.keys())[0]
                     self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                        {ic: params['anc_availability_probability']})
+                        {iptp: params['anc_availability_probability']})
 
                 # And then override the quality parameters in the model
                 for parameter in ['prob_intervention_delivered_urine_ds', 'prob_intervention_delivered_bp',
