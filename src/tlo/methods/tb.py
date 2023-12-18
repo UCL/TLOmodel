@@ -383,6 +383,10 @@ class Tb(Module):
             Types.DATA_FRAME,
             "list of parameters and values changed in scenario analysis",
         ),
+        "tb_healthseekingbehaviour_cap": Parameter(
+            Types.DATA_FRAME,
+            "number of repeat visits assumed for healthcare services",
+        ),
     }
 
     def read_parameters(self, data_folder):

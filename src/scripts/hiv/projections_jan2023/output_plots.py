@@ -712,7 +712,7 @@ plt.errorbar(
     ecolor="g",
 )
 plt.ylim((20, 100))
-plt.savefig(outputpath / ("HIV_art_cascade_adults" + datestamp + ".pdf"), format='pdf')
+# plt.savefig(outputpath / ("HIV_art_cascade_adults" + datestamp + ".pdf"), format='pdf')
 
 plt.show()
 
@@ -787,7 +787,7 @@ blue_cross = mlines.Line2D(
 )
 # orange_ci = mlines.Line2D([], [], color="C1", marker=".", markersize=15, label="DHS")
 plt.legend(handles=[red_line, green_cross, blue_cross])
-plt.savefig(outputpath / ("Proportion_men_circumcised" + datestamp + ".png"), format='png')
+# plt.savefig(outputpath / ("Proportion_men_circumcised" + datestamp + ".png"), format='png')
 plt.show()
 
 

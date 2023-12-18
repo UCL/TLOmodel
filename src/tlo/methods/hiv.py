@@ -372,7 +372,7 @@ class Hiv(Module):
         ),
         "hiv_healthseekingbehaviour_cap": Parameter(
             Types.REAL,
-            "number of repeat visits for healthcare assumed",
+            "number of repeat visits assumed for healthcare services",
         ),
     }
 
