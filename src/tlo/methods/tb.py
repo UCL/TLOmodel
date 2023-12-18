@@ -1625,7 +1625,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
                     months=int(rng.uniform(low=1, high=6))
                 )
                 self.sim.schedule_event(
-                    event=TbDeathEvent(person_id=person_id, module=self.module, cause="AIDS_TB"),
+                    event=TbDecideDeathEvent(person_id=person_id, module=self.module, cause="AIDS_TB"),
                     date=date_of_tb_death,
                 )
 
@@ -1640,7 +1640,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
                 months=int(rng.uniform(low=1, high=6))
             )
             self.sim.schedule_event(
-                event=TbDeathEvent(person_id=person_id, module=self.module, cause="TB"),
+                event=TbDecideDeathEvent(person_id=person_id, module=self.module, cause="TB"),
                 date=date_of_tb_death,
             )
 
@@ -2555,6 +2555,41 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
                     )
 
 
+class HSI_Tb_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
+    """
+    this is a hospital stay for terminally-ill patients with TB
+    it does not affect disability weight or probability of death
+    no consumables are logged but health system capacity (HR) is allocated
+    there are no consequences if hospital bed is not available as person has scheduled death
+    already within 2 weeks
+    """
+
+    def __init__(self, module, person_id, beddays):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Tb)
+
+        self.TREATMENT_ID = 'Tb_PalliativeCare'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.ACCEPTED_FACILITY_LEVEL = '2'
+
+        self.beddays = beddays
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint(
+            {'general_bed': self.beddays}) if self.beddays else self.make_beddays_footprint({'general_bed': 7.5})
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        hs = self.sim.modules["HealthSystem"]
+
+        if not df.at[person_id, 'is_alive']:
+            return hs.get_blank_appt_footprint()
+
+        if df.at[person_id, 'hv_art'] == 'virally_suppressed':
+            return hs.get_blank_appt_footprint()
+
+        logger.debug(key='message',
+                     data=f'HSI_Tb_EndOfLifeCare: inpatient admission for {person_id}')
+
+
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
     """Helper event that is used to 'decide' if someone on IPT should continue or end
     This event is scheduled by 'HSI_Tb_Start_or_Continue_Ipt' after 6 months
@@ -2595,6 +2630,53 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------
 #   Deaths
 # ---------------------------------------------------------------------------
+class TbDecideDeathEvent(Event, IndividualScopeEventMixin):
+    """
+    The scheduled hospitalisation and subsequent death for a tb case
+    check whether death should occur using a linear model
+    will depend on treatment status, smear status and age
+    then schedule a hospital stay prior to that death
+    hospital stay will not affect outcomes
+    """
+
+    def __init__(self, module, person_id, cause):
+        super().__init__(module, person_id=person_id)
+        self.cause = cause
+
+    def apply(self, person_id):
+        df = self.sim.population.props
+
+        if not df.at[person_id, "is_alive"]:
+            return
+
+        if not df.at[person_id, "tb_inf"] == "active":
+            return
+
+        logger.debug(
+            key="message",
+            data=f"TbDecideDeathEvent: checking whether death should occur for person {person_id}",
+        )
+
+        # use linear model to determine whether this person will die:
+        rng = self.module.rng
+        result = self.module.lm["death_rate"].predict(df.loc[[person_id]], rng=rng)
+
+        if result:
+            # schedule hospital stay for this person
+            # schedule hospital stay
+            beddays = self.module.rng.randint(low=5, high=10)
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Tb_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Tb"], beddays=beddays),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+            )
+
+            # schedule death for this person after hospital stay
+            self.sim.schedule_event(
+                event=TbDeathEvent(person_id=person_id, module=self.module, cause="TB"),
+                date=self.sim.date + pd.DateOffset(days=beddays),
+            )
 
 
 class TbDeathEvent(Event, IndividualScopeEventMixin):
@@ -2622,21 +2704,13 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
             data=f"TbDeathEvent: checking whether death should occur for person {person_id}",
         )
 
-        # use linear model to determine whether this person will die:
-        rng = self.module.rng
-        result = self.module.lm["death_rate"].predict(df.loc[[person_id]], rng=rng)
 
-        if result:
-            logger.debug(
-                key="message",
-                data=f"TbDeathEvent: cause this death for person {person_id}",
-            )
 
-            self.sim.modules["Demography"].do_death(
-                individual_id=person_id,
-                cause=self.cause,
-                originating_module=self.module,
-            )
+        self.sim.modules["Demography"].do_death(
+            individual_id=person_id,
+            cause=self.cause,
+            originating_module=self.module,
+        )
 
 
 # ---------------------------------------------------------------------------
