@@ -540,6 +540,15 @@ class HealthSystem(Module):
                         " the queueing system under different policies, where the lower the number the higher"
                         " the priority, and on which categories of individuals classify for fast-tracking "
                         " for specific treatments"),
+                        
+        'absenteeism_table': Parameter(
+            Types.DICT, "Factors by which capabilities of medical officer categories at different levels will be"
+                              "reduced to account for issues of absenteeism in the workforce."),
+                              
+        'absenteeism_mode': Parameter(
+            Types.STRING, "Mode of absenteeism considered. Options are default (capabilities are scaled by a "
+                          "constaint factor of 1), data (factors informed by survey data), and custom (user"
+                          "can freely set these factors as parameters in the analysis)."),
 
         'tclose_overwrite': Parameter(
             Types.INT, "Decide whether to overwrite tclose variables assigned by disease modules"),
@@ -793,6 +802,11 @@ class HealthSystem(Module):
         self.parameters['priority_rank'] = pd.read_excel(path_to_resourcefiles_for_healthsystem / 'priority_policies' /
                                                          'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx',
                                                          sheet_name=None)
+                                                         
+        self.parameters['absenteeism_table'] = pd.read_excel(path_to_resourcefiles_for_healthsystem / 'absenteeism' /
+                                                         'ResourceFile_Absenteeism.xlsx',
+                                                         sheet_name=None)
+                                                         
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
@@ -833,6 +847,12 @@ class HealthSystem(Module):
 
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
+        
+        # Ensure the mode of absenteeism to be considered in included in the tables loaded
+        assert self.parameters['absenteeism_mode'] in self.parameters['absenteeism_table']
+        
+        # Scale
+        
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -931,6 +951,8 @@ class HealthSystem(Module):
 
     def process_human_resources_files(self, use_funded_or_actual_staffing: str):
         """Create the data-structures needed from the information read into the parameters."""
+
+
 
         # * Define Facility Levels
         self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
@@ -1041,6 +1063,17 @@ class HealthSystem(Module):
 
         (This is so that its easier to track where demands are being placed where there is no capacity)
         """
+        
+        # Rescale assumed Daily Capabilities to account for absenteeism
+        absenteeism_factor = self.parameters['absenteeism_table'][self.parameters['absenteeism_mode']]
+        absenteeism_factor = absenteeism_factor.set_index('Officer_Category')
+        
+        level_conversion = { "1a" : "L1a_Av_Mins_Per_Day", "1b":"L1b_Av_Mins_Per_Day",
+                             "2":"L2_Av_Mins_Per_Day", "0":"L0_Av_Mins_Per_Day", "3": "L3_Av_Mins_Per_Day",
+                             "4": "L4_Av_Mins_Per_Day", "5": "L5_Av_Mins_Per_Day"}
+
+        self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']['Total_Mins_Per_Day'] *= self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}'].apply(lambda row: absenteeism_factor.loc[row['Officer_Category'],
+                                                                                   level_conversion[row['Facility_Level']]], axis=1)
 
         # Get the capabilities data imported (according to the specified underlying assumptions).
         capabilities = pool_capabilities_at_levels_1b_and_2(
