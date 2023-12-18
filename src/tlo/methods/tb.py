@@ -2228,7 +2228,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         # if treatment not available, return for treatment start in 1 week
         # cap repeated visits at 5
         else:
-            if self.number_of_occurrences <= 5:
+            if self.number_of_occurrences <= self.module.parameters["tb_healthseekingbehaviour_cap"]:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=self,
                     topen=self.sim.date + DateOffset(weeks=1),
