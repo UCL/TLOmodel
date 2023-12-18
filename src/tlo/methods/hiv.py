@@ -1079,7 +1079,7 @@ class Hiv(Module):
             # usually performed by care_of_women_during_pregnancy module
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
-                    self.rng.random_sample() < p["prob_hiv_test_at_anc_or_delivery"]):
+                self.rng.random_sample() < p["prob_hiv_test_at_anc_or_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=abs(mother_id),  # Pass mother's id, whether from true or direct birth
@@ -1172,7 +1172,7 @@ class Hiv(Module):
 
         if df.at[child_id, "hv_is_on_prep"]:
             monthly_prob_mtct_bf = monthly_prob_mtct_bf * (
-                    1 - params["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"])
+                1 - params["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"])
 
         if monthly_prob_mtct_bf > 0.0:
             months_to_infection = int(self.rng.exponential(1 / monthly_prob_mtct_bf))
@@ -2223,7 +2223,6 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
             self.counter_for_test_not_available += 1  # The current appointment is included in the count.
 
             if self.counter_for_test_not_available <= self.module.parameters["hiv_healthseekingbehaviour_cap"]:
-
                 # repeat appt for HIV test
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     HSI_Hiv_TestAndRefer(person_id=person_id, module=self.module, referred_from='HIV_test'),
@@ -2339,10 +2338,10 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
             )
 
         else:
-            if self.repeat_visits <= self.module.parameters["hiv_healthseekingbehaviour_cap"]:
-                # infant does not get NVP now but has repeat visit scheduled up to 5 times
-                df.at[person_id, "hv_is_on_prep"] = False
+            # infant does not get NVP now but has repeat visit scheduled up to 5 times
+            df.at[person_id, "hv_is_on_prep"] = False
 
+            if self.repeat_visits <= self.module.parameters["hiv_healthseekingbehaviour_cap"]:
                 self.repeat_visits += 1
 
                 # Schedule repeat visit for one week's time
@@ -2371,6 +2370,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Hiv_Prevention_Prep"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"PharmDispensing": 1, "VCTNegative": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.counter_for_drugs_not_available = 0
 
     def apply(self, person_id, squeeze_factor):
         """Start PrEP for this person; or continue them on PrEP for 3 more months"""
@@ -2415,6 +2415,20 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         else:
             # If PrEP is not available, the person will default and not be on PrEP
             df.at[person_id, "hv_is_on_prep"] = False
+
+            self.counter_for_drugs_not_available += 1  # The current appointment is included in the count.
+
+            if self.counter_for_drugs_not_available <= self.module.parameters["hiv_healthseekingbehaviour_cap"]:
+
+                # Schedule repeat visit for one week's time
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_StartOrContinueOnPrep(
+                        person_id=person_id,
+                        module=self.module),
+                    priority=1,
+                    topen=self.sim.date + pd.DateOffset(days=7),
+                    tclose=None,
+                )
 
     def never_ran(self):
         """This is called if this HSI was never run.
