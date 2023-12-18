@@ -2284,7 +2284,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
                 )
             else:
                 # schedule repeating appt when consumables not available
-                if self.number_of_occurrences <= 3:
+                if self.number_of_occurrences <= self.module.parameters["hiv_healthseekingbehaviour_cap"]:
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         self,
                         topen=self.sim.date + DateOffset(weeks=1),
