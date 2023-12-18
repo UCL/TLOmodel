@@ -370,7 +370,7 @@ class Hiv(Module):
             Types.REAL,
             "probability of death if aids and tb, person on treatment for tb",
         ),
-        "healthseekingbehaviour_cap": Parameter(
+        "hiv_healthseekingbehaviour_cap": Parameter(
             Types.REAL,
             "number of repeat visits for healthcare assumed",
         ),
@@ -2222,7 +2222,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
             # set cap for number of repeat tests
             self.counter_for_test_not_available += 1  # The current appointment is included in the count.
 
-            if self.counter_for_test_not_available <= self.module.parameters["healthseekingbehaviour_cap"]:
+            if self.counter_for_test_not_available <= self.module.parameters["hiv_healthseekingbehaviour_cap"]:
 
                 # repeat appt for HIV test
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2339,7 +2339,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
             )
 
         else:
-            if self.repeat_visits <= 4:
+            if self.repeat_visits <= self.module.parameters["hiv_healthseekingbehaviour_cap"]:
                 # infant does not get NVP now but has repeat visit scheduled up to 5 times
                 df.at[person_id, "hv_is_on_prep"] = False
 
