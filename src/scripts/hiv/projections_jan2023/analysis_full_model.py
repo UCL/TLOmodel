@@ -24,8 +24,8 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2012, 1, 1)
-popsize = 10
+end_date = Date(2023, 1, 1)
+popsize = 10_000
 scenario = 0
 
 # set up the log config
@@ -35,11 +35,11 @@ log_config = {
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
-        # "tlo.methods.hiv": logging.INFO,
-        # "tlo.methods.tb": logging.INFO,
-        # "tlo.methods.demography": logging.INFO,
+        "tlo.methods.hiv": logging.INFO,
+        "tlo.methods.tb": logging.INFO,
+        "tlo.methods.demography": logging.INFO,
         # "tlo.methods.healthsystem.summary": logging.INFO,
-        'tlo.methods.deviance_measure': logging.INFO,
+        # 'tlo.methods.deviance_measure': logging.INFO,
         "tlo.methods.labour.detail": logging.WARNING,  # this logger keeps outputting even when set to warning
     },
 }
@@ -65,7 +65,7 @@ sim.register(*fullmodel(
                          "capabilities_coefficient": 1.0},
     },
     ),
-    deviance_measure.Deviance(resourcefilepath=resourcefilepath),
+    # deviance_measure.Deviance(resourcefilepath=resourcefilepath),
 )
 
 # # set the scenario

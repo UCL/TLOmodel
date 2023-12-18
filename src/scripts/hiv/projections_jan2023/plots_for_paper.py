@@ -1971,7 +1971,7 @@ plt.tight_layout()
 
 plt.xlabel('Facility level')
 plt.ylabel('')
-plt.savefig(outputspath / "cons_availability.png", bbox_inches='tight')
+# plt.savefig(outputspath / "cons_availability.png", bbox_inches='tight')
 plt.show()
 
 
@@ -2029,7 +2029,7 @@ plt.tight_layout()
 
 plt.xlabel('Facility level')
 plt.ylabel('')
-plt.savefig(outputspath / "cons_availability_HIV.png", bbox_inches='tight')
+# plt.savefig(outputspath / "cons_availability_HIV.png", bbox_inches='tight')
 plt.show()
 
 

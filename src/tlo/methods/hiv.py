@@ -106,6 +106,10 @@ class Hiv(Module):
             "ART status of person, whether on ART or not; and whether viral load is suppressed or not if on ART.",
             categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"],
         ),
+        "hv_on_cotrimoxazole": Property(
+            Types.BOOL,
+            "Whether the person is currently taking and receiving a malaria-protective effect from cotrimoxazole",
+        ),
         "hv_is_on_prep": Property(
             Types.BOOL,
             "Whether the person is currently taking and receiving a protective effect from Pre-Exposure Prophylaxis.",
@@ -924,6 +928,15 @@ class Hiv(Module):
                 date=date_aids_death,
             )
 
+            # schedule hospital stay for end of life care if untreated
+            beddays = self.rng.randint(low=14, high=20)
+            date_admission = date_aids_death - pd.DateOffset(days=beddays)
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self, beddays=beddays),
+                priority=0,
+                topen=date_admission if (date_admission >= self.sim.date) else self.sim.date,
+            )
+
         # 5) (Optionally) Schedule the event to check the configuration of all properties
         if self.run_with_checks:
             sim.schedule_event(
@@ -1019,6 +1032,7 @@ class Hiv(Module):
         # --- Current status
         df.at[child_id, "hv_inf"] = False
         df.at[child_id, "hv_art"] = "not"
+        df.at[child_id, "hv_on_cotrimoxazole"] = False
         df.at[child_id, "hv_date_treated"] = pd.NaT
         df.at[child_id, "hv_is_on_prep"] = False
         df.at[child_id, "hv_behaviour_change"] = False
@@ -1169,10 +1183,6 @@ class Hiv(Module):
             monthly_prob_mtct_bf = params["monthly_prob_mtct_bf_treated"]
         else:
             monthly_prob_mtct_bf = params["monthly_prob_mtct_bf_untreated"]
-
-        if df.at[child_id, "hv_is_on_prep"]:
-            monthly_prob_mtct_bf = monthly_prob_mtct_bf * (
-                1 - params["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"])
 
         if monthly_prob_mtct_bf > 0.0:
             months_to_infection = int(self.rng.exponential(1 / monthly_prob_mtct_bf))
@@ -1354,6 +1364,7 @@ class Hiv(Module):
 
         # Set that the person is no longer on ART
         df.at[person_id, "hv_art"] = "not"
+        df.at[person_id, "hv_on_cotrimoxazole"] = "not"
 
     def per_capita_testing_rate(self):
         """This calculates the numbers of hiv tests performed in each time period.
@@ -1856,6 +1867,16 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
                     ),
                     date=date_of_aids_death,
                 )
+                # schedule hospital stay
+                beddays = self.sim.modules["Hiv"].rng.randint(low=14, high=20)
+                date_admission = date_of_aids_death - pd.DateOffset(days=beddays)
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Hiv"],
+                                                    beddays=beddays),
+                    priority=0,
+                    topen=date_admission if (date_admission > self.sim.date) else self.sim.date,
+                    tclose=date_of_aids_death
+                )
 
             else:
                 # cause is active TB
@@ -1864,6 +1885,16 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
                         person_id=person_id, module=self.sim.modules["Hiv"], cause=self.cause
                     ),
                     date=date_of_aids_death,
+                )
+                # schedule hospital stay
+                beddays = self.sim.modules["Hiv"].rng.randint(low=14, high=20)
+                date_admission = date_of_aids_death - pd.DateOffset(days=beddays)
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Hiv"],
+                                                    beddays=beddays),
+                    priority=0,
+                    topen=date_admission if (date_admission >= self.sim.date) else self.sim.date,
+                    tclose=date_of_aids_death
                 )
 
 
@@ -1958,6 +1989,16 @@ class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
                         cause="AIDS_non_TB"
                     ),
                     date=date_of_aids_death,
+                )
+                # schedule hospital stay
+                beddays = self.module.rng.randint(low=14, high=20)
+                date_admission = date_of_aids_death - pd.DateOffset(days=beddays)
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Hiv"],
+                                                    beddays=beddays),
+                    priority=0,
+                    topen=date_admission if (date_admission >= self.sim.date) else self.sim.date,
+                    tclose=date_of_aids_death
                 )
 
         # aids-tb and not on tb treatment
@@ -2580,6 +2621,10 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                     person_id=person_id, disease_module=self.module
                 )
 
+        # if cotrimoxazole is available
+        if list(drugs_available.values())[1]:
+            df.at[person_id, "hv_on_cotrimoxazole"] = True
+
         # Consider if TB treatment should start
         self.consider_tb(person_id)
 
@@ -2591,12 +2636,19 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
 
+        # default to person stopping cotrimoxazole
+        df.at[person_id, "hv_on_cotrimoxazole"] = False
+
         # Viral Load Monitoring
         # NB. This does not have a direct effect on outcomes for the person.
         _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
         # Check if drugs are available, and provide drugs:
         drugs_available = self.get_drugs(age_of_person=person["age_years"])
+
+        # if cotrimoxazole is available, update person's property
+        if list(drugs_available.values())[1]:
+            df.at[person_id, "hv_on_cotrimoxazole"] = True
 
         return drugs_available
 
@@ -2623,21 +2675,24 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: young child'],
                 optional_item_codes=self.module.item_codes_for_consumables_required[
-                    'First line ART regimen: young child: cotrimoxazole'])
+                    'First line ART regimen: young child: cotrimoxazole'],
+                return_individual_results=True)
 
         elif age_of_person <= p["ART_age_cutoff_older_child"]:
             # Formulation for older children
             drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: older child'],
                 optional_item_codes=self.module.item_codes_for_consumables_required[
-                    'First line ART regimen: older child: cotrimoxazole'])
+                    'First line ART regimen: older child: cotrimoxazole'],
+                return_individual_results=True)
 
         else:
             # Formulation for adults
             drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['First-line ART regimen: adult'],
                 optional_item_codes=self.module.item_codes_for_consumables_required[
-                    'First-line ART regimen: adult: cotrimoxazole'])
+                    'First-line ART regimen: adult: cotrimoxazole'],
+                return_individual_results=True)
 
         return drugs_available
 
@@ -2695,6 +2750,40 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         else:
             return self.make_appt_footprint({"EstNonCom": 1})  # Adult already on treatment
 
+
+class HSI_Hiv_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
+    """
+    this is a hospital stay for terminally-ill patients with AHD
+    it does not affect disability weight or probability of death
+    no consumables are logged but health system capacity (HR) is allocated
+    there are no consequences if hospital bed is not available as person has scheduled death
+    already within 2 weeks
+    """
+
+    def __init__(self, module, person_id, beddays):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Hiv)
+
+        self.TREATMENT_ID = 'Hiv_PalliativeCare'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.ACCEPTED_FACILITY_LEVEL = '2'
+
+        self.beddays = beddays
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint(
+            {'general_bed': self.beddays}) if self.beddays else self.make_beddays_footprint({'general_bed': 17})
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        hs = self.sim.modules["HealthSystem"]
+
+        if not df.at[person_id, 'is_alive']:
+            return hs.get_blank_appt_footprint()
+
+        if df.at[person_id, 'hv_art'] == 'virally_suppressed':
+            return hs.get_blank_appt_footprint()
+
+        logger.debug(key='message',
+                     data=f'HSI_Hiv_EndOfLifeCare: inpatient admission for {person_id}')
 
 # ---------------------------------------------------------------------------
 #   Logging

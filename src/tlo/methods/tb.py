@@ -384,7 +384,7 @@ class Tb(Module):
             "list of parameters and values changed in scenario analysis",
         ),
         "tb_healthseekingbehaviour_cap": Parameter(
-            Types.DATA_FRAME,
+            Types.REAL,
             "number of repeat visits assumed for healthcare services",
         ),
     }
@@ -1445,6 +1445,57 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
                     self.sim.modules['HealthSystem'], parameters=new_parameters),
                 self.sim.date)
 
+        # set all cons to available, reset only HIV tx to default
+        if scenario == 3:
+            new_parameters = {
+                'cons_availability': 'all',
+            }
+            self.sim.schedule_event(
+                HealthSystemChangeParameters(
+                    self.sim.modules['HealthSystem'], parameters=new_parameters),
+                self.sim.date)
+
+            # self.sim.modules['HealthSystem'].override_availability_of_consumables(
+            #     {item_code: updated_probability_of_being_available.})
+
+        # set all cons to available, reset only HIV prevention to default
+        if scenario == 4:
+            new_parameters = {
+                'cons_availability': 'all',
+            }
+            self.sim.schedule_event(
+                HealthSystemChangeParameters(
+                    self.sim.modules['HealthSystem'], parameters=new_parameters),
+                self.sim.date)
+
+            # self.sim.modules['HealthSystem'].override_availability_of_consumables(
+            #     {item_code: updated_probability_of_being_available.})
+
+        # set all cons to available, reset only TB tx to default
+        if scenario == 5:
+            new_parameters = {
+                'cons_availability': 'all',
+            }
+            self.sim.schedule_event(
+                HealthSystemChangeParameters(
+                    self.sim.modules['HealthSystem'], parameters=new_parameters),
+                self.sim.date)
+
+            # self.sim.modules['HealthSystem'].override_availability_of_consumables(
+            #     {item_code: updated_probability_of_being_available.})
+
+        # set all cons to available, reset only TB prevention to default
+        if scenario == 6:
+            new_parameters = {
+                'cons_availability': 'all',
+            }
+            self.sim.schedule_event(
+                HealthSystemChangeParameters(
+                    self.sim.modules['HealthSystem'], parameters=new_parameters),
+                self.sim.date)
+
+            # self.sim.modules['HealthSystem'].override_availability_of_consumables(
+            #     {item_code: updated_probability_of_being_available.})
 
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
@@ -2230,7 +2281,9 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         else:
             if self.number_of_occurrences <= self.module.parameters["tb_healthseekingbehaviour_cap"]:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=self,
+                    hsi_event=HSI_Tb_StartTreatment(
+                        person_id=person_id, module=self.module,
+                    ),
                     topen=self.sim.date + DateOffset(weeks=1),
                     tclose=None,
                     priority=0,
@@ -2492,8 +2545,8 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
                 )
 
             else:
-                # Reschedule this HSI to occur again, up to a 3 times in total
-                if self.number_of_occurrences < 3:
+                # Reschedule this HSI to occur again, up to a 5 times in total
+                if self.number_of_occurrences <= self.module.parameters["tb_healthseekingbehaviour_cap"]:
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         self,
                         topen=self.sim.date + pd.DateOffset(days=1),
