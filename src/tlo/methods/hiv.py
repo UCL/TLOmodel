@@ -370,6 +370,10 @@ class Hiv(Module):
             Types.REAL,
             "probability of death if aids and tb, person on treatment for tb",
         ),
+        "healthseekingbehaviour_cap": Parameter(
+            Types.REAL,
+            "number of repeat visits for healthcare assumed",
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -1075,7 +1079,7 @@ class Hiv(Module):
             # usually performed by care_of_women_during_pregnancy module
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
-                self.rng.random_sample() < p["prob_hiv_test_at_anc_or_delivery"]):
+                    self.rng.random_sample() < p["prob_hiv_test_at_anc_or_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=abs(mother_id),  # Pass mother's id, whether from true or direct birth
@@ -1086,7 +1090,7 @@ class Hiv(Module):
                     tclose=None,
                 )
 
-        # if mother known HIV+, schedule virological test for infant
+        # if mother known HIV+, schedule virological test for infant and give prep
         if mother.hv_diagnosed and df.at[child_id, "is_alive"]:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 hsi_event=HSI_Hiv_StartInfantProphylaxis(
@@ -2100,6 +2104,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Hiv_Test"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"VCTNegative": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.counter_for_test_not_available = 0
 
     def apply(self, person_id, squeeze_factor):
         """Do the testing and referring to other services"""
@@ -2214,13 +2219,18 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
             # Test was not possible, set blank footprint and schedule another test
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({"VCTNegative": 1})
 
-            # repeat appt for HIV test
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Hiv_TestAndRefer(person_id=person_id, module=self.module, referred_from='HIV_test'),
-                topen=self.sim.date + pd.DateOffset(months=1),
-                tclose=None,
-                priority=0,
-            )
+            # set cap for number of repeat tests
+            self.counter_for_test_not_available += 1  # The current appointment is included in the count.
+
+            if self.counter_for_test_not_available <= self.module.parameters["healthseekingbehaviour_cap"]:
+
+                # repeat appt for HIV test
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    HSI_Hiv_TestAndRefer(person_id=person_id, module=self.module, referred_from='HIV_test'),
+                    topen=self.sim.date + pd.DateOffset(days=7),
+                    tclose=None,
+                    priority=0,
+                )
 
         # Return the footprint. If it should be suppressed, return a blank footprint.
         if self.suppress_footprint:
