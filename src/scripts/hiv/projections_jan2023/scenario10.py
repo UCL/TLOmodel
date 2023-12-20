@@ -51,13 +51,13 @@ class TestScenario(BaseScenario):
                 "SymptomManager": {"spurious_symptoms": True},
                 "HealthSystem": {"disable": False,
                                  "service_availability": ["*"],
-                                 "mode_appt_constraints": 2,
-                                 "policy_name": "HivTbProgrammes",
+                                 "mode_appt_constraints": 2,  # changed
+                                 "policy_name": "HivTbProgrammes",  # changed
                                  "cons_availability": "default",
                                  "beds_availability": "all",
                                  "ignore_priority": False,
-                                 "use_funded_or_actual_staffing": "funded_plus",
-                                 "capabilities_coefficient": 1.0},
+                                 "use_funded_or_actual_staffing": "funded",  # changed
+                                 "capabilities_coefficient": None},  # changed
             },
         ),
 
