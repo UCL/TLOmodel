@@ -39,9 +39,11 @@ def get_html_for_commit(commit_dir: Path) -> str:
 
     # from the info.txt file, we know the message of the commit & can link to GitHub page
     if (commit_dir / "info.txt").is_file():
-        commit_log = open(commit_dir / "info.txt", "r").readline().strip().split()
-        commit_title = date + " - " + " ".join(commit_log[2:])
-        gh_link = f"https://github.com/UCL/TLOmodel/commit/{commit_log[0]}"
+        with open(commit_dir / "info.txt") as info_file:
+            commit_id, _, *commit_msg = info_file.readline().strip().split()
+            commit_msg = " ".join(commit_msg)
+        commit_title = f"{date} - {commit_msg}"
+        gh_link = f"https://github.com/UCL/TLOmodel/commit/{commit_id}"
         commit_links.append(f"<a href='{gh_link}'>gh</a>")
 
     # link to raw log files
