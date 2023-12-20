@@ -1,30 +1,26 @@
 import datetime
 import re
+import sys
 from pathlib import Path
 from string import Template
 
-output_directory = Path(".")  # working directory must be the analyses output directory
 max_commits = 50  # Number of runs to show in the generated html
 page_title = "TLOmodel calibration analyses"
 
 
-def main() -> None:
+def main(output_directory: Path) -> None:
     """Generate and print the HTML page to stdout"""
     generated_time = datetime.datetime.now().strftime("%d %b %Y %H:%M")
-    body_html = get_html_for_all_commits()
+
+    commit_dirs = output_directory.glob("202?-[0-9a-f]*")
+    commit_dirs = sorted(commit_dirs, reverse=True)
+    commit_dirs = commit_dirs[:max_commits]
+    body_html = "".join([get_html_for_commit(commit) for commit in commit_dirs])
+
     page_html = page_template.substitute(title=page_title,
                                          body=body_html,
                                          generated_time=generated_time)
     print(page_html)
-
-
-def get_html_for_all_commits() -> str:
-    """Get the HTML for all commits analysed in the output directory"""
-    commit_dirs = output_directory.glob("202?-[0-9a-f]*")
-    commit_dirs = sorted(commit_dirs, reverse=True)
-    commit_dirs = commit_dirs[:max_commits]
-    body = [get_html_for_commit(commit) for commit in commit_dirs]
-    return "".join(body)
 
 
 def get_html_for_commit(commit_dir: Path) -> str:
@@ -47,14 +43,14 @@ def get_html_for_commit(commit_dir: Path) -> str:
         commit_links.append(f"<a href='{gh_link}'>gh</a>")
 
     # link to raw log files
-    logs_dir = commit_dir / "021_long_run_all_diseases_run/0"
-    if logs_dir.is_dir():
-        commit_links.append(f"<a href='{logs_dir}'>logs</a>")
+    logs_dir = "021_long_run_all_diseases_run/0"
+    if (commit_dir / logs_dir).is_dir():
+        commit_links.append(f"<a href='./{logs_dir}'>logs</a>")
 
     # if the post-process step has been completed, link to the results
-    results_file = commit_dir / "022_long_run_all_diseases_process/index.html"
-    if results_file.is_file():
-        commit_title = f"<a href='{results_file}'>{commit_title}</a>"
+    results_file = "022_long_run_all_diseases_process/index.html"
+    if (commit_dir / results_file).is_file():
+        commit_title = f"<a href='./{results_file}'>{commit_title}</a>"
         commit_p_class = "completed"
 
     return commit_template.substitute(dir_title=commit_title,
@@ -62,15 +58,13 @@ def get_html_for_commit(commit_dir: Path) -> str:
                                       p_class=commit_p_class)
 
 
-commit_template = Template("""
-<p class="$p_class">
+commit_template = Template("""<p class="$p_class">
     $dir_title
     $links<br>
 </p>
 """)
 
-page_template = Template("""
-<!DOCTYPE html>
+page_template = Template("""<!DOCTYPE html>
 <html lang="en">
 <head>
     <title>$title</title>
@@ -115,4 +109,5 @@ $body
 """)
 
 if __name__ == "__main__":
-    main()
+    # Usage: python generate_html.py /path/to/output/directory
+    main(Path(sys.argv[1]))
