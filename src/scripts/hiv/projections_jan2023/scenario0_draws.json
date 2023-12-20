@@ -1,11 +1,10 @@
 {
   "scenario_script_path": "src/scripts/hiv/projections_jan2023/scenario0.py",
-  "scenario_seed": 20,
-  "runs_per_draw": 1,
+  "scenario_seed": 0,
+  "runs_per_draw": 5,
   "draws": [
     {
       "draw_number": 0,
-      "draw_seed": 378518883,
       "parameters": {
         "Tb": {
           "scenario": 0,
@@ -15,8 +14,56 @@
           "beta": 0.143785163
         }
       }
+    },
+    {
+      "draw_number": 1,
+      "parameters": {
+        "Tb": {
+          "scenario": 0,
+          "scaling_factor_WHO": 1.507636969
+        },
+        "Hiv": {
+          "beta": 0.137641638
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "parameters": {
+        "Tb": {
+          "scenario": 0,
+          "scaling_factor_WHO": 1.673313118
+        },
+        "Hiv": {
+          "beta": 0.130761192
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "parameters": {
+        "Tb": {
+          "scenario": 0,
+          "scaling_factor_WHO": 1.739471024
+        },
+        "Hiv": {
+          "beta": 0.141134768
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "parameters": {
+        "Tb": {
+          "scenario": 0,
+          "scaling_factor_WHO": 1.702850618
+        },
+        "Hiv": {
+          "beta": 0.11937769
+        }
+      }
     }
   ],
-  "commit": "2d55b266a26035120e3647aed36b5cb20d534e9c",
-  "github": "https://github.com/UCL/TLOmodel/tree/2d55b266a26035120e3647aed36b5cb20d534e9c"
+  "commit": "1ebfd592c2f2f361ba4d67eadf0a0acf46c58953",
+  "github": "https://github.com/UCL/TLOmodel/tree/1ebfd592c2f2f361ba4d67eadf0a0acf46c58953"
 }

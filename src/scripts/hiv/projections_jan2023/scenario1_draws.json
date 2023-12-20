@@ -1,5 +1,5 @@
 {
-  "scenario_script_path": "src/scripts/hiv/projections_jan2023/scenario2.py",
+  "scenario_script_path": "src/scripts/hiv/projections_jan2023/scenario1.py",
   "scenario_seed": 0,
   "runs_per_draw": 5,
   "draws": [
@@ -7,7 +7,7 @@
       "draw_number": 0,
       "parameters": {
         "Tb": {
-          "scenario": 2,
+          "scenario": 1,
           "scaling_factor_WHO": 1.603029372
         },
         "Hiv": {
@@ -19,7 +19,7 @@
       "draw_number": 1,
       "parameters": {
         "Tb": {
-          "scenario": 2,
+          "scenario": 1,
           "scaling_factor_WHO": 1.507636969
         },
         "Hiv": {
@@ -31,7 +31,7 @@
       "draw_number": 2,
       "parameters": {
         "Tb": {
-          "scenario": 2,
+          "scenario": 1,
           "scaling_factor_WHO": 1.673313118
         },
         "Hiv": {
@@ -43,7 +43,7 @@
       "draw_number": 3,
       "parameters": {
         "Tb": {
-          "scenario": 2,
+          "scenario": 1,
           "scaling_factor_WHO": 1.739471024
         },
         "Hiv": {
@@ -55,7 +55,7 @@
       "draw_number": 4,
       "parameters": {
         "Tb": {
-          "scenario": 2,
+          "scenario": 1,
           "scaling_factor_WHO": 1.702850618
         },
         "Hiv": {
