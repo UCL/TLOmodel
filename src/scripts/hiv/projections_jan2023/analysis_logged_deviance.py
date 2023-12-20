@@ -36,7 +36,7 @@ resourcefilepath = Path("./resources")
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2030, 1, 1)
-popsize = 15_000
+popsize = 10_000
 
 scenario = 1
 
@@ -71,11 +71,11 @@ sim.register(
         resourcefilepath=resourcefilepath,
         service_availability=["*"],  # all treatment allowed
         # todo update this
-        mode_appt_constraints=2,  # mode of constraints to do with officer numbers and time
+        mode_appt_constraints=1,  # mode of constraints to do with officer numbers and time
         policy_name="HivTbProgrammes",
         cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
         ignore_priority=False,  # do not use the priority information in HSI event to schedule
-        capabilities_coefficient=None,  # multiplier for the capabilities of health officers
+        capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
         use_funded_or_actual_staffing="funded",  # actual: use numbers/distribution of staff available currently
         disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
         disable_and_reject_all=False,  # disable healthsystem and no HSI runs
@@ -92,6 +92,11 @@ sim.register(
 # set the scenario
 sim.modules["Tb"].parameters["scenario"] = scenario
 # sim.modules["Tb"].parameters["scenario_start_date"] = Date(2024, 1, 1)
+
+sim.modules["Tb"].parameters["tb_healthseekingbehaviour_cap"] = 0
+sim.modules["Hiv"].parameters['hiv_healthseekingbehaviour_cap'] = 0
+sim.modules["Hiv"].parameters['probability_of_seeking_further_art_appointment_if_drug_not_available'] = 0
+sim.modules["Hiv"].parameters['probability_of_seeking_further_art_appointment_if_appointment_not_available'] = 0
 
 # sim.modules["Tb"].parameters["rr_tb_hiv"] = 5  # default 13
 # rr relapse if HIV+ 4.7
