@@ -864,14 +864,6 @@ class Tb(Module):
                 TbCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1)
             )
 
-        # todo this is a fix for missing Xpert availability data
-        # it's needed when cons availability = default
-        # set Xpert availability to average value of levels 2 and 3
-        # no data available for levels 1a and 1b
-        if self.parameters['scenario'] in ('0', '1'):
-            self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {187: 0.285})
-
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual
         allocate IPT for child if mother diagnosed with TB
