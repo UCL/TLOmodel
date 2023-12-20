@@ -63,12 +63,13 @@ def get_html_for_commit(commit_dir: Path) -> str:
 commit_template = Template("""
 <p class="$p_class">
     $dir_title
-    $links<br />
+    $links<br>
 </p>
 """)
 
 page_template = Template("""
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <title>$title</title>
     <style>
