@@ -163,6 +163,7 @@ jobs:
           mkdir -p "${task_output_dir}"
 
           python3 "${{ needs.setup.outputs.worktree_path }}/src/scripts/calibration_analyses/analysis_scripts/process.py" "${task_output_dir}" "${RUN_NAME}" "${{ needs.setup.outputs.worktree_path }}/resources"
+          python3 "${{ needs.setup.outputs.worktree_path }}/src/scripts/task_runner/generate_html.py" "${OUTPUT_ROOT}" > "${OUTPUT_ROOT}/index.html"
         working-directory: "${{ needs.setup.outputs.worktree_path }}"
 
   # Cleanup stage, to remove temporary directories and such
