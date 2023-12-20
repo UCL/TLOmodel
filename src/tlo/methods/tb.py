@@ -864,6 +864,14 @@ class Tb(Module):
                 TbCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1)
             )
 
+        # todo this is a fix for missing Xpert availability data
+        # it's needed when cons availability = default
+        # set Xpert availability to average value of levels 2 and 3
+        # no data available for levels 1a and 1b
+        if self.parameters['scenario'] in ('0', '1'):
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(
+                {187: 0.285})
+
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual
         allocate IPT for child if mother diagnosed with TB
@@ -1351,6 +1359,11 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         scenario = p["scenario"]
         scaled_params = p["scaleup_parameters"]
 
+        # get dict of all cons, ready for updating for some scenarios
+        tmp = pd.read_csv("./resources/healthsystem/consumables/ResourceFile_Consumables_availability_small.csv")
+        unique_item_codes = tmp['item_code'].unique()
+        result_dict = {code: 1.0 for code in unique_item_codes}
+
         logger.debug(
             key="message", data=f"ScenarioSetupEvent: scenario {scenario}"
         )
@@ -1445,62 +1458,53 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
                     self.sim.modules['HealthSystem'], parameters=new_parameters),
                 self.sim.date)
 
-        # set all cons to available, reset only HIV tx to default
         if scenario == 3:
-            new_parameters = {
-                'cons_availability': 'all',
-            }
-            self.sim.schedule_event(
-                HealthSystemChangeParameters(
-                    self.sim.modules['HealthSystem'], parameters=new_parameters),
-                self.sim.date)
 
-            # HIV tx
-            self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {2671: 0.94, 2672: 0.88, 2673: 0.78,
-                 204: 0.93, 162: 0.85, 202: 0.43})
+            # list of HIV tx consumables
+            cons_codes = [2671, 2672, 2673, 204, 162, 202]
+            default_avail = [0.94, 0.88, 0.78, 0.93, 0.85, 0.43]
+            # default_avail = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            for value in cons_codes:
+                if value in result_dict:
+                    result_dict[value] = default_avail[cons_codes.index(value)]
+
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(result_dict)
 
         # set all cons to available, reset only HIV prevention to default
         if scenario == 4:
-            new_parameters = {
-                'cons_availability': 'all',
-            }
-            self.sim.schedule_event(
-                HealthSystemChangeParameters(
-                    self.sim.modules['HealthSystem'], parameters=new_parameters),
-                self.sim.date)
 
-            # HIV prevention
-            self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {196: 0.91, 197: 0.91, 1191: 0.88, 198: 0.78})
+            # list of HIV prevention consumables
+            cons_codes = [196, 197, 1191, 198]
+            default_avail = [0.91, 0.91, 0.88, 0.78]
+            for value in cons_codes:
+                if value in result_dict:
+                    result_dict[value] = default_avail[cons_codes.index(value)]
+
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(result_dict)
 
         # set all cons to available, reset only TB tx to default
         if scenario == 5:
-            new_parameters = {
-                'cons_availability': 'all',
-            }
-            self.sim.schedule_event(
-                HealthSystemChangeParameters(
-                    self.sim.modules['HealthSystem'], parameters=new_parameters),
-                self.sim.date)
 
-            # Tb tx
-            self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {176: 0.75, 178: 0.66, 177: 0.60, 179: 0.60, 181: 0.28})
+            # list of TB treatment consumables
+            cons_codes = [176, 178, 177, 179, 181]
+            default_avail = [0.75, 0.66, 0.60, 0.60, 0.28]
+            for value in cons_codes:
+                if value in result_dict:
+                    result_dict[value] = default_avail[cons_codes.index(value)]
+
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(result_dict)
 
         # set all cons to available, reset only TB prevention to default
         if scenario == 6:
-            new_parameters = {
-                'cons_availability': 'all',
-            }
-            self.sim.schedule_event(
-                HealthSystemChangeParameters(
-                    self.sim.modules['HealthSystem'], parameters=new_parameters),
-                self.sim.date)
 
-            # Tb prevention
-            self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                {192: 0.59})
+            # list of TB prevention consumables
+            cons_codes = [192]
+            default_avail = [0.59]
+            for value in cons_codes:
+                if value in result_dict:
+                    result_dict[value] = default_avail[value]
+
+            self.sim.modules['HealthSystem'].override_availability_of_consumables(result_dict)
 
 
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
@@ -1524,11 +1528,11 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         prop_untreated_mdr = self.module.calculate_untreated_proportion(population, strain="mdr")
 
         scaled_incidence_ds = incidence_year * \
-            p["scaling_factor_WHO"] * prop_untreated_ds
+                              p["scaling_factor_WHO"] * prop_untreated_ds
         scaled_incidence_mdr = incidence_year * \
-            p["prop_mdr2010"] * \
-            p["scaling_factor_WHO"] * \
-            prop_untreated_mdr
+                               p["prop_mdr2010"] * \
+                               p["scaling_factor_WHO"] * \
+                               prop_untreated_mdr
 
         # transmission ds-tb
         self.module.assign_active_tb(population, strain="ds", incidence=scaled_incidence_ds)
@@ -1772,16 +1776,17 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
     * give IPT for paediatric contacts of diagnosed case
     """
 
-    def __init__(self, module, person_id, suppress_footprint=False):
+    def __init__(self, module, person_id, suppress_footprint=False, facility_level='1a'):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
+        self.facility_level = facility_level
 
         assert isinstance(suppress_footprint, bool)
         self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = "Tb_Test_Screening"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '1a' if (self.facility_level == '1a') else '2'
 
     def apply(self, person_id, squeeze_factor):
         """Do the screening and referring to next tests"""
@@ -1831,6 +1836,8 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 tclose=None,
             )
 
+        # ------------------------- x-ray for children ------------------------- #
+
         # child under 5 -> chest x-ray, but access is limited
         # if xray not available, HSI_Tb_Xray_level1b will refer
         if person["age_years"] < 5:
@@ -1846,6 +1853,8 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
             )
             test_result = False  # to avoid calling a clinical diagnosis
+
+        # ------------------------- select test for adults ------------------------- #
 
         # for all presumptive cases over 5 years of age
         else:
@@ -1877,19 +1886,31 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         )
 
             elif test == "xpert":
-                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                    {"Over5OPD": 1}
-                )
-                # relevant test depends on smear status (changes parameters on sensitivity/specificity
-                if smear_status:
-                    test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-                        dx_tests_to_run="tb_xpert_test_smear_positive", hsi_event=self
+
+                # this can only be performed at level 1b/2, refer if necessary
+                if self.facility_level == '1a':
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        hsi_event=HSI_Tb_ScreeningAndRefer(
+                            person_id=person_id, module=self.module,
+                            facility_level='2'
+                        ),
+                        topen=self.sim.date + DateOffset(days=1),
+                        tclose=None,
+                        priority=0,
                     )
-                # for smear-negative people
-                else:
-                    test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-                        dx_tests_to_run="tb_xpert_test_smear_negative", hsi_event=self
-                    )
+                    return self.make_appt_footprint({"Over5OPD": 1})
+
+                elif self.facility_level != '1a':
+                    # relevant test depends on smear status (changes parameters on sensitivity/specificity
+                    if smear_status:
+                        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                            dx_tests_to_run="tb_xpert_test_smear_positive", hsi_event=self
+                        )
+                    # for smear-negative people
+                    else:
+                        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                            dx_tests_to_run="tb_xpert_test_smear_negative", hsi_event=self
+                        )
 
         # ------------------------- testing referrals ------------------------- #
 
@@ -2110,7 +2131,6 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         # if consumables not available, refer to level 2
         # return blank footprint as xray did not occur
         if test_result is None:
-
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2182,7 +2202,6 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         # if consumables not available, rely on clinical diagnosis
         # return blank footprint as xray was not available
         if test_result is None:
-
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2366,7 +2385,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             & (person["age_years"] <= 16) \
             & ~(person["tb_smear"]) \
             & ~person["tb_ever_treated"] \
-                & ~person["tb_diagnosed_mdr"]:
+            & ~person["tb_diagnosed_mdr"]:
             treatment_regimen = "tb_tx_child_shorter"
 
         return treatment_regimen
@@ -2422,7 +2441,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 
         # if previously treated:
         if ((person["tb_treatment_regimen"] == "tb_retx_adult") or
-                (person["tb_treatment_regimen"] == "tb_retx_child")):
+            (person["tb_treatment_regimen"] == "tb_retx_child")):
 
             # if strain is ds and person previously treated:
             sputum_fup = follow_up_times["ds_retreatment_sputum"].dropna()
@@ -2727,8 +2746,6 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
             key="message",
             data=f"TbDeathEvent: checking whether death should occur for person {person_id}",
         )
-
-
 
         self.sim.modules["Demography"].do_death(
             individual_id=person_id,

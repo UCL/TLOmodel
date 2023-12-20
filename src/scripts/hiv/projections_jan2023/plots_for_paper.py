@@ -2055,7 +2055,7 @@ cons_full = pd.merge(cons_availability, master_fac,
 
 
 # select month for representation - Dec (use jan for hiv?)
-cons_dec = cons_full.loc[cons_full.month == 1]
+cons_dec = cons_full.loc[cons_full.month == 12]
 
 # groupby item code & facility level -> average availability by facility level for all items
 average_cons_availability = cons_dec.groupby(["item_code", "Facility_Level"])["available_prop"].mean().reset_index()

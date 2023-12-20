@@ -35,10 +35,10 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2023, 1, 1)
+end_date = Date(2030, 1, 1)
 popsize = 10_000
 
-scenario = 0
+scenario = 3
 
 # set up the log config
 log_config = {
@@ -52,7 +52,7 @@ log_config = {
         "tlo.methods.tb": logging.INFO,
         "tlo.methods.demography": logging.INFO,
         # "tlo.methods.demography.detail": logging.WARNING,
-        # "tlo.methods.healthsystem.summary": logging.INFO,
+        "tlo.methods.healthsystem.summary": logging.INFO,
         # "tlo.methods.healthsystem": logging.INFO,
         # "tlo.methods.healthburden": logging.INFO,
     },
@@ -89,7 +89,7 @@ sim.register(
 
 # set the scenario
 sim.modules["Tb"].parameters["scenario"] = scenario
-# sim.modules["Tb"].parameters["scenario_start_date"] = Date(2010, 2, 1)
+# sim.modules["Tb"].parameters["scenario_start_date"] = Date(2024, 1, 1)
 
 # sim.modules["Tb"].parameters["rr_tb_hiv"] = 5  # default 13
 # rr relapse if HIV+ 4.7

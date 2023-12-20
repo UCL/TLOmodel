@@ -1272,10 +1272,10 @@ class Hiv(Module):
         """
         mean = self.parameters["mean_months_between_aids_and_death"]
         draw_number_of_months = int(np.round(self.rng.exponential(mean)))
-        return pd.DateOffset(months=draw_number_of_months)
+        return pd.DateOffset(months=(draw_number_of_months+1))
 
     def do_when_hiv_diagnosed(self, person_id):
-        """Things to do when a person has been tested and found (newly) be be HIV-positive:.
+        """Things to do when a person has been tested and found (newly) be HIV-positive:.
         * Consider if ART should be initiated, and schedule HSI if so.
         The person should not yet be on ART.
         """
@@ -2513,7 +2513,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             # Try to continue the person on ART:
             drugs_were_available = self.do_at_continuation(person_id)
 
-        if drugs_were_available:
+        if list(drugs_were_available.values())[0]:
+
             # If person has been placed/continued on ART, schedule 'decision about whether to continue on Treatment
             self.sim.schedule_event(
                 Hiv_DecisionToContinueTreatment(
@@ -2597,6 +2598,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             )
 
     def do_at_initiation(self, person_id):
+
         """Things to do when this the first appointment ART"""
         df = self.sim.population.props
         person = df.loc[person_id]
@@ -2604,10 +2606,11 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # Check if drugs are available, and provide drugs:
         drugs_available = self.get_drugs(age_of_person=person["age_years"])
 
-        if drugs_available:
-            # Assign person to be have suppressed or un-suppressed viral load
+        if list(drugs_available.values())[0]:
+            # Assign person to have suppressed or un-suppressed viral load
             # (If person is VL suppressed This will prevent the Onset of AIDS, or an AIDS death if AIDS has already
-            # onset,)
+            # onset)
+
             vl_status = self.determine_vl_status(
                 age_of_person=person["age_years"]
             )
