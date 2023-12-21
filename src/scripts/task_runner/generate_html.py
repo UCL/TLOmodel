@@ -99,9 +99,9 @@ page_template = Template("""<!DOCTYPE html>
 <body>
 <h1>$title</h1>
 <p style="font-size: small;">
-    This page was generated on $generated_time. 
-    The workflow runs every night on the latest new commit on the master branch. 
-    <a href="#" id="toggleIncomplete">toggle incomplete</a>
+    This page was generated on $generated_time. The 
+    <a href="https://github.com/UCL/TLOmodel/actions/workflows/calibration.yaml">calibration workflow</a> runs every 
+    night on the latest new commit on the master branch. <a href="#" id="toggleIncomplete">toggle incomplete</a>
 </p>
 $body
 </body>
