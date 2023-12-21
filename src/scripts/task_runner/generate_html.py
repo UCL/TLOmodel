@@ -12,7 +12,7 @@ def main(output_directory: Path) -> None:
     """Generate and print the HTML page to stdout"""
     generated_time = datetime.datetime.now().strftime("%d %b %Y %H:%M")
 
-    commit_dirs = output_directory.glob("202?-[0-9a-f]*")
+    commit_dirs = [x for x in output_directory.iterdir() if x.is_dir()]
     commit_dirs = sorted(commit_dirs, reverse=True)
     commit_dirs = commit_dirs[:max_commits]
     body_html = "".join([get_html_for_commit(commit) for commit in commit_dirs])
