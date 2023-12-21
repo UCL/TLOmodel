@@ -125,6 +125,7 @@ class BaseScenario(abc.ABC):
         self.resources = resources_path
         self.rng = None
         self.scenario_path = None
+        self.suspend_date = None
 
     @abc.abstractmethod
     def log_configuration(self, **kwargs):
@@ -348,7 +349,14 @@ class SampleRunner:
             self.override_parameters(sim, sample["parameters"])
 
         sim.make_initial_population(n=self.scenario.pop_size)
-        sim.simulate(end_date=self.scenario.end_date)
+
+        if self.scenario.suspend_date is None:
+            sim.simulate(end_date=self.scenario.end_date)
+        else:
+            sim.initialise(end_date=self.scenario.end_date)
+            sim.run_simulation_to(to_date=self.scenario.suspend_date)
+            sim.save_to_pickle(pickle_path=log_config["directory"] / "suspended_simulation.pickle")
+            sim.finalise()
 
         if sim.log_filepath is not None:
             outputs = parse_log_file(sim.log_filepath)
