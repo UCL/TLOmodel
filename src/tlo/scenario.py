@@ -73,6 +73,7 @@ import numpy as np
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
+from tlo.util import str_to_pandas_date
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -141,6 +142,16 @@ class BaseScenario(abc.ABC):
         self.arguments = extra_arguments
 
         parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "--resume-simulation",
+            type=str,
+            help="Directory containing suspended state files to resume simulation from",
+        )
+        parser.add_argument(
+            "--suspend-date",
+            type=str_to_pandas_date,
+            help="Date to suspend the simulation at",
+        )
 
         # add arguments from the subclass
         self.add_arguments(parser)
@@ -395,7 +406,14 @@ class SampleRunner:
             self.override_parameters(sim, sample["parameters"])
 
         sim.make_initial_population(n=self.scenario.pop_size)
-        sim.simulate(end_date=self.scenario.end_date)
+
+        if self.scenario.suspend_date is None:
+            sim.simulate(end_date=self.scenario.end_date)
+        else:
+            sim.initialise(end_date=self.scenario.end_date)
+            sim.run_simulation_to(to_date=self.scenario.suspend_date)
+            sim.save_to_pickle(pickle_path=log_config["directory"] / "suspended_simulation.pickle")
+            sim.finalise()
 
         if sim.log_filepath is not None:
             outputs = parse_log_file(sim.log_filepath)

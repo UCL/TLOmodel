@@ -14,10 +14,12 @@ class Playing22(BaseScenario):
         super().__init__()
         self.seed = 655123742
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2011, 1, 1)
+        self.end_date = Date(2012, 1, 1)
         self.pop_size = 200
-        self.number_of_draws = 5
-        self.runs_per_draw = 1
+        self.number_of_draws = 1
+        self.runs_per_draw = 3
+
+        self.suspend_date = Date(2011, 1, 1)
 
     def log_configuration(self):
         return {
