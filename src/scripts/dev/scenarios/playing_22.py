@@ -19,7 +19,8 @@ class Playing22(BaseScenario):
         self.number_of_draws = 1
         self.runs_per_draw = 3
 
-        self.suspend_date = Date(2011, 1, 1)
+        # self.suspend_date = Date(2011, 1, 1)
+        self.restore_simulation = "playing_22-2023-12-22T010640Z"
 
     def log_configuration(self):
         return {
@@ -38,14 +39,6 @@ class Playing22(BaseScenario):
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
         ]
-
-    def draw_parameters(self, draw_number, rng):
-        return {
-            'Lifestyle': {
-                'init_p_urban': rng.randint(10, 20) / 100.0,
-                'init_p_high_sugar': 0.52,
-            },
-        }
 
 
 if __name__ == '__main__':
