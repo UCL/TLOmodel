@@ -175,6 +175,10 @@ jobs:
           python3 "${{ needs.setup.outputs.worktree_path }}/src/scripts/task_runner/generate_html.py" "${OUTPUT_ROOT}" > "${OUTPUT_ROOT}/index.html"
         working-directory: "${{ needs.setup.outputs.worktree_path }}"
 
+      - name: Compress log files
+        run: |
+          find "${{ needs.setup.outputs.output_dir }}" -name '*.log' -exec gzip --best --force --verbose '{}' \;
+
   # Cleanup stage, to remove temporary directories and such
   cleanup:
     name: Cleanup job
