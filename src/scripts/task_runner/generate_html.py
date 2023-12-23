@@ -50,7 +50,7 @@ def get_html_for_commit(commit_dir: Path) -> str:
     # if the post-process step has been completed, link to the results
     results_file = "022_long_run_all_diseases_process/index.html"
     if (commit_dir / results_file).is_file():
-        commit_title = f"<a href='./{results_file}'>{commit_title}</a>"
+        commit_title = f"<a href='./{commit_dir.stem}/{results_file}'>{commit_title}</a>"
         commit_p_class = "completed"
 
     return commit_template.substitute(dir_title=commit_title,
