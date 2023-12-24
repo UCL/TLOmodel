@@ -18,7 +18,7 @@ from tlo.methods.breast_cancer import (
     HSI_BreastCancer_Investigation_Following_breast_lump_discernible,
 )
 from tlo.methods.cervical_cancer import (
-    HSI_CervicalCancer_Biopsy,
+    HSI_CervicalCancer_Biopsy, HSI_CervicalCancer_AceticAcidScreening, HSI_CervicalCancer_XpertHPVScreening
 )
 from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
@@ -266,6 +266,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     tclose=None)
 
         if 'CervicalCancer' in sim.modules:
+#           print('initial_step_to_run_hsi', person_id, df.at[person_id, 'ce_selected_for_via'])
             # If the symptoms include vaginal bleeding:
             if 'vaginal_bleeding' in symptoms:
                 schedule_hsi(
@@ -276,6 +277,31 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     priority=0,
                     topen=sim.date,
                     tclose=None)
+
+            if 'chosen_via_screening_for_cin_cervical_cancer' in symptoms:
+#               print('hsi_via_ran:', person_id, df.at[person_id, 'ce_selected_for_via'],
+#                     'sy_chosen_via_screening_for_cin_cervical_cancer')
+                schedule_hsi(
+                    HSI_CervicalCancer_AceticAcidScreening(
+                        person_id=person_id,
+                        module=sim.modules['CervicalCancer']
+                    ),
+                    priority=0,
+                    topen=sim.date,
+                    tclose=None)
+#               print(person_id, 'ce_selected_for_via')
+
+            if df.at[person_id, 'ce_selected_for_xpert']:
+#               print('hsi_xpert_ran:', person_id)
+                schedule_hsi(
+                    HSI_CervicalCancer_XpertHPVScreening(
+                        person_id=person_id,
+                        module=sim.modules['CervicalCancer']
+                    ),
+                    priority=0,
+                    topen=sim.date,
+                    tclose=None)
+
 
 
         if 'Depression' in sim.modules:

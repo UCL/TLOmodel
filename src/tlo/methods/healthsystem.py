@@ -1576,7 +1576,7 @@ class HealthSystem(Module):
         residence and the level of the facility of the HSI."""
         the_district = self.sim.population.props.at[hsi_event.target, 'district_of_residence']
         the_level = hsi_event.ACCEPTED_FACILITY_LEVEL
-        print(self._facilities_for_each_district[the_level][the_district])
+
         return self._facilities_for_each_district[the_level][the_district]
 
 
