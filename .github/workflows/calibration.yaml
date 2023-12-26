@@ -110,6 +110,7 @@ jobs:
               SKIP_TASKS="true"
           fi
           echo "SKIP_TASKS=${SKIP_TASKS}"
+          echo "SKIP_TASKS=${SKIP_TASKS}" >> "${GITHUB_ENV}"
           echo "skip_tasks=${SKIP_TASKS}" >> "${GITHUB_OUTPUT}"
           RUNS="["
           for run in $(seq 0 $((${RUNS_NUMBER} - 1))); do
@@ -120,6 +121,7 @@ jobs:
           echo "tasks=${RUNS}" >> "${GITHUB_OUTPUT}"
 
       - name: Write info.txt file
+        if: ${{ env.SKIP_TASKS == 'false' }}
         run: |
           mkdir -p "${output_dir}"
           info_txt="${output_dir}/info.txt"
