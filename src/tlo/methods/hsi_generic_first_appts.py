@@ -266,7 +266,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     tclose=None)
 
         if 'CervicalCancer' in sim.modules:
-#           print('initial_step_to_run_hsi', person_id, df.at[person_id, 'ce_selected_for_via'])
             # If the symptoms include vaginal bleeding:
             if 'vaginal_bleeding' in symptoms:
                 schedule_hsi(
@@ -279,8 +278,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     tclose=None)
 
             if 'chosen_via_screening_for_cin_cervical_cancer' in symptoms:
-#               print('hsi_via_ran:', person_id, df.at[person_id, 'ce_selected_for_via'],
-#                     'sy_chosen_via_screening_for_cin_cervical_cancer')
                 schedule_hsi(
                     HSI_CervicalCancer_AceticAcidScreening(
                         person_id=person_id,
@@ -289,10 +286,9 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     priority=0,
                     topen=sim.date,
                     tclose=None)
-#               print(person_id, 'ce_selected_for_via')
 
-            if df.at[person_id, 'ce_selected_for_xpert']:
-#               print('hsi_xpert_ran:', person_id)
+
+            if 'chosen_xpert_screening_for_hpv_cervical_cancer' in symptoms:
                 schedule_hsi(
                     HSI_CervicalCancer_XpertHPVScreening(
                         person_id=person_id,
@@ -301,8 +297,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     priority=0,
                     topen=sim.date,
                     tclose=None)
-
-
 
         if 'Depression' in sim.modules:
             sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,

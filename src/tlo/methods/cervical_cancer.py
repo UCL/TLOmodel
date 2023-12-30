@@ -1340,6 +1340,18 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_diagnosed_past_year_stage3": n_diagnosed_past_year_stage3})
         out.update({"n_diagnosed_past_year_stage4": n_diagnosed_past_year_stage4})
 
+        print('total_none:', out['total_none'], 'total_hpv:',out['total_hpv'], 'total_cin1:',out['total_cin1'],
+              'total_cin2:', out['total_cin2'], 'total_cin3:',out['total_cin3'], 'total_stage1:', out['total_stage1'],
+              'total_stage2a:', out['total_stage2a'], 'total_stage2b:', out['total_stage2b'],
+              'total_stage3:', out['total_stage3'],'total_stage4:',out['total_stage4'],
+              'year:', out['rounded_decimal_year'], 'deaths_past_year:', out['n_deaths_past_year'],
+              'treatedn past year:', out['n_treated_past_year'],'prop cc hiv:', out['prop_cc_hiv'],
+              'diagnosed_past_year_stage1:', out['n_diagnosed_past_year_stage1'],
+              'diagnosed_past_year_stage2a:', out['n_diagnosed_past_year_stage2a'],
+              'diagnosed_past_year_stage2b:', out['n_diagnosed_past_year_stage2b'],
+              'diagnosed_past_year_stage3:', out['n_diagnosed_past_year_stage3'],
+              'diagnosed_past_year_stage4:', out['n_diagnosed_past_year_stage4'])
+
         # comment out this below when running tests
 
         # Specify the file path for the CSV file
@@ -1364,14 +1376,14 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Set the display width to a large value to fit all columns in one row
         pd.set_option('display.width', 1000)
 
-        selected_columns = ['ce_hpv_cc_status', 'ce_selected_for_via_this_month', 'sy_chosen_via_screening_for_cin_cervical_cancer',
-                            'ce_via_cin_ever_detected',
+        selected_columns = ['ce_hpv_cc_status',
                             'ce_selected_for_xpert_this_month', 'sy_chosen_xpert_screening_for_hpv_cervical_cancer',
                             'ce_xpert_hpv_ever_pos', 'ce_biopsy', 'ce_date_cryo',
                             'sy_vaginal_bleeding', 'ce_current_cc_diagnosed', 'ce_date_diagnosis', 'ce_date_treatment',
-                            'ce_date_palliative_care']
+                            'ce_date_palliative_care', 'ce_selected_for_via_this_month', 'sy_chosen_via_screening_for_cin_cervical_cancer',
+                            'ce_via_cin_ever_detected']
         selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive']]
-        print(selected_rows[selected_columns])
+#       print(selected_rows[selected_columns])
 
 #       selected_columns = ['sex', 'age_years', 'is_alive']
 #       pd.set_option('display.max_rows', None)
