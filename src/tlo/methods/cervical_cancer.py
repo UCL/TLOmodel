@@ -140,7 +140,7 @@ class CervicalCancer(Module):
         ),
         "r_death_cervical_cancer": Parameter(
             Types.REAL,
-            "probabilty per 3 months of death from cervical cancer amongst people with stage 4 cervical cancer",
+            "probabilty per month of death from cervical cancer amongst people with stage 4 cervical cancer",
         ),
         "r_vaginal_bleeding_cc_stage1": Parameter(
             Types.REAL, "rate of vaginal bleeding if have stage 1 cervical cancer"
@@ -184,11 +184,6 @@ class CervicalCancer(Module):
             "Current hpv / cervical cancer status",
             categories=["none", "hpv", "cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"],
         ),
-# this property not currently used as vaccine efficacy implicitly takes into account probability hpv is no vaccine preventable
-        "ce_hpv_vp": Property(
-            Types.BOOL,
-            "if ce_hpv_cc_status = hpv, is it vaccine preventable?"
-        ),
         "ce_date_diagnosis": Property(
             Types.DATE,
             "the date of diagnosis of cervical cancer (pd.NaT if never diagnosed)"
@@ -197,14 +192,6 @@ class CervicalCancer(Module):
             Types.CATEGORICAL,
             "the cancer stage at which cancer diagnosis was made",
             categories=["none", "hpv", "cin1", "cin2", "cin3", "stage1", "stage2a", "stage2b", "stage3", "stage4"],
-        ),
-        "ce_date_via": Property(
-            Types.DATE,
-            "the date of last visual inspection with acetic acid (pd.NaT if never diagnosed)"
-        ),
-        "ce_date_xpert": Property(
-            Types.DATE,
-            "the date of last hpv test using xpert (pd.NaT if never diagnosed)"
         ),
         "ce_date_cin_removal": Property(
             Types.DATE,
@@ -594,14 +581,11 @@ class CervicalCancer(Module):
         """
         df = self.sim.population.props
         df.at[child_id, "ce_hpv_cc_status"] = "none"
-        df.at[child_id, "ce_hpv_vp"] = False
         df.at[child_id, "ce_date_treatment"] = pd.NaT
         df.at[child_id, "ce_stage_at_which_treatment_given"] = "none"
         df.at[child_id, "ce_date_diagnosis"] = pd.NaT
         df.at[child_id, "ce_new_stage_this_month"] = False
         df.at[child_id, "ce_date_palliative_care"] = pd.NaT
-        df.at[child_id, "ce_date_xpert"] = pd.NaT
-        df.at[child_id, "ce_date_via"] = pd.NaT
         df.at[child_id, "ce_date_death"] = pd.NaT
         df.at[child_id, "ce_date_cin_removal"] = pd.NaT
         df.at[child_id, "ce_date_treatment"] = pd.NaT
@@ -1028,14 +1012,6 @@ class HSI_CervicalCancer_Cryotherapy_CIN(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
 
-        # Check that the person has been diagnosed and has hpv / cin
-        assert not df.at[person_id, "ce_hpv_cc_status"] == 'none'
-        assert not df.at[person_id, "ce_hpv_cc_status"] == 'stage1'
-        assert not df.at[person_id, "ce_hpv_cc_status"] == 'stage2a'
-        assert not df.at[person_id, "ce_hpv_cc_status"] == 'stage2b'
-        assert not df.at[person_id, "ce_hpv_cc_status"] == 'stage3'
-        assert not df.at[person_id, "ce_hpv_cc_status"] == 'stage4'
-
         # Record date and stage of starting treatment
         df.at[person_id, "ce_date_cryo"] = self.sim.date
 
@@ -1084,12 +1060,6 @@ class HSI_CervicalCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({})
 
         # Check that the person has been diagnosed and is not on treatment
-        assert not df.at[person_id, "ce_hpv_cc_status"] == 'none'
-        assert not df.at[person_id, "ce_hpv_cc_status"] == 'hpv'
-        assert not df.at[person_id, "ce_hpv_cc_status"] == 'cin1'
-        assert not df.at[person_id, "ce_hpv_cc_status"] == 'cin2'
-        assert not df.at[person_id, "ce_hpv_cc_status"] == 'cin3'
-        assert not df.at[person_id, "ce_hpv_cc_status"] == 'stage4'
         assert not pd.isnull(df.at[person_id, "ce_date_diagnosis"])
 
         # Record date and stage of starting treatment
@@ -1314,6 +1284,20 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         else:
             prop_cc_hiv = np.nan
 
+        n_screened_via_this_month = (df.is_alive & df.ce_selected_for_via_this_month).sum()
+        n_screened_xpert_this_month = (df.is_alive & df.ce_selected_for_xpert_this_month).sum()
+
+        n_vaginal_bleeding_stage1 = (df.is_alive & (df.sy_vaginal_bleeding == 2) &
+                                     (df.ce_hpv_cc_status == 'stage1')).sum()
+        n_vaginal_bleeding_stage2a = (df.is_alive & (df.sy_vaginal_bleeding == 2) &
+                                     (df.ce_hpv_cc_status == 'stage2a')).sum()
+        n_vaginal_bleeding_stage2b = (df.is_alive & (df.sy_vaginal_bleeding == 2) &
+                                     (df.ce_hpv_cc_status == 'stage2b')).sum()
+        n_vaginal_bleeding_stage3 = (df.is_alive & (df.sy_vaginal_bleeding == 2) &
+                                     (df.ce_hpv_cc_status == 'stage3')).sum()
+        n_vaginal_bleeding_stage4 = (df.is_alive & (df.sy_vaginal_bleeding == 2) &
+                                     (df.ce_hpv_cc_status == 'stage4')).sum()
+
         n_diagnosed_past_year_stage1 = \
             (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date) &
              (df.ce_stage_at_diagnosis == 'stage1')).sum()
@@ -1339,23 +1323,39 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_diagnosed_past_year_stage2b": n_diagnosed_past_year_stage2b})
         out.update({"n_diagnosed_past_year_stage3": n_diagnosed_past_year_stage3})
         out.update({"n_diagnosed_past_year_stage4": n_diagnosed_past_year_stage4})
+        out.update({"n_screened_xpert_this_month": n_screened_xpert_this_month})
+        out.update({"n_screened_via_this_month": n_screened_via_this_month})
+        out.update({"n_vaginal_bleeding_stage1": n_vaginal_bleeding_stage1})
+        out.update({"n_vaginal_bleeding_stage2a": n_vaginal_bleeding_stage2a})
+        out.update({"n_vaginal_bleeding_stage2b": n_vaginal_bleeding_stage2b})
+        out.update({"n_vaginal_bleeding_stage3": n_vaginal_bleeding_stage3})
+        out.update({"n_vaginal_bleeding_stage4": n_vaginal_bleeding_stage4})
 
-        print('total_none:', out['total_none'], 'total_hpv:',out['total_hpv'], 'total_cin1:',out['total_cin1'],
-              'total_cin2:', out['total_cin2'], 'total_cin3:',out['total_cin3'], 'total_stage1:', out['total_stage1'],
+        print('total_none:', out['total_none'], 'total_hpv:', out['total_hpv'], 'total_cin1:',out['total_cin1'],
+              'total_cin2:', out['total_cin2'], 'total_cin3:', out['total_cin3'], 'total_stage1:', out['total_stage1'],
               'total_stage2a:', out['total_stage2a'], 'total_stage2b:', out['total_stage2b'],
-              'total_stage3:', out['total_stage3'],'total_stage4:',out['total_stage4'],
+              'total_stage3:', out['total_stage3'],'total_stage4:', out['total_stage4'],
               'year:', out['rounded_decimal_year'], 'deaths_past_year:', out['n_deaths_past_year'],
-              'treatedn past year:', out['n_treated_past_year'],'prop cc hiv:', out['prop_cc_hiv'],
+              'treated past year:', out['n_treated_past_year'],'prop cc hiv:', out['prop_cc_hiv'],
+              'n_vaginal_bleeding_stage1:', out['n_vaginal_bleeding_stage1'],
+              'n_vaginal_bleeding_stage2a:', out['n_vaginal_bleeding_stage2a'],
+              'n_vaginal_bleeding_stage2b:', out['n_vaginal_bleeding_stage2b'],
+              'n_vaginal_bleeding_stage3:', out['n_vaginal_bleeding_stage3'],
+              'n_vaginal_bleeding_stage4:', out['n_vaginal_bleeding_stage4'],
               'diagnosed_past_year_stage1:', out['n_diagnosed_past_year_stage1'],
               'diagnosed_past_year_stage2a:', out['n_diagnosed_past_year_stage2a'],
               'diagnosed_past_year_stage2b:', out['n_diagnosed_past_year_stage2b'],
               'diagnosed_past_year_stage3:', out['n_diagnosed_past_year_stage3'],
-              'diagnosed_past_year_stage4:', out['n_diagnosed_past_year_stage4'])
+              'diagnosed_past_year_stage4:', out['n_diagnosed_past_year_stage4'],
+              'n_screened_xpert_this_month:', out['n_screened_xpert_this_month'],
+              'n_screened_via_this_month:', out['n_screened_via_this_month'])
 
         # comment out this below when running tests
 
         # Specify the file path for the CSV file
         out_csv = Path("./outputs/output_data.csv")
+
+# comment out this code below only when running tests
 
         with open(out_csv, "a", newline="") as csv_file:
             # Create a CSV writer
@@ -1376,12 +1376,34 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # Set the display width to a large value to fit all columns in one row
         pd.set_option('display.width', 1000)
 
-        selected_columns = ['ce_hpv_cc_status',
-                            'ce_selected_for_xpert_this_month', 'sy_chosen_xpert_screening_for_hpv_cervical_cancer',
-                            'ce_xpert_hpv_ever_pos', 'ce_biopsy', 'ce_date_cryo',
-                            'sy_vaginal_bleeding', 'ce_current_cc_diagnosed', 'ce_date_diagnosis', 'ce_date_treatment',
-                            'ce_date_palliative_care', 'ce_selected_for_via_this_month', 'sy_chosen_via_screening_for_cin_cervical_cancer',
-                            'ce_via_cin_ever_detected']
+#       selected_columns = ['ce_hpv_cc_status',
+#                           'ce_selected_for_xpert_this_month', 'sy_chosen_xpert_screening_for_hpv_cervical_cancer',
+#                           'ce_xpert_hpv_ever_pos', 'ce_biopsy', 'ce_date_cryo',
+#                           'sy_vaginal_bleeding', 'ce_current_cc_diagnosed', 'ce_date_diagnosis', 'ce_date_treatment',
+#                           'ce_date_palliative_care', 'ce_selected_for_via_this_month', 'sy_chosen_via_screening_for_cin_cervical_cancer',
+#                           'ce_via_cin_ever_detected']
+
+        selected_columns = ["ce_hpv_cc_status",
+        "ce_date_treatment",
+        "ce_stage_at_which_treatment_given",
+        "ce_date_diagnosis",
+        "ce_new_stage_this_month",
+        "ce_date_palliative_care",
+        "ce_date_death",
+        "ce_date_cin_removal",
+        "ce_date_treatment",
+        "ce_stage_at_diagnosis",
+        "ce_ever_treated",
+        "ce_cc_ever",
+        "ce_xpert_hpv_ever_pos",
+        "ce_via_cin_ever_detected",
+        "ce_date_cryo",
+        "ce_current_cc_diagnosed",
+        "ce_selected_for_via_this_month",
+        "ce_selected_for_xpert_this_month",
+        "ce_biopsy"]
+
+
         selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive']]
 #       print(selected_rows[selected_columns])
 

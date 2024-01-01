@@ -44,7 +44,7 @@ resourcefilepath = Path("./resources")
 
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2022, 1, 1)
+end_date = Date(2016, 1, 1)
 popsize = 170000
 
 
@@ -103,7 +103,7 @@ plt.title('Total deaths by Year')
 plt.xlabel('Year')
 plt.ylabel('Total deaths past year')
 plt.grid(True)
-plt.ylim(0, 5000)
+plt.ylim(0, 10000)
 plt.show()
 
 
