@@ -251,7 +251,7 @@ def test_analysis_events_force_availability_of_consumables_when_scheduled_in_anc
     pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
     pregnancy_helper_functions.update_mni_dictionary(sim.modules['Labour'], mother_id)
 
-    for params in ['prob_intervention_delivered_ifa', 'prob_adherent_ifa', 'prob_intervention_delivered_syph_test']:
+    for params in ['prob_adherent_ifa', 'prob_intervention_delivered_syph_test']:
         sim.modules['CareOfWomenDuringPregnancy'].current_parameters[params] = 1.0
 
     # Override the availability of the consumables within the health system- set to 0. If analysis was not running no

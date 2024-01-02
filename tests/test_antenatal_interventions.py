@@ -199,7 +199,6 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     params['prob_intervention_delivered_urine_ds'] = 1.0
     params['prob_intervention_delivered_bp'] = 1.0
     params['prob_intervention_delivered_depression_screen'] = 1.0
-    params['prob_intervention_delivered_ifa'] = 1.0
     params['prob_intervention_delivered_gdm_test'] = 1.0
     params['prob_adherent_ifa'] = 1.0
     params['prob_intervention_delivered_bep'] = 1.0
@@ -576,7 +575,6 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
 
     # Set treatment parameters to 1
     params['treatment_effect_blood_transfusion_anaemia'] = 1.0
-    params['prob_intervention_delivered_ifa'] = 1.0
     params['prob_adherent_ifa'] = 1.0
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
