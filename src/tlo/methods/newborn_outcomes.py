@@ -1057,13 +1057,13 @@ class NewbornOutcomes(Module):
 
                 early_event = HSI_NewbornOutcomes_ReceivesPostnatalCheck(module=self, person_id=child_id)
 
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                early_event, priority=0,
-                topen=self.sim.date + pd.DateOffset(days=1),
-                tclose=self.sim.date + pd.DateOffset(days=2))
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    early_event, priority=0,
+                    topen=self.sim.date + pd.DateOffset(days=1),
+                    tclose=self.sim.date + pd.DateOffset(days=2))
 
             else:
-                # 'Late' PNC is scheduled in the postnatal supevervisor module
+                # 'Late' PNC is scheduled in the postnatal supervisor module
                 nci[child_id]['will_receive_pnc'] = 'late'
 
     def on_birth(self, mother_id, child_id):
