@@ -588,7 +588,6 @@ class CervicalCancer(Module):
         df.at[child_id, "ce_date_palliative_care"] = pd.NaT
         df.at[child_id, "ce_date_death"] = pd.NaT
         df.at[child_id, "ce_date_cin_removal"] = pd.NaT
-        df.at[child_id, "ce_date_treatment"] = pd.NaT
         df.at[child_id, "ce_stage_at_diagnosis"] = 'none'
         df.at[child_id, "ce_ever_treated"] = False
         df.at[child_id, "ce_cc_ever"] = False
@@ -924,6 +923,38 @@ class HSI_CervicalCancer_XpertHPVScreening(HSI_Event, IndividualScopeEventMixin)
 
         df.at[person_id, 'ce_selected_for_xpert_this_month'] = False
 
+
+
+class HSI_CervicalCancerPresentationVaginalBleeding(HSI_Event, IndividualScopeEventMixin):
+
+    def __init__(self, module, person_id):
+        super().__init__(module, person_id=person_id)
+
+        self.TREATMENT_ID = "CervicalCancer_presentation_vaginal_bleeding"
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
+        self.ACCEPTED_FACILITY_LEVEL = '1a'
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        person = df.loc[person_id]
+        hs = self.sim.modules["HealthSystem"]
+
+        # Ignore this event if the person is no longer alive:
+        if not person.is_alive:
+            return hs.get_blank_appt_footprint()
+
+        hs.schedule_hsi_event(
+                hsi_event=HSI_CervicalCancer_Biopsy(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+        )
+
+
+
 class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
 
     def __init__(self, module, person_id):
@@ -934,7 +965,7 @@ class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "CervicalCancer_Biopsy"
 
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '2'
+        self.ACCEPTED_FACILITY_LEVEL = '3'
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1273,6 +1304,9 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_deaths_past_year = df.ce_date_death.between(date_1_year_ago, self.sim.date).sum()
         n_treated_past_year = df.ce_date_treatment.between(date_1_year_ago, self.sim.date).sum()
 
+        date_1p25_years_ago = self.sim.date - pd.DateOffset(days=456)
+        date_0p75_years_ago = self.sim.date - pd.DateOffset(days=274)
+
         cc = (df.is_alive & ((df.ce_hpv_cc_status == 'stage1') | (df.ce_hpv_cc_status == 'stage2a')
                              | (df.ce_hpv_cc_status == 'stage2b') | (df.ce_hpv_cc_status == 'stage3')
                              | (df.ce_hpv_cc_status == 'stage4'))).sum()
@@ -1298,6 +1332,9 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_vaginal_bleeding_stage4 = (df.is_alive & (df.sy_vaginal_bleeding == 2) &
                                      (df.ce_hpv_cc_status == 'stage4')).sum()
 
+        n_diagnosed_1_year_ago = df.date_diagnosis.between(date_1p25_years_ago, date_0p75_years_ago)
+        n_diagnosed_1_year_ago_died = (df.date_diagnosis.between(date_1p25_years_ago, date_0p75_years_ago) & ~df.is_alive)
+
         n_diagnosed_past_year_stage1 = \
             (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date) &
              (df.ce_stage_at_diagnosis == 'stage1')).sum()
@@ -1313,6 +1350,23 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_diagnosed_past_year_stage4 = \
             (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date) &
              (df.ce_stage_at_diagnosis == 'stage4')).sum()
+
+        n_diagnosed_past_year = \
+            (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date)).sum()
+
+        n_women_alive = (df.is_alive & (df.sex == 'F') & df.age_years > 15).sum()
+
+        rate_diagnosed_cc = n_diagnosed_past_year / n_women_alive
+
+        n_women_living_with_diagnosed_cc = \
+            (df['ce_date_diagnosis'] > 0).sum()
+
+        n_women_living_with_diagnosed_cc_age_lt_30 = \
+            (df['ce_date_diagnosis'] > 0 & (df['age_years'] < 30)).sum()
+        n_women_living_with_diagnosed_cc_age_3050 = \
+            (df['ce_date_diagnosis'] > 0 & (df['age_years'] > 30) & (df['age_years'] < 50)).sum()
+        n_women_living_with_diagnosed_cc_age_gt_50 = \
+            (df['ce_date_diagnosis'] > 0 & (df['age_years'] > 50)).sum()
 
         out.update({"rounded_decimal_year": rounded_decimal_year})
         out.update({"n_deaths_past_year": n_deaths_past_year})
@@ -1330,13 +1384,21 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_vaginal_bleeding_stage2b": n_vaginal_bleeding_stage2b})
         out.update({"n_vaginal_bleeding_stage3": n_vaginal_bleeding_stage3})
         out.update({"n_vaginal_bleeding_stage4": n_vaginal_bleeding_stage4})
+        out.update({"n_diagnosed_past_year": n_diagnosed_past_year})
+        out.update({"n_women_alive": n_women_alive})
+        out.update({"rate_diagnosed_cc": rate_diagnosed_cc})
+        out.update({"cc": cc})
+        out.update({"n_women_living_with_diagnosed_cc": n_women_living_with_diagnosed_cc })
+        out.update({"n_women_living_with_diagnosed_cc_age_lt_30": n_women_living_with_diagnosed_cc_age_lt_30})
+        out.update({"n_women_living_with_diagnosed_cc_age_3050": n_women_living_with_diagnosed_cc_age_3050})
+        out.update({"n_women_living_with_diagnosed_cc_age_gt_50": n_women_living_with_diagnosed_cc_age_gt_50})
 
         print('total_none:', out['total_none'], 'total_hpv:', out['total_hpv'], 'total_cin1:',out['total_cin1'],
               'total_cin2:', out['total_cin2'], 'total_cin3:', out['total_cin3'], 'total_stage1:', out['total_stage1'],
               'total_stage2a:', out['total_stage2a'], 'total_stage2b:', out['total_stage2b'],
               'total_stage3:', out['total_stage3'],'total_stage4:', out['total_stage4'],
               'year:', out['rounded_decimal_year'], 'deaths_past_year:', out['n_deaths_past_year'],
-              'treated past year:', out['n_treated_past_year'],'prop cc hiv:', out['prop_cc_hiv'],
+              'treated past year:', out['n_treated_past_year'], 'prop cc hiv:', out['prop_cc_hiv'],
               'n_vaginal_bleeding_stage1:', out['n_vaginal_bleeding_stage1'],
               'n_vaginal_bleeding_stage2a:', out['n_vaginal_bleeding_stage2a'],
               'n_vaginal_bleeding_stage2b:', out['n_vaginal_bleeding_stage2b'],
@@ -1348,7 +1410,12 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
               'diagnosed_past_year_stage3:', out['n_diagnosed_past_year_stage3'],
               'diagnosed_past_year_stage4:', out['n_diagnosed_past_year_stage4'],
               'n_screened_xpert_this_month:', out['n_screened_xpert_this_month'],
-              'n_screened_via_this_month:', out['n_screened_via_this_month'])
+              'n_screened_via_this_month:', out['n_screened_via_this_month'],
+              'n_diagnosed_past_year:', out['n_diagnosed_past_year'],
+              'n_women_alive:', out['n_women_alive'],
+              'rate_diagnosed_cc:', 'rate_diagnosed_cc',
+              'n_women_with_cc:', 'cc',
+              'n_women_living_with_diagnosed_cc:', 'n_women_living_with_diagnosed_cc')
 
         # comment out this below when running tests
 

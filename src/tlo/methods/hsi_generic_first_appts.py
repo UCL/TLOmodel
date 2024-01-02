@@ -18,7 +18,7 @@ from tlo.methods.breast_cancer import (
     HSI_BreastCancer_Investigation_Following_breast_lump_discernible,
 )
 from tlo.methods.cervical_cancer import (
-    HSI_CervicalCancer_Biopsy, HSI_CervicalCancer_AceticAcidScreening, HSI_CervicalCancer_XpertHPVScreening
+    HSI_CervicalCancerPresentationVaginalBleeding, HSI_CervicalCancer_AceticAcidScreening, HSI_CervicalCancer_XpertHPVScreening
 )
 from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
@@ -269,7 +269,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
             # If the symptoms include vaginal bleeding:
             if 'vaginal_bleeding' in symptoms:
                 schedule_hsi(
-                    HSI_CervicalCancer_Biopsy(
+                    HSI_CervicalCancerPresentationVaginalBleeding(
                         person_id=person_id,
                         module=sim.modules['CervicalCancer']
                     ),
