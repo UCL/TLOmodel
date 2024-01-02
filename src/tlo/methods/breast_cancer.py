@@ -32,6 +32,7 @@ class BreastCancer(Module):
         self.linear_models_for_progession_of_brc_status = dict()
         self.lm_onset_breast_lump_discernible = None
         self.daly_wts = dict()
+        self.item_codes_bladder_can = dict()
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
 
@@ -330,6 +331,24 @@ class BreastCancer(Module):
 
         # set date of palliative care being initiated: same as diagnosis (NB. future HSI will be scheduled for this)
         df.loc[select_for_care, "brc_date_palliative_care"] = df.loc[select_for_care, "brc_date_diagnosis"]
+
+    # TODO: add
+    # def get_and_store_bladder_cancer_item_codes(self):
+    #     """
+    #     This function defines the required consumables for each intervention delivered during this module and stores
+    #     them in a module level dictionary called within HSIs
+    #      """
+    #     get_item_code_from_pkg = self.sim.modules['HealthSystem'].get_item_codes_from_package_name
+    #
+    #     def get_list_of_items(item_list):
+    #         item_code_function = self.sim.modules['HealthSystem'].get_item_code_from_item_name
+    #         codes = [item_code_function(item) for item in item_list]
+    #         return codes
+    #
+    #     self.item_codes_bladder_can['screening']
+    #     self.item_codes_bladder_can['treatment']
+    #     self.item_codes_bladder_can['palliation']
+
 
     def initialise_simulation(self, sim):
         """
@@ -646,6 +665,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         self.TREATMENT_ID = "BreastCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "Mammography": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'  # Biopsy only available at level 3 and above.
+        self.EQUIPMENT = set()
 
         # TODO: Eva's dummy equipment example (not sure if it actually needs to be added and if it is in the RF)
         #  {'Slice Master sample processing Unit', 'Paraffin Dispense', 'Whatever used with biopsy'}
@@ -733,6 +753,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
+        self.EQUIPMENT = set()
 
         # ap_oct23 - I believe this will almost always be mastectomy surgery with chemotherapy, so I think for equipment
         # we just need the standard surgery equipment list. We may need to add radiotherapy when more available.
@@ -802,6 +823,7 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "BreastCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.EQUIPMENT = set()
 
         # ap_oct23 - Eva, I'm not aware of any equipment needed here.  Clinical guidelines do not specify what
         # checks or monitoring are indicated
