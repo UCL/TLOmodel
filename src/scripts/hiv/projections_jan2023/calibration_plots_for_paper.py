@@ -608,7 +608,7 @@ plt.show()
 
 # HIV Prevalence Children
 make_plot(
-    title_str="HIV Prevalence in Children 0-14 (%)",
+    title_str="HIV Prevalence in Children Aged 0-14 (%)",
     model=model_hiv_child_prev["median"] * 100,
     model_low=model_hiv_child_prev["lower"] * 100,
     model_high=model_hiv_child_prev["upper"] * 100,
@@ -736,10 +736,11 @@ make_plot(
     ylab="Proportion of MDR cases"
 )
 # data from ResourceFile_TB sheet WHO_mdrTB2017
-plt.errorbar(model_tb_mdr.index[7], 0.0075, yerr=[[0.0059], [0.0105]], fmt="ob")
+plt.errorbar(model_tb_mdr.index[7], 0.0075, yerr=[[0.0059], [0.0105]],
+             fmt="o", color="C0")
 
 red_line = mlines.Line2D([], [], color="C3", markersize=15, label="TLO Model")
-blue_dot = mlines.Line2D([], [], color="b", marker=".", markersize=15, label="WHO")
+blue_dot = mlines.Line2D([], [], color="C0", marker=".", markersize=15, label="WHO")
 
 plt.legend(handles=[red_line, blue_dot])
 
@@ -941,16 +942,20 @@ tmp2 = tmp.loc[
 # for each run need to combine deaths in each year, may have different numbers of runs
 model_deaths_AIDS = pd.DataFrame(tmp2.groupby(["year"]).sum())
 
+model_deaths_AIDS[model_deaths_AIDS.columns[1:]] = model_deaths_AIDS[model_deaths_AIDS.columns[1:]].astype(float)
+# remove first colum (cause)
+model_deaths_AIDS = model_deaths_AIDS.iloc[:, 1:]
+
 # double check all columns are float64 or quantile argument will fail
-model_2012_median = model_deaths_AIDS.iloc[2].quantile(0.5)
-model_2017_median = model_deaths_AIDS.iloc[5].quantile(0.5)
-model_2012_low = model_deaths_AIDS.iloc[2].quantile(0.025)
-model_2017_low = model_deaths_AIDS.iloc[5].quantile(0.025)
-model_2012_high = model_deaths_AIDS.iloc[2].quantile(0.975)
-model_2017_high = model_deaths_AIDS.iloc[5].quantile(0.975)
+model_2012_median = model_deaths_AIDS.iloc[2].quantile(0.5).item()
+model_2017_median = model_deaths_AIDS.iloc[5].quantile(0.5).item()
+model_2012_low = model_deaths_AIDS.iloc[2].quantile(0.025).item()
+model_2017_low = model_deaths_AIDS.iloc[5].quantile(0.025).item()
+model_2012_high = model_deaths_AIDS.iloc[2].quantile(0.975).item()
+model_2017_high = model_deaths_AIDS.iloc[5].quantile(0.975).item()
 
 # get GBD estimates from any log_filepath
-death_compare = compare_number_of_deaths("outputs/dev_runs__2023-05-19T120456.log", resourcefilepath)
+death_compare = compare_number_of_deaths("outputs/dev_runs__2023-12-18T094504.log", resourcefilepath)
 
 # sim.log_filepath example: 'outputs/Logfile__2021-10-04T155631.log'
 
@@ -1002,6 +1007,7 @@ plt.errorbar(
 plt.xticks(ticks=x_vals, labels=labels)
 plt.title("Deaths per year due to AIDS")
 plt.ylabel("Numbers of deaths per year")
+plt.ylim(0, 60000)
 plt.xlabel("Year")
 plt.legend(handles=[blue_patch, green_patch])
 plt.tight_layout()
@@ -1021,6 +1027,8 @@ tmp2 = tmp.loc[
 # sum rows for each year (2 entries)
 # for each run need to combine deaths in each year, may have different numbers of runs
 model_deaths_TB = pd.DataFrame(tmp2.groupby(["year"]).sum())
+# remove first colum (cause)
+model_deaths_TB = model_deaths_TB.iloc[:, 1:]
 
 # double check all columns are float64 or quantile argument will fail
 model_2010_median = model_deaths_TB.iloc[2].quantile(0.5)  # uses 2012 value
@@ -1070,6 +1078,7 @@ plt.errorbar(
 plt.xticks(ticks=x_vals, labels=labels)
 plt.title("Deaths per year due to TB")
 plt.ylabel("Numbers of deaths per year")
+plt.ylim(0, 14000)
 plt.xlabel("Year")
 plt.legend(handles=[blue_patch, green_patch])
 plt.tight_layout()

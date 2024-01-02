@@ -1941,7 +1941,7 @@ item_codes_dict["tb_tx_adult"] = get_item_code_from_item_name(items_list, "Cat. 
 item_codes_dict["tb_tx_child"] = get_item_code_from_item_name(items_list, "Cat. I & III Patient Kit B")
 item_codes_dict["tb_retx_adult"] = get_item_code_from_item_name(items_list, "Cat. II Patient Kit A1")
 item_codes_dict["tb_retx_child"] = get_item_code_from_item_name(items_list, "Cat. II Patient Kit A2")
-item_codes_dict["tb_mdrtx"] = get_item_code_from_item_name(items_list, "Category IV")
+item_codes_dict["tb_mdrtx"] = get_item_code_from_item_name(items_list, "Treatment: second-line drugs")
 item_codes_dict["tb_ipt"] = get_item_code_from_item_name(items_list, "Isoniazid/Pyridoxine, tablet 300 mg")
 
 # select item codes from item_codes_dict
@@ -1960,7 +1960,7 @@ selected_cons_availability.loc[selected_cons_availability.item_code == 176, "ite
 selected_cons_availability.loc[selected_cons_availability.item_code == 178, "item_code"] = "Child treatment"
 selected_cons_availability.loc[selected_cons_availability.item_code == 177, "item_code"] = "Adult retreatment"
 selected_cons_availability.loc[selected_cons_availability.item_code == 179, "item_code"] = "Child retreatment"
-selected_cons_availability.loc[selected_cons_availability.item_code == 180, "item_code"] = "MDR treatment"
+selected_cons_availability.loc[selected_cons_availability.item_code == 181, "item_code"] = "MDR treatment"
 selected_cons_availability.loc[selected_cons_availability.item_code == 192, "item_code"] = "IPT"
 
 df_heatmap = selected_cons_availability.pivot_table(
@@ -1969,12 +1969,18 @@ df_heatmap = selected_cons_availability.pivot_table(
     columns='Facility_Level',
     aggfunc=np.mean)
 
-ax = sns.heatmap(df_heatmap, annot=True)
-plt.tight_layout()
+fig, ax = plt.subplots(figsize=(7, 5))
+plt.subplots_adjust(top=1.5)  # Adjust the top margin to leave space for the title
+
+ax = sns.heatmap(df_heatmap, annot=True,
+                 vmin=0, vmax=1.0)
 
 plt.xlabel('Facility level')
 plt.ylabel('')
-# plt.savefig(outputspath / "cons_availability.png", bbox_inches='tight')
+plt.title('TB consumables')
+plt.tight_layout()
+
+plt.savefig(outputspath / "TBcons_availability.png", bbox_inches='tight')
 plt.show()
 
 
@@ -2027,12 +2033,18 @@ df_heatmap = selected_cons_availability.pivot_table(
     columns='Facility_Level',
     aggfunc=np.mean)
 
-ax = sns.heatmap(df_heatmap, annot=True)
-plt.tight_layout()
+fig, ax = plt.subplots(figsize=(7, 5))
+plt.subplots_adjust(top=1.5)  # Adjust the top margin to leave space for the title
+
+ax = sns.heatmap(df_heatmap, annot=True,
+                 vmin=0, vmax=1.0)
 
 plt.xlabel('Facility level')
 plt.ylabel('')
-# plt.savefig(outputspath / "cons_availability_HIV.png", bbox_inches='tight')
+plt.title('HIV consumables')
+plt.tight_layout()
+
+plt.savefig(outputspath / "cons_availability_HIV.png", bbox_inches='tight')
 plt.show()
 
 
