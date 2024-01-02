@@ -1,0 +1,89 @@
+{
+  "scenario_script_path": "src/scripts/hiv/projections_jan2023/scenario9.py",
+  "scenario_seed": 0,
+  "runs_per_draw": 2,
+  "draws": [
+    {
+      "draw_number": 0,
+      "parameters": {
+        "Tb": {
+          "scenario": 2,
+          "scaling_factor_WHO": 1.603029372,
+          "tb_healthseekingbehaviour_cap": 0
+        },
+        "Hiv": {
+          "beta": 0.143785163,
+          "hiv_healthseekingbehaviour_cap": 0,
+          "probability_of_seeking_further_art_appointment_if_drug_not_available": 0,
+          "probability_of_seeking_further_art_appointment_if_appointment_not_available": 0
+        }
+      }
+    },
+    {
+      "draw_number": 1,
+      "parameters": {
+        "Tb": {
+          "scenario": 2,
+          "scaling_factor_WHO": 1.507636969,
+          "tb_healthseekingbehaviour_cap": 0
+        },
+        "Hiv": {
+          "beta": 0.137641638,
+          "hiv_healthseekingbehaviour_cap": 0,
+          "probability_of_seeking_further_art_appointment_if_drug_not_available": 0,
+          "probability_of_seeking_further_art_appointment_if_appointment_not_available": 0
+        }
+      }
+    },
+    {
+      "draw_number": 2,
+      "parameters": {
+        "Tb": {
+          "scenario": 2,
+          "scaling_factor_WHO": 1.673313118,
+          "tb_healthseekingbehaviour_cap": 0
+        },
+        "Hiv": {
+          "beta": 0.130761192,
+          "hiv_healthseekingbehaviour_cap": 0,
+          "probability_of_seeking_further_art_appointment_if_drug_not_available": 0,
+          "probability_of_seeking_further_art_appointment_if_appointment_not_available": 0
+        }
+      }
+    },
+    {
+      "draw_number": 3,
+      "parameters": {
+        "Tb": {
+          "scenario": 2,
+          "scaling_factor_WHO": 1.739471024,
+          "tb_healthseekingbehaviour_cap": 0
+        },
+        "Hiv": {
+          "beta": 0.141134768,
+          "hiv_healthseekingbehaviour_cap": 0,
+          "probability_of_seeking_further_art_appointment_if_drug_not_available": 0,
+          "probability_of_seeking_further_art_appointment_if_appointment_not_available": 0
+        }
+      }
+    },
+    {
+      "draw_number": 4,
+      "parameters": {
+        "Tb": {
+          "scenario": 2,
+          "scaling_factor_WHO": 1.702850618,
+          "tb_healthseekingbehaviour_cap": 0
+        },
+        "Hiv": {
+          "beta": 0.11937769,
+          "hiv_healthseekingbehaviour_cap": 0,
+          "probability_of_seeking_further_art_appointment_if_drug_not_available": 0,
+          "probability_of_seeking_further_art_appointment_if_appointment_not_available": 0
+        }
+      }
+    }
+  ],
+  "commit": "b02175d9793769aa2c7eae702c427f99d8c033fc",
+  "github": "https://github.com/UCL/TLOmodel/tree/b02175d9793769aa2c7eae702c427f99d8c033fc"
+}

@@ -35,10 +35,10 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2030, 1, 1)
-popsize = 10_000
+end_date = Date(2013, 1, 1)
+popsize = 1000
 
-scenario = 1
+scenario = 5
 
 # set up the log config
 log_config = {
@@ -91,12 +91,12 @@ sim.register(
 
 # set the scenario
 sim.modules["Tb"].parameters["scenario"] = scenario
-# sim.modules["Tb"].parameters["scenario_start_date"] = Date(2024, 1, 1)
+sim.modules["Tb"].parameters["scenario_start_date"] = Date(2011, 1, 1)
 
-sim.modules["Tb"].parameters["tb_healthseekingbehaviour_cap"] = 0
-sim.modules["Hiv"].parameters['hiv_healthseekingbehaviour_cap'] = 0
-sim.modules["Hiv"].parameters['probability_of_seeking_further_art_appointment_if_drug_not_available'] = 0
-sim.modules["Hiv"].parameters['probability_of_seeking_further_art_appointment_if_appointment_not_available'] = 0
+# sim.modules["Tb"].parameters["tb_healthseekingbehaviour_cap"] = 0
+# sim.modules["Hiv"].parameters['hiv_healthseekingbehaviour_cap'] = 0
+# sim.modules["Hiv"].parameters['probability_of_seeking_further_art_appointment_if_drug_not_available'] = 0
+# sim.modules["Hiv"].parameters['probability_of_seeking_further_art_appointment_if_appointment_not_available'] = 0
 
 # sim.modules["Tb"].parameters["rr_tb_hiv"] = 5  # default 13
 # rr relapse if HIV+ 4.7

@@ -1490,11 +1490,9 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         if scenario == 6:
 
             # list of TB prevention consumables
-            cons_codes = [192]
-            default_avail = [0.59]
-            for value in cons_codes:
-                if value in result_dict:
-                    result_dict[value] = default_avail[value]
+            cons_codes = 192
+            default_avail = 0.59
+            result_dict[cons_codes] = default_avail
 
             self.sim.modules['HealthSystem'].override_availability_of_consumables(result_dict)
 
@@ -2372,7 +2370,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # -------- SHINE Trial shorter paediatric regimen -------- #
         # shorter treatment for child with minimal tb
-        if (self.module.parameters["scenario"] == 5) \
+        if (self.module.parameters["scenario"] == 99) \
             & (self.sim.date >= self.module.parameters["scenario_start_date"]) \
             & (person["age_years"] <= 16) \
             & ~(person["tb_smear"]) \
