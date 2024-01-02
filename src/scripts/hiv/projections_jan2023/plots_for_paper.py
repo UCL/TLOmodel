@@ -36,6 +36,7 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # download all files (and get most recent [-1])
+# todo check file paths to make sure scenario12 not selected
 results0 = get_scenario_outputs("scenario0.py", outputspath)[-1]
 results1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
 results2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
