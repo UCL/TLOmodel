@@ -81,7 +81,7 @@ hcw2 = summarise_frac_hcws(results2)
 
 # %%:  ---------------------------------- Appt usage -------------------------------------
 
-years_of_simulation = 26
+years_of_simulation = 24
 
 
 def summarise_treatment_counts(df_list, treatment_id):
@@ -261,27 +261,34 @@ tx2_norm.loc["Hiv_Prevention_Prep_median"] = tx2_norm.loc["Hiv_Prevention_Prep_m
     "Hiv_Prevention_Prep_median", 13]
 
 # rename treatment IDs
-appt_types = ["TB test", "HIV test", "HIV tx", "VMMC", "HIV \n infant prophylaxis", "TB X-ray",
-              "TB tx", "TB follow-up", "TB IPT", "PrEP"]
-tx0_norm.index = appt_types
-tx1_norm.index = appt_types
-tx2_norm.index = appt_types
+# appt_types = ["TB test", "HIV test", "HIV tx", "VMMC", "HIV \n infant prophylaxis", "TB X-ray",
+#               "TB tx", "TB follow-up", "TB IPT", "PrEP"]
+tx0_norm.index = [name.replace('_median', '').replace('_', ' ') for name in tx0_norm.index]
+tx1_norm.index = [name.replace('_median', '').replace('_', ' ') for name in tx1_norm.index]
+tx2_norm.index = [name.replace('_median', '').replace('_', ' ') for name in tx2_norm.index]
 
 # insert zeros for IPT and PrEP pre-introduction (actual values are slightly above 0)
-tx0_norm.loc['TB IPT'][0:4] = 0
-tx1_norm.loc['TB IPT'][0:4] = 0
-tx2_norm.loc['TB IPT'][0:4] = 0
+tx0_norm.loc['Tb Prevention Ipt', tx0_norm.columns[0:4]] = 0
+tx1_norm.loc['Tb Prevention Ipt', tx1_norm.columns[0:4]] = 0
+tx2_norm.loc['Tb Prevention Ipt', tx2_norm.columns[0:4]] = 0
 
-tx0_norm.loc['PrEP'][0:8] = 0
-tx1_norm.loc['PrEP'][0:8] = 0
-tx2_norm.loc['PrEP'][0:8] = 0
+tx0_norm.loc['Hiv Prevention Prep', tx0_norm.columns[0:8]] = 0
+tx1_norm.loc['Hiv Prevention Prep', tx1_norm.columns[0:8]] = 0
+tx2_norm.loc['Hiv Prevention Prep', tx2_norm.columns[0:8]] = 0
 
-
-years = list((range(2010, 2036, 1)))
+years = list((range(2010, 2034, 1)))
 
 tx0_norm.columns = years
 tx1_norm.columns = years
 tx2_norm.columns = years
+
+# save treatment_ID numbers
+with pd.ExcelWriter(outputspath / ("Treatment_numbers_Dec2023" + ".xlsx"), engine='openpyxl') as writer:
+    tx0.to_excel(writer, sheet_name='scenario0', index=True)
+    tx1.to_excel(writer, sheet_name='scenario1', index=True)
+    tx2.to_excel(writer, sheet_name='scenario2', index=True)
+    # writer.save()
+    writer.close()
 
 
 # %%:  ---------------------------------- PLOTS ------------------------------------
@@ -334,10 +341,10 @@ sns.heatmap(tx2_norm,
             cbar=True,
             ax=axs[2]
             )
-axs[2].set_title("Constrained scale-up no constraints", size=10)
+axs[2].set_title("Unconstrained scale-up", size=10)
 
 plt.tick_params(axis="both", which="major", labelsize=9)
-fig.savefig(outputspath / "HS_use.png")
+fig.savefig(outputspath / "Figure_S9_NumbersAppointments.png")
 plt.show()
 
 
@@ -353,16 +360,16 @@ sc2_colour = berry[2]
 
 fig, ax = plt.subplots()
 
-ax.bar(years_num[13:26], hcw1["median"].loc[13:25], width, color=sc1_colour)
-ax.bar(years_num[13:26] + width, hcw2["median"].loc[13:25], width, color=sc2_colour)
+ax.bar(years_num[14:24], hcw1["median"].loc[14:23], width, color=sc1_colour)
+ax.bar(years_num[14:24] + width, hcw2["median"].loc[14:23], width, color=sc2_colour)
 
 ax.set_ylabel("% difference", rotation=90, labelpad=15)
-ax.set_ylim([-10, 10])
+ax.set_ylim([-10, 60])
 
 ax.yaxis.set_label_position("left")
-ax.legend(["Constrained scale-up", "Constrained scale-up \n no constraints"], frameon=False)
+ax.legend(["Constrained scale-up", "Unconstrained scale-up"], frameon=False)
 plt.tight_layout()
-fig.savefig(outputspath / "Frac_HWC_time.png")
+# fig.savefig(outputspath / "Frac_HWC_time.png")
 plt.show()
 
 
@@ -416,9 +423,6 @@ py2 = extract_results(
     custom_generate_series=get_person_years,
     do_scaling=False
 )
-
-
-
 
 # ---------------------------------- HIV ---------------------------------- #
 
@@ -671,7 +675,7 @@ l_sc2 = mlines.Line2D([], [], color=sc2_colour, label="Constrained scale-up \n n
 
 plt.legend(handles=[l_baseline, l_sc1, l_sc2])
 
-fig.savefig(outputspath / "Epi_outputs.png")
+# fig.savefig(outputspath / "Epi_outputs.png")
 
 plt.show()
 
@@ -759,7 +763,7 @@ l_sc2 = mlines.Line2D([], [], color=sc2_colour, label="Constrained scale-up \n n
 
 plt.legend(handles=[l_baseline, l_sc1, l_sc2])
 
-fig.savefig(outputspath / "Epi_outputs_focussed.png")
+# fig.savefig(outputspath / "Epi_outputs_focussed.png")
 
 plt.show()
 

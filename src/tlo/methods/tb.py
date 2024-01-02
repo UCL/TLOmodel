@@ -387,6 +387,10 @@ class Tb(Module):
             Types.REAL,
             "number of repeat visits assumed for healthcare services",
         ),
+        "data_end": Parameter(
+            Types.INT,
+            "last year for which data are available",
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -1509,9 +1513,12 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         p = self.module.parameters
+
+        current_year = min(self.sim.date.year, p['data_end'])
+
         inc_estimates = p["who_incidence_estimates"]
         incidence_year = (inc_estimates.loc[
-            (inc_estimates.year == self.sim.date.year), "incidence_per_100k"
+            (inc_estimates.year == current_year), "incidence_per_100k"
         ].values[0]) / 100000
 
         prop_untreated_ds = self.module.calculate_untreated_proportion(population, strain="ds")
