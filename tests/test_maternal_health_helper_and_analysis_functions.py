@@ -337,6 +337,7 @@ def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed
     df.at[mother_id, 'ps_premature_rupture_of_membranes'] = True
     df.at[mother_id, 'ps_htn_disorders'] = 'severe_pre_eclamp'
     df.at[mother_id, 'la_obstructed_labour'] = True
+
     df.at[mother_id, 'la_sepsis'] = True
 
     mni[mother_id]['cpd'] = False
@@ -369,6 +370,9 @@ def test_analysis_events_force_availability_of_consumables_for_sba_analysis(seed
     for cons in abx_prom, steroids, cbp, ol, mag_sulf, htns, seps, resus:
         available = hsi_event.get_consumables(item_codes=cons)
         assert not available
+
+    # Ensure AVD can occur
+    params['prob_successful_assisted_vaginal_delivery'] = 1.0
 
     # Next define the actual HSI of interest
     sba = labour.HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
@@ -621,6 +625,9 @@ def test_analysis_events_circumnavigates_sf_and_competency_parameters(seed):
     params['prob_hcw_avail_avd'] = 0.0
     params['mean_hcw_competence_hp'] = 0.0
     params['mean_hcw_competence_hc'] = 0.0
+
+    # Ensure AVD can occur
+    params['prob_successful_assisted_vaginal_delivery'] = 1.0
 
     # Next define the actual HSI of interest
     from tlo.methods.healthsystem import FacilityInfo

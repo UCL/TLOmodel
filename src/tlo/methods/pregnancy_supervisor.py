@@ -2170,9 +2170,8 @@ class PregnancyAnalysisEvent(Event, PopulationScopeEventMixin):
                 # Override the availability of IPTp consumables with the set level of coverage
                 if 'Malaria' in self.sim.modules:
                     iptp = self.sim.modules['Malaria'].item_codes_for_consumables_required['malaria_iptp']
-                    ic = list(iptp.keys())[0]
                     self.sim.modules['HealthSystem'].override_availability_of_consumables(
-                        {ic: params['anc_availability_probability']})
+                        {iptp: params['anc_availability_probability']})
 
                 # And then override the quality parameters in the model
                 for parameter in ['prob_intervention_delivered_urine_ds', 'prob_intervention_delivered_bp',
