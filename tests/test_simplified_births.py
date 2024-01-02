@@ -4,7 +4,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from pandas._libs.tslibs.offsets import DateOffset
 
 from tlo import Date, Simulation, logging
 from tlo.events import PopulationScopeEventMixin, RegularEvent
@@ -70,7 +69,7 @@ def check_property_integrity(sim):
     # Check that all women identified as a mother by a newborn have been pregnant and delivered and were alive and >15yo
     # at the time of delivery/birth of that child.
     df = sim.population.props
-    mothers = set(df.loc[~df.date_of_birth.isna() & (df.mother_id >= 0)].mother_id)
+    mothers = df.loc[~df.date_of_birth.isna() & (df.mother_id >= 0)].mother_id.unique()
 
     if len(mothers) > 0:
         assert not df.loc[
@@ -211,7 +210,7 @@ def test_standard_run_using_simplified_birth_module(seed):
     # Cause the 'check on configuration' of properties to run daily during the simulation.
     class CheckProperties(RegularEvent, PopulationScopeEventMixin):
         def __init__(self, module):
-            super().__init__(module, frequency=DateOffset(days=1))
+            super().__init__(module, frequency=pd.DateOffset(days=1))
 
         def apply(self, population):
             check_property_integrity(self.module.sim)

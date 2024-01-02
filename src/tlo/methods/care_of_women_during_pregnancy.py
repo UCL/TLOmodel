@@ -8,7 +8,6 @@ from tlo.methods import Metadata, pregnancy_helper_functions
 from tlo.methods.dxmanager import DxTest
 from tlo.methods.epi import HSI_TdVaccine
 from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.labour import LabourOnsetEvent
 from tlo.methods.malaria import HSI_MalariaIPTp
 from tlo.methods.tb import HSI_Tb_ScreeningAndRefer
@@ -71,19 +70,19 @@ class CareOfWomenDuringPregnancy(Module):
 
         # CARE SEEKING...
         'prob_seek_anc2': Parameter(
-            Types.LIST, 'Probability a women who is not predicted to attended four or more ANC visits will attend '
+            Types.LIST, 'Probability a woman who is not predicted to attended four or more ANC visits will attend '
                         'ANC2'),
         'prob_seek_anc3': Parameter(
-            Types.LIST, 'Probability a women who is not predicted to attended four or more ANC visits will attend '
+            Types.LIST, 'Probability a woman who is not predicted to attended four or more ANC visits will attend '
                         'ANC3'),
         'prob_seek_anc5': Parameter(
-            Types.LIST, 'Probability a women who is predicted to attend four or more ANC visits will attend ANC5'),
+            Types.LIST, 'Probability a woman who is predicted to attend four or more ANC visits will attend ANC5'),
         'prob_seek_anc6': Parameter(
-            Types.LIST, 'Probability a women who is predicted to attend four or more ANC visits will attend ANC6'),
+            Types.LIST, 'Probability a woman who is predicted to attend four or more ANC visits will attend ANC6'),
         'prob_seek_anc7': Parameter(
-            Types.LIST, 'Probability a women who is predicted to attend four or more ANC visits will attend ANC7'),
+            Types.LIST, 'Probability a woman who is predicted to attend four or more ANC visits will attend ANC7'),
         'prob_seek_anc8': Parameter(
-            Types.LIST, 'Probability a women who is predicted to attend four or more ANC visits will attend ANC8'),
+            Types.LIST, 'Probability a woman who is predicted to attend four or more ANC visits will attend ANC8'),
 
         # TREATMENT EFFECTS...
         'effect_of_ifa_for_resolving_anaemia': Parameter(
@@ -390,7 +389,7 @@ class CareOfWomenDuringPregnancy(Module):
                 specificity=params['specificity_bp_monitoring']),
 
             # This test represents a urine dipstick which is used to measuring the presence and amount of protein in a
-            # womans urine, proteinuria being indicative of pre-eclampsia/eclampsia
+            # woman's urine, proteinuria being indicative of pre-eclampsia/eclampsia
             urine_dipstick_protein=DxTest(
                 property='ps_htn_disorders',
                 target_categories=['mild_pre_eclamp', 'severe_pre_eclamp', 'eclampsia'],
@@ -510,7 +509,7 @@ class CareOfWomenDuringPregnancy(Module):
     #  ================================ ADDITIONAL ANTENATAL HELPER FUNCTIONS =========================================
     def get_approx_days_of_pregnancy(self, person_id):
         """
-        This function calculates the approximate number of days remaining in a womans pregnancy- assuming all
+        This function calculates the approximate number of days remaining in a woman's pregnancy - assuming all
          pregnancies go to full term (40 weeks gestational age)
         :param person_id: Mothers individual id
         :return: Approximate number of days left in a term pregnancy
@@ -538,7 +537,7 @@ class CareOfWomenDuringPregnancy(Module):
         # ANC1 - 12wks, ANC2 - 20wks, ANC3 - 26wks, ANC4 - 30wks, ANC5 - 34wks, ANC6 - 36wks, ANC7 - 38wks,
         # ANC8 - 40 wks
 
-        # Using a womans gestational age at the time of her current visit, we calculate how many weeks in the future
+        # Using a woman's gestational age at the time of her current visit, we calculate how many weeks in the future
         # until she should return for her next visit in the schedule
         if mother.ps_gestational_age_in_weeks < 20:
             recommended_gestation_next_anc = 20
@@ -574,7 +573,7 @@ class CareOfWomenDuringPregnancy(Module):
 
     def antenatal_care_scheduler(self, individual_id, visit_to_be_scheduled, recommended_gestation_next_anc):
         """
-        This function is responsible for scheduling a womans next ANC contact in the schedule if she chooses to seek
+        This function is responsible for scheduling a woman's next ANC contact in the schedule if she chooses to seek
         care again.  It is called by each of the ANC HSIs.
         :param individual_id: individual_id
         :param visit_to_be_scheduled: Number if next visit in the schedule (2-8)
@@ -610,7 +609,7 @@ class CareOfWomenDuringPregnancy(Module):
                                                                    visit_number=visit_to_be_scheduled)
 
         def calculate_visit_date_and_schedule_visit(visit):
-            # We subtract this womans current gestational age from the recommended gestational age for the next
+            # We subtract this woman's current gestational age from the recommended gestational age for the next
             # contact
             weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[individual_id,
                                                                               'ps_gestational_age_in_weeks'])
@@ -723,7 +722,7 @@ class CareOfWomenDuringPregnancy(Module):
     def screening_interventions_delivered_at_every_contact(self, hsi_event):
         """
         This function contains the screening interventions which are delivered at every ANC contact regardless of the
-        womans gestational age and include blood pressure measurement and urine dipstick testing
+        woman's gestational age and include blood pressure measurement and urine dipstick testing
         :param hsi_event: HSI event in which the function has been called:
         """
         person_id = hsi_event.target
@@ -735,7 +734,7 @@ class CareOfWomenDuringPregnancy(Module):
         proteinuria_diagnosed = False
 
         # Delivery of the intervention is conditioned on a random draw against a probability that the intervention
-        # would be delivered (used to calibrate to SPA data- acts as proxy for clinical quality)
+        # would be delivered (used to calibrate to SPA data - acts as proxy for clinical quality)
         if self.rng.random_sample() < params['prob_intervention_delivered_urine_ds']:
 
             # check consumables
@@ -782,8 +781,8 @@ class CareOfWomenDuringPregnancy(Module):
         if 'Depression' in self.sim.modules:
             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'depression_screen'})
 
-            if not df.at[person_id, 'de_ever_diagnosed_depression']:
-                self.sim.modules['Depression'].do_when_suspected_depression(person_id, hsi_event)
+            self.sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
+                                                                      hsi_event=hsi_event)
 
     def iron_and_folic_acid_supplementation(self, hsi_event):
         """This function contains the intervention iron and folic acid supplementation delivered during ANC.
@@ -856,9 +855,9 @@ class CareOfWomenDuringPregnancy(Module):
         """
 
         # Currently we schedule women to the TB screening HSI in the TB module
-        if 'Tb' in self.sim.modules.keys():
+        if 'Tb' in self.sim.modules:
             tb_screen = HSI_Tb_ScreeningAndRefer(
-                    module=self.sim.modules['Tb'], person_id=hsi_event.target)
+                module=self.sim.modules['Tb'], person_id=hsi_event.target)
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(tb_screen, priority=0,
                                                                 topen=self.sim.date,
@@ -872,33 +871,15 @@ class CareOfWomenDuringPregnancy(Module):
         :param hsi_event: HSI event in which the function has been called
         """
         person_id = hsi_event.target
-        df = self.sim.population.props
 
         if 'Epi' in self.sim.modules:
 
             # Define the HSI in which the vaccine is delivered
-            vaccine_hsi = HSI_TdVaccine(self.sim.modules['Epi'], person_id=person_id)
+            vaccine_hsi = HSI_TdVaccine(self.sim.modules['Epi'], person_id=person_id,
+                                        suppress_footprint=True)
 
-            # Identify individuals district of residence in order to determine district level coverage of TT
-            ind_district = df.at[person_id, 'district_num_of_residence']
-            vaccine_coverage_df = self.sim.modules['Epi'].parameters['district_vaccine_coverage']
-
-            # If the year is 2010-2018 we condition the HSI being scheduled on the district level coverage
-            if self.sim.date.year <= 2018:
-                coverage_year = self.sim.date.year
-
-                tt2_coverage = vaccine_coverage_df.loc[(vaccine_coverage_df['District'] == ind_district) &
-                                                       (vaccine_coverage_df['Year'] == coverage_year)]['TT2+']
-
-                if self.rng.random_sample() < tt2_coverage.values:
-
-                    self.sim.modules['HealthSystem'].schedule_hsi_event(vaccine_hsi, priority=0,
-                                                                        topen=self.sim.date)
-            else:
-                # After 2018 all women are scheduled the HSI and consumable availability will determine intervention
-                # delivery
-                self.sim.modules['HealthSystem'].schedule_hsi_event(vaccine_hsi, priority=0,
-                                                                    topen=self.sim.date)
+            self.sim.modules['HealthSystem'].schedule_hsi_event(vaccine_hsi, priority=0,
+                                                                topen=self.sim.date)
 
     def calcium_supplementation(self, hsi_event):
         """This function contains the intervention calcium supplementation delivered during ANC.
@@ -1034,7 +1015,6 @@ class CareOfWomenDuringPregnancy(Module):
         This function contains the scheduling for HIV testing and is provided to women during ANC.
         :param hsi_event: HSI event in which the function has been called
         """
-        df = self.sim.population.props
         person_id = hsi_event.target
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
@@ -1043,16 +1023,12 @@ class CareOfWomenDuringPregnancy(Module):
             return
 
         if 'Hiv' in self.sim.modules:
+            # The decision of whether the woman gets a test is determined by the Hiv module
+            test_scheduled = self.sim.modules['Hiv'].decide_whether_hiv_test_for_mother(
+                person_id, referred_from="care_of_women_during_pregnancy")
 
-            # Women who are already diagnosed will not be tested again, testing is managed in the HIV module
-            if not df.at[person_id, 'hv_diagnosed']:
+            if test_scheduled:
                 mni[person_id]['anc_ints'].append('hiv')
-
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                   HSI_Hiv_TestAndRefer(person_id=person_id, module=self.sim.modules['Hiv']),
-                   topen=self.sim.date,
-                   tclose=None,
-                   priority=0)
 
             logger.info(key='anc_interventions', data={'mother': person_id, 'intervention': 'hiv_screen'})
 
@@ -1084,7 +1060,7 @@ class CareOfWomenDuringPregnancy(Module):
         if 'gdm_screen' in mni[person_id]['anc_ints']:
             return
 
-        # We check if this women has any of the key risk factors, if so they are sent for additional blood tests
+        # We check if this woman has any of the key risk factors, if so they are sent for additional blood tests
         if df.at[person_id, 'li_bmi'] >= 4 or df.at[person_id, 'ps_prev_gest_diab'] or df.at[person_id,
                                                                                              'ps_prev_stillbirth']:
 
@@ -1131,7 +1107,6 @@ class CareOfWomenDuringPregnancy(Module):
         :returns True/False as to whether the event can run
         """
         df = self.sim.population.props
-        params = self.current_parameters
         mother = df.loc[individual_id]
 
         visit = HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(
@@ -1173,14 +1148,6 @@ class CareOfWomenDuringPregnancy(Module):
             df.at[individual_id, 'ps_date_of_anc1'] = visit_date
             return False
 
-        # Finally, if the squeeze factor is too high the event wont run and she will return tomorrow
-        if squeeze_factor > params['squeeze_factor_threshold_anc']:
-
-            self.sim.modules['HealthSystem'].schedule_hsi_event(visit, priority=0,
-                                                                topen=self.sim.date + DateOffset(days=1),
-                                                                tclose=self.sim.date + DateOffset(days=2))
-            return False
-
         return True
 
     def check_subsequent_anc_can_run(self, individual_id, this_contact, this_visit_number, squeeze_factor,
@@ -1197,7 +1164,6 @@ class CareOfWomenDuringPregnancy(Module):
         """
 
         df = self.sim.population.props
-        params = self.current_parameters
 
         date_difference = self.sim.date - df.at[individual_id, 'ac_date_next_contact']
 
@@ -1220,13 +1186,6 @@ class CareOfWomenDuringPregnancy(Module):
         if df.at[individual_id, 'hs_is_inpatient']:
             self.antenatal_care_scheduler(individual_id, visit_to_be_scheduled=this_visit_number,
                                           recommended_gestation_next_anc=gest_age_next_contact)
-            return False
-
-        # If the squeeze factor is too high she will return tomorrow
-        if squeeze_factor > params['squeeze_factor_threshold_anc']:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(this_contact, priority=0,
-                                                                topen=self.sim.date + DateOffset(days=1),
-                                                                tclose=self.sim.date + DateOffset(days=2))
             return False
 
         return True
@@ -1517,9 +1476,11 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
+            return  # return nothing implies that the footprint used matches the EXPECTED_APPT_FOOTPRINT
 
-        return actual_appt_footprint
+        else:
+            # return a blank footprint as the appointment could not run as intended
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareVisit: did not run')
@@ -1534,7 +1495,7 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
     antenatal care contact (ANC2). It is scheduled by the HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact for
     women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 20
     weeks gestation. This event delivers the interventions to women which are part of ANC2. Additionally interventions
-    that should be delivered according to a womans gestational age and position in her ANC schedule are delivered.
+    that should be delivered according to a woman's gestational age and position in her ANC schedule are delivered.
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
@@ -1575,8 +1536,8 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
                 self.module.antenatal_care_scheduler(person_id, visit_to_be_scheduled=3,
                                                      recommended_gestation_next_anc=gest_age_next_contact)
 
-            # Then we administer interventions that are due to be delivered at this womans gestational age, which may be
-            # in addition to intervention delivered in ANC2
+            # Then we administer interventions that are due to be delivered at this woman's gestational age, which may
+            # be in addition to intervention delivered in ANC2
             if mother.ps_gestational_age_in_weeks < 26:
                 self.module.albendazole_administration(hsi_event=self)
                 self.module.iptp_administration(hsi_event=self)
@@ -1605,8 +1566,11 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
-        return actual_appt_footprint
+            return  # return nothing implies that the footprint used matches the EXPECTED_APPT_FOOTPRINT
+
+        else:
+            # return a blank footprint as the appointment could not run as intended
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareVisit: did not run')
@@ -1621,7 +1585,7 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
     antenatal care contact (ANC3). It is scheduled by the HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact for
     women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 26
     weeks gestation. This event delivers the interventions to women which are part of ANC3. Additionally interventions
-    that should be delivered according to a womans gestational age and position in her ANC schedule are delivered.
+    that should be delivered according to a woman's gestational age and position in her ANC schedule are delivered.
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
@@ -1678,8 +1642,11 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
-        return actual_appt_footprint
+            return  # return nothing implies that the footprint used matches the EXPECTED_APPT_FOOTPRINT
+
+        else:
+            # return a blank footprint as the appointment could not run as intended
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact: did not run')
@@ -1694,7 +1661,7 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
     antenatal care contact (ANC4). It is scheduled by the HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact for
     women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 30
     weeks gestation. This event delivers the interventions to women which are part of ANC4. Additionally interventions
-    that should be delivered according to a womans gestational age and position in her ANC schedule are delivered.
+    that should be delivered according to a woman's gestational age and position in her ANC schedule are delivered.
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
@@ -1747,8 +1714,11 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
-        return actual_appt_footprint
+            return  # return nothing implies that the footprint used matches the EXPECTED_APPT_FOOTPRINT
+
+        else:
+            # return a blank footprint as the appointment could not run as intended
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact: did not run')
@@ -1762,8 +1732,8 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
     """This is the  HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact which represents the fifth routine
     antenatal care contact (ANC5). It is scheduled by the HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact for
     women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 34
-    weeks gestation. This event delivers the interventions to women which are part of ANC5. Additionally interventions
-    that should be delivered according to a womans gestational age and position in her ANC schedule are delivered.
+    weeks gestation. This event delivers the interventions to women which are part of ANC5. Additionally, interventions
+    that should be delivered according to a woman's gestational age and position in her ANC schedule are delivered.
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
@@ -1813,8 +1783,11 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
-        return actual_appt_footprint
+            return  # return nothing implies that the footprint used matches the EXPECTED_APPT_FOOTPRINT
+
+        else:
+            # return a blank footprint as the appointment could not run as intended
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact: did not run')
@@ -1828,8 +1801,8 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
     """This is the  HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact which represents the sixth routine
     antenatal care contact (ANC6). It is scheduled by the HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact for
     women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 36
-    weeks gestation. This event delivers the interventions to women which are part of ANC6. Additionally interventions
-    that should be delivered according to a womans gestational age and position in her ANC schedule are delivered.
+    weeks gestation. This event delivers the interventions to women which are part of ANC6. Additionally, interventions
+    that should be delivered according to a woman's gestational age and position in her ANC schedule are delivered.
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
@@ -1875,8 +1848,11 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
-        return actual_appt_footprint
+            return  # return nothing implies that the footprint used matches the EXPECTED_APPT_FOOTPRINT
+
+        else:
+            # return a blank footprint as the appointment could not run as intended
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact: did not run')
@@ -1890,8 +1866,8 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
     """"This is the  HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact which represents the seventh routine
     antenatal care contact (ANC7). It is scheduled by the HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact for
     women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 36
-    weeks gestation. This event delivers the interventions to women which are part of ANC7. Additionally interventions
-    that should be delivered according to a womans gestational age and position in her ANC schedule are delivered.
+    weeks gestation. This event delivers the interventions to women which are part of ANC7. Additionally, interventions
+    that should be delivered according to a woman's gestational age and position in her ANC schedule are delivered.
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
     ward in the case of complications"""
 
@@ -1931,8 +1907,11 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
-        return actual_appt_footprint
+            return  # return nothing implies that the footprint used matches the EXPECTED_APPT_FOOTPRINT
+
+        else:
+            # return a blank footprint as the appointment could not run as intended
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact: did not run')
@@ -1943,13 +1922,13 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
 
 
 class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, IndividualScopeEventMixin):
-    """"This is the  HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact which represents the eighth routine
+    """This is the  HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact which represents the eighth routine
     antenatal care contact (ANC8). It is scheduled by the HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact for
     women who choose to seek additional ANC after their previous visit. It is recommended that this visit occur at 36
-    weeks gestation. This event delivers the interventions to women which are part of ANC8. Additionally interventions
-    that should be delivered according to a womans gestational age and position in her ANC schedule are delivered.
+    weeks gestation. This event delivers the interventions to women which are part of ANC8. Additionally, interventions
+    that should be delivered according to a woman's gestational age and position in her ANC schedule are delivered.
     Finally scheduling the next ANC contact in the occurs during this HSI along with admission to antenatal inpatient
-    ward in the case of complications"""
+    ward in the case of complications."""
 
     def __init__(self, module, person_id):
         super().__init__(module, person_id=person_id)
@@ -1979,8 +1958,11 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
             if df.at[person_id, 'ac_to_be_admitted']:
                 self.module.schedule_admission(person_id)
 
-        actual_appt_footprint = self.EXPECTED_APPT_FOOTPRINT
-        return actual_appt_footprint
+            return  # return nothing implies that the footprint used matches the EXPECTED_APPT_FOOTPRINT
+
+        else:
+            # return a blank footprint as the appointment could not run as intended
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact: did not run')
@@ -2012,10 +1994,9 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         mother = df.loc[person_id]
-        params = self.module.current_parameters
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        # First we determine at what point in this womans pregnancy should she return for another visit
+        # First we determine at what point in this woman's pregnancy should she return for another visit
         if mother.ps_gestational_age_in_weeks < 22:
             recommended_gestation_next_anc = 22
         elif 22 <= mother.ps_gestational_age_in_weeks < 30:
@@ -2043,13 +2024,12 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
             self.visit_number > 4 or
             self.visit_number != (df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] + 1)
         ):
-            return
-
-        self.module.anc_counter[self.visit_number] += 1
+            # return blank footprint as the appointment did not run as intended.
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # Women who are inpatients at the time the HSI should run will return at the next recommended point in
         # pregnancy
-        if df.at[person_id, 'hs_is_inpatient'] and (df.at[person_id, 'ps_gestational_age_in_weeks'] < 37):
+        elif df.at[person_id, 'hs_is_inpatient'] and (df.at[person_id, 'ps_gestational_age_in_weeks'] < 37):
             weeks_due_next_visit = int(recommended_gestation_next_anc - df.at[person_id, 'ps_gestational_age_in_weeks'])
             visit_date = self.sim.date + DateOffset(weeks=weeks_due_next_visit)
             self.sim.modules['HealthSystem'].schedule_hsi_event(self, priority=0,
@@ -2061,53 +2041,52 @@ class HSI_CareOfWomenDuringPregnancy_FocusedANCVisit(HSI_Event, IndividualScopeE
             else:
                 df.at[person_id, 'ac_date_next_contact'] = visit_date
 
-        # Finally, if the squeeze factor is too high the event wont run and she will return tomorrow
-        elif squeeze_factor > params['squeeze_factor_threshold_anc']:
-            self.sim.modules['HealthSystem'].schedule_hsi_event(self, priority=0,
-                                                                topen=self.sim.date + DateOffset(days=1),
-                                                                tclose=self.sim.date + DateOffset(days=2))
-            return
+            # return blank footprint as the appointment did not run as intended.
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
-        # updated mni with GA at first visit
-        if self.visit_number == 1:
-            mni[person_id]['ga_anc_one'] = df.at[person_id, 'ps_gestational_age_in_weeks']
+        else:
+            self.module.anc_counter[self.visit_number] += 1
 
-        # We add a visit to a rolling total of ANC visits in this pregnancy used for logging
-        df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
+            # updated mni with GA at first visit
+            if self.visit_number == 1:
+                mni[person_id]['ga_anc_one'] = df.at[person_id, 'ps_gestational_age_in_weeks']
 
-        # Next interventions are delivered according to gestational age and visit number
-        self.module.screening_interventions_delivered_at_every_contact(hsi_event=self)
-        self.module.iron_and_folic_acid_supplementation(hsi_event=self)
-        self.module.iptp_administration(hsi_event=self)
+            # We add a visit to a rolling total of ANC visits in this pregnancy used for logging
+            df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
-        if self.visit_number == 1:
-            self.module.tb_screening(hsi_event=self)
-            self.module.hiv_testing(hsi_event=self)
-            self.module.syphilis_screening_and_treatment(hsi_event=self)
-            self.module.point_of_care_hb_testing(hsi_event=self)
-            self.module.tetanus_vaccination(hsi_event=self)
+            # Next interventions are delivered according to gestational age and visit number
+            self.module.screening_interventions_delivered_at_every_contact(hsi_event=self)
+            self.module.iron_and_folic_acid_supplementation(hsi_event=self)
+            self.module.iptp_administration(hsi_event=self)
 
-        elif (self.visit_number == 2) or ((mother.ps_gestational_age_in_weeks > 20) and (self.visit_number == 1)):
-            self.module.albendazole_administration(hsi_event=self)
-            self.module.tetanus_vaccination(hsi_event=self)
+            if self.visit_number == 1:
+                self.module.tb_screening(hsi_event=self)
+                self.module.hiv_testing(hsi_event=self)
+                self.module.syphilis_screening_and_treatment(hsi_event=self)
+                self.module.point_of_care_hb_testing(hsi_event=self)
+                self.module.tetanus_vaccination(hsi_event=self)
 
-        elif self.visit_number == 3 or ((mother.ps_gestational_age_in_weeks > 30) and (self.visit_number == 1)):
-            self.module.point_of_care_hb_testing(hsi_event=self)
+            elif (self.visit_number == 2) or ((mother.ps_gestational_age_in_weeks > 20) and (self.visit_number == 1)):
+                self.module.albendazole_administration(hsi_event=self)
+                self.module.tetanus_vaccination(hsi_event=self)
 
-        # Following this the woman's next visit is scheduled (if she hasn't already attended 4 visits)
-        if self.visit_number < 4:
+            elif self.visit_number == 3 or ((mother.ps_gestational_age_in_weeks > 30) and (self.visit_number == 1)):
+                self.module.point_of_care_hb_testing(hsi_event=self)
 
-            # update the visit number for the event scheduling
-            self.visit_number = self.visit_number + 1
+            # Following this the woman's next visit is scheduled (if she hasn't already attended 4 visits)
+            if self.visit_number < 4:
 
-            # schedule the next event
-            self.module.antenatal_care_scheduler(individual_id=person_id,
-                                                 visit_to_be_scheduled=self.visit_number,
-                                                 recommended_gestation_next_anc=recommended_gestation_next_anc)
+                # update the visit number for the event scheduling
+                self.visit_number = self.visit_number + 1
 
-        # If the woman has had any complications detected during ANC she is admitted for treatment to be initiated
-        if df.at[person_id, 'ac_to_be_admitted']:
-            self.module.schedule_admission(person_id)
+                # schedule the next event
+                self.module.antenatal_care_scheduler(individual_id=person_id,
+                                                     visit_to_be_scheduled=self.visit_number,
+                                                     recommended_gestation_next_anc=recommended_gestation_next_anc)
+
+            # If the woman has had any complications detected during ANC she is admitted for treatment to be initiated
+            if df.at[person_id, 'ac_to_be_admitted']:
+                self.module.schedule_admission(person_id)
 
 
 class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, IndividualScopeEventMixin):
@@ -2140,48 +2119,6 @@ class HSI_CareOfWomenDuringPregnancy_PresentsForInductionOfLabour(HSI_Event, Ind
                                          f'{df.at[person_id, "ac_admitted_for_immediate_delivery"]} today')
 
         self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id), self.sim.date)
-
-
-class HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment(HSI_Event, IndividualScopeEventMixin):
-    """
-    This is HSI_CareOfWomenDuringPregnancy_MaternalEmergencyAssessment. It is schedule by the PregnancySupervisor Event
-    for women who choose to seek care for emergency treatment in pregnancy (due to severe pre-eclampsia/eclampsia,
-    antepartum haemorrhage, premature rupture of membranes or chorioamnionitis). It is assumed women present to this
-    event as their first point of contact for an emergency in pregnancy, and therefore circumnavigate regular A&E.
-    """
-
-    def __init__(self, module, person_id):
-        super().__init__(module, person_id=person_id)
-        assert isinstance(module, CareOfWomenDuringPregnancy)
-
-        self.TREATMENT_ID = 'AntenatalCare_Inpatient'
-        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
-        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'maternity_bed': 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1b'
-
-    def apply(self, person_id, squeeze_factor):
-        df = self.sim.population.props
-
-        if not df.at[person_id, 'is_alive'] or not df.at[person_id, 'is_pregnant']:
-            return
-
-        if not df.at[person_id, 'hs_is_inpatient'] and not df.at[person_id, 'la_currently_in_labour']:
-            admission = HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(
-                self.sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
-
-            self.sim.modules['HealthSystem'].schedule_hsi_event(admission, priority=0,
-                                                                topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=1))
-
-    def never_ran(self):
-        self.module.call_if_maternal_emergency_assessment_cant_run(self)
-
-    def did_not_run(self):
-        self.module.call_if_maternal_emergency_assessment_cant_run(self)
-        return False
-
-    def not_available(self):
-        self.module.call_if_maternal_emergency_assessment_cant_run(self)
 
 
 class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, IndividualScopeEventMixin):
@@ -2278,7 +2215,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
             df.at[person_id, 'ps_gest_diab'] = 'controlled'
 
             # We then schedule GestationalDiabetesGlycaemicControlEvent which determines if this treatment will be
-            # effective in controlling this womans blood sugar prior to her next check up
+            # effective in controlling this woman's blood sugar prior to her next check up
             from tlo.methods.pregnancy_supervisor import GestationalDiabetesGlycaemicControlEvent
             self.sim.schedule_event(GestationalDiabetesGlycaemicControlEvent(
                 self.sim.modules['PregnancySupervisor'], person_id), self.sim.date + DateOffset(days=7))
@@ -2321,7 +2258,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 self.module.initiate_maintenance_anti_hypertensive_treatment(person_id, self)
 
             # And are given intravenous magnesium sulfate which reduces risk of death from eclampsia and reduces a
-            # womans risk of progressing from severe pre-eclampsia to eclampsia during the intrapartum period
+            # woman's risk of progressing from severe pre-eclampsia to eclampsia during the intrapartum period
             self.module.treatment_for_severe_pre_eclampsia_or_eclampsia(person_id,
                                                                         hsi_event=self)
             # intravenous antihypertensives are also given
@@ -2387,7 +2324,7 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
                 logger.info(key='error', data=f'Mother {person_id} was not admitted for delivery following APH')
 
         # ===================================== INITIATE TREATMENT FOR PROM =======================================
-        # Treatment for women with premature rupture of membranes is dependent upon a womans gestational age and if
+        # Treatment for women with premature rupture of membranes is dependent upon a woman's gestational age and if
         # she also has an infection of membrane surrounding the foetus (the chorion)
 
         if mother.ps_premature_rupture_of_membranes and not mother.ps_chorioamnionitis:

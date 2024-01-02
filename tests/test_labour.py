@@ -208,13 +208,13 @@ def test_event_scheduling_for_care_seeking_during_home_birth(seed):
     assert (mni[mother_id]['sought_care_labour_phase'] == 'intrapartum')
 
     # Check that the woman will correctly seek care through HSI_GenericEmergencyFirstApptAtFacilityLevel1
-    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstApptAtFacilityLevel1
+    from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
-    assert HSI_GenericEmergencyFirstApptAtFacilityLevel1 in hsi_events
+    assert HSI_GenericEmergencyFirstAppt in hsi_events
 
     # Now run the event
-    emergency_appt = HSI_GenericEmergencyFirstApptAtFacilityLevel1(person_id=mother_id,
-                                                                   module=sim.modules['Labour'])
+    emergency_appt = HSI_GenericEmergencyFirstAppt(person_id=mother_id,
+                                                   module=sim.modules['Labour'])
     emergency_appt.apply(person_id=mother_id, squeeze_factor=0.0)
 
     # Check she has been correctly identified as being in labour and is sent to the labour ward

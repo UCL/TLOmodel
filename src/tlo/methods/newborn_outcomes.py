@@ -3,13 +3,12 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import Event, IndividualScopeEventMixin
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, demography, newborn_outcomes_lm, pregnancy_helper_functions
 from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
-from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneNeonatalEvent
 from tlo.util import BitsetHandler
 
@@ -312,7 +311,6 @@ class NewbornOutcomes(Module):
         'nb_kangaroo_mother_care': Property(Types.BOOL, 'whether this neonate received kangaroo mother care following '
                                                         'birth'),
         'nb_clean_birth': Property(Types.BOOL, 'whether this neonate received clean birth practices at delivery'),
-        # 'nb_received_cord_care': Property(Types.BOOL, 'whether this neonate received chlorhexidine cord care'),
         'nb_death_after_birth': Property(Types.BOOL, 'whether this child has died following complications after birth'),
         'nb_pnc_check': Property(Types.INT, 'Number of postnatal checks received in the postnatal period'),
     }
@@ -373,7 +371,6 @@ class NewbornOutcomes(Module):
         df.loc[df.is_alive, 'nb_breastfeeding_status'] = 'none'
         df.loc[df.is_alive, 'nb_kangaroo_mother_care'] = False
         df.loc[df.is_alive, 'nb_clean_birth'] = False
-        # df.loc[df.is_alive, 'nb_received_cord_care'] = False
         df.loc[df.is_alive, 'nb_death_after_birth'] = False
         df.loc[df.is_alive, 'nb_pnc_check'] = 0
 
@@ -709,17 +706,16 @@ class NewbornOutcomes(Module):
             # align with GBD estimates
             elif 'anomaly' in potential_cause_of_death:
 
-                days_per_year = 365.25
                 # Generate the minimum and maximum number of days within the age group to allow for random
                 # distribution within each group
                 days_per_age_group = \
                     {'early_n': [0, 6],
                      'late_n': [7, 28],
                      'post_n': [29, 364],
-                     '1-4': [days_per_year, ((5 * days_per_year) - 1)],
-                     '5-9': [(5 * days_per_year), ((10 * days_per_year) - 1)],
-                     '10-14': [(10 * days_per_year), ((15 * days_per_year) - 1)],
-                     '15-69': [(15 * days_per_year), ((70 * days_per_year) - 1)]}
+                     '1-4': [DAYS_IN_YEAR, ((5 * DAYS_IN_YEAR) - 1)],
+                     '5-9': [(5 * DAYS_IN_YEAR), ((10 * DAYS_IN_YEAR) - 1)],
+                     '10-14': [(10 * DAYS_IN_YEAR), ((15 * DAYS_IN_YEAR) - 1)],
+                     '15-69': [(15 * DAYS_IN_YEAR), ((70 * DAYS_IN_YEAR) - 1)]}
 
                 random_draw = self.rng.choice(list(days_per_age_group.keys()), p=params['prob_cba_death_by_age_group'])
 
@@ -927,18 +923,11 @@ class NewbornOutcomes(Module):
         """
         df = self.sim.population.props
         child_id = int(child_id)
+        mother_id = df.at[child_id, 'mother_id']
 
         if 'Hiv' in self.sim.modules:
-            if not df.at[child_id, 'hv_diagnosed']:
-
-                if df.at[child_id, 'nb_pnc_check'] == 1:
-                    for days in 0, 41:
-                        self.sim.modules['HealthSystem'].schedule_hsi_event(
-                            HSI_Hiv_TestAndRefer(person_id=child_id, module=self.sim.modules['Hiv']),
-                            topen=self.sim.date + pd.DateOffset(days=days),
-                            tclose=None,
-                            priority=0
-                        )
+            # schedule test if child not already diagnosed and mother is known hiv+
+            self.sim.modules['Hiv'].decide_whether_hiv_test_for_infant(mother_id, child_id)
 
     def apply_effect_of_neonatal_resus(self, person_id):
         """
@@ -1068,10 +1057,10 @@ class NewbornOutcomes(Module):
 
                 early_event = HSI_NewbornOutcomes_ReceivesPostnatalCheck(module=self, person_id=child_id)
 
-                self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    early_event, priority=0,
-                    topen=self.sim.date,
-                    tclose=self.sim.date + pd.DateOffset(days=1))
+            self.sim.modules['HealthSystem'].schedule_hsi_event(
+                early_event, priority=0,
+                topen=self.sim.date + pd.DateOffset(days=1),
+                tclose=self.sim.date + pd.DateOffset(days=2))
 
             else:
                 # 'Late' PNC is scheduled in the postnatal supevervisor module
@@ -1089,7 +1078,7 @@ class NewbornOutcomes(Module):
         df = self.sim.population.props
         nci = self.newborn_care_info
 
-        if mother_id == -1:
+        if mother_id < 0:  # select direct births
             # The child has been born without a mother identified (from contraception.DirectBirth), so give the child
             # the default properties:
             child = {
@@ -1115,7 +1104,6 @@ class NewbornOutcomes(Module):
                 'nb_breastfeeding_status': 'none',
                 'nb_kangaroo_mother_care': False,
                 'nb_clean_birth': False,
-                # 'nb_received_cord_care': False,
                 'nb_death_after_birth': False,
                 'nb_pnc_check': 0
             }
@@ -1356,7 +1344,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
 
         # Run a series of checks to ensure this HSI should be running fot this individual
         if (nci[person_id]['will_receive_pnc'] == 'early') and not nci[person_id]['passed_through_week_one']:
-            if not self.sim.date < (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2)):
+            if not self.sim.date <= (df.at[person_id, 'date_of_birth'] + pd.DateOffset(days=2)):
                 logger.info(key='error', data=f'Child {person_id} arrived at early PNC too late')
 
             if not df.at[person_id, 'nb_pnc_check'] == 0:

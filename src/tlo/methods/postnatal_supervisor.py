@@ -699,7 +699,7 @@ class PostnatalSupervisor(Module):
             self.sim.modules['HealthSystem'].schedule_hsi_event(postnatal_check,
                                                                 priority=0,
                                                                 topen=self.sim.date,
-                                                                tclose=self.sim.date + DateOffset(days=1))
+                                                                tclose=self.sim.date + DateOffset(days=2))
 
         # For women who do not seek care we immediately apply risk of death due to complications
         for person in care_seekers.loc[~care_seekers].index:
@@ -766,7 +766,7 @@ class PostnatalSupervisor(Module):
         # Here we apply risk of late onset neonatal sepsis (sepsis onsetting after day 7) to newborns
         onset_sepsis = self.apply_linear_model(
             self.pn_linear_models['late_onset_neonatal_sepsis'],
-            df.loc[df['is_alive'] & (df['mother_id'] != -1) & ~df['nb_death_after_birth'] &
+            df.loc[df['is_alive'] & (df['mother_id'] >= 0) & ~df['nb_death_after_birth'] &
                    (df['age_days'] > upper_and_lower_day_limits[0]) &
                    (df['age_days'] < upper_and_lower_day_limits[1]) & (df['date_of_birth'] > self.sim.start_date) &
                    ~df['hs_is_inpatient']])
@@ -1179,7 +1179,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
                 pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id, timing='postnatal')
 
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    pnc_one_maternal, priority=0, topen=self.sim.date, tclose=self.sim.date + pd.DateOffset(days=1))
+                    pnc_one_maternal, priority=0, topen=self.sim.date, tclose=self.sim.date + pd.DateOffset(days=2))
 
             # If she will not receive treatment for her complications we apply risk of death now
             else:
@@ -1190,7 +1190,7 @@ class PostnatalWeekOneMaternalEvent(Event, IndividualScopeEventMixin):
             if mni[individual_id]['will_receive_pnc'] == 'late':
                 appt_date = self.sim.date + pd.DateOffset(self.module.rng.randint(0, 35))
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
-                    pnc_one_maternal, priority=0, topen=appt_date, tclose=appt_date + pd.DateOffset(days=1))
+                    pnc_one_maternal, priority=0, topen=appt_date, tclose=appt_date + pd.DateOffset(days=2))
 
 
 class PostnatalWeekOneNeonatalEvent(Event, IndividualScopeEventMixin):

@@ -57,9 +57,8 @@ def sim(seed):
         healthburden.HealthBurden(resourcefilepath=resources),
         healthsystem.HealthSystem(
             resourcefilepath=resources,
-            disable=True,
+            disable=True,  # disables the health system constraints so all HSI events run
         ),
-        # disables the health system constraints so all HSI events run
         epi.Epi(resourcefilepath=resources),
         measles.Measles(resourcefilepath=resources),
     )

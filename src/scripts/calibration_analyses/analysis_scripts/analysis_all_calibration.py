@@ -1,3 +1,4 @@
+import argparse
 import glob
 import os.path
 import zipfile
@@ -10,8 +11,8 @@ import plot_legends
 
 from scripts.calibration_analyses.analysis_scripts import (
     analysis_compare_appt_usage_real_and_simulation,
+    plot_appt_use_by_hsi,
 )
-from tlo.analysis.utils import get_scenario_outputs
 
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
@@ -28,6 +29,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
 
     analysis_compare_appt_usage_real_and_simulation.apply(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
+
+    plot_appt_use_by_hsi.apply(
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath)
 
     # Plot the legends
@@ -56,11 +60,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 if __name__ == "__main__":
-    outputspath = Path('./outputs/tbh03@ic.ac.uk')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("results_folder", type=Path)
+    args = parser.parse_args()
 
-    # Find results folder (most recent run generated using that scenario_filename)
-    scenario_filename = 'long_run_all_diseases.py'
-    results_folder = get_scenario_outputs(scenario_filename, outputspath)[-1]
-
-    # Run all the calibrations
-    apply(results_folder=results_folder, output_folder=results_folder, resourcefilepath=Path('./resources'))
+    apply(
+        results_folder=args.results_folder,
+        output_folder=args.results_folder,
+        resourcefilepath=Path('./resources')
+    )
