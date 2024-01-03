@@ -1,9 +1,9 @@
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.10144015.svg
+  :target: https://zenodo.org/doi/10.5281/zenodo.10144015
+
 =====================
 Getting Started
 =====================
-
-
-
 
 Prequisites
 ===========
