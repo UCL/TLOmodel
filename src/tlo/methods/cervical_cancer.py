@@ -314,32 +314,12 @@ class CervicalCancer(Module):
 
 
         # -------------------- ce_hpv_cc_status -----------
-        # Determine who has cancer at ANY cancer stage:
-        # check parameters are sensible: probability of having any cancer stage cannot exceed 1.0
-
-        women_over_15_hiv_idx = df.index[(df["age_years"] > 15) & (df["sex"] == 'F') & df["hv_inf"]]
-
-        df.loc[women_over_15_hiv_idx, 'ce_hpv_cc_status'] = rng.choice(
-            ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
-            size=len(women_over_15_hiv_idx), p=p['init_prev_cin_hpv_cc_stage_hiv']
-        )
-
-        women_over_15_nhiv_idx = df.index[(df["age_years"] > 15) & (df["sex"] == 'F') & ~df["hv_inf"]]
-
-        df.loc[women_over_15_nhiv_idx, 'ce_hpv_cc_status'] = rng.choice(
-            ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
-            size=len(women_over_15_nhiv_idx), p=p['init_prev_cin_hpv_cc_stage_nhiv']
-        )
-
-        assert sum(p['init_prev_cin_hpv_cc_stage_hiv']) < 1.01
-        assert sum(p['init_prev_cin_hpv_cc_stage_hiv']) > 0.99
-        assert sum(p['init_prev_cin_hpv_cc_stage_nhiv']) < 1.01
-        assert sum(p['init_prev_cin_hpv_cc_stage_nhiv']) > 0.99
+        # this was not assigned here at outset because baseline value of hv_inf was not accessible - it is assigned
+        # st start of main polling event below
 
         # -------------------- symptoms, diagnosis, treatment  -----------
         # For simplicity we assume all these are null at baseline - we don't think this will influence population
         # status in the present to any significant degree
-
 
 
     def initialise_simulation(self, sim):
@@ -669,6 +649,28 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props  # shortcut to dataframe
         m = self.module
         rng = m.rng
+        p = self.sim.modules['CervicalCancer'].parameters
+
+        # ------------------- SET INITIAL CE_HPV_CC_STATUS -------------------------------------------------------------------
+        # this was done here and not at outset because baseline value of hv_inf was not accessible
+
+        given_date = pd.to_datetime('2010-02-03')
+
+        if self.sim.date < given_date:
+
+            women_over_15_nhiv_idx = df.index[(df["age_years"] > 15) & (df["sex"] == 'F') & ~df["hv_inf"]]
+
+            df.loc[women_over_15_nhiv_idx, 'ce_hpv_cc_status'] = rng.choice(
+                ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
+                size=len(women_over_15_nhiv_idx), p=p['init_prev_cin_hpv_cc_stage_nhiv']
+            )
+
+            women_over_15_hiv_idx = df.index[(df["age_years"] > 15) & (df["sex"] == 'F') & df["hv_inf"]]
+
+            df.loc[women_over_15_hiv_idx, 'ce_hpv_cc_status'] = rng.choice(
+                ['none', 'hpv', 'cin1', 'cin2', 'cin3', 'stage1', 'stage2a', 'stage2b', 'stage3', 'stage4'],
+                size=len(women_over_15_hiv_idx), p=p['init_prev_cin_hpv_cc_stage_hiv']
+            )
 
         # -------------------- ACQUISITION AND PROGRESSION OF CANCER (ce_hpv_cc_status) -----------------------------------
 
@@ -698,8 +700,6 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # A subset of women aged 30-50 will receive a screening test
 
         # todo: in future this may be triggered by family planning visit
-
-        p = self.sim.modules['CervicalCancer'].parameters
 
         df.ce_selected_for_via_this_month = False
 
@@ -1332,8 +1332,9 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         n_vaginal_bleeding_stage4 = (df.is_alive & (df.sy_vaginal_bleeding == 2) &
                                      (df.ce_hpv_cc_status == 'stage4')).sum()
 
-        n_diagnosed_1_year_ago = df.date_diagnosis.between(date_1p25_years_ago, date_0p75_years_ago)
-        n_diagnosed_1_year_ago_died = (df.date_diagnosis.between(date_1p25_years_ago, date_0p75_years_ago) & ~df.is_alive)
+        n_diagnosed_1_year_ago = df.ce_date_diagnosis.between(date_1p25_years_ago, date_0p75_years_ago).sum()
+        n_diagnosed_1_year_ago_died = (df.ce_date_diagnosis.between(date_1p25_years_ago, date_0p75_years_ago)
+                                       & ~df.is_alive).sum()
 
         n_diagnosed_past_year_stage1 = \
             (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date) &
@@ -1351,22 +1352,21 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
             (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date) &
              (df.ce_stage_at_diagnosis == 'stage4')).sum()
 
-        n_diagnosed_past_year = \
-            (df.ce_date_diagnosis.between(date_1_year_ago, self.sim.date)).sum()
+        n_diagnosed_past_year = (df['ce_date_diagnosis'].between(date_1_year_ago, self.sim.date)).sum()
 
-        n_women_alive = (df.is_alive & (df.sex == 'F') & df.age_years > 15).sum()
+        n_women_alive = ((df['is_alive']) & (df['sex'] == 'F') & (df['age_years'] > 15)).sum()
 
         rate_diagnosed_cc = n_diagnosed_past_year / n_women_alive
 
         n_women_living_with_diagnosed_cc = \
-            (df['ce_date_diagnosis'] > 0).sum()
+            (df['ce_date_diagnosis'].notnull()).sum()
 
         n_women_living_with_diagnosed_cc_age_lt_30 = \
-            (df['ce_date_diagnosis'] > 0 & (df['age_years'] < 30)).sum()
+            (df['ce_date_diagnosis'].notnull() & (df['age_years'] < 30)).sum()
         n_women_living_with_diagnosed_cc_age_3050 = \
-            (df['ce_date_diagnosis'] > 0 & (df['age_years'] > 30) & (df['age_years'] < 50)).sum()
+            (df['ce_date_diagnosis'].notnull() & (df['age_years'] > 29) & (df['age_years'] < 50)).sum()
         n_women_living_with_diagnosed_cc_age_gt_50 = \
-            (df['ce_date_diagnosis'] > 0 & (df['age_years'] > 50)).sum()
+            (df['ce_date_diagnosis'].notnull() & (df['age_years'] > 49)).sum()
 
         out.update({"rounded_decimal_year": rounded_decimal_year})
         out.update({"n_deaths_past_year": n_deaths_past_year})
@@ -1392,6 +1392,8 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         out.update({"n_women_living_with_diagnosed_cc_age_lt_30": n_women_living_with_diagnosed_cc_age_lt_30})
         out.update({"n_women_living_with_diagnosed_cc_age_3050": n_women_living_with_diagnosed_cc_age_3050})
         out.update({"n_women_living_with_diagnosed_cc_age_gt_50": n_women_living_with_diagnosed_cc_age_gt_50})
+        out.update({"n_diagnosed_1_year_ago": n_diagnosed_1_year_ago})
+        out.update({"n_diagnosed_1_year_ago_died": n_diagnosed_1_year_ago_died})
 
         print('total_none:', out['total_none'], 'total_hpv:', out['total_hpv'], 'total_cin1:',out['total_cin1'],
               'total_cin2:', out['total_cin2'], 'total_cin3:', out['total_cin3'], 'total_stage1:', out['total_stage1'],
@@ -1413,9 +1415,14 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
               'n_screened_via_this_month:', out['n_screened_via_this_month'],
               'n_diagnosed_past_year:', out['n_diagnosed_past_year'],
               'n_women_alive:', out['n_women_alive'],
-              'rate_diagnosed_cc:', 'rate_diagnosed_cc',
-              'n_women_with_cc:', 'cc',
-              'n_women_living_with_diagnosed_cc:', 'n_women_living_with_diagnosed_cc')
+              'rate_diagnosed_cc:', out['rate_diagnosed_cc'],
+              'n_women_with_cc:', out['cc'],
+              'n_women_living_with_diagnosed_cc:', out['n_women_living_with_diagnosed_cc'],
+              'n_women_living_with_diagnosed_cc_age_lt_30:', out['n_women_living_with_diagnosed_cc_age_lt_30'],
+              'n_women_living_with_diagnosed_cc_age_3050:', out['n_women_living_with_diagnosed_cc_age_3050'],
+              'n_women_living_with_diagnosed_cc_age_gt_50:', out['n_women_living_with_diagnosed_cc_age_gt_50'],
+              'n_diagnosed_1_year_ago_died:', out['n_diagnosed_1_year_ago_died'],
+              'n_diagnosed_1_year_ago:', out['n_diagnosed_1_year_ago'])
 
         # comment out this below when running tests
 
@@ -1470,8 +1477,11 @@ class CervicalCancerLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         "ce_selected_for_xpert_this_month",
         "ce_biopsy"]
 
+        selected_columns = ["hv_inf", "ce_hpv_cc_status"]
 
-        selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive']]
+        selected_rows = df[(df['sex'] == 'F') & (df['age_years'] > 15) & df['is_alive'] & df['hv_inf']]
+
+        pd.set_option('display.max_rows', None)
 #       print(selected_rows[selected_columns])
 
 #       selected_columns = ['sex', 'age_years', 'is_alive']
