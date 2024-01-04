@@ -725,7 +725,8 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # # # INCIDENCE OF WASTING # # # # # # # # # # # # # # # # # # # # #
         # Determine who will be onset with wasting among those who are not currently wasted -------------
         inc_wasting = df.loc[df.is_alive & (df.age_exact_years < 5) & (
-                df.un_WHZ_category == 'WHZ>=-2')]; get_incidence_of_wasting = \
+                df.un_WHZ_category == 'WHZ>=-2')]
+        get_incidence_of_wasting = \
             self.module.wasting_models.get_wasting_incidence(inc_wasting)
 
         incidence_of_wasting = rng.random_sample(len(get_incidence_of_wasting)) < get_incidence_of_wasting
