@@ -84,10 +84,7 @@ def induced_abortion_death(self, df, rng=None, **externals):
     result = params['prob_induced_abortion_death']
 
     if person['ac_received_post_abortion_care']:
-        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
-            externals['delay_one_two'], externals['delay_three'], 'treatment_effect_post_abortion_care', params)
-
-        result *= treatment_effect
+        result *= params['treatment_effect_post_abortion_care']
 
     return pd.Series(data=[result], index=df.index)
 
@@ -127,10 +124,7 @@ def spontaneous_abortion_death(self, df, rng=None, **externals):
     result = params['prob_spontaneous_abortion_death']
 
     if person['ac_received_post_abortion_care']:
-        treatment_effect = pregnancy_helper_functions.get_treatment_effect(
-            externals['delay_one_two'], externals['delay_three'], 'treatment_effect_post_abortion_care', params)
-
-        result *= treatment_effect
+        result *= params['treatment_effect_post_abortion_care']
 
     return pd.Series(data=[result], index=df.index)
 

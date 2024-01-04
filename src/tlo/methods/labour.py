@@ -378,18 +378,6 @@ class Labour(Module):
 
         'probability_delivery_hospital': Parameter(
             Types.LIST, 'probability of delivering in a hospital'),
-        'prob_delay_one_two_fd': Parameter(
-            Types.LIST, 'probability a woman seeking care during pregnancy will experience a type 1 or 2 delay when '
-                        'choosing to seek care (i.e. she is delayed in reaching the facility'),
-        'squeeze_threshold_for_delay_three_bemonc': Parameter(
-            Types.LIST, 'squeeze factor value over which an individual within a EMoNC HSI is said to experience type 3'
-                        ' delay i.e. delay in receiving appropriate care'),
-        'squeeze_threshold_for_delay_three_cemonc': Parameter(
-            Types.LIST, 'squeeze factor value over which an individual within a CEMoNC HSI is said to experience type 3'
-                        ' delay i.e. delay in receiving appropriate car1e'),
-        'squeeze_threshold_for_delay_three_pn': Parameter(
-            Types.LIST, 'squeeze factor value over which an individual within a postnatal HSI is said to experience '
-                        'type 3 delay i.e. delay in receiving appropriate care'),
 
         # PNC CHECK...
         'prob_timings_pnc': Parameter(
@@ -535,12 +523,6 @@ class Labour(Module):
         'mean_hcw_competence_hp': Parameter(
             Types.LIST, 'mean competence of HCW at delivering EmONC care at a hospital. A draw below this level '
                         'prevents intervention delivery'),
-
-        # EFFECT OF DELAYS...
-        'treatment_effect_modifier_all_delays': Parameter(
-            Types.LIST, 'factor by which treatment effectiveness is reduced in the presences of multiple delays'),
-        'treatment_effect_modifier_one_delay': Parameter(
-            Types.LIST, 'factor by which treatment effectiveness is reduced in the presences of one delays'),
 
         'prob_intervention_delivered_anaemia_assessment_pnc': Parameter(
             Types.LIST, 'probability a woman will have their Hb levels checked during PNC given that the HSI has ran '
@@ -1148,8 +1130,6 @@ class Labour(Module):
         received_abx_for_prom = mni[person_id]['abx_for_prom_given']
         amtsl_given = mni[person_id]['amtsl_given']
         delivery_setting = mni[person_id]['delivery_setting']
-        delay_one_two = mni[person_id]['delay_one_two']
-        delay_three = mni[person_id]['delay_three']
 
         macrosomia = mni[person_id]['birth_weight'] == 'macrosomia'
 
@@ -1161,9 +1141,7 @@ class Labour(Module):
                                                      received_blood_transfusion=has_rbt,
                                                      amtsl_given=amtsl_given,
                                                      macrosomia=macrosomia,
-                                                     delivery_setting=delivery_setting,
-                                                     delay_one_two=delay_one_two,
-                                                     delay_three=delay_three)[person_id]
+                                                     delivery_setting=delivery_setting)[person_id]
 
     def reset_due_date(self, id_or_index, new_due_date):
         """
@@ -1531,11 +1509,6 @@ class Labour(Module):
         # If she hasn't died from any complications, we reset some key properties that resolve after risk of death
         # has been applied
         else:
-            # Reset delay property
-            mni[individual_id]['delay_one_two'] = False
-            mni[individual_id]['delay_three'] = False
-            mni[individual_id]['didnt_seek_care'] = False
-
             if df.at[individual_id, 'pn_htn_disorders'] == 'eclampsia':
                 df.at[individual_id, 'pn_htn_disorders'] = 'severe_pre_eclamp'
 
@@ -2058,12 +2031,8 @@ class Labour(Module):
                 pregnancy_helper_functions.log_met_need(self, 'uterotonics', hsi_event)
 
                 # We apply a probability that this treatment will stop a womans bleeding in the first instance
-                # meaning she will not require further treatment (adjusted for delays)
-                prob_haemostatis_uterotonics = pregnancy_helper_functions.get_treatment_effect(
-                    mni[person_id]['delay_one_two'], mni[person_id]['delay_three'], 'prob_haemostatis_uterotonics',
-                    params)
-
-                if prob_haemostatis_uterotonics > self.rng.random_sample():
+                # meaning she will not require further treatment
+                if params['prob_haemostatis_uterotonics'] > self.rng.random_sample():
 
                     # Bleeding has stopped, this woman will not be at risk of death
                     df.at[person_id, 'la_postpartum_haem'] = False
@@ -2104,15 +2073,11 @@ class Labour(Module):
                                                                                        hsi_event=hsi_event)
 
             # Similar to uterotonics we apply a probability that this intervention will successfully stop
-            # bleeding to ensure some women go on to require further care (adjusted for delay)
+            # bleeding to ensure some women go on to require further care
             if sf_check:
                 pregnancy_helper_functions.log_met_need(self, 'man_r_placenta', hsi_event)
 
-                prob_successful_manual_removal_placenta = pregnancy_helper_functions.get_treatment_effect(
-                    mni[person_id]['delay_one_two'], mni[person_id]['delay_three'],
-                    'prob_successful_manual_removal_placenta', params)
-
-                if prob_successful_manual_removal_placenta > self.rng.random_sample():
+                if params['prob_successful_manual_removal_placenta'] > self.rng.random_sample():
 
                     df.at[person_id, 'la_postpartum_haem'] = False
                     mni[person_id]['retained_placenta'] = False
@@ -2527,10 +2492,6 @@ class LabourOnsetEvent(Event, IndividualScopeEventMixin):
                                                                     topen=self.sim.date,
                                                                     tclose=self.sim.date + DateOffset(days=2))
 
-            # Determine if the labouring woman will be delayed in attending for facility delivery
-            if df.at[individual_id, 'ac_admitted_for_immediate_delivery'] == 'none':
-                pregnancy_helper_functions.check_if_delayed_careseeking(self.module, individual_id, timing='delivery')
-
             # ======================================== SCHEDULING BIRTH AND DEATH EVENTS ============================
             # We schedule all women to move through both the death and birth event.
 
@@ -2604,9 +2565,6 @@ class LabourAtHomeEvent(Event, IndividualScopeEventMixin):
                 if self.module.rng.random_sample() < params['prob_careseeking_for_complication']:
                     mni[individual_id]['sought_care_for_complication'] = True
                     mni[individual_id]['sought_care_labour_phase'] = 'intrapartum'
-
-                    # Assume all women who develop complications at home incur effect of delay
-                    mni[individual_id]['delay_one_two'] = True
 
                     # We assume women present to the health system through the generic a&e appointment
                     from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
@@ -2703,10 +2661,8 @@ class LabourDeathAndStillBirthEvent(Event, IndividualScopeEventMixin):
             logger.info(key='intrapartum_stillbirth', data={'mother_id': individual_id,
                                                             'date_of_ip_stillbirth': self.sim.date})
 
-        # Reset delay property
+        # Reset property
         if individual_id in mni:
-            mni[individual_id]['delay_one_two'] = False
-            mni[individual_id]['delay_three'] = False
             mni[individual_id]['didnt_seek_care'] = False
 
         # Finally, reset some treatment variables
@@ -2906,11 +2862,6 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
         elif df.at[person_id, 'ac_admitted_for_immediate_delivery'] == 'avd_now':
             self.module.assessment_for_assisted_vaginal_delivery(self, indication='spe_ec')
 
-        # and then if the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk
-        # of death if complications occur)
-        pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id,
-                                                                  hsi_type='bemonc')
-
         # LOG CONSUMABLES FOR DELIVERY...
         # We assume all deliveries require this basic package of consumables
         avail = pregnancy_helper_functions.return_cons_avail(
@@ -3098,10 +3049,6 @@ class HSI_Labour_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEventMixin):
         # reset variable for capturing early pnc
         mni[person_id]['will_receive_pnc'] = 'none'
 
-        # If the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk
-        # of death if complications occur)
-        pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id, hsi_type='pn')
-
         # Perform assessments and treatment for each of the major complications that can occur after birth
         self.module.assessment_and_treatment_of_eclampsia(self, 'pp')
         self.module.assessment_and_treatment_of_pph_retained_placenta(self)
@@ -3202,15 +3149,6 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
         df = self.sim.population.props
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
         params = self.module.current_parameters
-
-        # If the squeeze factor is too high we assume delay in receiving interventions occurs (increasing risk
-        # of death if complications occur)
-        if self.timing == 'intrapartum':
-            hsi = 'cemonc'
-        else:
-            hsi = 'pn'
-        pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id,
-                                                                  hsi_type=hsi)
 
         # We use the variable self.timing to differentiate between women sent to this event during labour and women
         # sent after labour
@@ -3374,14 +3312,6 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
 
             params['la_analysis_in_progress'] = True
 
-            # Remove squeeze thresholds which impact effectiveness of the interventions
-            if params['alternative_bemonc_availability']:
-                params['squeeze_threshold_for_delay_three_bemonc'] = 10_000
-                nb_params['squeeze_threshold_for_delay_three_nb_care'] = 10_000
-
-            if params['alternative_cemonc_availability']:
-                params['squeeze_threshold_for_delay_three_cemonc'] = 10_000
-
             # If PNC analysis is being conducted we reset the intercept parameter of the equation determining care
             # seeking for PNC and scale the model
             if params['alternative_pnc_coverage']:
@@ -3416,8 +3346,6 @@ class LabourAndPostnatalCareAnalysisEvent(Event, PopulationScopeEventMixin):
                 nb_params['prob_timings_pnc_newborns'] = [1.0, 0]
 
             if params['alternative_pnc_quality']:
-                params['squeeze_threshold_for_delay_three_pn'] = 10_000
-                nb_params['squeeze_threshold_for_delay_three_nb_care'] = 10_000
                 nb_params['prob_kmc_available'] = params['pnc_availability_probability']
                 params['prob_intervention_delivered_anaemia_assessment_pnc'] = params['pnc_availability_probability']
 

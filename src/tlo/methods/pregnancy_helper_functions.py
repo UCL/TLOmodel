@@ -313,81 +313,6 @@ def store_dalys_in_mni(individual_id, mni, mni_variable, date):
     mni[individual_id][mni_variable] = date
 
 
-def check_if_delayed_careseeking(self, individual_id, timing):
-    """
-    This function checks if a woman who is seeking care for treatment of a pregnancy/postnatal related emergency will
-    experience either a type 1 or type 2 delay
-    :param self: module
-    :param individual_id: individual_id
-    """
-    mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-    if individual_id not in mni or mni[individual_id]['delay_one_two']:
-        return
-
-    if self.sim.modules['PregnancySupervisor'].current_parameters['ps_analysis_in_progress'] and \
-       ((timing == 'preg_emerg') and self.sim.modules['PregnancySupervisor'].current_parameters['sens_analysis_max']):
-        mni[individual_id]['delay_one_two'] = False
-
-    elif self.sim.modules['Labour'].current_parameters['la_analysis_in_progress'] and \
-        (((timing == 'postnatal') and self.sim.modules['Labour'].current_parameters['pnc_sens_analysis_max']) or
-         ((timing == 'delivery') and self.sim.modules['Labour'].current_parameters['sba_sens_analysis_max'])):
-        mni[individual_id]['delay_one_two'] = False
-
-    elif self.rng.random_sample() < self.sim.modules['Labour'].current_parameters['prob_delay_one_two_fd']:
-        mni[individual_id]['delay_one_two'] = True
-
-
-def check_if_delayed_care_delivery(self, squeeze_factor, individual_id, hsi_type):
-    """
-    This function checks if a woman who is receiving care during a HSI will experience a type three delay to her care
-    due to high squeeze
-    :param self: module
-    :param squeeze_factor: squeeze factor of HSI event
-    :param individual_id: individual_id
-    :param hsi_type: STR (bemonc, cemonc, an, pn)
-    :return:
-    """
-    mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
-
-    if individual_id not in mni or mni[individual_id]['delay_three']:
-        return
-
-    if squeeze_factor > self.current_parameters[f'squeeze_threshold_for_delay_three_{hsi_type}']:
-        mni[individual_id]['delay_three'] = True
-
-
-def get_treatment_effect(delay_one_two, delay_three, treatment_effect, params):
-    """
-    Returns a treatment effect which may be modified if care was delayed
-    :param delay_one_two: BOOL, if delay 1/2 has occurred
-    :param delay_three: BOOL, if a delay 3 has occurred
-    :param treatment_effect: STR, parameter housing the treatment effect
-    :param params: module parameters
-    :return: Treatment effect to be used in the linear model
-    """
-
-    # If they have experienced all delays, treatment effectiveness is reduced by greater amount
-    if delay_one_two and delay_three:
-        if treatment_effect in ('prob_haemostatis_uterotonics', 'prob_successful_manual_removal_placenta'):
-            treatment_effect = params[treatment_effect] * params['treatment_effect_modifier_all_delays']
-        else:
-            treatment_effect = 1 - ((1 - params[treatment_effect]) * params['treatment_effect_modifier_all_delays'])
-
-    # Otherwise, if only one type of delay is experience the treatment effect is reduced by a lesser amount
-    elif delay_one_two or delay_three:
-        if treatment_effect in ('prob_haemostatis_uterotonics', 'prob_successful_manual_removal_placenta'):
-            treatment_effect = params[treatment_effect] * params['treatment_effect_modifier_one_delay']
-        else:
-            treatment_effect = 1 - ((1 - params[treatment_effect]) * params['treatment_effect_modifier_one_delay'])
-
-    # If no delays occurred, maximum treatment effectiveness is applied
-    else:
-        treatment_effect = params[treatment_effect]
-
-    return treatment_effect
-
-
 def log_mni_for_maternal_death(self, person_id):
     """
     This function is called on the death of a woman/newborn in the module and logs a number of variables from the
@@ -399,7 +324,7 @@ def log_mni_for_maternal_death(self, person_id):
     logger = logging.getLogger("tlo.methods.labour.detail")
 
     mni_to_log = dict()
-    for k in ['delay_one_two', 'delay_three', 'didnt_seek_care', 'cons_not_avail', 'comp_not_avail', 'hcw_not_avail']:
+    for k in ['didnt_seek_care', 'cons_not_avail', 'comp_not_avail', 'hcw_not_avail']:
         mni_to_log.update({k: mni[person_id][k]})
 
     logger.info(key='death_mni', data=mni_to_log)
@@ -521,8 +446,6 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
                     risk = {cause: self.la_linear_models['postpartum_haemorrhage_death'].predict(
                         df.loc[[individual_id]],
                         received_blood_transfusion=mni[individual_id]['received_blood_transfusion'],
-                        delay_one_two=mni[individual_id]['delay_one_two'],
-                        delay_three=mni[individual_id]['delay_three']
                     )[individual_id]}
                     apply_effect_of_anaemia(cause)
 
@@ -531,9 +454,7 @@ def check_for_risk_of_death_from_cause_maternal(self, individual_id, timing):
                         df.loc[[individual_id]],
                         received_blood_transfusion=mni[individual_id]['received_blood_transfusion'],
                         mode_of_delivery=mni[individual_id]['mode_of_delivery'],
-                        chorio_in_preg=mni[individual_id]['chorio_in_preg'],
-                        delay_one_two=mni[individual_id]['delay_one_two'],
-                        delay_three=mni[individual_id]['delay_three'])[individual_id]}
+                        chorio_in_preg=mni[individual_id]['chorio_in_preg'])[individual_id]}
 
                     if (cause == 'postpartum_haemorrhage') or (cause == 'antepartum_haemorrhage'):
                         apply_effect_of_anaemia(cause)
@@ -611,7 +532,7 @@ def check_for_risk_of_death_from_cause_neonatal(self, individual_id):
         for cause in causes:
             if f'{cause}_death' in self.nb_linear_models.keys():
                 risk = {cause: self.nb_linear_models[f'{cause}_death'].predict(
-                    df.loc[[individual_id]], delay=nci[individual_id]['third_delay'])[individual_id]}
+                    df.loc[[individual_id]])[individual_id]}
             else:
                 risk = {cause: params[f'cfr_{cause}']}
 
@@ -630,9 +551,7 @@ def update_mni_dictionary(self, individual_id):
 
     if self == self.sim.modules['PregnancySupervisor']:
 
-        mni[individual_id] = {'delay_one_two': False,
-                              'delay_three': False,
-                              'delete_mni': False,  # if True, mni deleted in report_daly_values function
+        mni[individual_id] = {'delete_mni': False,  # if True, mni deleted in report_daly_values function
                               'didnt_seek_care': False,
                               'cons_not_avail': False,
                               'comp_not_avail': False,

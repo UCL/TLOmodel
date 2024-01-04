@@ -106,11 +106,7 @@ def test_analysis_analysis_events_run_as_expected_and_update_parameters(seed):
         assert c_current_params[parameter] == new_avail_prob
 
     # Now check corrent labour/newborn/postnatal parameters have been updated
-    assert l_current_params['squeeze_threshold_for_delay_three_bemonc'] == 10_000
-    assert l_current_params['squeeze_threshold_for_delay_three_cemonc'] == 10_000
-    assert l_current_params['squeeze_threshold_for_delay_three_pn'] == 10_000
     assert l_current_params['prob_intervention_delivered_anaemia_assessment_pnc'] == new_avail_prob
-    assert nbparams['squeeze_threshold_for_delay_three_nb_care'] == 10_000
 
     assert l_current_params['odds_will_attend_pnc'] != unchanged_odds_pnc
     assert l_current_params['prob_timings_pnc'] == [1.0, 0.0]
@@ -156,7 +152,6 @@ def test_analysis_analysis_events_run_as_expected_when_using_sensitivity_max_par
         assert c_current_params[parameter] == 1.0
 
     assert p_current_params['prob_seek_care_pregnancy_complication'] == 1.0
-    assert c_current_params['squeeze_factor_threshold_anc'] == 10_000
 
     # Check labour max
     assert l_current_params['odds_deliver_at_home'] == 0.0

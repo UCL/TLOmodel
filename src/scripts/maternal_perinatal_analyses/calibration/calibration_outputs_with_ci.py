@@ -326,72 +326,72 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
 
     # For each year the total women attending ANC1 by each of the gestational age groupings is calculated, first as a
     # crude number then as a percentage of the total women who attended ANC1 that year
-    for year in sim_years:
-        # Add calibration data
-        if year == 2010:
-            anc_before_four_months.append(12.4)
-            anc_before_four_five_months.append(48.2)
-            anc_before_six_seven_months.append(35.6)
-            anc_before_eight_plus_months.append(3.8)
-        if year == 2015:
-            anc_before_four_months.append(24)
-            anc_before_four_five_months.append(51.2)
-            anc_before_six_seven_months.append(21.4)
-            anc_before_eight_plus_months.append(3.4)
-
-        year_df = anc_ga_first_visit.loc[year]
-        total_women_that_year = 0
-        for index in year_df.index:
-            total_women_that_year += year_df.loc[index].mean()
-
-        anc1 = get_means(year_df.loc[0, 0:len(year_df.columns)])
-
-        total_women_anc = total_women_that_year - anc1
-
-        early_anc = year_df.loc[(slice(1, 8), slice(0, 13)), 0:len(year_df.columns)]
-        early_anc4 = year_df.loc[(slice(4, 8), slice(0, 17)), 0:len(year_df.columns)]
-        four_to_five = year_df.loc[(slice(1, 8), slice(14, 22)), 0:len(year_df.columns)]
-        six_to_seven = year_df.loc[(slice(1, 8), slice(23, 31)), 0:len(year_df.columns)]
-        eight_plus = year_df.loc[(slice(1, 8), slice(32, 50)), 0:len(year_df.columns)]
-
-        sum_means_early = get_means(early_anc)
-        sum_means_early_anc4 = get_means(early_anc4)
-        sum_four = get_means(four_to_five)
-        sum_six = get_means(six_to_seven)
-        sum_eight = get_means(eight_plus)
-
-        # Also output the proportion of women per year who attend 4 visits with there first visit before month 5
-        early_anc_4_list.append((sum_means_early_anc4 / total_women_anc) * 100)
-
-        anc_before_four_months.append((sum_means_early / total_women_anc) * 100)
-        anc_before_four_five_months.append((sum_four / total_women_anc) * 100)
-        anc_before_six_seven_months.append((sum_six / total_women_anc) * 100)
-        anc_before_eight_plus_months.append((sum_eight / total_women_anc) * 100)
-
-    # Finally plot these results as a stacked bar graph using model data from 2010/2015 compared to the
-    # calibration data
-    a_4 = [anc_before_four_months[0], anc_before_four_months[1], anc_before_four_months[6], anc_before_four_months[8]]
-    a_5 = [anc_before_four_five_months[0], anc_before_four_five_months[1], anc_before_four_five_months[6],
-           anc_before_four_five_months[8]]
-    a_6 = [anc_before_six_seven_months[0], anc_before_six_seven_months[1], anc_before_six_seven_months[6],
-           anc_before_six_seven_months[8]]
-    a_8 = [anc_before_eight_plus_months[0], anc_before_eight_plus_months[1], anc_before_eight_plus_months[6],
-           anc_before_eight_plus_months[8]]
-
-    labels = ['2010 (DHS)', '2010 (Model)', '2015 (DHS)', '2016 (Model)']
-    fig, ax = plt.subplots()
-    ax.bar(labels, a_8, width, label='>8m',
-           bottom=[x + y + z for x, y, z in zip(a_4, a_5, a_6)])
-    ax.bar(labels, a_6, width, label='6-7m',
-           bottom=[x + y for x, y in zip(a_4, a_5)])
-    ax.bar(labels, a_5, width, label='4-5m',
-           bottom=a_4)
-    ax.bar(labels, a_4, width, label='<4m')
-    ax.legend(bbox_to_anchor=(1.2, 1.1))
-    ax.set_ylabel('% of first ANC contacts')
-    ax.set_title('Maternal gestational age at first ANC contact by year')
-    plt.savefig(f'{graph_location}/anc_ga_first_visit_update_2010_2015.png', bbox_inches="tight")
-    plt.show()
+    # for year in sim_years:
+    #     # Add calibration data
+    #     if year == 2010:
+    #         anc_before_four_months.append(12.4)
+    #         anc_before_four_five_months.append(48.2)
+    #         anc_before_six_seven_months.append(35.6)
+    #         anc_before_eight_plus_months.append(3.8)
+    #     if year == 2015:
+    #         anc_before_four_months.append(24)
+    #         anc_before_four_five_months.append(51.2)
+    #         anc_before_six_seven_months.append(21.4)
+    #         anc_before_eight_plus_months.append(3.4)
+    #
+    #     year_df = anc_ga_first_visit.loc[year]
+    #     total_women_that_year = 0
+    #     for index in year_df.index:
+    #         total_women_that_year += year_df.loc[index].mean()
+    #
+    #     anc1 = get_means(year_df.loc[0, 0:len(year_df.columns)])
+    #
+    #     total_women_anc = total_women_that_year - anc1
+    #
+    #     early_anc = year_df.loc[(slice(1, 8), slice(0, 13)), 0:len(year_df.columns)]
+    #     early_anc4 = year_df.loc[(slice(4, 8), slice(0, 17)), 0:len(year_df.columns)]
+    #     four_to_five = year_df.loc[(slice(1, 8), slice(14, 22)), 0:len(year_df.columns)]
+    #     six_to_seven = year_df.loc[(slice(1, 8), slice(23, 31)), 0:len(year_df.columns)]
+    #     eight_plus = year_df.loc[(slice(1, 8), slice(32, 50)), 0:len(year_df.columns)]
+    #
+    #     sum_means_early = get_means(early_anc)
+    #     sum_means_early_anc4 = get_means(early_anc4)
+    #     sum_four = get_means(four_to_five)
+    #     sum_six = get_means(six_to_seven)
+    #     sum_eight = get_means(eight_plus)
+    #
+    #     # Also output the proportion of women per year who attend 4 visits with there first visit before month 5
+    #     early_anc_4_list.append((sum_means_early_anc4 / total_women_anc) * 100)
+    #
+    #     anc_before_four_months.append((sum_means_early / total_women_anc) * 100)
+    #     anc_before_four_five_months.append((sum_four / total_women_anc) * 100)
+    #     anc_before_six_seven_months.append((sum_six / total_women_anc) * 100)
+    #     anc_before_eight_plus_months.append((sum_eight / total_women_anc) * 100)
+    #
+    # # Finally plot these results as a stacked bar graph using model data from 2010/2015 compared to the
+    # # calibration data
+    # a_4 = [anc_before_four_months[0], anc_before_four_months[1], anc_before_four_months[6], anc_before_four_months[8]]
+    # a_5 = [anc_before_four_five_months[0], anc_before_four_five_months[1], anc_before_four_five_months[6],
+    #        anc_before_four_five_months[8]]
+    # a_6 = [anc_before_six_seven_months[0], anc_before_six_seven_months[1], anc_before_six_seven_months[6],
+    #        anc_before_six_seven_months[8]]
+    # a_8 = [anc_before_eight_plus_months[0], anc_before_eight_plus_months[1], anc_before_eight_plus_months[6],
+    #        anc_before_eight_plus_months[8]]
+    #
+    # labels = ['2010 (DHS)', '2010 (Model)', '2015 (DHS)', '2016 (Model)']
+    # fig, ax = plt.subplots()
+    # ax.bar(labels, a_8, width, label='>8m',
+    #        bottom=[x + y + z for x, y, z in zip(a_4, a_5, a_6)])
+    # ax.bar(labels, a_6, width, label='6-7m',
+    #        bottom=[x + y for x, y in zip(a_4, a_5)])
+    # ax.bar(labels, a_5, width, label='4-5m',
+    #        bottom=a_4)
+    # ax.bar(labels, a_4, width, label='<4m')
+    # ax.legend(bbox_to_anchor=(1.2, 1.1))
+    # ax.set_ylabel('% of first ANC contacts')
+    # ax.set_title('Maternal gestational age at first ANC contact by year')
+    # plt.savefig(f'{graph_location}/anc_ga_first_visit_update_2010_2015.png', bbox_inches="tight")
+    # plt.show()
 
     # --------------------------------------------- Facility delivery -------------------------------------------------
     # Here the yearly health centre, hospital, home and facility delivery rates are outputted against calibration
@@ -1461,6 +1461,26 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         ),
     )
     death_results = d_r.fillna(0)
+
+    def update_dfs_to_replace_missing_causes(df, causes):
+        """Checks DF that a predetermined list of outcomes are present in the DF index. If not
+        (the outcome did not occur for a given year) a row is added containing zero"""
+        t = []
+        for year in sim_years:
+            for cause in causes:
+                if cause not in df.loc[year].index:
+                    index = pd.MultiIndex.from_tuples([(year, cause)], names=["year", "cause_of_death"])
+                    new_row = pd.DataFrame(columns=df.columns, index=index)
+                    f_df = new_row.fillna(0.0)
+                    t.append(f_df)
+        if t:
+            causes_df = pd.concat(t)
+            updated_df = pd.concat([df, causes_df])
+            return updated_df
+        else:
+            return df
+
+    death_results = update_dfs_to_replace_missing_causes(death_results, ['antenatal_sepsis'])
 
     # List each cause of interest
     simplified_causes = ['ectopic_pregnancy', 'abortion', 'severe_pre_eclampsia', 'sepsis', 'uterine_rupture',

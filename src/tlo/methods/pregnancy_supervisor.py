@@ -339,12 +339,6 @@ class PregnancySupervisor(Module):
         'treatment_effect_still_birth_food_sups': Parameter(
             Types.LIST, 'risk reduction of still birth for women receiving nutritional supplements'),
 
-        # EFFECT OF DELAYS...
-        'treatment_effect_modifier_all_delays': Parameter(
-            Types.LIST, 'factor by which treatment effectiveness is reduced in the presences of multiple delays'),
-        'treatment_effect_modifier_one_delay': Parameter(
-            Types.LIST, 'factor by which treatment effectiveness is reduced in the presences of one delays'),
-
         # ANALYSIS PARAMETERS...
         'anc_service_structure': Parameter(
             Types.INT, 'stores type of ANC service being delivered in the model (anc4 or anc8) and is used in analysis'
@@ -1538,9 +1532,6 @@ class PregnancySupervisor(Module):
             care_seeking = self.rng.random_sample() < params['prob_seek_care_pregnancy_loss']
 
         if care_seeking:
-            # check for delay
-            pregnancy_helper_functions.check_if_delayed_careseeking(self, individual_id, timing='preg_loss')
-
             # We assume women will seek care via HSI_GenericEmergencyFirstApptAtFacilityLevel1 and will be admitted for
             # care in CareOfWomenDuringPregnancy module
             from tlo.methods.hsi_generic_first_appts import HSI_GenericEmergencyFirstAppt
@@ -1857,9 +1848,6 @@ class PregnancySupervisorEvent(RegularEvent, PopulationScopeEventMixin):
         for person in care_seeking.loc[care_seeking].index:
             if not df.at[person, 'hs_is_inpatient']:
 
-                # Determine if care seeking is delayed
-                pregnancy_helper_functions.check_if_delayed_careseeking(self.module, person, timing='preg_emerg')
-
                 from tlo.methods.care_of_women_during_pregnancy import (
                     HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare,
                 )
@@ -1986,9 +1974,7 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
 
         # Individual risk of death is calculated through the linear model
         risk_of_death = self.module.ps_linear_models[f'{self.cause}_death'].predict(
-            df.loc[[individual_id]],
-            delay_one_two=mni[individual_id]['delay_one_two'],
-            delay_three=mni[individual_id]['delay_three'])[individual_id]
+            df.loc[[individual_id]])[individual_id]
 
         # If the death occurs we record it here
         if self.module.rng.random_sample() < risk_of_death:
@@ -2008,8 +1994,6 @@ class EarlyPregnancyLossDeathEvent(Event, IndividualScopeEventMixin):
             else:
                 self.module.abortion_complications.unset(individual_id, 'sepsis', 'haemorrhage', 'injury')
                 df.at[individual_id, 'ac_received_post_abortion_care'] = False
-                mni[individual_id]['delay_one_two'] = False
-                mni[individual_id]['delay_three'] = False
 
             if individual_id in mni:
                 mni[individual_id]['delete_mni'] = True

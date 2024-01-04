@@ -588,9 +588,7 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
     # set key pregnancy characteristics
     df.at[mother_id, 'is_pregnant'] = True
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 22
-    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'severe_anaemia_resolution': pd.NaT,
-                                                                             'delay_one_two': False,
-                                                                             'delay_three': False}
+    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'severe_anaemia_resolution': pd.NaT}
 
     # and override quality parameters
     lparams = sim.modules['Labour'].current_parameters

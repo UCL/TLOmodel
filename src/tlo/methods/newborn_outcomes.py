@@ -244,7 +244,7 @@ class NewbornOutcomes(Module):
         'treatment_effect_resuscitation': Parameter(
             Types.LIST, 'effect of resuscitation on newborn mortality associated with encephalopathy'),
         'treatment_effect_resuscitation_preterm': Parameter(
-            Types.LIST, 'effect of delayed resuscitation on newborn mortality associated with prematurity'),
+            Types.LIST, 'effect of resuscitation on newborn mortality associated with prematurity'),
         'treatment_effect_abx_prom': Parameter(
             Types.LIST, 'effect of antibiotics given to mothers experience PROM on risk of newborn sepsis '),
         'treatment_effect_steroid_preterm': Parameter(
@@ -252,12 +252,6 @@ class NewbornOutcomes(Module):
                         'corticosteroids'),
         'treatment_effect_kmc': Parameter(
             Types.LIST, 'treatment effect of kangaroo mother care on preterm mortality'),
-
-        'squeeze_threshold_for_delay_three_nb_care': Parameter(
-            Types.LIST, 'squeeze factor value over which an individual within a newborn HSI is said to experience '
-                        'type 3 delay i.e. delay in receiving appropriate care'),
-        'treatment_effect_modifier_one_delay': Parameter(
-            Types.LIST, 'factor by which treatment effectiveness is reduced in the presences of one delays'),
 
     }
 
@@ -737,8 +731,6 @@ class NewbornOutcomes(Module):
 
         # Finally we schedule the postnatal week one event
         if individual_id in nci:
-            nci[individual_id]['third_delay'] = False
-
             if not nci[individual_id]['passed_through_week_one']:
                 self.scheduled_week_one_postnatal_event(individual_id)
 
@@ -1198,8 +1190,7 @@ class NewbornOutcomes(Module):
                              'cause_of_death_after_birth': [],
                              'sepsis_postnatal': False,
                              'passed_through_week_one': False,
-                             'will_receive_pnc': 'none',
-                             'third_delay': False}
+                             'will_receive_pnc': 'none'}
 
             # Check these variables are not unassigned
             if nci[child_id]['delivery_setting'] == 'none':
@@ -1364,9 +1355,6 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
                                                  'timing': nci[person_id]['will_receive_pnc']})
 
         df.at[person_id, 'nb_pnc_check'] += 1
-
-        if squeeze_factor > params['squeeze_threshold_for_delay_three_nb_care']:
-            nci[person_id]['third_delay'] = True
 
         # First the newborn is assessed for sepsis and treated if needed
         self.module.assessment_and_treatment_newborn_sepsis(self, self.ACCEPTED_FACILITY_LEVEL)

@@ -91,8 +91,6 @@ class CareOfWomenDuringPregnancy(Module):
             Types.LIST, 'treatment effectiveness of blood transfusion for anaemia in pregnancy'),
 
         # INTERVENTION PROBABILITIES...
-        'squeeze_factor_threshold_anc': Parameter(
-            Types.INT, 'squeeze factor threshold over which an ANC appointment cannot run'),
         'prob_intervention_delivered_urine_ds': Parameter(
             Types.LIST, 'probability a woman will receive the intervention "urine dipstick" given that the HSI has ran '
                         'and the consumables are available (proxy for clinical quality)'),
@@ -141,9 +139,6 @@ class CareOfWomenDuringPregnancy(Module):
         'specificity_blood_test_syphilis': Parameter(
             Types.LIST, 'specificity of a blood test to detect syphilis'),
 
-        'squeeze_threshold_for_delay_three_an': Parameter(
-            Types.LIST, 'squeeze factor value over which an individual within a antenatal HSI is said to experience '
-                        'type 3 delay i.e. delay in receiving appropriate care'),
     }
 
     PROPERTIES = {
@@ -677,9 +672,7 @@ class CareOfWomenDuringPregnancy(Module):
                                              f' run for person {individual_id}')
 
             self.sim.modules['PregnancySupervisor'].apply_risk_of_death_from_monthly_complications(individual_id)
-            if df.at[individual_id, 'is_alive']:
-                mni[individual_id]['delay_one_two'] = False
-                mni[individual_id]['delay_three'] = False
+
 
     # ================================= INTERVENTIONS DELIVERED DURING ANC ============================================
     # The following functions contain the interventions that are delivered as part of routine ANC contacts. Functions
@@ -1097,12 +1090,11 @@ class CareOfWomenDuringPregnancy(Module):
         self.balance_energy_and_protein_supplementation(hsi_event=hsi_event)
         self.calcium_supplementation(hsi_event=hsi_event)
 
-    def check_anc1_can_run(self, individual_id, squeeze_factor, gest_age_next_contact):
+    def check_anc1_can_run(self, individual_id, gest_age_next_contact):
         """
         This function is called by the first ANC contact and runs a series of checks to determine if the HSI should run
         on the date it has been scheduled for
         :param individual_id: individual id
-        :param squeeze_factor: squeeze_factor of the HSI calling this function
         :param gest_age_next_contact: gestational age, in weeks, this woman is due to return for her next ANC
         :returns True/False as to whether the event can run
         """
@@ -1150,15 +1142,12 @@ class CareOfWomenDuringPregnancy(Module):
 
         return True
 
-    def check_subsequent_anc_can_run(self, individual_id, this_contact, this_visit_number, squeeze_factor,
-                                     gest_age_next_contact):
+    def check_subsequent_anc_can_run(self, individual_id, this_visit_number, gest_age_next_contact):
         """
         This function is called by the subsequent ANC contacts and runs a series of checks to determine if the HSI
         should run on the date it has been scheduled for
         :param individual_id: individual id
-        :param this_contact: HSI object of the current ANC contact that needs to be rebooked
         :param this_visit_number: Number of the next ANC contact in the schedule
-        :param squeeze_factor: squeeze_factor of the HSI calling this function
         :param gest_age_next_contact: gestational age, in weeks, this woman is due to return for her next ANC
         :returns True/False as to whether the event can run
         """
@@ -1428,7 +1417,7 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
         gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
 
         # Check this visit can run
-        can_anc1_run = self.module.check_anc1_can_run(person_id, squeeze_factor, gest_age_next_contact)
+        can_anc1_run = self.module.check_anc1_can_run(person_id, gest_age_next_contact)
 
         if can_anc1_run:
             self.module.anc_counter[1] += 1
@@ -1511,14 +1500,10 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        # Here we define variables used within the function that checks in this ANC visit can run
-        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(
-            self.module, person_id=person_id)
-
         # Run the check
-        can_anc_run = self.module.check_subsequent_anc_can_run(individual_id=person_id, this_contact=this_contact,
-                                                               this_visit_number=2, squeeze_factor=squeeze_factor,
+        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
+        can_anc_run = self.module.check_subsequent_anc_can_run(individual_id=person_id,
+                                                               this_visit_number=2,
                                                                gest_age_next_contact=gest_age_next_contact)
 
         if can_anc_run:
@@ -1601,13 +1586,9 @@ class HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(HSI_Event, Indivi
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        # Here we define variables used within the function that checks in this ANC visit can run
-        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_ThirdAntenatalCareContact(self.module, person_id=person_id)
-
         # Run the check
-        can_anc_run = self.module.check_subsequent_anc_can_run(person_id, this_contact, 3, squeeze_factor,
-                                                               gest_age_next_contact)
+        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
+        can_anc_run = self.module.check_subsequent_anc_can_run(person_id, 3, gest_age_next_contact)
 
         if can_anc_run:
             self.module.anc_counter[3] += 1
@@ -1677,13 +1658,9 @@ class HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(HSI_Event, Indiv
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        # Here we define variables used within the function that checks in this ANC visit can run
-        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_FourthAntenatalCareContact(self.module, person_id=person_id)
-
         # Run the check
-        can_anc_run = self.module.check_subsequent_anc_can_run(person_id, this_contact, 4, squeeze_factor,
-                                                               gest_age_next_contact)
+        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
+        can_anc_run = self.module.check_subsequent_anc_can_run(person_id, 4, gest_age_next_contact)
 
         if can_anc_run:
             self.module.anc_counter[4] += 1
@@ -1749,13 +1726,9 @@ class HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(HSI_Event, Indivi
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        # Here we define variables used within the function that checks in this ANC visit can run
-        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_FifthAntenatalCareContact(self.module, person_id=person_id)
-
         # Run the check
-        can_anc_run = self.module.check_subsequent_anc_can_run(person_id, this_contact, 5, squeeze_factor,
-                                                               gest_age_next_contact)
+        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
+        can_anc_run = self.module.check_subsequent_anc_can_run(person_id, 5, gest_age_next_contact)
 
         if can_anc_run:
             self.module.anc_counter[5] += 1
@@ -1818,13 +1791,9 @@ class HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(HSI_Event, Indivi
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        # Here we define variables used within the function that checks in this ANC visit can run
-        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_SixthAntenatalCareContact(self.module, person_id=person_id)
-
         # Run the check
-        can_anc_run = self.module.check_subsequent_anc_can_run(person_id, this_contact, 6, squeeze_factor,
-                                                               gest_age_next_contact)
+        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
+        can_anc_run = self.module.check_subsequent_anc_can_run(person_id, 6, gest_age_next_contact)
 
         if can_anc_run:
             self.module.anc_counter[6] += 1
@@ -1883,13 +1852,9 @@ class HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(HSI_Event, Indi
         df = self.sim.population.props
         mother = df.loc[person_id]
 
-        # Here we define variables used within the function that checks in this ANC visit can run
-        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_SeventhAntenatalCareContact(self.module, person_id=person_id)
-
         # Run the check
-        can_anc_run = self.module.check_subsequent_anc_can_run(person_id, this_contact, 7, squeeze_factor,
-                                                               gest_age_next_contact)
+        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
+        can_anc_run = self.module.check_subsequent_anc_can_run(person_id, 7, gest_age_next_contact)
 
         if can_anc_run:
             self.module.anc_counter[7] += 1
@@ -1941,13 +1906,9 @@ class HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(HSI_Event, Indiv
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
 
-        # Here we define variables used within the function that checks in this ANC visit can run
-        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
-        this_contact = HSI_CareOfWomenDuringPregnancy_EighthAntenatalCareContact(self.module, person_id=person_id)
-
         # Run the check
-        can_anc_run = self.module.check_subsequent_anc_can_run(person_id, this_contact, 8, squeeze_factor,
-                                                               gest_age_next_contact)
+        gest_age_next_contact = self.module.determine_gestational_age_for_next_contact(person_id)
+        can_anc_run = self.module.check_subsequent_anc_can_run(person_id, 8, gest_age_next_contact)
 
         if can_anc_run:
             self.module.anc_counter[8] += 1
@@ -2155,9 +2116,6 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
         if not (mother.is_pregnant and not mother.la_currently_in_labour and not mother.hs_is_inpatient):
             return
-
-        # check if she will experience delayed care
-        pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id, hsi_type='an')
 
         # store the GA at which CS will most likely be scheduled for in those for which it is indicated
         assumed_weeks_till_delivery = 37
@@ -2382,9 +2340,6 @@ class HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare(HSI_Event, Indiv
 
             self.sim.schedule_event(LabourOnsetEvent(self.sim.modules['Labour'], person_id),
                                     admission_date)
-        else:
-            mni[person_id]['delay_one_two'] = False
-            mni[person_id]['delay_three'] = False
 
     def did_not_run(self):
         logger.debug(key='message', data='HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare: did not run')
@@ -2558,10 +2513,6 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
         if not mother.is_alive or not abortion_complications.has_any([person_id], 'sepsis', 'haemorrhage', 'injury',
                                                                      'other', first=True):
             return
-
-        # Determine if there will be a delay due to high squeeze
-        pregnancy_helper_functions.check_if_delayed_care_delivery(self.module, squeeze_factor, person_id,
-                                                                  hsi_type='an')
 
         # Request baseline PAC consumables
         baseline_cons = pregnancy_helper_functions.return_cons_avail(
