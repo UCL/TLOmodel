@@ -24,7 +24,7 @@ def add_footnote(fig: plt.Figure, footnote: str):
     """ A function that adds a footnote below each plot. Here we are explaining what a denominator for every
     graph is """
     fig.figure.text(0.5, 0.01, footnote, ha="center", fontsize=10,
-                bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
+                    bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
 
 
 class PlotDescriptor(NamedTuple):
@@ -132,7 +132,7 @@ class LifeStylePlots:
 
     # 1. PLOT BY GENDER
     # --------------------------------------------------------------------------------------------------------
-    def plot_categorical_properties_by_gender(self, li_property: str, categories: list):
+    def plot_categorical_properties_by_gender(self, li_property: str):
         """ a function to plot all categorical properties of lifestyle module grouped by gender. Available
         categories per property include;
 
@@ -146,7 +146,7 @@ class LifeStylePlots:
             bmi is np.nan until age 15
 
         2. wealth level
-            wealth level is categorised as follows;
+            categorised as follows;
 
                     Urban                               |         Rural
                     ------------------------------------|----------------------------------------------
@@ -157,144 +157,68 @@ class LifeStylePlots:
                     level 5 = 2% wealth level           |  level 5 = 23% wealth level
 
         3. education level
-             education level is categorised as follows
+             categorised as follows
                     level 1: no education
                     level 2: primary education
                     level 3 : secondary+ education
 
         4. marital status
-            marital status is categorised as follows
+            categorised as follows
                     category 1: never married
                     category 2: married
                     category 3: widowed or divorced
 
-        :param li_property: any other categorical property defined in lifestyle module
-        :param categories: a list of categories """
+        :param li_property: any other categorical property defined in lifestyle module """
 
-        # a new dataframe to contain data of property categories grouped by gender
-        gc_df = pd.DataFrame()
+        categories = sorted(set(self.dfs[li_property].columns.get_level_values(li_property)))
 
-        # 1. check if property is in a group of those that need plotting by urban and rural
-        if li_property in self.cat_by_rural_urban_props:
-            _cols_counter: int = 0  # a counter for plotting. setting rows
-            fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(10, 5))  # plot setup
-            for urban_rural in self._rural_urban_state.keys():
-                _rows_counter: int = 0  # a counter for plotting. setting columns
-                for gender, desc in self.gender_des.items():
+        col: int = 0  # counter for indexing purposes
+        # create subplots
+        fig, axes = plt.subplots(nrows=2 if li_property in self.cat_by_rural_urban_props
+                                 or li_property == 'li_ed_lev' else 1, ncols=2, figsize=(10, 5))
+        for gender, desc in self.gender_des.items():
+
+            df_dict = dict()
+            if li_property == 'li_ed_lev' or li_property in self.cat_by_rural_urban_props:
+                _row: int = 0  # row counter
+                _rows_counter: int = 0  # a counter for plotting. setting rows
+                key_value_desc = self.wealth_desc.items() if li_property == 'li_ed_lev' else \
+                    self._rural_urban_state.items()
+                for _key, _value in key_value_desc:
+                    gc_df = pd.DataFrame()
                     for cat in categories:
-                        gc_df[f'cat_{cat}'] = self.dfs[li_property][urban_rural][gender][cat].sum(axis=1)
-
+                        if li_property == 'li_ed_lev':
+                            gc_df[f'cat_{cat}'] = self.dfs[li_property][gender][_key][cat].sum(axis=1)
+                        else:
+                            gc_df[f'cat_{cat}'] = self.dfs[li_property][_key][gender][cat].sum(axis=1)
                     # normalise the probabilities
-                    gc_df = gc_df.apply(lambda row: row / row.sum(), axis=1)
-                    # do plotting
-                    ax = gc_df.plot(kind='bar', stacked=True, ax=axes[_cols_counter, _rows_counter],
-                                    title=f"{self._rural_urban_state[urban_rural]}"
-                                          f" {self.en_props[li_property].label} categories in {desc}",
-                                    ylabel=f"{self.en_props[li_property].label} proportions", xlabel="Year"
-                                    )
-                    self.custom_axis_formatter(gc_df, ax)
-                    # increase counter
-                    _rows_counter += 1
-
-                _cols_counter += 1
-            # save and display plots
-            add_footnote(fig, f'{self.en_props[li_property].per_gender_footnote}')
-            fig.tight_layout()
-            fig.savefig(self.outputpath / (
-                li_property + '_' + self.datestamp + '.png'),
-                        format='png')
-
-        # 2. if property is not in a group of those that need plotting by urban and rural plot them by age category only
-        else:
-            if li_property == 'li_ed_lev':
-                # GENERAL EDUCATION PLOTTING
-                counter: int = 0  # counter for indexing purposes
-                # create subplots
-                fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 5))
-                for gender, desc in self.gender_des.items():
-                    # re-order columns
-                    re_ordered_df = self.dfs[li_property].reorder_levels([0, 2, 1, 3], axis=1)
-                    for cat in categories:
-                        gc_df[f'cat_{cat}'] = re_ordered_df[gender][cat].sum(axis=1)
-
-                    # normalise the probabilities
-                    gc_df = gc_df.apply(lambda row: row / row.sum(), axis=1)
-
-                    # do plotting
-                    ax = gc_df.plot(kind='bar', stacked=True, ax=axes[counter],
-                                    title=f"{desc} {self.en_props[li_property].label}  categories",
-                                    ylabel=f"{self.en_props[li_property].label} proportions", xlabel="Year"
-                                    )
-                    self.custom_axis_formatter(gc_df, ax)
-                    # increase counter
-                    counter += 1
-
-                # save and display plots for property categories by gender
-                add_footnote(fig, f'{self.en_props[li_property].per_gender_footnote}')
-                fig.tight_layout()
-                fig.savefig(self.outputpath / (li_property + self.datestamp + '.png'), format='png')
-                # fig.show()
-
-                # PLOT EDUCATION BY WEALTH LEVELS
-                # create subplots
-                fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(10, 5))
-                _col_counter: int = 0  # counter for indexing purposes
-                for gender, desc in self.gender_des.items():
-                    _all_edu_lev_dfs = dict()  # a dictionary to store education level dataframes
-
-                    _rows_counter: int = 0  # a counter for plotting. setting rows
-                    for _wealth_level in self.wealth_desc.keys():
-                        # a new dataframe to contain data of property categories grouped by gender
-                        gc_df = pd.DataFrame()
-                        for cat in categories:
-                            gc_df[f'cat_{cat}_wealth{_wealth_level}'] = self.dfs[li_property][gender][_wealth_level][
-                                cat].sum(axis=1)
-
-                        # normalise the probabilities
-                        gc_df = gc_df.apply(lambda row: row / row.sum(), axis=1)
-                        _all_edu_lev_dfs[gender + _wealth_level] = gc_df
-
-                        # do plotting
-                        ax = _all_edu_lev_dfs[gender + _wealth_level].plot(kind='bar', stacked=True,
-                                                                           ax=axes[_col_counter, _rows_counter],
-                                                                           title=f"{desc} "
-                                                                                 f"{self.wealth_desc[_wealth_level]} "
-                                                                                 f"{self.en_props[li_property].label}  "
-                                                                                 f"categories",
-                                                                           ylabel=f"{self.en_props[li_property].label} "
-                                                                                  f"proportions",
-                                                                           xlabel="Year"
-                                                                           )
-                        self.custom_axis_formatter(gc_df, ax)
-                        # increase counter
-                        _rows_counter += 1
-                    _col_counter += 1
-
+                    df_dict[f'{gender}_{_value}_{_row}'] = gc_df
+                    _row += 1
             else:
-                counter: int = 0  # counter for indexing purposes
-                # create subplots
-                fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(10, 5))
-                for gender, desc in self.gender_des.items():
-                    for cat in categories:
-                        gc_df[f'cat_{cat}'] = self.dfs[li_property][gender][cat].sum(axis=1)
-
+                gc_df = pd.DataFrame()
+                for cat in categories:
+                    gc_df[f'cat_{cat}'] = self.dfs[li_property][gender][cat].sum(axis=1)
                     # normalise the probabilities
-                    gc_df = gc_df.apply(lambda row: row / row.sum(), axis=1)
-
-                    # do plotting
-                    ax = gc_df.plot(kind='bar', stacked=True, ax=axes[counter],
-                                    title=f"{desc} {self.en_props[li_property].label}  categories",
-                                    ylabel=f"{self.en_props[li_property].label} proportions", xlabel="Year"
-                                    )
-                    self.custom_axis_formatter(gc_df, ax)
-                    # increase counter
-                    counter += 1
-
-            # save and display plots for property categories by gender
-            add_footnote(fig, f'{self.en_props[li_property].per_gender_footnote}')
-            fig.tight_layout()
-            fig.savefig(self.outputpath / (li_property + self.datestamp + '.png'), format='png')
-            # fig.show()
+                    df_dict[gender] = gc_df
+            for _key in df_dict.keys():
+                df_dict[_key] = df_dict[_key].apply(lambda row: row / row.sum(), axis=1)
+                # do plotting
+                ax = df_dict[_key].plot(kind='bar', stacked=True,
+                                        ax=axes[int(_key.split("_")[-1]), col] if
+                                        li_property in self.cat_by_rural_urban_props or li_property == 'li_ed_lev'
+                                        else axes[col],
+                                        legend=None,
+                                        title=f"{_key.split('_')[1]} {desc} {self.en_props[li_property].label}"
+                                              ' categories' if li_property in self.cat_by_rural_urban_props or
+                                                               li_property == 'li_ed_lev' else f"{desc}"
+                                                                                               f" {self.en_props[li_property].label}",
+                                        ylabel=f"{self.en_props[li_property].label} proportions", xlabel="Year"
+                                        )
+                self.custom_axis_formatter(df_dict[_key], ax)
+            # increase counter
+            col += 1
+        fig.legend(self.categories_desc[li_property], loc='lower left', bbox_to_anchor=(0.8, 0.6))
+        plt.show()
 
     def plot_non_categorical_properties_by_gender(self, _property):
         """ a function to plot non-categorical properties of lifestyle module grouped by gender
@@ -434,10 +358,8 @@ class LifeStylePlots:
     def display_all_categorical_and_non_categorical_plots_by_gender(self):
         """ a function to display plots for both categorical and non categorical properties grouped by gender """
         for _property in self.en_props.keys():
-            if _property in ['li_bmi', 'li_wealth']:
-                self.plot_categorical_properties_by_gender(_property, ['1', '2', '3', '4', '5'])
-            elif _property in ['li_mar_stat', 'li_ed_lev']:
-                self.plot_categorical_properties_by_gender(_property, ['1', '2', '3'])
+            if _property in ['li_bmi', 'li_wealth', 'li_mar_stat', 'li_ed_lev']:
+                self.plot_categorical_properties_by_gender(_property)
             else:
                 self.plot_non_categorical_properties_by_gender(_property)
 
@@ -628,8 +550,8 @@ class LifeStylePlots:
                 for age_group in get_age_group:
                     for _bool_value in ['True', 'False']:
                         get_age_group_totals[_bool_value] = (
-                            self.dfs[_property][urban_rural]['M'][_bool_value][age_group] +
-                            self.dfs[_property][urban_rural]['F'][_bool_value][age_group])
+                                self.dfs[_property][urban_rural]['M'][_bool_value][age_group] +
+                                self.dfs[_property][urban_rural]['F'][_bool_value][age_group])
 
                     get_age_group_props = get_age_group_totals['True'] / get_age_group_totals.sum(axis=1)
 
