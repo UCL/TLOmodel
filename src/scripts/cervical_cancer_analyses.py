@@ -45,7 +45,7 @@ resourcefilepath = Path("./resources")
 # Set parameters for the simulation
 start_date = Date(2010, 1, 1)
 end_date = Date(2024, 1, 1)
-popsize = 17000
+popsize = 170000
 
 
 def run_sim(service_availability):
@@ -103,7 +103,7 @@ plt.title('Total deaths by Year')
 plt.xlabel('Year')
 plt.ylabel('Total deaths past year')
 plt.grid(True)
-plt.ylim(0, 20000)
+plt.ylim(0, 10000)
 plt.show()
 
 
