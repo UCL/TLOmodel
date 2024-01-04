@@ -15,7 +15,7 @@ from .population import Population  # noqa
 from .simulation import Simulation  # noqa
 
 try:
-    __version__ = version("package-name")
+    __version__ = version("tlo")
 except PackageNotFoundError:
     # package is not installed
     pass
