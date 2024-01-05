@@ -8,6 +8,8 @@ These are the publications that have been generated either in the course of the 
 Healthcare Seeking Behaviour
 ============================
 
+* `A Healthcare Service Delivery and Epidemiological Model for Investigating Resource Allocation for Health: The Thanzi La Onse Model <https://www.medrxiv.org/content/10.1101/2024.01.04.24300834v1>`_
+
 * `Modeling Contraception and Pregnancy in Malawi: A Thanzi La Onse Mathematical Modeling Study <https://onlinelibrary.wiley.com/doi/10.1111/sifp.12255>`_
 
 * `Factors Associated with Consumable Stock-Outs in Malawi: Evidence from a Facility Census <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4424341>`_
