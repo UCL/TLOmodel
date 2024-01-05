@@ -28,9 +28,9 @@ output_path = './outputs/sejjj49@ucl.ac.uk/'
 
 for scenario_dict, service, colours in zip([scenario_dict1, scenario_dict2, scenario_dict3],
                                            ['anc', 'sba', 'pnc'],
-                                           [['lightcoral', 'firebrick', 'red', 'chocolate', 'darkorange'],
-                                            ['cadetblue', 'deepskyblue', 'midnightblue', 'green', 'palegreen'],
-                                            ['plum', 'purple', 'deeppink', 'crimson', 'maroon']]):
+                                           [['#a6611a', '#dfc27d', '#f5f5f5', '#80cdc1', '#018571'],
+                                            ['#7b3294', '#c2a5cf', '#f7f7f7', '#a6dba0', '#008837'],
+                                            ['#d7191c', '#fdae61', '#ffffbf', '#abd9e9', '#2c7bb6']]):
 
     service_of_interest = service
     scen_colours = colours
