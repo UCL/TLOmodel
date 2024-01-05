@@ -445,17 +445,17 @@ tlo.methods.pregnancy_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Contraception', 'Labour', 'HealthSystem', 'Lifestyle', 'CareOfWomenDuringPregnancy'}
+     ADDITIONAL_DEPENDENCIES : {'HealthSystem', 'CareOfWomenDuringPregnancy', 'Contraception', 'Lifestyle', 'Labour'}
 
-     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x12d78b550>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x12d78a710>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x12d7881d0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12d78af50>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x12d78a3d0>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x12d78b1d0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x12d78b190>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x12d78b790>}
+     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x12f2ece90>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x12f2ec910>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x12f2eead0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12f2eef10>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x12f2ee7d0>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x12f2ef590>, 'eclampsia': <tlo.methods.causes.Cause object at 0x12f2ec490>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x12f2ed490>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x12d788450>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x12f2eef90>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'CardioMetabolicDisorders', 'Hiv', 'HealthBurden', 'Malaria'}
+     OPTIONAL_INIT_DEPENDENCIES : {'Malaria', 'Hiv', 'CardioMetabolicDisorders', 'HealthBurden'}
 
      **Functions (defined or overridden in class PregnancySupervisor):**
 
