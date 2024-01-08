@@ -564,9 +564,9 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         'Neonatal Mortality Rate per Year by Scenario ',
         primary_oc_path, 'neonatal_mr_int')
 
-    for group, l in zip(['Maternal', 'Neonatal'], ['dir_m', 'n']):
+    for group, abrv in zip(['Maternal', 'Neonatal'], ['dir_m', 'n']):
         analysis_utility_functions.comparison_bar_chart_multiple_bars(
-            death_data, f'crude_{l}_deaths', sim_years, scen_colours,
+            death_data, f'crude_{abrv}_deaths', sim_years, scen_colours,
             f'Total {group} Deaths (scaled)', f'Total {group} Deaths per by Scenario ',
             primary_oc_path, f'{group}_crude_deaths_comparison.png')
 
