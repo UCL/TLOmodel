@@ -1,7 +1,5 @@
 import pandas as pd
 
-from tlo.methods import pregnancy_helper_functions
-
 
 def predict_early_onset_neonatal_sepsis(self, df, rng=None, **externals):
     """

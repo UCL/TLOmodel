@@ -22,8 +22,6 @@ def predict_for_dataframe(self, df, rng=None, **externals):
 """
 import pandas as pd
 
-from tlo.methods import pregnancy_helper_functions
-
 
 def predict_post_term_labour(self, df, rng=None, **externals):
     """

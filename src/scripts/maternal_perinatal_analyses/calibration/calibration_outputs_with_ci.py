@@ -1953,9 +1953,9 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
     fig, ax = plt.subplots(1, 1, figsize=(8, 6))
     x = np.arange(len(simp_causes_neo))
     width = 0.2
-    rect1 = ax.bar(x - width, all_values_2015_neo, width=width, yerr=ui, label='Model', color='cornflowerblue')
-    rect2 = ax.bar(x, neo_calib_targets_fottrell, width=width, label='Fottrell (2015)', color='lightsteelblue')
-    rects2 = ax.bar(x + width, neo_calib_targets_bemonc, width=width, label='EMoNC (2015)', color='forestgreen')
+    ax.bar(x - width, all_values_2015_neo, width=width, yerr=ui, label='Model', color='cornflowerblue')
+    ax.bar(x, neo_calib_targets_fottrell, width=width, label='Fottrell (2015)', color='lightsteelblue')
+    ax.bar(x + width, neo_calib_targets_bemonc, width=width, label='EMoNC (2015)', color='forestgreen')
     ax.set_ylabel("% of Total Neonatal Deaths in 2015")
     ax.set_xlabel("Cause of Death")
     ax.set_title("Percentage of Total Neonatal Deaths by Leading Causes in 2015")

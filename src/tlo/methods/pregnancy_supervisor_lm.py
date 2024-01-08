@@ -1,7 +1,5 @@
 import pandas as pd
 
-from tlo.methods import pregnancy_helper_functions
-
 
 def preterm_labour(self, df, rng=None, **externals):
     """
