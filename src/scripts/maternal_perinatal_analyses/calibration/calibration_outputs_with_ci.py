@@ -81,7 +81,7 @@ def output_incidence_for_calibration(scenario_filename, pop_size, outputspath, s
         key="on_birth",
         custom_generate_series=(
             lambda df:
-            df.loc[(df['mother'] != -1)].assign(year=df['date'].dt.year).groupby(['year'])['year'].count()))
+            df.loc[(df['mother'] >= 0)].assign(year=df['date'].dt.year).groupby(['year'])['year'].count()))
 
     lb_data = analysis_utility_functions.return_95_CI_across_runs(births_results_exc_2010, sim_years)
     analysis_utility_functions.simple_line_chart_with_ci(
