@@ -3,11 +3,15 @@ import os
 import analysis_utility_functions
 import numpy as np
 import pandas as pd
+import scipy.stats
+from analysis_utility_functions import (
+    get_mean_95_CI_from_list,
+    get_mean_from_columns,
+    return_95_CI_across_runs,
+)
 from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import extract_results, get_scenario_outputs
-from analysis_utility_functions import get_mean_from_columns, get_mean_95_CI_from_list, return_95_CI_across_runs
-import scipy.stats
 
 plt.style.use('seaborn-darkgrid')
 
