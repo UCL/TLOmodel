@@ -3,11 +3,15 @@ import os
 import analysis_utility_functions
 import numpy as np
 import pandas as pd
+import scipy.stats
+from analysis_utility_functions import (
+    get_mean_95_CI_from_list,
+    get_mean_from_columns,
+    return_95_CI_across_runs,
+)
 from matplotlib import pyplot as plt
 
 from tlo.analysis.utils import extract_results, get_scenario_outputs
-from analysis_utility_functions import get_mean_from_columns, get_mean_95_CI_from_list, return_95_CI_across_runs
-import scipy.stats
 
 plt.style.use('seaborn-darkgrid')
 
@@ -81,7 +85,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                     t.append(f_df)
         if t:
             causes_df = pd.concat(t)
-            updated_df = df.append(causes_df)
+            updated_df = pd.concat([df, causes_df])
             return updated_df
         else:
             return df
@@ -99,7 +103,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
 
         if t:
             final_df = pd.concat(t)
-            updated_df = df.append(final_df)
+            updated_df = pd.concat([df, final_df])
             return updated_df
         else:
             return df
@@ -163,6 +167,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             return m, m - h, m + h
 
         # Cycle through each of the outcomes of interest (e.g. MMR, NMR etc)
+        df_lists = list()
         for k in keys:
             # Create DF which is the difference between the status quo and intervention scenario across runs/years
             diff = dfs[intervention][k] - dfs[baseline][k]
@@ -226,9 +231,9 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
                                            'skew_for_diff_data',
                                            'median_diff_outcome_int_period',
                                            'percent_diff'])
+            df_lists.append(res_df)
 
-            output_df = output_df.append(res_df)
-
+        output_df = pd.concat(df_lists)
         return output_df
 
     def save_outputs(folder, keys, save_name, save_folder):
@@ -563,9 +568,9 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
         'Neonatal Mortality Rate per Year by Scenario ',
         primary_oc_path, 'neonatal_mr_int')
 
-    for group, l in zip(['Maternal', 'Neonatal'], ['dir_m', 'n']):
+    for group, abrv in zip(['Maternal', 'Neonatal'], ['dir_m', 'n']):
         analysis_utility_functions.comparison_bar_chart_multiple_bars(
-            death_data, f'crude_{l}_deaths', sim_years, scen_colours,
+            death_data, f'crude_{abrv}_deaths', sim_years, scen_colours,
             f'Total {group} Deaths (scaled)', f'Total {group} Deaths per by Scenario ',
             primary_oc_path, f'{group}_crude_deaths_comparison.png')
 
@@ -864,7 +869,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             key="dalys",
             custom_generate_series=(
                 lambda df: df.drop(
-                    columns='date').groupby(['year']).sum().stack()),
+                    columns=['date', 'sex', 'age_range']).groupby(['year']).sum().stack()),
             do_scaling=True)
 
         dalys_stacked = extract_results(
@@ -873,7 +878,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             key="dalys_stacked",
             custom_generate_series=(
                 lambda df: df.drop(
-                    columns='date').groupby(['year']).sum().stack()),
+                    columns=['date', 'sex', 'age_range']).groupby(['year']).sum().stack()),
             do_scaling=True)
 
         # And the total person-years from the scenario file which is used as a denominator
@@ -964,7 +969,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             key="yll_by_causes_of_death",
             custom_generate_series=(
                 lambda df: df.drop(
-                    columns='date').groupby(['year']).sum().stack()),
+                    columns=['date', 'sex', 'age_range']).groupby(['year']).sum().stack()),
             do_scaling=True)
         yll_final = yll.fillna(0)
 
@@ -974,7 +979,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             key="yll_by_causes_of_death_stacked",
             custom_generate_series=(
                 lambda df: df.drop(
-                    columns='date').groupby(['year']).sum().stack()),
+                    columns=['date', 'sex', 'age_range']).groupby(['year']).sum().stack()),
             do_scaling=True)
         yll_stacked_final = yll_stacked.fillna(0)
 
@@ -984,7 +989,7 @@ def run_maternal_newborn_health_thesis_analysis(scenario_file_dict, outputspath,
             key="yld_by_causes_of_disability",
             custom_generate_series=(
                 lambda df: df.drop(
-                    columns='date').groupby(['year']).sum().stack()),
+                    columns=['date', 'sex', 'age_range']).groupby(['year']).sum().stack()),
             do_scaling=True)
         yld_final = yld.fillna(0)
 
