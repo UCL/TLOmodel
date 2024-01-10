@@ -416,10 +416,10 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     usage_all = usage_all / 1e6
 
     # plot
-    name_of_plot = 'Model vs Data on average annual health service volume'
+    name_of_plot = 'Average annual health service volume on national level'
     fig, ax = plt.subplots()
     usage_all.plot(kind='bar', stacked=True, color=appt_color_dict, rot=0, ax=ax)
-    ax.set_ylabel('Health service volume in millions')
+    ax.set_ylabel('Number of visits')
     ax.set(xlabel=None)
     plt.legend(loc='center left', bbox_to_anchor=(1.0, 0.5), title='Appointment type', fontsize=9)
     plt.title(name_of_plot)
