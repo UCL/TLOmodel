@@ -211,7 +211,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .clip(lower=0.1, upper=10.0)
 
         # reduce the mean ratio by 1.0, for the bar plot that starts from y=1.0 instead of y=0.0
-        hcw_usage_ratio['mean'] = hcw_usage_ratio['mean'] - 1.0
+        #hcw_usage_ratio['mean'] = hcw_usage_ratio['mean'] - 1.0
 
         # rename cadre Nursing_and_Midwifery
         hcw_usage_ratio.rename(index={'Nursing_and_Midwifery': 'Nursing and Midwifery'}, inplace=True)
@@ -224,22 +224,22 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     name_of_plot = 'Simulated average annual working time (95% CI) vs Capability per cadre'
     fig, ax = plt.subplots(figsize=(8, 5))
     hcw_usage_ratio_establishment.plot(kind='bar', yerr=error_establishment, width=0.4,
-                                       ax=ax, position=0, bottom=1.0,
+                                       ax=ax, position=0, bottom=0.0,
                                        legend=False, color='c')
     hcw_usage_ratio_actual.plot(kind='bar', yerr=error_actual, width=0.4,
-                                ax=ax, position=1, bottom=1.0,
+                                ax=ax, position=1, bottom=0.0,
                                 legend=False, color='y')
-    ax.axhline(1.0, color='r')
+    #ax.axhline(1.0, color='r')
     ax.set_xlim(right=len(hcw_usage_ratio_establishment) - 0.3)
-    ax.set_yscale('log')
-    ax.set_ylim(1 / 20, 20)
-    ax.set_yticks([1 / 10, 1.0, 10])
-    ax.set_yticklabels(("<= 1/10", "1.0", ">= 10"))
+    #ax.set_yscale('log')
+    #ax.set_ylim(1 / 20, 20)
+    #ax.set_yticks([1 / 10, 1.0, 10])
+    #ax.set_yticklabels(("<= 1/10", "1.0", ">= 10"))
     ax.set_ylabel('Working time / Capability')
     ax.set_xlabel('Cadre Category')
     plt.xticks(rotation=60, ha='right')
-    ax.xaxis.grid(True, which='major', linestyle='--')
-    ax.yaxis.grid(True, which='both', linestyle='--')
+    #ax.xaxis.grid(True, which='major', linestyle='--')
+    #ax.yaxis.grid(True, which='both', linestyle='--')
     ax.set_title(name_of_plot)
     patch_establishment = matplotlib.patches.Patch(facecolor='c', label='Establishment capability')
     patch_actual = matplotlib.patches.Patch(facecolor='y', label='Actual capability')
