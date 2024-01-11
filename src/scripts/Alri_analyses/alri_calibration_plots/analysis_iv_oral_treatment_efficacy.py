@@ -178,16 +178,14 @@ def treatment_efficacy(
 
     # Get Treatment classification
     classification_for_treatment_decision = hsi._get_disease_classification_for_treatment_decision(
-        age_exact_years=age_exact_years,
-        symptoms=symptoms,
-        oxygen_saturation=oxygen_saturation,
-        facility_level=_facility_level,
-        use_oximeter=oximeter_available,
-    )
+        age_exact_years=age_exact_years, symptoms=symptoms, oxygen_saturation=oxygen_saturation,
+        facility_level=_facility_level, use_oximeter=oximeter_available, hiv_infected_and_not_on_art=False,
+        un_clinical_acute_malnutrition='well')
 
     imci_symptom_based_classification = hsi._get_imci_classification_based_on_symptoms(
         child_is_younger_than_2_months=(age_exact_years < 2.0 / 12.0),
-        symptoms=symptoms, facility_level=_facility_level
+        symptoms=symptoms, facility_level=_facility_level, hiv_infected_and_not_on_art=False,
+        un_clinical_acute_malnutrition='well',
     )
 
     # Get the treatment selected based on classification given
@@ -216,6 +214,7 @@ def treatment_efficacy(
         complications=complications,
         hiv_infected_and_not_on_art=False,
         un_clinical_acute_malnutrition='well',
+        pre_referral_oxygen='not_provided'
     )
 
     # Return percentage probability of treatment success
@@ -253,7 +252,8 @@ def treatment_efficacy_for_each_classification(
     # get the IMCI symptoms based classification
     imci_symptom_based_classification = hsi._get_imci_classification_based_on_symptoms(
         child_is_younger_than_2_months=(age_exact_years < 2.0 / 12.0),
-        symptoms=symptoms, facility_level=_facility_level
+        symptoms=symptoms, facility_level=_facility_level, hiv_infected_and_not_on_art=False,
+        un_clinical_acute_malnutrition='well',
     )
 
     # apply TFs by oral/IV antibiotic +/- oxygen (proxy by classification)
@@ -271,6 +271,8 @@ def treatment_efficacy_for_each_classification(
         complications=complications,
         hiv_infected_and_not_on_art=False,
         un_clinical_acute_malnutrition='well',
+        pre_referral_oxygen='not_applicable',
+        this_is_follow_up=False
     )
 
     # for inpatients provide 2nd line IV antibiotic if 1st line failed
@@ -286,6 +288,8 @@ def treatment_efficacy_for_each_classification(
             complications=complications,
             hiv_infected_and_not_on_art=False,
             un_clinical_acute_malnutrition='well',
+            pre_referral_oxygen='not_applicable',
+            this_is_follow_up=False
         ))
 
     # Return percentage probability of treatment success
@@ -376,21 +380,15 @@ def generate_table():
             # Classifications
             'classification_for_treatment_decision_with_oximeter_perfect_accuracy':
                 hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
-                    age_exact_years=x.age_exact_years,
-                    symptoms=x.symptoms,
-                    oxygen_saturation=x.oxygen_saturation,
-                    facility_level=_facility_level,
-                    use_oximeter=True,
-                ),
+                    age_exact_years=x.age_exact_years, symptoms=x.symptoms, oxygen_saturation=x.oxygen_saturation,
+                    facility_level=_facility_level, use_oximeter=True, hiv_infected_and_not_on_art=False,
+                    un_clinical_acute_malnutrition='well'),
 
             'classification_for_treatment_decision_without_oximeter_perfect_accuracy':
                 hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
-                    age_exact_years=x.age_exact_years,
-                    symptoms=x.symptoms,
-                    oxygen_saturation=x.oxygen_saturation,
-                    facility_level=_facility_level,
-                    use_oximeter=False,
-                )
+                    age_exact_years=x.age_exact_years, symptoms=x.symptoms, oxygen_saturation=x.oxygen_saturation,
+                    facility_level=_facility_level, use_oximeter=False, hiv_infected_and_not_on_art=False,
+                    un_clinical_acute_malnutrition='well')
         })
 
     return df.join(pd.DataFrame(risk_of_death))

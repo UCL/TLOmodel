@@ -333,12 +333,9 @@ def treatment_efficacy(
 
     # Get Treatment classification
     classification_for_treatment_decision = hsi._get_disease_classification_for_treatment_decision(
-        age_exact_years=age_exact_years,
-        symptoms=symptoms,
-        oxygen_saturation=oxygen_saturation,
-        facility_level=facility_level,
-        use_oximeter=oximeter_available,
-    )
+        age_exact_years=age_exact_years, symptoms=symptoms, oxygen_saturation=oxygen_saturation,
+        facility_level=facility_level, use_oximeter=oximeter_available, hiv_infected_and_not_on_art=False,
+        un_clinical_acute_malnutrition='well')
 
     imci_symptom_based_classification = alri_module.get_imci_classification_based_on_symptoms(
         child_is_younger_than_2_months=(age_exact_years < 2.0 / 12.0),
@@ -779,40 +776,28 @@ def generate_table():
             # * CLASSIFICATION BY LEVEL 2 *
             'classification_for_treatment_decision_with_oximeter_perfect_accuracy_level2':
                 hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
-                    age_exact_years=x.age_exact_years,
-                    symptoms=x.symptoms,
-                    oxygen_saturation=x.oxygen_saturation,
-                    facility_level='2',
-                    use_oximeter=True,
-                ),
+                    age_exact_years=x.age_exact_years, symptoms=x.symptoms, oxygen_saturation=x.oxygen_saturation,
+                    facility_level='2', use_oximeter=True, hiv_infected_and_not_on_art=False,
+                    un_clinical_acute_malnutrition='well'),
 
             'classification_for_treatment_decision_without_oximeter_perfect_accuracy_level2':
                 hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
-                    age_exact_years=x.age_exact_years,
-                    symptoms=x.symptoms,
-                    oxygen_saturation=x.oxygen_saturation,
-                    facility_level='2',
-                    use_oximeter=False,
-                ),
+                    age_exact_years=x.age_exact_years, symptoms=x.symptoms, oxygen_saturation=x.oxygen_saturation,
+                    facility_level='2', use_oximeter=False, hiv_infected_and_not_on_art=False,
+                    un_clinical_acute_malnutrition='well'),
 
             # * CLASSIFICATION BY LEVEL 1a *
             'classification_for_treatment_decision_with_oximeter_perfect_accuracy_level1a':
                 hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
-                    age_exact_years=x.age_exact_years,
-                    symptoms=x.symptoms,
-                    oxygen_saturation=x.oxygen_saturation,
-                    facility_level='1a',
-                    use_oximeter=True,
-                ),
+                    age_exact_years=x.age_exact_years, symptoms=x.symptoms, oxygen_saturation=x.oxygen_saturation,
+                    facility_level='1a', use_oximeter=True, hiv_infected_and_not_on_art=False,
+                    un_clinical_acute_malnutrition='well'),
 
             'classification_for_treatment_decision_without_oximeter_perfect_accuracy_level1a':
                 hsi_with_perfect_diagnosis._get_disease_classification_for_treatment_decision(
-                    age_exact_years=x.age_exact_years,
-                    symptoms=x.symptoms,
-                    oxygen_saturation=x.oxygen_saturation,
-                    facility_level='1a',
-                    use_oximeter=False,
-                ),
+                    age_exact_years=x.age_exact_years, symptoms=x.symptoms, oxygen_saturation=x.oxygen_saturation,
+                    facility_level='1a', use_oximeter=False, hiv_infected_and_not_on_art=False,
+                    un_clinical_acute_malnutrition='well'),
 
         })
     return df.join(pd.DataFrame(risk_of_death))

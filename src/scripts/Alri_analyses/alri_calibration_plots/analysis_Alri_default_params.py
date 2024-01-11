@@ -38,7 +38,7 @@ output_files = dict()
 
 # %% Run the Simulation
 start_date = Date(2010, 1, 1)
-end_date = start_date + pd.DateOffset(years=10)
+end_date = start_date + pd.DateOffset(years=1)
 popsize = 10_000
 
 log_config = {

@@ -1,0 +1,14 @@
+{
+  "scenario_script_path": "src/scripts/Alri_analyses/alri_azure_run_scenarios/baseline_alri_scenario.py",
+  "scenario_seed": 45019,
+  "runs_per_draw": 10,
+  "draws": [
+    {
+      "draw_number": 0,
+      "draw_seed": 1437479079,
+      "parameters": {}
+    }
+  ],
+  "commit": "994d571fe8ae386910911328e850e190828cf4d1",
+  "github": "https://github.com/UCL/TLOmodel/blob/994d571fe8ae386910911328e850e190828cf4d1/src/scripts/Alri_analyses/alri_azure_run_scenarios/baseline_alri_scenario.py"
+}

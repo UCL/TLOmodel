@@ -11,6 +11,7 @@ from matplotlib import pyplot as plt
 import matplotlib.colors as mcolors
 
 from tlo import Date, Simulation
+from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import (
     alri,
     demography,
@@ -118,20 +119,23 @@ def generate_case_mix() -> pd.DataFrame:
         # Return dataframe in which person_id is replaced with age and sex (ignoring variation in vaccine /
         # under-nutrition).
         return pd.DataFrame(columns=['person_id', 'pathogen'], data=new_alri) \
-            .merge(sim1.population.props[['age_exact_years', 'sex']],
+            .merge(sim1.population.props[['age_exact_years', 'sex', 'hv_inf', 'hv_art',
+                                          'va_hib_all_doses', 'va_pneumo_all_doses', 'un_clinical_acute_malnutrition']],
                    right_index=True, left_on=['person_id'], how='left') \
             .drop(columns=['person_id'])
 
     def char_of_incident_case(sex,
                               age_exact_years,
+                              hv_inf, hv_art,
                               pathogen,
-                              va_hib_all_doses=False,
-                              va_pneumo_all_doses=False,
-                              un_clinical_acute_malnutrition="well",
+                              va_hib_all_doses,
+                              va_pneumo_all_doses,
+                              un_clinical_acute_malnutrition,
                               ) -> dict:
-        """Return the characteristics that are determined by IncidentCase (over NUM_REPS_FOR_EACH_CASE iterations), given an infection
+        """Return the characteristics that are determined by IncidentCase (over 1000 iterations), given an infection
         caused by the pathogen"""
-        incident_case = AlriIncidentCase(module=alri_module_with_perfect_diagnosis, person_id=None, pathogen=None)
+        incident_case = AlriIncidentCase(module=alri_module_with_perfect_diagnosis,
+                                         person_id=None, pathogen=None)
 
         samples = []
         for _ in range(NUM_REPS_FOR_EACH_CASE):
@@ -146,10 +150,12 @@ def generate_case_mix() -> pd.DataFrame:
 
             samples.append({**nature_of_char, **{'sex': sex,
                                                  'age_exact_years': age_exact_years,
+                                                 'hv_inf': hv_inf, 'hv_art': hv_art,
                                                  'pathogen': pathogen,
                                                  'va_hib_all_doses': va_hib_all_doses,
                                                  'va_pneumo_all_doses': va_pneumo_all_doses,
                                                  'un_clinical_acute_malnutrition': un_clinical_acute_malnutrition,
+
                                                  }
                             })
 
@@ -161,7 +167,10 @@ def generate_case_mix() -> pd.DataFrame:
 
     for x in incident_case_mix.itertuples():
         overall_case_mix.extend(
-            char_of_incident_case(sex=x.sex, age_exact_years=x.age_exact_years, pathogen=x.pathogen)
+            char_of_incident_case(sex=x.sex, age_exact_years=x.age_exact_years, hv_inf=x.hv_inf, hv_art=x.hv_art,
+                                  pathogen=x.pathogen,
+                                  va_hib_all_doses=x.va_hib_all_doses, va_pneumo_all_doses=x.va_pneumo_all_doses,
+                                  un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition)
         )
 
     return pd.DataFrame(overall_case_mix)
@@ -177,6 +186,9 @@ def treatment_efficacy(
     oxygen_available,
     treatment_perfect,
     hw_dx_perfect,
+    un_clinical_acute_malnutrition,
+    hiv_infected_and_not_on_art,
+    # facility_level
 ):
     """Return the percentage by which the treatment reduce the risk of death"""
     # Decide which hsi configuration to use:
@@ -189,23 +201,20 @@ def treatment_efficacy(
 
     # Get Treatment classification
     classification_for_treatment_decision = hsi._get_disease_classification_for_treatment_decision(
-        age_exact_years=age_exact_years,
-        symptoms=symptoms,
-        oxygen_saturation=oxygen_saturation,
-        facility_level='2',
-        use_oximeter=oximeter_available,
-    )
+        age_exact_years=age_exact_years, symptoms=symptoms, oxygen_saturation=oxygen_saturation, facility_level='2',
+        use_oximeter=oximeter_available, hiv_infected_and_not_on_art=hiv_infected_and_not_on_art,
+        un_clinical_acute_malnutrition=un_clinical_acute_malnutrition)
 
     imci_symptom_based_classification = alri_module_with_perfect_diagnosis.get_imci_classification_based_on_symptoms(
         child_is_younger_than_2_months=(age_exact_years < 2.0 / 12.0),
-        symptoms=symptoms, facility_level='2'
-    )
+        symptoms=symptoms, facility_level='2', hiv_infected_and_not_on_art=hiv_infected_and_not_on_art,
+        un_clinical_acute_malnutrition=un_clinical_acute_malnutrition)
 
     # Get the treatment selected based on classification given
     ultimate_treatment = alri_module._ultimate_treatment_indicated_for_patient(
         classification_for_treatment_decision=classification_for_treatment_decision,
         age_exact_years=age_exact_years,
-        use_oximeter=oximeter_available,
+        facility_level='2',
         oxygen_saturation=oxygen_saturation,
     )
 
@@ -225,8 +234,9 @@ def treatment_efficacy(
         age_exact_years=age_exact_years,
         symptoms=symptoms,
         complications=complications,
-        hiv_infected_and_not_on_art=False,
-        un_clinical_acute_malnutrition='well',
+        hiv_infected_and_not_on_art=hiv_infected_and_not_on_art,
+        un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
+        pre_referral_oxygen='not_applicable'
     )
 
     # for inpatients provide 2nd line IV antibiotic if 1st line failed
@@ -240,8 +250,9 @@ def treatment_efficacy(
             age_exact_years=age_exact_years,
             symptoms=symptoms,
             complications=complications,
-            hiv_infected_and_not_on_art=False,
-            un_clinical_acute_malnutrition='well',
+            hiv_infected_and_not_on_art=hiv_infected_and_not_on_art,
+            un_clinical_acute_malnutrition=un_clinical_acute_malnutrition,
+            pre_referral_oxygen='not_applicable'
         ))
 
     # Return percentage probability of treatment success
@@ -254,72 +265,24 @@ def generate_table():
 
     # Get Case Mix
     df = generate_case_mix()
-    # df = df.iloc[[5]]
+
+    seek_level = list()
+    for x in df.itertuples():
+        seek_level.append({
+            'seek_level': alri_module_with_perfect_diagnosis.seek_care_level(
+                symptoms=x.symptoms
+            )})
+    df = df.join(pd.DataFrame(seek_level))
+
+    hiv_not_on_art = list()
+    for x in df.itertuples():
+        hiv_not_on_art.append({
+            'hiv_not_on_art': (x.hv_inf and x.hv_art != "on_VL_suppressed")})
+    df = df.join(pd.DataFrame(hiv_not_on_art))
 
     # Consider risk of death for this person, intrinsically and under different conditions of treatments
     risk_of_death = list()
     for x in df.itertuples():
-
-        te_with_po_and_ox_imperfect_dx = treatment_efficacy(
-            # Information about the patient:
-            age_exact_years=x.age_exact_years,
-            symptoms=x.symptoms,
-            oxygen_saturation=x.oxygen_saturation,
-            disease_type=x.disease_type,
-            complications=x.complications,
-
-            # Information about the care that can be provided:
-            oximeter_available=True,
-            oxygen_available=True,
-            treatment_perfect=False,
-            hw_dx_perfect=False,
-        )
-
-        te_with_po_without_ox_imperfect_dx = treatment_efficacy(
-            # Information about the patient:
-            age_exact_years=x.age_exact_years,
-            symptoms=x.symptoms,
-            oxygen_saturation=x.oxygen_saturation,
-            disease_type=x.disease_type,
-            complications=x.complications,
-
-            # Information about the care that can be provided:
-            oximeter_available=True,
-            oxygen_available=False,
-            treatment_perfect=False,
-            hw_dx_perfect=False,
-        )
-
-        te_without_po_or_ox_imperfect_dx = treatment_efficacy(
-            # Information about the patient:
-            age_exact_years=x.age_exact_years,
-            symptoms=x.symptoms,
-            oxygen_saturation=x.oxygen_saturation,
-            disease_type=x.disease_type,
-            complications=x.complications,
-
-            # Information about the care that can be provided:
-            oximeter_available=False,
-            oxygen_available=False,
-            treatment_perfect=False,
-            hw_dx_perfect=False,
-        )
-
-        te_with_ox_without_po_imperfect_dx = treatment_efficacy(
-            # Information about the patient:
-            age_exact_years=x.age_exact_years,
-            symptoms=x.symptoms,
-            oxygen_saturation=x.oxygen_saturation,
-            disease_type=x.disease_type,
-            complications=x.complications,
-
-            # Information about the care that can be provided:
-            oximeter_available=False,
-            oxygen_available=True,
-            treatment_perfect=False,
-            hw_dx_perfect=False,
-        )
-
         risk_of_death.append({
             'prob_die_if_no_treatment': alri_module_with_perfect_diagnosis.models.prob_die_of_alri(
                 age_exact_years=x.age_exact_years,
@@ -340,13 +303,15 @@ def generate_table():
                 oxygen_saturation=x.oxygen_saturation,
                 disease_type=x.disease_type,
                 complications=x.complications,
+                hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                 # Information about the care that can be provided:
                 oximeter_available=True,
                 oxygen_available=True,
                 treatment_perfect=True,
                 hw_dx_perfect=True,
-            ),
+            )[0],
 
             'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_perfect_hw_dx': treatment_efficacy(
                 # Information about the patient:
@@ -355,13 +320,15 @@ def generate_table():
                 oxygen_saturation=x.oxygen_saturation,
                 disease_type=x.disease_type,
                 complications=x.complications,
+                hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                 # Information about the care that can be provided:
                 oximeter_available=True,
                 oxygen_available=True,
                 treatment_perfect=False,
                 hw_dx_perfect=True,
-            ),
+            )[0],
 
             'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_perfect_hw_dx': treatment_efficacy(
                 # Information about the patient:
@@ -370,13 +337,15 @@ def generate_table():
                 oxygen_saturation=x.oxygen_saturation,
                 disease_type=x.disease_type,
                 complications=x.complications,
+                hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                 # Information about the care that can be provided:
                 oximeter_available=False,
                 oxygen_available=False,
                 treatment_perfect=False,
                 hw_dx_perfect=True,
-            ),
+            )[0],
 
             'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_perfect_hw_dx':
                 treatment_efficacy(
@@ -386,13 +355,15 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=True,
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-                ),
+                )[0],
 
             'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_perfect_hw_dx':
                 treatment_efficacy(
@@ -402,31 +373,33 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=False,
                     oxygen_available=True,
                     treatment_perfect=False,
                     hw_dx_perfect=True,
-                ),
+                )[0],
 
             # Treatment Efficacy with * IMPERFECT HW Diangosis *
-            'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_imperfect_hw_dx':
-                te_with_po_and_ox_imperfect_dx[0],
-                # treatment_efficacy(
-                #     # Information about the patient:
-                #     age_exact_years=x.age_exact_years,
-                #     symptoms=x.symptoms,
-                #     oxygen_saturation=x.oxygen_saturation,
-                #     disease_type=x.disease_type,
-                #     complications=x.complications,
-                #
-                #     # Information about the care that can be provided:
-                #     oximeter_available=True,
-                #     oxygen_available=True,
-                #     treatment_perfect=False,
-                #     hw_dx_perfect=False,
-                # ),
+            'treatment_efficacy_if_normal_treatment_and_with_oximeter_and_oxygen_imperfect_hw_dx': treatment_efficacy(
+                # Information about the patient:
+                age_exact_years=x.age_exact_years,
+                symptoms=x.symptoms,
+                oxygen_saturation=x.oxygen_saturation,
+                disease_type=x.disease_type,
+                complications=x.complications,
+                hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
+
+                # Information about the care that can be provided:
+                oximeter_available=True,
+                oxygen_available=True,
+                treatment_perfect=False,
+                hw_dx_perfect=False,
+            )[0],
 
             'treatment_efficacy_if_normal_treatment_but_without_oximeter_or_oxygen_imperfect_hw_dx':
                 treatment_efficacy(
@@ -436,13 +409,15 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=False,
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-                ),
+                )[0],
 
             'treatment_efficacy_if_normal_treatment_and_with_oximeter_but_without_oxygen_imperfect_hw_dx':
                 treatment_efficacy(
@@ -452,30 +427,33 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=True,
                     oxygen_available=False,
                     treatment_perfect=False,
                     hw_dx_perfect=False,
-                ),
+                )[0],
 
             'treatment_efficacy_if_normal_treatment_and_with_oxygen_but_without_oximeter_imperfect_hw_dx':
-                te_with_ox_without_po_imperfect_dx[0],
-                # treatment_efficacy(
-                #     # Information about the patient:
-                #     age_exact_years=x.age_exact_years,
-                #     symptoms=x.symptoms,
-                #     oxygen_saturation=x.oxygen_saturation,
-                #     disease_type=x.disease_type,
-                #     complications=x.complications,
-                #
-                #     # Information about the care that can be provided:
-                #     oximeter_available=False,
-                #     oxygen_available=True,
-                #     treatment_perfect=False,
-                #     hw_dx_perfect=False,
-                # ),
+            treatment_efficacy(
+                # Information about the patient:
+                age_exact_years=x.age_exact_years,
+                symptoms=x.symptoms,
+                oxygen_saturation=x.oxygen_saturation,
+                disease_type=x.disease_type,
+                complications=x.complications,
+                hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
+
+                # Information about the care that can be provided:
+                oximeter_available=False,
+                oxygen_available=True,
+                treatment_perfect=False,
+                hw_dx_perfect=False,
+            )[0],
 
             # Classifications
             'classification_for_treatment_decision_with_oximeter_perfect_accuracy':
@@ -486,6 +464,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=True,
@@ -502,6 +482,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=False,
@@ -518,6 +500,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=True,
@@ -534,6 +518,8 @@ def generate_table():
                     oxygen_saturation=x.oxygen_saturation,
                     disease_type=x.disease_type,
                     complications=x.complications,
+                    hiv_infected_and_not_on_art=x.hiv_not_on_art,
+                    un_clinical_acute_malnutrition=x.un_clinical_acute_malnutrition,
 
                     # Information about the care that can be provided:
                     oximeter_available=False,
@@ -542,39 +528,8 @@ def generate_table():
                     hw_dx_perfect=False,
                 )[1],
 
-            'classification_for_treatment_decision_with_oximeter_and_ox_imperfect_accuracy':
-                treatment_efficacy(
-                    # Information about the patient:
-                    age_exact_years=x.age_exact_years,
-                    symptoms=x.symptoms,
-                    oxygen_saturation=x.oxygen_saturation,
-                    disease_type=x.disease_type,
-                    complications=x.complications,
-
-                    # Information about the care that can be provided:
-                    oximeter_available=True,
-                    oxygen_available=True,
-                    treatment_perfect=False,
-                    hw_dx_perfect=False,
-                )[1],
-
-            'classification_for_treatment_decision_without_oximeter_with_ox_imperfect_accuracy':
-                treatment_efficacy(
-                    # Information about the patient:
-                    age_exact_years=x.age_exact_years,
-                    symptoms=x.symptoms,
-                    oxygen_saturation=x.oxygen_saturation,
-                    disease_type=x.disease_type,
-                    complications=x.complications,
-
-                    # Information about the care that can be provided:
-                    oximeter_available=False,
-                    oxygen_available=True,
-                    treatment_perfect=False,
-                    hw_dx_perfect=False,
-                )[1],
-
         })
+
     return df.join(pd.DataFrame(risk_of_death))
 
 
@@ -1030,157 +985,246 @@ if __name__ == "__main__":
 
     df = table.drop(table[table.age_exact_years < 1 / 6].index)
 
-    ds_pneumonia = (df[
-                        "classification_for_treatment_decision_without_oximeter_perfect_accuracy"] == 'danger_signs_pneumonia').sum()
-    # ds_pneumonia = (df["treatment_failure_with_oximeter_only"] == True).sum()
+    df_ds_pneumonia = df.drop(df.index[df["classification_for_treatment_decision_without_oximeter_perfect_accuracy"] != 'danger_signs_pneumonia'])
+    ds_pneumonia_total = len(df_ds_pneumonia)
 
     # get the no risk
-    not_risked = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
-                     'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+    not_risked = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                  'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
         lambda x: 1 if ((x[0] != '<90%') and ('danger_signs' not in x[1]) and (x[2] != 'pneumonia') and not any(
-            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3])) and
-                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                        (x[4] == 'well') and (x[5] == False)) else 0, axis=1).sum()
     # get with risk
-    with_risk = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
-                    'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+    with_risk = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                 'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
         lambda x: 1 if ((x[0] == '<90%') or ('danger_signs' in x[1]) or (x[2] == 'pneumonia') or any(
-            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3])) and
-                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) or
+                        (x[4] != 'well') or (x[5] == True)) else 0, axis=1).sum()
 
-    prop_not_risked = not_risked / ds_pneumonia
+    prop_not_risked = not_risked / ds_pneumonia_total  # 0.14831
 
     # get the SpO2 without any other signs
-    below90SpO2_only = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
-                           'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+    below90SpO2_only = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                           'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
         lambda x: 1 if (x[0] == '<90%') and ('danger_signs' not in x[1]) and (x[2] != 'pneumonia') and not any(
             e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
-                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+                       (x[4] == 'well') and (x[5] == False) else 0, axis=1).sum()
 
-    prop_below90SpO2_only = below90SpO2_only / ds_pneumonia
+    prop_below90SpO2_only = below90SpO2_only / ds_pneumonia_total  # 0.041495
 
     # get the danger signs without any other signs
-    ds_only = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
-                  'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+    ds_only = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                  'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
         lambda x: 1 if (x[0] != '<90%') and ('danger_signs' in x[1]) and (x[2] != 'pneumonia') and not any(
             e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
-                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+                       (x[4] == 'well') and (x[5] == False) else 0, axis=1).sum()
 
-    prop_ds_only = ds_only / ds_pneumonia
+    prop_ds_only = ds_only / ds_pneumonia_total  # 0.17009
 
     # get the CXR+ without any other signs
-    abnormal_cxr_only = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
-                            'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+    abnormal_cxr_only = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                            'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
         lambda x: 1 if (x[0] != '<90%') and ('danger_signs' not in x[1]) and (x[2] == 'pneumonia') and not any(
             e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
-                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+                       (x[4] == 'well') and (x[5] == False) else 0, axis=1).sum()
 
-    prop_abnormal_cxr_only = abnormal_cxr_only / ds_pneumonia
+    prop_abnormal_cxr_only = abnormal_cxr_only / ds_pneumonia_total  # 0.10039
 
     # get the pulmonary complications without any other signs
-    pc_only = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
-                  'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+    pc_only = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                               'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
         lambda x: 1 if (x[0] != '<90%') and ('danger_signs' not in x[1]) and (x[2] != 'pneumonia') and any(
             e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
-                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+                       (x[4] == 'well') and (x[5] == False) else 0, axis=1).sum()
 
-    prop_pc_only = pc_only / ds_pneumonia
+    prop_pc_only = pc_only / ds_pneumonia_total  # 0
 
     # get the SpO2 with danger sign
-    below90SpO2_and_ds = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
-                             'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+    below90SpO2_and_ds = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                          'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
         lambda x: 1 if (x[0] == '<90%') and ('danger_signs' in x[1]) and (x[2] != 'pneumonia') and not any(
             e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
-                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+                       (x[4] == 'well') and (x[5] == False) else 0, axis=1).sum()
 
-    prop_below90SpO2_and_ds = below90SpO2_and_ds / ds_pneumonia
+    prop_below90SpO2_and_ds = below90SpO2_and_ds / ds_pneumonia_total  # 0.0394
 
     # get the SpO2 with ds and pc
-    below90SpO2_and_ds_and_pc = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
-                                    'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+    below90SpO2_and_ds_and_pc = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                                 'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
         lambda x: 1 if (x[0] == '<90%') and ('danger_signs' in x[1]) and (x[2] != 'pneumonia') and any(
             e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
-                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+                       (x[4] == 'well') and (x[5] == False) else 0, axis=1).sum()
 
-    prop_below90SpO2_and_ds_and_pc = below90SpO2_and_ds_and_pc / ds_pneumonia
+    prop_below90SpO2_and_ds_and_pc = below90SpO2_and_ds_and_pc / ds_pneumonia_total  # 0.0
 
     # get SpO2 and CXR+
-    below90SpO2_and_abnormal_cxr = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
-                                       'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+    below90SpO2_and_abnormal_cxr = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                                    'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
         lambda x: 1 if (x[0] == '<90%') and ('danger_signs' not in x[1]) and (x[2] == 'pneumonia') and not any(
             e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
-                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+                       (x[4] == 'well') and (x[5] == False) else 0, axis=1).sum()
 
-    prop_below90SpO2_and_abnormal_cxr = below90SpO2_and_abnormal_cxr / ds_pneumonia
+    prop_below90SpO2_and_abnormal_cxr = below90SpO2_and_abnormal_cxr / ds_pneumonia_total  # 0.03575
 
-    below90SpO2_and_pc = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
-                             'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+    below90SpO2_and_pc = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                          'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
         lambda x: 1 if (x[0] == '<90%') and ('danger_signs' not in x[1]) and (x[2] != 'pneumonia') and any(
             e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
-                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+                       (x[4] == 'well') and (x[5] == False) else 0, axis=1).sum()
 
-    prop_below90SpO2_pc = below90SpO2_and_pc / ds_pneumonia
+    prop_below90SpO2_pc = below90SpO2_and_pc / ds_pneumonia_total  # 0.0
 
-    below90SpO2_and_abnormal_cxr_and_pc = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
-                                              'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+    below90SpO2_and_abnormal_cxr_and_pc = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                                           'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
         lambda x: 1 if (x[0] == '<90%') and ('danger_signs' not in x[1]) and (x[2] == 'pneumonia') and any(
             e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
-                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+                       (x[4] == 'well') and (x[5] == False) else 0, axis=1).sum()
 
-    prop_below90SpO2_and_abnormal_cxr_and_pc = below90SpO2_and_abnormal_cxr_and_pc / ds_pneumonia
+    prop_below90SpO2_and_abnormal_cxr_and_pc = below90SpO2_and_abnormal_cxr_and_pc / ds_pneumonia_total  # 0.018688
 
     # get the SpO2 + danger sign + CXR+
-    below90SpO2_and_ds_and_abnormal_cxr = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
-                                              'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+    below90SpO2_and_ds_and_abnormal_cxr = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                                           'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
         lambda x: 1 if (x[0] == '<90%') and ('danger_signs' in x[1]) and (x[2] == 'pneumonia') and not any(
             e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
-                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+                       (x[4] == 'well') and (x[5] == False) else 0, axis=1).sum()
 
-    prop_below90SpO2_and_ds_and_abnormal_cxr = below90SpO2_and_ds_and_abnormal_cxr / ds_pneumonia
+    prop_below90SpO2_and_ds_and_abnormal_cxr = below90SpO2_and_ds_and_abnormal_cxr / ds_pneumonia_total  # 0.0348079
 
     # get the SpO2 + danger sign + CXR+ + pc
-    below90SpO2_and_ds_and_abnormal_cxr_and_pc = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
-                                                     'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+    below90SpO2_and_ds_and_abnormal_cxr_and_pc = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                                                  'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
         lambda x: 1 if (x[0] == '<90%') and ('danger_signs' in x[1]) and (x[2] == 'pneumonia') and any(
             e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
-                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+                       (x[4] == 'well') and (x[5] == False) else 0, axis=1).sum()
 
-    prop_below90SpO2_and_ds_and_abnormal_cxr_and_pc = below90SpO2_and_ds_and_abnormal_cxr_and_pc / ds_pneumonia
+    prop_below90SpO2_and_ds_and_abnormal_cxr_and_pc = below90SpO2_and_ds_and_abnormal_cxr_and_pc / ds_pneumonia_total
 
     # get the danger sign + CXR+
-    ds_and_abnormal_cxr = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
-                              'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+    ds_and_abnormal_cxr = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                           'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
         lambda x: 1 if (x[0] != '<90%') and ('danger_signs' in x[1]) and (x[2] == 'pneumonia') and not any(
             e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
-                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+                       (x[4] == 'well') and (x[5] == False) else 0, axis=1).sum()
 
-    prop_ds_and_abnormal_cxr = ds_and_abnormal_cxr / ds_pneumonia
+    prop_ds_and_abnormal_cxr = ds_and_abnormal_cxr / ds_pneumonia_total  # 0.114797
 
     # get the danger sign + pc
-    ds_and_pc = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
-                    'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+    ds_and_pc = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                 'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
         lambda x: 1 if (x[0] != '<90%') and ('danger_signs' in x[1]) and (x[2] != 'pneumonia') and any(
             e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
-                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+                       (x[4] == 'well') and (x[5] == False) else 0, axis=1).sum()
 
-    prop_ds_and_pc = ds_and_pc / ds_pneumonia
+    prop_ds_and_pc = ds_and_pc / ds_pneumonia_total  # 0.0
 
     # get danger sign + CXR+ + pc
-    ds_and_abnormal_cxr_and_pc = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
-                                     'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+    ds_and_abnormal_cxr_and_pc = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                                  'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
         lambda x: 1 if (x[0] != '<90%') and ('danger_signs' in x[1]) and (x[2] == 'pneumonia') and any(
             e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
-                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+                       (x[4] == 'well') and (x[5] == False) else 0, axis=1).sum()
 
-    prop_ds_and_abnormal_cxr_and_pc = ds_and_abnormal_cxr_and_pc / ds_pneumonia
+    prop_ds_and_abnormal_cxr_and_pc = ds_and_abnormal_cxr_and_pc / ds_pneumonia_total  # 0.05761
 
     # get CXR+ and pc
-    abnormal_cxr_and_pc = df[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
-                              'classification_for_treatment_decision_with_oximeter_perfect_accuracy']].apply(
+    abnormal_cxr_and_pc = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                           'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
         lambda x: 1 if (x[0] != '<90%') and ('danger_signs' not in x[1]) and (x[2] == 'pneumonia') and any(
             e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
-                       (x[4] == 'danger_signs_pneumonia') else 0, axis=1).sum()
+                       (x[4] == 'well') and (x[5] == False) else 0, axis=1).sum()
 
-    prop_abnormal_cxr_and_pc = abnormal_cxr_and_pc / ds_pneumonia
+    prop_abnormal_cxr_and_pc = abnormal_cxr_and_pc / ds_pneumonia_total  # 0.0504115
+
+    # Also add HIV, MAM, SAM
+    # HIV not on ART
+    hiv_only = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
+        lambda x: 1 if (x[0] != '<90%') and ('danger_signs' not in x[1]) and (x[2] != 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'well') and (x[5] == True) else 0, axis=1).sum()
+
+    prop_hiv_only = hiv_only / ds_pneumonia_total  # 0.018775
+
+    # HIV not on ART, and SpO2<90%
+    hiv_and_below90SpO2 = df_ds_pneumonia[['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+                                'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
+        lambda x: 1 if (x[0] == '<90%') and ('danger_signs' not in x[1]) and (x[2] != 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'well') and (x[5] == True) else 0, axis=1).sum()
+
+    prop_hiv_and_below90SpO2 = hiv_and_below90SpO2 / ds_pneumonia_total  # 0.00462969
+
+    # HIV not on ART, and danger signs
+    hiv_and_ds = df_ds_pneumonia[
+        ['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+         'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
+        lambda x: 1 if (x[0] != '<90%') and ('danger_signs' in x[1]) and (x[2] != 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'well') and (x[5] == True) else 0, axis=1).sum()
+
+    prop_hiv_and_ds = hiv_and_ds / ds_pneumonia_total  # 0.020919
+
+    # # HIV not on ART, and SpO2<90%, danger signs
+    hiv_and_below90SpO2_and_ds = df_ds_pneumonia[
+        ['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+         'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
+        lambda x: 1 if (x[0] == '<90%') and ('danger_signs' in x[1]) and (x[2] != 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'well') and (x[5] == True) else 0, axis=1).sum()
+
+    prop_hiv_and_below90SpO2_and_ds = hiv_and_below90SpO2_and_ds / ds_pneumonia_total  # 0.005744
+
+    # # HIV not on ART, CXR+
+    hiv_and_abnormal_cxr = df_ds_pneumonia[
+        ['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+         'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
+        lambda x: 1 if (x[0] != '<90%') and ('danger_signs' not in x[1]) and (x[2] == 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'well') and (x[5] == True) else 0, axis=1).sum()
+
+    prop_hiv_and_abnormal_cxr = hiv_and_abnormal_cxr / ds_pneumonia_total  # 0.0112311
+
+    # # HIV not on ART, CXR+, ds
+    hiv_and_ds_and_abnormal_cxr = df_ds_pneumonia[
+        ['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+         'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
+        lambda x: 1 if (x[0] != '<90%') and ('danger_signs' in x[1]) and (x[2] == 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'well') and (x[5] == True) else 0, axis=1).sum()
+
+    prop_hiv_and_ds_and_abnormal_cxr = hiv_and_ds_and_abnormal_cxr / ds_pneumonia_total  # 0.014231
+
+    # # HIV not on ART, and SpO2<90%, CXR+
+    hiv_and_below90SpO2_and_abnormal_cxr = df_ds_pneumonia[
+        ['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+         'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
+        lambda x: 1 if (x[0] == '<90%') and ('danger_signs' not in x[1]) and (x[2] == 'pneumonia') and not any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'well') and (x[5] == True) else 0, axis=1).sum()
+
+    prop_hiv_and_below90SpO2_and_abnormal_cxr = hiv_and_below90SpO2_and_abnormal_cxr / ds_pneumonia_total  # 0.003343
+
+    # # HIV not on ART, and PC
+    hiv_and_pc = df_ds_pneumonia[
+        ['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+         'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
+        lambda x: 1 if (x[0] != '<90%') and ('danger_signs' not in x[1]) and (x[2] != 'pneumonia') and any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'well') and (x[5] == True) else 0, axis=1).sum()
+
+    prop_hiv_and_pc = hiv_and_pc / ds_pneumonia_total  # 0.0
+
+    # # HIV not on ART, ds, and PC
+    hiv_and_ds_and_pc = df_ds_pneumonia[
+        ['oxygen_saturation', 'symptoms', 'disease_type', 'complications',
+         'un_clinical_acute_malnutrition', 'hiv_not_on_art']].apply(
+        lambda x: 1 if (x[0] != '<90%') and ('danger_signs' in x[1]) and (x[2] != 'pneumonia') and any(
+            e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x[3]) and
+                       (x[4] == 'well') and (x[5] == True) else 0, axis=1).sum()
+
+    prop_hiv_and_ds_and_pc = hiv_and_ds_and_pc / ds_pneumonia_total  # 0.0
+
 
     risk_cases = abnormal_cxr_and_pc + \
                  ds_and_abnormal_cxr_and_pc + \
@@ -1215,7 +1259,7 @@ if __name__ == "__main__":
     unscaled_tf_ds_and_abnormal_cxr_and_pc = unscaled_tf_no_risk * 1.55 * 1.71 * 2.31
     unscaled_tf_abnormal_cxr_and_pc = unscaled_tf_no_risk * 1.71 * 2.31
 
-    total_unscaled = ((unscaled_tf_no_risk * (ds_pneumonia - risk_cases)) + (
+    total_unscaled = ((unscaled_tf_no_risk * (ds_pneumonia_total - risk_cases)) + (
         unscaled_tf_below90SpO2_only * below90SpO2_only) + (
                           unscaled_tf_ds_only * ds_only) + (
                           unscaled_tf_abnormal_cxr_only * abnormal_cxr_only) + (
@@ -1229,10 +1273,75 @@ if __name__ == "__main__":
                           unscaled_tf_below90SpO2_and_ds_and_abnormal_cxr_and_pc * below90SpO2_and_ds_and_abnormal_cxr_and_pc) + (
                           unscaled_tf_ds_and_abnormal_cxr * ds_and_abnormal_cxr) + (
                           unscaled_tf_ds_and_abnormal_cxr_and_pc * ds_and_abnormal_cxr_and_pc) + (
-                          unscaled_tf_abnormal_cxr_and_pc * abnormal_cxr_and_pc)) / ds_pneumonia
+                          unscaled_tf_abnormal_cxr_and_pc * abnormal_cxr_and_pc)) / ds_pneumonia_total
 
     scaling_factor = 0.171 / total_unscaled
     baseline_tf = 0.171 * scaling_factor  # base line TF is 0.0684
+
+    def scaled_baseline_tf(df):
+        """" scale the treatment failure of IV antibiotics for danger signs pneumonia """
+
+        unscaled_lm = \
+            LinearModel(
+                LinearModelType.MULTIPLICATIVE,
+                0.171,
+                Predictor('disease_type', external=True).when('pneumonia', 1.71),
+                Predictor('complications', external=True).when(True, 2.31),
+                Predictor('hiv_not_on_art', external=True).when(True, 1.8),
+                Predictor('un_clinical_acute_malnutrition', external=True).when('MAM', 1.48),
+                Predictor('un_clinical_acute_malnutrition', external=True).when('SAM', 2.02),
+                Predictor('oxygen_saturation', external=True).when(True, 1.28),
+                Predictor('symptoms', external=True).when(True, 1.55),
+                # Predictor('referral_hc', external=True).when(True, 1.66),
+            )
+
+        # make unscaled linear model
+        unscaled_tf = unscaled_lm.predict(df,
+                                          disease_type=df['disease_type'],
+                                          complications=any(c in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for c in df.complications),
+                                          hiv_not_on_art=df['hiv_not_on_art'],
+                                          un_clinical_acute_malnutrition=df['un_clinical_acute_malnutrition'],
+                                          oxygen_saturation=df.oxygen_saturation == '<90%',
+                                          symptoms='danger_signs' in df.symptoms,
+                                          # referral_hc=any(l in ['0', '1a'] for l in df.seek_level) and
+                                          #             df.classification_for_treatment_decision_without_oximeter_perfect_accuracy == 'danger_signs_pneumonia'
+                                          )
+
+        cases_combo = unscaled_tf.unique()
+        total_each_combo = unscaled_tf.value_counts()
+        total_unscale_tf = (cases_combo * total_each_combo).sum() / total_each_combo.sum()
+
+        scaling_factor = 0.171 / total_unscale_tf
+
+        scaled_baseline_tf = 0.171 * scaling_factor
+
+        return scaled_baseline_tf
+
+    get_base_tf = scaled_baseline_tf(df=df_ds_pneumonia)
+
+    def get_prob_of_outcome_in_baseline_group(or_value, prob_ref, prop_case_group, prevalence) -> dict:
+        """
+        Helper function to convert odds ratio (OR) to risk ratio (RR) and adjust for the overall prevalence,
+        it returns the probability of outcome in the unexposed group (reference group)
+        :param or_value: odds ratio of case group for the outcome
+        :param prob_ref: prevalence of outcome in reference group
+        :param prop_case_group: proportion of case group (with the outcome) over total (case + ref group)
+        :param prevalence: overall prevalence (joined groups)
+        :return: returns the risk ratio ('rr'), and the baseline probability of outcome in the reference group
+        """
+
+        # Convert OR to RR with the following equation
+        rr = or_value / ((1 - prob_ref) + (prob_ref * or_value))
+
+        # adjust the probability values using the RR, the two group proportions
+        # and the overall prevalence of the risk factor / outcome.
+        adjusted_p = prevalence / (prop_case_group * rr + (1 - prop_case_group))
+
+        return dict({'rr': rr, 'adjusted_p': adjusted_p})
+
+
+    get_rr_death_referral_hc = get_prob_of_outcome_in_baseline_group(
+        or_value=1.72, prob_ref=0.050284, prop_case_group=0.242, prevalence=0.06376822)  # 1.65990
 
     # ----------------------------------------------------------------------------------------------------------
     # Now get the baseline treatment failure for oral antibiotics to treat non-severe pneumonia
