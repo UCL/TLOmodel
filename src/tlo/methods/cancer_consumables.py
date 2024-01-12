@@ -2,11 +2,6 @@
 This file stores defines the consumables required within the cancer modules
 """
 
-import numpy as np
-import pandas as pd
-
-from tlo import logging
-
 
 def get_consumable_item_codes_cancers(self, cons_dict):
     """
