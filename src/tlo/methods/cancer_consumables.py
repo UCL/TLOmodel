@@ -64,7 +64,7 @@ def get_consumable_item_codes_cancers(self, cons_dict):
             get_list_of_items(['Blood collecting tube, 5 ml'
                                'Disposables gloves, powder free, 100 pieces per box'])
 
-    elif self == self.sim.modules['Bladder_cancer']:
+    elif self == self.sim.modules['BladderCancer']:
         # Note: bladder cancer is not in the malawi STG 2023 therefore no details on chemotherapy
 
         cons_dict['screening_cystoscopy_core'] = get_list_of_items(['Cytoscope'])
