@@ -674,6 +674,7 @@ class HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(HSI_Event, Ind
         self.TREATMENT_ID = "ProstateCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = set()
 
         # biopsy equipment needed (perhaps ultrasound to guide).  histology lab equipment.
 
@@ -726,6 +727,7 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
         self.TREATMENT_ID = "ProstateCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = set()
 
     # biopsy equipment needed (perhaps ultrasound to guide).  histology lab equipment.
 
@@ -778,6 +780,7 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
         self.TREATMENT_ID = "ProstateCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = set()
 
         # biopsy equipment needed (perhaps ultrasound to guide).  histology lab equipment.
 
@@ -796,47 +799,52 @@ class HSI_ProstateCancer_Investigation_Following_psa_positive(HSI_Event, Individ
         df.at[person_id, 'pc_date_biopsy'] = self.sim.date
 
         # todo: stratify by pc_status
-        # Use a psa test to assess whether the person has prostate cancer:
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='biopsy_for_prostate_cancer',
-            hsi_event=self
-        )
 
         cons_available = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_biopsy_core'],
                                               optional_item_codes=self.module.item_codes_prostate_can[
                                               'screening_biopsy_optional'])
 
-        if dx_result and cons_available:
-            # record date of diagnosis:
-            df.at[person_id, 'pc_date_diagnosis'] = self.sim.date
+        if cons_available:
+            # If consumables are available update the use of equipment and run the dx_test representing the biopsy
+            self.EQUIPMENT.update({'Ultrasound scanning machine', 'Ordinary Microscope'})
 
-            # Check if is in metastatic stage:
-            in_metastatic = df.at[person_id, 'pc_status'] == 'metastatic'
-            # If the diagnosis does detect cancer, it is assumed that the classification as metastatic is made
-            # accurately.
+            # Use a biopsy  to assess whether the person has prostate cancer:
+            dx_result = hs.dx_manager.run_dx_test(
+                dx_tests_to_run='biopsy_for_prostate_cancer',
+                hsi_event=self
+            )
 
-            if not in_metastatic:
-                # start treatment:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_ProstateCancer_StartTreatment(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
-            else:
-                # start palliative care:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_ProstateCancer_PalliativeCare(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+            if dx_result:
+                # record date of diagnosis:
+                df.at[person_id, 'pc_date_diagnosis'] = self.sim.date
+
+                # Check if is in metastatic stage:
+                in_metastatic = df.at[person_id, 'pc_status'] == 'metastatic'
+                # If the diagnosis does detect cancer, it is assumed that the classification as metastatic is made
+                # accurately.
+
+                if not in_metastatic:
+                    # start treatment:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_ProstateCancer_StartTreatment(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
+                else:
+                    # start palliative care:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_ProstateCancer_PalliativeCare(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
 
 
 class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -853,6 +861,7 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
+        self.EQUIPMENT = set()
 
         # equipment as required for surgery
 
@@ -889,6 +898,11 @@ class HSI_ProstateCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                                                   'treatment_surgery_optional'])
 
         if cons_available:
+
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.EQUIPMENT.update({'Infusion pump', 'Drip stand', 'Laparotomy Set',
+                                   'Blood pressure machine', 'Pulse oximeter'})
+
             # Record date and stage of starting treatment
             df.at[person_id, "pc_date_treatment"] = self.sim.date
             df.at[person_id, "pc_stage_at_which_treatment_given"] = df.at[person_id, "pc_status"]
@@ -919,6 +933,7 @@ class HSI_ProstateCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin
         self.TREATMENT_ID = "ProstateCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.EQUIPMENT = set()
 
         # possibly biopsy and histology
 
@@ -977,6 +992,7 @@ class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
+        self.EQUIPMENT = set()
 
         # generally not sure equipment is required as therapy is with drug, but can require castration surgery
 
@@ -995,6 +1011,9 @@ class HSI_ProstateCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             item_codes=self.module.item_codes_prostate_can['palliation'])
 
         if cons_available:
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.EQUIPMENT.update({'Infusion pump', 'Drip stand'})
+
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "pc_date_palliative_care"]):
                 df.at[person_id, "pc_date_palliative_care"] = self.sim.date

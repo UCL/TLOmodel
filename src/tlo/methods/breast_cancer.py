@@ -679,47 +679,53 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
 
         df.brc_breast_lump_discernible_investigated = True
 
-        # Use a biopsy to diagnose whether the person has breast Cancer:
+        # Check consumables to undertake biopsy are available
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_breast_can['screening_biopsy_core'],
                                           optional_item_codes=
                                           self.module.item_codes_breast_can['screening_biopsy_optional'])
 
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='biopsy_for_breast_cancer_given_breast_lump_discernible',
-            hsi_event=self
-        )
+        if cons_avail:
+            # Use a biopsy to diagnose whether the person has breast Cancer
+            # If consumables are available update the use of equipment and run the dx_test representing the biopsy
+            self.EQUIPMENT.update({'Ultrasound scanning machine', 'Ordinary Microscope'})
 
-        if dx_result and cons_avail:
-            # record date of diagnosis:
-            df.at[person_id, 'brc_date_diagnosis'] = self.sim.date
+            dx_result = hs.dx_manager.run_dx_test(
+                dx_tests_to_run='biopsy_for_breast_cancer_given_breast_lump_discernible',
+                hsi_event=self
+            )
 
-            # Check if is in stage4:
-            in_stage4 = df.at[person_id, 'brc_status'] == 'stage4'
-            # If the diagnosis does detect cancer, it is assumed that the classification as stage4 is made accurately.
+            if dx_result:
+                # record date of diagnosis:
+                df.at[person_id, 'brc_date_diagnosis'] = self.sim.date
 
-            if not in_stage4:
-                # start treatment:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_BreastCancer_StartTreatment(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+                # Check if is in stage4:
+                in_stage4 = df.at[person_id, 'brc_status'] == 'stage4'
+                # If the diagnosis does detect cancer, it is assumed that the classification as stage4 is
+                # made accurately.
 
-            else:
-                # start palliative care:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_BreastCancer_PalliativeCare(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+                if not in_stage4:
+                    # start treatment:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_BreastCancer_StartTreatment(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
+
+                else:
+                    # start palliative care:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_BreastCancer_PalliativeCare(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
 
 #   todo: we would like to note that the symptom has been investigated in a diagnostic test and the diagnosis was
 #   todo: was missed, so the same test will not likely be repeated, at least not in the short term, so we even
@@ -776,12 +782,16 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         assert not pd.isnull(df.at[person_id, "brc_date_diagnosis"])
         assert pd.isnull(df.at[person_id, "brc_date_treatment"])
 
+        # Check that consumables are available
         cons_available = self.get_consumables(
             item_codes=self.module.item_codes_breast_can['treatment_surgery_core'],
             optional_item_codes=self.module.item_codes_breast_can['treatment_surgery_optional'],
         )
 
         if cons_available:
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.EQUIPMENT.update({'Infusion pump', 'Drip stand', 'Laparotomy Set',
+                                   'Blood pressure machine', 'Pulse oximeter'})
 
             # Log the use of adjuvant chemotherapy
             self.get_consumables(
@@ -882,6 +892,7 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
+        self.EQUIPMENT = set()
 
     # not sure there is any need for equipment here
 
@@ -900,6 +911,10 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             item_codes=self.module.item_codes_breast_can['palliation'])
 
         if cons_available:
+
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.EQUIPMENT.update({'Infusion pump', 'Drip stand'})
+
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "brc_date_palliative_care"]):
                 df.at[person_id, "brc_date_palliative_care"] = self.sim.date

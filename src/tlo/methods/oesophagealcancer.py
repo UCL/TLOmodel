@@ -647,6 +647,7 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
         self.TREATMENT_ID = "OesophagealCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = set()
 
         # I think this will need endoscope and biopsy needle.  Also lab equipment needed to perform histology.
         # I can't see endoscope in equipment list but it may be given a slightly different name
@@ -666,46 +667,53 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
         if not pd.isnull(df.at[person_id, "oc_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
-        # Use an endoscope to diagnose whether the person has Oesophageal Cancer:
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='endoscopy_for_oes_cancer_given_dysphagia',
-            hsi_event=self
-        )
+        # Check the consumables are available
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_oesophageal_can['screening_endoscope_core'],
                                           optional_item_codes=
                                           self.module.item_codes_oesophageal_can['screening_endoscope_optional'])
 
-        if dx_result and cons_avail:
-            # record date of diagnosis:
-            df.at[person_id, 'oc_date_diagnosis'] = self.sim.date
+        if cons_avail:
+            # If consumables are available update equipment and run the dx_test representing the biopsy
+            # n.b. endoscope not in equipment list
+            self.EQUIPMENT.update({'Ordinary Microscope'})
 
-            # Check if is in stage4:
-            in_stage4 = df.at[person_id, 'oc_status'] == 'stage4'
-            # If the diagnosis does detect cancer, it is assumed that the classification as stage4 is made accurately.
+            # Use an endoscope to diagnose whether the person has Oesophageal Cancer:
+            dx_result = hs.dx_manager.run_dx_test(
+                dx_tests_to_run='endoscopy_for_oes_cancer_given_dysphagia',
+                hsi_event=self
+            )
+            if dx_result:
+                # record date of diagnosis:
+                df.at[person_id, 'oc_date_diagnosis'] = self.sim.date
 
-            if not in_stage4:
-                # start treatment:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_OesophagealCancer_StartTreatment(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+                # Check if is in stage4:
+                in_stage4 = df.at[person_id, 'oc_status'] == 'stage4'
+                # If the diagnosis does detect cancer, it is assumed that the classification as stage4 is made
+                # accurately.
 
-            else:
-                # start palliative care:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_OesophagealCancer_PalliativeCare(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+                if not in_stage4:
+                    # start treatment:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_OesophagealCancer_StartTreatment(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
+
+                else:
+                    # start palliative care:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_OesophagealCancer_PalliativeCare(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
 
 
 class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -722,6 +730,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
+        self.EQUIPMENT = set()
 
         # equipment need here will be surgery
 
@@ -758,6 +767,9 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
                                           self.module.item_codes_oesophageal_can['treatment_surgery_optional'])
 
         if cons_avail:
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.EQUIPMENT.update({'Infusion pump', 'Drip stand', 'Laparotomy Set',
+                                   'Blood pressure machine', 'Pulse oximeter'})
 
             # Log chemotherapy consumables
             self.get_consumables(
@@ -794,6 +806,7 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
         self.TREATMENT_ID = "OesophagealCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.EQUIPMENT = set()
 
         # equipment: I assume endoscope needed for this
 
@@ -852,6 +865,7 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
+        self.EQUIPMENT = set()
 
         # when radiology available then palliative radiology may be performed but suggest we don't need to include yet
         # not sure what equipment needed for Endoscopic stent placement or Feeding tube which are done as palliative
@@ -872,6 +886,9 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
             item_codes=self.module.item_codes_oesophageal_can['palliation'])
 
         if cons_available:
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.EQUIPMENT.update({'Infusion pump', 'Drip stand'})
+
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "oc_date_palliative_care"]):
                 df.at[person_id, "oc_date_palliative_care"] = self.sim.date

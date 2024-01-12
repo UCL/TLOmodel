@@ -638,6 +638,7 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
         self.TREATMENT_ID = "OtherAdultCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.EQUIPMENT = set()
 
         # equipment: investigations will differ by presenting symptom, but suggest we have biopsy and histology
         # and ultrasound
@@ -657,49 +658,54 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
         if not pd.isnull(df.at[person_id, "oac_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
-        # Use a diagnostic_device to diagnose whether the person has other adult cancer:
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='diagnostic_device_for_other_adult_cancer_given_other_adult_ca_symptom',
-            hsi_event=self
-        )
-
         # Check consumables are available
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_other_can['screening_biopsy_core'],
                                           optional_item_codes=
                                           self.module.item_codes_other_can['screening_biopsy_optional'])
 
-        if dx_result and cons_avail:
-            # record date of diagnosis:
-            df.at[person_id, 'oac_date_diagnosis'] = self.sim.date
+        if cons_avail:
+            # If consumables are available update equipment and run the dx_test representing the biopsy
+            self.EQUIPMENT.update({'Ultrasound scanning machine', 'Ordinary Microscope'})
 
-            # Check if is in metastatic:
-            in_metastatic = df.at[person_id, 'oac_status'] == 'metastatic'
-            # If the diagnosis does detect cancer, it is assumed that the classification as metastatic is
-            # made accurately.
+            # Use a diagnostic_device to diagnose whether the person has other adult cancer:
+            dx_result = hs.dx_manager.run_dx_test(
+                dx_tests_to_run='diagnostic_device_for_other_adult_cancer_given_other_adult_ca_symptom',
+                hsi_event=self
+            )
 
-            if not in_metastatic:
-                # start treatment:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_OtherAdultCancer_StartTreatment(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+            if dx_result:
+                # record date of diagnosis:
+                df.at[person_id, 'oac_date_diagnosis'] = self.sim.date
 
-            else:
-                # start palliative care:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_OtherAdultCancer_PalliativeCare(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+                # Check if is in metastatic:
+                in_metastatic = df.at[person_id, 'oac_status'] == 'metastatic'
+                # If the diagnosis does detect cancer, it is assumed that the classification as metastatic is
+                # made accurately.
+
+                if not in_metastatic:
+                    # start treatment:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_OtherAdultCancer_StartTreatment(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
+
+                else:
+                    # start palliative care:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_OtherAdultCancer_PalliativeCare(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
+
 
 
 class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
@@ -716,6 +722,7 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
+        self.EQUIPMENT = set()
 
         # equipment: a proportion of these cancers will require surgery - also radiotherapy in some cases when available
 
@@ -751,6 +758,10 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         )
 
         if cons_available:
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.EQUIPMENT.update({'Infusion pump', 'Drip stand', 'Laparotomy Set',
+                                   'Blood pressure machine', 'Pulse oximeter'})
+
             # Record date and stage of starting treatment
             df.at[person_id, "oac_date_treatment"] = self.sim.date
             df.at[person_id, "oac_stage_at_which_treatment_given"] = df.at[person_id, "oac_status"]
@@ -784,6 +795,7 @@ class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMix
         self.TREATMENT_ID = "OtherAdultCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.EQUIPMENT = set()
 
         # equipment: some checks will involve further biopsy, ultrasound, histology
 
@@ -846,7 +858,7 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
-
+        self.EQUIPMENT = set()
         # equipment: in general not required I don't think
 
     def apply(self, person_id, squeeze_factor):
@@ -864,6 +876,9 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
             item_codes=self.module.item_codes_other_can['palliation'])
 
         if cons_available:
+            # If consumables are available and the treatment will go ahead - update the equipment
+            self.EQUIPMENT.update({'Infusion pump', 'Drip stand'})
+
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "oac_date_palliative_care"]):
                 df.at[person_id, "oac_date_palliative_care"] = self.sim.date
