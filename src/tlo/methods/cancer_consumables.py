@@ -47,7 +47,7 @@ def get_consumable_item_codes_cancers(self, cons_dict):
                            'Disposables gloves, powder free, 100 pieces per box'
                            ])
 
-    if self == self.sim.modules['BreastCancer']:
+    if ('BreastCancer' in self.sim.modules) and (self == self.sim.modules['BreastCancer']):
 
         # TODO: chemotharpy protocols??: TAC(Taxotere, Adriamycin, and Cyclophosphamide), AC (anthracycline and
         #  cyclophosphamide) +/-Taxane, TC (Taxotere and cyclophosphamide), CMF (cyclophosphamide, methotrexate,
@@ -56,7 +56,7 @@ def get_consumable_item_codes_cancers(self, cons_dict):
         # only chemotherapy i consumable list which is also in suggested protocol is cyclo
         cons_dict['treatment_chemotherapy'] = get_list_of_items(['Cyclophosphamide, 1 g'])
 
-    elif self == self.sim.modules['ProstateCancer']:
+    elif ('ProstateCancer' in self.sim.modules) and (self == self.sim.modules['ProstateCancer']):
 
         # TODO: Prostate specific antigen test is listed in ResourceFile_Consumables_availability_and_usage but not
         #  ResourceFile_Consumables_Items_and_Package
@@ -66,7 +66,7 @@ def get_consumable_item_codes_cancers(self, cons_dict):
             get_list_of_items(['Blood collecting tube, 5 ml',
                                'Disposables gloves, powder free, 100 pieces per box'])
 
-    elif self == self.sim.modules['BladderCancer']:
+    elif ('BladderCancer' in self.sim.modules) and (self == self.sim.modules['BladderCancer']):
         # Note: bladder cancer is not in the malawi STG 2023 therefore no details on chemotherapy
 
         # TODO: cytoscope is listed in ResourceFile_Consumables_availability_and_usage but not
@@ -75,7 +75,7 @@ def get_consumable_item_codes_cancers(self, cons_dict):
 
         cons_dict['screening_cystoscope_optional'] = get_list_of_items(['Specimen container'])
 
-    elif self == self.sim.modules['OesophagealCancer']:
+    elif ('OesophagealCancer' in self.sim.modules) and (self == self.sim.modules['OesophagealCancer']):
 
         # TODO: endoscope is listed in ResourceFile_Consumables_availability_and_usage but not
         #  ResourceFile_Consumables_Items_and_Packages

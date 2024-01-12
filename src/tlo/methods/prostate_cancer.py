@@ -754,10 +754,8 @@ class HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(HSI_Event, Individu
             hsi_event=self
         )
 
-        # Check consumable availability
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_psa_core'],
-                                          optional_item_codes=self.module.item_codes_prostate_can[
-                                              'screening_psa_optional'])
+        # TODO: replace with PSA test when added to cons list
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_prostate_can['screening_psa_test_optional'])
 
         if dx_result and cons_avail:
             # send for biopsy
