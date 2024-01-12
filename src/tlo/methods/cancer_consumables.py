@@ -58,22 +58,28 @@ def get_consumable_item_codes_cancers(self, cons_dict):
 
     elif self == self.sim.modules['ProstateCancer']:
 
-        cons_dict['screening_psa_test_core'] = get_list_of_items(['Prostate specific antigen test'])
+        # TODO: Prostate specific antigen test is listed in ResourceFile_Consumables_availability_and_usage but not
+        #  ResourceFile_Consumables_Items_and_Package
+        # cons_dict['screening_psa_test_core'] = get_list_of_items(['Prostate specific antigen test'])
 
         cons_dict['screening_psa_test_optional'] = \
-            get_list_of_items(['Blood collecting tube, 5 ml'
+            get_list_of_items(['Blood collecting tube, 5 ml',
                                'Disposables gloves, powder free, 100 pieces per box'])
 
     elif self == self.sim.modules['BladderCancer']:
         # Note: bladder cancer is not in the malawi STG 2023 therefore no details on chemotherapy
 
-        cons_dict['screening_cystoscopy_core'] = get_list_of_items(['Cytoscope'])
+        # TODO: cytoscope is listed in ResourceFile_Consumables_availability_and_usage but not
+        #  ResourceFile_Consumables_Items_and_Packages
+        # cons_dict['screening_cystoscopy_core'] = get_list_of_items(['Cytoscope'])
 
         cons_dict['screening_cystoscope_optional'] = get_list_of_items(['Specimen container'])
 
     elif self == self.sim.modules['OesophagealCancer']:
 
-        cons_dict['screening_endoscope_core'] = get_list_of_items(['Endoscope'])
+        # TODO: endoscope is listed in ResourceFile_Consumables_availability_and_usage but not
+        #  ResourceFile_Consumables_Items_and_Packages
+        # cons_dict['screening_endoscope_core'] = get_list_of_items(['Endoscope'])
 
         cons_dict['screening_endoscope_optional'] =\
             get_list_of_items(['Specimen container',

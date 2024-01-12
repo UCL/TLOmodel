@@ -681,7 +681,8 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
             return hs.get_blank_appt_footprint()
 
         # Check consumables are available
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_cystoscopy_core'],
+        # TODO: replace with cystoscope
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_biopsy_core'],
                                           optional_item_codes=
                                           self.module.item_codes_breast_can['screening_biopsy_optional'])
 
