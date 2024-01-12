@@ -13,7 +13,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata
+from tlo.methods import cancer_consumables, Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
@@ -34,6 +34,7 @@ class BladderCancer(Module):
         self.lm_onset_blood_urine = None
         self.lm_onset_pelvic_pain = None
         self.daly_wts = dict()
+        self.item_codes_bladder_can = dict()
 
     INIT_DEPENDENCIES = {'Demography', 'Lifestyle', 'HealthSystem', 'SymptomManager'}
 
@@ -368,6 +369,9 @@ class BladderCancer(Module):
         * Define the Disability-weights
         * Schedule the palliative care appointments for those that are on palliative care at initiation
         """
+        # We call the following function to store the required consumables for the simulation run within the appropriate
+        # dictionary
+        cancer_consumables.get_consumable_item_codes_cancers(self, self.item_codes_bladder_can)
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
@@ -681,7 +685,12 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
             hsi_event=self
         )
 
-        if dx_result:
+        # Check consumables are available
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_cytoscopy_core'],
+                                          optional_item_codes=
+                                          self.module.item_codes_breast_can['screening_biopsy_optional'])
+
+        if cons_avail and dx_result:
             # record date of diagnosis:
             df.at[person_id, 'bc_date_diagnosis'] = self.sim.date
 
@@ -746,7 +755,12 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
             hsi_event=self
         )
 
-        if dx_result:
+        # Check consumables are available
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_cytoscopy_core'],
+                                          optional_item_codes=
+                                          self.module.item_codes_breast_can['screening_biopsy_optional'])
+
+        if cons_avail and dx_result:
             # record date of diagnosis:
             df.at[person_id, 'bc_date_diagnosis'] = self.sim.date
 
@@ -823,20 +837,26 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         assert not pd.isnull(df.at[person_id, "bc_date_diagnosis"])
         assert pd.isnull(df.at[person_id, "bc_date_treatment"])
 
-        # Record date and stage of starting treatment
-        df.at[person_id, "bc_date_treatment"] = self.sim.date
-        df.at[person_id, "bc_stage_at_which_treatment_given"] = df.at[person_id, "bc_status"]
+        # Check consumables are available
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['treatment_surgery_core'],
+                                          optional_item_codes=
+                                          self.module.item_codes_breast_can['treatment_surgery_optional'])
 
-        # Schedule a post-treatment check for 12 months:
-        hs.schedule_hsi_event(
-            hsi_event=HSI_BladderCancer_PostTreatmentCheck(
-                module=self.module,
-                person_id=person_id,
-            ),
-            topen=self.sim.date + DateOffset(years=12),
-            tclose=None,
-            priority=0
-        )
+        if cons_avail:
+            # Record date and stage of starting treatment
+            df.at[person_id, "bc_date_treatment"] = self.sim.date
+            df.at[person_id, "bc_stage_at_which_treatment_given"] = df.at[person_id, "bc_status"]
+
+            # Schedule a post-treatment check for 12 months:
+            hs.schedule_hsi_event(
+                hsi_event=HSI_BladderCancer_PostTreatmentCheck(
+                    module=self.module,
+                    person_id=person_id,
+                ),
+                topen=self.sim.date + DateOffset(years=12),
+                tclose=None,
+                priority=0
+            )
 
 
 class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
@@ -924,20 +944,25 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         # Check that the person is in metastatic
         assert df.at[person_id, "bc_status"] == 'metastatic'
 
-        # Record the start of palliative care if this is first appointment
-        if pd.isnull(df.at[person_id, "bc_date_palliative_care"]):
-            df.at[person_id, "bc_date_palliative_care"] = self.sim.date
+        # Check consumables are available
+        cons_available = self.get_consumables(
+            item_codes=self.module.item_codes_bladder_can['palliation'])
 
-        # Schedule another instance of the event for one month
-        hs.schedule_hsi_event(
-            hsi_event=HSI_BladderCancer_PalliativeCare(
-                module=self.module,
-                person_id=person_id
-            ),
-            topen=self.sim.date + DateOffset(months=1),
-            tclose=None,
-            priority=0
-        )
+        if cons_available:
+            # Record the start of palliative care if this is first appointment
+            if pd.isnull(df.at[person_id, "bc_date_palliative_care"]):
+                df.at[person_id, "bc_date_palliative_care"] = self.sim.date
+
+            # Schedule another instance of the event for one month
+            hs.schedule_hsi_event(
+                hsi_event=HSI_BladderCancer_PalliativeCare(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                topen=self.sim.date + DateOffset(months=1),
+                tclose=None,
+                priority=0
+            )
 
 
 # ---------------------------------------------------------------------------------------------------------
