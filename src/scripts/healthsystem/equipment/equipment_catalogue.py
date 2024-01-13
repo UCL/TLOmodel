@@ -6,6 +6,7 @@ import pandas as pd
 
 from tlo.analysis.utils import extract_results
 
+# TODO: make these to be arguments of called fnc
 # %%% TO SET %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Declare whether to scale the counts to Malawi population size
 # (True/False)
