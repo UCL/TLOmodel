@@ -1806,8 +1806,6 @@ class HealthSystem(Module):
             description="record of each HSI event"
         )
         if did_run:
-            print("\nevent_details")
-            print(event_details)
             if self._hsi_event_count_log_period is not None:
                 event_details_key = self._hsi_event_details.setdefault(
                     event_details, len(self._hsi_event_details)
