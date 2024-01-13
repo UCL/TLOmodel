@@ -18,7 +18,7 @@ catalog_by_details = ['treatment_id', 'facility_level']
 # (periods: 'monthly', 'annual')
 catalog_by_time = 'annual'
 # Suffix for output file names
-suffix_file_names = '__5y_20Kpop_10runs'
+suffix_file_names = '__2y_2Kpop_4runs_1draw'
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -123,7 +123,8 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
         return list_of_strings_col.apply(lambda x: "['" + "', '".join(map(str, x)) + "']")
 
     def strings_of_list_to_lists_of_strings(strings_of_list_col):
-        return strings_of_list_col.apply(lambda x: x.strip('][').split(', '))
+        lists_of_strings_col = strings_of_list_col.apply(lambda x: x.strip('][').split("'"))
+        return lists_of_strings_col.apply(lambda x: [s for s in x if (s != '' and s != ', ')])
 
     for col in hsi_event_keys.columns:
         df_col = sim_equipment_df[col].dropna()
