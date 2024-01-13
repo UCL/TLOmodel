@@ -1109,6 +1109,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         self.TREATMENT_ID = "Contraception_Routine"
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
+        self.set_essential_equipment({''})
 
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
@@ -1144,6 +1145,11 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         # Record the date that Family Planning Appointment happened for this person
         self.sim.population.props.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
 
+        # Measure weight, height and BP even if contraception not administrated
+        self.update_equipment({
+            'Weighing scale', 'Height Pole (Stadiometer)', 'Blood pressure machine'
+        })
+
         # Determine essential and optional items
         # TODO: we don't distinguish essential X optional for contraception methods yet, will need to update once we do
         items_essential = self.module.cons_codes[self.new_contraceptive]
@@ -1170,7 +1176,8 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         items_all = {**items_essential, **items_optional}
 
         # Determine whether the contraception is administrated (ie all essential items are available),
-        # if so do log the availability of all items, if not set the contraception to "not_using":
+        # if so do log the availability of all items and update used equipment if any, if not set the contraception to
+        # "not_using":
         co_administrated = all(v for k, v in cons_available.items() if k in items_essential)
 
         if co_administrated:
@@ -1194,6 +1201,16 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
                              )
 
             _new_contraceptive = self.new_contraceptive
+
+            # Update equipment if any needed for the method
+            if _new_contraceptive == 'female_sterilization':
+                self.update_equipment({
+                    'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise'
+                })
+            elif _new_contraceptive == 'IUD':
+                self.update_equipment({
+                    'Cusco’s/ bivalved Speculum (small, medium, large)', 'Sponge Holding Forceps'
+                })
 
         else:
             _new_contraceptive = "not_using"

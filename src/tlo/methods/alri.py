@@ -2290,6 +2290,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         self._treatment_id_stub = 'Alri_Pneumonia_Treatment'
         self._facility_levels = ("0", "1a", "1b", "2")  # Health facility levels at which care may be provided
         assert facility_level in self._facility_levels
+        self.set_essential_equipment({'Pulse oximeter'})
+        # TODO: CORRECT --- an example with ess. equipm. set (which may or may not be used at the end)
         self.is_followup_following_treatment_failure = is_followup_following_treatment_failure
 
         if not inpatient:
@@ -2595,6 +2597,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                  'chest_indrawing_pneumonia',       (symptoms-based assessment)
                  'cough_or_cold'                    (symptoms-based assessment)
          }."""
+
+        self.update_equipment({'Pulse oximeter'})
 
         child_is_younger_than_2_months = age_exact_years < (2.0 / 12.0)
 
