@@ -21,6 +21,7 @@ suffix_file_names = '__5y_20Kpop_10runs'
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+# TODO: Could I have use the bin_hsi_event_details from src/tlo/analysis/utils.py instead? If so, how?
 def get_monthly_hsi_event_counts(results_folder: Path) -> pd.DataFrame:
     """Returned pd.DataFrame gives the monthly counts of all the hsi event details logged (details as keys)
     for each simulated month.
