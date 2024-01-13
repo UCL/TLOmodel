@@ -1817,7 +1817,6 @@ class HealthSystem(Module):
                 squeeze_factor=squeeze_factor,
                 appt_footprint=event_details.appt_footprint,
                 level=event_details.facility_level,
-                equipment=equipment,
             )
 
     def call_and_record_never_ran_hsi_event(self, hsi_event, priority=None):
