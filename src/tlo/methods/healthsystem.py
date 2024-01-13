@@ -1849,7 +1849,7 @@ class HealthSystem(Module):
         event_details: HSIEventDetails,
         person_id: int,
         facility_id: Optional[int],
-        priority: int
+        priority: int,
     ):
         """Write the log `HSI_Event` and add to the summary counter."""
         logger.debug(
@@ -1874,7 +1874,7 @@ class HealthSystem(Module):
             treatment_id=event_details.treatment_id,
             hsi_event_name=event_details.event_name,
             appt_footprint=event_details.appt_footprint,
-            level=event_details.facility_level
+            level=event_details.facility_level,
         )
 
     def log_current_capabilities_and_usage(self):
@@ -2134,7 +2134,7 @@ class HealthSystem(Module):
                         actual_appt_footprint=actual_appt_footprint,
                         squeeze_factor=squeeze_factor,
                         did_run=True,
-                        priority=_priority,
+                        priority=_priority
                     )
 
                 # if not ok_to_run
