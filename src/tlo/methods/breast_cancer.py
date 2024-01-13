@@ -790,6 +790,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment
+            # TODO: link to surgical equipment package when that exists
             self.EQUIPMENT.update({'Infusion pump', 'Drip stand', 'Laparotomy Set',
                                    'Blood pressure machine', 'Pulse oximeter'})
 
