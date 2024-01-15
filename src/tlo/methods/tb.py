@@ -1610,7 +1610,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         active_and_hiv = df.loc[
             (df.index.isin(active_idx) & df.hv_inf)].index
 
-        # higher probability of being smear positive than HIV-
+        # lower probability of being smear positive than HIV-
         smear_pos = (
             rng.random_sample(len(active_and_hiv)) < p["prop_smear_positive_hiv"]
         )

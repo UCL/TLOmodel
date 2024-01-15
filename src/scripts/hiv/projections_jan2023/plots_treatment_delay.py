@@ -79,17 +79,16 @@ def extract_tx_delay(results_folder: Path,
 # need to collapse all draws/runs together
 # set up empty list with columns for each year
 # values will be variable length lists of delays
-years = list((range(2010, 2035, 1)))
+years = list((range(2010, 2033, 1)))
 
 
-# todo this should be for years post-2022
 def summarise_tx_delay(treatment_delay_df):
     """
     extract all treatment delays from all draws/runs
     for each scenario and collapse into lists, with
     one list per year
     """
-    list_delays = [[] for i in range(25)]
+    list_delays = [[] for i in range(23)]
 
     # for each row of tb_tx_delay_adult_sc0 0-14 [draws, runs]:
     for i in range(treatment_delay_df.shape[0]):
@@ -99,89 +98,13 @@ def summarise_tx_delay(treatment_delay_df):
 
         # combine them into a list, with items separated from array
         # e.g. tmp[0] has values for 2010
-        for j in range(25):
+        for j in range(23):
             tmp2 = tmp[j]
 
             list_delays[j] = [*list_delays[j], *tmp2]
 
     return list_delays
 
-#
-# # hiv treatment delays
-# hiv_tx_delay_adult_sc0_dict = extract_tx_delay(results_folder=results0,
-#                                               module="tlo.methods.hiv",
-#                                               key="hiv_treatment_delays",
-#                                               column="HivTreatmentDelayAdults")
-#
-# hiv_tx_delay_adult_sc1_dict = extract_tx_delay(results_folder=results1,
-#                                               module="tlo.methods.hiv",
-#                                               key="hiv_treatment_delays",
-#                                               column="HivTreatmentDelayAdults")
-#
-# hiv_tx_delay_adult_sc2_dict = extract_tx_delay(results_folder=results2,
-#                                               module="tlo.methods.hiv",
-#                                               key="hiv_treatment_delays",
-#                                               column="HivTreatmentDelayAdults")
-#
-#
-# # convert dict to dataframe
-# hiv_tx_delay_adult_sc0 = pd.DataFrame(hiv_tx_delay_adult_sc0_dict.items())
-# hiv_tx_delay_adult_sc1 = pd.DataFrame(hiv_tx_delay_adult_sc1_dict.items())
-# hiv_tx_delay_adult_sc2 = pd.DataFrame(hiv_tx_delay_adult_sc2_dict.items())
-#
-#
-# list_hiv_tx_delay0 = summarise_tx_delay(hiv_tx_delay_adult_sc0)
-# list_hiv_tx_delay1 = summarise_tx_delay(hiv_tx_delay_adult_sc1)
-# list_hiv_tx_delay2 = summarise_tx_delay(hiv_tx_delay_adult_sc2)
-#
-# # replace nan with negative number (false positive)
-# list_hiv_tx_delay0 = [[-99 if np.isnan(j) else j for j in i] for i in list_hiv_tx_delay0]
-# list_hiv_tx_delay1 = [[-99 if np.isnan(j) else j for j in i] for i in list_hiv_tx_delay1]
-# list_hiv_tx_delay2 = [[-99 if np.isnan(j) else j for j in i] for i in list_hiv_tx_delay2]
-#
-# # convert lists to df
-# # todo note nans are fillers for dataframe
-# hiv_delay0 = pd.DataFrame(list_hiv_tx_delay0).T
-# hiv_delay0.columns = years
-# # convert wide to long format
-# hiv_delay0 = hiv_delay0.reset_index()
-# hiv_delay0_scatter = pd.melt(hiv_delay0, id_vars='index', value_vars=years)
-# hiv_delay0_scatter['value_years'] = round(hiv_delay0_scatter.value / 365.25)
-# hiv_delay0_scatter.loc[hiv_delay0_scatter['value_years'] >= 16, 'value_years'] = 16
-# hiv_delay0_scatter = hiv_delay0_scatter[hiv_delay0_scatter['value'].notna()]
-#
-# hiv_delay1 = pd.DataFrame(list_hiv_tx_delay1).T
-# hiv_delay1.columns = years
-# # convert wide to long format
-# hiv_delay1 = hiv_delay1.reset_index()
-# hiv_delay1_scatter = pd.melt(hiv_delay1, id_vars='index', value_vars=years)
-# hiv_delay1_scatter['value_years'] = round(hiv_delay1_scatter.value / 365.25)
-# hiv_delay1_scatter.loc[hiv_delay1_scatter['value_years'] >= 16, 'value_years'] = 16
-# hiv_delay1_scatter = hiv_delay1_scatter[hiv_delay1_scatter['value_years'].notna()]
-#
-# hiv_delay2 = pd.DataFrame(list_hiv_tx_delay2).T
-# hiv_delay2.columns = years
-# # convert wide to long format
-# hiv_delay2 = hiv_delay2.reset_index()
-# hiv_delay2_scatter = pd.melt(hiv_delay2, id_vars='index', value_vars=years)
-# hiv_delay2_scatter['value_years'] = round(hiv_delay2_scatter.value / 365.25)
-# hiv_delay2_scatter.loc[hiv_delay2_scatter['value_years'] >= 16, 'value_years'] = 16
-# hiv_delay2_scatter = hiv_delay2_scatter[hiv_delay2_scatter['value'].notna()]
-#
-# # scenario delays 2023-2035
-# # aggregate values over 10 years
-# hiv_delay0_hist = hiv_delay0_scatter.loc[hiv_delay0_scatter['variable'] >= 2023]
-# hiv_delay0_hist = hiv_delay0_hist.loc[
-#     (hiv_delay0_hist['value_years'] >= 1) & (hiv_delay0_hist['value'] <= 10000)]  # exclude negative values (false +ve)
-#
-# hiv_delay1_hist = hiv_delay1_scatter.loc[hiv_delay1_scatter['variable'] >= 2023]
-# hiv_delay1_hist = hiv_delay1_hist.loc[
-#     (hiv_delay1_hist['value_years'] >= 1) & (hiv_delay1_hist['value'] <= 10000)]
-#
-# hiv_delay2_hist = hiv_delay2_scatter.loc[hiv_delay2_scatter['variable'] >= 2023]
-# hiv_delay2_hist = hiv_delay2_hist.loc[
-#     (hiv_delay2_hist['value_years'] >= 1) & (hiv_delay2_hist['value'] <= 10000)]
-#
 
 # tb treatment delays
 tb_tx_delay_adult_sc0_dict = extract_tx_delay(results_folder=results0,
@@ -262,98 +185,86 @@ delay2_hist = delay2_hist.loc[
 plt.style.use('ggplot')
 
 colours = [baseline_colour, sc1_colour, sc2_colour]
-# bins_hiv = [0, 2, 4, 6, 8, 10, 12, 14, 16]
-# labels_hiv = ["", "2", "4", "6", "8",
-#               "10", "12", "14", "≥ 16"]
 
 bins = range(1, 12)
 labels = ["", "1", "2", "3", "4", "5", "6", "7", "8", "9", "≥ 10"]
 
+# Validate data types
+assert all(isinstance(value, (int, float)) for value in delay0_hist.value_weeks)
+assert all(isinstance(value, (int, float)) for value in delay1_hist.value_weeks)
+assert all(isinstance(value, (int, float)) for value in delay2_hist.value_weeks)
+
+
 ## plot
-plt.style.use('ggplot')
 fig, ax = plt.subplots(constrained_layout=True)
 fig.suptitle('')
 
 ax.hist([list(delay0_hist.value_weeks),
-                               list(delay1_hist.value_weeks),
-                               list(delay2_hist.value_weeks),
-          ],
-         bins=bins,
-         align='right',
-         color=colours,
-         density=True)
+         list(delay1_hist.value_weeks),
+         list(delay2_hist.value_weeks)],
+        bins=bins,
+        align='right',
+        color=colours,
+        density=True)
+
 ax.set_xticks(bins)
 ax.set_xticklabels(labels)
 ax.patch.set_edgecolor('grey')
-ax.patch.set_linewidth('1')
+ax.patch.set_linewidth(1)
 
 ax.set(title='',
-        ylabel='Density',
-        xLabel="Treatment delay, weeks")
+       ylabel='Density',
+       xlabel="Treatment delay, weeks")
 ax.set_ylim([0, 1.0])
-ax.set(title='',
-       ylabel='Proportion treated')
-ax.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
 
 plt.tick_params(axis="both", which="major", labelsize=10)
 
-fig.savefig(outputspath / "TB_treatment_delays.png")
+# ax.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
+# fig.savefig(outputspath / "TB_treatment_delays.png")
 
 plt.show()
 
 
+##################################
+import matplotlib.pyplot as plt
+import numpy as np
 
+def plot_histogram(data, bins, labels):
+    fig, ax = plt.subplots(constrained_layout=True)
+    fig.suptitle('')
 
-# ## plot
-# plt.style.use('ggplot')
-# # fig, ax = plt.subplots()
-# fig, ((ax1, ax2)) = plt.subplots(nrows=1, ncols=2,
-#                                              # sharey=True,
-#                                              constrained_layout=True,
-#                                              figsize=(9, 4))
-# fig.suptitle('')
-#
-# ax1.hist([list(hiv_delay0_hist.value_years),
-#                                list(hiv_delay1_hist.value_years),
-#                                list(hiv_delay2_hist.value_years),
-#           ],
-#          bins=bins_hiv,
-#          align='right',
-#          color=colours,
-#          density=True)
-#
-# ax1.set_xticks(bins_hiv)
-# ax1.set_xticklabels(labels_hiv)
-# ax1.patch.set_edgecolor('grey')
-# ax1.patch.set_linewidth('1')
-#
-# ax1.set(title='HIV',
-#         ylabel='Density',
-#         xLabel="Treatment delay, years")
-# ax1.set_ylim([0, 1.0])
-# plt.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
-#
-# ax2.hist([list(delay0_hist.value_weeks),
-#                                list(delay1_hist.value_weeks),
-#                                list(delay2_hist.value_weeks),
-#           ],
-#          bins=bins,
-#          align='right',
-#          color=colours,
-#          density=True)
-# ax2.set_xticks(bins)
-# ax2.set_xticklabels(labels)
-# ax2.patch.set_edgecolor('grey')
-# ax2.patch.set_linewidth('1')
-#
-# ax2.set(title='TB',
-#         ylabel='',
-#         xLabel="Treatment delay, weeks")
-# ax2.set_ylim([0, 1.0])
-#
-# plt.tick_params(axis="both", which="major", labelsize=10)
-#
-# # fig.savefig(outputspath / "Treatment_delays.png")
-#
-# plt.show()
-#
+    # Convert strings to floats, ignoring non-convertible values
+    def convert_to_float(value):
+        try:
+            return float(value)
+        except (ValueError, TypeError):
+            return np.nan
+
+    data = np.array([convert_to_float(value) for value in data])
+
+    # Validate data types
+    assert all(isinstance(value, (float, np.floating)) for value in data), "Invalid data type"
+
+    ax.hist(data, bins=bins, align='right', density=True)
+
+    ax.set_xticks(bins)
+    ax.set_xticklabels(labels)
+    ax.patch.set_edgecolor('grey')
+    ax.patch.set_linewidth(1)
+
+    ax.set(title='',
+           ylabel='Density',
+           xlabel="Treatment delay, weeks")
+    ax.set_ylim([0, 1.0])
+
+    plt.tick_params(axis="both", which="major", labelsize=10)
+
+    plt.show()
+
+# Generate numeric sample data
+numeric_data = np.random.uniform(1, 10, 100).astype(str)
+bins = range(1, 12)
+labels = ["", "1", "2", "3", "4", "5", "6", "7", "8", "9", "≥ 10"]
+
+# Call the function with numeric data
+plot_histogram(numeric_data, bins, labels)
