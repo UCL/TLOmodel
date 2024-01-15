@@ -183,7 +183,10 @@ class HSI_Event:
         self._received_info_about_bed_days = None
         self.expected_time_requests = {}
         self.facility_info = None
-        # self.set_essential_equipment({''})  # HSI needs this attribute, but it is not defined in the Base class
+        # self.set_equipment_essential_to_run_event({''})  # HSI needs this attribute, but it is not defined in the Base
+        #                                                    class to allow verification of its existence as a test for
+        #                                                    each HSI event, showing that equipment setup was thought
+        #                                                    through for the event.
         self.EQUIPMENT = set()
 
     @property
@@ -340,36 +343,35 @@ class HSI_Event:
             "values"
         )
 
-    def set_essential_equipment(self, set_of_equip):
+    def set_equipment_essential_to_run_event(self, set_of_equip):
         """Helper function to set essential equipment.
 
         Should be passed a set of equipment items names (strings) or an empty set.
         """
         # Set EQUIPMENT if the given set_of_equip in correct format, ie a set of strings or an empty set
-        if isinstance(set_of_equip, set) and all(isinstance(item, str) for item in set_of_equip):
-            self.ESSENTIAL_EQUIPMENT  = set_of_equip
-            return 0
+        if not isinstance(set_of_equip, set) or any(not isinstance(item, str) for item in set_of_equip):
+            raise ValueError(
+                "Argument to set_equipment_essential_to_run_event should be an empty set or a set of strings of "
+                "equipment item names from ResourceFile_Equipment.csv."
+            )
 
-        raise ValueError(
-            "Argument to set_essential_equipment should be an empty set or a set of strings of equipment item names "
-            "from ResourceFile_Equipment.csv."
-        )
+        self.ESSENTIAL_EQUIPMENT  = set_of_equip
 
-    def update_equipment(self, set_of_equip):
+    def add_equipment(self, set_of_equip):
         """Helper function to update equipment.
 
         Should be passed a set of equipment item names (strings).
         """
         # Update EQUIPMENT if the given set_of_equip in correct format, ie a non-empty set of strings
-        if isinstance(set_of_equip, set) and (all(isinstance(item, str) for item in set_of_equip)) and \
-           (set_of_equip not in [set(), None, {''}]):
-            self.EQUIPMENT.update(set_of_equip)
-            return self.EQUIPMENT.discard('')
+        if not isinstance(set_of_equip, set) or any(not isinstance(item, str) for item in set_of_equip) or \
+           (set_of_equip in [set(), None, {''}]):
+            raise ValueError(
+                "Argument to add_equipment should be a non-empty set of strings of "
+                "equipment item names from ResourceFile_Equipment.csv."
+            )
 
-        raise ValueError(
-            "Argument to update_equipment should be a non-empty set of strings of equipment item names "
-            "from ResourceFile_Equipment.csv."
-        )
+        self.EQUIPMENT.update(set_of_equip)
+        self.EQUIPMENT.discard('')
 
     def initialise(self):
         """Initialise the HSI:
