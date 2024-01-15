@@ -8,10 +8,14 @@ import datetime
 from pathlib import Path
 import os
 
+import matplotlib
+import matplotlib.pyplot as plt
+plt.style.use('default')
+matplotlib.use('tkagg')
+
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
 from matplotlib.lines import Line2D
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib.gridspec import GridSpec
@@ -1237,172 +1241,6 @@ plt.show()
 
 
 
-# %%:  ---------------------------------- TB false positives -------------------------------------
-
-# show false positives put on treatment per 100,000 population
-
-# tmp1 = delay0_scatter.groupby('variable').count()
-#
-# false0 = delay0_scatter.groupby('variable')['value'].apply(lambda x: ((x<=0) | (x>1095)).count()).reset_index(name='count')
-# false1 = delay1_scatter.groupby('variable')['value'].apply(lambda x: ((x<=0) | (x>1095)).count()).reset_index(name='count')
-# false2 = delay2_scatter.groupby('variable')['value'].apply(lambda x: ((x<=0) | (x>1095)).count()).reset_index(name='count')
-
-
-def tb_false_pos_adults(results_folder):
-    false_pos = extract_results(
-        results_folder,
-        module="tlo.methods.tb",
-        key="tb_false_positive",
-        column="tbPropFalsePositiveAdults",
-        index="date",
-        do_scaling=False
-    )
-
-    false_pos.columns = false_pos.columns.get_level_values(0)
-    false_pos_summary = pd.DataFrame(index=false_pos.index, columns=["median", "lower", "upper"])
-    false_pos_summary["median"] = false_pos.median(axis=1)
-    false_pos_summary["lower"] = false_pos.quantile(q=0.025, axis=1)
-    false_pos_summary["upper"] = false_pos.quantile(q=0.975, axis=1)
-
-    return false_pos_summary
-
-# def tb_false_pos_children(results_folder):
-#     false_pos = extract_results(
-#         results_folder,
-#         module="tlo.methods.tb",
-#         key="tb_false_positive",
-#         column="tbPropFalsePositiveChildren",
-#         index="date",
-#         do_scaling=False
-#     )
-#
-#     false_pos.columns = false_pos.columns.get_level_values(0)
-#     false_pos_summary = pd.DataFrame(index=false_pos.index, columns=["median", "lower", "upper"])
-#     false_pos_summary["median"] = false_pos.median(axis=1)
-#     false_pos_summary["lower"] = false_pos.quantile(q=0.025, axis=1)
-#     false_pos_summary["upper"] = false_pos.quantile(q=0.975, axis=1)
-#
-#     return false_pos_summary
-
-false_pos0 = tb_false_pos_adults(results0)
-false_pos1 = tb_false_pos_adults(results1)
-false_pos2 = tb_false_pos_adults(results2)
-
-#
-# false_pos_child0 = tb_false_pos_children(results0)
-# false_pos_child1 = tb_false_pos_children(results1)
-# false_pos_child2 = tb_false_pos_children(results2)
-
-
-# plt.style.use('ggplot')
-
-berry = lacroix.colorList('CranRaspberry')  # ['#F2B9B8', '#DF7878', '#E40035', '#009A90', '#0054A4', '#001563']
-baseline_colour = berry[5]  # '#001563'
-sc1_colour = berry[3]  # '#009A90'
-sc2_colour = berry[2]  # '#E40035'
-
-
-# Sample x and y data
-x = [1, 2, 3, 4, 5]
-y = [3, 5, 7, 1, 4]
-
-# Create the line plot
-plt.plot(x.values, y.values)
-
-plt.show()
-
-
-
-
-
-
-years_num = false_pos0.index.year
-
-fig, ax = plt.subplots()
-
-ax.plot(years_num[12:23], false_pos0["median"][12:23].values, "-", color=baseline_colour)
-ax.fill_between(years_num[12:23], false_pos0["lower"][12:23], false_pos0["upper"][12:25],
-                color=baseline_colour, alpha=0.2)
-
-ax.plot(years_num[12:23], false_pos1["median"][12:23], "-", color=sc1_colour)
-ax.fill_between(years_num[12:23], false_pos1["lower"][12:23], false_pos1["upper"][12:25],
-                color=sc1_colour, alpha=0.2)
-
-ax.plot(years_num[12:23], false_pos2["median"][12:23], "-", color=sc2_colour)
-ax.fill_between(years_num[12:23], false_pos2["lower"][12:23], false_pos2["upper"][12:25],
-                color=sc2_colour, alpha=0.2)
-
-ax.patch.set_edgecolor('grey')
-ax.patch.set_linewidth('1')
-
-plt.ylabel("Proportion false positives")
-
-plt.xlabel("Year")
-plt.ylim((0, 0.5))
-plt.title("")
-plt.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
-# fig.savefig(outputspath / "Tb_false_positives.png")
-plt.show()
-
-
-#
-# ## plot false positives for all years
-# plt.style.use('ggplot')
-# fig, ax = plt.subplots()
-#
-# ax.plot(years_num[1:26], false_pos0["median"], "-", color=baseline_colour)
-# ax.fill_between(years_num[1:26], false_pos0["lower"], false_pos0["upper"],
-#                 color=baseline_colour, alpha=0.2)
-#
-# ax.plot(years_num[1:26], false_pos1["median"], "-", color=sc1_colour)
-# ax.fill_between(years_num[1:26], false_pos1["lower"], false_pos1["upper"],
-#                 color=sc1_colour, alpha=0.2)
-#
-# ax.plot(years_num[1:26], false_pos2["median"], "-", color=sc2_colour)
-# ax.fill_between(years_num[1:26], false_pos2["lower"], false_pos2["upper"],
-#                 color=sc2_colour, alpha=0.2)
-#
-# ax.patch.set_edgecolor('grey')
-# ax.patch.set_linewidth('1')
-#
-# plt.ylabel("Proportion false positives")
-#
-# plt.xlabel("Year")
-# plt.ylim((0, 0.5))
-# plt.title("")
-# plt.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
-# fig.savefig(outputspath / "Tb_false_positives_all_years.png")
-# plt.show()
-
-
-## plot false positives for all years - CHILDREN
-plt.style.use('ggplot')
-fig, ax = plt.subplots()
-
-ax.plot(years_num[1:26], false_pos_child0["median"], "-", color=baseline_colour)
-ax.fill_between(years_num[1:26], false_pos_child0["lower"], false_pos_child0["upper"],
-                color=baseline_colour, alpha=0.2)
-
-ax.plot(years_num[1:26], false_pos_child1["median"], "-", color=sc1_colour)
-ax.fill_between(years_num[1:26], false_pos_child1["lower"], false_pos_child1["upper"],
-                color=sc1_colour, alpha=0.2)
-
-ax.plot(years_num[1:26], false_pos_child2["median"], "-", color=sc2_colour)
-ax.fill_between(years_num[1:26], false_pos_child2["lower"], false_pos_child2["upper"],
-                color=sc2_colour, alpha=0.2)
-
-ax.patch.set_edgecolor('grey')
-ax.patch.set_linewidth('1')
-
-plt.ylabel("Proportion false positives")
-
-plt.xlabel("Year")
-# plt.ylim((0, 0.5))
-plt.title("")
-plt.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
-fig.savefig(outputspath / "Tb_false_positives_all_years_children.png")
-plt.show()
-
 
 # %%:  ---------------------------------- PrEP IMPACT ---------------------------------- #
 
@@ -1640,7 +1478,7 @@ cons_full = pd.merge(cons_availability, master_fac,
 cons_dec = cons_full.loc[cons_full.month == 12]
 
 # groupby item code & facility level -> average availability by facility level for all items
-average_cons_availability = cons_dec.groupby(["item_code", "Facility_Level"])["available_prop"].mean().reset_index()
+average_cons_availability = cons_full.groupby(["item_code", "Facility_Level"])["available_prop"].mean().reset_index()
 
 
 def get_item_codes_from_package_name(lookup_df: pd.DataFrame, package: str) -> dict:
