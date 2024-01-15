@@ -684,10 +684,10 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
         # TODO: replace with cystoscope
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_biopsy_core'],
                                           optional_item_codes=
-                                          self.module.item_codes_breast_can['screening_biopsy_optional'])
+                                          self.module.item_codes_bladder_can['screening_biopsy_optional'])
 
         if cons_avail:
-            # Use a biopsy to diagnose whether the person has breast Cancer
+            # Use a biopsy to diagnose whether the person has bladder Cancer
             # If consumables are available update the use of equipment and run the dx_test representing the biopsy
             self.EQUIPMENT.update({'Cystoscope', 'Ordinary Microscope'})
 
@@ -764,7 +764,7 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
                                               'screening_biopsy_optional'])
 
         if cons_avail:
-            # Use a biopsy to diagnose whether the person has breast Cancer
+            # Use a biopsy to diagnose whether the person has bladder Cancer
             # If consumables are available log the use of equipment and run the dx_test representing the biopsy
             self.EQUIPMENT.update({'Cystoscope', 'Ordinary Microscope'})
 
@@ -855,7 +855,7 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         # Check consumables are available
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['treatment_surgery_core'],
                                           optional_item_codes=
-                                          self.module.item_codes_breast_can['treatment_surgery_optional'])
+                                          self.module.item_codes_bladder_can['treatment_surgery_optional'])
 
         if cons_avail:
             # If consumables are available and the treatment will go ahead - update the equipment
