@@ -1109,7 +1109,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         self.TREATMENT_ID = "Contraception_Routine"
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
-        self.set_essential_equipment({''})
+        self.set_equipment_essential_to_run_event({''})
 
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
@@ -1146,7 +1146,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.sim.population.props.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
 
         # Measure weight, height and BP even if contraception not administrated
-        self.update_equipment({
+        self.add_equipment({
             'Weighing scale', 'Height Pole (Stadiometer)', 'Blood pressure machine'
         })
 
@@ -1204,11 +1204,11 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
             # Update equipment if any needed for the method
             if _new_contraceptive == 'female_sterilization':
-                self.update_equipment({
+                self.add_equipment({
                     'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise'
                 })
             elif _new_contraceptive == 'IUD':
-                self.update_equipment({
+                self.add_equipment({
                     'Cusco’s/ bivalved Speculum (small, medium, large)', 'Sponge Holding Forceps'
                 })
 
