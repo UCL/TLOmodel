@@ -758,9 +758,11 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
             return hs.get_blank_appt_footprint()
 
         # Check consumables are available
-        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_cystoscopy_core'],
-                                          optional_item_codes=
-                                          self.module.item_codes_breast_can['screening_biopsy_optional'])
+        # TODO: replace with cystoscope
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_bladder_can['screening_biopsy_core'],
+                                          optional_item_codes=self.module.item_codes_bladder_can[
+                                              'screening_biopsy_optional'])
+
         if cons_avail:
             # Use a biopsy to diagnose whether the person has breast Cancer
             # If consumables are available log the use of equipment and run the dx_test representing the biopsy
