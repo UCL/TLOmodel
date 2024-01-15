@@ -219,52 +219,8 @@ ax.set_ylim([0, 1.0])
 
 plt.tick_params(axis="both", which="major", labelsize=10)
 
-# ax.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
-# fig.savefig(outputspath / "TB_treatment_delays.png")
+ax.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
+fig.savefig(outputspath / "TB_treatment_delays.png")
 
 plt.show()
 
-
-##################################
-import matplotlib.pyplot as plt
-import numpy as np
-
-def plot_histogram(data, bins, labels):
-    fig, ax = plt.subplots(constrained_layout=True)
-    fig.suptitle('')
-
-    # Convert strings to floats, ignoring non-convertible values
-    def convert_to_float(value):
-        try:
-            return float(value)
-        except (ValueError, TypeError):
-            return np.nan
-
-    data = np.array([convert_to_float(value) for value in data])
-
-    # Validate data types
-    assert all(isinstance(value, (float, np.floating)) for value in data), "Invalid data type"
-
-    ax.hist(data, bins=bins, align='right', density=True)
-
-    ax.set_xticks(bins)
-    ax.set_xticklabels(labels)
-    ax.patch.set_edgecolor('grey')
-    ax.patch.set_linewidth(1)
-
-    ax.set(title='',
-           ylabel='Density',
-           xlabel="Treatment delay, weeks")
-    ax.set_ylim([0, 1.0])
-
-    plt.tick_params(axis="both", which="major", labelsize=10)
-
-    plt.show()
-
-# Generate numeric sample data
-numeric_data = np.random.uniform(1, 10, 100).astype(str)
-bins = range(1, 12)
-labels = ["", "1", "2", "3", "4", "5", "6", "7", "8", "9", "≥ 10"]
-
-# Call the function with numeric data
-plot_histogram(numeric_data, bins, labels)

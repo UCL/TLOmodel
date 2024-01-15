@@ -1241,31 +1241,11 @@ plt.show()
 
 # show false positives put on treatment per 100,000 population
 
-tmp1 = delay0_scatter.groupby('variable').count()
-
-false0 = delay0_scatter.groupby('variable')['value'].apply(lambda x: ((x<=0) | (x>1095)).count()).reset_index(name='count')
-false1 = delay1_scatter.groupby('variable')['value'].apply(lambda x: ((x<=0) | (x>1095)).count()).reset_index(name='count')
-false2 = delay2_scatter.groupby('variable')['value'].apply(lambda x: ((x<=0) | (x>1095)).count()).reset_index(name='count')
-
-# todo note these are aggregated across all runs
-# plt.style.use('ggplot')
-# fig, ax = plt.subplots()
+# tmp1 = delay0_scatter.groupby('variable').count()
 #
-# ax.plot(years_num[13:25], false0["count"].loc[13:24], "-", color=berry[5])
-# ax.plot(years_num[13:25], false1["count"].loc[13:24], "-", color=berry[4])
-# ax.plot(years_num[13:25], false2["count"].loc[13:24], "-", color=berry[3])
-# ax.plot(years_num[13:25], false3["count"].loc[13:24], "-", color=berry[2])
-# ax.plot(years_num[13:25], false4["count"].loc[13:24], "-", color=berry[1])
-#
-# ax.patch.set_edgecolor('grey')
-# ax.patch.set_linewidth('1')
-#
-# plt.ylabel("number false positives")
-# plt.xlabel("Year")
-# # plt.ylim((0, 1.0))
-# plt.title("")
-# plt.legend(labels=["Scenario 0", "Scenario 1", "Scenario 2", "Scenario 3", "Scenario 4"])
-# plt.show()
+# false0 = delay0_scatter.groupby('variable')['value'].apply(lambda x: ((x<=0) | (x>1095)).count()).reset_index(name='count')
+# false1 = delay1_scatter.groupby('variable')['value'].apply(lambda x: ((x<=0) | (x>1095)).count()).reset_index(name='count')
+# false2 = delay2_scatter.groupby('variable')['value'].apply(lambda x: ((x<=0) | (x>1095)).count()).reset_index(name='count')
 
 
 def tb_false_pos_adults(results_folder):
@@ -1286,47 +1266,70 @@ def tb_false_pos_adults(results_folder):
 
     return false_pos_summary
 
-def tb_false_pos_children(results_folder):
-    false_pos = extract_results(
-        results_folder,
-        module="tlo.methods.tb",
-        key="tb_false_positive",
-        column="tbPropFalsePositiveChildren",
-        index="date",
-        do_scaling=False
-    )
-
-    false_pos.columns = false_pos.columns.get_level_values(0)
-    false_pos_summary = pd.DataFrame(index=false_pos.index, columns=["median", "lower", "upper"])
-    false_pos_summary["median"] = false_pos.median(axis=1)
-    false_pos_summary["lower"] = false_pos.quantile(q=0.025, axis=1)
-    false_pos_summary["upper"] = false_pos.quantile(q=0.975, axis=1)
-
-    return false_pos_summary
+# def tb_false_pos_children(results_folder):
+#     false_pos = extract_results(
+#         results_folder,
+#         module="tlo.methods.tb",
+#         key="tb_false_positive",
+#         column="tbPropFalsePositiveChildren",
+#         index="date",
+#         do_scaling=False
+#     )
+#
+#     false_pos.columns = false_pos.columns.get_level_values(0)
+#     false_pos_summary = pd.DataFrame(index=false_pos.index, columns=["median", "lower", "upper"])
+#     false_pos_summary["median"] = false_pos.median(axis=1)
+#     false_pos_summary["lower"] = false_pos.quantile(q=0.025, axis=1)
+#     false_pos_summary["upper"] = false_pos.quantile(q=0.975, axis=1)
+#
+#     return false_pos_summary
 
 false_pos0 = tb_false_pos_adults(results0)
 false_pos1 = tb_false_pos_adults(results1)
 false_pos2 = tb_false_pos_adults(results2)
 
+#
+# false_pos_child0 = tb_false_pos_children(results0)
+# false_pos_child1 = tb_false_pos_children(results1)
+# false_pos_child2 = tb_false_pos_children(results2)
 
-false_pos_child0 = tb_false_pos_children(results0)
-false_pos_child1 = tb_false_pos_children(results1)
-false_pos_child2 = tb_false_pos_children(results2)
+
+# plt.style.use('ggplot')
+
+berry = lacroix.colorList('CranRaspberry')  # ['#F2B9B8', '#DF7878', '#E40035', '#009A90', '#0054A4', '#001563']
+baseline_colour = berry[5]  # '#001563'
+sc1_colour = berry[3]  # '#009A90'
+sc2_colour = berry[2]  # '#E40035'
 
 
-plt.style.use('ggplot')
+# Sample x and y data
+x = [1, 2, 3, 4, 5]
+y = [3, 5, 7, 1, 4]
+
+# Create the line plot
+plt.plot(x.values, y.values)
+
+plt.show()
+
+
+
+
+
+
+years_num = false_pos0.index.year
+
 fig, ax = plt.subplots()
 
-ax.plot(years_num[13:26], false_pos0["median"][12:25], "-", color=baseline_colour)
-ax.fill_between(years_num[13:26], false_pos0["lower"][12:25], false_pos0["upper"][12:25],
+ax.plot(years_num[12:23], false_pos0["median"][12:23].values, "-", color=baseline_colour)
+ax.fill_between(years_num[12:23], false_pos0["lower"][12:23], false_pos0["upper"][12:25],
                 color=baseline_colour, alpha=0.2)
 
-ax.plot(years_num[13:26], false_pos1["median"][12:25], "-", color=sc1_colour)
-ax.fill_between(years_num[13:26], false_pos1["lower"][12:25], false_pos1["upper"][12:25],
+ax.plot(years_num[12:23], false_pos1["median"][12:23], "-", color=sc1_colour)
+ax.fill_between(years_num[12:23], false_pos1["lower"][12:23], false_pos1["upper"][12:25],
                 color=sc1_colour, alpha=0.2)
 
-ax.plot(years_num[13:26], false_pos2["median"][12:25], "-", color=sc2_colour)
-ax.fill_between(years_num[13:26], false_pos2["lower"][12:25], false_pos2["upper"][12:25],
+ax.plot(years_num[12:23], false_pos2["median"][12:23], "-", color=sc2_colour)
+ax.fill_between(years_num[12:23], false_pos2["lower"][12:23], false_pos2["upper"][12:25],
                 color=sc2_colour, alpha=0.2)
 
 ax.patch.set_edgecolor('grey')
@@ -1338,38 +1341,38 @@ plt.xlabel("Year")
 plt.ylim((0, 0.5))
 plt.title("")
 plt.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
-fig.savefig(outputspath / "Tb_false_positives.png")
+# fig.savefig(outputspath / "Tb_false_positives.png")
 plt.show()
 
 
-
-## plot false positives for all years
-plt.style.use('ggplot')
-fig, ax = plt.subplots()
-
-ax.plot(years_num[1:26], false_pos0["median"], "-", color=baseline_colour)
-ax.fill_between(years_num[1:26], false_pos0["lower"], false_pos0["upper"],
-                color=baseline_colour, alpha=0.2)
-
-ax.plot(years_num[1:26], false_pos1["median"], "-", color=sc1_colour)
-ax.fill_between(years_num[1:26], false_pos1["lower"], false_pos1["upper"],
-                color=sc1_colour, alpha=0.2)
-
-ax.plot(years_num[1:26], false_pos2["median"], "-", color=sc2_colour)
-ax.fill_between(years_num[1:26], false_pos2["lower"], false_pos2["upper"],
-                color=sc2_colour, alpha=0.2)
-
-ax.patch.set_edgecolor('grey')
-ax.patch.set_linewidth('1')
-
-plt.ylabel("Proportion false positives")
-
-plt.xlabel("Year")
-plt.ylim((0, 0.5))
-plt.title("")
-plt.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
-fig.savefig(outputspath / "Tb_false_positives_all_years.png")
-plt.show()
+#
+# ## plot false positives for all years
+# plt.style.use('ggplot')
+# fig, ax = plt.subplots()
+#
+# ax.plot(years_num[1:26], false_pos0["median"], "-", color=baseline_colour)
+# ax.fill_between(years_num[1:26], false_pos0["lower"], false_pos0["upper"],
+#                 color=baseline_colour, alpha=0.2)
+#
+# ax.plot(years_num[1:26], false_pos1["median"], "-", color=sc1_colour)
+# ax.fill_between(years_num[1:26], false_pos1["lower"], false_pos1["upper"],
+#                 color=sc1_colour, alpha=0.2)
+#
+# ax.plot(years_num[1:26], false_pos2["median"], "-", color=sc2_colour)
+# ax.fill_between(years_num[1:26], false_pos2["lower"], false_pos2["upper"],
+#                 color=sc2_colour, alpha=0.2)
+#
+# ax.patch.set_edgecolor('grey')
+# ax.patch.set_linewidth('1')
+#
+# plt.ylabel("Proportion false positives")
+#
+# plt.xlabel("Year")
+# plt.ylim((0, 0.5))
+# plt.title("")
+# plt.legend(labels=["Baseline", "Constrained scale-up", "Unconstrained scale-up"])
+# fig.savefig(outputspath / "Tb_false_positives_all_years.png")
+# plt.show()
 
 
 ## plot false positives for all years - CHILDREN
