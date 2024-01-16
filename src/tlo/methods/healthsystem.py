@@ -343,6 +343,10 @@ class HSI_Event:
             "values"
         )
 
+    def get_equip_item_code_from_item_name(self, lookup_df: pd.DataFrame, equip_item_name: str) -> int:
+        """Helper function to provide the equip_item_code (an int) when provided with the equip_item_name of the item"""
+        return int(pd.unique(lookup_df.loc[lookup_df["Equip_Item"] == equip_item_name, "Equip_Code"])[0])
+
     def set_equipment_essential_to_run_event(self, set_of_equip):
         """Helper function to set essential equipment.
 
@@ -369,8 +373,13 @@ class HSI_Event:
                 "Argument to add_equipment should be a non-empty set of strings of "
                 "equipment item names from ResourceFile_Equipment.csv."
             )
-
-        self.EQUIPMENT.update(set_of_equip)
+        # from the set of equip item names create a set of item codes
+        # this function is calling parameters from this
+        equip_codes = set(self.get_equip_item_code_from_item_name(
+            self.sim.modules['HealthSystem'].parameters['equip_item_and_package_code_lookups'], item_name
+        ) for item_name in set_of_equip
+        )
+        self.EQUIPMENT.update(equip_codes)
         self.EQUIPMENT.discard('')
 
     def initialise(self):
@@ -561,6 +570,9 @@ class HealthSystem(Module):
             "Availability of beds. If 'default' then use the availability specified in the ResourceFile; if "
             "'none', then let no beds be  ever be available; if 'all', then all beds are always available. NB. This "
             "parameter is over-ridden if an argument is provided to the module initialiser."),
+        'equip_item_and_package_code_lookups': Parameter(
+            Types.DATA_FRAME, "Items based on the the HSSP III 1K Equipment Costing (SEL Costing Sheet): "
+            "https://www.health.gov.mw/download/hssp-iii/, packages created in consultation with clinicians."),
 
         # Service Availability
         'Service_Availability': Parameter(
@@ -847,6 +859,10 @@ class HealthSystem(Module):
         # Data on the number of beds available of each type by facility_id
         self.parameters['BedCapacity'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'infrastructure_and_equipment' / 'ResourceFile_Bed_Capacity.csv')
+
+        # Read in ResourceFile_Equipment
+        self.parameters['equip_item_and_package_code_lookups'] = pd.read_csv(
+            path_to_resourcefiles_for_healthsystem / 'infrastructure_and_equipment' / 'ResourceFile_Equipment.csv')
 
         # Data on the priority of each Treatment_ID that should be adopted in the queueing system according to different
         # priority policies. Load all policies at this stage, and decide later which one to adopt.
