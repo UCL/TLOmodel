@@ -608,9 +608,9 @@ data2 = tx_id2[tx_id2.columns.intersection(all_appts)]
 
 # row 13 is 2023
 # sum all appts from 2023 for each scenario
-tmp1 = data1.iloc[13:26]
+tmp1 = data1.iloc[13:24]
 tmp1.loc['Total'] = tmp1.sum()
-tmp2 = data2.iloc[13:26]
+tmp2 = data2.iloc[13:24]
 tmp2.loc['Total'] = tmp2.sum()
 
 # total number of hiv/tb appts 2023-2035 - sum only the "_median" columns

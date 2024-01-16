@@ -224,3 +224,12 @@ fig.savefig(outputspath / "TB_treatment_delays.png")
 
 plt.show()
 
+##############################################################
+# treatment delay data are aggregated over all draws/runs
+# pop size is 2500000, scale by 5.8 to get full pop size
+# sum instances where tx delay is >10 weeks
+count_immediate_tx = delay1_hist[delay1_hist['value_weeks'] == 2.0].shape[0]
+delay1_hist.shape
+
+count_immediate_tx = delay2_hist[delay2_hist['value_weeks'] == 2.0].shape[0]
+delay2_hist.shape

@@ -419,17 +419,12 @@ ax4.set_ylim([0, 100])
 
 plt.tick_params(axis="both", which="major", labelsize=10)
 
-ax1.text(-0.15, 1.05, 'A)', horizontalalignment='center',
-         verticalalignment='center', transform=ax1.transAxes, fontdict=font)
 
-ax2.text(-0.1, 1.05, 'B)', horizontalalignment='center',
-         verticalalignment='center', transform=ax2.transAxes, fontdict=font)
+ax1.annotate('A', xy=(0.02, 0.9), xycoords='axes fraction', fontsize=12, fontweight='bold')
+ax2.annotate('B', xy=(0.02, 0.9), xycoords='axes fraction', fontsize=12, fontweight='bold')
+ax3.annotate('C', xy=(0.02, 0.9), xycoords='axes fraction', fontsize=12, fontweight='bold')
+ax4.annotate('D', xy=(0.02, 0.9), xycoords='axes fraction', fontsize=12, fontweight='bold')
 
-ax3.text(-0.15, 1.05, 'C)', horizontalalignment='center',
-         verticalalignment='center', transform=ax3.transAxes, fontdict=font)
-
-ax4.text(-0.1, 1.05, 'D)', horizontalalignment='center',
-         verticalalignment='center', transform=ax4.transAxes, fontdict=font)
 
 # handles for legend
 l_baseline = mlines.Line2D([], [], color=baseline_colour, label="Baseline")
@@ -526,8 +521,11 @@ sc2_aids_deaths = num_deaths_aids(results2)
 sum_columns_aids_deaths1 = sc1_aids_deaths.sum(axis=0)
 sum_columns_aids_deaths2 = sc2_aids_deaths.sum(axis=0)
 
+# remove top row which contains cause
+sum_columns_aids_deaths1 = sum_columns_aids_deaths1.iloc[1:]
+sum_columns_aids_deaths2 = sum_columns_aids_deaths2.iloc[1:]
 
-# extract differences in number deaths by run
+# Perform subtraction with fill_value=0
 diff = sum_columns_aids_deaths1.subtract(sum_columns_aids_deaths2, fill_value=0)
 
 # summarise differences in number deaths
@@ -536,4 +534,49 @@ lower_aids_deaths = diff.quantile(q=0.025)
 upper_aids_deaths = diff.quantile(q=0.975)
 
 
+def num_deaths_tb(results_folder):
+    extract_deaths = extract_results(
+        results_folder,
+        module="tlo.methods.demography",
+        key="death",
+        custom_generate_series=(
+            lambda df: df.assign(year=df["date"].dt.year).groupby(
+                ["year", "cause"])["person_id"].count()
+        ),
+        do_scaling=True,
+    )
+    # removes multi-index
+    extract_deaths = extract_deaths.reset_index()
+
+    # select only cause AIDS_TB and AIDS_non_TB
+    num_tb_deaths = extract_deaths.loc[(extract_deaths.year >= 2023)]
+
+    # select years 2023-2035
+    num_tb_deaths = num_tb_deaths.loc[(num_tb_deaths.cause == "TB")]
+
+    # group deaths by year
+    num_tb_deaths = pd.DataFrame(num_tb_deaths.groupby(["year"]).sum())
+
+    return(num_tb_deaths)
+
+
+# differences in deaths
+sc1_tb_deaths = num_deaths_tb(results1)
+sc2_tb_deaths = num_deaths_tb(results2)
+
+# sum columns to get total deaths over full time-period by run
+sum_columns_tb_deaths1 = sc1_tb_deaths.sum(axis=0)
+sum_columns_tb_deaths2 = sc2_tb_deaths.sum(axis=0)
+
+# remove top row which contains cause
+sum_columns_tb_deaths1 = sum_columns_tb_deaths1.iloc[1:]
+sum_columns_tb_deaths2 = sum_columns_tb_deaths2.iloc[1:]
+
+# Perform subtraction with fill_value=0
+diff = sum_columns_tb_deaths1.subtract(sum_columns_tb_deaths2, fill_value=0)
+
+# summarise differences in number deaths
+median_tb_deaths = diff.median()
+lower_tb_deaths = diff.quantile(q=0.025)
+upper_tb_deaths = diff.quantile(q=0.975)
 

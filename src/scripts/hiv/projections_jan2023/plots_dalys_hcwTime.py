@@ -79,7 +79,7 @@ hcw1 = summarise_frac_hcws(results1)
 hcw2 = summarise_frac_hcws(results2)
 
 # %%:  ---------------------------------- DALYS ---------------------------------- #
-TARGET_PERIOD = (Date(2023, 1, 1), Date(2036, 1, 1))
+TARGET_PERIOD = (Date(2023, 1, 1), Date(2034, 1, 1))
 
 
 def num_dalys_by_cause(_df):
@@ -290,7 +290,7 @@ total_dalys_diff = [sc2_sc0_median['Column_Total'],
 # -------------------------- HCW by cadre -----------------------------------------------
 # PMTCT services embedded within ANC care
 
-years_of_simulation = 26
+years_of_simulation = 24
 
 
 def summarise_appt_counts(df_list, appt_type):
@@ -368,12 +368,13 @@ scaling_factor = 145.39609
 
 # produce lists of relevant columns
 # todo excludes usage of Over5OPD and DiagRadio
-tb_appts = ['TBFollowUp', 'TBNew']
+# todo excludes palliative care
+tb_appts = ['TBFollowUp', 'TBNew', 'LabTBMicro']
 hiv_appts = ['VCTNegative', 'VCTPositive', 'EstNonCom', 'NewAdult', 'Peds',
              'MaleCirc']
 all_appts = tb_appts + hiv_appts
 
-# total number of hiv/tb appts 2023-2035 - keep only the "_median" columns
+# total number of hiv/tb appts 2023-2034 - keep only the "_median" columns
 median_appts = [col for col in appt_id0 if col.endswith('_median')]
 data0_median = appt_id0[appt_id0.columns.intersection(median_appts)]
 data1_median = appt_id1[appt_id1.columns.intersection(median_appts)]
@@ -385,11 +386,11 @@ data0 = data0_median.loc[:, data0_median.columns.str.contains(pattern)]
 data1 = data1_median.loc[:, data1_median.columns.str.contains(pattern)]
 data2 = data2_median.loc[:, data2_median.columns.str.contains(pattern)]
 
-# row 12 is 2022
-# all appts from 2022 for each scenario
-tmp0 = data0.iloc[12:26]
-tmp1 = data1.iloc[12:26]
-tmp2 = data2.iloc[12:26]
+# row 13 is 2023
+# all appts from 2023 for each scenario
+tmp0 = data0.iloc[13:24]
+tmp1 = data1.iloc[13:24]
+tmp2 = data2.iloc[13:24]
 
 
 # for every column
@@ -397,7 +398,8 @@ tmp2 = data2.iloc[12:26]
 # store for each year
 def extract_hcw_minutes(df):
     # set up empty df to store outputs
-    output = pd.DataFrame(0, index=df.index, columns=['clinical', 'nursing', 'pharmacy', 'radiography'])
+    output = pd.DataFrame(0, index=df.index,
+                          columns=['clinical', 'nursing', 'pharmacy', 'radiography'])
 
     # remove suffix _median from column names for mapping
     df = df.rename(columns=lambda x: x.replace('_median', ''))
@@ -428,6 +430,13 @@ def extract_hcw_minutes(df):
             (hcw_time.Facility_Level == '1a'), 'Time_Taken_Mins'
             ]
 
+        # radiography time
+        radiography_time = hcw_time.loc[
+            (hcw_time.Appt_Type_Code == appt_type) &
+            (hcw_time.Officer_Category == 'Radiography') &
+            (hcw_time.Facility_Level == '2'), 'Time_Taken_Mins'
+            ]
+
         # multiply df row values by scaling factor then clinical_time then sum and store in output
         if not clinical_time.empty:
             output['clinical'] += df.iloc[:, column] * scaling_factor * clinical_time.values[0]
@@ -437,6 +446,9 @@ def extract_hcw_minutes(df):
 
         if not pharmacy_time.empty:
             output['pharmacy'] += df.iloc[:, column] * scaling_factor * pharmacy_time.values[0]
+
+        if not radiography_time.empty:
+            output['radiography'] += df.iloc[:, column] * scaling_factor * radiography_time.values[0]
 
     return output
 
@@ -536,8 +548,8 @@ def extract_additional_hcw_minutes(df, output):
     # remove suffix _median from column names for mapping
     df = df.rename(columns=lambda x: x.replace('_median', ''))
 
-    # select years 2022-2035
-    df = df.iloc[12:26]
+    # select years 2023-2033
+    df = df.iloc[13:24]
 
     # rename columns for mapping
     df = df.rename({'Tb_Test_Screening': 'Over5OPD',
@@ -607,6 +619,13 @@ hcw_minutes_full_2 = extract_additional_hcw_minutes(tx_list2, hcw_minutes2)
 hcw_minutes_full_0 = (hcw_minutes_full_0 / 60)
 hcw_minutes_full_1 = (hcw_minutes_full_1 / 60)
 hcw_minutes_full_2 = (hcw_minutes_full_2 / 60)
+
+hcw_minutes_full_0.loc['Total'] = hcw_minutes_full_0.sum(numeric_only=False, axis=0)
+hcw_minutes_full_1.loc['Total'] = hcw_minutes_full_1.sum(numeric_only=False, axis=0)
+hcw_minutes_full_2.loc['Total'] = hcw_minutes_full_2.sum(numeric_only=False, axis=0)
+
+hcw_minutes_full_1['Total'] = hcw_minutes_full_1.sum(axis=1)
+hcw_minutes_full_2['Total'] = hcw_minutes_full_2.sum(axis=1)
 
 # -------------------------- plots ---------------------------- #
 # HCW time by year - plot for each scenario
