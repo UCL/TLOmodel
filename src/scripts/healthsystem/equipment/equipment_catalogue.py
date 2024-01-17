@@ -109,6 +109,12 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
     output_summary_file_name = 'equipment_summary__module_name_event_name_treatment_id' + suffix_file_names + '.csv'
     # ---
 
+    # %%% Load RF
+    # Equipment
+    equip_resource_items_pkgs_df = pd.read_csv(
+        'resources/healthsystem/infrastructure_and_equipment/ResourceFile_Equipment.csv'
+    )
+
     # %% Catalog equipment by all HSI event details
     sim_equipment = get_monthly_hsi_event_counts(results_folder)
     sim_equipment_df = pd.DataFrame(sim_equipment)
@@ -119,8 +125,15 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
     def details_col_to_str(details_col):
         return details_col.apply(lambda x: ', '.join(map(str, x)))
 
-    def lists_of_strings_to_strings_of_list(list_of_strings_col):
-        return list_of_strings_col.apply(lambda x: "['" + "', '".join(map(str, x)) + "']")
+    def get_equip_item_name_from_item_code(lookup_df: pd.DataFrame, equip_item_code: str) -> int:
+        """Helper function to provide the equip_item_code (an int) when provided with the equip_item_name of the item"""
+        return str(pd.unique(lookup_df.loc[lookup_df["Equip_Code"] == equip_item_code, "Equip_Item"])[0])
+
+    def lists_of_equip_item_codes_to_strings_of_list_of_equip_item_names(list_of_equip_item_codes_col):
+        return list_of_equip_item_codes_col.apply(
+            lambda x:
+            str(sorted([get_equip_item_name_from_item_code(equip_resource_items_pkgs_df, item_code) for item_code in x]))
+        )
 
     def strings_of_list_to_lists_of_strings(strings_of_list_col):
         lists_of_strings_col = strings_of_list_col.apply(lambda x: x.strip('][').split("'"))
@@ -152,7 +165,7 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
         # Make values in 'appt_footprint', 'beddays_footprint', and 'equipment' columns to be string
         df_col['appt_footprint'] = details_col_to_str(df_col['appt_footprint'])
         df_col['beddays_footprint'] = details_col_to_str(df_col['beddays_footprint'])
-        df_col['equipment'] = lists_of_strings_to_strings_of_list(df_col['equipment'])
+        df_col['equipment'] = lists_of_equip_item_codes_to_strings_of_list_of_equip_item_names(df_col['equipment'])
         df_col = (df_col.droplevel(level=1)
                   .set_index(['module_name', 'event_name', 'treatment_id', 'facility_level', 'appt_footprint',
                               'beddays_footprint', 'equipment'], append=True))
@@ -199,8 +212,7 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
         ).sum()
 
     # Remove rows with no equipment used
-    equipment_counts_by_time_and_requested_details.drop("['']", level='equipment', axis=0, inplace=True)
-    # Split the equipment by an item per row
+    equipment_counts_by_time_and_requested_details.drop("[]", level='equipment', axis=0, inplace=True)
     equipment_counts_by_time_and_requested_details['equipment'] = \
         equipment_counts_by_time_and_requested_details.index.get_level_values('equipment')
     equipment_counts_by_time_and_requested_details.index = \
@@ -230,4 +242,5 @@ if __name__ == "__main__":
         results_folder=args.results_folder,
         output_folder=args.results_folder,
     )
-# NB. Edit run configuration, the Parameters: "./outputs/sejjej5@ucl.ac.uk/long_run_all_diseases-2023-09-04T233551Z"
+# NB. Edit run configuration, the Parameters:
+# "./outputs/sejjej5@ucl.ac.uk/equip_jobs/long_run_all_diseases-2023-09-04T233551Z"
