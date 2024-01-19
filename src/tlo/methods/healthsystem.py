@@ -343,8 +343,9 @@ class HSI_Event:
             "values"
         )
 
-    def get_equip_item_code_from_item_name(self, lookup_df: pd.DataFrame, equip_item_name: str) -> int:
+    def get_equip_item_code_from_item_name(self, equip_item_name: str) -> int:
         """Helper function to provide the equip_item_code (an int) when provided with the equip_item_name of the item"""
+        lookup_df = self.sim.modules['HealthSystem'].parameters['equip_item_and_package_code_lookups']
         return int(pd.unique(lookup_df.loc[lookup_df["Equip_Item"] == equip_item_name, "Equip_Code"])[0])
 
     def set_equipment_essential_to_run_event(self, set_of_equip: Set[str]) -> None:
@@ -359,7 +360,11 @@ class HSI_Event:
                 "equipment item names from ResourceFile_Equipment.csv."
             )
 
-        self.ESSENTIAL_EQUIPMENT  = set_of_equip
+        if set_of_equip not in [set(), None, {''}]:
+            equip_codes = set(self.get_equip_item_code_from_item_name(item_name) for item_name in set_of_equip)
+            self.ESSENTIAL_EQUIPMENT = equip_codes
+        else:
+            self.ESSENTIAL_EQUIPMENT = set()
 
     def add_equipment(self, set_of_equip: Set[str]) -> None:
         """Helper function to update equipment.
@@ -375,12 +380,7 @@ class HSI_Event:
             )
         # from the set of equip item names create a set of item codes
         # this function is calling parameters from this
-        equip_codes = set(
-            self.get_equip_item_code_from_item_name(
-                self.sim.modules['HealthSystem'].parameters['equip_item_and_package_code_lookups'],
-                item_name
-            ) for item_name in set_of_equip
-        )
+        equip_codes = set(self.get_equip_item_code_from_item_name(item_name) for item_name in set_of_equip)
         self.EQUIPMENT.update(equip_codes)
 
     def initialise(self):
