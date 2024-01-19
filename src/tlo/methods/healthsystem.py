@@ -451,6 +451,16 @@ class HSI_Event:
             for pkg_name in set_of_pkgs:
                 self.EQUIPMENT.update(self.get_equip_item_codes_from_pkg_name(pkg_name))
 
+    def check_availability_essential_equip(self, essential_equip_set):
+        if essential_equip_set:
+            return self.get_availability_equip(essential_equip_set)  # True of False
+        return True
+
+    def get_availability_equip(self, equip_set):
+        # TODO: update with implementation of essential equipment availability for the HSI event to run
+        #  for now, always available
+        return True
+
     def initialise(self):
         """Initialise the HSI:
         * Set the facility_info
@@ -2232,6 +2242,7 @@ class HealthSystem(Module):
 
     def run_population_level_events(self, _list_of_population_hsi_event_tuples: List[HSIEventQueueItem]) -> None:
         """Run a list of population level events."""
+        # TODO: check availability of ess. equip: if unavailable do not run the event
         while len(_list_of_population_hsi_event_tuples) > 0:
             pop_level_hsi_event_tuple = _list_of_population_hsi_event_tuples.pop()
             pop_level_hsi_event = pop_level_hsi_event_tuple.hsi_event
@@ -2285,7 +2296,7 @@ class HealthSystem(Module):
 
                 # Mode 0: All HSI Event run, with no squeeze
                 # Mode 1: All HSI Events run with squeeze provided latter is not inf
-                ok_to_run = True
+                ok_to_run = True  # TODO: False if essential equipment unavailable
 
                 if self.mode_appt_constraints == 1 and squeeze_factor == float('inf'):
                     ok_to_run = False
@@ -2625,7 +2636,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         squeeze_factor = 0.
 
                         # Check if any of the officers required have run out.
-                        out_of_resources = False
+                        out_of_resources = False  # TODO: True if essential equipment unavailable
                         for officer, call in original_call.items():
                             # If any of the officers are not available, then out of resources
                             if officer not in set_capabilities_still_available:
