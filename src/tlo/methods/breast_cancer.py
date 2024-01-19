@@ -663,7 +663,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         if not pd.isnull(df.at[person_id, "brc_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
-        df.brc_breast_lump_discernible_investigated = True
+        df.at[person_id, 'brc_breast_lump_discernible_investigated'] = True
 
         # Use a biopsy to diagnose whether the person has breast Cancer:
         # todo: request consumables needed for this
