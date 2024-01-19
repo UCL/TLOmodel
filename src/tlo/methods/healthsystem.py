@@ -6,7 +6,7 @@ from collections import Counter, defaultdict
 from collections.abc import Iterable
 from itertools import repeat
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional, Tuple, Union, Set
+from typing import Dict, List, NamedTuple, Optional, Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
