@@ -6,7 +6,7 @@ from collections import Counter, defaultdict
 from collections.abc import Iterable
 from itertools import repeat
 from pathlib import Path
-from typing import Dict, List, NamedTuple, Optional, Tuple, Union
+from typing import Dict, List, NamedTuple, Optional, Tuple, Union, Set
 
 import numpy as np
 import pandas as pd
@@ -347,7 +347,7 @@ class HSI_Event:
         """Helper function to provide the equip_item_code (an int) when provided with the equip_item_name of the item"""
         return int(pd.unique(lookup_df.loc[lookup_df["Equip_Item"] == equip_item_name, "Equip_Code"])[0])
 
-    def set_equipment_essential_to_run_event(self, set_of_equip):
+    def set_equipment_essential_to_run_event(self, set_of_equip: Set[str]) -> None:
         """Helper function to set essential equipment.
 
         Should be passed a set of equipment items names (strings) or an empty set.
@@ -361,7 +361,7 @@ class HSI_Event:
 
         self.ESSENTIAL_EQUIPMENT  = set_of_equip
 
-    def add_equipment(self, set_of_equip):
+    def add_equipment(self, set_of_equip: Set[str]) -> None:
         """Helper function to update equipment.
 
         Should be passed a set of equipment item names (strings).
@@ -375,12 +375,13 @@ class HSI_Event:
             )
         # from the set of equip item names create a set of item codes
         # this function is calling parameters from this
-        equip_codes = set(self.get_equip_item_code_from_item_name(
-            self.sim.modules['HealthSystem'].parameters['equip_item_and_package_code_lookups'], item_name
-        ) for item_name in set_of_equip
+        equip_codes = set(
+            self.get_equip_item_code_from_item_name(
+                self.sim.modules['HealthSystem'].parameters['equip_item_and_package_code_lookups'],
+                item_name
+            ) for item_name in set_of_equip
         )
         self.EQUIPMENT.update(equip_codes)
-        self.EQUIPMENT.discard('')
 
     def initialise(self):
         """Initialise the HSI:
