@@ -348,6 +348,12 @@ class HSI_Event:
         lookup_df = self.sim.modules['HealthSystem'].parameters['equip_item_and_package_code_lookups']
         return int(pd.unique(lookup_df.loc[lookup_df["Equip_Item"] == equip_item_name, "Equip_Code"])[0])
 
+    def get_equip_item_codes_from_pkg_name(self, equip_pkg_name: str) -> Set[int]:
+        """Helper function to provide the equip_item_codes (a set of ints) when provided with the equip_pkg_name of the
+        equipment package"""
+        lookup_df = self.sim.modules['HealthSystem'].parameters['equip_item_and_package_code_lookups']
+        return set(lookup_df.loc[lookup_df["Equip_Pkg"] == equip_pkg_name, "Equip_Code"])
+
     def set_equipment_essential_to_run_event(self, set_of_equip: Set[str]) -> None:
         """Helper function to set essential equipment.
 
@@ -378,10 +384,25 @@ class HSI_Event:
                 "Argument to add_equipment should be a non-empty set of strings of "
                 "equipment item names from ResourceFile_Equipment.csv."
             )
-        # from the set of equip item names create a set of item codes
-        # this function is calling parameters from this
+        # from the set of equip item names create a set of equip item codes
         equip_codes = set(self.get_equip_item_code_from_item_name(item_name) for item_name in set_of_equip)
         self.EQUIPMENT.update(equip_codes)
+
+    def add_equipment_from_pkg(self, set_of_pkgs: Set[str]) -> None:
+        """Helper function to update equipment with equipment from pkg(s).
+
+        Should be passed a set of equipment pkgs names (strings).
+        """
+        # Update EQUIPMENT if the given set_of_pkgs in correct format, ie a non-empty set of strings
+        if not isinstance(set_of_pkgs, set) or any(not isinstance(item, str) for item in set_of_pkgs) or \
+           (set_of_pkgs in [set(), None, {''}]):
+            raise ValueError(
+                "Argument to add_equipment_from_pkg should be a non-empty set of strings of "
+                "equipment pkg names from ResourceFile_Equipment.csv."
+            )
+        # update EQUIPMENT with eqip item codes from equip pkgs with provided names
+        for pkg_name in set_of_pkgs:
+            self.EQUIPMENT.update(self.get_equip_item_codes_from_pkg_name(pkg_name))
 
     def initialise(self):
         """Initialise the HSI:
