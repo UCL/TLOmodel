@@ -125,14 +125,20 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
     def details_col_to_str(details_col):
         return details_col.apply(lambda x: ', '.join(map(str, x)))
 
-    def get_equip_item_name_from_item_code(lookup_df: pd.DataFrame, equip_item_code: str) -> int:
-        """Helper function to provide the equip_item_code (an int) when provided with the equip_item_name of the item"""
+    def get_equip_item_name_from_item_code(equip_item_code: int) -> str:
+        """Helper function to provide the equip item name (a string) when provided with the equip_item_code (an int)."""
+        lookup_df = equip_resource_items_pkgs_df
         return str(pd.unique(lookup_df.loc[lookup_df["Equip_Code"] == equip_item_code, "Equip_Item"])[0])
+
+    def get_equip_item_code_from_item_name(equip_item_name: str) -> int:
+        """Helper function to provide the equip item code (an int) when provided with the equip_item_name (a string)"""
+        lookup_df = equip_resource_items_pkgs_df
+        return int(pd.unique(lookup_df.loc[lookup_df["Equip_Item"] == equip_item_name, "Equip_Code"])[0])
 
     def lists_of_equip_item_codes_to_strings_of_list_of_equip_item_names(list_of_equip_item_codes_col):
         return list_of_equip_item_codes_col.apply(
             lambda x:
-            str(sorted([get_equip_item_name_from_item_code(equip_resource_items_pkgs_df, item_code) for item_code in x]))
+            str(sorted([get_equip_item_name_from_item_code(item_code) for item_code in x]))
         )
 
     def strings_of_list_to_lists_of_strings(strings_of_list_col):
@@ -221,7 +227,10 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
         equipment_counts_by_time_and_requested_details['equipment']
     )
     exploded_df = equipment_counts_by_time_and_requested_details.explode('equipment')
-    exploded_df = exploded_df.set_index(['equipment'], append=True)
+    # Add column with equip item code
+    exploded_df['equip_code'] = exploded_df['equipment'].apply(lambda x: get_equip_item_code_from_item_name(x))
+    exploded_df = exploded_df.set_index(['equipment', 'equip_code'], append=True)
+
     # Sum values with the same multi-index
     exploded_df = exploded_df.groupby(level=exploded_df.index.names).sum()
 
