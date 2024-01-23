@@ -451,14 +451,16 @@ class HSI_Event:
             for pkg_name in set_of_pkgs:
                 self.EQUIPMENT.update(self.get_equip_item_codes_from_pkg_name(pkg_name))
 
-    def check_availability_essential_equip(self, essential_equip_set):
-        if essential_equip_set:
-            return self.get_availability_equip(essential_equip_set)  # True of False
-        return True
-
-    def get_availability_equip(self, equip_set):
+    def check_availability_equip_item(self, equip_item):
         # TODO: update with implementation of essential equipment availability for the HSI event to run
         #  for now, always available
+        return True  # True of False
+
+    def get_availability_essential_equip(self, essential_equip_set):
+        # check essential equipment availability if any
+        if essential_equip_set:
+            for item in essential_equip_set:
+                return self.check_availability_equip_item(item)  # True of False
         return True
 
     def initialise(self):
@@ -2296,7 +2298,8 @@ class HealthSystem(Module):
 
                 # Mode 0: All HSI Event run, with no squeeze
                 # Mode 1: All HSI Events run with squeeze provided latter is not inf
-                ok_to_run = True  # TODO: False if essential equipment unavailable
+                ok_to_run = self.get_availability_essential_equip(event.ESSENTIAL_EQUIPMENT)
+                # True if essential equipment available
 
                 if self.mode_appt_constraints == 1 and squeeze_factor == float('inf'):
                     ok_to_run = False
@@ -2635,8 +2638,10 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         # based on queue information, and we assume no squeeze ever takes place.
                         squeeze_factor = 0.
 
-                        # Check if any of the officers required have run out.
-                        out_of_resources = False  # TODO: True if essential equipment unavailable
+                        # Check if any essential equipment unavailable or any of the officers required have run out.
+                        out_of_resources = \
+                            not self.get_availability_essential_equip(next_event_tuple.hsi_event.ESSENTIAL_EQUIPMENT)
+                        # True if any of essential equipment unavailable
                         for officer, call in original_call.items():
                             # If any of the officers are not available, then out of resources
                             if officer not in set_capabilities_still_available:
