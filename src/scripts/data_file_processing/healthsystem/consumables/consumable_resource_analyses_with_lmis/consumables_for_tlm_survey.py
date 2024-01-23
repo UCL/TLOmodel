@@ -1,7 +1,7 @@
 """
 This script chooses a subset of consumables on which data will be collected through the TLM Data collection protocol.
 A representative sample of consumables is selected using the stratified sampling approach. Consumables are divided into
-8 groups based on the following combination of characteristics - 1. Top 20 consumables demanded within the TLO model,
+8 groups based on the following combination of characteristics - 1. Top 20 consumables demanded within the TLO model (Oversampled),
 2. General vs Disease-specific consumables, 3. Consumables split into 4 groups based on quartiles of average availability
 for each level of care. Strata with only 1 consumable were dropped from the list before stratified sampling.
 """
@@ -140,13 +140,46 @@ df_by_item_fac = df_by_item_fac[df_by_item_fac['sampling_group'].notna()]
 df_by_item_fac = df_by_item_fac[df_by_item_fac['available_prop'].notna()]
 
 # Collapse by item_code
-groupby_list2 = ['item_code', 'consumable_name_tlo']
-columns_to_preserve2 = ['module_name', 'category', 'data_source', 'sampling_group', 'top20_requested', 'general_vs_disease-specific', 'stockout_group']
+groupby_list2 = ['consumable_name_tlo']
+columns_to_preserve2 = ['item_code', 'module_name', 'category', 'data_source', 'sampling_group', 'top20_requested', 'general_vs_disease-specific', 'stockout_group']
 df_by_item = collapse_stockout_data(df_by_item_fac, groupby_list2, columns_to_preserve2)
+
+df_by_item = df_by_item[df_by_item['data_source'] != 'other']
 
 group_size = df_by_item['sampling_group'].value_counts()
 min_group_size_index = group_size[group_size >1].index
 df_by_item = df_by_item[df_by_item.sampling_group.isin(min_group_size_index)]
 
-train, test = train_test_split(df_by_item, test_size=21/len(df_by_item), stratify=df_by_item['sampling_group'], random_state=458)
+train, test = train_test_split(df_by_item, test_size=21/len(df_by_item), stratify=df_by_item['sampling_group'], random_state=876)
 test.to_csv(outputfilepath / "ResourceFile_tlm_survey_sample.csv")
+
+"""
+from sklearn.model_selection import StratifiedShuffleSplit
+# Define the number of samples you want per stratum
+samples_per_stratum = 20
+
+# Create an instance of StratifiedShuffleSplit
+stratified_splitter = StratifiedShuffleSplit(n_splits=1, test_size=samples_per_stratum, random_state=42)
+
+# Split the population into training and test sets
+for train_index, test_index in stratified_splitter.split(df_by_item, df_by_item['sampling_group']):
+    stratified_sample = df_by_item.iloc[test_index]
+"""
+
+# Assuming you have a DataFrame df_by_item and want to oversample from a specific stratum
+stratum_to_oversample = [3,7,11,15]  # Replace with the actual stratum name
+
+# Create an instance of StratifiedShuffleSplit
+stratified_splitter = StratifiedShuffleSplit(n_splits=1, test_size=16, random_state=123)
+
+# Get the indices for training and testing sets
+for train_index, test_index in stratified_splitter.split(df_by_item, df_by_item['sampling_group']):
+    train_set = df_by_item.iloc[train_index]
+    test_set = df_by_item.iloc[test_index]
+
+# Oversample from the specified stratum in the training set
+oversampled_stratum = train_set[train_set['sampling_group'].isin(stratum_to_oversample)].sample(n=4, replace=True, random_state=123)
+
+# Combine oversampled stratum with the rest of the training set
+test_set_oversampled = pd.concat([test_set, oversampled_stratum])
+test_set_oversampled.to_csv(outputfilepath / "ResourceFile_tlm_survey_sample.csv")
