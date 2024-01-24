@@ -189,8 +189,7 @@ class HSI_Event:
         #                                                    each HSI event, showing that equipment setup was thought
         #                                                    through for the event.
         self.EQUIPMENT = set()
-        self._hsi_event_names_missing_ess_equip = set()  # The names of hsi events for which the settings of
-        #                                                       essential equipment is missing.
+
     @property
     def bed_days_allocated_to_this_event(self):
         if self._received_info_about_bed_days is None:
@@ -440,7 +439,7 @@ class HSI_Event:
         # Set essential equip to empty set if not exists and warn about missing settings
         if self.ESSENTIAL_EQUIPMENT is None:
             self.set_equipment_essential_to_run_event({''})
-            self._hsi_event_names_missing_ess_equip.update(self.__class__.__name__)
+            self.sim.modules['HealthSystem']._hsi_event_names_missing_ess_equip.update(self.__class__.__name__)
 
     def _check_if_appt_footprint_can_run(self):
         """Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
@@ -475,19 +474,6 @@ class HSI_Event:
             ),
             equipment=(tuple(sorted(self.EQUIPMENT)))
         )
-
-    def on_simulation_end(self):
-        """Do tasks at the end of the simulation: Raise warning and enter to log the set of hsi event names which were
-        initialised but the settings of essential equipment is missing."""
-        if self._hsi_event_names_missing_ess_equip:
-            warnings.warn(UserWarning(f"The HSI event names which were initialised but the settings of essential"
-                                      f"equipment is missing:/n"
-                                      f"{self._hsi_event_names_missing_ess_equip}"))
-            logger.info(
-                key="hsi_event_names_missing_ess_equip",
-                data={"event_names": self._hsi_event_names_missing_ess_equip}
-            )
-
 
 class HSIEventWrapper(Event):
     """This is wrapper that contains an HSI event.
@@ -858,6 +844,9 @@ class HealthSystem(Module):
                 "'year', 'simulation' or None."
             )
 
+        self._hsi_event_names_missing_ess_equip = set()  # The names of HSI events for which the settings of essential
+        #                                                   equipment is missing.
+
     def read_parameters(self, data_folder):
 
         path_to_resourcefiles_for_healthsystem = Path(self.resourcefilepath) / 'healthsystem'
@@ -1017,7 +1006,9 @@ class HealthSystem(Module):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
 
     def on_simulation_end(self):
-        """Put out to the log the information from the tracker of the last day of the simulation"""
+        """Put out to the log the information from the tracker of the last day of the simulation.
+        Raise warning and enter to log the set of hsi event names which were initialised but the settings of essential
+        equipment is missing."""
         self.bed_days.on_simulation_end()
         self.consumables.on_simulation_end()
         if self._hsi_event_count_log_period == "simulation":
@@ -1042,6 +1033,15 @@ class HealthSystem(Module):
                     }
                 }
             )
+
+            if self._hsi_event_names_missing_ess_equip:
+                warnings.warn(UserWarning(f"The HSI event names which were initialised but the settings of essential"
+                                          f"equipment is missing:/n"
+                                          f"{self._hsi_event_names_missing_ess_equip}"))
+                logger_summary.info(
+                    key="hsi_event_names_missing_ess_equip",
+                    data={"event_names": self._hsi_event_names_missing_ess_equip}
+                )
 
     def setup_priority_policy(self):
 
