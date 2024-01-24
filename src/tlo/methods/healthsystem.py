@@ -183,12 +183,14 @@ class HSI_Event:
         self._received_info_about_bed_days = None
         self.expected_time_requests = {}
         self.facility_info = None
+        self.ESSENTIAL_EQUIPMENT = None
         # self.set_equipment_essential_to_run_event({''})  # HSI needs this attribute, but it is not defined in the Base
         #                                                    class to allow verification of its existence as a test for
         #                                                    each HSI event, showing that equipment setup was thought
         #                                                    through for the event.
         self.EQUIPMENT = set()
-
+        self._hsi_event_names_missing_ess_equip = set()  # The names of hsi events for which the settings of
+        #                                                       essential equipment is missing.
     @property
     def bed_days_allocated_to_this_event(self):
         if self._received_info_about_bed_days is None:
@@ -435,6 +437,11 @@ class HSI_Event:
         # Do checks
         _ = self._check_if_appt_footprint_can_run()
 
+        # Set essential equip to empty set if not exists and warn about missing settings
+        if self.ESSENTIAL_EQUIPMENT is None:
+            self.set_equipment_essential_to_run_event({''})
+            self._hsi_event_names_missing_ess_equip.update(self.__class__.__name__)
+
     def _check_if_appt_footprint_can_run(self):
         """Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
         this does not demand officers that are _never_ available), and issue warning if not."""
@@ -468,6 +475,18 @@ class HSI_Event:
             ),
             equipment=(tuple(sorted(self.EQUIPMENT)))
         )
+
+    def on_simulation_end(self):
+        """Do tasks at the end of the simulation: Raise warning and enter to log the set of hsi event names which were
+        initialised but the settings of essential equipment is missing."""
+        if self._hsi_event_names_missing_ess_equip:
+            warnings.warn(UserWarning(f"The HSI event names which were initialised but the settings of essential"
+                                      f"equipment is missing:/n"
+                                      f"{self._hsi_event_names_missing_ess_equip}"))
+            logger.info(
+                key="hsi_event_names_missing_ess_equip",
+                data={"event_names": self._hsi_event_names_missing_ess_equip}
+            )
 
 
 class HSIEventWrapper(Event):
