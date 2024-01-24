@@ -18,6 +18,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import squarify
+from pandas.api.types import is_numeric_dtype
 
 from tlo import Date, Simulation, logging, util
 from tlo.logging.reader import LogData
@@ -282,9 +283,6 @@ def extract_results(results_folder: Path,
     # get number of draws and numbers of runs
     info = get_scenario_info(results_folder)
 
-    def is_number(element):
-        return isinstance(element, (int, float))
-
     # Collect results from each draw/run
     res = dict()
     for draw in range(info['number_of_draws']):
@@ -296,7 +294,7 @@ def extract_results(results_folder: Path,
                 df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
                 output_from_eval: pd.Series = generate_series(df)
                 assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
-                if output_from_eval.apply(is_number).all():
+                if is_numeric_dtype(output_from_eval):
                     res[draw_run] = output_from_eval * get_multiplier(draw, run)
                 else:
                     res[draw_run] = output_from_eval
