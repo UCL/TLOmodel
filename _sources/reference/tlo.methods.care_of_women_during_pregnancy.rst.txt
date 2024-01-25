@@ -169,7 +169,7 @@ tlo.methods.care_of_women_during_pregnancy module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Contraception', 'Lifestyle', 'Labour'}
+     ADDITIONAL_DEPENDENCIES : {'Contraception', 'Labour', 'Lifestyle'}
 
      INIT_DEPENDENCIES : {'HealthSystem', 'PregnancySupervisor', 'Demography'}
 

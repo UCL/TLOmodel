@@ -105,13 +105,13 @@ tlo.methods.copd module
 
      ADDITIONAL_DEPENDENCIES : set()
 
-     CAUSES_OF_DEATH : {'COPD_cat0': <tlo.methods.causes.Cause object at 0x12f2e2690>, 'COPD_cat1': <tlo.methods.causes.Cause object at 0x12f2e1f10>, 'COPD_cat2': <tlo.methods.causes.Cause object at 0x12f2e3610>, 'COPD_cat3': <tlo.methods.causes.Cause object at 0x12f2e08d0>, 'COPD_cat4': <tlo.methods.causes.Cause object at 0x12f2e2b10>, 'COPD_cat5': <tlo.methods.causes.Cause object at 0x12f2e04d0>, 'COPD_cat6': <tlo.methods.causes.Cause object at 0x12f2e0d90>}
+     CAUSES_OF_DEATH : {'COPD_cat0': <tlo.methods.causes.Cause object at 0x12cd405d0>, 'COPD_cat1': <tlo.methods.causes.Cause object at 0x12cd42f10>, 'COPD_cat2': <tlo.methods.causes.Cause object at 0x12cd43350>, 'COPD_cat3': <tlo.methods.causes.Cause object at 0x12cd43fd0>, 'COPD_cat4': <tlo.methods.causes.Cause object at 0x12cd41c10>, 'COPD_cat5': <tlo.methods.causes.Cause object at 0x12cd42c50>, 'COPD_cat6': <tlo.methods.causes.Cause object at 0x12cd40650>}
 
-     CAUSES_OF_DISABILITY : {'COPD': <tlo.methods.causes.Cause object at 0x12f2e0310>}
+     CAUSES_OF_DISABILITY : {'COPD': <tlo.methods.causes.Cause object at 0x12cd42cd0>}
 
      INIT_DEPENDENCIES : {'SymptomManager', 'Lifestyle'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
+     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
 
      **Functions (defined or overridden in class Copd):**
 

@@ -445,17 +445,17 @@ tlo.methods.pregnancy_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'HealthSystem', 'CareOfWomenDuringPregnancy', 'Contraception', 'Lifestyle', 'Labour'}
+     ADDITIONAL_DEPENDENCIES : {'Contraception', 'Labour', 'Lifestyle', 'HealthSystem', 'CareOfWomenDuringPregnancy'}
 
-     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x12f2ece90>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x12f2ec910>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x12f2eead0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12f2eef10>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x12f2ee7d0>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x12f2ef590>, 'eclampsia': <tlo.methods.causes.Cause object at 0x12f2ec490>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x12f2ed490>}
+     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x12cdef750>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x12cdeed50>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x12cdef9d0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12cded550>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x12cdedb90>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x12cded190>, 'eclampsia': <tlo.methods.causes.Cause object at 0x12cded150>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x12cdecf90>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x12f2eef90>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x12cdee510>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
      METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'Malaria', 'Hiv', 'CardioMetabolicDisorders', 'HealthBurden'}
+     OPTIONAL_INIT_DEPENDENCIES : {'Hiv', 'HealthBurden', 'CardioMetabolicDisorders', 'Malaria'}
 
      **Functions (defined or overridden in class PregnancySupervisor):**
 
