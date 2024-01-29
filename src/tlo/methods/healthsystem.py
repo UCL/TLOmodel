@@ -1042,6 +1042,10 @@ class HealthSystem(Module):
                     key="hsi_event_names_missing_ess_equip",
                     data={"event_names": self._hsi_event_names_missing_ess_equip}
                 )
+                # TODO: smt odd is going on, some hsi events were logged, according to my equipment_catalogue script,
+                #  for which the essential equipment is not define, but they are not included in this warning.
+                #  E.g. HSI_BladderCancer_Investigation_Following_Blood_Urine, HSI_BladderCancer_StartTreatment,
+                #  HSI_BreastCancer_Investigation_Following_breast_lump_discernible, ...
 
     def setup_priority_policy(self):
 
