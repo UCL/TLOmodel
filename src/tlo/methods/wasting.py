@@ -44,13 +44,13 @@ class Wasting(Module):
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'SAM': Cause(gbd_causes='Protein-energy malnutrition',
+        'Severe Acute Malnutrition': Cause(gbd_causes='Protein-energy malnutrition',
                      label='Childhood Wasting')
     }
 
     # Declare Causes of Death and Disability
     CAUSES_OF_DISABILITY = {
-        'SAM': Cause(gbd_causes='Protein-energy malnutrition',
+        'Severe Acute Malnutrition': Cause(gbd_causes='Protein-energy malnutrition',
                      label='Childhood Wasting')
     }
 
@@ -292,11 +292,11 @@ class Wasting(Module):
         wasting_prevalence = self.wasting_models.get_wasting_prevalence()
 
         # Assign wasting categories in young children at initiation
-        for agegp in [(0, 5), (6, 11), (12, 23), (24, 35), (36, 47), (48, 59)]:  # in months
-            low_bound_age_in_years = agegp[0] / 12.0
-            high_bound_age_in_years = (1 + agegp[1]) / 12.0
+        for low_bound_mnts, high_bound_mnths in [(0, 5), (6, 11), (12, 23), (24, 35), (36, 47), (48, 59)]:  # in months
+            low_bound_age_in_years = low_bound_mnts / 12.0
+            high_bound_age_in_years = (1 + high_bound_mnths) / 12.0
             # linear model external variables
-            lm_ext_var = f'{agegp[0]}_{agegp[1]}mo'
+            lm_ext_var = f'{low_bound_mnts}_{high_bound_mnths}mo'
             mask = (df.is_alive & df.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
                                                              inclusive='left'))
             prevalence_of_wasting = wasting_prevalence.predict(df.loc[mask], agrp='None', agrp_scaling=lm_ext_var)
@@ -522,13 +522,6 @@ class Wasting(Module):
         df = self.sim.population.props
         for person_id in index_under5:
             self.clinical_acute_malnutrition_state(person_id=person_id, pop_dataframe=df)
-
-    def on_hsi_alert(self, person_id, treatment_id):
-        """
-        This is called whenever there is an HSI event commissioned by one of the other disease modules.
-        """
-        logger.debug(key='message', data=f'This is Wasting, being alerted about a health system interaction for '
-                                         f'person {person_id} and treatment {treatment_id}')
 
     def report_daly_values(self):
         """
@@ -871,7 +864,7 @@ class SevereAcuteMalnutritionDeathEvent(Event, IndividualScopeEventMixin):
             df.at[person_id, 'un_sam_death_date'] = self.sim.date
             self.sim.modules['Demography'].do_death(
                 individual_id=person_id,
-                cause='SAM',
+                cause='Severe Acute Malnutrition',
                 originating_module=self.module)
 
 
@@ -1123,7 +1116,7 @@ class HSI_Wasting_InpatientCareForComplicated_SAM(HSI_Event, IndividualScopeEven
         the_appt_footprint['U5Malnutr'] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Inpatient_care_for_complicated_SAM'
+        self.TREATMENT_ID = 'Undernutrition_Feeding_Inpatient'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.ALERT_OTHER_DISEASES = []
@@ -1136,8 +1129,6 @@ class HSI_Wasting_InpatientCareForComplicated_SAM(HSI_Event, IndividualScopeEven
         if not df.at[person_id, 'is_alive']:
             return
 
-        # Do here whatever happens to an individual during this health system interaction event
-        # ~~~~~~~~~~~~~~~~~~~~~~
         # Make request for some consumables
         consumables = self.sim.modules['HealthSystem'].parameters['item_and_package_code_lookups']
 
@@ -1314,20 +1305,17 @@ class WastingModels:
         return wasting_prevalence
 
     def get_moderate_acute_malnutrition_recovery(self):
-        """ predict moderate acute malnutrition recovery amongst young children less than 5 years
-        :params df: population dataframe
+        """ get moderate acute malnutrition recovery amongst young children less than 5 years
         """
         return self.__Acute_Malnutrition_Recovery_MAM
 
     def get_severe_acute_malnutrition_recovery(self):
-        """ predict severe acute malnutrition recovery amongst young children less than 5 years
-       :params df: population dataframe
+        """ get severe acute malnutrition recovery amongst young children less than 5 years
        """
         return self.__Acute_Malnutrition_Recovery_SAM
 
     def get_wasting_progression(self):
-        """ predict wasting progression amongst young children less than 5 years
-       :params df: population dataframe
+        """ get wasting progression amongst young children less than 5 years
        """
         return self.__Severe_Wasting_Progression
 

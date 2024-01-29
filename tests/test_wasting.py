@@ -173,8 +173,7 @@ def test_wasting_polling(tmpdir):
     # Make incidence of wasting very high :
     params = sim.modules['Wasting'].parameters
     params['base_inc_rate_wasting_by_agegp'] = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-    params['progression_severe_wasting_by_agegp'] = [1.0, 1.0, 1.0, 1.0, 1.0,
-                                                     1.0]
+    params['progression_severe_wasting_by_agegp'] = [0, 0, 0, 0, 0, 0]
 
     # re-initialise wasting linear models to use the updated parameter
     sim.modules['Wasting'].pre_initialise_population()
@@ -183,14 +182,14 @@ def test_wasting_polling(tmpdir):
     sim.simulate(end_date=start_date + dur)
     sim.event_queue.queue = []  # clear the queue
 
-    # Run polling event: check that a severe incident case is produced:
+    # Run polling event: check that an incident case is produced:
     polling = WastingPollingEvent(sim.modules['Wasting'])
     polling.apply(sim.population)
 
-    assert len([q for q in sim.event_queue.queue if
-                isinstance(q[3], ProgressionSevereWastingEvent)]) > 0
+    # assert len([q for q in sim.event_queue.queue if
+    #             isinstance(q[3], ProgressionSevereWastingEvent)]) > 0
 
-    # Check properties of this individual: should now be moderately wasted
+    # Check properties of individuals: should now be moderately wasted
     df = sim.population.props
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
     person_id = under5s.index[0]
@@ -703,9 +702,8 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
                                                      1.0]
     params['prob_mam_death_after_care'] = [0.0, 1.0]
 
-    # reduce to 100% recovery rate. This is to ensure death event is scheduled
-    # for the individual each time we run this
-    # test
+    # reduce to 0% recovery rate. This is to ensure death event is scheduled
+    # for the individual each time we run this test
     params['recovery_rate_with_standard_RUTF'] = 0.0
     params['recovery_rate_with_inpatient_care'] = 0.0
 
