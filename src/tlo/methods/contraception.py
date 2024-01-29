@@ -1234,6 +1234,9 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.add_equipment({
             'Weighing scale', 'Height Pole (Stadiometer)', 'Blood pressure machine', 'NecoZleAddedInCo'
         })
+        self.add_equipment({
+            'NecoZleAddedInCo'
+        })
 
         # Determine essential and optional items
         # TODO: we don't distinguish essential X optional for contraception methods yet, will need to update once we do
@@ -1289,6 +1292,18 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
             # Update equipment if any needed for the method
             if _new_contraceptive == 'female_sterilization':
+                self.add_equipment({
+                    'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise'
+                })
+                self.add_equipment_from_pkg({
+                    'Minor Surgery', 'PkgZleAddedInCo'
+                })
+                self.add_equipment({
+                    'SamostatneZloAddedInCo'
+                })
+                self.add_equipment_from_pkg({
+                    'SamostatneZlyPkgAddedInCo'
+                })
                 self.add_equipment({
                     'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise'
                 })
