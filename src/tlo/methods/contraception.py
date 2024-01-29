@@ -1194,7 +1194,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         self.TREATMENT_ID = "Contraception_Routine"
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
-        self.set_equipment_essential_to_run_event({''})
+        self.set_equipment_essential_to_run_event({'NecoZleSetAsEssentialInCo'})
 
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
@@ -1232,7 +1232,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         # Measure weight, height and BP even if contraception not administrated
         self.add_equipment({
-            'Weighing scale', 'Height Pole (Stadiometer)', 'Blood pressure machine'
+            'Weighing scale', 'Height Pole (Stadiometer)', 'Blood pressure machine', 'NecoZleAddedInCo'
         })
 
         # Determine essential and optional items
@@ -1293,7 +1293,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
                     'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise'
                 })
                 self.add_equipment_from_pkg({
-                    'Minor Surgery'
+                    'Minor Surgery', 'PkgZleAddedInCo'
                 })
                 # TODO: this is just an example - update once figured out what we want in the pkgs
                 #  (! Update also the RF_Equipment accordingly !)
