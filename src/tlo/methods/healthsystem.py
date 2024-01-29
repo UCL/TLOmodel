@@ -355,6 +355,45 @@ class HSI_Event:
         lookup_df = self.sim.modules['HealthSystem'].parameters['equip_item_and_package_lookups']
         return set(lookup_df.loc[lookup_df["Equip_Pkg"] == equip_pkg_name, "Equip_Code"])
 
+    def ignore_unknown_equip_names(self, set_of_names: Set[str], type_in_set: str) -> Set[str]:
+        """Helper function to check if the equipment item or pkg names (depending on type_in_set: 'item' or 'pkg') from
+        the provided set are in the RF_Equipment. If they are not, they are added to a set to be warned about at the end
+        of the simulation.
+
+        Only known (item or pkg) names are returned."""
+        if set_of_names in [set(), None, {''}]:
+            return set()
+
+        def add_unknown_names_to_dict(unknown_names_to_add: Set[str], dict_to_be_added_to: Dict) -> Dict:
+            if self.__class__.__name__ not in dict_to_be_added_to.keys():
+                dict_to_be_added_to.update(
+                    {self.__class__.__name__: unknown_names_to_add}
+                )
+            else:
+                dict_to_be_added_to[self.__class__.__name__].update(
+                    unknown_names_to_add
+                )
+            return dict_to_be_added_to
+
+        lookup_df = self.sim.modules['HealthSystem'].parameters['equip_item_and_package_lookups']
+        if type_in_set == "item":
+            unknown_names = set_of_names.difference(set(lookup_df["Equip_Item"]))
+            if unknown_names:
+                self.sim.modules['HealthSystem']._equip_items_missing_in_RF = \
+                    add_unknown_names_to_dict(
+                        unknown_names, self.sim.modules['HealthSystem']._equip_items_missing_in_RF
+                    )
+
+        elif type_in_set == "pkg":
+            unknown_names = set_of_names.difference(set(lookup_df["Equip_Pkg"]))
+            if unknown_names:
+                self.sim.modules['HealthSystem']._equip_pkgs_missing_in_RF = \
+                    add_unknown_names_to_dict(
+                        unknown_names, self.sim.modules['HealthSystem']._equip_pkgs_missing_in_RF
+                    )
+
+        return set_of_names.difference(unknown_names)
+
     def set_equipment_essential_to_run_event(self, set_of_equip: Set[str]) -> None:
         """Helper function to set essential equipment.
 
@@ -367,7 +406,8 @@ class HSI_Event:
                 "equipment item names from ResourceFile_Equipment.csv."
             )
 
-        if set_of_equip not in [set(), None, {''}]:
+        set_of_equip = self.ignore_unknown_equip_names(set_of_equip, "item")
+        if set_of_equip:
             equip_codes = set(self.get_equip_item_code_from_item_name(item_name) for item_name in set_of_equip)
             self.ESSENTIAL_EQUIPMENT = equip_codes
         else:
@@ -385,9 +425,12 @@ class HSI_Event:
                 "Argument to add_equipment should be a non-empty set of strings of "
                 "equipment item names from ResourceFile_Equipment.csv."
             )
-        # from the set of equip item names create a set of equip item codes
-        equip_codes = set(self.get_equip_item_code_from_item_name(item_name) for item_name in set_of_equip)
-        self.EQUIPMENT.update(equip_codes)
+        # from the set of equip item names create a set of equip item codes, ignore unknown equip names
+        # (ie not included in RF_Equipment)
+        set_of_equip = self.ignore_unknown_equip_names(set_of_equip, "item")
+        if set_of_equip:
+            equip_codes = set(self.get_equip_item_code_from_item_name(item_name) for item_name in set_of_equip)
+            self.EQUIPMENT.update(equip_codes)
 
     def add_equipment_from_pkg(self, set_of_pkgs: Set[str]) -> None:
         """Helper function to update equipment with equipment from pkg(s).
@@ -401,9 +444,12 @@ class HSI_Event:
                 "Argument to add_equipment_from_pkg should be a non-empty set of strings of "
                 "equipment pkg names from ResourceFile_Equipment.csv."
             )
-        # update EQUIPMENT with eqip item codes from equip pkgs with provided names
-        for pkg_name in set_of_pkgs:
-            self.EQUIPMENT.update(self.get_equip_item_codes_from_pkg_name(pkg_name))
+        # update EQUIPMENT with eqip item codes from equip pkgs with provided names, ignore unknown equip names
+        # (ie not included in RF_Equipment)
+        set_of_pkgs = self.ignore_unknown_equip_names(set_of_pkgs, "pkg")
+        if set_of_pkgs:
+            for pkg_name in set_of_pkgs:
+                self.EQUIPMENT.update(self.get_equip_item_codes_from_pkg_name(pkg_name))
 
     def initialise(self):
         """Initialise the HSI:
@@ -823,6 +869,10 @@ class HealthSystem(Module):
 
         self._hsi_event_names_missing_ess_equip = set()  # The names of HSI events for which the settings of essential
         #                                                   equipment is missing.
+        self._equip_items_missing_in_RF = dict()  # The equipment item names called for an HSI event, but are missing in
+        #                                           the RF_Equipment.
+        self._equip_pkgs_missing_in_RF = dict()  # The equipment pkg names called for an HSI event, but are missing in
+        #                                           the RF_Equipment.
 
     def read_parameters(self, data_folder):
 
@@ -991,19 +1041,49 @@ class HealthSystem(Module):
                 }
             )
 
-            if self._hsi_event_names_missing_ess_equip:
-                hsi_event_names_missing_ess_equip = sorted(self._hsi_event_names_missing_ess_equip)
-                warnings.warn(UserWarning(f"The HSI event names which were initialised but the settings of essential "
-                                          f"equipment is missing:/n"
-                                          f"{hsi_event_names_missing_ess_equip}"))
+        if self._hsi_event_names_missing_ess_equip:
+            hsi_event_names_missing_ess_equip = sorted(self._hsi_event_names_missing_ess_equip)
+            warnings.warn(UserWarning(f"The HSI event names which were initialised but the settings of essential "
+                                      f"equipment is missing:/n"
+                                      f"{hsi_event_names_missing_ess_equip}"))
+            logger_summary.info(
+                key="hsi_event_names_missing_ess_equip",
+                data={"event_names": hsi_event_names_missing_ess_equip}
+            )
+            # TODO: smt odd is going on, some hsi events were logged, according to my equipment_catalogue script,
+            #  for which the essential equipment is not define, but they are not included in this warning.
+            #  E.g. HSI_BladderCancer_Investigation_Following_Blood_Urine, HSI_BladderCancer_StartTreatment,
+            #  HSI_BreastCancer_Investigation_Following_breast_lump_discernible, ...
+
+        def sort_dict_for_print(dict_to_sort: Dict) -> Dict:
+            sorted_list = sorted(dict_to_sort.items())
+            sorted_dict = {}
+            for key, value in sorted_list:
+                sorted_dict[key] = sorted(value)
+            return sorted_dict
+
+        if self._equip_items_missing_in_RF:
+            sorted_equip_items_missing_in_RF = sort_dict_for_print(self._equip_items_missing_in_RF)
+            warnings.warn(UserWarning(f"The equipment item names called for an HSI event, but missing in the "
+                                      f"RF_Equipment:/n"
+                                      f"{sorted_equip_items_missing_in_RF}"))
+
+            for _hsi_event_name, _item_names in sorted_equip_items_missing_in_RF.items():
                 logger_summary.info(
-                    key="hsi_event_names_missing_ess_equip",
-                    data={"event_names": hsi_event_names_missing_ess_equip}
+                    key="equip_items_missing_in_RF",
+                    data={_hsi_event_name: _item_names}
                 )
-                # TODO: smt odd is going on, some hsi events were logged, according to my equipment_catalogue script,
-                #  for which the essential equipment is not define, but they are not included in this warning.
-                #  E.g. HSI_BladderCancer_Investigation_Following_Blood_Urine, HSI_BladderCancer_StartTreatment,
-                #  HSI_BreastCancer_Investigation_Following_breast_lump_discernible, ...
+
+        if self._equip_pkgs_missing_in_RF:
+            sorted_equip_pkgs_missing_in_RF = sort_dict_for_print(self._equip_pkgs_missing_in_RF)
+            warnings.warn(UserWarning(f"The equipment pkg names called for an HSI event, but missing in the "
+                                      f"RF_Equipment:/n"
+                                      f"{sorted_equip_pkgs_missing_in_RF}"))
+            for _hsi_event_name, _pkg_names in sorted_equip_pkgs_missing_in_RF.items():
+                logger_summary.info(
+                    key="equip_pkgs_missing_in_RF",
+                    data={_hsi_event_name: _pkg_names}
+                )
 
     def setup_priority_policy(self):
 
