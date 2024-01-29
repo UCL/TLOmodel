@@ -1194,7 +1194,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         self.TREATMENT_ID = "Contraception_Routine"
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
-        self.set_equipment_essential_to_run_event({'NecoZleSetAsEssentialInCo'})
+        self.set_equipment_essential_to_run_event({'SamostatneZloSetAsEssentialInCo'})
 
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
@@ -1294,6 +1294,12 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
                 })
                 self.add_equipment_from_pkg({
                     'Minor Surgery', 'PkgZleAddedInCo'
+                })
+                self.add_equipment({
+                    'SamostatneZloAddedInCo'
+                })
+                self.add_equipment_from_pkg({
+                    'SamostatneZlyPkgAddedInCo'
                 })
                 # TODO: this is just an example - update once figured out what we want in the pkgs
                 #  (! Update also the RF_Equipment accordingly !)
