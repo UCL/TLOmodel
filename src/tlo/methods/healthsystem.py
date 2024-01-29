@@ -992,12 +992,13 @@ class HealthSystem(Module):
             )
 
             if self._hsi_event_names_missing_ess_equip:
+                hsi_event_names_missing_ess_equip = sorted(self._hsi_event_names_missing_ess_equip)
                 warnings.warn(UserWarning(f"The HSI event names which were initialised but the settings of essential "
                                           f"equipment is missing:/n"
-                                          f"{self._hsi_event_names_missing_ess_equip}"))
+                                          f"{hsi_event_names_missing_ess_equip}"))
                 logger_summary.info(
                     key="hsi_event_names_missing_ess_equip",
-                    data={"event_names": self._hsi_event_names_missing_ess_equip}
+                    data={"event_names": hsi_event_names_missing_ess_equip}
                 )
                 # TODO: smt odd is going on, some hsi events were logged, according to my equipment_catalogue script,
                 #  for which the essential equipment is not define, but they are not included in this warning.
