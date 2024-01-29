@@ -439,7 +439,7 @@ class HSI_Event:
         # Set essential equip to empty set if not exists and warn about missing settings
         if self.ESSENTIAL_EQUIPMENT is None:
             self.set_equipment_essential_to_run_event({''})
-            self.sim.modules['HealthSystem']._hsi_event_names_missing_ess_equip.update(self.__class__.__name__)
+            self.sim.modules['HealthSystem']._hsi_event_names_missing_ess_equip.update({self.__class__.__name__})
 
     def _check_if_appt_footprint_can_run(self):
         """Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
@@ -992,7 +992,7 @@ class HealthSystem(Module):
             )
 
             if self._hsi_event_names_missing_ess_equip:
-                warnings.warn(UserWarning(f"The HSI event names which were initialised but the settings of essential"
+                warnings.warn(UserWarning(f"The HSI event names which were initialised but the settings of essential "
                                           f"equipment is missing:/n"
                                           f"{self._hsi_event_names_missing_ess_equip}"))
                 logger_summary.info(
