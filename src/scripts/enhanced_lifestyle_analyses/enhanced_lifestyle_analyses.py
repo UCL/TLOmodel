@@ -13,7 +13,6 @@ from matplotlib import ticker
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import (
-    make_age_grp_lookup,
     parse_log_file,
     unflatten_flattened_multi_index_in_logging,
 )
