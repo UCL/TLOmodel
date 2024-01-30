@@ -1086,8 +1086,7 @@ class HealthSystem(Module):
 
         if self._hsi_event_names_missing_ess_equip:
             hsi_event_names_missing_ess_equip = sorted(self._hsi_event_names_missing_ess_equip)
-            warnings.warn(UserWarning(f"The HSI event names which were initialised but the settings of essential "
-                                      f"equipment is missing:/n"
+            warnings.warn(UserWarning(f"Missing settings of essential equipment for HSI events:/n"
                                       f"{hsi_event_names_missing_ess_equip}"))
             logger_summary.info(
                 key="hsi_event_names_missing_ess_equip",
@@ -1107,8 +1106,7 @@ class HealthSystem(Module):
 
         if self._equip_items_missing_in_RF:
             sorted_equip_items_missing_in_RF = sort_dict_for_print(self._equip_items_missing_in_RF)
-            warnings.warn(UserWarning(f"The equipment item names called for an HSI event, but missing in the "
-                                      f"RF_Equipment:/n"
+            warnings.warn(UserWarning(f"Equipment item names were not recognised:/n"
                                       f"{sorted_equip_items_missing_in_RF}"))
 
             for _hsi_event_name, _item_names in sorted_equip_items_missing_in_RF.items():
@@ -1119,8 +1117,7 @@ class HealthSystem(Module):
 
         if self._equip_pkgs_missing_in_RF:
             sorted_equip_pkgs_missing_in_RF = sort_dict_for_print(self._equip_pkgs_missing_in_RF)
-            warnings.warn(UserWarning(f"The equipment pkg names called for an HSI event, but missing in the "
-                                      f"RF_Equipment:/n"
+            warnings.warn(UserWarning(f"Equipment pkg names were not recognised:/n"
                                       f"{sorted_equip_pkgs_missing_in_RF}"))
             for _hsi_event_name, _pkg_names in sorted_equip_pkgs_missing_in_RF.items():
                 logger_summary.info(
