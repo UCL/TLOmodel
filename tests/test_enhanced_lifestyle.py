@@ -135,12 +135,3 @@ def test_check_properties_daily_event():
     )
     sim.make_initial_population(n=2000)
     sim.simulate(end_date=end_date)
-
-
-if __name__ == '__main__':
-    t0 = time.time()
-    simulation = simulation()
-    simulation.make_initial_population(n=popsize)
-    simulation.simulate(end_date=end_date)
-    t1 = time.time()
-    print('Time taken', t1 - t0)
