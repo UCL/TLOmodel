@@ -2,7 +2,6 @@
 This is a test file for Lifestyle Module. It contains a number of checks to ensure everything is running as expected
 """
 import os
-import time
 from pathlib import Path
 
 import numpy as np
