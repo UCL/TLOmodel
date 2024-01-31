@@ -232,6 +232,13 @@ class Wasting(Module):
         # store severe wasting by age groups probabilities
         self.age_grps_sev_wasting_probs: dict = dict()
 
+    def declare_symptoms(self):
+        for symptom_name in self.symptoms:
+            self.sim.modules['SymptomManager'].register_symptom(
+                Symptom(name=symptom_name)
+                # (give non-generic symptom 'average' healthcare seeking)
+            )
+
     def read_parameters(self, data_folder):
         """
         :param data_folder: path of a folder supplied to the Simulation containing data files. Typically,
@@ -245,13 +252,14 @@ class Wasting(Module):
 
         # Declare symptoms that this module will cause and which are not
         # included in the generic symptoms:
-        generic_symptoms = self.sim.modules['SymptomManager'].generic_symptoms
-        for symptom_name in self.symptoms:
-            if symptom_name not in generic_symptoms:
-                self.sim.modules['SymptomManager'].register_symptom(
-                    Symptom(name=symptom_name)
-                    # (give non-generic symptom 'average' healthcare seeking)
-                )
+        self.declare_symptoms()
+        # generic_symptoms = self.sim.modules['SymptomManager'].generic_symptoms
+        # for symptom_name in self.symptoms:
+        #     if symptom_name not in generic_symptoms:
+        #         self.sim.modules['SymptomManager'].register_symptom(
+        #             Symptom(name=symptom_name)
+        #             # (give non-generic symptom 'average' healthcare seeking)
+        #         )
 
     def pre_initialise_population(self):
         """Things to do before processing the population:
@@ -1008,7 +1016,7 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
         the_appt_footprint['Under5OPD'] = 1  # This requires one out patient
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Supplementary_feeding_programme_for_MAM'
+        self.TREATMENT_ID = 'Undernutrition_Feeding_Supplementary'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
@@ -1042,7 +1050,7 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
             logger.debug(key='debug', data="PkgCode1 is not available, so can't use it.")
 
     def did_not_run(self):
-        logger.debug("supplementary_feeding_programme_for_MAM: did not run")
+        logger.debug("Undernutrition_Feeding_Supplementary: did not run")
         pass
 
 
@@ -1061,7 +1069,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
         the_appt_footprint['U5Malnutr'] = 1
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Outpatient_therapeutic_programme_for_SAM'
+        self.TREATMENT_ID = 'Undernutrition_Feeding_Outpatient'
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.ALERT_OTHER_DISEASES = []
@@ -1098,7 +1106,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
             logger.debug(key='debug', data="consumables not available, so can't use it.")
 
     def did_not_run(self):
-        logger.debug("HSI_outpatient_therapeutic_programme_for_SAM: did not run")
+        logger.debug("HSI_Undernutrition_Feeding_Outpatient: did not run")
         pass
 
 
