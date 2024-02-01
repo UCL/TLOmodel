@@ -818,6 +818,11 @@ class HealthSystem(Module):
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
+
+        # Ensure the mode of absenteeism to be considered in included in the tables loaded
+        assert self.parameters['absenteeism_mode'] in self.parameters['absenteeism_table'], \
+            f"Value of `absenteeism_mode` not recognised: {self.parameters['absenteeism_mode']}"
+
         # Create dedicated RNGs for separate functions done by the HealthSystem module
         self.rng_for_hsi_queue = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
         self.rng_for_dx = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
@@ -855,9 +860,6 @@ class HealthSystem(Module):
 
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
-
-        # Ensure the mode of absenteeism to be considered in included in the tables loaded
-        assert self.parameters['absenteeism_mode'] in self.parameters['absenteeism_table']
 
 
     def initialise_population(self, population):
