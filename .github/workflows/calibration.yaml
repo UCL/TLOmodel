@@ -110,6 +110,7 @@ jobs:
               SKIP_TASKS="true"
           fi
           echo "SKIP_TASKS=${SKIP_TASKS}"
+          echo "SKIP_TASKS=${SKIP_TASKS}" >> "${GITHUB_ENV}"
           echo "skip_tasks=${SKIP_TASKS}" >> "${GITHUB_OUTPUT}"
           RUNS="["
           for run in $(seq 0 $((${RUNS_NUMBER} - 1))); do
@@ -118,6 +119,16 @@ jobs:
           RUNS="${RUNS}]"
           echo "tasks=${RUNS}"
           echo "tasks=${RUNS}" >> "${GITHUB_OUTPUT}"
+
+      - name: Write info.txt file
+        if: ${{ env.SKIP_TASKS == 'false' }}
+        run: |
+          mkdir -p "${output_dir}"
+          info_txt="${output_dir}/info.txt"
+          git -C "${WORKTREE_PATH}" log --pretty=format:"%H%x09%ad%x09%s" --date=iso-strict -n 1 > "${info_txt}"
+          echo -e "\n${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" >> "${info_txt}"
+          echo "Content of ${info_txt}:"
+          cat "${info_txt}"
 
   # Run the tasks.
   tasks:
@@ -163,7 +174,12 @@ jobs:
           mkdir -p "${task_output_dir}"
 
           python3 "${{ needs.setup.outputs.worktree_path }}/src/scripts/calibration_analyses/analysis_scripts/process.py" "${task_output_dir}" "${RUN_NAME}" "${{ needs.setup.outputs.worktree_path }}/resources"
+          python3 "${{ needs.setup.outputs.worktree_path }}/src/scripts/task_runner/generate_html.py" "${OUTPUT_ROOT}" > "${OUTPUT_ROOT}/index.html"
         working-directory: "${{ needs.setup.outputs.worktree_path }}"
+
+      - name: Compress log files
+        run: |
+          find "${{ needs.setup.outputs.output_dir }}" -name '*.log' -exec gzip --best --force --verbose '{}' \;
 
   # Cleanup stage, to remove temporary directories and such
   cleanup:
