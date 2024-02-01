@@ -548,10 +548,9 @@ class HealthSystem(Module):
                               "the format of pd.DataFrames."),
 
         'absenteeism_mode': Parameter(
-            Types.CATEGORICAL, "Mode of absenteeism considered. Options are default (capabilities are scaled by a "
+            Types.STRING, "Mode of absenteeism considered. Options are default (capabilities are scaled by a "
                           "constaint factor of 1), data (factors informed by survey data), and custom (user"
                           "can freely set these factors as parameters in the analysis).",
-                          categories=["default", "data", "custom", ]
         ),
 
         'tclose_overwrite': Parameter(
