@@ -3737,8 +3737,6 @@ class HSI_RTI_Shock_Treatment(HSI_Event, IndividualScopeEventMixin):
     """
     This HSI event handles the process of treating hypovolemic shock, as recommended by the pediatric
     handbook for Malawi and (TODO: FIND ADULT REFERENCE)
-    Currently this HSI_Event is described only and not used, as I still need to work out how to model the occurrence
-    of shock TODO: is this still the case - should this be scheduled/ignored?
     """
 
     def __init__(self, module, person_id):
@@ -5079,8 +5077,7 @@ class HSI_RTI_Minor_Surgeries(HSI_Event, IndividualScopeEventMixin):
         # todo: think about consequences of certain consumables not being available for minor surgery and model health
         #  outcomes
         if request_outcome:
-            # TODO: not all surgeries conducted here are laparotomies however likely to have most appropriate equipment
-            #  so should be fine for now
+            # TODO: link to surgical equipment package when that exists
             self.EQUIPMENT.update({'Laparotomy Set', 'Infusion pump', 'Drip stand'})
 
             # create a dictionary to store the recovery times for each injury in days
