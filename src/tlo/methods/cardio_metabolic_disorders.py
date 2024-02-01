@@ -1458,7 +1458,7 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
             return
 
         if _c == 'chronic_ischemic_heart_disease':
-            self.EQUIPMENT.update({'Stethoscope'})
+            self.EQUIPMENT.update({'Electrocardiogram', 'Stethoscope'})
 
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run=f'assess_{_c}',
@@ -1709,6 +1709,9 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
         # Run a test to diagnose whether the person has condition:
         if _ev == 'ever_stroke':
             self.EQUIPMENT.update({'Computed Tomography (CT machine)', 'CT scanner accessories'})
+
+        if _ev == 'ever_heart_attack':
+            self.EQUIPMENT.update({'Electrocardiogram'})
 
         dx_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
             dx_tests_to_run=f'assess_{_ev}',
