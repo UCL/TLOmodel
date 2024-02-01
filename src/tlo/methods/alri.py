@@ -2597,8 +2597,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                  'chest_indrawing_pneumonia',       (symptoms-based assessment)
                  'cough_or_cold'                    (symptoms-based assessment)
          }."""
-        # TODO: Currently this is logged as equipment even if pulse ox consumable isnt available
-        self.EQUIPMENT.update({'Pulse oximeter'})
+        if use_oximeter:
+            self.EQUIPMENT.update({'Pulse oximeter'})
 
         child_is_younger_than_2_months = age_exact_years < (2.0 / 12.0)
 
@@ -2654,14 +2654,13 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             oxygen_available = self._get_cons('Oxygen_Therapy')
             oxygen_provided = (oxygen_available and oxygen_indicated)
 
-            # todo: should equipment only be logged if consumables are available?
             # If individual requires oxygen, update equipment
             if oxygen_provided:
                 self.EQUIPMENT.update({'Oxygen cylinder, with regulator', 'Nasal Prongs'})
 
             # If individual requires intravenous antibiotics, update equipment
-            if antibiotic_available in ('1st_line_IV_antibiotics',
-                                        'Benzylpenicillin_gentamicin_therapy_for_severe_pneumonia'):
+            if antibiotic_provided in ('1st_line_IV_antibiotics',
+                                       'Benzylpenicillin_gentamicin_therapy_for_severe_pneumonia'):
                 self.EQUIPMENT.update({'Infusion pump', 'Drip stand'})
 
             all_things_needed_available = antibiotic_available and (
