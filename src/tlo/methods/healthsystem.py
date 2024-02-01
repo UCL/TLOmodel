@@ -543,8 +543,10 @@ class HealthSystem(Module):
                         
         'absenteeism_table': Parameter(
             Types.DICT, "Factors by which capabilities of medical officer categories at different levels will be"
-                              "reduced to account for issues of absenteeism in the workforce."),
-                              
+                              "reduced to account for issues of absenteeism in the workforce. This is the imported"
+                              "Excel workbook: keys are the worksheet names and values are the worksheets in "
+                              "the format of pd.DataFrames."),
+
         'absenteeism_mode': Parameter(
             Types.CATEGORICAL, "Mode of absenteeism considered. Options are default (capabilities are scaled by a "
                           "constaint factor of 1), data (factors informed by survey data), and custom (user"
