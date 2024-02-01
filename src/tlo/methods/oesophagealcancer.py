@@ -676,7 +676,7 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
         if cons_avail:
             # If consumables are available update equipment and run the dx_test representing the biopsy
             # n.b. endoscope not in equipment list
-            self.EQUIPMENT.update({'Ordinary Microscope'})
+            self.EQUIPMENT.update({'Endoscope', 'Ordinary Microscope'})
 
             # Use an endoscope to diagnose whether the person has Oesophageal Cancer:
             dx_result = hs.dx_manager.run_dx_test(
