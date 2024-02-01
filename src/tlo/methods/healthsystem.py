@@ -546,9 +546,11 @@ class HealthSystem(Module):
                               "reduced to account for issues of absenteeism in the workforce."),
                               
         'absenteeism_mode': Parameter(
-            Types.STRING, "Mode of absenteeism considered. Options are default (capabilities are scaled by a "
+            Types.CATEGORICAL, "Mode of absenteeism considered. Options are default (capabilities are scaled by a "
                           "constaint factor of 1), data (factors informed by survey data), and custom (user"
-                          "can freely set these factors as parameters in the analysis)."),
+                          "can freely set these factors as parameters in the analysis).",
+                          categories=["default", "data", "custom", ]
+        ),
 
         'tclose_overwrite': Parameter(
             Types.INT, "Decide whether to overwrite tclose variables assigned by disease modules"),
