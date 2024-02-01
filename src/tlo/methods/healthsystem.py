@@ -806,11 +806,15 @@ class HealthSystem(Module):
         self.parameters['priority_rank'] = pd.read_excel(path_to_resourcefiles_for_healthsystem / 'priority_policies' /
                                                          'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx',
                                                          sheet_name=None)
-                                                         
-        self.parameters['absenteeism_table'] = pd.read_excel(path_to_resourcefiles_for_healthsystem / 'absenteeism' /
-                                                         'ResourceFile_Absenteeism.xlsx',
-                                                         sheet_name=None)
-                                                         
+
+        self.parameters['absenteeism_table']: Dict = pd.read_excel(
+            path_to_resourcefiles_for_healthsystem /
+            "human_resources" /
+            "absenteeism" /
+            "ResourceFile_Absenteeism.xlsx",
+            sheet_name=None  # all sheets read in
+        )
+
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
