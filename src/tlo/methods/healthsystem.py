@@ -858,9 +858,7 @@ class HealthSystem(Module):
         
         # Ensure the mode of absenteeism to be considered in included in the tables loaded
         assert self.parameters['absenteeism_mode'] in self.parameters['absenteeism_table']
-        
-        # Scale
-        
+
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
