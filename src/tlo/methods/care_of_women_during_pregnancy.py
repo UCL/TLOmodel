@@ -733,7 +733,6 @@ class CareOfWomenDuringPregnancy(Module):
         # Delivery of the intervention is conditioned on a random draw against a probability that the intervention
         # would be delivered (used to calibrate to SPA data - acts as proxy for clinical quality)
         if self.rng.random_sample() < params['prob_intervention_delivered_urine_ds']:
-            hsi_event.EQUIPMENT.update({'Urine dip Stick'})
 
             # check consumables
             avail = pregnancy_helper_functions.return_cons_avail(
