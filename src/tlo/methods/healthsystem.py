@@ -540,7 +540,7 @@ class HealthSystem(Module):
                         " the queueing system under different policies, where the lower the number the higher"
                         " the priority, and on which categories of individuals classify for fast-tracking "
                         " for specific treatments"),
-                        
+
         'absenteeism_table': Parameter(
             Types.DICT, "Factors by which capabilities of medical officer categories at different levels will be"
                               "reduced to account for issues of absenteeism in the workforce. This is the imported"
@@ -855,7 +855,7 @@ class HealthSystem(Module):
 
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
-        
+
         # Ensure the mode of absenteeism to be considered in included in the tables loaded
         assert self.parameters['absenteeism_mode'] in self.parameters['absenteeism_table']
 
@@ -1059,6 +1059,28 @@ class HealthSystem(Module):
         # never available.)
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
 
+    def adjust_for_absenteeism(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Adjust the Daily_Capabilities pd.DataFrame to account for assumptions about absenteeism"""
+
+        # Get the set of scaling_factors that are specified by the 'absenteeism_mode' assumption
+        absenteeism_factor = self.parameters['absenteeism_table'][self.parameters['absenteeism_mode']]
+        absenteeism_factor = absenteeism_factor.set_index('Officer_Category')
+
+        level_conversion = {"1a": "L1a_Av_Mins_Per_Day", "1b": "L1b_Av_Mins_Per_Day",
+                            "2": "L2_Av_Mins_Per_Day", "0": "L0_Av_Mins_Per_Day", "3": "L3_Av_Mins_Per_Day",
+                            "4": "L4_Av_Mins_Per_Day", "5": "L5_Av_Mins_Per_Day"}
+
+        scaler = df[['Officer_Category', 'Facility_Level']].apply(
+            lambda row: absenteeism_factor.loc[row['Officer_Category'], level_conversion[row['Facility_Level']]],
+            axis=1
+        )
+
+        # Apply scaling to 'Total_Mins_Per_Day'
+        df['Total_Mins_Per_Day'] *= scaler
+
+        return df
+
+
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> pd.Series:
         """
         This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to include
@@ -1069,21 +1091,13 @@ class HealthSystem(Module):
 
         (This is so that its easier to track where demands are being placed where there is no capacity)
         """
-        
-        # Rescale assumed Daily Capabilities to account for absenteeism
-        absenteeism_factor = self.parameters['absenteeism_table'][self.parameters['absenteeism_mode']]
-        absenteeism_factor = absenteeism_factor.set_index('Officer_Category')
-        
-        level_conversion = { "1a" : "L1a_Av_Mins_Per_Day", "1b":"L1b_Av_Mins_Per_Day",
-                             "2":"L2_Av_Mins_Per_Day", "0":"L0_Av_Mins_Per_Day", "3": "L3_Av_Mins_Per_Day",
-                             "4": "L4_Av_Mins_Per_Day", "5": "L5_Av_Mins_Per_Day"}
-
-        self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']['Total_Mins_Per_Day'] *= self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}'].apply(lambda row: absenteeism_factor.loc[row['Officer_Category'],
-                                                                                   level_conversion[row['Facility_Level']]], axis=1)
 
         # Get the capabilities data imported (according to the specified underlying assumptions).
         capabilities = pool_capabilities_at_levels_1b_and_2(
-            self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}'])
+            self.adjust_for_absenteeism(
+                self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
+            )
+        )
         capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
 
         # Create dataframe containing background information about facility and officer types
