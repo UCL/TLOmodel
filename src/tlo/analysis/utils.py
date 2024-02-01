@@ -734,8 +734,6 @@ SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
 
     'FirstAttendance*': 'darkgrey',
     'Inpatient*': 'silver',
-    'Outpatient*': 'grey',
-    'Supplementary*': 'darkslategrey',
 
     'Contraception*': 'darkseagreen',
     'AntenatalCare*': 'green',
