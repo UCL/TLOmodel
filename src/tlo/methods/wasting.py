@@ -45,13 +45,13 @@ class Wasting(Module):
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
         'Severe Acute Malnutrition': Cause(gbd_causes='Protein-energy malnutrition',
-                     label='Childhood Wasting')
+                                           label='Childhood Wasting')
     }
 
     # Declare Causes of Death and Disability
     CAUSES_OF_DISABILITY = {
         'Severe Acute Malnutrition': Cause(gbd_causes='Protein-energy malnutrition',
-                     label='Childhood Wasting')
+                                           label='Childhood Wasting')
     }
 
     PARAMETERS = {
@@ -205,13 +205,7 @@ class Wasting(Module):
         self.resourcefilepath = resourcefilepath
 
         # Store the symptoms that this module will use:
-        self.symptoms = {
-            'palmar_pallor',
-            'weight_loss',
-            'poor_appetite',
-            'lethargic',
-            # 'dehydration'
-        }
+        self.symptoms = {'weight_loss'}
 
         # dict to hold counters for the number of episodes by wasting-type
         # and age-group
@@ -313,8 +307,8 @@ class Wasting(Module):
             wasted = self.rng.random_sample(len(prevalence_of_wasting)) < prevalence_of_wasting
             for idx in prevalence_of_wasting.index[wasted]:
                 probability_of_severe = self.age_grps_sev_wasting_probs[lm_ext_var]
-                wasted_category = self.rng.choice(['WHZ<-3', '-3<=WHZ<-2'],  p=[probability_of_severe,
-                                                                                1 - probability_of_severe])
+                wasted_category = self.rng.choice(['WHZ<-3', '-3<=WHZ<-2'], p=[probability_of_severe,
+                                                                               1 - probability_of_severe])
                 df.at[idx, 'un_WHZ_category'] = wasted_category
                 df.at[idx, 'un_last_wasting_date_of_onset'] = self.sim.date
                 df.at[idx, 'un_ever_wasted'] = True
@@ -393,7 +387,7 @@ class Wasting(Module):
             df.loc[idx[~low_muac_in_moderate_wasting][moderate_low_muac_in_moderate_wasting], 'un_am_MUAC_category'] \
                 = '115-<125mm'
             # other moderate wasting will have normal MUAC
-            df.loc[idx[~low_muac_in_moderate_wasting][~moderate_low_muac_in_moderate_wasting], 'un_am_MUAC_category']\
+            df.loc[idx[~low_muac_in_moderate_wasting][~moderate_low_muac_in_moderate_wasting], 'un_am_MUAC_category'] \
                 = '>=125mm'
 
         if whz == 'WHZ>=-2':
@@ -453,7 +447,7 @@ class Wasting(Module):
 
         # check if person is not wasted
         if ((df.at[person_id, 'un_WHZ_category'] == 'WHZ>=-2') &
-                (df.at[person_id, 'un_am_MUAC_category'] == '>=125mm') & (~df.at[person_id, 'un_am_bilateral_oedema'])):
+            (df.at[person_id, 'un_am_MUAC_category'] == '>=125mm') & (~df.at[person_id, 'un_am_bilateral_oedema'])):
             df.at[person_id, 'un_clinical_acute_malnutrition'] = 'well'
 
         # severe acute malnutrition - MUAC<115mm and/or WHZ<-3 and/or
@@ -538,31 +532,29 @@ class Wasting(Module):
         series of columns is taken to be the label of the cause of this disability. It will be recorded by the
         healthburden module as <ModuleName>_<Cause>.
         """
-        # dict to hold the DALY weights
+        # Dict to hold the DALY weights
         daly_wts = dict()
 
-        if 'HealthBurden' in self.sim.modules.keys():
-            df = self.sim.population.props
-            # Get DALY weights
-            get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
+        df = self.sim.population.props
+        # Get DALY weights
+        get_daly_weight = self.sim.modules['HealthBurden'].get_daly_weight
 
-            daly_wts['MAM_with_oedema'] = get_daly_weight(sequlae_code=461)
-            daly_wts['SAM_w/o_oedema'] = get_daly_weight(sequlae_code=462)
-            daly_wts['SAM_with_oedema'] = get_daly_weight(sequlae_code=463)
+        daly_wts['MAM_with_oedema'] = get_daly_weight(sequlae_code=461)
+        daly_wts['SAM_w/o_oedema'] = get_daly_weight(sequlae_code=462)
+        daly_wts['SAM_with_oedema'] = get_daly_weight(sequlae_code=463)
 
-            total_daly_values = pd.Series(data=0.0,
-                                          index=df.index[df.is_alive])
-            total_daly_values.loc[df.is_alive & (df.un_clinical_acute_malnutrition == 'SAM') &
-                                  df.un_am_bilateral_oedema] = daly_wts['SAM_with_oedema']
-            total_daly_values.loc[df.is_alive & (df.un_clinical_acute_malnutrition == 'SAM') &
-                                  (~df.un_am_bilateral_oedema)] = daly_wts['SAM_w/o_oedema']
-            total_daly_values.loc[df.is_alive & (
-                        ((df.un_WHZ_category == '-3<=WHZ<-2') & (df.un_am_MUAC_category != "<115mm")) | (
-                            (df.un_WHZ_category != 'WHZ<-3') & (
-                                df.un_am_MUAC_category != "115-<125mm"))) & df.un_am_bilateral_oedema] = daly_wts[
-                'MAM_with_oedema']
-
-            return total_daly_values
+        total_daly_values = pd.Series(data=0.0,
+                                      index=df.index[df.is_alive])
+        total_daly_values.loc[df.is_alive & (df.un_clinical_acute_malnutrition == 'SAM') &
+                              df.un_am_bilateral_oedema] = daly_wts['SAM_with_oedema']
+        total_daly_values.loc[df.is_alive & (df.un_clinical_acute_malnutrition == 'SAM') &
+                              (~df.un_am_bilateral_oedema)] = daly_wts['SAM_w/o_oedema']
+        total_daly_values.loc[df.is_alive & (
+            ((df.un_WHZ_category == '-3<=WHZ<-2') & (df.un_am_MUAC_category != "<115mm")) | (
+            (df.un_WHZ_category != 'WHZ<-3') & (
+            df.un_am_MUAC_category != "115-<125mm"))) & df.un_am_bilateral_oedema] = daly_wts[
+            'MAM_with_oedema']
+        return total_daly_values
 
     def wasting_clinical_symptoms(self, person_id):
         """
@@ -602,7 +594,9 @@ class Wasting(Module):
             # Check for coverage of supplementary feeding
             if self.rng.random_sample() < p['coverage_supplementary_feeding_program']:
                 # schedule HSI for supplementary feeding program for MAM
-                self.sim.modules['HealthSystem'].schedule_hsi_event(hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id), priority=0, topen=self.sim.date)
+                self.sim.modules['HealthSystem'].schedule_hsi_event(
+                    hsi_event=HSI_Wasting_SupplementaryFeedingProgramme_MAM(module=self, person_id=person_id),
+                    priority=0, topen=self.sim.date)
             else:
                 return
         # Interventions for uncomplicated SAM
@@ -673,7 +667,7 @@ class Wasting(Module):
                 else:
                     self.sim.schedule_event(event=UpdateToMAM(module=self, person_id=person_id),
                                             date=df.at[person_id, 'un_acute_malnutrition_tx_start_date'] +
-                                            DateOffset(weeks=3))
+                                                 DateOffset(weeks=3))
 
         if intervention == 'ITC':
             sam_recovery = self.wasting_models.get_severe_acute_malnutrition_recovery().predict(
@@ -726,7 +720,7 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # # # INCIDENCE OF WASTING # # # # # # # # # # # # # # # # # # # # #
         # Determine who will be onset with wasting among those who are not currently wasted -------------
         inc_wasting = df.loc[df.is_alive & (df.age_exact_years < 5) & (
-                df.un_WHZ_category == 'WHZ>=-2')]
+            df.un_WHZ_category == 'WHZ>=-2')]
         get_incidence_of_wasting = \
             self.module.wasting_models.get_wasting_incidence(inc_wasting)
 
@@ -756,7 +750,7 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         progression_sev_wasting = df.loc[df.is_alive & (df.age_exact_years < 5) &
                                          (df.un_WHZ_category == '-3<=WHZ<-2')]
         progression_severe_wasting = self.module.wasting_models.get_wasting_progression().predict(
-                progression_sev_wasting)
+            progression_sev_wasting)
 
         progression_severe_wasting = \
             rng.random_sample(len(progression_sev_wasting)) < progression_severe_wasting
@@ -823,7 +817,7 @@ class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
         # before progression to severe wasting, check those who started
         # supplementary feeding programme before today
         if df.at[person_id, 'un_last_wasting_date_of_onset'] < \
-                df.at[person_id, 'un_acute_malnutrition_tx_start_date'] < self.sim.date:
+            df.at[person_id, 'un_acute_malnutrition_tx_start_date'] < self.sim.date:
             return
 
         # continue with progression to severe if not treated/recovered
@@ -867,7 +861,7 @@ class SevereAcuteMalnutritionDeathEvent(Event, IndividualScopeEventMixin):
 
         # # Check if this person should still die from SAM:
         if pd.isnull(df.at[person_id, 'un_am_recovery_date']) & \
-                (df.at[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'):
+            (df.at[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'):
             # Cause the death to happen immediately
             df.at[person_id, 'un_sam_death_date'] = self.sim.date
             self.sim.modules['Demography'].do_death(
@@ -1171,13 +1165,14 @@ class WastingModels:
 
         # linear model to predict the incidence of wasting
         self.__Wasting_Incidence = LinearModel.multiplicative(
-            Predictor('age_exact_years').when('<0.5', self.params['base_inc_rate_wasting_by_agegp'][0])
-            .when('<1.0', self.params['base_inc_rate_wasting_by_agegp'][1])
-            .when('.between(1,1.9999)', self.params['base_inc_rate_wasting_by_agegp'][2])
-            .when('.between(2,2.9999)', self.params['base_inc_rate_wasting_by_agegp'][3])
-            .when('.between(3,3.9999)', self.params['base_inc_rate_wasting_by_agegp'][4])
-            .when('.between(4,4.9999)', self.params['base_inc_rate_wasting_by_agegp'][5])
-            .otherwise(0.0),
+            Predictor('age_exact_years', conditions_are_mutually_exclusive=True, conditions_are_exhaustive=True)
+                .when('<0.5', self.params['base_inc_rate_wasting_by_agegp'][0])
+                .when('.between(0.5,1, inclusive="left")', self.params['base_inc_rate_wasting_by_agegp'][1])
+                .when('.between(1,2, inclusive="left")', self.params['base_inc_rate_wasting_by_agegp'][2])
+                .when('.between(2,3, inclusive="left")', self.params['base_inc_rate_wasting_by_agegp'][3])
+                .when('.between(3,4, inclusive="left")', self.params['base_inc_rate_wasting_by_agegp'][4])
+                .when('.between(4,5, inclusive="left")', self.params['base_inc_rate_wasting_by_agegp'][5])
+                .otherwise(0.0),
             Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") &'
                              '(nb_late_preterm == False) & (nb_early_preterm == False)',
                              self.params['rr_wasting_SGA_and_term']),
@@ -1193,36 +1188,37 @@ class WastingModels:
 
         # a linear model to predict the probability of individual's recovery from moderate acute malnutrition
         self.__Acute_Malnutrition_Recovery_MAM = LinearModel.multiplicative(
-            Predictor('un_am_treatment_type').when('soy_RUSF', self.params['recovery_rate_with_soy_RUSF'])
-            .when('CSB++', self.params['recovery_rate_with_CSB++'])
-            .otherwise(0.0),
+            Predictor('un_am_treatment_type', conditions_are_mutually_exclusive=True, conditions_are_exhaustive=True)
+                .when('soy_RUSF', self.params['recovery_rate_with_soy_RUSF'])
+                .when('CSB++', self.params['recovery_rate_with_CSB++'])
+                .otherwise(0.0),
         )
 
         # a linear model to predict the probability of individual's recovery from severe acute malnutrition
         self.__Acute_Malnutrition_Recovery_SAM = LinearModel.multiplicative(
-            Predictor('un_am_treatment_type')
-            .when('standard_RUTF', self.params['recovery_rate_with_standard_RUTF'])
-            .when('inpatient_care', self.params['recovery_rate_with_inpatient_care'])
-            .otherwise(0.0),
+            Predictor('un_am_treatment_type', conditions_are_mutually_exclusive=True, conditions_are_exhaustive=True)
+                .when('standard_RUTF', self.params['recovery_rate_with_standard_RUTF'])
+                .when('inpatient_care', self.params['recovery_rate_with_inpatient_care'])
+                .otherwise(0.0),
         )
 
         # Linear model for the probability of progression to severe wasting (age-dependent only)
         # (natural history only, no interventions)
         self.__Severe_Wasting_Progression = LinearModel.multiplicative(
-            Predictor('age_exact_years')
-            .when('<0.5', self.params['progression_severe_wasting_by_agegp'][0])
-            .when('.between(0.5,0.9999)', self.params['progression_severe_wasting_by_agegp'][1])
-            .when('.between(1,1.9999)', self.params['progression_severe_wasting_by_agegp'][2])
-            .when('.between(2,2.9999)', self.params['progression_severe_wasting_by_agegp'][3])
-            .when('.between(3,3.9999)', self.params['progression_severe_wasting_by_agegp'][4])
-            .when('.between(4,4.9999)', self.params['progression_severe_wasting_by_agegp'][5])
-            .otherwise(0.0),
+            Predictor('age_exact_years', conditions_are_mutually_exclusive=True, conditions_are_exhaustive=True)
+                .when('<0.5', self.params['progression_severe_wasting_by_agegp'][0])
+                .when('.between(0.5,1, inclusive="left")', self.params['progression_severe_wasting_by_agegp'][1])
+                .when('.between(1,2, inclusive="left")', self.params['progression_severe_wasting_by_agegp'][2])
+                .when('.between(2,3, inclusive="left")', self.params['progression_severe_wasting_by_agegp'][3])
+                .when('.between(3,4, inclusive="left")', self.params['progression_severe_wasting_by_agegp'][4])
+                .when('.between(4,5, inclusive="left")', self.params['progression_severe_wasting_by_agegp'][5])
+                .otherwise(0.0),
         )
 
         self.__SAM_Death = LinearModel.multiplicative(
             Predictor('un_am_treatment_type').when('none', self.params['base_death_rate_untreated_SAM']),
             Predictor('un_sam_with_complications')
-            .when(True, self.params['rr_SAM_death_with_complications']),
+                .when(True, self.params['rr_SAM_death_with_complications']),
             Predictor().when('(un_am_bilateral_oedema == False) & '
                              '(un_WHZ_category == "WHZ<-3") &'
                              '(un_am_MUAC_category == "115-<125mm")',
@@ -1272,29 +1268,32 @@ class WastingModels:
         wasting_prevalence = LinearModel(
             LinearModelType.LOGISTIC,
             1.0,
-            Predictor('agrp', external=True)
-            .when('0_5mo', self.module.wasting_prevalence_odds_by_age_grp['0_5mo'])
-            .when('6_11mo', self.module.wasting_prevalence_odds_by_age_grp['6_11mo'])
-            .when('12_23mo', self.module.wasting_prevalence_odds_by_age_grp['12_23mo'])
-            .when('24_35mo', self.module.wasting_prevalence_odds_by_age_grp['24_35mo'])
-            .when('36_47mo', self.module.wasting_prevalence_odds_by_age_grp['36_47mo'])
-            .when('48_59mo', self.module.wasting_prevalence_odds_by_age_grp['48_59mo'])
-            .otherwise(1.0),
+            Predictor('agrp', external=True, conditions_are_mutually_exclusive=True,
+                      conditions_are_exhaustive=True)
+                .when('0_5mo', self.module.wasting_prevalence_odds_by_age_grp['0_5mo'])
+                .when('6_11mo', self.module.wasting_prevalence_odds_by_age_grp['6_11mo'])
+                .when('12_23mo', self.module.wasting_prevalence_odds_by_age_grp['12_23mo'])
+                .when('24_35mo', self.module.wasting_prevalence_odds_by_age_grp['24_35mo'])
+                .when('36_47mo', self.module.wasting_prevalence_odds_by_age_grp['36_47mo'])
+                .when('48_59mo', self.module.wasting_prevalence_odds_by_age_grp['48_59mo'])
+                .otherwise(1.0),
 
-            Predictor('agrp_scaling', external=True)
-            .when('0_5mo', self.module.age_grps_dict['0_5mo'])
-            .when('6_11mo', self.module.age_grps_dict['6_11mo'])
-            .when('12_23mo', self.module.age_grps_dict['12_23mo'])
-            .when('24_35mo', self.module.age_grps_dict['24_35mo'])
-            .when('36_47mo', self.module.age_grps_dict['36_47mo'])
-            .when('48_59mo', self.module.age_grps_dict['48_59mo'])
-            .otherwise(1.0),
+            Predictor('agrp_scaling', external=True, conditions_are_mutually_exclusive=True,
+                      conditions_are_exhaustive=True)
+                .when('0_5mo', self.module.age_grps_dict['0_5mo'])
+                .when('6_11mo', self.module.age_grps_dict['6_11mo'])
+                .when('12_23mo', self.module.age_grps_dict['12_23mo'])
+                .when('24_35mo', self.module.age_grps_dict['24_35mo'])
+                .when('36_47mo', self.module.age_grps_dict['36_47mo'])
+                .when('48_59mo', self.module.age_grps_dict['48_59mo'])
+                .otherwise(1.0),
 
-            Predictor('li_wealth').when(2, self.params['or_wasting_hhwealth_Q2'])
-            .when(3, self.params['or_wasting_hhwealth_Q3'])
-            .when(4, self.params['or_wasting_hhwealth_Q4'])
-            .when(5, self.params['or_wasting_hhwealth_Q5'])
-            .otherwise(1.0),
+            Predictor('li_wealth', conditions_are_mutually_exclusive=True, conditions_are_exhaustive=True)
+                .when(2, self.params['or_wasting_hhwealth_Q2'])
+                .when(3, self.params['or_wasting_hhwealth_Q3'])
+                .when(4, self.params['or_wasting_hhwealth_Q4'])
+                .when(5, self.params['or_wasting_hhwealth_Q5'])
+                .otherwise(1.0),
             Predictor().when(
                 '(nb_size_for_gestational_age == "small_for_gestational_age") '
                 '& (nb_late_preterm == False) & (nb_early_preterm == False)',
@@ -1313,12 +1312,12 @@ class WastingModels:
         return wasting_prevalence
 
     def get_moderate_acute_malnutrition_recovery(self):
-        """ get moderate acute malnutrition recovery amongst young children less than 5 years
+        """ returns linear model of moderate acute malnutrition recovery amongst young children less than 5 years
         """
         return self.__Acute_Malnutrition_Recovery_MAM
 
     def get_severe_acute_malnutrition_recovery(self):
-        """ get severe acute malnutrition recovery amongst young children less than 5 years
+        """ returns linear model of severe acute malnutrition recovery amongst young children less than 5 years
        """
         return self.__Acute_Malnutrition_Recovery_SAM
 
@@ -1353,7 +1352,7 @@ class WastingModels:
             probability_less_than_minus2sd = 1 - whz_normal_distribution.sf(-2)
             # convert probability to odds and update odds by age group
             #  dictionary
-            self.module.wasting_prevalence_odds_by_age_grp[agegp] =\
+            self.module.wasting_prevalence_odds_by_age_grp[agegp] = \
                 probability_less_than_minus2sd / (1 - probability_less_than_minus2sd)
 
             # get severe wasting zcores: WHZ <-3
@@ -1374,10 +1373,10 @@ class WastingModels:
             actual_mean = wasting_prevalence.predict(df.loc[df.is_alive & (df.age_years == 1)],
                                                      agrp=agegp, agrp_scaling='None').mean()
             # update and return age groups dictionary
-            self.module.age_grps_dict[agegp] =\
-                self.module.wasting_prevalence_odds_by_age_grp[agegp] * (target_mean / actual_mean)\
-                if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean))\
-                else self.module.wasting_prevalence_odds_by_age_grp[agegp]
+            self.module.age_grps_dict[agegp] = \
+                self.module.wasting_prevalence_odds_by_age_grp[agegp] * (target_mean / actual_mean) \
+                    if (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) \
+                    else self.module.wasting_prevalence_odds_by_age_grp[agegp]
 
 
 class WastingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1423,10 +1422,10 @@ class WastingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
              (df.un_WHZ_category != 'WHZ>=-2')).sum()
         currently_wasted_age_36_47mo = \
             (df.is_alive & ((df.age_exact_years >= 3) & (df.age_exact_years < 4)) & (
-                        df.un_WHZ_category != 'WHZ>=-2')).sum()
+                df.un_WHZ_category != 'WHZ>=-2')).sum()
         currently_wasted_age_48_59mo = \
             (df.is_alive & ((df.age_exact_years >= 4) & (df.age_exact_years < 5)) & (
-                        df.un_WHZ_category != 'WHZ>=-2')).sum()
+                df.un_WHZ_category != 'WHZ>=-2')).sum()
 
         currently_wasted = {'0_5mo': currently_wasted_age_0_5mo,
                             '6_11mo': currently_wasted_age_6_11mo,

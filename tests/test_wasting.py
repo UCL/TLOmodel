@@ -86,15 +86,15 @@ def check_configuration_of_properties(sim):
 
     # Those that were never wasted, should have normal WHZ score:
     assert (
-            df.loc[~df.un_ever_wasted &
-                   ~df.date_of_birth.isna(), 'un_WHZ_category'] == 'WHZ>=-2'
+        df.loc[~df.un_ever_wasted &
+               ~df.date_of_birth.isna(), 'un_WHZ_category'] == 'WHZ>=-2'
     ).all()
 
     # Those for whom the death date has past should be dead
     assert not df.loc[df.un_ever_wasted &
                       (df['un_sam_death_date'] < sim.date), 'is_alive'].any()
     assert not df.loc[(df.un_clinical_acute_malnutrition == 'SAM') & (
-            df['un_sam_death_date'] < sim.date), 'is_alive'].any()
+        df['un_sam_death_date'] < sim.date), 'is_alive'].any()
 
     # Check that those in a current episode have symptoms of wasting
     # [caused by the wasting module] but not others (among those alive)
@@ -127,8 +127,8 @@ def check_configuration_of_properties(sim):
 
     assert set() == \
            set_of_person_id_in_current_episode_before_recovery.intersection(
-        set_of_person_id_in_current_episode_before_death
-    )
+               set_of_person_id_in_current_episode_before_death
+           )
 
     # WHZ standard deviation of -3, oedema, and MUAC <115mm should cause
     # severe acute malnutrition
@@ -197,6 +197,93 @@ def test_wasting_polling(tmpdir):
     assert person['un_ever_wasted']
     assert person['un_WHZ_category'] == '-3<=WHZ<-2'
     assert person['un_last_wasting_date_of_onset'] == sim.date
+
+
+def test_report_daly_weights(tmpdir):
+    """Check if daly weights reporting is done as expected. Four checks are made:
+    1. For an individual who is well (No weights are expected/must be 0.0)
+    2. For an individual with MAM and Oedema (expected daly weight is 0.051)
+    3. For an individual with SAM, Oedema and Weight for Height Z-score(WHZ<-3), expected daly weight is 0.172
+    4. For an individual with SAM but no Oedema (expected daly weight is 0.128)"""
+
+    dur = pd.DateOffset(days=0)
+    popsize = 1
+    sim = get_sim(tmpdir)
+    sim.make_initial_population(n=popsize)
+    sim.simulate(end_date=start_date + dur)
+
+    # Dict to hold the DALY weights
+    daly_wts = dict()
+
+    # Get person to use
+    df = sim.population.props
+    person_id = df.index[0]
+
+    # Check when no daly weight is available and person is not undernourished
+    df.at[person_id, 'is_alive'] = True
+    df.at[person_id, 'un_clinical_acute_malnutrition'] = 'well'
+
+    # Report daly weight for this individual
+    daly_weights_reported = sim.modules["Wasting"].report_daly_values()
+
+    # Verify that individual has no daly weight
+    assert daly_weights_reported.loc[person_id] == 0.0
+
+    # Check daly weight for person with MAM (MAM daly weight is 0.051)
+    get_daly_weights = sim.modules['HealthBurden'].get_daly_weight
+
+    # Reset diagnosis and check correct daly weight is given for MAM
+    df.loc[person_id, 'un_clinical_acute_malnutrition'] = 'MAM'
+    df.loc[person_id, 'un_am_bilateral_oedema'] = True
+    daly_wts['MAM_with_oedema'] = get_daly_weights(sequlae_code=461)
+
+    # Verify diagnosis
+    assert df.loc[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
+    assert df.loc[person_id, 'un_am_bilateral_oedema'] == True
+
+    # Report daly weight for this individual
+    daly_weights_reported = sim.modules["Wasting"].report_daly_values()
+
+    # Compare the daly weight of this individual with the daly weight obtained from HealthBurden module
+    assert daly_wts['MAM_with_oedema'] == daly_weights_reported.loc[person_id]
+
+    # Check daly weight for person with SAM and oedema (SAM_oedema weight is 0.172)
+    # Reset diagnosis
+    df.loc[person_id, 'un_WHZ_category'] = 'WHZ<-3'
+    df.loc[person_id, 'un_clinical_acute_malnutrition'] = 'SAM'
+    df.loc[person_id, 'un_am_bilateral_oedema'] = True
+
+    # Verify diagnosis - an individual should be SAM
+    assert df.loc[person_id, 'un_WHZ_category'] == 'WHZ<-3'
+    assert df.loc[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
+    assert df.loc[person_id, 'un_am_bilateral_oedema'] == True
+
+    # Report daly weight for this individual
+    daly_weights_reported = sim.modules["Wasting"].report_daly_values()
+
+    # Get daly weights of SAM with Oedema
+    daly_wts['SAM_with_oedema'] = get_daly_weights(sequlae_code=463)
+
+    # Compare the daly weight of this individual with the daly weight obtained from HealthBurden module
+    assert daly_wts['SAM_with_oedema'] == daly_weights_reported.loc[person_id]
+
+    # Check daly weight for person with SAM no Oedema (SAM no oedema weight is 0.128)
+    # Reset diagnosis
+    df.loc[person_id, 'un_clinical_acute_malnutrition'] = 'SAM'
+    df.loc[person_id, 'un_am_bilateral_oedema'] = False
+
+    # Get day weights of SAM without Oedema
+    daly_wts['SAM_w/o_oedema'] = get_daly_weights(sequlae_code=462)
+
+    # Report daly weight for this individual
+    daly_weights_reported = sim.modules["Wasting"].report_daly_values()
+
+    # Verify diagnosis
+    assert df.loc[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
+    assert df.loc[person_id, 'un_am_bilateral_oedema'] == False
+
+    # Compare the daly weight of this individual with the daly weight obtained from HealthBurden module
+    assert daly_wts['SAM_w/o_oedema'] == daly_weights_reported.loc[person_id]
 
 
 def test_recovery_moderate_wasting(tmpdir):
@@ -609,10 +696,10 @@ def test_nat_hist_cure_if_recovery_scheduled(tmpdir):
     sim.simulate(end_date=start_date + dur)
     sim.event_queue.queue = []  # clear the queue
 
-    # Make 0% death rate by replacing with empty linear model 0.0
-    sim.modules['Wasting'].sam_death_equation = LinearModel(
-        LinearModelType.MULTIPLICATIVE, 0.0)
     wasting_module = sim.modules['Wasting']
+    # Make 0% death rate by replacing with empty linear model 0.0
+    wasting_module.sam_death_equation = LinearModel(
+        LinearModelType.MULTIPLICATIVE, 0.0)
 
     # increase wasting incidence rate to 100% and reduce rate of progress to
     # severe wasting to zero.We don't want individuals to progress to SAM as

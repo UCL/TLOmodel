@@ -88,7 +88,7 @@ class WastingAnalyses:
                 _col_counter = -1
             _col_counter += 1  # increment column counter
             fig.tight_layout()
-        plt.show()
+        # plt.show()
 
     def plot_wasting_prevalence(self):
         w_prev_df = self.__logs_dict['wasting_prevalence_count']
@@ -100,7 +100,7 @@ class WastingAnalyses:
                        ylabel='proportions',
                        xlabel='year'
                        )
-        plt.show()
+        # plt.show()
 
     def plot_modal_gbd_deaths_by_gender(self):
         """ compare modal and GBD deaths by gender """
@@ -126,77 +126,76 @@ class WastingAnalyses:
             outputs / ('modal_gbd_deaths_by_gender' + datestamp + ".pdf"),
             format="pdf"
         )
+        # plt.show()
 
-        plt.show()
+if __name__ == "__main__":
+    seed = 1
 
+    # Path to the resource files used by the disease and intervention methods
+    resources = Path("./resources")
+    outputs = Path("./outputs")
 
-seed = 1
+    # create a datestamp
+    datestamp = datetime.date.today().strftime("__%Y_%m_%d") + \
+                datetime.datetime.now().strftime("%H_%M_%S")
 
-# Path to the resource files used by the disease and intervention methods
-resources = Path("./resources")
-outputs = Path("./outputs")
-
-# create a datestamp
-datestamp = datetime.date.today().strftime("__%Y_%m_%d") + \
-            datetime.datetime.now().strftime("%H_%M_%S")
-
-# configure logging
-log_config = {
-    # output filename. A timestamp will be added to this.
-    "filename": "wasting",
-    "custom_levels": {  # Customise the output of specific loggers
-        "tlo.methods.demography": logging.INFO,
-        "tlo.methods.population": logging.INFO,
-        "tlo.methods.wasting": logging.INFO,
-        '*': logging.WARNING
+    # configure logging
+    log_config = {
+        # output filename. A timestamp will be added to this.
+        "filename": "wasting",
+        "custom_levels": {  # Customise the output of specific loggers
+            "tlo.methods.demography": logging.INFO,
+            "tlo.methods.population": logging.INFO,
+            "tlo.methods.wasting": logging.INFO,
+            '*': logging.WARNING
+        }
     }
-}
 
-# Basic arguments required for the simulation
-start_date = Date(2010, 1, 1)
-end_date = Date(2030, 1, 2)
-pop_size = 10000
+    # Basic arguments required for the simulation
+    start_date = Date(2010, 1, 1)
+    end_date = Date(2030, 1, 2)
+    pop_size = 30000
 
-# Create simulation instance for this run.
-sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+    # Create simulation instance for this run.
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
-# Register modules for simulation
-sim.register(
-    demography.Demography(resourcefilepath=resources),
-    healthsystem.HealthSystem(resourcefilepath=resources,
-                              service_availability=['*'],
-                              cons_availability='default'),
-    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-    healthburden.HealthBurden(resourcefilepath=resources),
-    symptommanager.SymptomManager(resourcefilepath=resources),
-    enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
-    labour.Labour(resourcefilepath=resources),
-    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(
-        resourcefilepath=resources),
-    contraception.Contraception(resourcefilepath=resources),
-    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
-    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
-    newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
-    hiv.Hiv(resourcefilepath=resources),
-    tb.Tb(resourcefilepath=resources),
-    epi.Epi(resourcefilepath=resources),
-    wasting.Wasting(resourcefilepath=resources),
-)
+    # Register modules for simulation
+    sim.register(
+        demography.Demography(resourcefilepath=resources),
+        healthsystem.HealthSystem(resourcefilepath=resources,
+                                  service_availability=['*'],
+                                  cons_availability='default'),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
+        healthburden.HealthBurden(resourcefilepath=resources),
+        symptommanager.SymptomManager(resourcefilepath=resources),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
+        labour.Labour(resourcefilepath=resources),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(
+            resourcefilepath=resources),
+        contraception.Contraception(resourcefilepath=resources),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resources),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resources),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resources),
+        hiv.Hiv(resourcefilepath=resources),
+        tb.Tb(resourcefilepath=resources),
+        epi.Epi(resourcefilepath=resources),
+        wasting.Wasting(resourcefilepath=resources),
+    )
 
-sim.make_initial_population(n=pop_size)
-sim.simulate(end_date=end_date)
+    sim.make_initial_population(n=pop_size)
+    sim.simulate(end_date=end_date)
 
-# read the results
-output_path = sim.log_filepath
+    # read the results
+    output_path = sim.log_filepath
 
-# initialise the wasting class
-wasting_analyses = WastingAnalyses(output_path)
+    # initialise the wasting class
+    wasting_analyses = WastingAnalyses(output_path)
 
-# plot wasting incidence
-wasting_analyses.plot_wasting_incidence()
+    # plot wasting incidence
+    wasting_analyses.plot_wasting_incidence()
 
-# plot wasting prevalence
-wasting_analyses.plot_wasting_prevalence()
+    # plot wasting prevalence
+    wasting_analyses.plot_wasting_prevalence()
 
-# plot wasting deaths by gender as compared to GBD deaths
-wasting_analyses.plot_modal_gbd_deaths_by_gender()
+    # plot wasting deaths by gender as compared to GBD deaths
+    wasting_analyses.plot_modal_gbd_deaths_by_gender()
