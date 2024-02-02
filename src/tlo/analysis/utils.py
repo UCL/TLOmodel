@@ -733,9 +733,6 @@ SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
     '*': 'black',
 
     'FirstAttendance*': 'darkgrey',
-    'UndernutritionFeedingInpatient*': 'silver',
-    'UndernutritionFeedingOutpatient*': 'grey',
-    'UndernutritionFeedingSupplementary*': 'darkslategrey',
 
     'Contraception*': 'darkseagreen',
     'AntenatalCare*': 'green',
