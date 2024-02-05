@@ -2654,11 +2654,11 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             oxygen_available = self._get_cons('Oxygen_Therapy')
             oxygen_provided = (oxygen_available and oxygen_indicated)
 
-            # If individual requires oxygen, update equipment
+            # If individual requires oxygen, add used equipment
             if oxygen_provided:
                 self.add_equipment({'Oxygen cylinder, with regulator', 'Nasal Prongs'})
 
-            # If individual requires intravenous antibiotics, update equipment
+            # If individual requires intravenous antibiotics, add used equipment
             if antibiotic_provided in ('1st_line_IV_antibiotics',
                                        'Benzylpenicillin_gentamicin_therapy_for_severe_pneumonia'):
                 self.add_equipment({'Infusion pump', 'Drip stand'})

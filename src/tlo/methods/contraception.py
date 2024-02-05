@@ -1285,7 +1285,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
             _new_contraceptive = self.new_contraceptive
 
-            # Update equipment
+            # Add used equipment
             if _new_contraceptive == 'female_sterilization':
                 self.add_equipment({
                     'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise'

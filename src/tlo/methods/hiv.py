@@ -2257,7 +2257,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
                 # Update circumcision state
                 df.at[person_id, "li_is_circ"] = True
 
-                # Update equipment
+                # Add used equipment
                 self.add_equipment({'Drip stand', 'Stool, adjustable height', 'Autoclave',
                                        'Bipolar Diathermy Machine', 'Bed, adult', 'Trolley, patient'})
 

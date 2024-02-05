@@ -687,7 +687,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
 
         if cons_avail:
             # Use a biopsy to diagnose whether the person has breast Cancer
-            # If consumables are available update the use of equipment and run the dx_test representing the biopsy
+            # If consumables are available, add the used equipment and run the dx_test representing the biopsy
             self.add_equipment({'Ultrasound scanning machine', 'Ordinary Microscope'})
 
             dx_result = hs.dx_manager.run_dx_test(
@@ -790,7 +790,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         )
 
         if cons_available:
-            # If consumables are available and the treatment will go ahead - update the equipment
+            # If consumables are available and the treatment will go ahead - add the used equipment
             # TODO: link to surgical equipment package when that exists
             self.add_equipment({'Infusion pump', 'Drip stand', 'Laparotomy Set',
                                    'Blood pressure machine', 'Pulse oximeter'})
@@ -805,7 +805,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "brc_stage_at_which_treatment_given"] = df.at[person_id, "brc_status"]
 
             # TODO: Eva's dummy equipment example - it needs to be replaced by real items from the RF
-            # Update equipment
+            # Add used equipment
             # self.add_equipment({'Anything used for mastectomy'})
 
             # Schedule a post-treatment check for 12 months:
@@ -914,7 +914,7 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
         if cons_available:
 
-            # If consumables are available and the treatment will go ahead - update the equipment
+            # If consumables are available and the treatment will go ahead - add the used equipment
             self.add_equipment({'Infusion pump', 'Drip stand'})
 
             # Record the start of palliative care if this is first appointment

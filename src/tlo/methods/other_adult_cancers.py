@@ -664,7 +664,7 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
                                           self.module.item_codes_other_can['screening_biopsy_optional'])
 
         if cons_avail:
-            # If consumables are available update equipment and run the dx_test representing the biopsy
+            # If consumables are available add used equipment and run the dx_test representing the biopsy
             self.add_equipment({'Ultrasound scanning machine', 'Ordinary Microscope'})
 
             # Use a diagnostic_device to diagnose whether the person has other adult cancer:

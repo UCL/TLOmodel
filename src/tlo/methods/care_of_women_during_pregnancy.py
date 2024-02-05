@@ -1462,7 +1462,7 @@ class HSI_CareOfWomenDuringPregnancy_FirstAntenatalCareContact(HSI_Event, Indivi
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             #  =================================== INTERVENTIONS ====================================================
-            # Update equipment used during first ANC visit not directly related to interventions
+            # Add equipment used during first ANC visit not directly related to interventions
             self.add_equipment(
                 {'Weighing scale', 'Height Pole (Stadiometer)', 'MUAC tape', 'Measuring tapes',
                  'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ'})
@@ -1556,7 +1556,7 @@ class HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact(HSI_Event, Indiv
             df.at[person_id, 'ac_total_anc_visits_current_pregnancy'] += 1
 
             #  =================================== INTERVENTIONS ====================================================
-            # Update equipment used during  ANC visit not directly related to interventions
+            # Add equipment used during  ANC visit not directly related to interventions
             self.add_equipment(
                 {'Weighing scale', 'Measuring tapes', 'Stethoscope, foetal, monaural, Pinard, plastic'
                  'Ultrasound, combined 2/4 pole interferential with vacuum and dual frequency 1-3MHZ'})
@@ -2628,7 +2628,7 @@ class HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(HSI_Event, Indiv
                                                                                    sf='retained_prod',
                                                                                    hsi_event=self)
 
-        # Update equipment if intervention can happen
+        # Add used equipment if intervention can happen
         if baseline_cons and sf_check:
             self.add_equipment({'D&C set', 'Suction Curettage machine', 'Drip stand', 'Infusion pump'})
 

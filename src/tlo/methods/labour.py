@@ -1867,7 +1867,7 @@ class Labour(Module):
 
                 if avail and sf_check:
 
-                    # Update equipment
+                    # Add used equipment
                     hsi_event.add_equipment({'Delivery Forceps', 'Vacuum extractor'})
 
                     pregnancy_helper_functions.log_met_need(self, f'avd_{indication}', hsi_event)
@@ -2120,7 +2120,7 @@ class Labour(Module):
 
             if avail and sf_check:
 
-                # Update equipment
+                # Add used equipment
                 # Todo: link to surgical equipment package when that exsists
                 hsi_event.add_equipment(
                     {'Infusion pump', 'Drip stand', 'Laparotomy Set', 'Blood pressure machine', 'Pulse oximeter'})
@@ -2134,7 +2134,7 @@ class Labour(Module):
                 else:
                     # If the treatment is unsuccessful then women will require a hysterectomy to stop the bleeding
 
-                    # Update equipment
+                    # Add used equipment
                     # Todo: link to surgical equipment package when that exsists
                     hsi_event.add_equipment(
                      {'Hysterectomy set'})
@@ -2148,7 +2148,7 @@ class Labour(Module):
               and sf_check and avail):
             self.pph_treatment.set(person_id, 'surgery')
 
-            # Update equipment
+            # Add used equipment
             # Todo: link to surgical equipment package when that exsists
             hsi_event.add_equipment(
                 {'Infusion pump', 'Drip stand', 'Laparotomy Set', 'Blood pressure machine', 'Pulse oximeter'})
@@ -2204,7 +2204,7 @@ class Labour(Module):
         mother = df.loc[person_id]
         mni = self.sim.modules['PregnancySupervisor'].mother_and_newborn_info
 
-        # Update equipment
+        # Add used equipment
         hsi_event.add_equipment({'Analyser, Haematology'})
 
         # Use dx_test function to assess anaemia status
@@ -3216,7 +3216,7 @@ class HSI_Labour_ReceivesComprehensiveEmergencyObstetricCare(HSI_Event, Individu
 
             if avail and sf_check or (mni[person_id]['cs_indication'] == 'other'):
 
-                # If intervention is delivered - update equipment
+                # If intervention is delivered - add used equipment
                 # Todo: link to surgical equipment package when that exsists
                 self.add_equipment(
                     {'Infusion pump', 'Drip stand', 'Laparotomy Set', 'Blood pressure machine', 'Pulse oximeter'})
