@@ -195,7 +195,6 @@ def test_wasting_incidence(tmpdir):
     # Check properties of individuals: should now be moderately wasted
     df = sim.population.props
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
-    person_id = under5s.index[0]
     assert all(under5s['un_ever_wasted'])
     assert all(under5s['un_WHZ_category'] == '-3<=WHZ<-2')
     assert all(under5s['un_last_wasting_date_of_onset'] == sim.date)
