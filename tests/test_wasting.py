@@ -30,8 +30,9 @@ from tlo.methods.wasting import (
     HSI_Wasting_OutpatientTherapeuticProgramme_SAM,
     ProgressionSevereWastingEvent,
     SevereAcuteMalnutritionDeathEvent,
+    UpdateToMAM,
     WastingNaturalRecoveryEvent,
-    WastingPollingEvent, UpdateToMAM,
+    WastingPollingEvent,
 )
 
 # Path to the resource files used by the disease and intervention methods
