@@ -1721,7 +1721,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Screening"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         """Do the screening and referring to next tests"""
@@ -1817,7 +1817,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         )
                 if test_result is not None:
                     # Update equipment
-                    self.EQUIPMENT.update({'Sputum Collection box', 'Ordinary Microscope'})
+                    self.add_equipment({'Sputum Collection box', 'Ordinary Microscope'})
 
             elif test == "xpert":
                 ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
@@ -1835,7 +1835,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                     )
                 if test_result is not None:
                     # Update equipment
-                    self.EQUIPMENT.update({'Sputum Collection box', 'Gene Expert (16 Module)'})
+                    self.add_equipment({'Sputum Collection box', 'Gene Expert (16 Module)'})
 
         # ------------------------- testing referrals ------------------------- #
 
@@ -1856,7 +1856,7 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
             )
             if test_result is not None:
                 # Update equipment
-                self.EQUIPMENT.update({'Sputum Collection box', 'Ordinary Microscope'})
+                self.add_equipment({'Sputum Collection box', 'Ordinary Microscope'})
 
         # if still no result available, rely on clinical diagnosis
         if test_result is None:
@@ -1966,7 +1966,7 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Clinical"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Under5OPD": 0.5})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         """ Do the screening and referring process """
@@ -2034,7 +2034,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
 
@@ -2058,7 +2058,7 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
             )
         if test_result is not None:
             # Update equipment
-            self.EQUIPMENT.update({'X-ray machine', 'X-ray viewer'})  # TODO: make an x-ray pkg with these items
+            self.add_equipment({'X-ray machine', 'X-ray viewer'})  # TODO: make an x-ray pkg with these items
 
         # if consumables not available, refer to level 2
         # return blank footprint as xray did not occur
@@ -2109,7 +2109,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_Xray"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"DiagRadio": 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
 
@@ -2133,7 +2133,7 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             )
         if test_result is not None:
             # Update equipment
-            self.EQUIPMENT.update({'X-ray machine', 'X-ray viewer'})  # TODO: make an x-ray pkg with these items
+            self.add_equipment({'X-ray machine', 'X-ray viewer'})  # TODO: make an x-ray pkg with these items
 
         # if consumables not available, rely on clinical diagnosis
         # return blank footprint as xray was not available
@@ -2181,7 +2181,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         self.TREATMENT_ID = "Tb_Treatment"
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
         self.number_of_occurrences = 0
 
     @property
@@ -2330,7 +2330,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Test_FollowUp"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"TBFollowUp": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         p = self.module.parameters
@@ -2396,7 +2396,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
                 )
             if test_result is not None:
                 # Update equipment
-                self.EQUIPMENT.update({'Sputum Collection box', 'Ordinary Microscope'})
+                self.add_equipment({'Sputum Collection box', 'Ordinary Microscope'})
 
             # if sputum test was available and returned positive and not diagnosed with mdr, schedule xpert test
             if test_result and not person["tb_diagnosed_mdr"]:
@@ -2413,7 +2413,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
                     )
                 if xperttest_result is not None:
                     # Update equipment
-                    self.EQUIPMENT.update({'Sputum Collection box', 'Gene Expert (16 Module)'})
+                    self.add_equipment({'Sputum Collection box', 'Gene Expert (16 Module)'})
 
         # if xpert test returns new mdr-tb diagnosis
         if xperttest_result and (df.at[person_id, "tb_strain"] == "mdr"):
@@ -2468,7 +2468,7 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Tb_Prevention_Ipt"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
         self.number_of_occurrences = 0
 
     def apply(self, person_id, squeeze_factor):

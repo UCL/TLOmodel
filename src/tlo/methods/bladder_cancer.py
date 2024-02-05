@@ -661,7 +661,7 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
         self.TREATMENT_ID = "BladderCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
         # equipment: (ultrsound guided) biopsy, lab equipment for histology
 
@@ -689,7 +689,7 @@ class HSI_BladderCancer_Investigation_Following_Blood_Urine(HSI_Event, Individua
         if cons_avail:
             # Use a biopsy to diagnose whether the person has bladder Cancer
             # If consumables are available update the use of equipment and run the dx_test representing the biopsy
-            self.EQUIPMENT.update({'Cystoscope', 'Ordinary Microscope'})
+            self.add_equipment({'Cystoscope', 'Ordinary Microscope'})
 
             # Use a cystoscope to diagnose whether the person has bladder Cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -738,7 +738,7 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
         self.TREATMENT_ID = "BladderCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
         # equipment: (ultrsound guided) biopsy, lab equipment for histology
 
@@ -766,7 +766,7 @@ class HSI_BladderCancer_Investigation_Following_pelvic_pain(HSI_Event, Individua
         if cons_avail:
             # Use a biopsy to diagnose whether the person has bladder Cancer
             # If consumables are available log the use of equipment and run the dx_test representing the biopsy
-            self.EQUIPMENT.update({'Cystoscope', 'Ordinary Microscope'})
+            self.add_equipment({'Cystoscope', 'Ordinary Microscope'})
 
             # Use a cystoscope to diagnose whether the person has bladder Cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -820,7 +820,7 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'MajorSurg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
         # equipment: standard equipment for surgery
 
@@ -860,7 +860,7 @@ class HSI_BladderCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if cons_avail:
             # If consumables are available and the treatment will go ahead - update the equipment
             # TODO: link to surgical equipment package when that exists
-            self.EQUIPMENT.update({'Infusion pump', 'Drip stand', 'Laparotomy Set',
+            self.add_equipment({'Infusion pump', 'Drip stand', 'Laparotomy Set',
                                    'Blood pressure machine', 'Pulse oximeter'})
 
             # Record date and stage of starting treatment
@@ -893,7 +893,7 @@ class HSI_BladderCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = "BladderCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
         # I assume ultrasound (Ultrasound scanning machine) and biopsy
 
@@ -952,7 +952,7 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
         # no equipment as far as I am aware
 
@@ -973,7 +973,7 @@ class HSI_BladderCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         if cons_available:
 
             # If consumables are available and the treatment will go ahead - update the equipment
-            self.EQUIPMENT.update({'Infusion pump', 'Drip stand'})
+            self.add_equipment({'Infusion pump', 'Drip stand'})
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "bc_date_palliative_care"]):

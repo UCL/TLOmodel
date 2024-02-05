@@ -2290,7 +2290,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         self._treatment_id_stub = 'Alri_Pneumonia_Treatment'
         self._facility_levels = ("0", "1a", "1b", "2")  # Health facility levels at which care may be provided
         assert facility_level in self._facility_levels
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
         self.is_followup_following_treatment_failure = is_followup_following_treatment_failure
 
@@ -2598,7 +2598,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                  'cough_or_cold'                    (symptoms-based assessment)
          }."""
         if use_oximeter:
-            self.EQUIPMENT.update({'Pulse oximeter'})
+            self.add_equipment({'Pulse oximeter'})
 
         child_is_younger_than_2_months = age_exact_years < (2.0 / 12.0)
 
@@ -2656,12 +2656,12 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
             # If individual requires oxygen, update equipment
             if oxygen_provided:
-                self.EQUIPMENT.update({'Oxygen cylinder, with regulator', 'Nasal Prongs'})
+                self.add_equipment({'Oxygen cylinder, with regulator', 'Nasal Prongs'})
 
             # If individual requires intravenous antibiotics, update equipment
             if antibiotic_provided in ('1st_line_IV_antibiotics',
                                        'Benzylpenicillin_gentamicin_therapy_for_severe_pneumonia'):
-                self.EQUIPMENT.update({'Infusion pump', 'Drip stand'})
+                self.add_equipment({'Infusion pump', 'Drip stand'})
 
             all_things_needed_available = antibiotic_available and (
                 (oxygen_available and oxygen_indicated) or (not oxygen_indicated)
@@ -2757,7 +2757,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             _ = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
 
         if _:
-            self.EQUIPMENT.update({'Infusion pump', 'Drip stand'})
+            self.add_equipment({'Infusion pump', 'Drip stand'})
 
     def apply(self, person_id, squeeze_factor):
         """Assess and attempt to treat the person."""

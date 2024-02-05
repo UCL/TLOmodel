@@ -2098,7 +2098,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Hiv_Test"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"VCTNegative": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         """Do the testing and referring to other services"""
@@ -2236,7 +2236,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MaleCirc": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.number_of_occurrences = 0
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         """ Do the circumcision for this man. If he is already circumcised, this is a follow-up appointment."""
@@ -2258,7 +2258,7 @@ class HSI_Hiv_Circ(HSI_Event, IndividualScopeEventMixin):
                 df.at[person_id, "li_is_circ"] = True
 
                 # Update equipment
-                self.EQUIPMENT.update({'Drip stand', 'Stool, adjustable height', 'Autoclave',
+                self.add_equipment({'Drip stand', 'Stool, adjustable height', 'Autoclave',
                                        'Bipolar Diathermy Machine', 'Bed, adult', 'Trolley, patient'})
 
                 # Schedule follow-up appts
@@ -2297,7 +2297,7 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.referred_from = referred_from
         self.repeat_visits = repeat_visits
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         """
@@ -2366,7 +2366,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "Hiv_Prevention_Prep"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"PharmDispensing": 1, "VCTNegative": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         """Start PrEP for this person; or continue them on PrEP for 3 more months"""
@@ -2428,7 +2428,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         self.ACCEPTED_FACILITY_LEVEL = facility_level_of_this_hsi
         self.counter_for_drugs_not_available = 0
         self.counter_for_did_not_run = 0
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         """This is a Health System Interaction Event - start or continue HIV treatment for 6 more months"""

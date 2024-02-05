@@ -647,7 +647,7 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
         self.TREATMENT_ID = "OesophagealCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
         # I think this will need endoscope and biopsy needle.  Also lab equipment needed to perform histology.
         # I can't see endoscope in equipment list but it may be given a slightly different name
@@ -676,7 +676,7 @@ class HSI_OesophagealCancer_Investigation_Following_Dysphagia(HSI_Event, Individ
         if cons_avail:
             # If consumables are available update equipment and run the dx_test representing the biopsy
             # n.b. endoscope not in equipment list
-            self.EQUIPMENT.update({'Endoscope', 'Ordinary Microscope'})
+            self.add_equipment({'Endoscope', 'Ordinary Microscope'})
 
             # Use an endoscope to diagnose whether the person has Oesophageal Cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -731,7 +731,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
         # equipment need here will be surgery
 
@@ -770,7 +770,7 @@ class HSI_OesophagealCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin)
         if cons_avail:
             # If consumables are available and the treatment will go ahead - update the equipment
             # TODO: link to surgical equipment package when that exists
-            self.EQUIPMENT.update({'Infusion pump', 'Drip stand', 'Laparotomy Set',
+            self.add_equipment({'Infusion pump', 'Drip stand', 'Laparotomy Set',
                                    'Blood pressure machine', 'Pulse oximeter'})
 
             # Log chemotherapy consumables
@@ -808,7 +808,7 @@ class HSI_OesophagealCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMi
         self.TREATMENT_ID = "OesophagealCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
         # equipment: I assume endoscope needed for this
 
@@ -867,7 +867,7 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
         # when radiology available then palliative radiology may be performed but suggest we don't need to include yet
         # not sure what equipment needed for Endoscopic stent placement or Feeding tube which are done as palliative
@@ -889,7 +889,7 @@ class HSI_OesophagealCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin)
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment
-            self.EQUIPMENT.update({'Infusion pump', 'Drip stand'})
+            self.add_equipment({'Infusion pump', 'Drip stand'})
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "oc_date_palliative_care"]):

@@ -1007,7 +1007,7 @@ class NewbornOutcomes(Module):
                     pregnancy_helper_functions.log_met_need(self, 'neo_sep_supportive_care', hsi_event)
 
                     # Update equipment
-                    hsi_event.EQUIPMENT.update({'Drip stand', 'Infusion pump'})
+                    hsi_event.add_equipment({'Drip stand', 'Infusion pump'})
 
             # The same pattern is then followed for health centre care
             else:
@@ -1020,7 +1020,7 @@ class NewbornOutcomes(Module):
                     pregnancy_helper_functions.log_met_need(self, 'neo_sep_abx', hsi_event)
 
                     # Update equipment
-                    hsi_event.EQUIPMENT.update({'Drip stand', 'Infusion pump', 'Oxygen cylinder, with regulator'})
+                    hsi_event.add_equipment({'Drip stand', 'Infusion pump', 'Oxygen cylinder, with regulator'})
 
     def link_twins(self, child_one, child_two, mother_id):
         """
@@ -1386,7 +1386,7 @@ class HSI_NewbornOutcomes_ReceivesPostnatalCheck(HSI_Event, IndividualScopeEvent
         self.TREATMENT_ID = 'PostnatalCare_Neonatal'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Under5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = self._get_facility_level_for_pnc(person_id)
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         nci = self.module.newborn_care_info
@@ -1478,7 +1478,7 @@ class HSI_NewbornOutcomes_NeonatalWardInpatientCare(HSI_Event, IndividualScopeEv
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 5})
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
 

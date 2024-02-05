@@ -638,7 +638,7 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
         self.TREATMENT_ID = "OtherAdultCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
         # equipment: investigations will differ by presenting symptom, but suggest we have biopsy and histology
         # and ultrasound
@@ -665,7 +665,7 @@ class HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
 
         if cons_avail:
             # If consumables are available update equipment and run the dx_test representing the biopsy
-            self.EQUIPMENT.update({'Ultrasound scanning machine', 'Ordinary Microscope'})
+            self.add_equipment({'Ultrasound scanning machine', 'Ordinary Microscope'})
 
             # Use a diagnostic_device to diagnose whether the person has other adult cancer:
             dx_result = hs.dx_manager.run_dx_test(
@@ -722,7 +722,7 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
         # equipment: a proportion of these cancers will require surgery - also radiotherapy in some cases when available
 
@@ -760,7 +760,7 @@ class HSI_OtherAdultCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment
             # TODO: link to surgical equipment package when that exists
-            self.EQUIPMENT.update({'Infusion pump', 'Drip stand', 'Laparotomy Set',
+            self.add_equipment({'Infusion pump', 'Drip stand', 'Laparotomy Set',
                                    'Blood pressure machine', 'Pulse oximeter'})
 
             # Record date and stage of starting treatment
@@ -796,7 +796,7 @@ class HSI_OtherAdultCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMix
         self.TREATMENT_ID = "OtherAdultCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
         # equipment: some checks will involve further biopsy, ultrasound, histology
 
@@ -859,7 +859,7 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
         # equipment: in general not required I don't think
 
     def apply(self, person_id, squeeze_factor):
@@ -878,7 +878,7 @@ class HSI_OtherAdultCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
 
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment
-            self.EQUIPMENT.update({'Infusion pump', 'Drip stand'})
+            self.add_equipment({'Infusion pump', 'Drip stand'})
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "oac_date_palliative_care"]):

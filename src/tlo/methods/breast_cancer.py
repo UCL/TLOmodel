@@ -650,7 +650,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         self.TREATMENT_ID = "BreastCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "Mammography": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'  # Biopsy only available at level 3 and above.
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
         # TODO: Eva's dummy equipment example (not sure if it actually needs to be added and if it is in the RF)
         #  {'Slice Master sample processing Unit', 'Paraffin Dispense', 'Whatever used with biopsy'}
@@ -688,7 +688,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         if cons_avail:
             # Use a biopsy to diagnose whether the person has breast Cancer
             # If consumables are available update the use of equipment and run the dx_test representing the biopsy
-            self.EQUIPMENT.update({'Ultrasound scanning machine', 'Ordinary Microscope'})
+            self.add_equipment({'Ultrasound scanning machine', 'Ordinary Microscope'})
 
             dx_result = hs.dx_manager.run_dx_test(
                 dx_tests_to_run='biopsy_for_breast_cancer_given_breast_lump_discernible',
@@ -747,7 +747,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
         # ap_oct23 - I believe this will almost always be mastectomy surgery with chemotherapy, so I think for equipment
         # we just need the standard surgery equipment list. We may need to add radiotherapy when more available.
@@ -792,7 +792,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         if cons_available:
             # If consumables are available and the treatment will go ahead - update the equipment
             # TODO: link to surgical equipment package when that exists
-            self.EQUIPMENT.update({'Infusion pump', 'Drip stand', 'Laparotomy Set',
+            self.add_equipment({'Infusion pump', 'Drip stand', 'Laparotomy Set',
                                    'Blood pressure machine', 'Pulse oximeter'})
 
             # Log the use of adjuvant chemotherapy
@@ -806,7 +806,7 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
             # TODO: Eva's dummy equipment example - it needs to be replaced by real items from the RF
             # Update equipment
-            # self.EQUIPMENT.update({'Anything used for mastectomy'})
+            # self.add_equipment({'Anything used for mastectomy'})
 
             # Schedule a post-treatment check for 12 months:
             hs.schedule_hsi_event(
@@ -834,7 +834,7 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "BreastCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
         # ap_oct23 - Eva, I'm not aware of any equipment needed here.  Clinical guidelines do not specify what
         # checks or monitoring are indicated
@@ -894,7 +894,7 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
-        self.EQUIPMENT = set()
+        self.set_equipment_essential_to_run_event({''})
 
     # not sure there is any need for equipment here
 
@@ -915,7 +915,7 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         if cons_available:
 
             # If consumables are available and the treatment will go ahead - update the equipment
-            self.EQUIPMENT.update({'Infusion pump', 'Drip stand'})
+            self.add_equipment({'Infusion pump', 'Drip stand'})
 
             # Record the start of palliative care if this is first appointment
             if pd.isnull(df.at[person_id, "brc_date_palliative_care"]):
