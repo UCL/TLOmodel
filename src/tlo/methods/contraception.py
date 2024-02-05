@@ -1288,11 +1288,11 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
             # Update equipment
             if _new_contraceptive == 'female_sterilization':
                 self.EQUIPMENT.update({
-                    'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise', 'Examination couch'
+                    'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise'
                 })
             elif _new_contraceptive == 'IUD':
                 self.EQUIPMENT.update({
-                    'Cusco’s/ bivalved Speculum (small, medium, large)', 'Sponge Holding Forceps',  'Examination couch'
+                    'Cusco’s/ bivalved Speculum (small, medium, large)', 'Sponge Holding Forceps'
                 })
 
         else:

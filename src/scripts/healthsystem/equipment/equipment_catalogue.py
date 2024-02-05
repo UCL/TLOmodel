@@ -22,6 +22,7 @@ suffix_file_names = '__2y_2Kpop_4runs_1draw'
 # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+# TODO: Could I have use the bin_hsi_event_details from src/tlo/analysis/utils.py instead? If so, how?
 def get_monthly_hsi_event_counts(results_folder: Path) -> pd.DataFrame:
     """Returned pd.DataFrame gives the monthly counts of all the hsi event details logged (details as keys)
     for each simulated month.
@@ -108,6 +109,12 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
     output_summary_file_name = 'equipment_summary__module_name_event_name_treatment_id' + suffix_file_names + '.csv'
     # ---
 
+    # %%% Load RF
+    # Equipment
+    equip_resource_items_pkgs_df = pd.read_csv(
+        'resources/healthsystem/infrastructure_and_equipment/ResourceFile_Equipment.csv'
+    )
+
     # %% Catalog equipment by all HSI event details
     sim_equipment = get_monthly_hsi_event_counts(results_folder)
     sim_equipment_df = pd.DataFrame(sim_equipment)
@@ -118,8 +125,21 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
     def details_col_to_str(details_col):
         return details_col.apply(lambda x: ', '.join(map(str, x)))
 
-    def lists_of_strings_to_strings_of_list(list_of_strings_col):
-        return list_of_strings_col.apply(lambda x: "['" + "', '".join(map(str, x)) + "']")
+    def get_equip_item_name_from_item_code(equip_item_code: int) -> str:
+        """Helper function to provide the equip item name (a string) when provided with the equip_item_code (an int)."""
+        lookup_df = equip_resource_items_pkgs_df
+        return str(pd.unique(lookup_df.loc[lookup_df["Equip_Code"] == equip_item_code, "Equip_Item"])[0])
+
+    def get_equip_item_code_from_item_name(equip_item_name: str) -> int:
+        """Helper function to provide the equip item code (an int) when provided with the equip_item_name (a string)"""
+        lookup_df = equip_resource_items_pkgs_df
+        return int(pd.unique(lookup_df.loc[lookup_df["Equip_Item"] == equip_item_name, "Equip_Code"])[0])
+
+    def lists_of_equip_item_codes_to_strings_of_list_of_equip_item_names(list_of_equip_item_codes_col):
+        return list_of_equip_item_codes_col.apply(
+            lambda x:
+            str(sorted([get_equip_item_name_from_item_code(item_code) for item_code in x]))
+        )
 
     def strings_of_list_to_lists_of_strings(strings_of_list_col):
         lists_of_strings_col = strings_of_list_col.apply(lambda x: x.strip('][').split("'"))
@@ -151,7 +171,7 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
         # Make values in 'appt_footprint', 'beddays_footprint', and 'equipment' columns to be string
         df_col['appt_footprint'] = details_col_to_str(df_col['appt_footprint'])
         df_col['beddays_footprint'] = details_col_to_str(df_col['beddays_footprint'])
-        df_col['equipment'] = lists_of_strings_to_strings_of_list(df_col['equipment'])
+        df_col['equipment'] = lists_of_equip_item_codes_to_strings_of_list_of_equip_item_names(df_col['equipment'])
         df_col = (df_col.droplevel(level=1)
                   .set_index(['module_name', 'event_name', 'treatment_id', 'facility_level', 'appt_footprint',
                               'beddays_footprint', 'equipment'], append=True))
@@ -198,7 +218,7 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
         ).sum()
 
     # Remove rows with no equipment used
-    equipment_counts_by_time_and_requested_details.drop("['']", level='equipment', axis=0, inplace=True)
+    equipment_counts_by_time_and_requested_details.drop("[]", level='equipment', axis=0, inplace=True)
     # Split the equipment by an item per row
     equipment_counts_by_time_and_requested_details['equipment'] = \
         equipment_counts_by_time_and_requested_details.index.get_level_values('equipment')
@@ -208,7 +228,10 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
         equipment_counts_by_time_and_requested_details['equipment']
     )
     exploded_df = equipment_counts_by_time_and_requested_details.explode('equipment')
-    exploded_df = exploded_df.set_index(['equipment'], append=True)
+    # Add column with equip item code
+    exploded_df['equip_code'] = exploded_df['equipment'].apply(lambda x: get_equip_item_code_from_item_name(x))
+    exploded_df = exploded_df.set_index(['equipment', 'equip_code'], append=True)
+
     # Sum values with the same multi-index
     exploded_df = exploded_df.groupby(level=exploded_df.index.names).sum()
 

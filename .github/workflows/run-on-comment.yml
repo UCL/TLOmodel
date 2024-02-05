@@ -194,7 +194,7 @@ jobs:
 
     - name: Upload artifact if requested
       if: "${{ inputs.artifact-path != '' }}"
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ inputs.artifact-name }}
         path: ${{ inputs.artifact-path }}

@@ -1822,7 +1822,7 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
             )
 
             self.sim.schedule_event(
-                event=HivAidsOnsetEvent(person_id=person_id, module=self, cause='AIDS_non_TB'),
+                event=HivAidsOnsetEvent(person_id=person_id, module=self.sim.modules["Hiv"], cause='AIDS_non_TB'),
                 date=self.sim.date + pd.DateOffset(months=months_to_aids),
             )
 

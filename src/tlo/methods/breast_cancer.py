@@ -661,6 +661,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         # package ?  I do not think mammography is done at this point but I could be wrong.
 
         # biopsy always performed with this HSI, hence always used the same set of equipment
+        # TODO: but the appt footprints suggests mammography to be provided
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -677,7 +678,7 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         if not pd.isnull(df.at[person_id, "brc_date_diagnosis"]):
             return hs.get_blank_appt_footprint()
 
-        df.brc_breast_lump_discernible_investigated = True
+        df.at[person_id, 'brc_breast_lump_discernible_investigated'] = True
 
         # Check consumables to undertake biopsy are available
         cons_avail = self.get_consumables(item_codes=self.module.item_codes_breast_can['screening_biopsy_core'],
