@@ -46,13 +46,13 @@ class Wasting(Module):
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
         'Severe Acute Malnutrition': Cause(gbd_causes='Protein-energy malnutrition',
-                                           label='Childhood Wasting')
+                                           label='Childhood Undernutrition')
     }
 
     # Declare Causes of Death and Disability
     CAUSES_OF_DISABILITY = {
         'Severe Acute Malnutrition': Cause(gbd_causes='Protein-energy malnutrition',
-                                           label='Childhood Wasting')
+                                           label='Childhood Undernutrition')
     }
 
     PARAMETERS = {

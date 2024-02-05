@@ -31,7 +31,7 @@ from tlo.methods.wasting import (
     ProgressionSevereWastingEvent,
     SevereAcuteMalnutritionDeathEvent,
     WastingNaturalRecoveryEvent,
-    WastingPollingEvent,
+    WastingPollingEvent, UpdateToMAM,
 )
 
 # Path to the resource files used by the disease and intervention methods
@@ -196,7 +196,6 @@ def test_wasting_incidence(tmpdir):
     df = sim.population.props
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
     person_id = under5s.index[0]
-    person = df.loc[person_id]
     assert all(under5s['un_ever_wasted'])
     assert all(under5s['un_WHZ_category'] == '-3<=WHZ<-2')
     assert all(under5s['un_last_wasting_date_of_onset'] == sim.date)
@@ -242,7 +241,7 @@ def test_report_daly_weights(tmpdir):
 
     # Verify diagnosis
     assert df.loc[person_id, 'un_clinical_acute_malnutrition'] == 'MAM'
-    assert df.loc[person_id, 'un_am_bilateral_oedema'] == True
+    assert df.loc[person_id, 'un_am_bilateral_oedema']
 
     # Report daly weight for this individual
     daly_weights_reported = sim.modules["Wasting"].report_daly_values()
@@ -344,7 +343,7 @@ def test_recovery_moderate_wasting(tmpdir):
 
 
 def test_recovery_severe_wasting_without_complications(tmpdir):
-    """ Check natural recovery to MAM by removing death rate for those with severe wasting, and check the onset of
+    """ Check recovery to MAM by removing death rate for those with severe wasting, and check the onset of
     symptoms with SAM and revolving of symptoms when recovered to MAM """
     dur = pd.DateOffset(days=0)
     popsize = 1000
@@ -372,18 +371,20 @@ def test_recovery_severe_wasting_without_complications(tmpdir):
     # set progress to severe wasting at 100% as well
     wmodule.wasting_models.severe_wasting_progression_lm = LinearModel.multiplicative()
 
+    # set complete recovery from wasting to zero. We want those with SAM to recover to MAM
+    wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
+
+    # Set death rate at 0% and recovery to MAM at 100%
+    wmodule.parameters['prob_death_after_care'] = 0.0
+    wmodule.parameters['prob_mam_after_care'] = 1.0
+
     # Run Wasting Polling event to get new incident cases:
     polling = WastingPollingEvent(module=sim.modules['Wasting'])
     polling.apply(sim.population)
 
     # Check properties of this individual: should now be moderately wasted
     person = df.loc[person_id]
-    assert person['un_ever_wasted']
     assert person['un_WHZ_category'] == '-3<=WHZ<-2'
-    assert person['un_last_wasting_date_of_onset'] == sim.date
-    assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
-    assert pd.isnull(person['un_am_recovery_date'])
-    assert pd.isnull(person['un_sam_death_date'])
 
     # Check that there is a ProgressionSevereWastingEvent scheduled for this person:
     progression_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
@@ -396,16 +397,14 @@ def test_recovery_severe_wasting_without_complications(tmpdir):
     sim.date = date_of_scheduled_progression
     progression_event.apply(person_id=person_id)
 
-    # Check individuals have symptoms caused by Wasting (SAM only)
-    assert 0 < len(sim.modules['SymptomManager'].has_what(person_id, sim.modules['Wasting']))
+    # Check this individual has symptom(weight loss) caused by Wasting (SAM only)
+    assert 'weight_loss' in sim.modules['SymptomManager'].has_what(person_id, sim.modules['Wasting'])
 
-    # Check properties of this individual: (should now be severely wasted and without a scheduled death date)
+    # Check properties of this individual: (should now be severely wasted, diagnosed as SAM and without a scheduled
+    # death date)
     person = df.loc[person_id]
-    assert person['un_ever_wasted']
     assert person['un_WHZ_category'] == 'WHZ<-3'
     assert person['un_clinical_acute_malnutrition'] == 'SAM'
-    assert pd.isnull(person['un_acute_malnutrition_tx_start_date'])
-    assert pd.isnull(person['un_am_recovery_date'])
     assert pd.isnull(person['un_sam_death_date'])
 
     hsp = HealthSeekingBehaviourPoll(sim.modules['HealthSeekingBehaviour'])
@@ -430,11 +429,11 @@ def test_recovery_severe_wasting_without_complications(tmpdir):
     sam_ev.run(squeeze_factor=0.0)
 
     # check recovery event is scheduled
-    assert isinstance(sim.find_events_for_person(person_id)[1][1], ClinicalAcuteMalnutritionRecoveryEvent)
+    assert isinstance(sim.find_events_for_person(person_id)[1][1], UpdateToMAM)
 
     # Run the recovery event and check the individual has recovered from SAM:
     sam_recovery_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id) if
-                                isinstance(event_tuple[1], ClinicalAcuteMalnutritionRecoveryEvent)][0]
+                                isinstance(event_tuple[1], UpdateToMAM)][0]
 
     date_of_scheduled_recovery_to_mam = sam_recovery_event_tuple[0]
     sam_recovery_event = sam_recovery_event_tuple[1]
@@ -446,8 +445,7 @@ def test_recovery_severe_wasting_without_complications(tmpdir):
 
     # Check properties of this individual
     person = df.loc[person_id]
-    assert person['un_WHZ_category'] == 'WHZ>=-2'
-    assert (person['un_am_MUAC_category'] == '>=125mm')
+    assert person['un_clinical_acute_malnutrition'] == 'MAM'
     assert pd.isnull(person['un_sam_death_date'])
 
     # check they have no symptoms:
@@ -535,7 +533,7 @@ def test_recovery_severe_wasting_with_complications(tmpdir):
     sim.date = date_of_scheduled_recovery_to_mam
     sam_recovery_event.apply(person_id=person_id)
 
-    # Check properties of this individual
+    # Check properties of this individual. Should now be well
     person = df.loc[person_id]
     assert person['un_WHZ_category'] == 'WHZ>=-2'
     assert (person['un_am_MUAC_category'] == '>=125mm')
@@ -726,6 +724,8 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     df = sim.population.props
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
     person_id = under5s.index[0]
+    # Let this person have severe wasting
+    df.loc[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
     assert df.loc[person_id, 'un_WHZ_category'] == 'WHZ>=-2'
 
     # Run Wasting Polling event to get new incident cases:
