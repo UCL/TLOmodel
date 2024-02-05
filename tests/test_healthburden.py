@@ -130,7 +130,13 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
     """Check that disability from different modules are being combined and computed in the correct way"""
     rfp = Path(os.path.dirname(__file__)) / '../resources'
 
-    class DiseaseThatCausesA(Module):
+    class ModuleWithPersonsAffected(Module):
+        
+        def __init__(self, persons_affected, name=None):
+            super().__init__(name=name)
+            self.persons_affected = persons_affected
+
+    class DiseaseThatCausesA(ModuleWithPersonsAffected):
         METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHBURDEN}
         CAUSES_OF_DEATH = {'A': Cause(label='A')}
         CAUSES_OF_DISABILITY = {'A': Cause(label='A')}
@@ -151,7 +157,7 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
             disability.loc[self.persons_affected] = self.daly_wt
             return disability
 
-    class DiseaseThatCausesB(Module):
+    class DiseaseThatCausesB(ModuleWithPersonsAffected):
         METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHBURDEN}
         CAUSES_OF_DEATH = {'B': Cause(label='B')}
         CAUSES_OF_DISABILITY = {'B': Cause(label='B')}
@@ -172,7 +178,7 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
             disability.loc[self.persons_affected] = self.daly_wt
             return disability
 
-    class DiseaseThatCausesAandB(Module):
+    class DiseaseThatCausesAandB(ModuleWithPersonsAffected):
         METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHBURDEN}
         CAUSES_OF_DEATH = {'A': Cause(label='A'), 'B': Cause(label='B')}
         CAUSES_OF_DISABILITY = {'A': Cause(label='A'), 'B': Cause(label='B')}
@@ -195,7 +201,7 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
             disability.loc[self.persons_affected, 'B'] = self.daly_wt_B
             return disability
 
-    class DiseaseThatCausesC(Module):
+    class DiseaseThatCausesC(ModuleWithPersonsAffected):
         METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHBURDEN}
         CAUSES_OF_DEATH = {'C': Cause(label='A')}
         CAUSES_OF_DISABILITY = {'C': Cause(label='C')}
@@ -239,24 +245,18 @@ def test_arithmetic_of_disability_aggregation_calcs(seed):
         demography.Demography(resourcefilepath=rfp),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=rfp),
-        DiseaseThatCausesA(),
-        DiseaseThatCausesB(),
-        DiseaseThatCausesAandB(),
-        DiseaseThatCausesC(name='DiseaseThatCausesC1'),  # intentionally two instances of DiseaseThatCausesC
-        DiseaseThatCausesC(name='DiseaseThatCausesC2'),
+        DiseaseThatCausesA(persons_affected=0),
+        DiseaseThatCausesB(persons_affected=1),
+        DiseaseThatCausesAandB(persons_affected=2),
+        # intentionally two instances of DiseaseThatCausesC
+        DiseaseThatCausesC(persons_affected=3, name='DiseaseThatCausesC1'),  
+        DiseaseThatCausesC(persons_affected=3, name='DiseaseThatCausesC2'),
         DiseaseThatCausesNothing(),
         # Disable sorting to allow registering multiple instances of DiseaseThatCausesC
         sort_modules=False
     )
     sim.make_initial_population(n=4)
     sim.simulate(end_date=start_date)
-
-    # determine who is affected by what:
-    sim.modules['DiseaseThatCausesA'].persons_affected = 0
-    sim.modules['DiseaseThatCausesB'].persons_affected = 1
-    sim.modules['DiseaseThatCausesAandB'].persons_affected = 2
-    sim.modules['DiseaseThatCausesC1'].persons_affected = 3
-    sim.modules['DiseaseThatCausesC2'].persons_affected = 3
 
     # get the dalys report:
     hb = sim.modules['HealthBurden']

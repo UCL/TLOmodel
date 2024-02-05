@@ -111,7 +111,6 @@ def figure1_distribution_of_hsi_event_by_treatment_id(results_folder: Path, outp
     ax.set_axis_off()
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
     fig, ax = plt.subplots()
@@ -128,7 +127,6 @@ def figure1_distribution_of_hsi_event_by_treatment_id(results_folder: Path, outp
     ax.set_axis_off()
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
 
@@ -180,7 +178,6 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
         output_folder
         / f"{PREFIX_ON_FILENAME}_Fig2_{name_of_plot.replace(' ', '_')}.png"
     )
-    fig.show()
     plt.close(fig)
 
     # Pivot the data so that Appt Types are on Horizontal Axis
@@ -216,7 +213,6 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
         output_folder
         / f"{PREFIX_ON_FILENAME}_Fig2_{name_of_plot.replace(' ', '_')}.png"
     )
-    fig.show()
     plt.close(fig)
 
 
@@ -335,7 +331,6 @@ def figure3_fraction_of_time_of_hcw_used_by_treatment(results_folder: Path, outp
         ax.set_title(f'{cadre}', {'size': 10, 'color': 'black'})
     fig.suptitle(name_of_plot, fontproperties={'size': 12})
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
 
@@ -414,7 +409,6 @@ def figure4_hr_use_overall(results_folder: Path, output_folder: Path, resourcefi
     ax.spines['right'].set_visible(False)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
     fig, ax = plt.subplots()
@@ -443,7 +437,6 @@ def figure4_hr_use_overall(results_folder: Path, output_folder: Path, resourcefi
     ax.spines['right'].set_visible(False)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
     fig, ax = plt.subplots()
@@ -457,7 +450,6 @@ def figure4_hr_use_overall(results_folder: Path, output_folder: Path, resourcefi
     ax.set_title(name_of_plot)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
 
@@ -495,7 +487,6 @@ def figure5_bed_use(results_folder: Path, output_folder: Path, resourcefilepath:
     ax.get_legend().remove()
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
 
@@ -553,7 +544,6 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
     ax.legend()
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
     fig, ax = plt.subplots()
@@ -567,7 +557,6 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
     ax.spines['right'].set_visible(False)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
     # HSI affected by missing consumables
@@ -604,7 +593,6 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
     ax.set_axis_off()
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
 
@@ -670,7 +658,6 @@ def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcef
     fig.suptitle(name_of_plot, fontsize=12, weight='bold')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
     plt.close(fig)
 
 

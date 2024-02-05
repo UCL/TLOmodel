@@ -61,11 +61,14 @@ class Population:
 
         :param size: the number of rows to create
         """
-        props = pd.DataFrame(index=pd.RangeIndex(stop=size, name="person"))
-        for module in self.sim.modules.values():
-            for prop_name, prop in module.PROPERTIES.items():
-                props[prop_name] = prop.create_series(prop_name, size)
-        return props
+        return pd.DataFrame(
+            data={
+                property_name: property.create_series(property_name, size)
+                for module in self.sim.modules.values()
+                for property_name, property in module.PROPERTIES.items()
+            },
+            index=pd.RangeIndex(stop=size, name="person")
+        )
 
     def do_birth(self):
         """Create a new person within the population.

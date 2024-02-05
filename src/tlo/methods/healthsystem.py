@@ -532,10 +532,8 @@ class HealthSystem(Module):
 
         'policy_name': Parameter(
             Types.STRING, "Name of priority policy assumed to have been adopted until policy switch"),
-        'policy_name_post_switch': Parameter(
-            Types.STRING, "Name of priority policy to be adopted from policy switch year onwards"),
-        'year_policy_switch': Parameter(
-            Types.INT, "Year in which priority policy switch in enforced"),
+        'year_mode_switch': Parameter(
+            Types.INT, "Year in which mode switch in enforced"),
 
         'priority_rank': Parameter(
             Types.DICT, "Data on the priority ranking of each of the Treatment_IDs to be adopted by "
@@ -559,8 +557,7 @@ class HealthSystem(Module):
                        ' to the module initialiser.',
         ),
         'mode_appt_constraints_postSwitch': Parameter(
-            Types.INT, 'If considering a mode switch alongside priority policy switch, specify in this parameter. '
-                       'The switch occcurs in the year given in `year_policy_switch`.')
+            Types.INT, 'Mode considered after a mode switch in year_mode_switch.')
     }
 
     PROPERTIES = {
@@ -660,7 +657,7 @@ class HealthSystem(Module):
         # Check that the name of policy being evaluated is included
         self.priority_policy = None
         if policy_name is not None:
-            assert policy_name in ['', 'Default', 'Test', 'Random', 'Naive', 'RMNCH',
+            assert policy_name in ['', 'Default', 'Test', 'Test Mode 1', 'Random', 'Naive', 'RMNCH',
                                        'VerticalProgrammes', 'ClinicallyVulnerable', 'EHP_III',
                                        'LCOA_EHP']
         self.arg_policy_name = policy_name
@@ -833,7 +830,6 @@ class HealthSystem(Module):
         # Ensure name of policy we want to consider before/after switch is among the policies loaded
         # in the self.parameters['priority_rank']
         assert self.parameters['policy_name'] in self.parameters['priority_rank']
-        assert self.parameters['policy_name_post_switch'] in self.parameters['priority_rank']
 
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
@@ -876,9 +872,9 @@ class HealthSystem(Module):
             self.healthsystemscheduler = HealthSystemScheduler(self)
             sim.schedule_event(self.healthsystemscheduler, sim.date)
 
-        # Schedule priority policy and mode_appt_constraints change
-        sim.schedule_event(HealthSystemChangePriorityPolicyAndMode(self),
-                           Date(self.parameters["year_policy_switch"], 1, 1))
+        # Schedule a mode_appt_constraints change
+        sim.schedule_event(HealthSystemChangeMode(self),
+                           Date(self.parameters["year_mode_switch"], 1, 1))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -1313,8 +1309,8 @@ class HealthSystem(Module):
         # Check that priority is in valid range
         assert priority >= 0
 
-        # If priority of HSI_Event lower than the lowest one considered, ignore event in scheduling
-        if priority > self.lowest_priority_considered:
+        # If priority of HSI_Event lower than the lowest one considered, ignore event in scheduling under mode 2
+        if (self.mode_appt_constraints == 2) and (priority > self.lowest_priority_considered):
             self.schedule_to_call_never_ran_on_date(hsi_event=hsi_event, tdate=tclose)  # Call this on tclose
             return
 
@@ -2113,7 +2109,7 @@ class HealthSystem(Module):
                     # add to the hold-over queue.
                     # Otherwise (disease module returns "FALSE") the event is not rescheduled and will not run.
 
-                    if not (rtn_from_did_not_run is False):
+                    if rtn_from_did_not_run is not False:
                         # reschedule event
                         hp.heappush(_to_be_held_over, _list_of_individual_hsi_event_tuples[ev_num])
 
@@ -2260,12 +2256,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # The event is not yet due (before topen)
                 hp.heappush(_list_of_events_not_due_today, next_event_tuple)
 
-                if next_event_tuple.priority == self.module.lowest_priority_considered:
-                    # Check the priority
-                    # If the next event is not due and has the lowest allowed priority, then stop looking
-                    # through the heapq as all other events will also not be due.
-                    break
-
             else:
                 # The event is now due to run today and the person is confirmed to be still alive
                 # Add it to the list of events due today (individual or population level)
@@ -2370,10 +2360,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         break
 
                 else:
-                    # The event is now due to run today and the person is confirmed to be still alive
+                    # The event is now due to run today and the person is confirmed to be still alive.
                     # Add it to the list of events due today if at population level.
                     # Otherwise, run event immediately.
-
                     is_pop_level_hsi_event = isinstance(event.target, tlo.population.Population)
                     if is_pop_level_hsi_event:
                         list_of_population_hsi_event_tuples_due_today.append(next_event_tuple)
@@ -2408,7 +2397,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             # Otherwise (disease module returns "FALSE") the event is not rescheduled and
                             # will not run.
 
-                            if not (rtn_from_did_not_run is False):
+                            if rtn_from_did_not_run is not False:
                                 # reschedule event
                                 # Add the event to the queue:
                                 hp.heappush(hold_over, next_event_tuple)
@@ -2497,13 +2486,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             else:
                 break
 
-        # Traverse the queue again to check all appts which have expired are removed from the queue,
-        # and call did_not_run() for all those that were postponed.
         # In previous iteration, we stopped querying the queue once capabilities
-        # were exhausted, so here ensure if any events expired were left unchecked they are properly
-        # removed from the queue, and did_not_run() is invoked for all postponed events.
-        # (This should still be more efficient than querying the queue as done in mode_appt_constraints
-        #  = 0 and 1 while ensuring midday effects are avoided.)
+        # were exhausted, so here we traverse the queue again to ensure that if any events expired were
+        # left unchecked they are properly removed from the queue, and did_not_run() is invoked for all
+        # postponed events. (This should still be more efficient than querying the queue as done in
+        # mode_appt_constraints = 0 and 1 while ensuring mid-day effects are avoided.)
+        # We also schedule a call_never_run for any HSI below the lowest_priority_considered,
+        # in case any of them where left in the queue due to a transition from mode 0/1 to mode 2
         while len(self.module.HSI_EVENT_QUEUE) > 0:
 
             next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
@@ -2511,7 +2500,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
             event = next_event_tuple.hsi_event
 
-            if self.sim.date > next_event_tuple.tclose:
+            # If the priority of the event is lower than lowest_priority_considered, schedule a call_never_ran
+            # on tclose regardless of whether appt is due today or any other time. (Although in mode 2 HSIs with
+            # priority > lowest_priority_considered are never added to the queue, some such HSIs may still be present
+            # in the queue if mode 2 was preceded by a period in mode 1).
+            if next_event_tuple.priority > self.module.lowest_priority_considered:
+                self.module.schedule_to_call_never_ran_on_date(hsi_event=event,
+                                                               tdate=next_event_tuple.tclose)
+
+            elif self.sim.date > next_event_tuple.tclose:
                 # The event has expired (after tclose) having never been run. Call the 'never_ran' function
                 self.module.call_and_record_never_ran_hsi_event(
                       hsi_event=event,
@@ -2527,20 +2524,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 pass
 
             elif self.sim.date < next_event_tuple.topen:
-                # The event is not yet due (before topen)
+                # The event is not yet due (before topen). Do not stop querying the queue here if we have
+                # reached the lowest_priority_considered, as we want to make sure HSIs with lower priority
+                # (which may have been scheduled during a prior mode 0/1 period) are flushed from the queue.
                 hp.heappush(list_of_events_not_due_today, next_event_tuple)
 
-                if next_event_tuple.priority == self.module.lowest_priority_considered:
-                    # Check the priority
-                    # If the next event is not due and has the lowest allowed priority, then stop looking
-                    # through the heapq as all other events will also not be due.
-                    break
-
             else:
-                # The event is now due to run today and the person is confirmed to be still alive
                 # Add it to the list of events due today if at population level.
                 # Otherwise, run event immediately.
-
                 is_pop_level_hsi_event = isinstance(event.target, tlo.population.Population)
                 if is_pop_level_hsi_event:
                     list_of_population_hsi_event_tuples_due_today.append(next_event_tuple)
@@ -2558,7 +2549,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # Otherwise (disease module returns "FALSE") the event is not rescheduled and
                     # will not run.
 
-                    if not (rtn_from_did_not_run is False):
+                    if rtn_from_did_not_run is not False:
                         # reschedule event
                         # Add the event to the queue:
                         hp.heappush(hold_over, next_event_tuple)
@@ -2796,7 +2787,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             self.module.bed_days.availability = self._parameters['beds_availability']
 
 
-class HealthSystemChangePriorityPolicyAndMode(RegularEvent, PopulationScopeEventMixin):
+class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to change the priority policy adopted by the
     HealthSystem at a given year.    """
 
@@ -2808,16 +2799,9 @@ class HealthSystemChangePriorityPolicyAndMode(RegularEvent, PopulationScopeEvent
         # Change mode_appt_constraints
         self.module.mode_appt_constraints = self.module.parameters["mode_appt_constraints_postSwitch"]
 
-        # If policy has changed, update it
-        if self.module.parameters["policy_name"] != self.module.parameters["policy_name_post_switch"]:
-            self.module.priority_policy = self.module.parameters["policy_name_post_switch"]
-            self.module.load_priority_policy(self.module.priority_policy)
-
         logger.info(key="message",
-                    data=f"Switched policy at sim date: "
+                    data=f"Switched mode at sim date: "
                          f"{self.sim.date}"
-                         f"Now using policy: "
-                         f"{self.module.priority_policy}"
-                         f"and mode: "
+                         f"Now using mode: "
                          f"{self.module.mode_appt_constraints}"
                     )

@@ -11,7 +11,7 @@ on:
       - resources/**
       - src/tlo/**
       - tests/**
-      - setup.*
+      - pyproject.toml
       - tox.ini
   schedule:
     - cron: 0 0 * * *
@@ -56,7 +56,7 @@ jobs:
   test:
     needs: gen-test-matrix
     name: Test ${{ matrix.file }}
-    runs-on: [self-hosted]
+    runs-on: [self-hosted, test]
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.gen-test-matrix.outputs.matrix) }}
@@ -67,7 +67,7 @@ jobs:
       - name: System info
         run: |
           set -x
-          python --version
+          python3 --version
           uname -a
           lsb_release -a
           virtualenv --version
@@ -75,4 +75,4 @@ jobs:
           tox --version
       - name: Test with tox
         run: |
-          tox -v -e py38,report -- pytest --cov --cov-report=term-missing -vv "${{ matrix.file }}"
+          tox -v -e py311,report -- pytest --cov --cov-report=term-missing -vv "${{ matrix.file }}"

@@ -52,7 +52,7 @@ def test_scale_run_script_deterministic(tmp_path):
             "Pickle of final population dataframe not found"
         )
         final_population_dataframes.append(pd.read_pickle(final_population_pickle_path))
-    pd.testing.assert_frame_equal(*final_population_dataframes), (
+    assert final_population_dataframes[0].equals(final_population_dataframes[1]), (
         f"Running {' '.join(command_args)} twice produces different final populations. "
         "This may be due to for example using an unseeded random number generator such "
         "as routines from `numpy.random` or the built-in `random` module, or due to "
