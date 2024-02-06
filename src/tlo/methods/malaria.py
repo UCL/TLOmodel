@@ -400,7 +400,9 @@ class Malaria(Module):
         def _draw_incidence_for(_col, _where):
             """a helper function to perform random draw for selected individuals on column of probabilities"""
             # create an index from the individuals to lookup entries in the current incidence table
-            district_age_lookup = df[_where].set_index(['district_num_of_residence', 'ma_age_edited']).index
+            district_age_subset = df.loc[_where, ['district_num_of_residence', 'ma_age_edited']]
+            district_age_subset.set_index(district_age_subset.columns.to_list(), inplace=True)
+            district_age_lookup = district_age_subset.index
             # get the monthly incidence probabilities for these individuals
             monthly_prob = curr_inc.loc[district_age_lookup, _col]
             # update the index so it's the same as the original population dataframe for these individuals

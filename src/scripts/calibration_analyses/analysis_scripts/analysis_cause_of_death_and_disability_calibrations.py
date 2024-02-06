@@ -58,9 +58,9 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     def make_std_graphs(what, period):
         """Make the standard Graphs for a specific period for either 'Deaths' or 'DALYS'"""
 
-        assert type(what) is str
+        assert isinstance(what, str)
         assert what in ('Deaths', 'DALYs')
-        assert type(period) is str
+        assert isinstance(period, str)
         assert period in make_calendar_period_lookup()[0]
 
         # limit to the subject of interest (either 'Deaths' or 'DALYS')
@@ -68,17 +68,33 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
         # %% Load modelling results:
 
+        def get_counts_of_death_by_period_sex_agegrp_label(df):
+            """Aggregate the model outputs into five-year periods for age and time"""
+            _, agegrplookup = make_age_grp_lookup()
+            _, calperiodlookup = make_calendar_period_lookup()
+            df["year"] = df["date"].dt.year
+            df["age_grp"] = df["age"].map(agegrplookup).astype(make_age_grp_types())
+            df["period"] = df["year"].map(calperiodlookup).astype(make_calendar_period_type())
+            return df.groupby(by=["period", "sex", "age_grp", "label"])["person_id"].count()
+
+        def get_dalys_by_period_sex_agegrp_label(df):
+            """Sum the dalys by period, sex, age-group and label"""
+            _, calperiodlookup = make_calendar_period_lookup()
+
+            df['age_grp'] = df['age_range'].astype(make_age_grp_types())
+            df["period"] = df["year"].map(calperiodlookup).astype(make_calendar_period_type())
+            df = df.drop(columns=['date', 'age_range', 'year'])
+            df = df.groupby(by=["period", "sex", "age_grp"]).sum().stack()
+            df.index = df.index.set_names('label', level=3)
+            return df
+
         # Extract results, summing by sex, year, age & label
         if what == 'Deaths':
             results = extract_results(
                 results_folder,
                 module="tlo.methods.demography",
                 key="death",
-                custom_generate_series=(
-                    lambda df_: df_.assign(
-                        year=df_['date'].dt.year
-                    ).groupby(['sex', 'year', 'age', 'label'])['person_id'].count()
-                ),
+                custom_generate_series=get_counts_of_death_by_period_sex_agegrp_label,
                 do_scaling=True
             )
         else:
@@ -86,33 +102,12 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 results_folder,
                 module="tlo.methods.healthburden",
                 key="dalys_stacked_by_age_and_time",  # <-- for DALYS stacked by age and time
-                custom_generate_series=(
-                    lambda df_: df_.drop(
-                        columns='date'
-                    ).rename(
-                        columns={'age_range': 'age_grp'}
-                    ).groupby(['sex', 'year', 'age_grp']).sum().stack()
-                ),
+                custom_generate_series=get_dalys_by_period_sex_agegrp_label,
                 do_scaling=True
             )
-            results.index = results.index.set_names('label', level=3)
 
-        # Update index to give results by five-year age-group and five-year calendar period
-        agegrps, agegrplookup = make_age_grp_lookup()
-        calperiods, calperiodlookup = make_calendar_period_lookup()
-        results = results.reset_index()
-        if 'age_grp' not in results.columns:
-            results['age_grp'] = results['age'].map(agegrplookup)
-            results = results.drop(columns=['age'])
-        results['age_grp'] = results['age_grp'].astype(make_age_grp_types())
-        results['period'] = results['year'].map(calperiodlookup).astype(make_calendar_period_type())
-        results = results.drop(columns=['year'])
-
-        # groupby, sum and divide by five to give the average number of deaths per year within the five year period:
-        results = results.groupby(['period', 'sex', 'age_grp', 'label']).sum().div(5.0)
-
-        # todo - this grouping could be inside the function for the extraction like done in
-        #  `analysis_effect_of_each_treatment`...?
+        # divide by five to give the average number of deaths per year within the five year period:
+        results = results.div(5.0)
 
         # %% Load the cause-of-deaths mappers and use them to populate the 'label' for gbd outputs
         if what == 'Deaths':
@@ -210,7 +205,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 # 5.2, 11_000, 'GBD || Model', horizontalalignment='left',  verticalalignment='bottom', fontsize=8)
                 ax.legend().set_visible(False)
 
-                fig.show()
                 plt.close(fig)
 
         # Simple pie-charts of just TLO estimates
@@ -248,7 +242,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         )
         fig.tight_layout()
         fig.savefig(make_graph_file_name(f"{what}_{period}_PieChart_Model"))
-        fig.show()
         plt.close(fig)
 
         # %% Plots of age-breakdown of outcomes patten for each cause:
@@ -291,7 +284,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 fig.savefig(make_graph_file_name(
                     f"B_{what}_{period}_AgeAndSexSpecificLineGraph_{reformat_cause(cause)}")
                 )
-                fig.show()
                 plt.close(fig)
 
             except KeyError:
@@ -356,7 +348,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.legend(ncol=1, prop={'size': 8}, loc='lower right')
         ax.legend().set_visible(False)
         plt.savefig(make_graph_file_name(f"A_{what}_{period}_Scatter_Plot"))
-        plt.show()
         plt.close(fig)
 
         # %% Assess the "coverage" of the model: i.e. the fraction of deaths/dalys that are causes that are represented
@@ -379,7 +370,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         fraction_causes_modelled = (1.0 - outcomes['Other'] / outcomes.sum(axis=1))
         fig, ax = plt.subplots()
         for sex in sexes:
-            fraction_causes_modelled.loc[(sex, slice(None))].droplevel(0).plot(
+            fraction_causes_modelled.loc[(sex, slice(None))].plot(
                 ax=ax,
                 color=get_color_cause_of_death_or_daly_label('Other'),
                 linestyle=':' if sex == 'F' else '-',
@@ -399,7 +390,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                 bbox={'edgecolor': 'r', 'facecolor': 'w'})
         fig.tight_layout()
         plt.savefig(make_graph_file_name(f"C_{what}_{period}_coverage"))
-        plt.show()
         plt.close(fig)
 
     # %% Make graphs for each of Deaths and DALYS for a specific period
