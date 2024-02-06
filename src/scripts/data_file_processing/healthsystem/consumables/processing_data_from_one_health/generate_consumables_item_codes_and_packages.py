@@ -3,7 +3,7 @@
 This file sets up the data regarding the consumables that may be used in the course of an HSI.
 
 Two files are used:
-* A data extraction from the original EHP work (provided to us by Matthoas Arnold)
+* A data extraction from the original EHP work (provided to us by Matthias Arnold)
 * A data extraction from the OneHealth tool (provided to us by the Palladium Health Group)
 
 In addition - some bespoke item codes are added here with our own specific definitions attached.
@@ -27,7 +27,7 @@ resourcefilepath = Path("./resources")
 path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
 
 
-# EHP Consumables list  # todo - organise this in the dropbox
+# EHP Consumables list
 path_to_files_in_the_tlo_dropbox = path_to_dropbox / "05 - Resources/Module-healthsystem/consumables raw files/"
 
 workingfile_ehp_consumables = path_to_dropbox / \
@@ -248,19 +248,6 @@ def add_record(df: pd.DataFrame, record: Dict):
     assert list(df.columns) == list(record.keys())
     return pd.concat([df, pd.DataFrame.from_records([record])], ignore_index=True)
 
-
-cons = add_record(
-    cons,
-    {
-        'Intervention_Cat': "Added by JC",
-        'Intervention_Pkg': "Misc",
-        'Intervention_Pkg_Code': -99,
-        'Items': "Forceps, obstetric",
-        'Item_Code': 2669,
-        'Expected_Units_Per_Case': 1.0,
-        'Unit_Cost': 1.0
-    }
-)
 
 
 cons = add_record(
