@@ -74,7 +74,7 @@ def get_sim(tmpdir):
 
 @pytest.mark.slow
 def test_basic_run(tmpdir):
-    """Short run of the module using default parameters with check on dtypes"""
+    """Run the simulation and do some daily checks on dtypes and properties integrity """
     class DummyModule(Module):
         """ A Dummy module that ensure wasting properties are as expected on a daily basis """
         METADATA = {Metadata.DISEASE_MODULE}
@@ -712,13 +712,6 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     wmodule.wasting_models.acute_malnutrition_recovery_sam_lm = LinearModel(LinearModelType.MULTIPLICATIVE, 0.0)
     wmodule.parameters['prob_mam_after_care'] = 0.0
     wmodule.parameters['prob_death_after_care'] = 1.0
-
-    # increase parameters in moderate wasting for clinical SAM (MUAC and oedema) to be polled for death
-    wmodule.parameters['proportion_-3<=WHZ<-2_with_MUAC<115mm'] = \
-        [5 * wmodule.parameters['proportion_-3<=WHZ<-2_with_MUAC<115mm']]
-    wmodule.parameters['proportion_-3<=WHZ<-2_with_MUAC_115-<125mm'] = \
-        [wmodule.parameters['proportion_-3<=WHZ<-2_with_MUAC_115-<125mm'] / 5]
-    wmodule.parameters['proportion_oedema_with_WHZ<-2'] = 0.9
 
     # Get person to use:
     df = sim.population.props

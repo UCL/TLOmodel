@@ -1138,7 +1138,6 @@ class WastingModels:
             Predictor('un_am_treatment_type', conditions_are_mutually_exclusive=True, conditions_are_exhaustive=True)
             .when('soy_RUSF', self.params['recovery_rate_with_soy_RUSF'])
             .when('CSB++', self.params['recovery_rate_with_CSB++'])
-            .otherwise(0.0),
         )
 
         # a linear model to predict the probability of individual's recovery from severe acute malnutrition
@@ -1146,20 +1145,18 @@ class WastingModels:
             Predictor('un_am_treatment_type', conditions_are_mutually_exclusive=True, conditions_are_exhaustive=True)
             .when('standard_RUTF', self.params['recovery_rate_with_standard_RUTF'])
             .when('inpatient_care', self.params['recovery_rate_with_inpatient_care'])
-            .otherwise(0.0),
         )
 
         # Linear model for the probability of progression to severe wasting (age-dependent only)
         # (natural history only, no interventions)
         self.severe_wasting_progression_lm = LinearModel.multiplicative(
-            Predictor('age_exact_years', conditions_are_mutually_exclusive=True, conditions_are_exhaustive=True)
+            Predictor('age_exact_years', conditions_are_mutually_exclusive=True, conditions_are_exhaustive=False)
             .when('<0.5', self.params['progression_severe_wasting_by_agegp'][0])
             .when('.between(0.5,1, inclusive="left")', self.params['progression_severe_wasting_by_agegp'][1])
             .when('.between(1,2, inclusive="left")', self.params['progression_severe_wasting_by_agegp'][2])
             .when('.between(2,3, inclusive="left")', self.params['progression_severe_wasting_by_agegp'][3])
             .when('.between(3,4, inclusive="left")', self.params['progression_severe_wasting_by_agegp'][4])
             .when('.between(4,5, inclusive="left")', self.params['progression_severe_wasting_by_agegp'][5])
-            .otherwise(0.0),
         )
 
         # get wasting incidence linear model
@@ -1175,13 +1172,13 @@ class WastingModels:
             return LinearModel(
                 LinearModelType.MULTIPLICATIVE,
                 intercept,
-                Predictor('age_exact_years').when('<0.5', self.params['base_inc_rate_wasting_by_agegp'][0])
-                .when('<1.0', self.params['base_inc_rate_wasting_by_agegp'][1])
-                .when('.between(1,1.9999)', self.params['base_inc_rate_wasting_by_agegp'][2])
-                .when('.between(2,2.9999)', self.params['base_inc_rate_wasting_by_agegp'][3])
-                .when('.between(3,3.9999)', self.params['base_inc_rate_wasting_by_agegp'][4])
-                .when('.between(4,4.9999)', self.params['base_inc_rate_wasting_by_agegp'][5])
-                .otherwise(0.0),
+                Predictor('age_exact_years', conditions_are_mutually_exclusive=True, conditions_are_exhaustive=False)
+                .when('<0.5', self.params['base_inc_rate_wasting_by_agegp'][0])
+                .when('.between(0.5,1, inclusive=left)', self.params['base_inc_rate_wasting_by_agegp'][1])
+                .when('.between(1,2, inclusive=left)', self.params['base_inc_rate_wasting_by_agegp'][2])
+                .when('.between(2,3, inclusive=left)', self.params['base_inc_rate_wasting_by_agegp'][3])
+                .when('.between(3,4, inclusive=left)', self.params['base_inc_rate_wasting_by_agegp'][4])
+                .when('.between(4,5, inclusive=left)', self.params['base_inc_rate_wasting_by_agegp'][5]),
                 Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
                                  '& (nb_late_preterm == False) & (nb_early_preterm == False)',
                                  self.params['rr_wasting_SGA_and_term']),
@@ -1216,11 +1213,11 @@ class WastingModels:
             return LinearModel(
                 LinearModelType.LOGISTIC,
                 intercept,  # baseline odds: get_odds_wasting(agegp=agegp)
-                Predictor('li_wealth').when(2, self.params['or_wasting_hhwealth_Q2'])
+                Predictor('li_wealth', conditions_are_mutually_exclusive=True, conditions_are_exhaustive=False)
+                .when(2, self.params['or_wasting_hhwealth_Q2'])
                 .when(3, self.params['or_wasting_hhwealth_Q3'])
                 .when(4, self.params['or_wasting_hhwealth_Q4'])
-                .when(5, self.params['or_wasting_hhwealth_Q5'])
-                .otherwise(1.0),
+                .when(5, self.params['or_wasting_hhwealth_Q5']),
                 Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
                                  '& (nb_late_preterm == False) & (nb_early_preterm == False)',
                                  self.params['or_wasting_SGA_and_term']),

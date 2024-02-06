@@ -88,7 +88,6 @@ class WastingAnalyses:
                 _col_counter = -1
             _col_counter += 1  # increment column counter
             fig.tight_layout()
-        # plt.show()
 
     def plot_wasting_prevalence(self):
         w_prev_df = self.__logs_dict['wasting_prevalence_count']
@@ -100,7 +99,6 @@ class WastingAnalyses:
                        ylabel='proportions',
                        xlabel='year'
                        )
-        # plt.show()
 
     def plot_modal_gbd_deaths_by_gender(self):
         """ compare modal and GBD deaths by gender """
@@ -109,7 +107,7 @@ class WastingAnalyses:
         fig, axs = plt.subplots(nrows=1, ncols=2, sharey=True, sharex=True)
         for _col, sex in enumerate(('M', 'F')):
             plot_df = death_compare.loc[(['2010-2014', '2015-2019'],
-                                         sex, slice(None), 'Childhood Wasting'
+                                         sex, slice(None), 'Childhood Undernutrition'
                                          )].groupby('period').sum()
             plotting = plot_df.loc[['2010-2014', '2015-2019']]
             ax = plotting['model'].plot.bar(label='Model', ax=axs[_col], rot=0)
@@ -126,7 +124,7 @@ class WastingAnalyses:
             outputs / ('modal_gbd_deaths_by_gender' + datestamp + ".pdf"),
             format="pdf"
         )
-        # plt.show()
+
 
 if __name__ == "__main__":
     seed = 1
