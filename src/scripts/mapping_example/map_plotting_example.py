@@ -12,9 +12,9 @@ resourcefilepath = Path("./resources")
 outputfilepath = Path("./outputs")
 
 # read in the shape file for district level maps
-sf = shp.Reader(shp=open(resourcefilepath / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.shp', 'rb'),
-                dbf=open(resourcefilepath / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.dbf', 'rb'),
-                shx=open(resourcefilepath / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.shx', 'rb'))
+sf = shp.Reader(shp=open(resourcefilepath / 'mapping' / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.shp', 'rb'),
+                dbf=open(resourcefilepath / 'mapping' / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.dbf', 'rb'),
+                shx=open(resourcefilepath / 'mapping' / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.shx', 'rb'))
 
 # create a figure
 plt.figure()
