@@ -554,6 +554,15 @@ class HealthSystem(Module):
                           "and custom (user can freely set these factors as parameters in the analysis).",
         ),
 
+        'dynamic_HR_scaling_factor': Parameter(
+            Types.REAL, "Factor by which HR capabilities are scaled at regular intervals of 1 year"
+        ),
+        
+        'scale_HR_by_popsize': Parameter(
+            Types.BOOL, "Decide whether to scale HR capabilities by population size every year. Can be used in addition to"
+                        "dynamic_HR_scaling_factor"
+        ),
+
         'tclose_overwrite': Parameter(
             Types.INT, "Decide whether to overwrite tclose variables assigned by disease modules"),
 
@@ -903,6 +912,12 @@ class HealthSystem(Module):
         # Schedule a mode_appt_constraints change
         sim.schedule_event(HealthSystemChangeMode(self),
                            Date(self.parameters["year_mode_switch"], 1, 1))
+
+        # Schedule recurring event which will rescale daily capabilities at regular intervals.
+        # Note: if want to use Demography's popsize_by_year for current year too (see options in DynamicRescalingHRCapabilities),
+        # need to ensure that the DynamicRescalingHRCapabilities event takes place *after* the DemographyLoggerEvent has been called.
+        # Could achieve this for example by scheduling the former to happen on 2nd of Feb..
+        sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date+DateOffset(years=1)))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -2840,6 +2855,29 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
 
         if 'beds_availability' in self._parameters:
             self.module.bed_days.availability = self._parameters['beds_availability']
+
+
+class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
+    """ This event exists to scale the daily capabilities assumed at fixed time intervals"""
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=1))
+
+    def apply(self, population):
+
+        # The following assumes that self.module._daily_capabilities is initialised once at start of simulation,
+        # which I believe is correct
+        
+        # Rescale daily capabilities by specified amount
+        self.module._daily_capabilities *= self.module.parameters['dynamic_HR_scaling_factor']
+
+        # Rescale daily capabilities by population size, if this option is included
+        if self.module.parameters['scale_HR_by_popsize']:
+            demog = self.sim.modules['Demography']
+            if self.sim.date.year>2010:
+                # Either
+                self.module._daily_capabilities *= population.props.is_alive.sum()/demog.popsize_by_year[self.sim.date.year - 1]
+                # Or, if ensuring DemographyLoggingEvent at start of the year takes place *before* this rescaling
+                # self.module._daily_capabilities *= demog.popsize_by_year[self.sim.date.year]/demog.popsize_by_year[self.sim.date.year - 1]
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
