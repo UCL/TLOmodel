@@ -779,7 +779,7 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     # since there is zero recovery rate, check death event is scheduled
     assert isinstance(sim.find_events_for_person(person_id)[1][1], SevereAcuteMalnutritionDeathEvent)
 
-    # Run Severe Acute Malnutrition Death Event scheduled for this person:
+    # Check a date of death is scheduled. it should be any date in the future:
     death_event_tuple = [event_tuple for event_tuple in sim.find_events_for_person(person_id)
                          if isinstance(event_tuple[1], SevereAcuteMalnutritionDeathEvent)][0]
     date_of_scheduled_death = death_event_tuple[0]
