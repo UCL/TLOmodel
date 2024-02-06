@@ -1352,7 +1352,7 @@ class Hiv(Module):
 
         # Set that the person is no longer on ART or cotrimoxazole
         df.at[person_id, "hv_art"] = "not"
-        df.at[person_id, "hv_on_cotrimoxazole"] = "not"
+        df.at[person_id, "hv_on_cotrimoxazole"] = False
 
     def per_capita_testing_rate(self):
         """This calculates the numbers of hiv tests performed in each time period.
