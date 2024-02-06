@@ -1164,9 +1164,9 @@ class LifestyleModels:
             male_circ = pd.Series(data=False, index=df.index, dtype=bool)
 
             # select a population of men to be circumcised
-            men = df.loc[df.is_alive & (df.sex == 'M')]
-            will_be_circ = rng.rand(len(men)) < p['proportion_of_men_circumcised_at_initiation']
-            male_circ.loc[men[will_be_circ].index] = True
+            is_alive_and_male = df.is_alive & (df.sex == 'M')
+            will_be_circ = rng.rand(len(is_alive_and_male)) < p['proportion_of_men_circumcised_at_initiation']
+            male_circ.loc[is_alive_and_male & will_be_circ] = True
             # return male circumcision series
             return male_circ
 
