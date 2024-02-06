@@ -485,7 +485,7 @@ class StuntingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         rng = self.module.rng
 
         annual_prob = model.predict(df.loc[mask]).clip(upper=1.0)
-        cum_prob_over_days_exposed = 1.0 - np.exp(np.log(1.0 - annual_prob) * days_exposed_to_risk / DAYS_IN_YEAR)
+        cum_prob_over_days_exposed = 1.0 - (1.0 - annual_prob) ** (days_exposed_to_risk / DAYS_IN_YEAR)
 
         assert pd.notnull(cum_prob_over_days_exposed).all()
         return mask[mask].index[cum_prob_over_days_exposed > rng.random_sample(mask.sum())]
