@@ -1,5 +1,4 @@
 import os
-import time
 from pathlib import Path
 
 import pandas as pd
@@ -434,10 +433,3 @@ def test_health_system_disabled(seed):
     sim.simulate(end_date=end_date)
     # check the datatypes
     check_dtypes(sim)
-
-
-if __name__ == '__main__':
-    t0 = time.time()
-    test_run()
-    t1 = time.time()
-    print('Time taken', t1 - t0)
