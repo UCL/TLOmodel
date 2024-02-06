@@ -1174,11 +1174,11 @@ class WastingModels:
                 intercept,
                 Predictor('age_exact_years', conditions_are_mutually_exclusive=True, conditions_are_exhaustive=False)
                 .when('<0.5', self.params['base_inc_rate_wasting_by_agegp'][0])
-                .when('.between(0.5,1, inclusive=left)', self.params['base_inc_rate_wasting_by_agegp'][1])
-                .when('.between(1,2, inclusive=left)', self.params['base_inc_rate_wasting_by_agegp'][2])
-                .when('.between(2,3, inclusive=left)', self.params['base_inc_rate_wasting_by_agegp'][3])
-                .when('.between(3,4, inclusive=left)', self.params['base_inc_rate_wasting_by_agegp'][4])
-                .when('.between(4,5, inclusive=left)', self.params['base_inc_rate_wasting_by_agegp'][5]),
+                .when('.between(0.5,1, inclusive="left")', self.params['base_inc_rate_wasting_by_agegp'][1])
+                .when('.between(1,2, inclusive="left")', self.params['base_inc_rate_wasting_by_agegp'][2])
+                .when('.between(2,3, inclusive="left")', self.params['base_inc_rate_wasting_by_agegp'][3])
+                .when('.between(3,4, inclusive="left")', self.params['base_inc_rate_wasting_by_agegp'][4])
+                .when('.between(4,5, inclusive="left")', self.params['base_inc_rate_wasting_by_agegp'][5]),
                 Predictor().when('(nb_size_for_gestational_age == "small_for_gestational_age") '
                                  '& (nb_late_preterm == False) & (nb_early_preterm == False)',
                                  self.params['rr_wasting_SGA_and_term']),
