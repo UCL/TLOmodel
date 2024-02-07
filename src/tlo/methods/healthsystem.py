@@ -914,9 +914,6 @@ class HealthSystem(Module):
                            Date(self.parameters["year_mode_switch"], 1, 1))
 
         # Schedule recurring event which will rescale daily capabilities at regular intervals.
-        # Note: if want to use Demography's popsize_by_year for current year too (see options in DynamicRescalingHRCapabilities),
-        # need to ensure that the DynamicRescalingHRCapabilities event takes place *after* the DemographyLoggerEvent has been called.
-        # Could achieve this for example by scheduling the former to happen on 2nd of Feb..
         sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date+DateOffset(years=1)))
 
     def on_birth(self, mother_id, child_id):
@@ -2864,20 +2861,20 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        # The following assumes that self.module._daily_capabilities is initialised once at start of simulation,
-        # which I believe is correct
-
         # Rescale daily capabilities by specified amount
         self.module._daily_capabilities *= self.module.parameters['dynamic_HR_scaling_factor']
 
-        # Rescale daily capabilities by population size, if this option is included
+        # Keeping this outside of the scale_HR_by_popsize if statement in case we want to
+        # implement a "switching on" of scale_HR_by_popsize at given year (e.g. 2023) in the future
+        df = self.sim.population.props
+        this_year_pop_size = df.is_alive.sum()
+
+         # Rescale daily capabilities by population size, if this option is included
         if self.module.parameters['scale_HR_by_popsize']:
-            demog = self.sim.modules['Demography']
             if self.sim.date.year>2010:
-                # Either
-                self.module._daily_capabilities *= population.props.is_alive.sum()/demog.popsize_by_year[self.sim.date.year - 1]
-                # Or, if ensuring DemographyLoggingEvent at start of the year takes place *before* this rescaling
-                # self.module._daily_capabilities *= demog.popsize_by_year[self.sim.date.year]/demog.popsize_by_year[self.sim.date.year - 1]
+                self.module._daily_capabilities *= this_year_pop_size/last_year_pop_size
+                
+        last_year_pop_size = this_year_pop_size   # Save for next year
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
