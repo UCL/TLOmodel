@@ -2241,3 +2241,40 @@ def test_service_availability_can_be_set_using_list_of_treatment_ids_and_asteris
 
         # Check that HSI event logs are identical
         pd.testing.assert_frame_equal(run_with_asterisk, run_with_list)
+
+
+def test_const_HR_scaling_assumption(seed, tmpdir):
+    """Check that we can use the parameter `const_HR_scaling_mode` to manipulate the minutes of time available for healthcare
+    workers."""
+
+    def get_capabilities_today(const_HR_scaling_mode: str) -> pd.Series:
+        sim = Simulation(start_date=start_date, seed=seed)
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
+        )
+        sim.modules['HealthSystem'].parameters['const_HR_scaling_mode'] = const_HR_scaling_mode
+        sim.make_initial_population(n=100)
+        sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+
+        return sim.modules['HealthSystem'].capabilities_today
+
+    caps = {
+        _const_HR_scaling_mode: get_capabilities_today(_const_HR_scaling_mode)
+        for _const_HR_scaling_mode in ('default', 'data', 'custom')
+    }
+
+    # Check that the custom assumption (multiplying all capabilities by 0.5) gives expected result
+    assert np.allclose(
+        caps['custom'].values,
+        caps['default'].values * 0.5
+    )
+
+    # Check that the "data" assumptions leads to changes in the capabilities (of any direction)
+    assert not np.allclose(
+        caps['data'].values,
+        caps['default'].values
+    )
+
+
+
