@@ -101,6 +101,8 @@ class CopdCalibrations:
             )
             ax.legend(["modal", "observed data"])
             _col_counter += 1  # increment column counter
+        plt.figtext(0.5, 0.01, "Prevalence of mild, moderate, severe, very severe COPD at mean age 49 (SD 17 years)*",
+                    ha="center", bbox={"facecolor": "grey", "alpha": 0.5, "pad": 5})
         plt.show()
 
     def rate_of_death_by_lungfunction_category(self):
@@ -165,7 +167,6 @@ class CopdCalibrations:
         # plot rate of death (per 100 per year) by COPD stage (mild, moderate, severe, very severe)
         plot_rate_df = pd.DataFrame(index=['mild', 'moderate', 'severe', 'very_severe'],
                                     data=model_and_observed_data_dict)
-
         fig, axes = plt.subplots(ncols=4, sharey=True)
         _col_counter = 0
         for _label in plot_rate_df.index:
@@ -175,6 +176,8 @@ class CopdCalibrations:
                                                                             y='model',
                                                                             marker='o',
                                                                             color='blue',
+                                                                            ylabel="rate of COPD death per 100 "
+                                                                                   "person years"
                                                                             )
 
             plot_rate_df.iloc[_col_counter:1 + _col_counter].plot.line(
@@ -194,6 +197,8 @@ class CopdCalibrations:
         # set legend
         legend_keys = ['Model (Risk of death per 100 persons)', 'Data (Rate of death per 100 person-years)']
         plt.legend(legend_keys, bbox_to_anchor=(0.1, 0.74), loc='upper left', prop=fontP)
+        plt.figtext(0.5, 0.01, "Rate of death (per 100 per year) by COPD stage (mild, moderate, severe, very severe)",
+                    ha="center", bbox={"facecolor": "grey", "alpha": 0.5, "pad": 5})
 
         # show plot
         plt.show()
@@ -209,7 +214,6 @@ class CopdCalibrations:
         # plot relative rate of (all cause) death according to COPD stage (none, mild, moderate, severe + v severe)
         plot_rr_rate_df = pd.DataFrame(index=['none', 'mild', 'moderate', 'severe_and_very_severe'],
                                        data=rr_model_and_observed_data_dict)
-
         fig, axes = plt.subplots(ncols=4, sharey=True)
         _col_counter = 0
         for _label in plot_rr_rate_df.index:
@@ -219,6 +223,9 @@ class CopdCalibrations:
                                                                                y='model',
                                                                                marker='o',
                                                                                color='blue',
+                                                                               ylabel="relative rate of COPD death per "
+                                                                                      "100 "
+                                                                                      "person years"
                                                                                )
 
             plot_rr_rate_df.iloc[_col_counter:1 + _col_counter].plot.line(
@@ -260,9 +267,10 @@ def get_simulation(popsize):
         log_config={
             'filename': 'copd_analyses',
             'directory': outputpath,
-            'custom_logs': {
+            'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography.detail': logging.INFO,
+                'tlo.methods.copd': logging.INFO,
             }
         },
     )
