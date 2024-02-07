@@ -63,10 +63,8 @@ def _num_deaths_by_age_group(results_folder, target_period):
 
     def extract_deaths_by_age_group(df: pd.DataFrame) -> pd.Series:
         # Call the function to add the 'age-group' column
-        df['age_group'] = _map_age_to_age_group(df)
-
-        return df.loc[pd.to_datetime(df.date).between(*target_period, inclusive=True)].groupby(["age_group", "sex"])[
-            "person_id"].count()
+        age_group = _map_age_to_age_group(df)
+        return df.loc[pd.to_datetime(df.date).dt.date.between(*target_period, inclusive='both')].groupby([age_group, df["sex"]]).size()
 
     return extract_results(
         results_folder,
