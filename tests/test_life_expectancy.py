@@ -8,7 +8,7 @@ from tlo.analysis.life_expectancy import get_life_expectancy_estimates
 
 
 def test_get_life_expectancy():
-    """Use `get_life_expectancy_estimates` to generate estimate of life-expetancy from the dummy simulation data."""
+    """Use `get_life_expectancy_estimates` to generate estimate of life-expectancy from the dummy simulation data."""
 
     results_folder_dummy_results = Path(os.path.dirname(__file__)) / 'resources' / 'dummy_simulation_run'
 
