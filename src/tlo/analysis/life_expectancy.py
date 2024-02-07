@@ -67,13 +67,12 @@ def _num_deaths_by_age_group(results_folder, target_period):
     for each draw by age-group
     dataframe returned: rows=age-gp, columns=draw median, draw lower, draw upper
     """
-    TARGET_PERIOD = target_period
 
     def extract_deaths_by_age_group(df: pd.DataFrame) -> pd.Series:
         # Call the function to add the 'age-group' column
         df['age_group'] = _map_age_to_age_group(df)
 
-        return df.loc[pd.to_datetime(df.date).between(*TARGET_PERIOD)].groupby(["age_group", "sex"])[
+        return df.loc[pd.to_datetime(df.date).between(*target_period, inclusive=True)].groupby(["age_group", "sex"])[
             "person_id"].count()
 
     return extract_results(
@@ -90,8 +89,6 @@ def _aggregate_person_years_by_age(results_folder, target_period):
     calculate for men and women separately
     return a dataframe with index=age-groups and columns=person-years
     """
-
-    TARGET_PERIOD = target_period
 
     # get number of draws and numbers of runs
     info = get_scenario_info(results_folder)
@@ -112,7 +109,7 @@ def _aggregate_person_years_by_age(results_folder, target_period):
                 # create dataframe one row per year and one column per age_year
                 new_df = pd.DataFrame(py.tolist())
                 new_df.index = _df.date
-                new_df = new_df.loc[TARGET_PERIOD[0]:TARGET_PERIOD[1]]
+                new_df = new_df.loc[new_df.index.between(*target_period, inclusive=True)]
 
                 # sum values for each age (single years)
                 py_by_single_age_years = new_df.sum(numeric_only=True, axis=0).reset_index()
@@ -264,10 +261,10 @@ def produce_life_expectancy_estimates(
     # get number of draws and numbers of runs
     info = get_scenario_info(results_folder)
 
-    # extract numbers of deaths
+    # extract numbers of deaths (by age-group, within the target_period)
     deaths = _num_deaths_by_age_group(results_folder, target_period)
 
-    # extract person-years
+    # extract person-years (by age-group, within the target_period)
     person_years = _aggregate_person_years_by_age(results_folder, target_period)
 
     # Initialize an empty list to collect life expectancies
@@ -275,7 +272,6 @@ def produce_life_expectancy_estimates(
 
     for draw in range(info['number_of_draws']):
         for run in range(info['runs_per_draw']):
-            # select column
             le = _estimate_life_expectancy(
                 _number_of_deaths_in_interval=deaths.loc[:, (draw, run)],
                 _person_years_at_risk=person_years.loc[:, (draw, run)])
@@ -294,7 +290,4 @@ def produce_life_expectancy_estimates(
         return output
 
     else:
-
-        summary = summarize(results=output, only_mean=False, collapse_columns=False)
-
-        return summary
+        return summarize(results=output, only_mean=False, collapse_columns=False)
