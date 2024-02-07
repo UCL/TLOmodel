@@ -238,7 +238,7 @@ def produce_life_expectancy_estimates(
     results_folder: Path,
     target_period: Tuple[datetime.date, datetime.date],
     median: bool = True
-) -> pd.Series:
+) -> pd.DataFrame:
     """
     produces sets of life expectancy estimates for each draw/run
     calls:
