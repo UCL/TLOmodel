@@ -38,13 +38,6 @@ def _map_age_to_age_group(_df):
 
     return pd.Series(_df['age_group'])
 
-
-def _get_multiplier(results_folder, _draw, _run):
-    """Helper function to get the multiplier from the simulation."""
-    return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.population'
-                                   )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
-
-
 def _extract_person_years(results_folder, _draw, _run):
     """Helper function to get the multiplier from the simulation
     Note that if the scaling factor cannot be found a `KeyError` is thrown."""
@@ -121,9 +114,7 @@ def _aggregate_person_years_by_age(results_folder, target_period):
                 # map single age bands to age-groups
                 py_by_single_age_years['age_group'] = _map_age_to_age_group(py_by_single_age_years)
 
-                summary = py_by_single_age_years.groupby(["age_group"])["person_years"].sum() * _get_multiplier(
-                    results_folder, _draw=draw,
-                    _run=run)
+                summary = py_by_single_age_years.groupby(["age_group"])["person_years"].sum()
                 tmp[sex] = summary
 
             # then join each draw/run in a new column
