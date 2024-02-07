@@ -234,7 +234,11 @@ def _estimate_life_expectancy(_person_years_at_risk, _number_of_deaths_in_interv
     return estimated_life_expectancy
 
 
-def produce_life_expectancy_estimates(results_folder, target_period: Tuple[datetime.date, datetime.date], median=True):
+def produce_life_expectancy_estimates(
+    results_folder: Path,
+    target_period: Tuple[datetime.date, datetime.date],
+    median: bool = True
+) -> pd.Series:
     """
     produces sets of life expectancy estimates for each draw/run
     calls:
