@@ -3,10 +3,10 @@
 This file defines a batch run through which the hiv and tb modules are run across a set of parameter values
 
 check the batch configuration gets generated without error:
-tlo scenario-run --draw-only src/scripts/hiv/projections_jan2023/batch_test_runs.py
+tlo scenario-run --draw-only src/scripts/hiv/mihpsa_runs/mihpsa_runs.py
 
 Test the scenario starts running without problems:
-tlo scenario-run src/scripts/hiv/projections_jan2023/batch_test_runs.py
+tlo scenario-run src/scripts/hiv/mihpsa_runs/mihpsa_runs.py
 
 or execute a single run:
 tlo scenario-run src/scripts/hiv/deviance_for_calibration/calibration_script.py --draw 1 0
@@ -36,14 +36,9 @@ from tlo.methods import (
     healthsystem,
     hiv,
     labour,
-    labour_lm,
     newborn_outcomes,
-    newborn_outcomes_lm,
     postnatal_supervisor,
-    postnatal_supervisor_lm,
-    pregnancy_helper_functions,
     pregnancy_supervisor,
-    pregnancy_supervisor_lm,
     symptommanager,
     tb,
 )
@@ -60,10 +55,10 @@ class TestScenario(BaseScenario):
         super().__init__(
             seed=0,
             start_date=Date(2010, 1, 1),
-            end_date=Date(2046, 1, 1),
-            initial_population_size=200000,
+            end_date=Date(2014, 1, 1),
+            initial_population_size=1000,
             number_of_draws=1,
-            runs_per_draw=5,
+            runs_per_draw=1,
         )
 
     def log_configuration(self):
@@ -80,8 +75,13 @@ class TestScenario(BaseScenario):
     def modules(self):
         return [
             demography.Demography(resourcefilepath=self.resources),
-            simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
+            contraception.Contraception(resourcefilepath=self.resources),
+            pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
+            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
+            labour.Labour(resourcefilepath=self.resources),
+            newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
+            postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
             healthsystem.HealthSystem(
                 resourcefilepath=self.resources,
                 service_availability=["*"],  # all treatment allowed
