@@ -99,12 +99,11 @@ def _aggregate_person_years_by_age(results_folder, target_period):
                 py = _df[sex]  # extract values for each sex
                 # create dataframe one row per year and one column per age_year
                 new_df = pd.DataFrame(py.tolist())
-                new_df.index = _df.date
-                new_df = new_df.loc[new_df.index.between(*target_period, inclusive=True)]
+                dates = _df.date.dt.date
+                new_df = new_df.loc[dates.between(*target_period, inclusive='both')]
 
                 # sum values for each age (single years)
                 py_by_single_age_years = new_df.sum(numeric_only=True, axis=0).reset_index()
-                # py_by_single_age_years = py_by_single_age_years.reset_index()
                 py_by_single_age_years = py_by_single_age_years.rename(columns={'index': 'age', 0: 'person_years'})
 
                 # convert single age years to float for mapping
