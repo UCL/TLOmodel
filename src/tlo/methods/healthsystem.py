@@ -557,7 +557,7 @@ class HealthSystem(Module):
         'dynamic_HR_scaling_factor': Parameter(
             Types.REAL, "Factor by which HR capabilities are scaled at regular intervals of 1 year"
         ),
-        
+
         'scale_HR_by_popsize': Parameter(
             Types.BOOL, "Decide whether to scale HR capabilities by population size every year. Can be used in addition to"
                         "dynamic_HR_scaling_factor"
@@ -2866,7 +2866,7 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
 
         # The following assumes that self.module._daily_capabilities is initialised once at start of simulation,
         # which I believe is correct
-        
+
         # Rescale daily capabilities by specified amount
         self.module._daily_capabilities *= self.module.parameters['dynamic_HR_scaling_factor']
 
