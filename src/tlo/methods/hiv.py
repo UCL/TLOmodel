@@ -121,6 +121,12 @@ class Hiv(Module):
         "hv_diagnosed": Property(
             Types.BOOL, "Knows that they are HIV+: i.e. is HIV+ and tested as HIV+"
         ),
+        "hv_has_aids": Property(
+            Types.BOOL, "person currently has AIDS"
+        ),
+        "hv_aids_at_art_start": Property(
+            Types.BOOL, "if person has AIDS at time of ART initiation"
+        ),
         "hv_number_tests": Property(Types.INT, "Number of HIV tests ever taken"),
         # --- Dates on which things have happened:
         "hv_last_test_date": Property(Types.DATE, "Date of last HIV test"),
@@ -570,6 +576,9 @@ class Hiv(Module):
         df.loc[df.is_alive, "hv_diagnosed"] = False
         df.loc[df.is_alive, "hv_number_tests"] = 0
 
+        df.loc[df.is_alive, "hv_has_aids"] = False
+        df.loc[df.is_alive, "hv_aids_at_art_start"] = False
+
         # --- Dates on which things have happened
         df.loc[df.is_alive, "hv_date_inf"] = pd.NaT
         df.loc[df.is_alive, "hv_last_test_date"] = pd.NaT
@@ -850,7 +859,8 @@ class Hiv(Module):
         )
 
         # 2) Schedule the Logging Event
-        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(years=1))
+        # todo set logger to mid-year
+        sim.schedule_event(HivLoggingEvent(self), sim.date + DateOffset(months=6))
 
         # 3) Determine who has AIDS and impose the Symptoms 'aids_symptoms'
 
@@ -876,6 +886,8 @@ class Hiv(Module):
             add_or_remove="+",
             disease_module=self,
         )
+        # change status to person has AIDS
+        df.loc[has_aids_idx, "hv_has_aids"] = True
 
         # 4) Schedule the AIDS onset events and AIDS death event for those infected already
         # AIDS Onset Event for those who are infected but not yet AIDS and have not ever started ART
@@ -1038,6 +1050,9 @@ class Hiv(Module):
         df.at[child_id, "hv_behaviour_change"] = False
         df.at[child_id, "hv_diagnosed"] = False
         df.at[child_id, "hv_number_tests"] = 0
+
+        df.at[child_id, "hv_has_aids"] = False
+        df.at[child_id, "hv_aids_at_art_start"] = False
 
         # --- Dates on which things have happened
         df.at[child_id, "hv_date_inf"] = pd.NaT
@@ -1364,7 +1379,7 @@ class Hiv(Module):
 
         # Set that the person is no longer on ART
         df.at[person_id, "hv_art"] = "not"
-        df.at[person_id, "hv_on_cotrimoxazole"] = "not"
+        df.at[person_id, "hv_on_cotrimoxazole"] = False
 
     def per_capita_testing_rate(self):
         """This calculates the numbers of hiv tests performed in each time period.
@@ -1854,6 +1869,8 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
                 add_or_remove="+",
                 disease_module=self.sim.modules["Hiv"],
             )
+            # change status to person has AIDS
+            df.at[person_id, "hv_has_aids"] = True
 
             # Schedule AidsDeath
             date_of_aids_death = self.sim.date + self.sim.modules["Hiv"].get_time_from_aids_to_death()
@@ -2618,11 +2635,16 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "hv_art"] = vl_status
             df.at[person_id, "hv_date_treated"] = self.sim.date
 
+            # check whether person has AIDS at ART start
+            if df.at[person_id, "hv_has_aids"]:
+                df.at[person_id, "hv_aids_at_art_start"] = True
+
             # If VL suppressed, remove any symptoms caused by this module
             if vl_status == "on_VL_suppressed":
                 self.sim.modules["SymptomManager"].clear_symptoms(
                     person_id=person_id, disease_module=self.module
                 )
+                df.at[person_id, "hv_has_aids"] = False
 
         # if cotrimoxazole is available
         if list(drugs_available.values())[1]:
@@ -2806,439 +2828,187 @@ class HivLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
 
-        # ------------------------------------ SUMMARIES ------------------------------------
-        # population
-        pop_male_15plus = len(
-            df[df.is_alive & (df.age_years >= 15) & (df.sex == "M")]
-        )
-        pop_female_15plus = len(
-            df[df.is_alive & (df.age_years >= 15) & (df.sex == "F")]
-        )
+        # ------------------------------------ DETAILED LOGGER FOR MIHPSA ------------------------------------
+        # Baseline comparisons
 
-        # plhiv
-        male_plhiv = len(
-            df[df.hv_inf & df.is_alive & (df.age_years >= 15) & (df.sex == "M")]
-        )
-        female_plhiv = len(
-            df[df.hv_inf & df.is_alive & (df.age_years >= 15) & (df.sex == "F")]
-        )
-        child_plhiv = len(df[df.hv_inf & df.is_alive & (df.age_years < 15)])
-        total_plhiv = len(df[df.hv_inf & df.is_alive])
-
-        # adult prevalence
-        adult_prev_15plus = len(
-            df[df.hv_inf & df.is_alive & (df.age_years >= 15)]
-        ) / len(df[df.is_alive & (df.age_years >= 15)]) if len(df[df.is_alive & (df.age_years >= 15)]) else 0
-
-        adult_prev_1549 = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 49)]
-        ) / len(df[df.is_alive & df.age_years.between(15, 49)]) if len(
-            df[df.is_alive & df.age_years.between(15, 49)]) else 0
-
-        # child prevalence
-        child_prev = len(
-            df[df.hv_inf & df.is_alive & (df.age_years < 15)]
-        ) / len(df[df.is_alive & (df.age_years < 15)]
-                ) if len(df[df.is_alive & (df.age_years < 15)]) else 0
-
-        # incidence in the period since the last log for 15+ and 15-49 year-olds (denominator is approximate)
-        n_new_infections_adult_15plus = len(
-            df.loc[
-                (df.age_years >= 15)
-                & df.is_alive
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-        denom_adults_15plus = len(df[df.is_alive & (df.age_years >= 15)])
-        adult_inc_15plus = n_new_infections_adult_15plus / denom_adults_15plus if denom_adults_15plus else 0
-
-        n_new_infections_adult_1549 = len(
-            df.loc[
-                df.age_years.between(15, 49)
-                & df.is_alive
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-        denom_adults_1549 = len(df[df.is_alive & df.age_years.between(15, 49)])
-        adult_inc_1549 = n_new_infections_adult_1549 / denom_adults_1549 if denom_adults_1549 else 0
-
-        # incidence in the period since the last log for 0-14 year-olds (denominator is approximate)
-        n_new_infections_children = len(
-            df.loc[
-                (df.age_years < 15)
-                & df.is_alive
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-        denom_children = len(df[df.is_alive & (df.age_years < 15)])
-        child_inc = n_new_infections_children / denom_children if denom_children else 0
-
-        # hiv prev among female sex workers (aged 15-49)
-        n_fsw = len(
-            df.loc[
-                df.is_alive
-                & df.li_is_sexworker
-                & (df.sex == "F")
-                & df.age_years.between(15, 49)
-                ]
-        )
-        prev_hiv_fsw = (
-            0
-            if n_fsw == 0
-            else len(
-                df.loc[
-                    df.is_alive
-                    & df.hv_inf
-                    & df.li_is_sexworker
-                    & (df.sex == "F")
-                    & df.age_years.between(15, 49)
-                    ]
-            ) / n_fsw
-        )
-
-        total_population = len(df.loc[df.is_alive])
-
-        logger.info(
-            key="summary_inc_and_prev_for_adults_and_children_and_fsw",
-            description="Summary of HIV among adult (15+ and 15-49) and children (0-14s) and female sex workers"
-                        " (15-49)",
-            data={
-                "pop_male_15plus": pop_male_15plus,
-                "pop_female_15plus": pop_female_15plus,
-                "pop_child": denom_children,
-                "pop_total": total_population,
-                "male_plhiv_15plus": male_plhiv,
-                "female_plhiv_15plus": female_plhiv,
-                "child_plhiv": child_plhiv,
-                "total_plhiv": total_plhiv,
-                "hiv_prev_adult_15plus": adult_prev_15plus,
-                "hiv_prev_adult_1549": adult_prev_1549,
-                "hiv_prev_child": child_prev,
-                "hiv_adult_inc_15plus": adult_inc_15plus,
-                "n_new_infections_adult_1549": n_new_infections_adult_1549,
-                "hiv_adult_inc_1549": adult_inc_1549,
-                "hiv_child_inc": child_inc,
-                "hiv_prev_fsw": prev_hiv_fsw,
-            },
-        )
-
-        # store some outputs in dict for calibration
-        self.module.hiv_outputs["date"] += [self.sim.date.year]
-        self.module.hiv_outputs["hiv_prev_adult_1549"] += [adult_prev_1549]
-        self.module.hiv_outputs["hiv_adult_inc_1549"] += [adult_inc_1549]
-        self.module.hiv_outputs["hiv_prev_child"] += [child_prev]
-        self.module.hiv_outputs["population"] += [total_population]
-
-        # ------------------------------------ PREVALENCE BY AGE and SEX  ------------------------------------
-
-        # Prevalence by Age/Sex (to make every category be output, do separately by 'sex')
-        prev_by_age_and_sex = {}
-        for sex in ["F", "M"]:
-            n_hiv = df.loc[df.sex == sex].groupby(by=["age_range"])["hv_inf"].sum()
-            n_pop = df.loc[df.sex == sex].groupby(by=["age_range"])["hv_inf"].count()
-            prev_by_age_and_sex[sex] = (n_hiv / n_pop).to_dict()
-
-        logger.info(
-            key="prev_by_age_and_sex",
-            data=prev_by_age_and_sex,
-            description="Prevalence of HIV split by age and sex",
-        )
-
-        male_prev_1524 = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]
-        ) / len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]) if len(
-            df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "M")]) else 0
-
-        male_prev_2549 = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]
-        ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]) if len(
-            df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "M")]) else 0
-
-        female_prev_1524 = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]
-        ) / len(df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]) if len(
-            df[df.is_alive & df.age_years.between(15, 24) & (df.sex == "F")]) else 0
-
-        female_prev_2549 = len(
-            df[df.hv_inf & df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]
-        ) / len(df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]) if len(
-            df[df.is_alive & df.age_years.between(25, 49) & (df.sex == "F")]) else 0
-
-        total_prev = len(
-            df[df.hv_inf & df.is_alive]
-        ) / len(df[df.is_alive])
-
-        # incidence by age-group and sex
-        n_new_infections_male_1524 = len(
-            df.loc[
-                df.age_years.between(15, 24)
-                & (df.sex == "M")
-                & df.is_alive
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-        denom_male_1524 = len(df[
-                                  df.is_alive
-                                  & (df.sex == "M")
-                                  & df.age_years.between(15, 24)])
-        male_inc_1524 = n_new_infections_male_1524 / denom_male_1524 if denom_male_1524 else 0
-
-        n_new_infections_male_2549 = len(
-            df.loc[
-                df.age_years.between(25, 49)
-                & (df.sex == "M")
-                & df.is_alive
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-        denom_male_2549 = len(df[
-                                  df.is_alive
-                                  & (df.sex == "M")
-                                  & df.age_years.between(25, 49)])
-        male_inc_2549 = n_new_infections_male_2549 / denom_male_2549 if denom_male_2549 else 0
-
-        n_new_infections_male_1549 = len(
-            df.loc[
-                df.age_years.between(15, 49)
-                & (df.sex == "M")
-                & df.is_alive
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-
-        n_new_infections_female_1524 = len(
-            df.loc[
-                df.age_years.between(15, 24)
-                & (df.sex == "F")
-                & df.is_alive
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-        denom_female_1524 = len(df[
-                                    df.is_alive
-                                    & (df.sex == "F")
-                                    & df.age_years.between(15, 24)])
-        female_inc_1524 = n_new_infections_female_1524 / denom_female_1524 if denom_female_1524 else 0
-
-        n_new_infections_female_2549 = len(
-            df.loc[
-                df.age_years.between(25, 49)
-                & (df.sex == "F")
-                & df.is_alive
-                & (df.hv_date_inf >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-        denom_female_2549 = len(df[
-                                    df.is_alive
-                                    & (df.sex == "F")
-                                    & df.age_years.between(25, 49)])
-        female_inc_2549 = n_new_infections_female_2549 / denom_female_2549 if denom_female_2549 else 0
-
-        logger.info(
-            key="infections_by_2age_groups_and_sex",
-            data={
-                "male_prev_1524": male_prev_1524,
-                "male_prev_2549": male_prev_2549,
-                "female_prev_1524": female_prev_1524,
-                "female_prev_2549": female_prev_2549,
-                "total_prev": total_prev,
-                "n_new_infections_male_1524": n_new_infections_male_1524,
-                "n_new_infections_male_2549": n_new_infections_male_2549,
-                "n_new_infections_male_1549": n_new_infections_male_1549,
-                "n_new_infections_female_1524": n_new_infections_female_1524,
-                "n_new_infections_female_2549": n_new_infections_female_2549,
-                "male_inc_1524": male_inc_1524,
-                "male_inc_2549": male_inc_2549,
-                "female_inc_1524": female_inc_1524,
-                "female_inc_2549": female_inc_2549,
-            },
-            description="HIV infections split by 2 age-groups age and sex",
-        )
-        logger.info(
-            key="prev_by_age_and_sex",
-            data=prev_by_age_and_sex,
-            description="Prevalence of HIV split by age and sex",
-        )
-
-        # ------------------------------------ TESTING ------------------------------------
-        # testing can happen through lm[spontaneous_testing] or symptom-driven or ANC or TB
-
-        # proportion of adult population tested in past year
-        n_tested = len(
-            df.loc[
-                df.is_alive
-                & (df.hv_number_tests > 0)
-                & (df.age_years >= 15)
-                & (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))
-                ]
-        )
-        n_pop = len(df.loc[df.is_alive & (df.age_years >= 15)])
-        tested = n_tested / n_pop if n_pop else 0
-
-        # proportion of adult population tested in past year by sex
-        testing_by_sex = {}
-        for sex in ["F", "M"]:
-            n_tested = len(
-                df.loc[
-                    (df.sex == sex)
-                    & (df.hv_number_tests > 0)
-                    & (df.age_years >= 15)
-                    & (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))
-                    ]
-            )
-            n_pop = len(df.loc[(df.sex == sex) & (df.age_years >= 15)])
-            testing_by_sex[sex] = n_tested / n_pop if n_pop else 0
-
-        # per_capita_testing_rate: number of tests administered divided by population
-        current_testing_rate = self.module.per_capita_testing_rate()
-
-        # testing yield: number positive results divided by number tests performed
-        # if person has multiple tests in one year, will only count 1
-        total_tested = len(
-            df.loc[(df.hv_number_tests > 0)
-                   & (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))
-                   ]
-        )
-        total_tested_hiv_positive = len(
-            df.loc[df.hv_inf
-                   & (df.hv_number_tests > 0)
-                   & (df.hv_last_test_date >= (now - DateOffset(months=self.repeat)))
-                   ]
-        )
-        testing_yield = total_tested_hiv_positive / total_tested if total_tested > 0 else 0
-
-        # ------------------------------------ TREATMENT ------------------------------------
-        def treatment_counts(subset):
+        def counts_of_subgroups(subset):
             # total number of subset (subset is a true/false series)
-            count = sum(subset)
-            # proportion of subset living with HIV that are diagnosed:
-            proportion_diagnosed = (
-                sum(subset & df.hv_diagnosed) / count if count > 0 else 0
+            subpop_size = sum(subset)
+            num_infected = sum(subset & df.hv_inf)
+            num_diagnosed = sum(subset & df.hv_diagnosed)
+            num_treated = sum(subset & (df.hv_art != "not"))
+
+            # prevalence
+            prevalence = (
+                num_infected / subpop_size if subpop_size > 0 else 0
             )
-            # proportions of subset living with HIV on treatment:
-            art = sum(subset & (df.hv_art != "not"))
-            art_cov = art / count if count > 0 else 0
+            # number new infections
+            num_new_infections = (
+                sum(subset & (df.hv_date_inf >= (now - DateOffset(months=self.repeat))))
+            )
+            # percentage of subset living with HIV that are diagnosed:
+            percent_dx = (
+                             num_diagnosed / num_infected if num_infected > 0 else 0
+                         ) * 100
+            # percentage of those diagnosed that are on treatment:
+            percent_tx_if_dx = (
+                                   num_treated / num_diagnosed if num_diagnosed > 0 else 0
+                               ) * 100
+            # percentage of those on treatment who are virally suppressed
+            percent_vl_if_tx = (
+                                   sum(subset & (
+                                           df.hv_art == "on_VL_suppressed")) / num_treated if num_treated > 0 else 0
+                               ) * 100
 
-            # proportion of subset on treatment that have good VL suppression
-            art_vs = sum(subset & (df.hv_art == "on_VL_suppressed"))
-            art_cov_vs = art_vs / art if art > 0 else 0
-            return proportion_diagnosed, art_cov, art_cov_vs
+            return [subpop_size, prevalence, num_new_infections, percent_dx, percent_tx_if_dx, percent_vl_if_tx]
 
-        alive_infected = df.is_alive & df.hv_inf
-        dx_adult, art_cov_adult, art_cov_vs_adult = treatment_counts(
-            alive_infected & (df.age_years >= 15)
-        )
-        dx_children, art_cov_children, art_cov_vs_children = treatment_counts(
-            alive_infected & (df.age_years < 15)
-        )
-
-        n_on_art_male_15plus = len(
-            df.loc[
-                (df.age_years >= 15)
-                & (df.sex == "M")
-                & df.is_alive
-                & (df.hv_art != "not")
-                ]
-        )
-
-        n_on_art_female_15plus = len(
-            df.loc[
-                (df.age_years >= 15)
-                & (df.sex == "F")
-                & df.is_alive
-                & (df.hv_art != "not")
-                ]
-        )
-
-        n_on_art_children = len(
-            df.loc[
-                (df.age_years < 15)
-                & df.is_alive
-                & (df.hv_art != "not")
-                ]
-        )
-
-        n_on_art_total = n_on_art_male_15plus + n_on_art_female_15plus + n_on_art_children
-
-        # ------------------------------------ BEHAVIOUR CHANGE ------------------------------------
-
-        # proportion of adults (15+) exposed to behaviour change intervention
-        prop_adults_exposed_to_behav_intv = len(
-            df[df.is_alive & df.hv_behaviour_change & (df.age_years >= 15)]
-        ) / len(df[df.is_alive & (df.age_years >= 15)]) if len(df[df.is_alive & (df.age_years >= 15)]) else 0
-
-        # ------------------------------------ PREP AMONG FSW ------------------------------------
-        prop_fsw_on_prep = (
-            0
-            if n_fsw == 0
-            else len(
-                df[
-                    df.is_alive
-                    & df.li_is_sexworker
-                    & (df.age_years >= 15)
-                    & df.hv_is_on_prep
-                    ]
-            ) / len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)])
-        ) if len(df[df.is_alive & df.li_is_sexworker & (df.age_years >= 15)]) else 0
-
-        # ------------------------------------ MALE CIRCUMCISION ------------------------------------
-        # NB. Among adult men
-        prop_men_circ = len(
-            df[df.is_alive & (df.sex == "M") & (df.age_years >= 15) & df.li_is_circ]
-        ) / len(df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) if len(
-            df[df.is_alive & (df.sex == "M") & (df.age_years >= 15)]) else 0
+        # log outputs
+        outputs_age15_64 = counts_of_subgroups(df.is_alive & df.age_years.between(15, 64))
+        outputs_age15_64_M = counts_of_subgroups(df.is_alive & df.age_years.between(15, 64) & (df.sex == "M"))
+        outputs_age15_64_F = counts_of_subgroups(df.is_alive & df.age_years.between(15, 64) & (df.sex == "F"))
 
         logger.info(
-            key="hiv_program_coverage",
-            description="Coverage of interventions for HIV among adult (15+) and children (0-14s)",
+            key="hiv_baseline_outputs",
+            description="Baseline comparisons",
             data={
-                "number_adults_tested": n_tested,
-                "prop_tested_adult": tested,
-                "prop_tested_adult_male": testing_by_sex["M"],
-                "prop_tested_adult_female": testing_by_sex["F"],
-                "per_capita_testing_rate": current_testing_rate,
-                "testing_yield": testing_yield,
-                "dx_adult": dx_adult,
-                "dx_childen": dx_children,
-                "art_coverage_adult": art_cov_adult,
-                "art_coverage_adult_VL_suppression": art_cov_vs_adult,
-                "art_coverage_child": art_cov_children,
-                "art_coverage_child_VL_suppression": art_cov_vs_children,
-                "n_on_art_total": n_on_art_total,
-                "n_on_art_male_15plus": n_on_art_male_15plus,
-                "n_on_art_female_15plus": n_on_art_female_15plus,
-                "n_on_art_children": n_on_art_children,
-                "prop_adults_exposed_to_behav_intv": prop_adults_exposed_to_behav_intv,
-                "prop_fsw_on_prep": prop_fsw_on_prep,
-                "prop_men_circ": prop_men_circ,
+                "outputs_age15_64": tuple(outputs_age15_64),
+                "outputs_age15_64_M": tuple(outputs_age15_64_M),
+                "outputs_age15_64_F": tuple(outputs_age15_64_F),
             },
         )
 
-        # ------------------------------------ TREATMENT DELAYS ------------------------------------
-        # for every person initiated on treatment, record time from onset to treatment
-        # each year a series of intervals in days (treatment date - onset date) are recorded
-        # convert to list
+        # Transmission outputs
+        def transmission_outputs(subset):
+            # total number of subset (subset is a true/false series)
 
-        # adults
-        # get index of adults starting tx in last time-period
-        adult_tx_idx = df.loc[(df.age_years >= 16) &
-                              (df.hv_date_treated >= (now - DateOffset(months=self.repeat)))].index
-        # calculate treatment_date - onset_date for each person in index
-        adult_tx_delays = (df.loc[adult_tx_idx, "hv_date_treated"] - df.loc[adult_tx_idx, "hv_date_inf"]).dt.days
-        adult_tx_delays = adult_tx_delays.tolist()
+            num_infected = sum(subset & df.hv_inf)
+            num_not_diagnosed = sum(subset & df.hv_inf & ~df.hv_diagnosed)
+            num_dx_no_art = sum(subset & df.hv_inf & df.hv_diagnosed & (df.hv_art == "not"))
 
-        # children
-        child_tx_idx = df.loc[(df.age_years < 16) &
-                              (df.hv_date_treated >= (now - DateOffset(months=self.repeat)))].index
-        child_tx_delays = (df.loc[child_tx_idx, "hv_date_treated"] - df.loc[child_tx_idx, "hv_date_inf"]).dt.days
-        child_tx_delays = child_tx_delays.tolist()
+            num_art_not_vs = sum(subset & df.hv_inf & (df.hv_art == "on_not_VL_suppressed"))
+            num_art_vs = sum(subset & df.hv_inf & (df.hv_art == "on_VL_suppressed"))
+
+            num_art_under_6mths_not_vs = sum(subset & df.hv_inf & (df.hv_art == "on_not_VL_suppressed") &
+                                             (df.hv_date_treated >= (now - DateOffset(months=6))))
+            num_art_under_6mths_vs = sum(subset & df.hv_inf & (df.hv_art == "on_VL_suppressed") &
+                                         (df.hv_date_treated >= (now - DateOffset(months=6))))
+
+            num_art_over_6mths_not_vs = sum(subset & df.hv_inf & (df.hv_art == "on_not_VL_suppressed") &
+                                            (df.hv_date_treated < (now - DateOffset(months=6))))
+            num_art_over_6mths_vs = sum(subset & df.hv_inf & (df.hv_art == "on_VL_suppressed") &
+                                        (df.hv_date_treated < (now - DateOffset(months=6))))
+
+            num_any_interruption = sum(subset & df.hv_inf & (df.hv_art == "not") & ~pd.isnull(df.hv_date_treated))
+
+            return [num_infected, num_not_diagnosed, num_dx_no_art,
+                    num_art_not_vs, num_art_vs,
+                    num_art_under_6mths_not_vs, num_art_under_6mths_vs,
+                    num_art_over_6mths_not_vs, num_art_over_6mths_vs,
+                    num_any_interruption]
+
+        # # log outputs for every age range
+        # outputs_age15_19_M = transmission_outputs(df.is_alive & df.age_years.between(15, 19) & (df.sex == "M"))
+        # outputs_age15_19_F = transmission_outputs(df.is_alive & df.age_years.between(15, 19) & (df.sex == "F"))
+        #
+        # outputs_age20_24_M = transmission_outputs(df.is_alive & df.age_years.between(20, 24) & (df.sex == "M"))
+        # outputs_age20_24_F = transmission_outputs(df.is_alive & df.age_years.between(20, 24) & (df.sex == "F"))
+        #
+        # outputs_age25_29_M = transmission_outputs(df.is_alive & df.age_years.between(25, 29) & (df.sex == "M"))
+        # outputs_age25_29_F = transmission_outputs(df.is_alive & df.age_years.between(25, 29) & (df.sex == "F"))
+        #
+        # outputs_age30_34_M = transmission_outputs(df.is_alive & df.age_years.between(30, 34) & (df.sex == "M"))
+        # outputs_age30_34_F = transmission_outputs(df.is_alive & df.age_years.between(30, 34) & (df.sex == "F"))
+        #
+        # outputs_age35_39_M = transmission_outputs(df.is_alive & df.age_years.between(35, 39) & (df.sex == "M"))
+        # outputs_age35_39_F = transmission_outputs(df.is_alive & df.age_years.between(35, 39) & (df.sex == "F"))
+        #
+        # outputs_age40_44_M = transmission_outputs(df.is_alive & df.age_years.between(40, 44) & (df.sex == "M"))
+        # outputs_age40_44_F = transmission_outputs(df.is_alive & df.age_years.between(40, 44) & (df.sex == "F"))
+        #
+        # outputs_age45_49_M = transmission_outputs(df.is_alive & df.age_years.between(45, 49) & (df.sex == "M"))
+        # outputs_age45_49_F = transmission_outputs(df.is_alive & df.age_years.between(45, 49) & (df.sex == "F"))
+        #
+        # outputs_age50_54_M = transmission_outputs(df.is_alive & df.age_years.between(50, 54) & (df.sex == "M"))
+        # outputs_age50_54_F = transmission_outputs(df.is_alive & df.age_years.between(50, 54) & (df.sex == "F"))
+        #
+        # outputs_age55_59_M = transmission_outputs(df.is_alive & df.age_years.between(55, 59) & (df.sex == "M"))
+        # outputs_age55_59_F = transmission_outputs(df.is_alive & df.age_years.between(55, 59) & (df.sex == "F"))
+        #
+        # outputs_age60_64_M = transmission_outputs(df.is_alive & df.age_years.between(60, 64) & (df.sex == "M"))
+        # outputs_age60_64_F = transmission_outputs(df.is_alive & df.age_years.between(60, 64) & (df.sex == "F"))
+        #
+        # outputs_age65_69_M = transmission_outputs(df.is_alive & df.age_years.between(65, 69) & (df.sex == "M"))
+        # outputs_age65_69_F = transmission_outputs(df.is_alive & df.age_years.between(65, 69) & (df.sex == "F"))
+        #
+        # outputs_age70_74_M = transmission_outputs(df.is_alive & df.age_years.between(70, 74) & (df.sex == "M"))
+        # outputs_age70_74_F = transmission_outputs(df.is_alive & df.age_years.between(70, 74) & (df.sex == "F"))
+        #
+        # outputs_age75_79_M = transmission_outputs(df.is_alive & df.age_years.between(75, 79) & (df.sex == "M"))
+        # outputs_age75_79_F = transmission_outputs(df.is_alive & df.age_years.between(75, 79) & (df.sex == "F"))
+        #
+        # outputs_age80_84_M = transmission_outputs(df.is_alive & df.age_years.between(80, 84) & (df.sex == "M"))
+        # outputs_age80_84_F = transmission_outputs(df.is_alive & df.age_years.between(80, 84) & (df.sex == "F"))
+        #
+        # logger.info(
+        #     key="hiv_detailed_outputs",
+        #     description="Transmission outputs",
+        #     data={
+        #         "outputs_age15_19_M": tuple(outputs_age15_19_M),
+        #         "outputs_age15_19_F": tuple(outputs_age15_19_F),
+        #         "outputs_age20_24_M": tuple(outputs_age20_24_M),
+        #         "outputs_age20_24_F": tuple(outputs_age20_24_F),
+        #         "outputs_age25_29_M": tuple(outputs_age25_29_M),
+        #         "outputs_age25_29_F": tuple(outputs_age25_29_F),
+        #         "outputs_age30_34_M": tuple(outputs_age30_34_M),
+        #         "outputs_age30_34_F": tuple(outputs_age30_34_F),
+        #         "outputs_age35_39_M": tuple(outputs_age35_39_M),
+        #         "outputs_age35_39_F": tuple(outputs_age35_39_F),
+        #         "outputs_age40_44_M": tuple(outputs_age40_44_M),
+        #         "outputs_age40_44_F": tuple(outputs_age40_44_F),
+        #         "outputs_age45_49_M": tuple(outputs_age45_49_M),
+        #         "outputs_age45_49_F": tuple(outputs_age45_49_F),
+        #         "outputs_age50_54_M": tuple(outputs_age50_54_M),
+        #         "outputs_age50_54_F": tuple(outputs_age50_54_F),
+        #         "outputs_age55_59_M": tuple(outputs_age55_59_M),
+        #         "outputs_age55_59_F": tuple(outputs_age55_59_F),
+        #         "outputs_age60_64_M": tuple(outputs_age60_64_M),
+        #         "outputs_age60_64_F": tuple(outputs_age60_64_F),
+        #         "outputs_age65_69_M": tuple(outputs_age65_69_M),
+        #         "outputs_age65_69_F": tuple(outputs_age65_69_F),
+        #         "outputs_age70_74_M": tuple(outputs_age70_74_M),
+        #         "outputs_age70_74_F": tuple(outputs_age70_74_F),
+        #         "outputs_age75_79_M": tuple(outputs_age75_79_M),
+        #         "outputs_age75_79_F": tuple(outputs_age75_79_F),
+        #         "outputs_age80_84_M": tuple(outputs_age80_84_M),
+        #         "outputs_age80_84_F": tuple(outputs_age80_84_F),
+        #     },
+        # )
+
+        # log outputs for every age range - broader age-groups
+        outputs_age15_24_M = transmission_outputs(df.is_alive & df.age_years.between(15, 24) & (df.sex == "M"))
+        outputs_age15_24_F = transmission_outputs(df.is_alive & df.age_years.between(15, 24) & (df.sex == "F"))
+
+        outputs_age25_34_M = transmission_outputs(df.is_alive & df.age_years.between(25, 34) & (df.sex == "M"))
+        outputs_age25_34_F = transmission_outputs(df.is_alive & df.age_years.between(25, 34) & (df.sex == "F"))
+
+        outputs_age35_44_M = transmission_outputs(df.is_alive & df.age_years.between(35, 44) & (df.sex == "M"))
+        outputs_age35_44_F = transmission_outputs(df.is_alive & df.age_years.between(35, 44) & (df.sex == "F"))
+
+        outputs_age45_100_M = transmission_outputs(df.is_alive & df.age_years.between(45, 100) & (df.sex == "M"))
+        outputs_age45_100_F = transmission_outputs(df.is_alive & df.age_years.between(45, 100) & (df.sex == "F"))
 
         logger.info(
-            key="hiv_treatment_delays",
-            description="HIV time from onset to treatment",
+            key="hiv_detailed_outputs",
+            description="Transmission outputs",
             data={
-                "HivTreatmentDelayAdults": adult_tx_delays,
-                "HivTreatmentDelayChildren": child_tx_delays,
+                "outputs_age15_24_M": tuple(outputs_age15_24_M),
+                "outputs_age15_24_F": tuple(outputs_age15_24_F),
+                "outputs_age25_34_M": tuple(outputs_age25_34_M),
+                "outputs_age25_34_F": tuple(outputs_age25_34_F),
+                "outputs_age35_44_M": tuple(outputs_age35_44_M),
+                "outputs_age35_44_F": tuple(outputs_age35_44_F),
+                "outputs_age45_100_M": tuple(outputs_age45_100_M),
+                "outputs_age45_100_F": tuple(outputs_age45_100_F),
             },
         )
 

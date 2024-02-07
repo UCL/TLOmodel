@@ -14,7 +14,6 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
-
 from tlo.analysis.utils import (
     compare_number_of_deaths,
     extract_params,

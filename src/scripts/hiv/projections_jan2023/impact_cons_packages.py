@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
-
+from tlo import Date
 from tlo.analysis.utils import (
     compare_number_of_deaths,
     extract_params,
@@ -19,8 +19,6 @@ from tlo.analysis.utils import (
     load_pickled_dataframes,
     summarize,
 )
-
-from tlo import Date
 
 resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")

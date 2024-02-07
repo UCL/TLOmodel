@@ -4,8 +4,8 @@
 
 """
 
-import os
 import datetime
+import os
 from pathlib import Path
 
 import lacroix
@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 
+from tlo import Date
 from tlo.analysis.utils import (
     compare_number_of_deaths,
     extract_params,
@@ -24,7 +25,6 @@ from tlo.analysis.utils import (
     load_pickled_dataframes,
     summarize,
 )
-from tlo import Date
 
 resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
@@ -100,8 +100,8 @@ def return_daly_summary(results_folder):
     )
     dalys.columns = dalys.columns.get_level_values(0)
     # combine two labels for non-AIDS TB (this now fixed in latest code)
-    dalys.loc['TB (non-AIDS)'] = dalys.loc['TB (non-AIDS)'] + dalys.loc['non_AIDS_TB']
-    dalys.drop(['non_AIDS_TB'], inplace=True)
+    # dalys.loc['TB (non-AIDS)'] = dalys.loc['TB (non-AIDS)'] + dalys.loc['non_AIDS_TB']
+    # dalys.drop(['non_AIDS_TB'], inplace=True)
     out = pd.DataFrame()
     out['median'] = dalys.median(axis=1).round(decimals=-3).astype(int)
     out['lower'] = dalys.quantile(q=0.025, axis=1).round(decimals=-3).astype(int)
@@ -161,8 +161,8 @@ full_dalys0 = extract_results(
     custom_generate_series=num_dalys_by_cause,
     do_scaling=True
 )
-full_dalys0.loc['TB (non-AIDS)'] = full_dalys0.loc['TB (non-AIDS)'] + full_dalys0.loc['non_AIDS_TB']
-full_dalys0.drop(['non_AIDS_TB'], inplace=True)
+# full_dalys0.loc['TB (non-AIDS)'] = full_dalys0.loc['TB (non-AIDS)'] + full_dalys0.loc['non_AIDS_TB']
+# full_dalys0.drop(['non_AIDS_TB'], inplace=True)
 full_dalys0.loc['Column_Total'] = full_dalys0.sum(numeric_only=True, axis=0)
 
 full_dalys1 = extract_results(
@@ -172,8 +172,8 @@ full_dalys1 = extract_results(
     custom_generate_series=num_dalys_by_cause,
     do_scaling=True
 )
-full_dalys1.loc['TB (non-AIDS)'] = full_dalys1.loc['TB (non-AIDS)'] + full_dalys1.loc['non_AIDS_TB']
-full_dalys1.drop(['non_AIDS_TB'], inplace=True)
+# full_dalys1.loc['TB (non-AIDS)'] = full_dalys1.loc['TB (non-AIDS)'] + full_dalys1.loc['non_AIDS_TB']
+# full_dalys1.drop(['non_AIDS_TB'], inplace=True)
 full_dalys1.loc['Column_Total'] = full_dalys1.sum(numeric_only=True, axis=0)
 
 full_dalys2 = extract_results(
@@ -624,8 +624,23 @@ hcw_minutes_full_0.loc['Total'] = hcw_minutes_full_0.sum(numeric_only=False, axi
 hcw_minutes_full_1.loc['Total'] = hcw_minutes_full_1.sum(numeric_only=False, axis=0)
 hcw_minutes_full_2.loc['Total'] = hcw_minutes_full_2.sum(numeric_only=False, axis=0)
 
+hcw_minutes_full_0['Total'] = hcw_minutes_full_0.sum(axis=1)
 hcw_minutes_full_1['Total'] = hcw_minutes_full_1.sum(axis=1)
 hcw_minutes_full_2['Total'] = hcw_minutes_full_2.sum(axis=1)
+
+hcw_minutes_full_0.loc['Total'] /1000000
+
+
+#---------------------------------------------------------------
+# numbers of appts
+
+# use appt_id0 which counts HSI events not TREATMENT_ID
+# run summarise but exclude the UI
+
+# sum all appts over 2023-2033
+sum_sc1 = appt_id1.iloc[13:24, :].sum().sum()
+sum_sc2 = appt_id2.iloc[13:24, :].sum().sum()
+(sum_sc2 - sum_sc1) * scaling_factor
 
 # -------------------------- plots ---------------------------- #
 # HCW time by year - plot for each scenario

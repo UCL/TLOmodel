@@ -1,24 +1,22 @@
 
 import datetime
-from pathlib import Path
 import os
+from pathlib import Path
 
 import matplotlib
 import matplotlib.pyplot as plt
+
 plt.style.use('default')
 matplotlib.use('tkagg')
 
+import lacroix
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
-from matplotlib.lines import Line2D
 import numpy as np
 import pandas as pd
-import lacroix
+from matplotlib.lines import Line2D
 
-from tlo.analysis.utils import (
-    extract_results,
-    get_scenario_outputs,
-)
+from tlo.analysis.utils import extract_results, get_scenario_outputs
 
 resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")

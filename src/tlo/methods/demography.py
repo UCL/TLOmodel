@@ -439,6 +439,9 @@ class Demography(Module):
 
         person = df.loc[individual_id]
 
+        # additional info to log
+        time_on_ART = person['hv_date_treated'] >= (self.sim.date - pd.DateOffset(months=6))
+
         # Log the death
         # - log the line-list of summary information about each death
         data_to_log_for_each_death = {
@@ -447,7 +450,12 @@ class Demography(Module):
             'cause': cause,
             'label': self.causes_of_death[cause].label,
             'person_id': individual_id,
-            'li_wealth': person['li_wealth'] if 'li_wealth' in person else -99,
+            'hiv_status': person['hv_inf'],
+            'hiv_diagnosed': person['hv_diagnosed'],
+            'art_status': person['hv_art'],
+            'on_ART_more_than_6months': time_on_ART,
+            'aids_status': person['hv_has_aids'],
+            'aids_at_art_start': person['hv_aids_at_art_start']
         }
 
         if ('Contraception' in self.sim.modules) or ('SimplifiedBirths' in self.sim.modules):

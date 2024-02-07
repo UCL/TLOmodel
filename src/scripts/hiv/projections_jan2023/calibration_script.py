@@ -21,15 +21,16 @@ tlo batch-download calibration_script-2022-04-12T190518Z
 
 """
 
+import os
 import warnings
 
+import pandas as pd
+
 from tlo import Date, logging
+from tlo.methods import deviance_measure
 # from tlo.methods import deviance_measure
 from tlo.methods.fullmodel import fullmodel
-from tlo.methods import deviance_measure
 from tlo.scenario import BaseScenario
-import pandas as pd
-import os
 
 # Ignore warnings to avoid cluttering output from simulation
 warnings.simplefilter("ignore", (UserWarning, RuntimeWarning))

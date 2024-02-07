@@ -5,24 +5,27 @@ plots created:
 """
 
 import datetime
-from pathlib import Path
 import os
+from pathlib import Path
 
 import matplotlib
 import matplotlib.pyplot as plt
+
 plt.style.use('default')
 matplotlib.use('tkagg')
 
-import matplotlib.lines as mlines
-import matplotlib.patches as mpatches
-from matplotlib.lines import Line2D
-import numpy as np
-import pandas as pd
-from matplotlib.gridspec import GridSpec
-import seaborn as sns
-import lacroix
 import math
 
+import lacroix
+import matplotlib.lines as mlines
+import matplotlib.patches as mpatches
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from matplotlib.gridspec import GridSpec
+from matplotlib.lines import Line2D
+
+from tlo import Date
 from tlo.analysis.utils import (
     compare_number_of_deaths,
     extract_params,
@@ -32,7 +35,6 @@ from tlo.analysis.utils import (
     load_pickled_dataframes,
     summarize,
 )
-from tlo import Date
 
 resourcefilepath = Path("./resources")
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")

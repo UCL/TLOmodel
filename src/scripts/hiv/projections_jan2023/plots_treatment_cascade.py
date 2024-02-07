@@ -9,14 +9,13 @@ import os
 from pathlib import Path
 
 import lacroix
-import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import matplotlib.patches as mpatches
-from matplotlib.lines import Line2D
-
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import statsmodels.api as sm
+from matplotlib.lines import Line2D
 
 from tlo.analysis.utils import (
     extract_results,
@@ -505,7 +504,7 @@ ax4.fill_between(xvals, tb_test0_l, tb_test0_u, color=baseline_colour, alpha=0.2
 ax4.plot(xvals, tb_test1, "-", color=sc1_colour)
 ax4.fill_between(xvals, tb_test1_l, tb_test1_u, color=sc1_colour, alpha=0.2)
 
-ax4.plot(xvals, tb_test0, "-", color=sc2_colour)
+ax4.plot(xvals, tb_test2, "-", color=sc2_colour)
 ax4.fill_between(xvals, tb_test0_l, tb_test0_u, color=sc2_colour, alpha=0.2)
 
 ax4.set_ylim([10, 15])
@@ -584,7 +583,8 @@ ax4.annotate('D', xy=(0.02, 0.95), xycoords='axes fraction', fontsize=12, fontwe
 ax5.annotate('E', xy=(0.02, 0.95), xycoords='axes fraction', fontsize=12, fontweight='bold')
 ax6.annotate('F', xy=(0.02, 0.95), xycoords='axes fraction', fontsize=12, fontweight='bold')
 
-fig.savefig(outputspath / "Treatment_cascade_6panel.png")
+# todo change
+fig.savefig(outputspath / "Treatment_cascade_6panel_noRepeatHSB.png")
 
 plt.show()
 

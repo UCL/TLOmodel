@@ -22,18 +22,12 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 outputspath = Path("./outputs/t.mangal@imperial.ac.uk")
 
 # download all files (and get most recent [-1])
-# results0 = get_scenario_outputs("scenario0.py", outputspath)[-1]
-# results1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
-# results2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
-# todo change for main results
-# results0 = get_scenario_outputs("scenario7.py", outputspath)[-1]
-# results1 = get_scenario_outputs("scenario8.py", outputspath)[-1]
-# results2 = get_scenario_outputs("scenario9.py", outputspath)[-1]
-results0 = get_scenario_outputs("mode2_scenario10.py", outputspath)[-1]
-results1 = get_scenario_outputs("mode2_scenario11.py", outputspath)[-1]
-results2 = get_scenario_outputs("mode2_scenario12.py", outputspath)[-1]
-
-
+results0 = get_scenario_outputs("scenario0.py", outputspath)[-1]
+results1 = get_scenario_outputs("scenario1.py", outputspath)[-1]
+results2 = get_scenario_outputs("scenario2.py", outputspath)[-1]
+results7 = get_scenario_outputs("mode2_scenario10.py", outputspath)[-1]
+results8 = get_scenario_outputs("mode2_scenario11.py", outputspath)[-1]
+results9 = get_scenario_outputs("mode2_scenario12.py", outputspath)[-1]
 
 # colour scheme
 berry = lacroix.colorList('CranRaspberry')  # ['#F2B9B8', '#DF7878', '#E40035', '#009A90', '#0054A4', '#001563']
@@ -94,6 +88,29 @@ py2 = extract_results(
     do_scaling=False
 )
 
+py7 = extract_results(
+    results7,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years,
+    do_scaling=False
+)
+
+py8 = extract_results(
+    results8,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years,
+    do_scaling=False
+)
+
+py9 = extract_results(
+    results9,
+    module="tlo.methods.demography",
+    key="person_years",
+    custom_generate_series=get_person_years,
+    do_scaling=False
+)
 
 # ---------------------------------- HIV ---------------------------------- #
 
@@ -121,6 +138,10 @@ def hiv_adult_inc(results_folder):
 inc0 = hiv_adult_inc(results0)
 inc1 = hiv_adult_inc(results1)
 inc2 = hiv_adult_inc(results2)
+
+inc7 = hiv_adult_inc(results7)
+inc8 = hiv_adult_inc(results8)
+inc9 = hiv_adult_inc(results9)
 
 
 # ---------------------------------- TB ---------------------------------- #
@@ -163,7 +184,9 @@ tb_inc0 = tb_inc(results0)
 tb_inc1 = tb_inc(results1)
 tb_inc2 = tb_inc(results2)
 
-
+tb_inc7 = tb_inc(results7)
+tb_inc8 = tb_inc(results8)
+tb_inc9 = tb_inc(results9)
 # ---------------------------------- HIV deaths ---------------------------------- #
 
 # AIDS deaths
@@ -213,6 +236,9 @@ aids_deaths0 = summarise_aids_deaths(results0, py0)
 aids_deaths1 = summarise_aids_deaths(results1, py1)
 aids_deaths2 = summarise_aids_deaths(results2, py2)
 
+aids_deaths7 = summarise_aids_deaths(results7, py7)
+aids_deaths8 = summarise_aids_deaths(results8, py8)
+aids_deaths9 = summarise_aids_deaths(results9, py9)
 
 # ---------------------------------- TB deaths ---------------------------------- #
 
@@ -261,6 +287,10 @@ tb_deaths0 = summarise_tb_deaths(results0, py0)
 tb_deaths1 = summarise_tb_deaths(results1, py1)
 tb_deaths2 = summarise_tb_deaths(results2, py2)
 
+tb_deaths7 = summarise_tb_deaths(results7, py7)
+tb_deaths8 = summarise_tb_deaths(results8, py8)
+tb_deaths9 = summarise_tb_deaths(results9, py9)
+
 #  create smoothed lines
 num_interp = 12
 
@@ -284,60 +314,40 @@ xvals = np.linspace(start=data_x.min(), stop=data_x.max(), num=num_interp)
 
 # hiv incidence
 s_hiv_inc0 = create_smoothed_lines(data_x, (inc0["median"][11:] * 100000))
-s_hiv_inc0_l = create_smoothed_lines(data_x, (inc0["lower"][11:] * 100000))
-s_hiv_inc0_u = create_smoothed_lines(data_x, (inc0["upper"][11:] * 100000))
-
 s_hiv_inc1 = create_smoothed_lines(data_x, (inc1["median"][11:] * 100000))
-s_hiv_inc1_l = create_smoothed_lines(data_x, (inc1["lower"][11:] * 100000))
-s_hiv_inc1_u = create_smoothed_lines(data_x, (inc1["upper"][11:] * 100000))
-
 s_hiv_inc2 = create_smoothed_lines(data_x, (inc2["median"][11:] * 100000))
-s_hiv_inc2_l = create_smoothed_lines(data_x, (inc2["lower"][11:] * 100000))
-s_hiv_inc2_u = create_smoothed_lines(data_x, (inc2["upper"][11:] * 100000))
+s_hiv_inc7 = create_smoothed_lines(data_x, (inc7["median"][11:] * 100000))
+s_hiv_inc8 = create_smoothed_lines(data_x, (inc8["median"][11:] * 100000))
+s_hiv_inc9 = create_smoothed_lines(data_x, (inc9["median"][11:] * 100000))
 
 # tb incidence
 s_tb_inc0 = create_smoothed_lines(data_x, (tb_inc0["median"][11:] * 100000))
-s_tb_inc0_l = create_smoothed_lines(data_x, (tb_inc0["lower"][11:] * 100000))
-s_tb_inc0_u = create_smoothed_lines(data_x, (tb_inc0["upper"][11:] * 100000))
-
 s_tb_inc1 = create_smoothed_lines(data_x, (tb_inc1["median"][11:] * 100000))
-s_tb_inc1_l = create_smoothed_lines(data_x, (tb_inc1["lower"][11:] * 100000))
-s_tb_inc1_u = create_smoothed_lines(data_x, (tb_inc1["upper"][11:] * 100000))
-
 s_tb_inc2 = create_smoothed_lines(data_x, (tb_inc2["median"][11:] * 100000))
-s_tb_inc2_l = create_smoothed_lines(data_x, (tb_inc2["lower"][11:] * 100000))
-s_tb_inc2_u = create_smoothed_lines(data_x, (tb_inc2["upper"][11:] * 100000))
+s_tb_inc7 = create_smoothed_lines(data_x, (tb_inc7["median"][11:] * 100000))
+s_tb_inc8 = create_smoothed_lines(data_x, (tb_inc8["median"][11:] * 100000))
+s_tb_inc9 = create_smoothed_lines(data_x, (tb_inc9["median"][11:] * 100000))
 
 # aids deaths
 data_x2 = py0.index[12:].year
 xvals2 = np.linspace(start=data_x2.min(), stop=data_x2.max(), num=num_interp)
 
-s_aids = create_smoothed_lines(data_x2, aids_deaths0["median_aids_deaths_rate_100kpy"][12:])
-s_aids_l = create_smoothed_lines(data_x2, aids_deaths0["lower_aids_deaths_rate_100kpy"][12:])
-s_aids_u = create_smoothed_lines(data_x2, aids_deaths0["upper_aids_deaths_rate_100kpy"][12:])
-
+s_aids0 = create_smoothed_lines(data_x2, aids_deaths0["median_aids_deaths_rate_100kpy"][12:])
 s_aids1 = create_smoothed_lines(data_x2, aids_deaths1["median_aids_deaths_rate_100kpy"][12:])
-s_aids1_l = create_smoothed_lines(data_x2, aids_deaths1["lower_aids_deaths_rate_100kpy"][12:])
-s_aids1_u = create_smoothed_lines(data_x2, aids_deaths1["upper_aids_deaths_rate_100kpy"][12:])
-
 s_aids2 = create_smoothed_lines(data_x2, aids_deaths2["median_aids_deaths_rate_100kpy"][12:])
-s_aids2_l = create_smoothed_lines(data_x2, aids_deaths2["lower_aids_deaths_rate_100kpy"][12:])
-s_aids2_u = create_smoothed_lines(data_x2, aids_deaths2["upper_aids_deaths_rate_100kpy"][12:])
+s_aids7 = create_smoothed_lines(data_x2, aids_deaths7["median_aids_deaths_rate_100kpy"][12:])
+s_aids8 = create_smoothed_lines(data_x2, aids_deaths8["median_aids_deaths_rate_100kpy"][12:])
+s_aids9 = create_smoothed_lines(data_x2, aids_deaths9["median_aids_deaths_rate_100kpy"][12:])
 
 # tb deaths
-s_tb_death = create_smoothed_lines(data_x2, tb_deaths0["median_tb_deaths_rate_100kpy"][12:])
-s_tb_death_l = create_smoothed_lines(data_x2, tb_deaths0["lower_tb_deaths_rate_100kpy"][12:])
-s_tb_death_u = create_smoothed_lines(data_x2, tb_deaths0["upper_tb_deaths_rate_100kpy"][12:])
-
+s_tb_death0 = create_smoothed_lines(data_x2, tb_deaths0["median_tb_deaths_rate_100kpy"][12:])
 s_tb_death1 = create_smoothed_lines(data_x2, tb_deaths1["median_tb_deaths_rate_100kpy"][12:])
-s_tb_death1_l = create_smoothed_lines(data_x2, tb_deaths1["lower_tb_deaths_rate_100kpy"][12:])
-s_tb_death1_u = create_smoothed_lines(data_x2, tb_deaths1["upper_tb_deaths_rate_100kpy"][12:])
-
 s_tb_death2 = create_smoothed_lines(data_x2, tb_deaths2["median_tb_deaths_rate_100kpy"][12:])
-s_tb_death2_l = create_smoothed_lines(data_x2, tb_deaths2["lower_tb_deaths_rate_100kpy"][12:])
-s_tb_death2_u = create_smoothed_lines(data_x2, tb_deaths2["upper_tb_deaths_rate_100kpy"][12:])
+s_tb_death7 = create_smoothed_lines(data_x2, tb_deaths7["median_tb_deaths_rate_100kpy"][12:])
+s_tb_death8 = create_smoothed_lines(data_x2, tb_deaths8["median_tb_deaths_rate_100kpy"][12:])
+s_tb_death9 = create_smoothed_lines(data_x2, tb_deaths9["median_tb_deaths_rate_100kpy"][12:])
 
-# ---------------------------------- PLOTS ---------------------------------- #
+# --------------------------- PLOTS ----------------------------------
 plt.style.use('ggplot')
 
 font = {'family': 'sans-serif',
@@ -356,14 +366,12 @@ fig.suptitle('')
 line1, = ax1.plot(data_x, inc0["median"][11:] * 100000)  # create empty plot to set axes
 
 ax1.plot(xvals, s_hiv_inc0, "-", color=baseline_colour)
-ax1.fill_between(xvals, s_hiv_inc0_l, s_hiv_inc0_u, color=baseline_colour,
-                 alpha=0.2)
-
 ax1.plot(xvals, s_hiv_inc1, "-", color=sc1_colour)
-ax1.fill_between(xvals, s_hiv_inc1_l, s_hiv_inc1_u, color=sc1_colour, alpha=0.2)
-
 ax1.plot(xvals, s_hiv_inc2, "-", color=sc2_colour)
-ax1.fill_between(xvals, s_hiv_inc2_l, s_hiv_inc2_u, color=sc2_colour, alpha=0.2)
+
+ax1.plot(xvals, s_hiv_inc7, "--", color=baseline_colour)
+ax1.plot(xvals, s_hiv_inc8, "--", color=sc1_colour)
+ax1.plot(xvals, s_hiv_inc9, "--", color=sc2_colour)
 
 ax1.set_ylim([0, 250])
 line1.remove()
@@ -372,16 +380,12 @@ ax1.set(title='HIV',
 
 # TB incidence
 ax2.plot(xvals, s_tb_inc0, "-", color=baseline_colour)
-ax2.fill_between(xvals, s_tb_inc0_l, s_tb_inc0_u,
-                 color=baseline_colour, alpha=0.2)
-
 ax2.plot(xvals, s_tb_inc1, "-", color=sc1_colour)
-ax2.fill_between(xvals, s_tb_inc1_l, s_tb_inc1_u, color=sc1_colour,
-                 alpha=0.2)
-
 ax2.plot(xvals, s_tb_inc2, "-", color=sc2_colour)
-ax2.fill_between(xvals, s_tb_inc2_l, s_tb_inc2_u, color=sc2_colour,
-                 alpha=0.2)
+
+ax2.plot(xvals, s_tb_inc7, "--", color=baseline_colour)
+ax2.plot(xvals, s_tb_inc8, "--", color=sc1_colour)
+ax2.plot(xvals, s_tb_inc9, "--", color=sc2_colour)
 
 ax2.set_ylim([0, 250])
 
@@ -389,36 +393,27 @@ ax2.set(title='TB',
         ylabel='')
 
 # HIV deaths
-ax3.plot(xvals2, s_aids, "-", color=baseline_colour)
-ax3.fill_between(xvals2, s_aids_l,
-                 s_aids_u, color=baseline_colour, alpha=0.2)
-
+ax3.plot(xvals2, s_aids0, "-", color=baseline_colour)
 ax3.plot(xvals2, s_aids1, "-", color=sc1_colour)
-ax3.fill_between(xvals2, s_aids1_l,
-                 s_aids1_u, color=sc1_colour, alpha=0.2)
-
 ax3.plot(xvals2, s_aids2, "-", color=sc2_colour)
-ax3.fill_between(xvals2, s_aids2_l,
-                 s_aids2_u, color=sc2_colour, alpha=0.2)
-# todo change
-ax3.set_ylim([0, 100])
-# ax3.set_ylim([0, 150])
+
+ax3.plot(xvals2, s_aids7, "--", color=baseline_colour)
+ax3.plot(xvals2, s_aids8, "--", color=sc1_colour)
+ax3.plot(xvals2, s_aids9, "--", color=sc2_colour)
+
+ax3.set_ylim([0, 150])
 
 ax3.set(title='',
         ylabel='Mortality per 100,000 py')
 
 # TB deaths
-ax4.plot(xvals2, s_tb_death, "-", color=baseline_colour)
-ax4.fill_between(xvals2, s_tb_death_l,
-                 s_tb_death_u, color=baseline_colour, alpha=0.2)
-
+ax4.plot(xvals2, s_tb_death0, "-", color=baseline_colour)
 ax4.plot(xvals2, s_tb_death1, "-", color=sc1_colour)
-ax4.fill_between(xvals2, s_tb_death1_l,
-                 s_tb_death1_u, color=sc1_colour, alpha=0.2)
-
 ax4.plot(xvals2, s_tb_death2, "-", color=sc2_colour)
-ax4.fill_between(xvals2, s_tb_death2_l,
-                 s_tb_death2_u, color=sc2_colour, alpha=0.2)
+
+ax4.plot(xvals2, s_tb_death7, "--", color=baseline_colour)
+ax4.plot(xvals2, s_tb_death8, "--", color=sc1_colour)
+ax4.plot(xvals2, s_tb_death9, "--", color=sc2_colour)
 
 ax4.set(title='',
         ylabel='')
@@ -435,162 +430,17 @@ ax4.annotate('D', xy=(0.02, 0.9), xycoords='axes fraction', fontsize=12, fontwei
 
 # handles for legend
 l_baseline = mlines.Line2D([], [], color=baseline_colour, label="Baseline")
-l_sc1 = mlines.Line2D([], [], color=sc1_colour, label="Constrained scale-up")
-l_sc2 = mlines.Line2D([], [], color=sc2_colour, label="Unconstrained scale-up")
+l_sc1 = mlines.Line2D([], [], color=sc1_colour, label="Constrained")
+l_sc2 = mlines.Line2D([], [], color=sc2_colour, label="Unconstrained")
 
-plt.legend(handles=[l_baseline, l_sc1, l_sc2])
+l_sc7 = mlines.Line2D([], [], color=baseline_colour, linestyle="--", label="Baseline + HR constraints")
+l_sc8 = mlines.Line2D([], [], color=sc1_colour, linestyle="--", label="Constrained + HR constraints")
+l_sc9 = mlines.Line2D([], [], color=sc2_colour, linestyle="--", label="Unconstrained + HR constraints")
 
-# todo change
-fig.savefig(outputspath / "Epi_outputs_mode2.png")
+
+plt.legend(handles=[l_baseline, l_sc1, l_sc2, l_sc7, l_sc8, l_sc9])
+
+fig.savefig(outputspath / "Epi_outputs_mode2_comparison.png")
 
 plt.show()
-
-
-# %%:  ---------------------------------- PrEP IMPACT ---------------------------------- #
-
-# HIV incidence in AGYW
-
-def hiv_agyw_inc(results_folder):
-    inc = extract_results(
-        results_folder,
-        module="tlo.methods.hiv",
-        key="infections_by_2age_groups_and_sex",
-        column="n_new_infections_female_1524",
-        index="date",
-        do_scaling=False
-    )
-
-    inc.columns = inc.columns.get_level_values(0)
-    inc_summary = pd.DataFrame(index=inc.index, columns=["median", "lower", "upper"])
-    inc_summary["median"] = inc.median(axis=1)
-    inc_summary["lower"] = inc.quantile(q=0.025, axis=1)
-    inc_summary["upper"] = inc.quantile(q=0.975, axis=1)
-
-    return inc_summary
-
-
-agyw_inc0 = hiv_agyw_inc(results0)
-agyw_inc1 = hiv_agyw_inc(results1)
-agyw_inc2 = hiv_agyw_inc(results2)
-
-# multiply by scaling factor to get numbers of expected infections
-
-# get scaling factor for numbers of tests performed and treatments requested
-# scaling factor 145.39609
-sf = extract_results(
-    results0,
-    module="tlo.methods.population",
-    key="scaling_factor",
-    column="scaling_factor",
-    index="date",
-    do_scaling=False)
-
-sc0_agyw = agyw_inc0["median"][12:25] * sf[0][0].values[0]
-sc1_agyw = agyw_inc1["median"][12:25] * sf[0][0].values[0]
-sc2_agyw = agyw_inc2["median"][12:25] * sf[0][0].values[0]
-
-
-# ---------------------------------------------------------------------------
-# calculate numbers of deaths over each scenario
-
-def num_deaths_aids(results_folder):
-    extract_deaths = extract_results(
-        results_folder,
-        module="tlo.methods.demography",
-        key="death",
-        custom_generate_series=(
-            lambda df: df.assign(year=df["date"].dt.year).groupby(
-                ["year", "cause"])["person_id"].count()
-        ),
-        do_scaling=True,
-    )
-    # removes multi-index
-    extract_deaths = extract_deaths.reset_index()
-
-    # select only cause AIDS_TB and AIDS_non_TB
-    num_aids_deaths = extract_deaths.loc[(extract_deaths.year >= 2023)]
-
-    # select years 2023-2035
-    num_aids_deaths = num_aids_deaths.loc[
-        (num_aids_deaths.cause == "AIDS_TB") | (num_aids_deaths.cause == "AIDS_non_TB")
-        ]
-
-    # group deaths by year
-    sum_aids_deaths = pd.DataFrame(num_aids_deaths.groupby(["year"]).sum())
-
-    return(sum_aids_deaths)
-
-
-# differences in deaths
-sc0_aids_deaths = num_deaths_aids(results0)
-sc1_aids_deaths = num_deaths_aids(results1)
-sc2_aids_deaths = num_deaths_aids(results2)
-
-# get median deaths from baseline in 2023
-sc0_aids_deaths.iloc[0, 1:].median()
-sc0_aids_deaths.iloc[0, 1:].quantile(0.025)
-sc0_aids_deaths.iloc[0, 1:].quantile(0.975)
-
-# sum columns to get total deaths over full time-period by run
-sum_columns_aids_deaths1 = sc1_aids_deaths.sum(axis=0)
-sum_columns_aids_deaths2 = sc2_aids_deaths.sum(axis=0)
-
-# remove top row which contains cause
-sum_columns_aids_deaths1 = sum_columns_aids_deaths1.iloc[1:]
-sum_columns_aids_deaths2 = sum_columns_aids_deaths2.iloc[1:]
-
-# Perform subtraction with fill_value=0
-diff = sum_columns_aids_deaths1.subtract(sum_columns_aids_deaths2, fill_value=0)
-
-# summarise differences in number deaths
-median_aids_deaths = diff.median()
-lower_aids_deaths = diff.quantile(q=0.025)
-upper_aids_deaths = diff.quantile(q=0.975)
-
-
-def num_deaths_tb(results_folder):
-    extract_deaths = extract_results(
-        results_folder,
-        module="tlo.methods.demography",
-        key="death",
-        custom_generate_series=(
-            lambda df: df.assign(year=df["date"].dt.year).groupby(
-                ["year", "cause"])["person_id"].count()
-        ),
-        do_scaling=True,
-    )
-    # removes multi-index
-    extract_deaths = extract_deaths.reset_index()
-
-    # select only cause AIDS_TB and AIDS_non_TB
-    num_tb_deaths = extract_deaths.loc[(extract_deaths.year >= 2023)]
-
-    # select years 2023-2035
-    num_tb_deaths = num_tb_deaths.loc[(num_tb_deaths.cause == "TB")]
-
-    # group deaths by year
-    num_tb_deaths = pd.DataFrame(num_tb_deaths.groupby(["year"]).sum())
-
-    return(num_tb_deaths)
-
-
-# differences in deaths
-sc1_tb_deaths = num_deaths_tb(results1)
-sc2_tb_deaths = num_deaths_tb(results2)
-
-# sum columns to get total deaths over full time-period by run
-sum_columns_tb_deaths1 = sc1_tb_deaths.sum(axis=0)
-sum_columns_tb_deaths2 = sc2_tb_deaths.sum(axis=0)
-
-# remove top row which contains cause
-sum_columns_tb_deaths1 = sum_columns_tb_deaths1.iloc[1:]
-sum_columns_tb_deaths2 = sum_columns_tb_deaths2.iloc[1:]
-
-# Perform subtraction with fill_value=0
-diff = sum_columns_tb_deaths1.subtract(sum_columns_tb_deaths2, fill_value=0)
-
-# summarise differences in number deaths
-median_tb_deaths = diff.median()
-lower_tb_deaths = diff.quantile(q=0.025)
-upper_tb_deaths = diff.quantile(q=0.975)
 
