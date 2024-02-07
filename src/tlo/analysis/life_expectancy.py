@@ -261,8 +261,6 @@ def produce_life_expectancy_estimates(
 
     """
 
-    output = pd.DataFrame()
-
     # get number of draws and numbers of runs
     info = get_scenario_info(results_folder)
 
