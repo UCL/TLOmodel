@@ -658,6 +658,9 @@ class HealthSystem(Module):
             'Cannot adopt a priority policy if the priority will be then ignored'
         )
 
+        # Use this variable to expand HS capabilities based on past year's pop grown
+        self.last_year_pop_size = 0
+
         self.disable = disable
         self.disable_and_reject_all = disable_and_reject_all
 
@@ -914,7 +917,9 @@ class HealthSystem(Module):
                            Date(self.parameters["year_mode_switch"], 1, 1))
 
         # Schedule recurring event which will rescale daily capabilities at regular intervals.
-        sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date+DateOffset(years=1)))
+        # The first event scheduled will only be used to update self.last_year_pop_size parameter,
+        # actual scaling will only take effect from 2011 onwards
+        sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -2861,20 +2866,19 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
 
-        # Rescale daily capabilities by specified amount
-        self.module._daily_capabilities *= self.module.parameters['dynamic_HR_scaling_factor']
-
-        # Keeping this outside of the scale_HR_by_popsize if statement in case we want to
-        # implement a "switching on" of scale_HR_by_popsize at given year (e.g. 2023) in the future
         df = self.sim.population.props
         this_year_pop_size = df.is_alive.sum()
 
-         # Rescale daily capabilities by population size, if this option is included
-        if self.module.parameters['scale_HR_by_popsize']:
-            if self.sim.date.year>2010:
-                self.module._daily_capabilities *= this_year_pop_size/last_year_pop_size
+        if self.sim.date.year>2010:
+        
+            # Rescale by fixed amount
+            self.module._daily_capabilities *= self.module.parameters['dynamic_HR_scaling_factor']
+            
+            # Rescale daily capabilities by population size, if this option is included
+            if self.module.parameters['scale_HR_by_popsize']:
+                self.module._daily_capabilities *= this_year_pop_size/self.module.last_year_pop_size
                 
-        last_year_pop_size = this_year_pop_size   # Save for next year
+        self.module.last_year_pop_size = this_year_pop_size   # Save for next year
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
