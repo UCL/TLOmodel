@@ -73,7 +73,7 @@ def _num_deaths_by_age_group(results_folder, target_period):
         module="tlo.methods.demography",
         key="death",
         custom_generate_series=extract_deaths_by_age_group,
-        do_scaling=True
+        do_scaling=False
     )
 
 
