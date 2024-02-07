@@ -41,9 +41,9 @@ def _map_age_to_age_group(_df):
 def _extract_person_years(results_folder, _draw, _run):
     """Helper function to get the multiplier from the simulation
     Note that if the scaling factor cannot be found a `KeyError` is thrown."""
-
-    return load_pickled_dataframes(results_folder, _draw, _run,
-                                   'tlo.methods.demography')['tlo.methods.demography']['person_years']
+    return load_pickled_dataframes(
+        results_folder, _draw, _run, 'tlo.methods.demography'
+    )['tlo.methods.demography']['person_years']
 
 
 def _create_multi_index_columns(results_folder: Path):
@@ -225,7 +225,7 @@ def _estimate_life_expectancy(_person_years_at_risk, _number_of_deaths_in_interv
 def produce_life_expectancy_estimates(
     results_folder: Path,
     target_period: Tuple[datetime.date, datetime.date],
-    median: bool = True
+    summary: bool = True
 ) -> pd.DataFrame:
     """
     produces sets of life expectancy estimates for each draw/run
