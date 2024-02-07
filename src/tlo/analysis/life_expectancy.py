@@ -236,7 +236,7 @@ def produce_life_expectancy_estimates(
     Args:
     - results_folder (PosixPath): The path to the results folder containing log, `tlo.methods.demography`
     - target period (tuple of dates): declare the date range (inclusively) in which life expectancy is to be estimated
-    - median (bool): declare whether to return a median value with 95% uncertainty intervals
+    - summary (bool): declare whether to return a summarized value (mean with 95% uncertainty intervals)
         or return the estimate for each draw/run
 
     Returns:
@@ -277,7 +277,7 @@ def produce_life_expectancy_estimates(
     output.columns = multi_index_columns
     output.index = ['M', 'F']
 
-    if not median:
+    if not summary:
         return output
 
     else:
