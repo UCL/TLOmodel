@@ -246,10 +246,10 @@ def produce_life_expectancy_estimates(
     *2 _aggregate_person_years_by_age
 
     Args:
-    - results_folder (PosixPath): The path to the folder containing all logged outputs
-    - median: declare whether to return a median value with 95% uncertainty intervals
+    - results_folder (PosixPath): The path to the results folder containing log, `tlo.methods.demography`
+    - target period (tuple of dates): declare the date range (inclusively) in which life expectancy is to be estimated
+    - median (bool): declare whether to return a median value with 95% uncertainty intervals
         or return the estimate for each draw/run
-    - target period: declare the year in which life expectancy is to be estimated
 
     Returns:
     - pd.DataFrame: The DataFrame with the life expectancy estimates (in years)
