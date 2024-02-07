@@ -157,7 +157,7 @@ class CopdCalibrations:
 
         # Compute fraction that die each year in each category of lung function, average over many years and compare to
         # data
-        death_rate_per100 = (100 * all_deaths_df / prev).mean()
+        death_rate_per100 = (100 * all_deaths_df.loc[[2021]] / prev.loc[[2021]]).mean()
 
         model_and_observed_data_dict = {'model': [death_rate_per100.mild, death_rate_per100.moderate,
                                                   death_rate_per100.severe, death_rate_per100.very_severe],
@@ -204,7 +204,8 @@ class CopdCalibrations:
         plt.show()
 
         # COMPUTE THE RELATIVE RATES TO NONE
-        rr_rates = death_rate_per100 / death_rate_per100.loc['none']
+        rr_death_rate_per100 = (100 * all_deaths_df.loc[[2023]] / prev.loc[[2023]]).mean()
+        rr_rates = rr_death_rate_per100 / rr_death_rate_per100.loc['none']
 
         rr_model_and_observed_data_dict = {'model': [rr_rates.none, rr_rates.mild, rr_rates.moderate,
                                                      rr_rates.severe + rr_rates.very_severe],
