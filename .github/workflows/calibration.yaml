@@ -1,0 +1,203 @@
+name: Calibration
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: '40-character commit hash'
+        required: true
+        default: ""
+        type: string
+  schedule:
+    - cron: 31 2 * * *
+
+env:
+  REPO_PATH:       /mnt/tlo/TLOmodel
+  OUTPUT_ROOT:     /mnt/tlodev2stg/tlo-dev-fs-2/task-runner/output
+  RUNS_NUMBER:     10
+  PYTHON_VER:      3.11
+  RUN_NAME:        021_long_run_all_diseases_run
+  PROCESS_NAME:    022_long_run_all_diseases_process
+
+jobs:
+
+  # Do a single clone from the remote repository, to reduce bandwidth usage.
+  # The repo is cloned to a directory outside of the runner workspace, because
+  # we want it to survive the current job, but this also means we can't use the
+  # `actions/checkout` workflow.
+  setup:
+    name: Setup
+    runs-on: [tlo-dev-vm-1]
+    strategy:
+      fail-fast: false
+    outputs:
+      # Environment variables can be passed to following steps within the same job by adding
+      # them to `GITHUB_ENV`, but to pass data to other jobs we have to necessarily use
+      # `GITHUB_OUTPUT`.
+      environment_path: ${{ steps.vars.outputs.environment_path }}
+      worktree_path: ${{ steps.vars.outputs.worktree_path }}
+      output_dir: ${{ steps.out-dir.outputs.output_dir }}
+      skip_tasks: ${{ steps.tasks.outputs.skip_tasks }}
+      tasks: ${{ steps.tasks.outputs.tasks }}
+    steps:
+      - name: Generate environment variables
+        id: vars
+        run: |
+          if [[ ${{ github.event_name }} == 'workflow_dispatch' ]] && [[ -n "${{ inputs.commit }}" ]]; then
+              SHA=${{ inputs.commit }}
+          else
+              SHA=${{ github.sha }}
+          fi
+          ENV="/mnt/tlo/env-${SHA}"
+          if [[ -d "${ENV}" ]]; then
+              echo "Virtual environment directory ${ENV} already exists, leaving..."
+              exit 1
+          fi
+          WORKTREE_PATH="/mnt/tlo/${SHA}"
+          if [[ -d "${WORKTREE_PATH}" ]]; then
+              echo "Worktree directory ${WORKTREE_PATH} already exists, leaving..."
+              exit 1
+          fi
+          echo "SHA=${SHA}"
+          echo "SHA=${SHA}" >> "${GITHUB_ENV}"
+          echo "ENV=${ENV}"
+          echo "ENV=${ENV}" >> "${GITHUB_ENV}"
+          echo "environment_path=${ENV}" >> "${GITHUB_OUTPUT}"
+          echo "WORKTREE_PATH=${WORKTREE_PATH}"
+          echo "WORKTREE_PATH=${WORKTREE_PATH}" >> "${GITHUB_ENV}"
+          echo "worktree_path=${WORKTREE_PATH}" >> "${GITHUB_OUTPUT}"
+
+      - name: Clone remote TLO repository and fetch desired commit
+        run: |
+          # If the repository doesn't exist on disk, clone it.
+          if [[ ! -d "${REPO_PATH}" ]]; then
+              git clone --depth=1 --branch="${{ github.ref_name }}" "https://github.com/${{ github.repository }}.git" "${REPO_PATH}"
+          fi
+          # In any case, fetch the requested commit.
+          git -C "${REPO_PATH}" fetch --depth=1 origin "${SHA}"
+
+      - name: Create worktree
+        run: |
+          git -C "${REPO_PATH}" worktree add "${WORKTREE_PATH}" ${SHA}
+
+      - name: Create virtual environment
+        run: |
+          python${PYTHON_VER} -m venv "${ENV}"
+          source "${ENV}/bin/activate"
+          pip install -r requirements/dev.txt
+          pip install -e .
+        working-directory: "${{ env.WORKTREE_PATH }}"
+
+      - name: Generate output directory
+        id: out-dir
+        run: |
+          commit_dir=$(git show -s --date=format:'%Y-%m-%d_%H%M%S' --format=%cd_%h "${SHA}")
+          output_dir="${OUTPUT_ROOT}/${commit_dir}"
+          echo "output_dir=${output_dir}"
+          echo "output_dir=${output_dir}" >> "${GITHUB_ENV}"
+          echo "output_dir=${output_dir}" >> "${GITHUB_OUTPUT}"
+        working-directory: "${{ env.WORKTREE_PATH }}"
+
+      - name: Generate list of tasks
+        id: tasks
+        run: |
+          SKIP_TASKS="false"
+          if [[ -d "${output_dir}" ]]; then
+              echo "Output directory ${output_dir} already exists, setting RUNS_NUMBER to 1 and skipping further task runs"
+              RUNS_NUMBER=1
+              # Set variable to make task job run, but exit immediately, so that
+              # the build doesn't fail.
+              SKIP_TASKS="true"
+          fi
+          echo "SKIP_TASKS=${SKIP_TASKS}"
+          echo "SKIP_TASKS=${SKIP_TASKS}" >> "${GITHUB_ENV}"
+          echo "skip_tasks=${SKIP_TASKS}" >> "${GITHUB_OUTPUT}"
+          RUNS="["
+          for run in $(seq 0 $((${RUNS_NUMBER} - 1))); do
+              RUNS="${RUNS}\"${run}\","
+          done
+          RUNS="${RUNS}]"
+          echo "tasks=${RUNS}"
+          echo "tasks=${RUNS}" >> "${GITHUB_OUTPUT}"
+
+      - name: Write info.txt file
+        if: ${{ env.SKIP_TASKS == 'false' }}
+        run: |
+          mkdir -p "${output_dir}"
+          info_txt="${output_dir}/info.txt"
+          git -C "${WORKTREE_PATH}" log --pretty=format:"%H%x09%ad%x09%s" --date=iso-strict -n 1 > "${info_txt}"
+          echo -e "\n${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" >> "${info_txt}"
+          echo "Content of ${info_txt}:"
+          cat "${info_txt}"
+
+  # Run the tasks.
+  tasks:
+    needs: setup
+    name: Run task ${{ matrix.index }}
+    runs-on: [tlo-dev-vm-1, tasks] # Use only runners dedicated to running the tasks.
+    timeout-minutes: 5760 # = 4 * 24 * 60 minutes = 4 days
+    strategy:
+      fail-fast: false
+      matrix:
+        index: ${{ fromJSON(needs.setup.outputs.tasks) }}
+    steps:
+      - name: Run the task
+        run: |
+          if [[ "${{ needs.setup.outputs.skip_tasks }}" == true ]]; then
+              echo "Nothing to be done, exiting..."
+              exit 0
+          fi
+          source "${{ needs.setup.outputs.environment_path }}/bin/activate"
+          draw=0
+          task_output_dir="${{ needs.setup.outputs.output_dir }}/${RUN_NAME}/${draw}/${{ matrix.index }}"
+          mkdir -p "${task_output_dir}"
+
+          tlo scenario-run --output-dir "${task_output_dir}" --draw "${draw}" ${{ matrix.index }} "${{ needs.setup.outputs.worktree_path }}/src/scripts/calibration_analyses/scenarios/long_run_all_diseases.py"
+        working-directory: "${{ needs.setup.outputs.worktree_path }}"
+
+  # Do the postprocessing
+  postprocess:
+    name: Post processing
+    needs: [setup, tasks]
+    runs-on: [tlo-dev-vm-1, postprocess] # Use only the runners dedicated to postprocessing
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Run post-processing
+        run: |
+          if [[ "${{ needs.setup.outputs.skip_tasks }}" == true ]]; then
+              echo "Nothing to be done, exiting..."
+              exit 0
+          fi
+          source "${{ needs.setup.outputs.environment_path }}/bin/activate"
+          task_output_dir="${{ needs.setup.outputs.output_dir }}/${PROCESS_NAME}"
+          mkdir -p "${task_output_dir}"
+
+          python3 "${{ needs.setup.outputs.worktree_path }}/src/scripts/calibration_analyses/analysis_scripts/process.py" "${task_output_dir}" "${RUN_NAME}" "${{ needs.setup.outputs.worktree_path }}/resources"
+          python3 "${{ needs.setup.outputs.worktree_path }}/src/scripts/task_runner/generate_html.py" "${OUTPUT_ROOT}" > "${OUTPUT_ROOT}/index.html"
+        working-directory: "${{ needs.setup.outputs.worktree_path }}"
+
+      - name: Compress log files
+        run: |
+          find "${{ needs.setup.outputs.output_dir }}" -name '*.log' -exec gzip --best --force --verbose '{}' \;
+
+  # Cleanup stage, to remove temporary directories and such
+  cleanup:
+    name: Cleanup job
+    timeout-minutes: 10
+    needs: [setup, tasks, postprocess]
+    # `always()` to run even if tasks and postprocess are skipped, but make sure
+    # `setup` was successful, to avoid cleaning up existing worktrees and
+    # environments used by other builds.
+    if: ${{ always() && needs.setup.result == 'success' }}
+    runs-on: [tlo-dev-vm-1]
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Cleanup worktree
+        run: |
+          git -C "${REPO_PATH}" worktree remove -f "${{ needs.setup.outputs.worktree_path }}" || true
+
+      - name: Cleanup virtual environment
+        run: |
+          rm -rvf "${{ needs.setup.outputs.environment_path }}"
