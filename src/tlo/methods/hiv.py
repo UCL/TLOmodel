@@ -129,12 +129,14 @@ class Hiv(Module):
     }
 
     PARAMETERS = {
+
         # Baseline characteristics
         "time_inf": Parameter(
             Types.DATA_FRAME, "prob of time since infection for baseline adult pop"
         ),
         "art_coverage": Parameter(Types.DATA_FRAME, "coverage of ART at baseline"),
         "treatment_cascade": Parameter(Types.DATA_FRAME, "spectrum estimates of treatment cascade"),
+
         # Natural history - transmission - overall rates
         "beta": Parameter(Types.REAL, "Transmission rate"),
         "unaids_prevalence_adjustment_factor": Parameter(
@@ -158,6 +160,7 @@ class Hiv(Module):
             Types.REAL,
             "Probability of mother to child transmission, mother infected during breastfeeding",
         ),
+
         # Natural history - transmission - relative risk of HIV acquisition (non-intervention)
         "rr_fsw": Parameter(Types.REAL, "Relative risk of HIV with female sex work"),
         "rr_circumcision": Parameter(
@@ -194,6 +197,7 @@ class Hiv(Module):
             Types.REAL,
             "Proportion reduction in risk of HIV acquisition if on PrEP. 0 for no efficacy; 1.0 for perfect efficacy.",
         ),
+
         # Natural history - survival (adults)
         "mean_months_between_aids_and_death": Parameter(
             Types.REAL,
@@ -268,6 +272,7 @@ class Hiv(Module):
             Types.REAL,
             "Proportion of PLHIV that will have delayed AIDS onset to compensate for AIDS-TB",
         ),
+
         # Natural history - survival (children)
         "mean_survival_for_infants_infected_prior_to_birth": Parameter(
             Types.REAL,
@@ -281,6 +286,7 @@ class Hiv(Module):
             Types.REAL,
             "Weibull shape parameter for mortality in infants who are infected after birth",
         ),
+
         # Uptake of Interventions
         "hiv_testing_rates": Parameter(
             Types.DATA_FRAME, "annual rates of testing for children and adults"
@@ -388,7 +394,7 @@ class Hiv(Module):
 
         # 1) Read the ResourceFiles
 
-        # Short cut to parameters dict
+        # Shortcut to parameters dict
         p = self.parameters
 
         workbook = pd.read_excel(
