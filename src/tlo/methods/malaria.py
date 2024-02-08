@@ -1392,7 +1392,7 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
             return
 
         # IPTp contra-indicated if currently on cotrimoxazole
-        if df.at[person_id, "hv_on_cotrimoxazole"]:
+        if 'Hiv' in self.sim.modules and df.at[person_id, "hv_on_cotrimoxazole"]:
             return
 
         logger.debug(
