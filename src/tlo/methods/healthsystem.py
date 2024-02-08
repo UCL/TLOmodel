@@ -919,7 +919,7 @@ class HealthSystem(Module):
         # Schedule recurring event which will rescale daily capabilities at regular intervals.
         # The first event scheduled will only be used to update self.last_year_pop_size parameter,
         # actual scaling will only take effect from 2011 onwards
-        sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date))
+        sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date) + pd.DateOffset(years=1))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
