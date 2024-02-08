@@ -383,6 +383,14 @@ class Tb(Module):
             Types.DATA_FRAME,
             "list of parameters and values changed in scenario analysis",
         ),
+        "tb_healthseekingbehaviour_cap": Parameter(
+            Types.REAL,
+            "number of repeat visits assumed for healthcare services",
+        ),
+        "data_end": Parameter(
+            Types.INT,
+            "last year for which data are available",
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -1454,20 +1462,23 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
 
     def apply(self, population):
         p = self.module.parameters
+
+        current_year = min(self.sim.date.year, p['data_end'])
+
         inc_estimates = p["who_incidence_estimates"]
         incidence_year = (inc_estimates.loc[
-            (inc_estimates.year == self.sim.date.year), "incidence_per_100k"
+            (inc_estimates.year == current_year), "incidence_per_100k"
         ].values[0]) / 100000
 
         prop_untreated_ds = self.module.calculate_untreated_proportion(population, strain="ds")
         prop_untreated_mdr = self.module.calculate_untreated_proportion(population, strain="mdr")
 
         scaled_incidence_ds = incidence_year * \
-            p["scaling_factor_WHO"] * prop_untreated_ds
+                              p["scaling_factor_WHO"] * prop_untreated_ds
         scaled_incidence_mdr = incidence_year * \
-            p["prop_mdr2010"] * \
-            p["scaling_factor_WHO"] * \
-            prop_untreated_mdr
+                               p["prop_mdr2010"] * \
+                               p["scaling_factor_WHO"] * \
+                               prop_untreated_mdr
 
         # transmission ds-tb
         self.module.assign_active_tb(population, strain="ds", incidence=scaled_incidence_ds)
@@ -1548,7 +1559,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
         active_and_hiv = df.loc[
             (df.index.isin(active_idx) & df.hv_inf)].index
 
-        # higher probability of being smear positive than HIV-
+        # lower probability of being smear positive than HIV-
         smear_pos = (
             rng.random_sample(len(active_and_hiv)) < p["prop_smear_positive_hiv"]
         )
@@ -1570,7 +1581,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
                     months=int(rng.uniform(low=1, high=6))
                 )
                 self.sim.schedule_event(
-                    event=TbDeathEvent(person_id=person_id, module=self.module, cause="AIDS_TB"),
+                    event=TbDecideDeathEvent(person_id=person_id, module=self.module, cause="AIDS_TB"),
                     date=date_of_tb_death,
                 )
 
@@ -1585,7 +1596,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
                 months=int(rng.uniform(low=1, high=6))
             )
             self.sim.schedule_event(
-                event=TbDeathEvent(person_id=person_id, module=self.module, cause="TB"),
+                event=TbDecideDeathEvent(person_id=person_id, module=self.module, cause="TB"),
                 date=date_of_tb_death,
             )
 
@@ -1711,16 +1722,17 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
     * give IPT for paediatric contacts of diagnosed case
     """
 
-    def __init__(self, module, person_id, suppress_footprint=False):
+    def __init__(self, module, person_id, suppress_footprint=False, facility_level='1a'):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
+        self.facility_level = facility_level
 
         assert isinstance(suppress_footprint, bool)
         self.suppress_footprint = suppress_footprint
 
         self.TREATMENT_ID = "Tb_Test_Screening"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
-        self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.ACCEPTED_FACILITY_LEVEL = '1a' if (self.facility_level == '1a') else '2'
 
     def apply(self, person_id, squeeze_factor):
         """Do the screening and referring to next tests"""
@@ -1770,6 +1782,8 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 tclose=None,
             )
 
+        # ------------------------- x-ray for children ------------------------- #
+
         # child under 5 -> chest x-ray, but access is limited
         # if xray not available, HSI_Tb_Xray_level1b will refer
         if person["age_years"] < 5:
@@ -1785,6 +1799,8 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
             )
             test_result = False  # to avoid calling a clinical diagnosis
+
+        # ------------------------- select test for adults ------------------------- #
 
         # for all presumptive cases over 5 years of age
         else:
@@ -1816,19 +1832,31 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
                         )
 
             elif test == "xpert":
-                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
-                    {"Over5OPD": 1}
-                )
-                # relevant test depends on smear status (changes parameters on sensitivity/specificity
-                if smear_status:
-                    test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-                        dx_tests_to_run="tb_xpert_test_smear_positive", hsi_event=self
+
+                # this can only be performed at level 1b/2, refer if necessary
+                if self.facility_level == '1a':
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        hsi_event=HSI_Tb_ScreeningAndRefer(
+                            person_id=person_id, module=self.module,
+                            facility_level='2'
+                        ),
+                        topen=self.sim.date + DateOffset(days=1),
+                        tclose=None,
+                        priority=0,
                     )
-                # for smear-negative people
-                else:
-                    test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
-                        dx_tests_to_run="tb_xpert_test_smear_negative", hsi_event=self
-                    )
+                    return self.make_appt_footprint({"Over5OPD": 1})
+
+                elif self.facility_level != '1a':
+                    # relevant test depends on smear status (changes parameters on sensitivity/specificity
+                    if smear_status:
+                        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                            dx_tests_to_run="tb_xpert_test_smear_positive", hsi_event=self
+                        )
+                    # for smear-negative people
+                    else:
+                        test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                            dx_tests_to_run="tb_xpert_test_smear_negative", hsi_event=self
+                        )
 
         # ------------------------- testing referrals ------------------------- #
 
@@ -1998,7 +2026,8 @@ class HSI_Tb_ClinicalDiagnosis(HSI_Event, IndividualScopeEventMixin):
                 )
 
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+                    HSI_Tb_StartTreatment(person_id=person_id, module=self.module,
+                                          facility_level='1a'),
                     topen=now,
                     tclose=None,
                     priority=0,
@@ -2064,7 +2093,8 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+                HSI_Tb_StartTreatment(person_id=person_id, module=self.module,
+                                      facility_level='1a'),
                 topen=self.sim.date,
                 tclose=None,
                 priority=0,
@@ -2135,7 +2165,8 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             df.at[person_id, "tb_date_diagnosed"] = self.sim.date
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Tb_StartTreatment(person_id=person_id, module=self.module),
+                HSI_Tb_StartTreatment(person_id=person_id, module=self.module,
+                                      facility_level='1a'),
                 topen=self.sim.date,
                 tclose=None,
                 priority=0,
@@ -2156,13 +2187,16 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
 
 
 class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, facility_level='1a'):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Tb)
+
+        self.facility_level = facility_level
 
         self.TREATMENT_ID = "Tb_Treatment"
         self.ACCEPTED_FACILITY_LEVEL = '1a'
         self.number_of_occurrences = 0
+        self.ACCEPTED_FACILITY_LEVEL = '1a' if (self.facility_level == '1a') else '2'
 
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
@@ -2196,6 +2230,19 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             item_codes=self.module.item_codes_for_consumables_required[treatment_regimen]
         )
 
+        # if require MDR treatment, and not currently at level 2, refer to level 2
+        if (treatment_regimen == "tb_mdrtx") and (self.facility_level != '2'):
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Tb_StartTreatment(
+                    person_id=person_id, module=self.module,
+                    facility_level='2'
+                ),
+                topen=self.sim.date + DateOffset(days=1),
+                tclose=None,
+                priority=0,
+            )
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
         if treatment_available:
             # start person on tb treatment - update properties
             df.at[person_id, "tb_on_treatment"] = True
@@ -2224,9 +2271,10 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         # if treatment not available, return for treatment start in 1 week
         # cap repeated visits at 5
         else:
-            if self.number_of_occurrences <= 5:
+            if self.number_of_occurrences <= self.module.parameters["tb_healthseekingbehaviour_cap"]:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=self,
+                    hsi_event=HSI_Tb_StartTreatment(
+                        person_id=person_id, module=self.module, facility_level='1a'),
                     topen=self.sim.date + DateOffset(weeks=1),
                     tclose=None,
                     priority=0,
@@ -2280,12 +2328,12 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # -------- SHINE Trial shorter paediatric regimen -------- #
         # shorter treatment for child with minimal tb
-        if (self.module.parameters["scenario"] == 5) \
+        if (self.module.parameters["scenario"] == 99) \
             & (self.sim.date >= self.module.parameters["scenario_start_date"]) \
             & (person["age_years"] <= 16) \
             & ~(person["tb_smear"]) \
             & ~person["tb_ever_treated"] \
-                & ~person["tb_diagnosed_mdr"]:
+            & ~person["tb_diagnosed_mdr"]:
             treatment_regimen = "tb_tx_child_shorter"
 
         return treatment_regimen
@@ -2488,14 +2536,49 @@ class HSI_Tb_Start_or_Continue_Ipt(HSI_Event, IndividualScopeEventMixin):
                 )
 
             else:
-                # Reschedule this HSI to occur again, up to a 3 times in total
-                if self.number_of_occurrences < 3:
+                # Reschedule this HSI to occur again, up to a 5 times in total
+                if self.number_of_occurrences <= self.module.parameters["tb_healthseekingbehaviour_cap"]:
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
                         self,
                         topen=self.sim.date + pd.DateOffset(days=1),
                         tclose=self.sim.date + pd.DateOffset(days=14),
                         priority=0,
                     )
+
+
+class HSI_Tb_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
+    """
+    this is a hospital stay for terminally-ill patients with TB
+    it does not affect disability weight or probability of death
+    no consumables are logged but health system capacity (HR) is allocated
+    there are no consequences if hospital bed is not available as person has scheduled death
+    already within 2 weeks
+    """
+
+    def __init__(self, module, person_id, beddays):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Tb)
+
+        self.TREATMENT_ID = 'Tb_PalliativeCare'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.ACCEPTED_FACILITY_LEVEL = '2'
+
+        self.beddays = beddays
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint(
+            {'general_bed': self.beddays}) if self.beddays else self.make_beddays_footprint({'general_bed': 7.5})
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        hs = self.sim.modules["HealthSystem"]
+
+        if not df.at[person_id, 'is_alive']:
+            return hs.get_blank_appt_footprint()
+
+        if df.at[person_id, 'hv_art'] == 'virally_suppressed':
+            return hs.get_blank_appt_footprint()
+
+        logger.debug(key='message',
+                     data=f'HSI_Tb_EndOfLifeCare: inpatient admission for {person_id}')
 
 
 class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
@@ -2538,6 +2621,53 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------
 #   Deaths
 # ---------------------------------------------------------------------------
+class TbDecideDeathEvent(Event, IndividualScopeEventMixin):
+    """
+    The scheduled hospitalisation and subsequent death for a tb case
+    check whether death should occur using a linear model
+    will depend on treatment status, smear status and age
+    then schedule a hospital stay prior to that death
+    hospital stay will not affect outcomes
+    """
+
+    def __init__(self, module, person_id, cause):
+        super().__init__(module, person_id=person_id)
+        self.cause = cause
+
+    def apply(self, person_id):
+        df = self.sim.population.props
+
+        if not df.at[person_id, "is_alive"]:
+            return
+
+        if not df.at[person_id, "tb_inf"] == "active":
+            return
+
+        logger.debug(
+            key="message",
+            data=f"TbDecideDeathEvent: checking whether death should occur for person {person_id}",
+        )
+
+        # use linear model to determine whether this person will die:
+        rng = self.module.rng
+        result = self.module.lm["death_rate"].predict(df.loc[[person_id]], rng=rng)
+
+        if result:
+            # schedule hospital stay for this person
+            # schedule hospital stay
+            beddays = self.module.rng.randint(low=5, high=10)
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Tb_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Tb"], beddays=beddays),
+                priority=0,
+                topen=self.sim.date,
+                tclose=None
+            )
+
+            # schedule death for this person after hospital stay
+            self.sim.schedule_event(
+                event=TbDeathEvent(person_id=person_id, module=self.module, cause="TB"),
+                date=self.sim.date + pd.DateOffset(days=beddays),
+            )
 
 
 class TbDeathEvent(Event, IndividualScopeEventMixin):
@@ -2565,21 +2695,11 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
             data=f"TbDeathEvent: checking whether death should occur for person {person_id}",
         )
 
-        # use linear model to determine whether this person will die:
-        rng = self.module.rng
-        result = self.module.lm["death_rate"].predict(df.loc[[person_id]], rng=rng)
-
-        if result:
-            logger.debug(
-                key="message",
-                data=f"TbDeathEvent: cause this death for person {person_id}",
-            )
-
-            self.sim.modules["Demography"].do_death(
-                individual_id=person_id,
-                cause=self.cause,
-                originating_module=self.module,
-            )
+        self.sim.modules["Demography"].do_death(
+            individual_id=person_id,
+            cause=self.cause,
+            originating_module=self.module,
+        )
 
 
 # ---------------------------------------------------------------------------
