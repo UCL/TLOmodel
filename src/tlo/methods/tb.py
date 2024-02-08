@@ -315,9 +315,6 @@ class Tb(Module):
         "prob_tx_success_5_14": Parameter(
             Types.REAL, "Probability of treatment success for children aged 5-14 years"
         ),
-        "prob_tx_success_shorter": Parameter(
-            Types.REAL, "Probability of treatment success for children aged <16 years on shorter regimen"
-        ),
         # ------------------ testing rates ------------------ #
         "rate_testing_general_pop": Parameter(
             Types.REAL,
@@ -339,9 +336,6 @@ class Tb(Module):
         "mdr_treatment_length": Parameter(
             Types.REAL, "length of treatment for mdr-tb in months"
         ),
-        "child_shorter_treatment_length": Parameter(
-            Types.REAL, "length of treatment for shorter paediatric regimen in months"
-        ),
         "prob_retained_ipt_6_months": Parameter(
             Types.REAL,
             "probability of being retained on IPT every 6 months if still eligible",
@@ -361,19 +355,6 @@ class Tb(Module):
         "second_line_test": Parameter(
             Types.STRING,
             "name of second test to be used for TB diagnosis"
-        ),
-        "probability_access_to_xray": Parameter(
-            Types.REAL,
-            "probability a person will have access to chest x-ray"
-        ),
-        "prob_tb_referral_in_generic_hsi": Parameter(
-            Types.REAL,
-            "probability of referral to TB screening HSI if presenting with TB-related symptoms"
-        ),
-        # ------------------ scale-up parameters for scenario analysis ------------------ #
-        "scaleup_parameters": Parameter(
-            Types.DATA_FRAME,
-            "list of parameters and values changed in scenario analysis",
         ),
         "tb_healthseekingbehaviour_cap": Parameter(
             Types.REAL,
@@ -839,7 +820,7 @@ class Tb(Module):
 
         # 1) Regular events
         sim.schedule_event(TbActiveEvent(self), sim.date)
-        sim.schedule_event(TbTreatmentAndRelapseEvents(self), sim.date)
+        sim.schedule_event(TbRegularEvents(self), sim.date)
         sim.schedule_event(TbSelfCureEvent(self), sim.date)
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
@@ -1158,22 +1139,10 @@ class Tb(Module):
             )
             ].index
 
-        # ---------------------- treatment end: shorter paediatric regimen ---------------------- #
-        # end treatment for paediatric cases on 4 month regimen
-        end_tx_shorter_idx = df.loc[
-            df.is_alive
-            & df.tb_on_treatment
-            & (df.tb_treatment_regimen == "tb_tx_child_shorter")
-            & (
-                now
-                > (df.tb_date_treated + pd.DateOffset(months=p["child_shorter_treatment_length"]))
-            )
-            ].index
 
         # join indices
         end_tx_idx = end_ds_tx_idx.union(end_ds_retx_idx)
         end_tx_idx = end_tx_idx.union(end_mdr_tx_idx)
-        end_tx_idx = end_tx_idx.union(end_tx_shorter_idx)
 
         # ---------------------- treatment failure ---------------------- #
         # sample some to have treatment failure
@@ -1361,7 +1330,7 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         self.module.assign_active_tb(population, strain="mdr", incidence=scaled_incidence_mdr)
 
 
-class TbTreatmentAndRelapseEvents(RegularEvent, PopulationScopeEventMixin):
+class TbRegularEvents(RegularEvent, PopulationScopeEventMixin):
     """ This event runs each month and calls three functions:
     * scheduling TB screening for the general population
     * ending treatment if end of treatment regimen has been reached
