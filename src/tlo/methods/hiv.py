@@ -2465,11 +2465,7 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
             ):
                 # repeat appt for HIV test
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Hiv_TestAndRefer(
-                        person_id=person_id,
-                        module=self.module,
-                        referred_from="HIV_test",
-                    ),
+                    self,
                     topen=self.sim.date + pd.DateOffset(days=7),
                     tclose=None,
                     priority=0,
@@ -2689,9 +2685,7 @@ class HSI_Hiv_StartOrContinueOnPrep(HSI_Event, IndividualScopeEventMixin):
 
                 # Schedule repeat visit for one week's time
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Hiv_StartOrContinueOnPrep(
-                        person_id=person_id, module=self.module
-                    ),
+                    self,
                     priority=1,
                     topen=self.sim.date + pd.DateOffset(days=7),
                     tclose=None,
@@ -2798,11 +2792,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 if self.counter_for_drugs_not_available <= 2:
                     # repeat attempt for ARVs at level 1a
                     self.sim.modules["HealthSystem"].schedule_hsi_event(
-                        hsi_event=HSI_Hiv_StartOrContinueTreatment(
-                            person_id=person_id,
-                            module=self.module,
-                            facility_level_of_this_hsi="1a",
-                        ),
+                        self,
                         topen=self.sim.date + pd.DateOffset(months=1),
                         priority=0,
                     )
