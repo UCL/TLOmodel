@@ -115,14 +115,15 @@ def _estimate_life_expectancy(
     estimated_life_expectancy_at_birth = dict()
 
     # first age-group is 0, then 1-4, 5-9, 10-14 etc. 22 categories in total
-    level_0_values = _person_years_at_risk.index.get_level_values('age_group').unique()
+    age_group_labels = _person_years_at_risk.index.get_level_values('age_group').unique()
 
     # Extract interval width
-    interval_width = [5 if '90' in interval else int(interval.split('-')[1]) - int(interval.split('-')[0]) + 1
-    if '-' in interval else 1 for interval in level_0_values.categories]
-
+    interval_width = [
+        5 if '90' in interval else int(interval.split('-')[1]) - int(interval.split('-')[0]) + 1
+        if '-' in interval else 1 for interval in age_group_labels.categories
+    ]
     number_age_groups = len(interval_width)
-    fraction_of_last_age_survived = pd.Series([0.5] * number_age_groups, index=level_0_values)
+    fraction_of_last_age_survived = pd.Series([0.5] * number_age_groups, index=age_group_labels)
 
     # separate male and female data
     for sex in ['M', 'F']:
@@ -147,7 +148,7 @@ def _estimate_life_expectancy(
         probability_of_dying_in_interval[~condition] = interval_width * death_rate_in_interval / (
             1 + interval_width * (1 - fraction_of_last_age_survived) * death_rate_in_interval)
         # all those surviving to final interval die during this interval
-        probability_of_dying_in_interval.loc['90'] = 1
+        probability_of_dying_in_interval.at['90'] = 1
 
         # number_alive_at_start_of_interval
         # keep dtype as float in case using aggregated outputs
@@ -163,7 +164,6 @@ def _estimate_life_expectancy(
         for i in range(0, number_age_groups - 1):
             number_dying_in_interval[i] = number_alive_at_start_of_interval[i] - number_alive_at_start_of_interval[
                 i + 1]
-
         number_dying_in_interval[number_age_groups - 1] = number_alive_at_start_of_interval[number_age_groups - 1]
 
         # person-years lived in interval
