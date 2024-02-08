@@ -53,8 +53,6 @@ class Malaria(Module):
 
     OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden"}
 
-    ADDITIONAL_DEPENDENCIES = {"Hiv", "Tb"}
-
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_HEALTHSYSTEM,
@@ -899,13 +897,19 @@ class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
         now = self.sim.date
 
         # select currently pregnant women without IPTp, malaria-negative, not on cotrimoxazole
-        p1 = df.index[
+        p1_condition = (
             df.is_alive
             & df.is_pregnant
             & ~df.ma_is_infected
             & ~df.ma_iptp
-            & ~df.hv_on_cotrimoxazole
-        ]
+            & (
+                ~df.hv_on_cotrimoxazole
+                if 'Hiv' in self.sim.modules
+                else True
+            )
+        )
+
+        p1 = df.index[p1_condition]
 
         for person_index in p1:
             logger.debug(
