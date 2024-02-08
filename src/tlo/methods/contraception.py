@@ -164,7 +164,7 @@ class Contraception(Module):
         """Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters
         (CSV ResourceFile).
         """
-        workbook = pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Contraception.xlsx', sheet_name=None)
+        workbook = pd.read_excel(Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_Contraception.xlsx', sheet_name=None)
 
         # Import selected sheets from the workbook as the parameters
         sheet_names = [
@@ -188,7 +188,7 @@ class Contraception(Module):
 
         # Declare values for other parameters
         self.load_parameters_from_dataframe(pd.read_csv(
-            Path(self.resourcefilepath) / 'ResourceFile_ContraceptionParams.csv'
+            Path(self.resourcefilepath) / 'contraception' / 'ResourceFile_ContraceptionParams.csv'
         ))
 
         # Import the Age-specific fertility rate data from WPP
@@ -353,7 +353,7 @@ class Contraception(Module):
             # Increase prob of 'female_sterilization' in older women accordingly
             probs_30plus = probs.copy()
             probs_30plus['female_sterilization'] = (
-                probs.loc['female_sterilization'] / 
+                probs.loc['female_sterilization'] /
                 self.ratio_n_females_30_49_to_15_49_in_2010
             )
             # Scale so that the probability of all outcomes sum to 1.0
@@ -633,7 +633,7 @@ class Contraception(Module):
             # Increase prob of 'female_sterilization' in older women accordingly
             probs_30plus = probs.copy()
             probs_30plus['female_sterilization'] = (
-                probs.loc['female_sterilization'] / 
+                probs.loc['female_sterilization'] /
                 self.ratio_n_females_30_49_to_15_49_in_2010
             )
             # Scale so that the probability of all outcomes sum to 1.0
@@ -1378,6 +1378,7 @@ class SimplifiedPregnancyAndLabour(Module):
 
     def read_parameters(self, *args):
         parameter_dataframe = pd.read_excel(self.sim.modules['Contraception'].resourcefilepath /
+                                            'contraception' /
                                             'ResourceFile_Contraception.xlsx',
                                             sheet_name='simplified_labour_parameters')
         self.load_parameters_from_dataframe(parameter_dataframe)
