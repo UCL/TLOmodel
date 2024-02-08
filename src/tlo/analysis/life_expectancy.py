@@ -239,7 +239,7 @@ def get_life_expectancy_estimates(
     Returns:
     - pd.DataFrame: The DataFrame with the life expectancy estimates (in years)
      for every draw/run in the results folder; or, with option `summary=True` summarized (central, lower,
-     upper estimaes) for each draw.
+     upper estimates) for each draw.
 
     example use:
     test = produce_life_expectancy_estimates(results_folder, median=True,
