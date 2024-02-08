@@ -12,12 +12,13 @@ class Wasting(Module):
     Provides dummy values for properties required by other modules.
     """
 
-    INIT_DEPENDENCIES = {'Demography'}
+    INIT_DEPENDENCIES = {"Demography"}
 
     PROPERTIES = {
-        'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL,
-                                                   'temporary property', categories=['MAM', 'SAM', 'well']),
-        'un_ever_wasted': Property(Types.BOOL, 'temporary property')
+        "un_clinical_acute_malnutrition": Property(
+            Types.CATEGORICAL, "temporary property", categories=["MAM", "SAM", "well"]
+        ),
+        "un_ever_wasted": Property(Types.BOOL, "temporary property"),
     }
 
     def __init__(self, name=None, resourcefilepath=None):
@@ -29,13 +30,13 @@ class Wasting(Module):
 
     def initialise_population(self, population):
         df = population.props
-        df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
-        df.loc[df.is_alive, 'un_ever_wasted'] = False
+        df.loc[df.is_alive, "un_clinical_acute_malnutrition"] = "well"
+        df.loc[df.is_alive, "un_ever_wasted"] = False
 
     def initialise_simulation(self, sim):
         pass
 
     def on_birth(self, mother, child):
         df = self.sim.population.props
-        df.at[child, 'un_clinical_acute_malnutrition'] = 'well'
-        df.at[child, 'un_ever_wasted'] = False
+        df.at[child, "un_clinical_acute_malnutrition"] = "well"
+        df.at[child, "un_ever_wasted"] = False

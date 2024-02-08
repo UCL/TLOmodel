@@ -26,7 +26,7 @@ outputspath = Path("./outputs/sejjil0@ucl.ac.uk")
 # 0) Find results_folder associated with a given batch_file (and get most recent [-1])
 # results_folder = get_scenario_outputs("baseline_alri_scenario.py", outputspath)[-1]
 # or specify which folder to use
-results_folder = (outputspath / 'baseline_alri_scenario-2022-03-23T102644Z')
+results_folder = outputspath / "baseline_alri_scenario-2022-03-23T102644Z"
 # results_folder = (outputspath/'baseline_alri_scenario-2022-03-22T113403Z')
 # folder9 = (outputspath/'baseline_alri_scenario-2022-03-23T102644Z/0/9')
 # # get the pickled files if not generated at the batch run
@@ -50,18 +50,20 @@ alri_incident_count = extract_results(
     results_folder,
     module="tlo.methods.alri",
     key="event_counts",
-    column='incident_cases',
+    column="incident_cases",
     index="date",
-    do_scaling=do_scaling)
+    do_scaling=do_scaling,
+)
 
 # death count from model
 alri_death_count = extract_results(
     results_folder,
     module="tlo.methods.alri",
     key="event_counts",
-    column='deaths',
+    column="deaths",
     index="date",
-    do_scaling=do_scaling)
+    do_scaling=do_scaling,
+)
 
 # set the index as year value (not date)
 alri_incident_count.index = alri_incident_count.index.year
@@ -76,12 +78,14 @@ alri_death_count.to_csv(outputspath / ("batch_run_death_count" + ".csv"))
 # call this for each run and then take the mean to use as denominator for mortality / incidence etc.
 def get_under5_person_years(py_):
     # get person-years of under 5 year-olds
-    years = pd.to_datetime(py_['date']).dt.year
+    years = pd.to_datetime(py_["date"]).dt.year
     py = pd.Series(dtype="int64", index=years)
     for year in years:
         tot_py = (
-            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series) +
-            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(pd.Series)
+            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series)
+            + (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(
+                pd.Series
+            )
         ).transpose()
         tot_py.index = tot_py.index.astype(int)
         py[year] = tot_py.loc[0:4].sum().values[0]
@@ -92,10 +96,11 @@ def get_under5_person_years(py_):
 # person-years for under 5 years of age from model
 person_years = extract_results(
     results_folder=results_folder,
-    module='tlo.methods.demography',
-    key='person_years',
+    module="tlo.methods.demography",
+    key="person_years",
     custom_generate_series=get_under5_person_years,
-    do_scaling=do_scaling)
+    do_scaling=do_scaling,
+)
 
 # ---------------------------------------------------------------------------------------------------
 # # # # # # # # # # INCIDENCE & MORTALITY RATE (CASES/ DENOMINATOR) # # # # # # # # # #
@@ -106,7 +111,9 @@ incidence_per_run_per_draw = ((alri_incident_count / person_years) * 100).dropna
 incidence_summary_per_draw = summarize(incidence_per_run_per_draw)
 
 # store the incidence summary statistics of each draw in each run of each draw
-incidence_summary_per_draw.to_csv(outputspath / ("batch_run_incidence_100cy_results" + ".csv"))
+incidence_summary_per_draw.to_csv(
+    outputspath / ("batch_run_incidence_100cy_results" + ".csv")
+)
 
 # ---------- Mortality ----------
 # calculate the mortality rate (deaths per 100,000 under-5 population or child-years) in each run of each draw
@@ -115,7 +122,9 @@ mortality_per_run_per_draw = ((alri_death_count / person_years) * 100000).dropna
 mortality_summary_per_draw = summarize(mortality_per_run_per_draw)
 
 # store the mortality summary statistics of each draw in each run of each draw
-mortality_summary_per_draw.to_csv(outputspath / ("batch_run_mortality_100000pop_results" + ".csv"))
+mortality_summary_per_draw.to_csv(
+    outputspath / ("batch_run_mortality_100000pop_results" + ".csv")
+)
 
 # ----------------------------------- CREATE PLOTS - SINGLE RUN FIGURES -----------------------------------
 # INCIDENCE & MORTALITY RATE - OUTPUT OVERTIME
@@ -142,7 +151,9 @@ plt.style.use("ggplot")
 fig = plt.figure()
 
 # GBD estimates
-plt.plot(GBD_data.Year, GBD_data.Incidence_per100_children, color='#E24A33', label='GBD')
+plt.plot(
+    GBD_data.Year, GBD_data.Incidence_per100_children, color="#E24A33", label="GBD"
+)
 plt.fill_between(
     GBD_data.Year,
     GBD_data.Incidence_per100_lower,
@@ -151,7 +162,12 @@ plt.fill_between(
 )
 # McAllister et al 2019 estimates
 years_with_data = McAllister_data.dropna(axis=0)
-plt.plot(years_with_data.Year, years_with_data.Incidence_per100_children, color='#348ABD', label='McAllister')
+plt.plot(
+    years_with_data.Year,
+    years_with_data.Incidence_per100_children,
+    color="#348ABD",
+    label="McAllister",
+)
 plt.fill_between(
     years_with_data.Year,
     years_with_data.Incidence_per100_lower,
@@ -159,13 +175,17 @@ plt.fill_between(
     alpha=0.5,
 )
 # model output
-plt.plot(incidence_summary_per_draw.index, incidence_summary_per_draw.loc[:, (draw, 'mean')].values,
-         color='teal', label='Model')
+plt.plot(
+    incidence_summary_per_draw.index,
+    incidence_summary_per_draw.loc[:, (draw, "mean")].values,
+    color="teal",
+    label="Model",
+)
 plt.fill_between(
     incidence_summary_per_draw.index,
-    incidence_summary_per_draw.loc[:, (draw, 'lower')].values,
-    incidence_summary_per_draw.loc[:, (draw, 'upper')].values,
-    color='teal',
+    incidence_summary_per_draw.loc[:, (draw, "lower")].values,
+    incidence_summary_per_draw.loc[:, (draw, "upper")].values,
+    color="teal",
     alpha=0.5,
 )
 
@@ -186,7 +206,9 @@ plt.show()
 fig1 = plt.figure()
 
 # GBD estimates
-plt.plot(GBD_data.Year, GBD_data.Death_per100k_children, color='#E24A33', label='GBD')  # GBD data
+plt.plot(
+    GBD_data.Year, GBD_data.Death_per100k_children, color="#E24A33", label="GBD"
+)  # GBD data
 plt.fill_between(
     GBD_data.Year,
     GBD_data.Death_per100k_lower,
@@ -194,14 +216,18 @@ plt.fill_between(
     alpha=0.5,
 )
 # model output
-plt.plot(mortality_summary_per_draw.index, mortality_summary_per_draw.loc[:, (draw, 'mean')].values,
-         color='teal', label='Model')  # model
+plt.plot(
+    mortality_summary_per_draw.index,
+    mortality_summary_per_draw.loc[:, (draw, "mean")].values,
+    color="teal",
+    label="Model",
+)  # model
 plt.fill_between(
     mortality_summary_per_draw.index,
-    mortality_summary_per_draw.loc[:, (draw, 'lower')].values,
-    mortality_summary_per_draw.loc[:, (draw, 'upper')].values,
-    color='teal',
-    alpha=0.5
+    mortality_summary_per_draw.loc[:, (draw, "lower")].values,
+    mortality_summary_per_draw.loc[:, (draw, "upper")].values,
+    color="teal",
+    alpha=0.5,
 )
 plt.title("ALRI Mortality per 100,000 children")
 plt.xlabel("Year")
@@ -221,9 +247,9 @@ birth_count = extract_results(
     module="tlo.methods.demography",
     key="on_birth",
     custom_generate_series=(
-        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
+        lambda df: df.assign(year=df["date"].dt.year).groupby(["year"])["year"].count()
     ),
-    do_scaling=do_scaling
+    do_scaling=do_scaling,
 )
 
 # store the output numbers of births in each run of each draw
@@ -240,18 +266,27 @@ mortality_per_livebirths_summary = summarize(deaths_per_livebirth)
 fig2 = plt.figure()
 
 # McAllister et al. 2019 estimates
-plt.plot(McAllister_data.Year, McAllister_data.Death_per1000_livebirths, color='#348ABD',
-         label='McAllister')  # no upper/lower
+plt.plot(
+    McAllister_data.Year,
+    McAllister_data.Death_per1000_livebirths,
+    color="#348ABD",
+    label="McAllister",
+)  # no upper/lower
 
 # model output
-plt.plot(mortality_per_livebirths_summary.index, mortality_per_livebirths_summary.loc[:, (draw, 'mean')].values,
-         color='teal', label='Model')  # model
+plt.plot(
+    mortality_per_livebirths_summary.index,
+    mortality_per_livebirths_summary.loc[:, (draw, "mean")].values,
+    color="teal",
+    label="Model",
+)  # model
 plt.fill_between(
     mortality_per_livebirths_summary.index,
-    mortality_per_livebirths_summary.loc[:, (draw, 'lower')].values,
-    mortality_per_livebirths_summary.loc[:, (draw, 'upper')].values,
-    color='teal',
-    alpha=0.5)
+    mortality_per_livebirths_summary.loc[:, (draw, "lower")].values,
+    mortality_per_livebirths_summary.loc[:, (draw, "upper")].values,
+    color="teal",
+    alpha=0.5,
+)
 
 plt.title("ALRI Mortality per 1,000 livebirths")
 plt.xlabel("Year")
@@ -270,12 +305,16 @@ plt.show()
 # Get the total DALYs from the output of health burden
 def get_lri_dalys(df_):
     # get dalys of ALRI in under-5
-    years = df_['year'].value_counts().keys()
-    dalys = pd.Series(dtype='float64', index=years)
+    years = df_["year"].value_counts().keys()
+    dalys = pd.Series(dtype="float64", index=years)
     for year in years:
         tot_dalys = (
-            df_.drop(columns='date').groupby(['year', 'age_range']).sum().apply(pd.Series))
-        dalys[year] = tot_dalys.loc[(year, '0-4'), 'Lower respiratory infections']
+            df_.drop(columns="date")
+            .groupby(["year", "age_range"])
+            .sum()
+            .apply(pd.Series)
+        )
+        dalys[year] = tot_dalys.loc[(year, "0-4"), "Lower respiratory infections"]
     dalys.sort_index()
 
     return dalys
@@ -287,7 +326,7 @@ alri_dalys_count = extract_results(
     module="tlo.methods.healthburden",
     key="dalys",
     custom_generate_series=get_lri_dalys,
-    do_scaling=do_scaling
+    do_scaling=do_scaling,
 )
 
 # get mean / upper/ lower statistics
@@ -300,7 +339,7 @@ dalys_summary.to_csv(outputspath / ("batch_run_dalys_results" + ".csv"))
 fig3 = plt.figure()
 
 # GBD estimates
-plt.plot(GBD_data.Year, GBD_data.DALYs, color='#E24A33', label='GBD')  # GBD data
+plt.plot(GBD_data.Year, GBD_data.DALYs, color="#E24A33", label="GBD")  # GBD data
 plt.fill_between(
     GBD_data.Year,
     GBD_data.DALYs_lower,
@@ -308,14 +347,19 @@ plt.fill_between(
     alpha=0.5,
 )
 # model output
-plt.plot(dalys_summary.index, dalys_summary.loc[:, (draw, 'mean')].values,
-         color='teal', label='Model')  # model
+plt.plot(
+    dalys_summary.index,
+    dalys_summary.loc[:, (draw, "mean")].values,
+    color="teal",
+    label="Model",
+)  # model
 plt.fill_between(
     dalys_summary.index,
-    dalys_summary.loc[:, (draw, 'lower')].values,
-    dalys_summary.loc[:, (draw, 'upper')].values,
-    color='teal',
-    alpha=0.5)
+    dalys_summary.loc[:, (draw, "lower")].values,
+    dalys_summary.loc[:, (draw, "upper")].values,
+    color="teal",
+    alpha=0.5,
+)
 
 plt.title("ALRI DALYs")
 plt.xlabel("Year")

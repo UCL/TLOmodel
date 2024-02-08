@@ -1,4 +1,5 @@
 """Support for creating different kinds of events."""
+
 from __future__ import annotations
 
 from enum import Enum
@@ -12,6 +13,7 @@ if TYPE_CHECKING:
 
 class Priority(Enum):
     """Enumeration for the Priority, which is used in sorting the events in the simulation queue."""
+
     START_OF_DAY = 0
     FIRST_HALF_OF_DAY = 25
     LAST_HALF_OF_DAY = 75
@@ -41,7 +43,9 @@ class Event:
             constructor, but may also take further keyword arguments.
         :param priority: a keyword-argument to set the priority (see Priority enum)
         """
-        assert isinstance(priority, Priority), "priority argument should be a value from Priority enum"
+        assert isinstance(
+            priority, Priority
+        ), "priority argument should be a value from Priority enum"
         self.module = module
         self.sim = module.sim
         self.priority = priority

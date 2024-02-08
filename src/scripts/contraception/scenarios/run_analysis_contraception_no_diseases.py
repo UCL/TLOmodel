@@ -57,29 +57,29 @@ class RunAnalysisCo(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'run_analysis_contraception_no_diseases',  # <- (specified only for local running)
-            'directory': './outputs',  # <- (specified only for local running)
-            'custom_levels': {
-                '*': logging.WARNING,
+            "filename": "run_analysis_contraception_no_diseases",  # <- (specified only for local running)
+            "directory": "./outputs",  # <- (specified only for local running)
+            "custom_levels": {
+                "*": logging.WARNING,
                 "tlo.methods.contraception": logging.INFO,
-                "tlo.methods.demography": logging.INFO
-            }
+                "tlo.methods.demography": logging.INFO,
+            },
         }
 
     def modules(self):
         return [
             # Core Modules
             demography.Demography(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(resourcefilepath=self.resources,
-                                      cons_availability="all"),
-
+            healthsystem.HealthSystem(
+                resourcefilepath=self.resources, cons_availability="all"
+            ),
             # - Contraception and replacement for Labour etc.
-            contraception.Contraception(resourcefilepath=self.resources,
-                                        use_healthsystem=True  # default: True <-- using HealthSystem
-                                        # if True initiation and switches to contraception require an HSI
-                                        ),
+            contraception.Contraception(
+                resourcefilepath=self.resources,
+                use_healthsystem=True,  # default: True <-- using HealthSystem
+                # if True initiation and switches to contraception require an HSI
+            ),
             contraception.SimplifiedPregnancyAndLabour(),
-
             # - Supporting Module required by Contraception
             hiv.DummyHivModule(),
         ]
@@ -89,7 +89,7 @@ class RunAnalysisCo(BaseScenario):
         return
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])

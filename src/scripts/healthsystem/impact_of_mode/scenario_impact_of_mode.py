@@ -34,15 +34,15 @@ class ImpactOfHealthSystemMode(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'effect_of_each_treatment',
-            'directory': Path('./outputs'),  # <- (specified only for local running)
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.demography.detail': logging.WARNING,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-            }
+            "filename": "effect_of_each_treatment",
+            "directory": Path("./outputs"),  # <- (specified only for local running)
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.WARNING,
+                "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO,
+            },
         }
 
     def modules(self):
@@ -71,36 +71,30 @@ class ImpactOfHealthSystemMode(BaseScenario):
 
         return {
             "No Healthcare System": {
-                'HealthSystem': {
-                    'Service_Availability': []
-                },
+                "HealthSystem": {"Service_Availability": []},
             },
-
             "Mode 0": {
-                'HealthSystem': {
-                    'mode_appt_constraints': 0,
+                "HealthSystem": {
+                    "mode_appt_constraints": 0,
                     "use_funded_or_actual_staffing": "actual",
                 },
             },
-
             "Mode 1": {
-                'HealthSystem': {
-                    'mode_appt_constraints': 1,
+                "HealthSystem": {
+                    "mode_appt_constraints": 1,
                     "use_funded_or_actual_staffing": "actual",
                 },
             },
-
             "Mode 2": {
-                'HealthSystem': {
-                    'mode_appt_constraints': 2,
+                "HealthSystem": {
+                    "mode_appt_constraints": 2,
                     "use_funded_or_actual_staffing": "actual",
                 },
             },
-
         }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])

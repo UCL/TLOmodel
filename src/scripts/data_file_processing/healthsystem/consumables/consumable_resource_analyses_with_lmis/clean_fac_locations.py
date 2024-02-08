@@ -17,7 +17,6 @@ NB. The comment of this file are commented-out because the script requires depen
 TLO framework at the time of writing.
 """
 
-
 """
 import datetime
 from pathlib import Path

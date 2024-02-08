@@ -32,7 +32,8 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'focused_anc_test_10k', 'directory': './outputs',
+            "filename": "focused_anc_test_10k",
+            "directory": "./outputs",
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -42,7 +43,7 @@ class TestScenario(BaseScenario):
                 "tlo.methods.care_of_women_during_pregnancy": logging.INFO,
                 "tlo.methods.pregnancy_supervisor": logging.INFO,
                 "tlo.methods.postnatal_supervisor": logging.INFO,
-            }
+            },
         }
 
     def modules(self):
@@ -51,28 +52,35 @@ class TestScenario(BaseScenario):
             contraception.Contraception(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(resourcefilepath=self.resources,
-                                      service_availability=['*'],
-                                      ignore_cons_constraints=True),
+            healthsystem.HealthSystem(
+                resourcefilepath=self.resources,
+                service_availability=["*"],
+                ignore_cons_constraints=True,
+            ),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
             depression.Depression(resourcefilepath=self.resources),
-            cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=self.resources),
-            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
+            cardio_metabolic_disorders.CardioMetabolicDisorders(
+                resourcefilepath=self.resources
+            ),
+            healthseekingbehaviour.HealthSeekingBehaviour(
+                resourcefilepath=self.resources
+            ),
             malaria.Malaria(resourcefilepath=self.resources),
             hiv.Hiv(resourcefilepath=self.resources),
             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=self.resources),
-            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=self.resources),
+            care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(
+                resourcefilepath=self.resources
+            ),
             labour.Labour(resourcefilepath=self.resources),
             postnatal_supervisor.PostnatalSupervisor(resourcefilepath=self.resources),
             newborn_outcomes.NewbornOutcomes(resourcefilepath=self.resources),
         ]
 
     def draw_parameters(self, draw_number, rng):
-        return {
-            'PregnancySupervisor': {'anc_service_structure': 4}
-        }
+        return {"PregnancySupervisor": {"anc_service_structure": 4}}
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
+
     scenario_run([__file__])

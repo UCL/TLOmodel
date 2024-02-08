@@ -1,4 +1,5 @@
 """The TLOmodel command-line interface"""
+
 import configparser
 import datetime
 import json
@@ -28,7 +29,9 @@ JOB_LABEL_PADDING = len("State transition time")
 
 
 @click.group()
-@click.option("--config-file", type=click.Path(exists=False), default="tlo.conf", hidden=True)
+@click.option(
+    "--config-file", type=click.Path(exists=False), default="tlo.conf", hidden=True
+)
 @click.option("--verbose", "-v", is_flag=True, default=False)
 @click.pass_context
 def cli(ctx, config_file, verbose):
@@ -46,7 +49,9 @@ def cli(ctx, config_file, verbose):
 
 @cli.command()
 @click.argument("scenario_file", type=click.Path(exists=True))
-@click.option("--draw-only", is_flag=True, help="Only generate draws; do not run the simulation")
+@click.option(
+    "--draw-only", is_flag=True, help="Only generate draws; do not run the simulation"
+)
 @click.option("--draw", "-d", nargs=2, type=int)
 @click.option("--output-dir", type=str)
 def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None):
@@ -65,7 +70,7 @@ def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None):
 
     # Write the JSON config to a temporary file (to prevent clobbering by multiple processes running same scenario)
     # We set delete=False on the file, otherwise Windows does not allow the opening of the file multiple times
-    tmp = tempfile.NamedTemporaryFile(delete=False, mode='w')
+    tmp = tempfile.NamedTemporaryFile(delete=False, mode="w")
     tmp.write(json_string)
     tmp.flush()
 
@@ -78,16 +83,29 @@ def scenario_run(scenario_file, draw_only, draw: tuple, output_dir=None):
     os.unlink(filename)
 
     if draw:
-        runner.run_sample_by_number(output_directory=output_dir, draw_number=draw[0], sample_number=draw[1])
+        runner.run_sample_by_number(
+            output_directory=output_dir, draw_number=draw[0], sample_number=draw[1]
+        )
     else:
         runner.run()
 
 
 @cli.command()
 @click.argument("scenario_file", type=click.Path(exists=True))
-@click.option("--asserts-on", type=bool, default=False, is_flag=True, help="Enable assertions in simulation run.")
-@click.option("--more-memory", type=bool, default=False, is_flag=True,
-              help="Request machine wth more memory (for larger population sizes).")
+@click.option(
+    "--asserts-on",
+    type=bool,
+    default=False,
+    is_flag=True,
+    help="Enable assertions in simulation run.",
+)
+@click.option(
+    "--more-memory",
+    type=bool,
+    default=False,
+    is_flag=True,
+    help="Request machine wth more memory (for larger population sizes).",
+)
 @click.option("--keep-pool-alive", type=bool, default=False, is_flag=True, hidden=True)
 @click.pass_context
 def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive):
@@ -115,7 +133,7 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive):
 
     print(">Setting up batch\r", end="")
 
-    config = load_config(ctx.obj['config_file'])
+    config = load_config(ctx.obj["config_file"])
 
     # ID of the Batch job.
     timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
@@ -125,28 +143,27 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive):
     azure_directory = f"{config['DEFAULT']['USERNAME']}/{job_id}"
 
     batch_client = get_batch_client(
-        config["BATCH"]["NAME"],
-        config["BATCH"]["KEY"],
-        config["BATCH"]["URL"]
+        config["BATCH"]["NAME"], config["BATCH"]["KEY"], config["BATCH"]["URL"]
     )
 
     create_file_share(
-        config["STORAGE"]["CONNECTION_STRING"],
-        config["STORAGE"]["FILESHARE"]
+        config["STORAGE"]["CONNECTION_STRING"], config["STORAGE"]["FILESHARE"]
     )
 
     # Recursively create all nested directories,
     for idx in range(len(os.path.split(azure_directory))):
-        create_directory(config["STORAGE"]["CONNECTION_STRING"],
-                         config["STORAGE"]["FILESHARE"],
-                         "/".join(os.path.split(azure_directory)[:idx+1]),
-                         )
+        create_directory(
+            config["STORAGE"]["CONNECTION_STRING"],
+            config["STORAGE"]["FILESHARE"],
+            "/".join(os.path.split(azure_directory)[: idx + 1]),
+        )
 
-    upload_local_file(config["STORAGE"]["CONNECTION_STRING"],
-                      run_json,
-                      config["STORAGE"]["FILESHARE"],
-                      azure_directory + "/" + os.path.basename(run_json),
-                      )
+    upload_local_file(
+        config["STORAGE"]["CONNECTION_STRING"],
+        run_json,
+        config["STORAGE"]["FILESHARE"],
+        azure_directory + "/" + os.path.basename(run_json),
+    )
 
     # Configuration of the pool: type of machines and number of nodes.
     if more_memory:
@@ -155,7 +172,9 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive):
         vm_size = config["BATCH"]["POOL_VM_SIZE"]
     # TODO: cap the number of nodes in the pool?  Take the number of nodes in
     # input from the user, but always at least 2?
-    pool_node_count = max(2, math.ceil(scenario.number_of_draws * scenario.runs_per_draw))
+    pool_node_count = max(
+        2, math.ceil(scenario.number_of_draws * scenario.runs_per_draw)
+    )
 
     # User identity in the Batch tasks
     auto_user = batch_models.AutoUserSpecification(
@@ -214,8 +233,9 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive):
     if asserts_on:
         py_opt = ""
 
-    azure_directory = "${{AZ_BATCH_NODE_MOUNTS_DIR}}/" + \
-        f"{file_share_mount_point}/{azure_directory}"
+    azure_directory = (
+        "${{AZ_BATCH_NODE_MOUNTS_DIR}}/" + f"{file_share_mount_point}/{azure_directory}"
+    )
     azure_run_json = f"{azure_directory}/{os.path.basename(run_json)}"
     working_dir = "${{AZ_BATCH_TASK_WORKING_DIR}}"
     task_dir = "${{AZ_BATCH_TASK_DIR}}"
@@ -234,12 +254,26 @@ def batch_submit(ctx, scenario_file, asserts_on, more_memory, keep_pool_alive):
 
     try:
         # Create the job that will run the tasks.
-        create_job(batch_client, vm_size, pool_node_count, job_id,
-                   container_conf, [mount_configuration], keep_pool_alive)
+        create_job(
+            batch_client,
+            vm_size,
+            pool_node_count,
+            job_id,
+            container_conf,
+            [mount_configuration],
+            keep_pool_alive,
+        )
 
         # Add the tasks to the job.
-        add_tasks(batch_client, user_identity, job_id, image_name,
-                  container_run_options, scenario, command)
+        add_tasks(
+            batch_client,
+            user_identity,
+            job_id,
+            image_name,
+            container_run_options,
+            scenario,
+            command,
+        )
 
     except batch_models.BatchErrorException as err:
         print_batch_exception(err)
@@ -273,8 +307,9 @@ def batch_terminate(ctx, job_id):
     config = load_config(ctx.obj["config_file"])
     username = config["DEFAULT"]["USERNAME"]
     directory = f"{username}/{job_id}"
-    share_client = ShareClient.from_connection_string(config['STORAGE']['CONNECTION_STRING'],
-                                                      config['STORAGE']['FILESHARE'])
+    share_client = ShareClient.from_connection_string(
+        config["STORAGE"]["CONNECTION_STRING"], config["STORAGE"]["FILESHARE"]
+    )
 
     try:
         directories = share_client.list_directories_and_files(directory)
@@ -284,9 +319,7 @@ def batch_terminate(ctx, job_id):
         return
 
     batch_client = get_batch_client(
-        config["BATCH"]["NAME"],
-        config["BATCH"]["KEY"],
-        config["BATCH"]["URL"]
+        config["BATCH"]["NAME"], config["BATCH"]["KEY"], config["BATCH"]["URL"]
     )
 
     # check the job is running
@@ -309,18 +342,27 @@ def batch_terminate(ctx, job_id):
 
 @cli.command()
 @click.argument("job_id", type=str)
-@click.option("show_tasks", "--tasks", is_flag=True, default=False, help="Display task information")
-@click.option("--raw", default=False, help="Display raw output (only when retrieving using --id)",
-              is_flag=True, hidden=True)
+@click.option(
+    "show_tasks",
+    "--tasks",
+    is_flag=True,
+    default=False,
+    help="Display task information",
+)
+@click.option(
+    "--raw",
+    default=False,
+    help="Display raw output (only when retrieving using --id)",
+    is_flag=True,
+    hidden=True,
+)
 @click.pass_context
 def batch_job(ctx, job_id, raw, show_tasks):
     """Display information about a specific job."""
     print(">Querying batch system\r", end="")
-    config = load_config(ctx.obj['config_file'])
+    config = load_config(ctx.obj["config_file"])
     batch_client = get_batch_client(
-        config["BATCH"]["NAME"],
-        config["BATCH"]["KEY"],
-        config["BATCH"]["URL"]
+        config["BATCH"]["NAME"], config["BATCH"]["KEY"], config["BATCH"]["URL"]
     )
     tasks = None
 
@@ -348,15 +390,19 @@ def batch_job(ctx, job_id, raw, show_tasks):
         state_counts = defaultdict(int)
         for task in tasks:
             task = task.as_dict()
-            dt = dateutil.parser.isoparse(task['state_transition_time'])
+            dt = dateutil.parser.isoparse(task["state_transition_time"])
             dt = dt.strftime("%d %b %Y %H:%M")
             total += 1
-            state_counts[task['state']] += 1
+            state_counts[task["state"]] += 1
             running_time = ""
             if task["state"] == "completed":
                 if "execution_info" in task:
-                    start_time = dateutil.parser.isoparse(task["execution_info"]["start_time"])
-                    end_time = dateutil.parser.isoparse(task["execution_info"]["end_time"])
+                    start_time = dateutil.parser.isoparse(
+                        task["execution_info"]["start_time"]
+                    )
+                    end_time = dateutil.parser.isoparse(
+                        task["execution_info"]["end_time"]
+                    )
                     running_time = str(end_time - start_time).split(".")[0]
             print(f"{task['id']}\t\t{task['state']}\t\t{dt}\t\t{running_time}")
         print()
@@ -372,10 +418,30 @@ def batch_job(ctx, job_id, raw, show_tasks):
 
 
 @cli.command()
-@click.option("--find", "-f", type=str, default=None, help="Show jobs where identifier contains supplied string")
-@click.option("--completed", "status", flag_value="completed", default=False, help="Only display completed jobs")
-@click.option("--active", "status", flag_value="active", default=False, help="Only display active jobs")
-@click.option("-n", default=5, type=int, help="Maximum number of jobs to list (default is 5)")
+@click.option(
+    "--find",
+    "-f",
+    type=str,
+    default=None,
+    help="Show jobs where identifier contains supplied string",
+)
+@click.option(
+    "--completed",
+    "status",
+    flag_value="completed",
+    default=False,
+    help="Only display completed jobs",
+)
+@click.option(
+    "--active",
+    "status",
+    flag_value="active",
+    default=False,
+    help="Only display active jobs",
+)
+@click.option(
+    "-n", default=5, type=int, help="Maximum number of jobs to list (default is 5)"
+)
 @click.option("--username", type=str, hidden=True)
 @click.pass_context
 def batch_list(ctx, status, n, find, username):
@@ -389,14 +455,13 @@ def batch_list(ctx, status, n, find, username):
         username = config["DEFAULT"]["USERNAME"]
 
     batch_client = get_batch_client(
-        config["BATCH"]["NAME"],
-        config["BATCH"]["KEY"],
-        config["BATCH"]["URL"]
+        config["BATCH"]["NAME"], config["BATCH"]["KEY"], config["BATCH"]["URL"]
     )
 
     # create client to connect to file share
-    share_client = ShareClient.from_connection_string(config['STORAGE']['CONNECTION_STRING'],
-                                                      config['STORAGE']['FILESHARE'])
+    share_client = ShareClient.from_connection_string(
+        config["STORAGE"]["CONNECTION_STRING"], config["STORAGE"]["FILESHARE"]
+    )
 
     # get list of all directories in user_directory
     directories = list(share_client.list_directories_and_files(f"{username}/"))
@@ -409,11 +474,11 @@ def batch_list(ctx, status, n, find, username):
     directories = set([directory["name"] for directory in directories])
 
     # get all jobs in batch system
-    jobs_list = list(batch_client.job.list(
-        job_list_options=batch_models.JobListOptions(
-            expand='stats'
+    jobs_list = list(
+        batch_client.job.list(
+            job_list_options=batch_models.JobListOptions(expand="stats")
         )
-    ))
+    )
 
     # create a dataframe of the jobs, using the job.as_dict() record
     # filter the list of jobs by those ids in the directories
@@ -457,7 +522,7 @@ def print_basic_job_details(job: dict):
         "id": "ID",
         "creation_time": "Creation time",
         "state": "State",
-        "state_transition_time": "State transition time"
+        "state_transition_time": "State transition time",
     }
     for _k, _v in job_labels.items():
         if _v.endswith("time"):
@@ -515,8 +580,9 @@ def batch_download(ctx, job_id, username, verbose):
     if username is None:
         username = config["DEFAULT"]["USERNAME"]
 
-    share_client = ShareClient.from_connection_string(config['STORAGE']['CONNECTION_STRING'],
-                                                      config['STORAGE']['FILESHARE'])
+    share_client = ShareClient.from_connection_string(
+        config["STORAGE"]["CONNECTION_STRING"], config["STORAGE"]["FILESHARE"]
+    )
 
     # if the job directory exist, exit with error
     top_level = f"{username}/{job_id}"
@@ -535,7 +601,9 @@ def load_config(config_file):
     """Load configuration for accessing Batch services"""
     config = configparser.ConfigParser()
     config.read(config_file)
-    server_config = load_server_config(config["AZURE"]["KV_URI"], config["AZURE"]["TENANT_ID"])
+    server_config = load_server_config(
+        config["AZURE"]["KV_URI"], config["AZURE"]["TENANT_ID"]
+    )
     merged_config = {**config, **server_config}
     return merged_config
 
@@ -556,7 +624,7 @@ def load_server_config(kv_uri, tenant_id) -> Dict[str, Dict]:
         exclude_environment_credential=True,
         exclude_managed_identity_credential=True,
         exclude_visual_studio_code_credential=True,
-        exclude_shared_token_cache_credential=True
+        exclude_shared_token_cache_credential=True,
     )
 
     client = SecretClient(vault_url=kv_uri, credential=credential)
@@ -564,7 +632,11 @@ def load_server_config(kv_uri, tenant_id) -> Dict[str, Dict]:
     batch_config = json.loads(client.get_secret("batchaccount").value)
     registry_config = json.loads(client.get_secret("registryserver").value)
 
-    return {"STORAGE": storage_config, "BATCH": batch_config, "REGISTRY": registry_config}
+    return {
+        "STORAGE": storage_config,
+        "BATCH": batch_config,
+        "REGISTRY": registry_config,
+    }
 
 
 def get_batch_client(name, key, url):
@@ -577,7 +649,9 @@ def get_batch_client(name, key, url):
 def load_scenario(scenario_file):
     """Load the Scenario class from the specified file"""
     scenario_path = Path(scenario_file)
-    scenario_class = ScenarioLoader(scenario_path.parent / scenario_path.name).get_scenario()
+    scenario_class = ScenarioLoader(
+        scenario_path.parent / scenario_path.name
+    ).get_scenario()
     print(f"Found class {scenario_class.__class__.__name__} in {scenario_path}")
     return scenario_class
 
@@ -602,12 +676,18 @@ def is_file_clean(scenario_file):
         return False
 
     current_branch = repo.head.reference
-    commits_ahead = list(repo.iter_commits(f"origin/{current_branch}..{current_branch}"))
-    commits_behind = list(repo.iter_commits(f"{current_branch}..origin/{current_branch}"))
+    commits_ahead = list(
+        repo.iter_commits(f"origin/{current_branch}..{current_branch}")
+    )
+    commits_behind = list(
+        repo.iter_commits(f"{current_branch}..origin/{current_branch}")
+    )
     if not len(commits_behind) == len(commits_ahead) == 0:
-        click.echo(f"ERROR: Branch '{current_branch}' isn't in-sync with remote: "
-                   f"{len(commits_ahead)} ahead; {len(commits_behind)} behind. "
-                   "Push and/or pull changes.")
+        click.echo(
+            f"ERROR: Branch '{current_branch}' isn't in-sync with remote: "
+            f"{len(commits_ahead)} ahead; {len(commits_behind)} behind. "
+            "Push and/or pull changes."
+        )
         return False
 
     return current_branch
@@ -620,9 +700,11 @@ def print_batch_exception(batch_exception):
     """
     print("-------------------------------------------")
     print("Exception encountered:")
-    if batch_exception.error and \
-            batch_exception.error.message and \
-            batch_exception.error.message.value:
+    if (
+        batch_exception.error
+        and batch_exception.error.message
+        and batch_exception.error.message.value
+    ):
         print(batch_exception.error.message.value)
         if batch_exception.error.values:
             print()
@@ -635,8 +717,7 @@ def create_file_share(connection_string, share_name):
     """Uses a ShareClient object to create a share if it does not exist."""
     try:
         # Create a ShareClient from a connection string
-        share_client = ShareClient.from_connection_string(
-            connection_string, share_name)
+        share_client = ShareClient.from_connection_string(connection_string, share_name)
 
         print("Creating share:", share_name)
         share_client.create_share()
@@ -652,7 +733,8 @@ def create_directory(connection_string, share_name, dir_name):
     try:
         # Create a ShareDirectoryClient from a connection string
         dir_client = ShareDirectoryClient.from_connection_string(
-            connection_string, share_name, dir_name)
+            connection_string, share_name, dir_name
+        )
 
         print("Creating directory:", share_name + "/" + dir_name)
         dir_client.create_directory()
@@ -671,7 +753,8 @@ def upload_local_file(connection_string, local_file_path, share_name, dest_file_
 
         # Create a ShareFileClient from a connection string
         file_client = ShareFileClient.from_connection_string(
-            connection_string, share_name, dest_file_path)
+            connection_string, share_name, dest_file_path
+        )
 
         print("Uploading to:", share_name + "/" + dest_file_path)
         file_client.upload_file(data)
@@ -683,8 +766,15 @@ def upload_local_file(connection_string, local_file_path, share_name, dest_file_
         print("ResourceNotFoundError:", ex.message)
 
 
-def create_job(batch_service_client, vm_size, pool_node_count, job_id,
-               container_conf, mount_configuration, keep_pool_alive):
+def create_job(
+    batch_service_client,
+    vm_size,
+    pool_node_count,
+    job_id,
+    container_conf,
+    mount_configuration,
+    keep_pool_alive,
+):
     """Creates a job with the specified ID, associated with the specified pool.
 
     :param batch_service_client: A Batch service client.
@@ -754,8 +844,15 @@ def create_job(batch_service_client, vm_size, pool_node_count, job_id,
     batch_service_client.job.add(job)
 
 
-def add_tasks(batch_service_client, user_identity, job_id,
-              image_name, container_run_options, scenario, command):
+def add_tasks(
+    batch_service_client,
+    user_identity,
+    job_id,
+    image_name,
+    container_run_options,
+    scenario,
+    command,
+):
     """Adds the simulation tasks in the collection to the specified job.
 
     :param batch_service_client: A Batch service client.
@@ -769,7 +866,11 @@ def add_tasks(batch_service_client, user_identity, job_id,
     :param str command: Command to run during the taks inside the Docker image.
     """
 
-    print("Adding {} task(s) to job.".format(scenario.number_of_draws * scenario.runs_per_draw))
+    print(
+        "Adding {} task(s) to job.".format(
+            scenario.number_of_draws * scenario.runs_per_draw
+        )
+    )
 
     tasks = list()
 
@@ -792,5 +893,5 @@ def add_tasks(batch_service_client, user_identity, job_id,
     batch_service_client.task.add_collection(job_id, tasks)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     cli(obj={})

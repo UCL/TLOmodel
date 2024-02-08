@@ -47,25 +47,26 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'test_runs',
-            'directory': './outputs',
-            'custom_levels': {
-                '*': logging.WARNING,
+            "filename": "test_runs",
+            "directory": "./outputs",
+            "custom_levels": {
+                "*": logging.WARNING,
                 "tlo.methods.hiv": logging.INFO,
                 "tlo.methods.tb": logging.INFO,
                 "tlo.methods.demography": logging.INFO,
-            }
+            },
         }
 
     def modules(self):
         return fullmodel(resourcefilepath=self.resources) + [
-            hiv_tb_calibration.Deviance(resourcefilepath=self.resources)]
+            hiv_tb_calibration.Deviance(resourcefilepath=self.resources)
+        ]
 
     def draw_parameters(self, draw_number, rng):
         return
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])

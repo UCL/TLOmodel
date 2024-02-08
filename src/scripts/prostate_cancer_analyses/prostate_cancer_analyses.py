@@ -54,22 +54,28 @@ def run_sim(service_availability):
     sim = Simulation(start_date=start_date, seed=0)
 
     # Register the appropriate modules
-    sim.register(care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-                 demography.Demography(resourcefilepath=resourcefilepath),
-                 contraception.Contraception(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           service_availability=service_availability),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 labour.Labour(resourcefilepath=resourcefilepath),
-                 newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-                 pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-                 oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-                 prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath),
-                 postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath)
-                 )
+    sim.register(
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(
+            resourcefilepath=resourcefilepath
+        ),
+        demography.Demography(resourcefilepath=resourcefilepath),
+        contraception.Contraception(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath, service_availability=service_availability
+        ),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(
+            resourcefilepath=resourcefilepath
+        ),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        labour.Labour(resourcefilepath=resourcefilepath),
+        newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+        pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+        oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
+        prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath),
+        postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+    )
 
     # Establish the logger
     logfile = sim.configure_logging(filename="LogFile")
@@ -85,9 +91,9 @@ def get_summary_stats(logfile):
     output = parse_log_file(logfile)
 
     # 1) TOTAL COUNTS BY STAGE OVER TIME
-    counts_by_stage = output['tlo.methods.prostate_cancer']['summary_stats']
-    counts_by_stage['date'] = pd.to_datetime(counts_by_stage['date'])
-    counts_by_stage = counts_by_stage.set_index('date', drop=True)
+    counts_by_stage = output["tlo.methods.prostate_cancer"]["summary_stats"]
+    counts_by_stage["date"] = pd.to_datetime(counts_by_stage["date"])
+    counts_by_stage = counts_by_stage.set_index("date", drop=True)
 
     # 2) NUMBERS UNDIAGNOSED-DIAGNOSED-TREATED-PALLIATIVE CARE OVER TIME (SUMMED ACROSS TYPES OF CANCER)
     def get_cols_excl_none(allcols, stub):
@@ -98,52 +104,68 @@ def get_summary_stats(logfile):
         return cols_not_none
 
     summary = {
-        'total': counts_by_stage[get_cols_excl_none(counts_by_stage.columns, 'total_')].sum(axis=1),
-        'udx': counts_by_stage[get_cols_excl_none(counts_by_stage.columns, 'undiagnosed_')].sum(axis=1),
-        'dx': counts_by_stage[get_cols_excl_none(counts_by_stage.columns, 'diagnosed_')].sum(axis=1),
-        'tr': counts_by_stage[get_cols_excl_none(counts_by_stage.columns, 'treatment_')].sum(axis=1),
-        'pc': counts_by_stage[get_cols_excl_none(counts_by_stage.columns, 'palliative_')].sum(axis=1)
+        "total": counts_by_stage[
+            get_cols_excl_none(counts_by_stage.columns, "total_")
+        ].sum(axis=1),
+        "udx": counts_by_stage[
+            get_cols_excl_none(counts_by_stage.columns, "undiagnosed_")
+        ].sum(axis=1),
+        "dx": counts_by_stage[
+            get_cols_excl_none(counts_by_stage.columns, "diagnosed_")
+        ].sum(axis=1),
+        "tr": counts_by_stage[
+            get_cols_excl_none(counts_by_stage.columns, "treatment_")
+        ].sum(axis=1),
+        "pc": counts_by_stage[
+            get_cols_excl_none(counts_by_stage.columns, "palliative_")
+        ].sum(axis=1),
     }
     counts_by_cascade = pd.DataFrame(summary)
 
     # 3) DALYS wrt age (total over whole simulation)
-    dalys = output['tlo.methods.healthburden']['dalys']
-    dalys = dalys.groupby(by=['age_range']).sum()
+    dalys = output["tlo.methods.healthburden"]["dalys"]
+    dalys = dalys.groupby(by=["age_range"]).sum()
     dalys.index = dalys.index.astype(make_age_grp_types())
     dalys = dalys.sort_index()
 
     # if no deaths due to prostate cancer there will be no YLL_ProstateCancer_ProstateCancer, so artificially put it in
-    if 'YLL_ProstateCancer_ProstateCancer' not in dalys.columns:
-        dalys['YLL_ProstateCancer_ProstateCancer'] = 0.0
+    if "YLL_ProstateCancer_ProstateCancer" not in dalys.columns:
+        dalys["YLL_ProstateCancer_ProstateCancer"] = 0.0
 
     # 4) DEATHS wrt age (total over whole simulation)
-    deaths = output['tlo.methods.demography']['death']
-    deaths['age_group'] = deaths['age'].map(demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_LOOKUP)
+    deaths = output["tlo.methods.demography"]["death"]
+    deaths["age_group"] = deaths["age"].map(
+        demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_LOOKUP
+    )
 
-    x = deaths.loc[deaths.cause == 'ProstateCancer'].copy()
-    x['age_group'] = x['age_group'].astype(make_age_grp_types())
-    prostate_cancer_deaths = x.groupby(by=['age_group']).size()
+    x = deaths.loc[deaths.cause == "ProstateCancer"].copy()
+    x["age_group"] = x["age_group"].astype(make_age_grp_types())
+    prostate_cancer_deaths = x.groupby(by=["age_group"]).size()
 
     # 5) Rates of diagnosis per year:
-    counts_by_stage['year'] = counts_by_stage.index.year
-    annual_count_of_dxtr = counts_by_stage.groupby(by='year')[['diagnosed_since_last_log',
-                                                               'treated_since_last_log',
-                                                               'palliative_since_last_log']].sum()
+    counts_by_stage["year"] = counts_by_stage.index.year
+    annual_count_of_dxtr = counts_by_stage.groupby(by="year")[
+        [
+            "diagnosed_since_last_log",
+            "treated_since_last_log",
+            "palliative_since_last_log",
+        ]
+    ].sum()
 
     return {
-        'total_counts_by_stage_over_time': counts_by_stage,
-        'counts_by_cascade': counts_by_cascade,
-        'dalys': dalys,
-        'deaths': deaths,
-        'prostate_cancer_deaths': prostate_cancer_deaths,
-        'annual_count_of_dxtr': annual_count_of_dxtr
+        "total_counts_by_stage_over_time": counts_by_stage,
+        "counts_by_cascade": counts_by_cascade,
+        "dalys": dalys,
+        "deaths": deaths,
+        "prostate_cancer_deaths": prostate_cancer_deaths,
+        "annual_count_of_dxtr": annual_count_of_dxtr,
     }
 
 
 # %% Run the simulation with and without interventions being allowed
 
 # With interventions:
-logfile_with_healthsystem = run_sim(service_availability=['*'])
+logfile_with_healthsystem = run_sim(service_availability=["*"])
 results_with_healthsystem = get_summary_stats(logfile_with_healthsystem)
 
 # Without interventions:
@@ -153,43 +175,40 @@ results_no_healthsystem = get_summary_stats(logfile_no_healthsystem)
 # %% Produce Summary Graphs:
 
 # Examine Counts by Stage Over Time
-counts = results_no_healthsystem['total_counts_by_stage_over_time']
-counts.plot(y=['total_prostate_confined',
-               'total_local_ln',
-               'total_metastatic'
-               ])
-plt.title('Count in Each Stage of Disease Over Time')
-plt.xlabel('Time')
-plt.ylabel('Count')
+counts = results_no_healthsystem["total_counts_by_stage_over_time"]
+counts.plot(y=["total_prostate_confined", "total_local_ln", "total_metastatic"])
+plt.title("Count in Each Stage of Disease Over Time")
+plt.xlabel("Time")
+plt.ylabel("Count")
 plt.show()
 
 # Examine numbers in each stage of the cascade:
-results_with_healthsystem['counts_by_cascade'].plot(y=['udx', 'dx', 'tr', 'pc'])
-plt.title('With Health System')
-plt.xlabel('Numbers of those With Cancer by Stage in Cascade')
-plt.xlabel('Time')
-plt.legend(['Undiagnosed', 'Diagnosed', 'On Treatment', 'On Palliative Care'])
+results_with_healthsystem["counts_by_cascade"].plot(y=["udx", "dx", "tr", "pc"])
+plt.title("With Health System")
+plt.xlabel("Numbers of those With Cancer by Stage in Cascade")
+plt.xlabel("Time")
+plt.legend(["Undiagnosed", "Diagnosed", "On Treatment", "On Palliative Care"])
 plt.show()
 
-results_no_healthsystem['counts_by_cascade'].plot(y=['udx', 'dx', 'tr', 'pc'])
-plt.title('With No Health System')
-plt.xlabel('Numbers of those With Cancer by Stage in Cascade')
-plt.xlabel('Time')
-plt.legend(['Undiagnosed', 'Diagnosed', 'On Treatment', 'On Palliative Care'])
+results_no_healthsystem["counts_by_cascade"].plot(y=["udx", "dx", "tr", "pc"])
+plt.title("With No Health System")
+plt.xlabel("Numbers of those With Cancer by Stage in Cascade")
+plt.xlabel("Time")
+plt.legend(["Undiagnosed", "Diagnosed", "On Treatment", "On Palliative Care"])
 plt.show()
 
 # Examine DALYS (summed over whole simulation)
-results_no_healthsystem['dalys'].plot.bar(
-    y=['YLD_ProstateCancer_0', 'YLL_ProstateCancer_ProstateCancer'],
-    stacked=True)
-plt.xlabel('Age-group')
-plt.ylabel('DALYS')
+results_no_healthsystem["dalys"].plot.bar(
+    y=["YLD_ProstateCancer_0", "YLL_ProstateCancer_ProstateCancer"], stacked=True
+)
+plt.xlabel("Age-group")
+plt.ylabel("DALYS")
 plt.legend()
 plt.title("With No Health System")
 plt.show()
 
 # Examine Deaths (summed over whole simulation)
-deaths = results_no_healthsystem['prostate_cancer_deaths']
+deaths = results_no_healthsystem["prostate_cancer_deaths"]
 deaths.index = deaths.index.astype(make_age_grp_types())
 # # make a series with the right categories and zero so formats nicely in the grapsh:
 agegrps = demography.Demography(resourcefilepath=resourcefilepath).AGE_RANGE_CATEGORIES
@@ -197,23 +216,23 @@ totdeaths = pd.Series(index=agegrps, data=np.nan)
 totdeaths.index = totdeaths.index.astype(make_age_grp_types())
 totdeaths = totdeaths.combine_first(deaths).fillna(0.0)
 totdeaths.plot.bar()
-plt.title('Deaths due to Prostate Cancer')
-plt.xlabel('Age-group')
-plt.ylabel('Total Deaths During Simulation')
+plt.title("Deaths due to Prostate Cancer")
+plt.xlabel("Age-group")
+plt.ylabel("Total Deaths During Simulation")
 # plt.gca().get_legend().remove()
 plt.show()
 
 # Compare Deaths - with and without the healthsystem functioning - sum over age and time
 deaths = {
-    'No_HealthSystem': sum(results_no_healthsystem['prostate_cancer_deaths']),
-    'With_HealthSystem': sum(results_with_healthsystem['prostate_cancer_deaths'])
+    "No_HealthSystem": sum(results_no_healthsystem["prostate_cancer_deaths"]),
+    "With_HealthSystem": sum(results_with_healthsystem["prostate_cancer_deaths"]),
 }
 
-plt.bar(range(len(deaths)), list(deaths.values()), align='center')
+plt.bar(range(len(deaths)), list(deaths.values()), align="center")
 plt.xticks(range(len(deaths)), list(deaths.keys()))
-plt.title('Deaths due to Prostate Cancer')
-plt.xlabel('Scenario')
-plt.ylabel('Total Deaths During Simulation')
+plt.title("Deaths due to Prostate Cancer")
+plt.xlabel("Scenario")
+plt.ylabel("Total Deaths During Simulation")
 plt.show()
 
 
@@ -223,28 +242,27 @@ plt.show()
 # 1, 2, 3,
 # 4), per 100,000 population aged 35+
 
-counts = results_with_healthsystem['total_counts_by_stage_over_time'][[
-    'total_prostate_confined',
-    'total_local_ln',
-    'total_metastatic'
-]].iloc[-1]
+counts = results_with_healthsystem["total_counts_by_stage_over_time"][
+    ["total_prostate_confined", "total_local_ln", "total_metastatic"]
+].iloc[-1]
 
-totpopsize = results_with_healthsystem['total_counts_by_stage_over_time'][[
-    'total_none',
-    'total_prostate_confined',
-    'total_local_ln',
-    'total_metastatic'
-]].iloc[-1].sum()
+totpopsize = (
+    results_with_healthsystem["total_counts_by_stage_over_time"][
+        ["total_none", "total_prostate_confined", "total_local_ln", "total_metastatic"]
+    ]
+    .iloc[-1]
+    .sum()
+)
 
 prev_per_100k = 1e5 * counts.sum() / totpopsize
 
 # ** Number of deaths from prostate cancer per year per 100,000 population.
 # average deaths per year = deaths over ten years divided by ten, * 100k/population size
-(results_with_healthsystem['prostate_cancer_deaths'].sum()/10) * 1e5/popsize
+(results_with_healthsystem["prostate_cancer_deaths"].sum() / 10) * 1e5 / popsize
 
 # ** Incidence rate of diagnosis, treatment, palliative care for prostate cancer (all stages combined),
 # per 100,000 population
-(results_with_healthsystem['annual_count_of_dxtr']).mean() * 1e5/popsize
+(results_with_healthsystem["annual_count_of_dxtr"]).mean() * 1e5 / popsize
 
 
 # ** 5-year survival following treatment

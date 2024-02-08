@@ -2,8 +2,13 @@
 A skeleton template for disease methods.
 
 """
+
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
-from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
+from tlo.events import (
+    IndividualScopeEventMixin,
+    PopulationScopeEventMixin,
+    RegularEvent,
+)
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
 from tlo.methods.healthsystem import HSI_Event
@@ -36,43 +41,44 @@ class Skeleton(Module):
 
     # Declares modules that need to be registered in simulation and initialised before
     # this module
-    INIT_DEPENDENCIES = {'Demography'}
+    INIT_DEPENDENCIES = {"Demography"}
 
     # Declares optiona;l modules that need to be registered in simulation and
     # initialised before this module if present
-    OPTIONAL_INIT_DEPENDENCIES = {'HealthBurden'}
+    OPTIONAL_INIT_DEPENDENCIES = {"HealthBurden"}
 
     # Declares any modules that need to be registered in simulation in addition to those
     # in INIT_DEPENDENCIES to allow running simulation
-    ADDITIONAL_DEPENDENCIES = {'HealthSystem'}
+    ADDITIONAL_DEPENDENCIES = {"HealthSystem"}
 
     # Declare Metadata (this is for a typical 'Disease Module')
     METADATA = {
         Metadata.DISEASE_MODULE,
         Metadata.USES_SYMPTOMMANAGER,
         Metadata.USES_HEALTHSYSTEM,
-        Metadata.USES_HEALTHBURDEN
+        Metadata.USES_HEALTHBURDEN,
     }
 
     # Declare Causes of Death
     CAUSES_OF_DEATH = {
-        'tlo_name_of_a_cause_of_death_in_this_module':
-            Cause(gbd_causes={'set_of_strings_of_gbd_causes_to_which_this_cause_corresponds'},
-                  label='the_category_of_which_this_cause_is_a_part')
+        "tlo_name_of_a_cause_of_death_in_this_module": Cause(
+            gbd_causes={"set_of_strings_of_gbd_causes_to_which_this_cause_corresponds"},
+            label="the_category_of_which_this_cause_is_a_part",
+        )
     }
 
     # Declare Causes of Disability
     CAUSES_OF_DISABILITY = {
-        'tlo_name_of_a_cause_of_disability_in_this_module':
-            Cause(gbd_causes={'set_of_strings_of_gbd_causes_to_which_this_cause_corresponds'},
-                  label='the_category_of_which_this_cause_is_a_part')
+        "tlo_name_of_a_cause_of_disability_in_this_module": Cause(
+            gbd_causes={"set_of_strings_of_gbd_causes_to_which_this_cause_corresponds"},
+            label="the_category_of_which_this_cause_is_a_part",
+        )
     }
 
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
-        'parameter_a': Parameter(
-            Types.REAL, 'Description of parameter a'),
+        "parameter_a": Parameter(Types.REAL, "Description of parameter a"),
     }
 
     # Next we declare the properties of individuals that this module provides.
@@ -82,7 +88,7 @@ class Skeleton(Module):
     # Note that all properties must have a two letter prefix that identifies them to this module.
 
     PROPERTIES = {
-        'sk_property_a': Property(Types.BOOL, 'Description of property a'),
+        "sk_property_a": Property(Types.BOOL, "Description of property a"),
     }
 
     # Declare the non-generic symptoms that this module will use.
@@ -95,7 +101,7 @@ class Skeleton(Module):
 
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.store = {'Proportion_infected': []}
+        self.store = {"Proportion_infected": []}
 
     def read_parameters(self, data_folder):
         """Read parameter values from file, if required.
@@ -164,6 +170,7 @@ class Skeleton(Module):
 #   that represent disease events for particular persons.
 # ---------------------------------------------------------------------------------------------------------
 
+
 class Skeleton_Event(RegularEvent, PopulationScopeEventMixin):
     """A skeleton class for an event
 
@@ -199,6 +206,7 @@ class Skeleton_Event(RegularEvent, PopulationScopeEventMixin):
 #   population. There may also be a logging event that is driven by particular events.
 # ---------------------------------------------------------------------------------------------------------
 
+
 class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         """Produce a summary of the numbers of people with respect to the action of this module.
@@ -213,12 +221,9 @@ class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
     def apply(self, population):
         # Make some summary statistics
 
-        dict_to_output = {
-            'Metric_One': 1.0,
-            'Metric_Two': 2.0
-        }
+        dict_to_output = {"Metric_One": 1.0, "Metric_Two": 2.0}
 
-        logger.info(key='summary_12m', data=dict_to_output)
+        logger.info(key="summary_12m", data=dict_to_output)
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -226,6 +231,7 @@ class Skeleton_LoggingEvent(RegularEvent, PopulationScopeEventMixin):
 #
 #   Here are all the different Health System Interactions Events that this module will use.
 # ---------------------------------------------------------------------------------------------------------
+
 
 class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
     """This is a Health System Interaction Event. An interaction with the healthsystem are encapsulated in events
@@ -238,7 +244,9 @@ class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
         assert isinstance(module, Skeleton)
 
         # Define the appointments types needed
-        the_appt_footprint = self.make_appt_footprint({'Over5OPD': 1})  # This requires one adult out-patient appt.
+        the_appt_footprint = self.make_appt_footprint(
+            {"Over5OPD": 1}
+        )  # This requires one adult out-patient appt.
 
         # Define the facilities at which this event can occur (only one is allowed)
         # Choose from: list(pd.unique(self.sim.modules['HealthSystem'].parameters['Facilities_For_Each_District']
@@ -246,7 +254,9 @@ class HSI_Skeleton_Example_Interaction(HSI_Event, IndividualScopeEventMixin):
         the_accepted_facility_level = 0
 
         # Define the necessary information for an HSI
-        self.TREATMENT_ID = 'Skeleton_Example_Interaction'  # This must begin with the module name
+        self.TREATMENT_ID = (
+            "Skeleton_Example_Interaction"  # This must begin with the module name
+        )
         self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
         self.ACCEPTED_FACILITY_LEVEL = the_accepted_facility_level
         self.ALERT_OTHER_DISEASES = []

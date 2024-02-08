@@ -1,4 +1,5 @@
 """This file contains helpful utility functions."""
+
 import hashlib
 from collections import defaultdict
 from typing import Dict, List, Optional, Set, Union
@@ -13,7 +14,9 @@ from tlo import Population
 DEFAULT_MOTHER_ID = -1e7
 
 
-def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> (list, Dict[int, str]):
+def create_age_range_lookup(
+    min_age: int, max_age: int, range_size: int = 5
+) -> (list, Dict[int, str]):
     """Create age-range categories and a dictionary that will map all whole years to age-range categories
 
     If the minimum age is not zero then a below minimum age category will be made,
@@ -31,18 +34,18 @@ def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> 
     def chunks(items, n):
         """Takes a list and divides it into parts of size n"""
         for index in range(0, len(items), n):
-            yield items[index:index + n]
+            yield items[index : index + n]
 
     # split all the ages from min to limit
     parts = chunks(range(min_age, max_age), range_size)
 
-    default_category = f'{max_age}+'
+    default_category = f"{max_age}+"
     lookup = defaultdict(lambda: default_category)
     age_categories = []
 
     # create category for minimum age
     if min_age > 0:
-        under_min_age_category = f'0-{min_age}'
+        under_min_age_category = f"0-{min_age}"
         age_categories.append(under_min_age_category)
         for i in range(0, min_age):
             lookup[i] = under_min_age_category
@@ -51,7 +54,7 @@ def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> 
     for part in parts:
         start = part.start
         end = part.stop - 1
-        value = f'{start}-{end}'
+        value = f"{start}-{end}"
         age_categories.append(value)
         for i in range(start, part.stop):
             lookup[i] = value
@@ -61,7 +64,9 @@ def create_age_range_lookup(min_age: int, max_age: int, range_size: int = 5) -> 
     return age_categories, lookup
 
 
-def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, rng: np.random.RandomState) -> pd.Series:
+def transition_states(
+    initial_series: pd.Series, prob_matrix: pd.DataFrame, rng: np.random.RandomState
+) -> pd.Series:
     """Transition a series of states based on probability matrix
 
     This should carry out all state transitions for a Series (i.e. column in DataFrame)
@@ -79,7 +84,9 @@ def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, rng:
     :return: Series with states changed according to probabilities
     """
     # Create final_series with index so that we are sure it's the same size as the original
-    final_states = pd.Series(None, index=initial_series.index, dtype=initial_series.dtype)
+    final_states = pd.Series(
+        None, index=initial_series.index, dtype=initial_series.dtype
+    )
 
     # for each state, get the random choice states and add to the final_states Series
     state_indexes = initial_series.groupby(initial_series).groups
@@ -92,7 +99,7 @@ def transition_states(initial_series: pd.Series, prob_matrix: pd.DataFrame, rng:
 
 
 def sample_outcome(probs: pd.DataFrame, rng: np.random.RandomState):
-    """ Helper function to randomly sample an outcome for each individual in a population from a set of probabilities
+    """Helper function to randomly sample an outcome for each individual in a population from a set of probabilities
     that are specific to each individual.
     :param probs: Each row of this dataframe represents the person and the columns are the possible outcomes. The
     values are the probability of that outcome for that individual. For each individual, the probabilities of each
@@ -103,26 +110,34 @@ def sample_outcome(probs: pd.DataFrame, rng: np.random.RandomState):
     """
 
     # Scaling to ensure that the sum in each row not exceed 1.0
-    probs = probs.apply(lambda row: (row / row.sum() if row.sum() >= 1.0 else row), axis=1)
-    assert (probs.sum(axis=1) < (1.0 + 1e-6)).all(), "Probabilities across columns cannot sum to more than 1.0"
+    probs = probs.apply(
+        lambda row: (row / row.sum() if row.sum() >= 1.0 else row), axis=1
+    )
+    assert (
+        probs.sum(axis=1) < (1.0 + 1e-6)
+    ).all(), "Probabilities across columns cannot sum to more than 1.0"
 
     # Compare uniform deviate to cumulative sum across columns, after including a "null" column (for no event).
     _probs = probs.copy()
-    _probs['_'] = 1.0 - _probs.sum(axis=1)  # add implied "none of these events" category
+    _probs["_"] = 1.0 - _probs.sum(
+        axis=1
+    )  # add implied "none of these events" category
     cumsum = _probs.cumsum(axis=1)
     draws = pd.Series(rng.rand(len(cumsum)), index=cumsum.index)
     y = cumsum.gt(draws, axis=0)
     outcome = y.idxmax(axis=1)
 
     # return as a dict of form {person_id: outcome} only in those cases where the outcome is one of the events.
-    return outcome.loc[outcome != '_'].to_dict()
+    return outcome.loc[outcome != "_"].to_dict()
 
 
 class BitsetHandler:
     """Provides methods to operate on int column(s) in the population dataframe as a bitset"""
 
-    def __init__(self, population: Population, column: Optional[str], elements: List[str]):
-        """""
+    def __init__(
+        self, population: Population, column: Optional[str], elements: List[str]
+    ):
+        """ ""
         :param population: The TLO Population object (not the props dataframe).
         :param column: The integer property column that will be used as a bitset. If
             set to ``None`` then the optional `columns` argument to methods which act
@@ -130,20 +145,20 @@ class BitsetHandler:
         :param elements: A list of strings specifying the elements of the bitset.
         :returns: Instance of BitsetHandler for supplied arguments.
         """
-        assert isinstance(population, Population), (
-            'First argument is the population object (not the `props` dataframe)'
-        )
-        assert len(elements) <= 64, 'A maximum of 64 elements are supported'
+        assert isinstance(
+            population, Population
+        ), "First argument is the population object (not the `props` dataframe)"
+        assert len(elements) <= 64, "A maximum of 64 elements are supported"
         self._elements = elements
-        self._element_to_int_map = {el: 2 ** i for i, el in enumerate(elements)}
+        self._element_to_int_map = {el: 2**i for i, el in enumerate(elements)}
         self._population = population
         if column is not None:
-            assert column in population.props.columns, (
-                'Column not found in population dataframe'
-            )
-            assert population.props[column].dtype == np.int64, (
-                'Column must be of int64 type'
-            )
+            assert (
+                column in population.props.columns
+            ), "Column not found in population dataframe"
+            assert (
+                population.props[column].dtype == np.int64
+            ), "Column must be of int64 type"
         self._column = column
 
     @property
@@ -160,20 +175,23 @@ class BitsetHandler:
         :param integer: The integer value for the bitset.
         :return: Set of strings corresponding to integer value.
         """
-        bin_repr = format(integer, 'b')
+        bin_repr = format(integer, "b")
         return {
             self._elements[index]
-            for index, bit in enumerate(reversed(bin_repr)) if bit == '1'
+            for index, bit in enumerate(reversed(bin_repr))
+            if bit == "1"
         }
 
     def _get_columns(self, columns):
         if columns is None and self._column is None:
             raise ValueError(
-                'columns argument must be specified as not set when constructing handler'
+                "columns argument must be specified as not set when constructing handler"
             )
         return self._column if columns is None else columns
 
-    def set(self, where, *elements: str, columns: Optional[Union[str, List[str]]] = None):
+    def set(
+        self, where, *elements: str, columns: Optional[Union[str, List[str]]] = None
+    ):
         """Set (i.e. set to True) the bits corersponding to the specified elements.
 
         The where argument is used verbatim as the first item in a `df.loc[x, y]` call.
@@ -189,7 +207,9 @@ class BitsetHandler:
         """
         self.df.loc[where, self._get_columns(columns)] |= self.element_repr(*elements)
 
-    def unset(self, where, *elements: str, columns: Optional[Union[str, List[str]]] = None):
+    def unset(
+        self, where, *elements: str, columns: Optional[Union[str, List[str]]] = None
+    ):
         """Unset (i.e. set to False) the bits corresponding the specified elements.
 
         The where argument is used verbatim as the first item in a `df.loc[x, y]` call.
@@ -203,7 +223,9 @@ class BitsetHandler:
             update. If set to ``None`` (the default) a ``column`` argument must have
             been specified when constructing the ``BitsetHandler`` object.
         """
-        self.df.loc[where, self._get_columns(columns)] &= ~self.element_repr(*elements)  # pylint: disable=E1130
+        self.df.loc[where, self._get_columns(columns)] &= ~self.element_repr(
+            *elements
+        )  # pylint: disable=E1130
 
     def clear(self, where, columns: Optional[Union[str, List[str]]] = None):
         """Clears all the bits for the specified rows.
@@ -220,18 +242,18 @@ class BitsetHandler:
         where,
         element: str,
         first: bool = False,
-        columns: Optional[Union[str, List[str]]] = None
+        columns: Optional[Union[str, List[str]]] = None,
     ) -> Union[pd.DataFrame, pd.Series, bool]:
         """Test whether bit(s) for a specified element are set.
 
-        :param where: Condition to filter rows that will checked.
-       :param element: Element string to test if bit is set for.
-        :param first: Boolean keyword argument specifying whether to return only the
-            first item / row in the computed column / dataframe.
-        :param columns: Optional argument specifying column(s) containing bitsets to
-            update. If set to ``None`` (the default) a ``column`` argument must have
-            been specified when constructing the ``BitsetHandler`` object.
-        :return: Boolean value(s) indicating whether element bit(s) are set.
+         :param where: Condition to filter rows that will checked.
+        :param element: Element string to test if bit is set for.
+         :param first: Boolean keyword argument specifying whether to return only the
+             first item / row in the computed column / dataframe.
+         :param columns: Optional argument specifying column(s) containing bitsets to
+             update. If set to ``None`` (the default) a ``column`` argument must have
+             been specified when constructing the ``BitsetHandler`` object.
+         :return: Boolean value(s) indicating whether element bit(s) are set.
         """
         int_repr = self._element_to_int_map[element]
         matched = (self.df.loc[where, self._get_columns(columns)] & int_repr) != 0
@@ -242,7 +264,7 @@ class BitsetHandler:
         where,
         *elements: str,
         first: bool = False,
-        columns: Optional[Union[str, List[str]]] = None
+        columns: Optional[Union[str, List[str]]] = None,
     ) -> Union[pd.DataFrame, pd.Series, bool]:
         """Check whether individual(s) have all the elements given set to True.
 
@@ -261,7 +283,9 @@ class BitsetHandler:
         :return: Boolean value(s) indicating whether all element bit(s) are set.
         """
         int_repr = self.element_repr(*elements)
-        matched = (self.df.loc[where, self._get_columns(columns)] & int_repr) == int_repr
+        matched = (
+            self.df.loc[where, self._get_columns(columns)] & int_repr
+        ) == int_repr
         return matched.iloc[0] if first else matched
 
     def has_any(
@@ -269,7 +293,7 @@ class BitsetHandler:
         where,
         *elements: str,
         first: bool = False,
-        columns: Optional[Union[str, List[str]]] = None
+        columns: Optional[Union[str, List[str]]] = None,
     ) -> Union[pd.DataFrame, pd.Series, bool]:
         """Check whether individual(s) have any of the elements given set to True.
 
@@ -295,7 +319,7 @@ class BitsetHandler:
         self,
         where,
         first: bool = False,
-        columns: Optional[Union[str, List[str]]] = None
+        columns: Optional[Union[str, List[str]]] = None,
     ) -> Union[pd.DataFrame, pd.Series, Set[str]]:
         """Returns a series or dataframe with set of string elements where bit is True.
 
@@ -320,9 +344,7 @@ class BitsetHandler:
         return sets.iloc[0] if first else sets
 
     def uncompress(
-        self,
-        where=None,
-        columns: Optional[Union[str, List[str]]] = None
+        self, where=None, columns: Optional[Union[str, List[str]]] = None
     ) -> Union[pd.DataFrame, Dict[str, pd.DataFrame]]:
         """Returns an exploded representation of the bitset(s).
 
@@ -354,10 +376,7 @@ class BitsetHandler:
         return uncompressed[columns] if isinstance(columns, str) else uncompressed
 
     def not_empty(
-        self,
-        where,
-        first=False,
-        columns: Optional[Union[str, List[str]]] = None
+        self, where, first=False, columns: Optional[Union[str, List[str]]] = None
     ) -> Union[pd.DataFrame, pd.Series, bool]:
         """Returns Series of bool indicating whether the BitSet entry is not empty.
 
@@ -374,10 +393,7 @@ class BitsetHandler:
         return ~self.is_empty(where, first=first, columns=columns)
 
     def is_empty(
-        self,
-        where,
-        first=False,
-        columns: Optional[Union[str, List[str]]] = None
+        self, where, first=False, columns: Optional[Union[str, List[str]]] = None
     ) -> Union[pd.DataFrame, pd.Series, bool]:
         """Returns Series of bool indicating whether the BitSet entry is empty.
 
@@ -407,12 +423,13 @@ def hash_dataframe(dataframe: pd.DataFrame):
         as list are not hashable."""
         return df.applymap(lambda x: tuple(x) if isinstance(x, list) else x)
 
-    return hashlib.sha1(pd.util.hash_pandas_object(coerce_lists_to_tuples(dataframe)).values).hexdigest()
+    return hashlib.sha1(
+        pd.util.hash_pandas_object(coerce_lists_to_tuples(dataframe)).values
+    ).hexdigest()
 
 
 def get_person_id_to_inherit_from(child_id, mother_id, population_dataframe, rng):
-    """Get index of person to inherit properties from.
-    """
+    """Get index of person to inherit properties from."""
 
     if mother_id == DEFAULT_MOTHER_ID:
         # Get indices of alive persons and try to drop child_id from these indices if

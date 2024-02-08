@@ -1,6 +1,7 @@
 """
 This is the analysis script for the calibration of the ALRI model
 """
+
 # %% Import Statements and initial declarations
 import datetime
 import os
@@ -27,7 +28,7 @@ resourcefilepath = Path("./resources")
 # Create name for log-file
 datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 
-log_filename = outputpath / 'alri_classification_and_treatment__2022-03-15T170845.log'
+log_filename = outputpath / "alri_classification_and_treatment__2022-03-15T170845.log"
 # <-- insert name of log file to avoid re-running the simulation // GBD_lri_comparison_50k_pop__2022-03-15T111444.log
 # alri_classification_and_treatment__2022-03-15T170845.log
 
@@ -47,30 +48,36 @@ if not os.path.exists(log_filename):
             "tlo.methods.alri": logging.DEBUG,
             "tlo.methods.demography": logging.INFO,
             "tlo.methods.healthburden": logging.INFO,
-        }
+        },
     }
 
     seed = random.randint(0, 50000)
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
+    sim = Simulation(
+        start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True
+    )
 
     # run the simulation
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(
+            resourcefilepath=resourcefilepath
+        ),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  service_availability=['*'],
-                                  mode_appt_constraints=0,
-                                  ignore_priority=True,
-                                  capabilities_coefficient=1.0,
-                                  disable=True),
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath,
+            service_availability=["*"],
+            mode_appt_constraints=0,
+            ignore_priority=True,
+            capabilities_coefficient=1.0,
+            disable=True,
+        ),
         alri.Alri(resourcefilepath=resourcefilepath),
-        alri.AlriPropertiesOfOtherModules()
+        alri.AlriPropertiesOfOtherModules(),
     )
 
     # Run the simulation
@@ -84,31 +91,34 @@ if not os.path.exists(log_filename):
 output = parse_log_file(log_filename)
 
 # -----------------------------------------------------------------------------
-classification = output['tlo.methods.alri']['classification']
-classification.set_index(
-    'year',
-    drop=True,
-    inplace=True
-)
+classification = output["tlo.methods.alri"]["classification"]
+classification.set_index("year", drop=True, inplace=True)
 
 # total number of year running in simulation
 n_years = classification.index.value_counts().count()
 # facility levels
-facilities = classification['facility_level'].value_counts().index
+facilities = classification["facility_level"].value_counts().index
 
 # create separate df for each level
-grouped = classification.groupby(['facility_level'])
-classification_level0 = grouped.get_group('0')
-classification_level1a = grouped.get_group('1a')
-classification_level1b = grouped.get_group('1b')
+grouped = classification.groupby(["facility_level"])
+classification_level0 = grouped.get_group("0")
+classification_level1a = grouped.get_group("1a")
+classification_level1b = grouped.get_group("1b")
 
 
 # total classifications at each facility level for the standard being oximeter-based classification
-total_symptom_classification = classification.groupby(['pulse_ox_classification']).symptom_classification.value_counts()
+total_symptom_classification = classification.groupby(
+    ["pulse_ox_classification"]
+).symptom_classification.value_counts()
 total_pulse_ox_classification = classification.groupby(
-    ['pulse_ox_classification']).pulse_ox_classification.value_counts()
-total_hw_classification = classification.groupby(['pulse_ox_classification']).hw_classification.value_counts()
-total_final_classification = classification.groupby(['pulse_ox_classification']).final_classification.value_counts()
+    ["pulse_ox_classification"]
+).pulse_ox_classification.value_counts()
+total_hw_classification = classification.groupby(
+    ["pulse_ox_classification"]
+).hw_classification.value_counts()
+total_final_classification = classification.groupby(
+    ["pulse_ox_classification"]
+).final_classification.value_counts()
 
 # yearly mean of total classifications
 mean_pulse_ox_classification = total_pulse_ox_classification / n_years
@@ -120,21 +130,29 @@ print(mean_symptom_classification)
 # labels = ['chest_indrawing_pneumonia', 'fast_breathing_pneumonia', 'danger_signs_pneumonia', 'cough_or_cold',
 #           'not_handled_at_facility_0', 'serious_bacterial_infection']
 
-level0_pulse_ox_class = mean_pulse_ox_classification.loc['danger_signs_pneumonia', slice(None)]
-level0_symptom_class = mean_symptom_classification.loc['danger_signs_pneumonia', slice(None)]
-level0_hw_class = mean_hw_classification.loc['danger_signs_pneumonia', slice(None)]
-level0_final_class = mean_final_classification.loc['danger_signs_pneumonia', slice(None)]
+level0_pulse_ox_class = mean_pulse_ox_classification.loc[
+    "danger_signs_pneumonia", slice(None)
+]
+level0_symptom_class = mean_symptom_classification.loc[
+    "danger_signs_pneumonia", slice(None)
+]
+level0_hw_class = mean_hw_classification.loc["danger_signs_pneumonia", slice(None)]
+level0_final_class = mean_final_classification.loc[
+    "danger_signs_pneumonia", slice(None)
+]
 
 # Pie chart, where the slices will be ordered and plotted counter-clockwise:
 labels = level0_symptom_class[:].index
 sizes = level0_symptom_class[:]
 
-category_names = level0_symptom_class[:].index.get_level_values('symptom_classification')
+category_names = level0_symptom_class[:].index.get_level_values(
+    "symptom_classification"
+)
 print(category_names)
 results = {
-    'symptom-based': level0_symptom_class[:],
-    'health_worker': level0_hw_class[:],
-    'final classification': level0_final_class[:],
+    "symptom-based": level0_symptom_class[:],
+    "health_worker": level0_hw_class[:],
+    "final classification": level0_final_class[:],
 }
 print(results)
 

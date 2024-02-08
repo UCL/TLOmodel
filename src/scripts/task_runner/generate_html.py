@@ -17,9 +17,9 @@ def main(output_directory: Path) -> None:
     commit_dirs = commit_dirs[:max_commits]
     body_html = "".join([get_html_for_commit(commit) for commit in commit_dirs])
 
-    page_html = page_template.substitute(title=page_title,
-                                         body=body_html,
-                                         generated_time=generated_time)
+    page_html = page_template.substitute(
+        title=page_title, body=body_html, generated_time=generated_time
+    )
     print(page_html)
 
 
@@ -52,21 +52,26 @@ def get_html_for_commit(commit_dir: Path) -> str:
     # if the post-process step has been completed, link to the results
     results_file = "022_long_run_all_diseases_process/index.html"
     if (commit_dir / results_file).is_file():
-        commit_title = f"<a href='./{commit_dir.stem}/{results_file}'>{commit_title}</a>"
+        commit_title = (
+            f"<a href='./{commit_dir.stem}/{results_file}'>{commit_title}</a>"
+        )
         commit_p_class = "completed"
 
-    return commit_template.substitute(dir_title=commit_title,
-                                      links=" ".join(commit_links),
-                                      p_class=commit_p_class)
+    return commit_template.substitute(
+        dir_title=commit_title, links=" ".join(commit_links), p_class=commit_p_class
+    )
 
 
-commit_template = Template("""<p class="$p_class">
+commit_template = Template(
+    """<p class="$p_class">
     $dir_title
     $links<br>
 </p>
-""")
+"""
+)
 
-page_template = Template("""<!DOCTYPE html>
+page_template = Template(
+    """<!DOCTYPE html>
 <html lang="en">
 <head>
     <title>$title</title>
@@ -108,7 +113,8 @@ page_template = Template("""<!DOCTYPE html>
 $body
 </body>
 </html>
-""")
+"""
+)
 
 if __name__ == "__main__":
     # Usage: python generate_html.py /path/to/output/directory

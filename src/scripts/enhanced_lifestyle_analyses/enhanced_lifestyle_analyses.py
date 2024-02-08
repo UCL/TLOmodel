@@ -21,8 +21,8 @@ def run():
         "filename": "enhanced_lifestyle",  # The prefix for the output file. A timestamp will be added to this.
         "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
             "tlo.methods.demography": logging.WARNING,
-            "tlo.methods.enhanced_lifestyle": logging.INFO
-        }
+            "tlo.methods.enhanced_lifestyle": logging.INFO,
+        },
     }
     # For default configuration, uncomment the next line
     # log_config = dict()
@@ -60,19 +60,23 @@ output = parse_log_file(sim.log_filepath)
 
 
 def extract_formatted_series(df):
-    return pd.Series(index=pd.to_datetime(df['date']), data=df.iloc[:, 1].values)
+    return pd.Series(index=pd.to_datetime(df["date"]), data=df.iloc[:, 1].values)
 
 
 # Examine Proportion Men Circumcised:
-circ = extract_formatted_series(output['tlo.methods.enhanced_lifestyle']['prop_adult_men_circumcised'])
+circ = extract_formatted_series(
+    output["tlo.methods.enhanced_lifestyle"]["prop_adult_men_circumcised"]
+)
 circ.plot()
-plt.title('Proportion of Adult Men Circumcised')
+plt.title("Proportion of Adult Men Circumcised")
 plt.ylim(0, 0.30)
 plt.show()
 
 # Examine Proportion Women sex Worker:
-fsw = extract_formatted_series(output['tlo.methods.enhanced_lifestyle']['proportion_1549_women_sexworker'])
+fsw = extract_formatted_series(
+    output["tlo.methods.enhanced_lifestyle"]["proportion_1549_women_sexworker"]
+)
 fsw.plot()
-plt.title('Proportion of 15-49 Women Sex Workers')
+plt.title("Proportion of 15-49 Women Sex Workers")
 plt.ylim(0, 0.01)
 plt.show()

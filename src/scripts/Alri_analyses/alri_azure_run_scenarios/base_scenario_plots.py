@@ -42,10 +42,12 @@ alri_incident_cases = summarize(
         results_folder,
         module="tlo.methods.alri",
         key="event_counts",
-        column='incident_cases',
+        column="incident_cases",
         index="date",
-        do_scaling=False),
-    collapse_columns=True)
+        do_scaling=False,
+    ),
+    collapse_columns=True,
+)
 
 # death count from model
 alri_death_count = summarize(
@@ -53,10 +55,12 @@ alri_death_count = summarize(
         results_folder,
         module="tlo.methods.alri",
         key="event_counts",
-        column='deaths',
+        column="deaths",
         index="date",
-        do_scaling=False),
-    collapse_columns=True)
+        do_scaling=False,
+    ),
+    collapse_columns=True,
+)
 
 # set the index as year value (not date)
 alri_incident_cases.index = alri_incident_cases.index.year
@@ -67,11 +71,13 @@ alri_incident_cases.to_csv(outputspath / ("batch_run_incident_results" + ".csv")
 alri_death_count.to_csv(outputspath / ("batch_run_death_results" + ".csv"))
 
 # get the mean/lowe/upper values per year for all draws
-mean_cases_per_year = \
-    alri_incident_cases.groupby(axis=1, by=alri_incident_cases.columns.get_level_values('stat')).mean()
+mean_cases_per_year = alri_incident_cases.groupby(
+    axis=1, by=alri_incident_cases.columns.get_level_values("stat")
+).mean()
 
-mean_deaths_per_year = \
-    alri_death_count.groupby(axis=1, by=alri_death_count.columns.get_level_values('stat')).mean()
+mean_deaths_per_year = alri_death_count.groupby(
+    axis=1, by=alri_death_count.columns.get_level_values("stat")
+).mean()
 
 
 # --------------------------------------- PERSON-YEARS (DENOMINATOR) ---------------------------------------
@@ -84,8 +90,10 @@ def get_person_years(draw, run):
     py = pd.Series(dtype="int64", index=years)
     for year in years:
         tot_py = (
-            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series) +
-            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(pd.Series)
+            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series)
+            + (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(
+                pd.Series
+            )
         ).transpose()
         tot_py.index = tot_py.index.astype(int)
         py[year] = tot_py.loc[0:4].sum().values[0]
@@ -94,7 +102,7 @@ def get_person_years(draw, run):
 
 
 # for each draw, get py for all runs
-number_draws = info['number_of_draws']
+number_draws = info["number_of_draws"]
 number_runs = info["runs_per_draw"]
 
 # create empty dataframe for collecting the results from get_person_years(draw, run) function
@@ -102,8 +110,10 @@ py_summary_per_run = pd.DataFrame(data=None, columns=range(0, number_runs))
 
 all_draws_py_summary = pd.DataFrame(
     columns=pd.MultiIndex.from_product(
-        [list(range(0, number_draws)), ['mean', 'lower', 'upper']],
-        names=['draw', 'stat']), index=pd.to_datetime(log["tlo.methods.demography"]["person_years"]["date"]).dt.year
+        [list(range(0, number_draws)), ["mean", "lower", "upper"]],
+        names=["draw", "stat"],
+    ),
+    index=pd.to_datetime(log["tlo.methods.demography"]["person_years"]["date"]).dt.year,
 )
 
 for draw in range(0, number_draws):
@@ -111,13 +121,20 @@ for draw in range(0, number_draws):
         py_summary_per_run.iloc[:, run] = get_person_years(draw, run)
 
     # get the mean, lower, upper values of the runs for the draw
-    py_summary_mean_df = pd.DataFrame(data=None, columns=['mean', 'lower', 'upper'], index=py_summary_per_run.index)
-    py_summary_mean_df.loc[:, 'mean'] = py_summary_per_run.mean(axis=1).values
-    py_summary_mean_df.loc[:, 'lower'] = py_summary_per_run.quantile(0.025, axis=1).values
-    py_summary_mean_df.loc[:, 'upper'] = py_summary_per_run.quantile(0.975, axis=1).values
+    py_summary_mean_df = pd.DataFrame(
+        data=None, columns=["mean", "lower", "upper"], index=py_summary_per_run.index
+    )
+    py_summary_mean_df.loc[:, "mean"] = py_summary_per_run.mean(axis=1).values
+    py_summary_mean_df.loc[:, "lower"] = py_summary_per_run.quantile(
+        0.025, axis=1
+    ).values
+    py_summary_mean_df.loc[:, "upper"] = py_summary_per_run.quantile(
+        0.975, axis=1
+    ).values
     # add an index-column [draw] to py_summary_mean_df
-    py_summary_mean_df.columns = pd.MultiIndex.from_product([[draw], list(py_summary_mean_df.columns)],
-                                                            names=['draw', 'stat'])
+    py_summary_mean_df.columns = pd.MultiIndex.from_product(
+        [[draw], list(py_summary_mean_df.columns)], names=["draw", "stat"]
+    )
 
     # update the index of empty dataframe all_draws_py_summary
     # year_index = py_summary_mean_df.index
@@ -125,7 +142,9 @@ for draw in range(0, number_draws):
     all_draws_py_summary.loc[:, [draw]] = py_summary_mean_df.loc[:, [draw]].values
 
 # get the mean of mean/ lower/ upper values per year across all draws
-mean_py_per_year = all_draws_py_summary.groupby(axis=1, by=all_draws_py_summary.columns.get_level_values('stat')).mean()
+mean_py_per_year = all_draws_py_summary.groupby(
+    axis=1, by=all_draws_py_summary.columns.get_level_values("stat")
+).mean()
 
 # ---------------------------------------------------------------------------------------------------
 # # # # # INCIDENCE & MORTALITY RATE (CASES/ DENOMINATOR) # # # # #
@@ -133,21 +152,27 @@ mean_py_per_year = all_draws_py_summary.groupby(axis=1, by=all_draws_py_summary.
 # calculate the incidence and mortality mean and upper/lower mean values
 # mean incidence & mortality
 alri_incidence_mean = pd.Series(
-    (mean_cases_per_year['mean'] / mean_py_per_year['mean']) * 100).dropna()
+    (mean_cases_per_year["mean"] / mean_py_per_year["mean"]) * 100
+).dropna()
 alri_death_mean = pd.Series(
-    (mean_deaths_per_year['mean'] / mean_py_per_year['mean']) * 100000).dropna()
+    (mean_deaths_per_year["mean"] / mean_py_per_year["mean"]) * 100000
+).dropna()
 
 # lower limit
 alri_incidence_lower = pd.Series(
-    (mean_cases_per_year['lower'] / mean_py_per_year['lower']) * 100).dropna()
+    (mean_cases_per_year["lower"] / mean_py_per_year["lower"]) * 100
+).dropna()
 alri_death_lower = pd.Series(
-    (mean_deaths_per_year['lower'] / mean_py_per_year['lower']) * 100000).dropna()
+    (mean_deaths_per_year["lower"] / mean_py_per_year["lower"]) * 100000
+).dropna()
 
 # upper limit
 alri_incidence_upper = pd.Series(
-    (mean_cases_per_year['upper'] / mean_py_per_year['upper']) * 100).dropna()
+    (mean_cases_per_year["upper"] / mean_py_per_year["upper"]) * 100
+).dropna()
 alri_death_upper = pd.Series(
-    (mean_deaths_per_year['upper'] / mean_py_per_year['upper']) * 100000).dropna()
+    (mean_deaths_per_year["upper"] / mean_py_per_year["upper"]) * 100000
+).dropna()
 
 # ----------------------------------- CREATE PLOTS - SINGLE RUN FIGURES -----------------------------------
 # INCIDENCE & MORTALITY RATE - OUTPUT OVERTIME
@@ -158,12 +183,12 @@ end_date = 2031
 GBD_data = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_Alri.xlsx",
     sheet_name="GBD_Malawi_estimates",
-    )
+)
 # import McAllister estimates for Malawi's ALRI incidence
 McAllister_data = pd.read_excel(
     Path(resourcefilepath) / "ResourceFile_Alri.xlsx",
     sheet_name="McAllister_2019",
-    )
+)
 
 plt.style.use("ggplot")
 # ------------------------------------
@@ -173,7 +198,7 @@ plt.style.use("ggplot")
 fig = plt.figure()
 
 # GBD estimates
-plt.plot(GBD_data.Year, GBD_data.Incidence_per100_children, label='GBD')
+plt.plot(GBD_data.Year, GBD_data.Incidence_per100_children, label="GBD")
 plt.fill_between(
     GBD_data.Year,
     GBD_data.Incidence_per100_lower,
@@ -182,7 +207,9 @@ plt.fill_between(
 )
 # McAllister et al 2019 estimates
 years_with_data = McAllister_data.dropna(axis=0)
-plt.plot(years_with_data.Year, years_with_data.Incidence_per100_children, label='McAllister')
+plt.plot(
+    years_with_data.Year, years_with_data.Incidence_per100_children, label="McAllister"
+)
 plt.fill_between(
     years_with_data.Year,
     years_with_data.Incidence_per100_lower,
@@ -190,12 +217,12 @@ plt.fill_between(
     alpha=0.5,
 )
 # model output
-plt.plot(alri_incidence_mean.index, alri_incidence_mean, color='teal', label='Model')
+plt.plot(alri_incidence_mean.index, alri_incidence_mean, color="teal", label="Model")
 plt.fill_between(
     alri_incidence_mean.index,
     alri_incidence_lower,
     alri_incidence_upper,
-    color='teal',
+    color="teal",
     alpha=0.5,
 )
 
@@ -216,7 +243,7 @@ plt.show()
 fig1 = plt.figure()
 
 # GBD estimates
-plt.plot(GBD_data.Year, GBD_data.Death_per100k_children, label='GBD')  # GBD data
+plt.plot(GBD_data.Year, GBD_data.Death_per100k_children, label="GBD")  # GBD data
 plt.fill_between(
     GBD_data.Year,
     GBD_data.Death_per100k_lower,
@@ -224,13 +251,9 @@ plt.fill_between(
     alpha=0.5,
 )
 # model output
-plt.plot(alri_death_mean.index, alri_death_mean, color='teal', label='Model')  # model
+plt.plot(alri_death_mean.index, alri_death_mean, color="teal", label="Model")  # model
 plt.fill_between(
-    alri_death_mean.index,
-    alri_death_lower,
-    alri_death_upper,
-    color='teal',
-    alpha=0.5
+    alri_death_mean.index, alri_death_lower, alri_death_upper, color="teal", alpha=0.5
 )
 plt.title("ALRI Mortality per 100,000 children")
 plt.xlabel("Year")
@@ -252,9 +275,9 @@ birth_count = extract_results(
     module="tlo.methods.demography",
     key="on_birth",
     custom_generate_series=(
-        lambda df: df.assign(year=df['date'].dt.year).groupby(['year'])['year'].count()
+        lambda df: df.assign(year=df["date"].dt.year).groupby(["year"])["year"].count()
     ),
-    do_scaling=False
+    do_scaling=False,
 )
 
 # mean_births_per_year = \
@@ -265,7 +288,9 @@ birth_count.to_csv(outputspath / ("batch_run_birth_results" + ".csv"))
 fig2, ax2 = plt.subplots()
 
 # McAllister et al. 2019 estimates
-plt.plot(McAllister_data.Year, McAllister_data.Death_per1000_livebirths)  # no upper/lower
+plt.plot(
+    McAllister_data.Year, McAllister_data.Death_per1000_livebirths
+)  # no upper/lower
 
 # model output
 mort_per_livebirth = (alri_death_count / birth_count * 1000).dropna()

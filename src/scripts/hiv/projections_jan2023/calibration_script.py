@@ -75,12 +75,12 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'deviance_runs',
-            'directory': './outputs',
-            'custom_levels': {
-                '*': logging.WARNING,
+            "filename": "deviance_runs",
+            "directory": "./outputs",
+            "custom_levels": {
+                "*": logging.WARNING,
                 "tlo.methods.deviance_measure": logging.INFO,
-            }
+            },
         }
 
     def modules(self):
@@ -100,7 +100,9 @@ class TestScenario(BaseScenario):
                 store_hsi_events_that_have_run=False,  # convenience function for debugging
             ),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
-            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
+            healthseekingbehaviour.HealthSeekingBehaviour(
+                resourcefilepath=self.resources
+            ),
             healthburden.HealthBurden(resourcefilepath=self.resources),
             epi.Epi(resourcefilepath=self.resources),
             hiv.Hiv(resourcefilepath=self.resources),
@@ -111,15 +113,16 @@ class TestScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
 
         return {
-            'Hiv': {
-                'beta': self.sampled_parameters.hiv[draw_number],
+            "Hiv": {
+                "beta": self.sampled_parameters.hiv[draw_number],
             },
-            'Tb': {
-                'transmission_rate': self.sampled_parameters.tb[draw_number],
+            "Tb": {
+                "transmission_rate": self.sampled_parameters.tb[draw_number],
             },
         }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
+
     scenario_run([__file__])

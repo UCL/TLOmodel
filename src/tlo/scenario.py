@@ -94,6 +94,7 @@ class BaseScenario(abc.ABC):
 
     * ``draw_parameters`` - override parameters for draws from the scenario.
     """
+
     def __init__(
         self,
         seed: Optional[int] = None,
@@ -210,7 +211,9 @@ class BaseScenario(abc.ABC):
 
     def save_draws(self, return_config=False, **kwargs):
         generator = DrawGenerator(self, self.number_of_draws, self.runs_per_draw)
-        output_path = self.scenario_path.parent / f"{self.scenario_path.stem}_draws.json"
+        output_path = (
+            self.scenario_path.parent / f"{self.scenario_path.stem}_draws.json"
+        )
         # assert not os.path.exists(output_path), f'Cannot save run config to {output_path} - file already exists'
         config = generator.get_run_config(self.scenario_path)
         if len(kwargs) > 0:
@@ -228,6 +231,7 @@ class BaseScenario(abc.ABC):
 
 class ScenarioLoader:
     """A utility class to load a scenario class from a file path"""
+
     def __init__(self, scenario_path):
         scenario_module = ScenarioLoader._load_scenario_script(scenario_path)
         scenario_class = ScenarioLoader._get_scenario_class(scenario_module)
@@ -237,6 +241,7 @@ class ScenarioLoader:
     @staticmethod
     def _load_scenario_script(path):
         import importlib.util
+
         spec = importlib.util.spec_from_file_location(Path(path).stem, path)
         foo = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(foo)
@@ -245,9 +250,12 @@ class ScenarioLoader:
     @staticmethod
     def _get_scenario_class(scenario_module):
         import inspect
+
         classes = inspect.getmembers(scenario_module, inspect.isclass)
         classes = [c for (n, c) in classes if BaseScenario == c.__base__]
-        assert len(classes) == 1, "Exactly one subclass of BaseScenario should be defined in the scenario script"
+        assert (
+            len(classes) == 1
+        ), "Exactly one subclass of BaseScenario should be defined in the scenario script"
         return classes[0]
 
     def get_scenario(self):
@@ -256,20 +264,29 @@ class ScenarioLoader:
 
 class DrawGenerator:
     """Creates and saves a JSON representation of draws from a scenario."""
+
     def __init__(self, scenario_class, number_of_draws, runs_per_draw):
         self.scenario = scenario_class
 
-        assert self.scenario.seed is not None, "Must set a seed for the scenario. Add `self.seed = <integer>`"
+        assert (
+            self.scenario.seed is not None
+        ), "Must set a seed for the scenario. Add `self.seed = <integer>`"
         self.scenario.rng = np.random.RandomState(seed=self.scenario.seed)
         self.number_of_draws = number_of_draws
         self.runs_per_draw = runs_per_draw
         self.draws = self.setup_draws()
 
     def setup_draws(self):
-        assert self.scenario.number_of_draws > 0, "Number of draws must be greater than 0"
-        assert self.scenario.runs_per_draw > 0, "Number of samples/draw must be greater than 0"
+        assert (
+            self.scenario.number_of_draws > 0
+        ), "Number of draws must be greater than 0"
+        assert (
+            self.scenario.runs_per_draw > 0
+        ), "Number of samples/draw must be greater than 0"
         if self.scenario.draw_parameters(1, self.scenario.rng) is None:
-            assert self.scenario.number_of_draws == 1, "Number of draws should equal one if no variable parameters"
+            assert (
+                self.scenario.number_of_draws == 1
+            ), "Number of draws should equal one if no variable parameters"
         return [self.get_draw(d) for d in range(0, self.scenario.number_of_draws)]
 
     def get_draw(self, draw_number):
@@ -293,12 +310,20 @@ class DrawGenerator:
 
 class SampleRunner:
     """Reads scenario draws from a JSON configuration and handles running of samples"""
+
     def __init__(self, run_configuration_path):
         with open(run_configuration_path, "r") as f:
             self.run_config = json.load(f)
-        self.scenario = ScenarioLoader(self.run_config["scenario_script_path"]).get_scenario()
-        logger.info(key="message", data=f"Loaded scenario using {run_configuration_path}")
-        logger.info(key="message", data=f"Found {self.number_of_draws} draws; {self.runs_per_draw} runs/draw")
+        self.scenario = ScenarioLoader(
+            self.run_config["scenario_script_path"]
+        ).get_scenario()
+        logger.info(
+            key="message", data=f"Loaded scenario using {run_configuration_path}"
+        )
+        logger.info(
+            key="message",
+            data=f"Found {self.number_of_draws} draws; {self.runs_per_draw} runs/draw",
+        )
 
     @property
     def number_of_draws(self):
@@ -310,7 +335,9 @@ class SampleRunner:
 
     def get_draw(self, draw_number):
         total = self.number_of_draws
-        assert draw_number < total, f"Cannot get draw {draw_number}; only {total} defined."
+        assert (
+            draw_number < total
+        ), f"Cannot get draw {draw_number}; only {total} defined."
         return self.run_config["draws"][draw_number]
 
     def get_samples_for_draw(self, draw):
@@ -318,15 +345,18 @@ class SampleRunner:
             yield self.get_sample(draw, sample_number)
 
     def get_sample(self, draw, sample_number):
-        assert sample_number < self.scenario.runs_per_draw, \
-            f"Cannot get sample {sample_number}; samples/draw={self.scenario.runs_per_draw}"
+        assert (
+            sample_number < self.scenario.runs_per_draw
+        ), f"Cannot get sample {sample_number}; samples/draw={self.scenario.runs_per_draw}"
         sample = draw.copy()
         sample["sample_number"] = sample_number
 
         # Instead of using the random number generator to create a seed for the simulation, we use an integer hash
         # function to get an integer based on the sum of the scenario seed and sample_number. This means the
         # seed can be created independently and out-of-order (i.e. instead of sampling a seed for each sample in order)
-        sample["simulation_seed"] = SampleRunner.low_bias_32(self.run_config["scenario_seed"] + sample_number)
+        sample["simulation_seed"] = SampleRunner.low_bias_32(
+            self.run_config["scenario_seed"] + sample_number
+        )
         return sample
 
     def run_sample_by_number(self, output_directory, draw_number, sample_number):
@@ -335,12 +365,15 @@ class SampleRunner:
         sample = self.get_sample(draw, sample_number)
         log_config = self.scenario.get_log_config(output_directory)
 
-        logger.info(key="message", data=f"Running draw {sample['draw_number']}, sample {sample['sample_number']}")
+        logger.info(
+            key="message",
+            data=f"Running draw {sample['draw_number']}, sample {sample['sample_number']}",
+        )
 
         sim = Simulation(
             start_date=self.scenario.start_date,
             seed=sample["simulation_seed"],
-            log_config=log_config
+            log_config=log_config,
         )
         sim.register(*self.scenario.modules())
 
@@ -354,7 +387,9 @@ class SampleRunner:
             outputs = parse_log_file(sim.log_filepath)
             for key, output in outputs.items():
                 if key.startswith("tlo."):
-                    with open(Path(log_config["directory"]) / f"{key}.pickle", "wb") as f:
+                    with open(
+                        Path(log_config["directory"]) / f"{key}.pickle", "wb"
+                    ) as f:
                         pickle.dump(output, f)
 
     def run(self):
@@ -364,7 +399,9 @@ class SampleRunner:
         root_dir = draw_dir = None
         if log_config["directory"]:  # i.e. write output files
             timestamp = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H%M%SZ")
-            root_dir = Path(log_config["directory"]) / (Path(log_config["filename"]).stem + "-" + timestamp)
+            root_dir = Path(log_config["directory"]) / (
+                Path(log_config["filename"]).stem + "-" + timestamp
+            )
 
         # loop over draws and samples
         for draw in range(0, self.scenario.number_of_draws):
@@ -380,12 +417,16 @@ class SampleRunner:
             if module_name in sim.modules:
                 module = sim.modules[module_name]
                 for param_name, param_val in overrides.items():
-                    assert param_name in module.PARAMETERS, f"{module} does not have parameter '{param_name}'"
+                    assert (
+                        param_name in module.PARAMETERS
+                    ), f"{module} does not have parameter '{param_name}'"
                     # assert np.isscalar(param_val),
                     #  f"Parameter value '{param_val}' is not scalar type (float, int, str)"
 
                     old_value = module.parameters[param_name]
-                    assert type(old_value) is type(param_val), f"Cannot override parameter '{param_name}' - wrong type"
+                    assert type(old_value) is type(
+                        param_val
+                    ), f"Cannot override parameter '{param_name}' - wrong type"
 
                     module.parameters[param_name] = param_val
                     logger.info(
@@ -394,8 +435,8 @@ class SampleRunner:
                             "module": module_name,
                             "name": param_name,
                             "old_value": old_value,
-                            "new_value": module.parameters[param_name]
-                        }
+                            "new_value": module.parameters[param_name],
+                        },
                     )
 
     @staticmethod
@@ -412,11 +453,11 @@ class SampleRunner:
         :param: x an integer
         :returns: an integer
         """
-        x *= 0x7feb352d
+        x *= 0x7FEB352D
         x ^= x >> 15
-        x *= 0x846ca68b
+        x *= 0x846CA68B
         x ^= x >> 16
-        return x % (2 ** 32)
+        return x % (2**32)
 
 
 def _nested_dictionary_from_flat(flat_dict):

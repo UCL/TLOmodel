@@ -82,8 +82,9 @@ def fullmodel(
         healthsystem.HealthSystem,
         # Contraception, Pregnancy, Labour, etc. (or SimplifiedBirths)
         *(
-            [simplified_births.SimplifiedBirths] if use_simplified_births else
-            [
+            [simplified_births.SimplifiedBirths]
+            if use_simplified_births
+            else [
                 contraception.Contraception,
                 pregnancy_supervisor.PregnancySupervisor,
                 care_of_women_during_pregnancy.CareOfWomenDuringPregnancy,
@@ -122,7 +123,7 @@ def fullmodel(
     return [
         module_class(
             resourcefilepath=resourcefilepath,
-            **module_kwargs.get(module_class.__name__, {})
+            **module_kwargs.get(module_class.__name__, {}),
         )
         for module_class in module_classes
     ]

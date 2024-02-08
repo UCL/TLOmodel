@@ -15,33 +15,41 @@ mal_clin = pd.read_csv(Path(resourcefilepath) / "ResourceFile_malaria_ClinInc.cs
 mal_inf = pd.read_csv(Path(resourcefilepath) / "ResourceFile_malaria_InfInc.csv")
 mal_sev = pd.read_csv(Path(resourcefilepath) / "ResourceFile_malaria_SevInc.csv")
 
-master_district_list = pd.read_csv(Path(resourcefilepath) / "ResourceFile_District_Population_Data.csv")
+master_district_list = pd.read_csv(
+    Path(resourcefilepath) / "ResourceFile_District_Population_Data.csv"
+)
 
 districts = master_district_list.District
 
 # check how many unique districts are in file
-len(mal_clin['admin'].unique())  # 27
-len(mal_inf['admin'].unique())  # 27
-len(mal_sev['admin'].unique())  # 27
+len(mal_clin["admin"].unique())  # 27
+len(mal_inf["admin"].unique())  # 27
+len(mal_sev["admin"].unique())  # 27
 
-len(master_district_list['District'].unique())  # 32
+len(master_district_list["District"].unique())  # 32
 
 # find which districts are missing between the two sets
-print("Additional values in first list:", (set(mal_clin['admin']).difference(master_district_list['District'])))
-print("Additional values in first list:", (set(master_district_list['District']).difference(mal_clin['admin'])))
+print(
+    "Additional values in first list:",
+    (set(mal_clin["admin"]).difference(master_district_list["District"])),
+)
+print(
+    "Additional values in first list:",
+    (set(master_district_list["District"]).difference(mal_clin["admin"])),
+)
 #  {'Nkhata Bay', 'Mzuzu City', 'Zomba City', 'Lilongwe City', 'Blantyre City'}
 
-print(mal_clin['admin'].unique())
-print(master_district_list['District'].unique())
+print(mal_clin["admin"].unique())
+print(master_district_list["District"].unique())
 
 ######################################################################
 # find which districts are missing in the malaria resource files
 map_districts = (
-    ('Lilongwe', 'Lilongwe City'),
-    ('Blantyre', 'Blantyre City'),
-    ('Zomba', 'Zomba City'),
-    ('Mzimba', 'Mzuzu City'),
-    ('Mzimba', 'Nkhata Bay')
+    ("Lilongwe", "Lilongwe City"),
+    ("Blantyre", "Blantyre City"),
+    ("Zomba", "Zomba City"),
+    ("Mzimba", "Mzuzu City"),
+    ("Mzimba", "Nkhata Bay"),
 )
 ######################################################################
 # format ResourceFile_malaria_ClinInc.csv
@@ -62,11 +70,13 @@ for i in np.arange(0, len(map_districts)):
     mal_clin_formatted = mal_clin_formatted.append(d1)
 
 # check now have same number unique districts as master file
-len(mal_clin_formatted['admin'].unique())
-print(mal_clin_formatted['admin'].unique())
+len(mal_clin_formatted["admin"].unique())
+print(mal_clin_formatted["admin"].unique())
 
 # output edited resource file to resources folder
-mal_clin_formatted.to_csv(Path(resourcefilepath) / 'ResourceFile_malaria_ClinInc_expanded.csv')
+mal_clin_formatted.to_csv(
+    Path(resourcefilepath) / "ResourceFile_malaria_ClinInc_expanded.csv"
+)
 
 ######################################################################
 # format ResourceFile_malaria_InfInc.csv
@@ -83,11 +93,13 @@ for i in np.arange(0, len(map_districts)):
     # add to malaria resource file
     mal_inf_formatted = mal_inf_formatted.append(d1)
 
-len(mal_inf_formatted['admin'].unique())
-print(mal_inf_formatted['admin'].unique())
+len(mal_inf_formatted["admin"].unique())
+print(mal_inf_formatted["admin"].unique())
 
 # output edited resource file to resources folder
-mal_inf_formatted.to_csv(Path(resourcefilepath) / 'ResourceFile_malaria_InfInc_expanded.csv')
+mal_inf_formatted.to_csv(
+    Path(resourcefilepath) / "ResourceFile_malaria_InfInc_expanded.csv"
+)
 
 ######################################################################
 # format ResourceFile_malaria_SevInc.csv
@@ -104,8 +116,10 @@ for i in np.arange(0, len(map_districts)):
     # add to malaria resource file
     mal_sev_formatted = mal_sev_formatted.append(d1)
 
-len(mal_sev_formatted['admin'].unique())
-print(mal_sev_formatted['admin'].unique())
+len(mal_sev_formatted["admin"].unique())
+print(mal_sev_formatted["admin"].unique())
 
 # output edited resource file to resources folder
-mal_sev_formatted.to_csv(Path(resourcefilepath) / 'ResourceFile_malaria_SevInc_expanded.csv')
+mal_sev_formatted.to_csv(
+    Path(resourcefilepath) / "ResourceFile_malaria_SevInc_expanded.csv"
+)

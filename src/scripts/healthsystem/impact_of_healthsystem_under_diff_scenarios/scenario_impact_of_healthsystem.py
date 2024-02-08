@@ -38,19 +38,21 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'effect_of_healthsystem_under_different_modes',
-            'directory': Path('./outputs'),  # <- (specified only for local running)
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.demography.detail': logging.WARNING,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-            }
+            "filename": "effect_of_healthsystem_under_different_modes",
+            "directory": Path("./outputs"),  # <- (specified only for local running)
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.WARNING,
+                "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO,
+            },
         }
 
     def modules(self):
-        return fullmodel(resourcefilepath=self.resources) + [ScenarioSwitcher(resourcefilepath=self.resources)]
+        return fullmodel(resourcefilepath=self.resources) + [
+            ScenarioSwitcher(resourcefilepath=self.resources)
+        ]
 
     def draw_parameters(self, draw_number, rng):
         return list(self._scenarios.values())[draw_number]
@@ -60,51 +62,52 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
 
         return {
             "No Healthcare System": {
-                'HealthSystem': {
-                    'Service_Availability': []
-                },
+                "HealthSystem": {"Service_Availability": []},
             },
-
-            "With Hard Constraints":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {
-                     'HealthSystem': {
-                        'mode_appt_constraints': 2,
+            "With Hard Constraints": mix_scenarios(
+                get_parameters_for_status_quo(),
+                {
+                    "HealthSystem": {
+                        "mode_appt_constraints": 2,
                         "Policy_Name_from2023": "Naive",
-                        'tclose_overwrite': 1,
-                        'tclose_days_offset_overwrite': 1,
-                        }
-                    },
-                ),
-
-            "Status Quo":
-                mix_scenarios(
-                    get_parameters_for_status_quo()
-                ),
-
-            "Perfect Healthcare Seeking":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {'ScenarioSwitcher': {'max_healthsystem_function': False, 'max_healthcare_seeking': True}},
-                ),
-
-            "+ Perfect Clinical Practice":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {'ScenarioSwitcher': {'max_healthsystem_function': True, 'max_healthcare_seeking': True}},
-                ),
-
-            "+ Perfect Consumables Availability":
-                mix_scenarios(
-                    get_parameters_for_status_quo(),
-                    {'ScenarioSwitcher': {'max_healthsystem_function': False, 'max_healthcare_seeking': True}},
-                    {'HealthSystem': {'cons_availability': 'all'}}
-                ),
+                        "tclose_overwrite": 1,
+                        "tclose_days_offset_overwrite": 1,
+                    }
+                },
+            ),
+            "Status Quo": mix_scenarios(get_parameters_for_status_quo()),
+            "Perfect Healthcare Seeking": mix_scenarios(
+                get_parameters_for_status_quo(),
+                {
+                    "ScenarioSwitcher": {
+                        "max_healthsystem_function": False,
+                        "max_healthcare_seeking": True,
+                    }
+                },
+            ),
+            "+ Perfect Clinical Practice": mix_scenarios(
+                get_parameters_for_status_quo(),
+                {
+                    "ScenarioSwitcher": {
+                        "max_healthsystem_function": True,
+                        "max_healthcare_seeking": True,
+                    }
+                },
+            ),
+            "+ Perfect Consumables Availability": mix_scenarios(
+                get_parameters_for_status_quo(),
+                {
+                    "ScenarioSwitcher": {
+                        "max_healthsystem_function": False,
+                        "max_healthcare_seeking": True,
+                    }
+                },
+                {"HealthSystem": {"cons_availability": "all"}},
+            ),
         }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])

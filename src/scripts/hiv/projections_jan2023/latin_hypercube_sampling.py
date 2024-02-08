@@ -1,4 +1,3 @@
-
 # need scipy version 1.7 so have to update package (in requirements v1.6 used)
 from pathlib import Path
 
@@ -18,6 +17,8 @@ sampled_params = pd.DataFrame(sc.qmc.scale(sample, l_bounds, u_bounds))
 # write to excel
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
 
-with pd.ExcelWriter(outputpath / ("LHC_Samples_Dec2022" + ".xlsx"), engine='openpyxl') as writer:
-    sampled_params.to_excel(writer, sheet_name='Sheet1', index=False)
+with pd.ExcelWriter(
+    outputpath / ("LHC_Samples_Dec2022" + ".xlsx"), engine="openpyxl"
+) as writer:
+    sampled_params.to_excel(writer, sheet_name="Sheet1", index=False)
     writer.save()

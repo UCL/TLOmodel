@@ -23,6 +23,7 @@ tlo scenario-run
 ```
 
 """
+
 from pathlib import Path
 from typing import Dict, List
 
@@ -45,15 +46,15 @@ class EffectOfEachTreatment(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'effect_of_each_treatment',
-            'directory': Path('./outputs'),  # <- (specified only for local running)
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.demography.detail': logging.WARNING,
-                'tlo.methods.healthburden': logging.INFO,
-                'tlo.methods.healthsystem.summary': logging.INFO,
-            }
+            "filename": "effect_of_each_treatment",
+            "directory": Path("./outputs"),  # <- (specified only for local running)
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.demography.detail": logging.WARNING,
+                "tlo.methods.healthburden": logging.INFO,
+                "tlo.methods.healthsystem.summary": logging.INFO,
+            },
         }
 
     def modules(self):
@@ -64,23 +65,22 @@ class EffectOfEachTreatment(BaseScenario):
                     "mode_appt_constraints": 1,
                     "use_funded_or_actual_staffing": "actual",
                 },
-                "SymptomManager": {
-                    "spurious_symptoms": True
-                },
-            }
+                "SymptomManager": {"spurious_symptoms": True},
+            },
         )
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'HealthSystem': {
-                'Service_Availability': list(self._scenarios.values())[draw_number],
-                'cons_availability': 'default',
-                },
+            "HealthSystem": {
+                "Service_Availability": list(self._scenarios.values())[draw_number],
+                "cons_availability": "default",
+            },
         }
 
     def _get_scenarios(self) -> Dict[str, List[str]]:
         """Return the Dict with values for the parameter `Service_Availability` keyed by a name for the scenario.
-        The sequences of scenarios systematically omits one of the TREATMENT_ID's that is defined in the model."""
+        The sequences of scenarios systematically omits one of the TREATMENT_ID's that is defined in the model.
+        """
 
         # Generate list of TREATMENT_IDs and filter to the resolution needed
         treatments = get_filtered_treatment_ids(depth=1)
@@ -89,13 +89,16 @@ class EffectOfEachTreatment(BaseScenario):
         # treatment is omitted
         service_availability = dict({"Everything": ["*"], "Nothing": []})
         service_availability.update(
-            {f"No {t.replace('_*', '*')}": [x for x in treatments if x != t] for t in treatments}
+            {
+                f"No {t.replace('_*', '*')}": [x for x in treatments if x != t]
+                for t in treatments
+            }
         )
 
         return service_availability
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])

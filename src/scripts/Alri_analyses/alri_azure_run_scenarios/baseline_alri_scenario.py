@@ -59,13 +59,13 @@ class TestScenario(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'baseline_scenario_alri_50k_pop_1drawx10runs',
-            'directory': './outputs',
+            "filename": "baseline_scenario_alri_50k_pop_1drawx10runs",
+            "directory": "./outputs",
             "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
                 "tlo.methods.alri": logging.INFO,
-            }
+            },
         }
 
     def modules(self):
@@ -74,36 +74,37 @@ class TestScenario(BaseScenario):
             simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
             enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
             healthburden.HealthBurden(resourcefilepath=self.resources),
-            healthsystem.HealthSystem(resourcefilepath=self.resources,
-                                      service_availability=["*"],  # all treatment allowed
-                                      mode_appt_constraints=0,
-                                      # mode of constraints to do with officer numbers and time
-                                      cons_availability="all",
-                                      # mode for consumable constraints (if ignored, all consumables available)
-                                      ignore_priority=True,
-                                      # do not use the priority information in HSI event to schedule
-                                      capabilities_coefficient=1.0,
-                                      # multiplier for the capabilities of health officers
-                                      disable=True,
-                                      # disables the healthsystem (no constraints and no logging) and every HSI runs
-                                      disable_and_reject_all=False,  # disable healthsystem and no HSI runs
-                                      ),
+            healthsystem.HealthSystem(
+                resourcefilepath=self.resources,
+                service_availability=["*"],  # all treatment allowed
+                mode_appt_constraints=0,
+                # mode of constraints to do with officer numbers and time
+                cons_availability="all",
+                # mode for consumable constraints (if ignored, all consumables available)
+                ignore_priority=True,
+                # do not use the priority information in HSI event to schedule
+                capabilities_coefficient=1.0,
+                # multiplier for the capabilities of health officers
+                disable=True,
+                # disables the healthsystem (no constraints and no logging) and every HSI runs
+                disable_and_reject_all=False,  # disable healthsystem and no HSI runs
+            ),
             symptommanager.SymptomManager(resourcefilepath=self.resources),
-            healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
+            healthseekingbehaviour.HealthSeekingBehaviour(
+                resourcefilepath=self.resources
+            ),
             malaria.Malaria(resourcefilepath=self.resources),
             alri.Alri(resourcefilepath=self.resources),
             epi.Epi(resourcefilepath=self.resources),
             wasting.Wasting(resourcefilepath=self.resources),
-            alri.AlriPropertiesOfOtherModules()
+            alri.AlriPropertiesOfOtherModules(),
         ]
 
     def draw_parameters(self, draw_number, rng):
-        return {
-
-        }
+        return {}
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])

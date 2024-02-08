@@ -42,10 +42,10 @@ def _in_shell_with_ansi_support() -> bool:
         (
             hasattr(sys.stdout, "isatty")
             and sys.stdout.isatty()
-            and platform.system() != 'Windows'
+            and platform.system() != "Windows"
         )
-        or os.environ.get('TERM') == "ANSI"
-        or os.environ.get('PYCHARM_HOSTED') == "1"
+        or os.environ.get("TERM") == "ANSI"
+        or os.environ.get("PYCHARM_HOSTED") == "1"
     )
 
 
@@ -59,7 +59,8 @@ def _create_display(obj):
         return ipython_display(obj, display_id=True)
     else:
         display = (
-            AnsiStreamDisplay() if _in_shell_with_ansi_support()
+            AnsiStreamDisplay()
+            if _in_shell_with_ansi_support()
             else BasicStreamDisplay()
         )
         display.update(obj)
@@ -101,7 +102,7 @@ class ProgressBar:
         description: Optional[str] = None,
         n_col: int = 10,
         unit: str = "step",
-        min_refresh_time: float = 1.,
+        min_refresh_time: float = 1.0,
     ):
         """
         :param n_step: Total number of steps in task.
@@ -135,7 +136,7 @@ class ProgressBar:
 
     @property
     def description(self):
-        """"Description of task being tracked."""
+        """ "Description of task being tracked."""
         return self._description
 
     @property
@@ -237,9 +238,7 @@ class ProgressBar:
     @property
     def stats(self):
         """Comma-delimited string list of statistic key=value pairs."""
-        return ", ".join(
-            f"{k}={_format_stat(v)}" for k, v in self._stats_dict.items()
-        )
+        return ", ".join(f"{k}={_format_stat(v)}" for k, v in self._stats_dict.items())
 
     @property
     def prefix(self):
@@ -267,10 +266,7 @@ class ProgressBar:
         self._stats_dict = {}
 
     def update(
-        self,
-        step: int,
-        stats_dict: Optional[Dict] = None,
-        refresh: bool = True
+        self, step: int, stats_dict: Optional[Dict] = None, refresh: bool = True
     ):
         """Update progress bar state.
 

@@ -45,16 +45,16 @@ popsize = 10000
 sim = Simulation(start_date=start_date, seed=0)
 
 # Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                       disable=True),
-             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-             prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath)
-             )
+sim.register(
+    demography.Demography(resourcefilepath=resourcefilepath),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+    oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
+    prostate_cancer.ProstateCancer(resourcefilepath=resourcefilepath),
+)
 
 # Make there be a very high initial prevalence in the first stage and no on-going new incidence and no treatment to
 # begin with:
@@ -70,9 +70,7 @@ sim.register(demography.Demography(resourcefilepath=resourcefilepath),
 # sim.modules['ProstateCancer'].parameters["init_prob_palliative_care"] = 0.0
 
 # Establish the logger and look at only demography
-custom_levels = {"*": logging.WARNING,  # <--
-                 "tlo.methods.demography": logging.INFO
-                 }
+custom_levels = {"*": logging.WARNING, "tlo.methods.demography": logging.INFO}  # <--
 logfile = sim.configure_logging(filename="LogFile", custom_levels=custom_levels)
 
 
@@ -90,24 +88,32 @@ df = sim.population.props
 cohort = df.iloc[1:popsize].index
 
 # get the person_ids of the original cohort who started treatment
-treated = pd.DataFrame(df.loc[df.index.isin(cohort) & ~pd.isnull(df.pc_date_treatment), 'pc_date_treatment'].copy())
+treated = pd.DataFrame(
+    df.loc[
+        df.index.isin(cohort) & ~pd.isnull(df.pc_date_treatment), "pc_date_treatment"
+    ].copy()
+)
 
 # for each person that started treatment, get their date of starting treatment
-deaths = pd.DataFrame(output['tlo.methods.demography']['death']).copy()
+deaths = pd.DataFrame(output["tlo.methods.demography"]["death"]).copy()
 
 # find the date and cause of death of those persons:
-deaths['person_id'] = deaths['person_id'].astype(int)
-deaths = deaths.merge(treated, left_on='person_id', right_index=True, how='outer')
+deaths["person_id"] = deaths["person_id"].astype(int)
+deaths = deaths.merge(treated, left_on="person_id", right_index=True, how="outer")
 
-cohort_treated = deaths.dropna(subset=['pc_date_treatment']).copy()
-cohort_treated['date'] = pd.to_datetime(cohort_treated['date'])
-cohort_treated['pc_date_treatment'] = pd.to_datetime(cohort_treated['pc_date_treatment'])
-cohort_treated['days_treatment_to_death'] = (cohort_treated['date'] - cohort_treated['pc_date_treatment']).dt.days
+cohort_treated = deaths.dropna(subset=["pc_date_treatment"]).copy()
+cohort_treated["date"] = pd.to_datetime(cohort_treated["date"])
+cohort_treated["pc_date_treatment"] = pd.to_datetime(
+    cohort_treated["pc_date_treatment"]
+)
+cohort_treated["days_treatment_to_death"] = (
+    cohort_treated["date"] - cohort_treated["pc_date_treatment"]
+).dt.days
 
 # calc % of those that were alive 5 years after starting treatment (not died of any cause):
 1 - (
-    len(cohort_treated.loc[cohort_treated['days_treatment_to_death'] < (5*365.25)]) /
-    len(cohort_treated)
+    len(cohort_treated.loc[cohort_treated["days_treatment_to_death"] < (5 * 365.25)])
+    / len(cohort_treated)
 )  # 0.77
 
 # calc % of those that had not died of prostate cancer 5 years after starting treatment (could have died of another
@@ -115,7 +121,9 @@ cohort_treated['days_treatment_to_death'] = (cohort_treated['date'] - cohort_tre
 1 - (
     len(
         cohort_treated.loc[
-            (cohort_treated['cause'] == 'ProstateCancer') & (cohort_treated['days_treatment_to_death'] < (5*365.25))
-            ]
-    ) / len(cohort_treated)
-)   # 0.87
+            (cohort_treated["cause"] == "ProstateCancer")
+            & (cohort_treated["days_treatment_to_death"] < (5 * 365.25))
+        ]
+    )
+    / len(cohort_treated)
+)  # 0.87

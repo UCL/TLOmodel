@@ -1,6 +1,7 @@
 """
 General utility functions for TLO analysis
 """
+
 import gzip
 import json
 import os
@@ -33,10 +34,10 @@ def _parse_log_file_inner_loop(filepath, level):
     with open(filepath) as log_file:
         for line in log_file:
             # only parse json entities
-            if line.startswith('{'):
+            if line.startswith("{"):
                 log_data.parse_log_line(line, level)
             else:
-                print('FAILURE: found old-style log:')
+                print("FAILURE: found old-style log:")
                 print(line)
                 raise RuntimeError
     # convert dictionaries to dataframes
@@ -52,38 +53,42 @@ def parse_log_file(log_filepath, level: int = logging.INFO):
     :param level: parse everything from the given level
     :return: a class containing paths to split logfiles
     """
-    print(f'Processing log file {log_filepath}')
+    print(f"Processing log file {log_filepath}")
     uuid_to_module_name: Dict[str, str] = dict()  # uuid to module name
     module_name_to_filehandle: Dict[str, TextIO] = dict()  # module name to file handle
 
     log_directory = Path(log_filepath).parent
-    print(f'Writing module-specific log files to {log_directory}')
+    print(f"Writing module-specific log files to {log_directory}")
 
     # iterate over each line in the logfile
     with open(log_filepath) as log_file:
         for line in log_file:
             # only parse lines that are json log lines (old-style logging is not supported)
-            if line.startswith('{'):
+            if line.startswith("{"):
                 log_data_json = json.loads(line)
-                uuid = log_data_json['uuid']
+                uuid = log_data_json["uuid"]
                 # if this is a header line (only header lines have a `type` key)
-                if 'type' in log_data_json:
+                if "type" in log_data_json:
                     module_name = log_data_json["module"]
                     uuid_to_module_name[uuid] = module_name
                     # we only need to create the file if we don't already have one for this module
                     if module_name not in module_name_to_filehandle:
-                        module_name_to_filehandle[module_name] = open(log_directory / f"{module_name}.log", mode="w")
+                        module_name_to_filehandle[module_name] = open(
+                            log_directory / f"{module_name}.log", mode="w"
+                        )
                 # copy line from log file to module-specific log file (both headers and non-header lines)
                 module_name_to_filehandle[uuid_to_module_name[uuid]].write(line)
 
-    print('Finished writing module-specific log files.')
+    print("Finished writing module-specific log files.")
 
     # close all module-specific files
     for file_handle in module_name_to_filehandle.values():
         file_handle.close()
 
     # return an object that accepts as an argument a dictionary containing paths to split logfiles
-    return LogsDict({name: handle.name for name, handle in module_name_to_filehandle.items()}, level)
+    return LogsDict(
+        {name: handle.name for name, handle in module_name_to_filehandle.items()}, level
+    )
 
 
 def write_log_to_excel(filename, log_dataframes):
@@ -92,19 +97,30 @@ def write_log_to_excel(filename, log_dataframes):
     sheet_count = 0
     for module, dataframes in log_dataframes.items():
         for key, dataframe in dataframes.items():
-            if key != '_metadata':
+            if key != "_metadata":
                 sheet_count += 1
-                metadata.append([module, key, sheet_count, dataframes['_metadata'][module][key]['description']])
+                metadata.append(
+                    [
+                        module,
+                        key,
+                        sheet_count,
+                        dataframes["_metadata"][module][key]["description"],
+                    ]
+                )
 
-    with pd.ExcelWriter(filename) as writer:  # https://github.com/PyCQA/pylint/issues/3060 pylint: disable=E0110
-        index = pd.DataFrame(data=metadata, columns=['module', 'key', 'sheet', 'description'])
-        index.to_excel(writer, sheet_name='Index')
+    with pd.ExcelWriter(
+        filename
+    ) as writer:  # https://github.com/PyCQA/pylint/issues/3060 pylint: disable=E0110
+        index = pd.DataFrame(
+            data=metadata, columns=["module", "key", "sheet", "description"]
+        )
+        index.to_excel(writer, sheet_name="Index")
         sheet_count = 0
         for module, dataframes in log_dataframes.items():
             for key, df in dataframes.items():
-                if key != '_metadata':
+                if key != "_metadata":
                     sheet_count += 1
-                    df.to_excel(writer, sheet_name=f'Sheet {sheet_count}')
+                    df.to_excel(writer, sheet_name=f"Sheet {sheet_count}")
 
 
 def make_calendar_period_lookup():
@@ -116,7 +132,7 @@ def make_calendar_period_lookup():
     ranges, lookup = util.create_age_range_lookup(1950, 2100, 5)
 
     # Removes the '0-1950' category
-    ranges.remove('0-1950')
+    ranges.remove("0-1950")
 
     for year in range(1950):
         lookup.pop(year)
@@ -157,8 +173,12 @@ def to_age_group(_ages: pd.Series):
 
 def get_scenario_outputs(scenario_filename: str, outputs_dir: Path) -> list:
     """Returns paths of folders associated with a batch_file, in chronological order."""
-    stub = scenario_filename.rstrip('.py')
-    folders = [Path(f.path) for f in os.scandir(outputs_dir) if f.is_dir() and f.name.startswith(stub)]
+    stub = scenario_filename.rstrip(".py")
+    folders = [
+        Path(f.path)
+        for f in os.scandir(outputs_dir)
+        if f.is_dir() and f.name.startswith(stub)
+    ]
     folders.sort()
     return folders
 
@@ -171,10 +191,10 @@ def get_scenario_info(scenario_output_dir: Path) -> dict:
     info = dict()
     draw_folders = [f for f in os.scandir(scenario_output_dir) if f.is_dir()]
 
-    info['number_of_draws'] = len(draw_folders)
+    info["number_of_draws"] = len(draw_folders)
 
     run_folders = [f for f in os.scandir(draw_folders[0]) if f.is_dir()]
-    info['runs_per_draw'] = len(run_folders)
+    info["runs_per_draw"] = len(run_folders)
 
     return info
 
@@ -183,7 +203,7 @@ def load_pickled_dataframes(results_folder: Path, draw=0, run=0, name=None) -> d
     """Utility function to create a dict contaning all the logs from the specified run within a batch set"""
     folder = results_folder / str(draw) / str(run)
     p: os.DirEntry
-    pickles = [p for p in os.scandir(folder) if p.name.endswith('.pickle')]
+    pickles = [p for p in os.scandir(folder) if p.name.endswith(".pickle")]
     if name is not None:
         pickles = [p for p in pickles if p.name in f"{name}.pickle"]
 
@@ -214,14 +234,14 @@ def extract_params(results_folder: Path) -> Optional[pd.DataFrame]:
             p = load_pickled_dataframes(results_folder, d.name, 0, name="tlo.scenario")
             p = p["tlo.scenario"]["override_parameter"]
 
-            p['module_param'] = p['module'] + ':' + p['name']
+            p["module_param"] = p["module"] + ":" + p["name"]
             p.index = [int(d.name)] * len(p.index)
 
-            list_of_param_changes.append(p[['module_param', 'new_value']])
+            list_of_param_changes.append(p[["module_param", "new_value"]])
 
         params = pd.concat(list_of_param_changes)
-        params.index.name = 'draw'
-        params = params.rename(columns={'new_value': 'value'})
+        params.index.name = "draw"
+        params = params.rename(columns={"new_value": "value"})
         params = params.sort_index()
         return params
 
@@ -230,14 +250,15 @@ def extract_params(results_folder: Path) -> Optional[pd.DataFrame]:
         return None
 
 
-def extract_results(results_folder: Path,
-                    module: str,
-                    key: str,
-                    column: str = None,
-                    index: str = None,
-                    custom_generate_series=None,
-                    do_scaling: bool = False,
-                    ) -> pd.DataFrame:
+def extract_results(
+    results_folder: Path,
+    module: str,
+    key: str,
+    column: str = None,
+    index: str = None,
+    custom_generate_series=None,
+    do_scaling: bool = False,
+) -> pd.DataFrame:
     """Utility function to unpack results.
 
     Produces a dataframe from extracting information from a log with the column multi-index for the draw/run.
@@ -259,8 +280,9 @@ def extract_results(results_folder: Path,
         if not do_scaling:
             return 1.0
         else:
-            return load_pickled_dataframes(results_folder, _draw, _run, 'tlo.methods.population'
-                                           )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+            return load_pickled_dataframes(
+                results_folder, _draw, _run, "tlo.methods.population"
+            )["tlo.methods.population"]["scaling_factor"]["scaling_factor"].values[0]
 
     if custom_generate_series is None:
         # If there is no `custom_generate_series` provided, it implies that function required selects the specified
@@ -284,15 +306,19 @@ def extract_results(results_folder: Path,
 
     # Collect results from each draw/run
     res = dict()
-    for draw in range(info['number_of_draws']):
-        for run in range(info['runs_per_draw']):
+    for draw in range(info["number_of_draws"]):
+        for run in range(info["runs_per_draw"]):
 
             draw_run = (draw, run)
 
             try:
-                df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+                df: pd.DataFrame = load_pickled_dataframes(
+                    results_folder, draw, run, module
+                )[module][key]
                 output_from_eval: pd.Series = generate_series(df)
-                assert pd.Series == type(output_from_eval), 'Custom command does not generate a pd.Series'
+                assert pd.Series == type(
+                    output_from_eval
+                ), "Custom command does not generate a pd.Series"
                 res[draw_run] = output_from_eval * get_multiplier(draw, run)
 
             except KeyError:
@@ -301,11 +327,16 @@ def extract_results(results_folder: Path,
 
     # Use pd.concat to compile results (skips dict items where the values is None)
     _concat = pd.concat(res, axis=1)
-    _concat.columns.names = ['draw', 'run']  # name the levels of the columns multi-index
+    _concat.columns.names = [
+        "draw",
+        "run",
+    ]  # name the levels of the columns multi-index
     return _concat
 
 
-def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False) -> pd.DataFrame:
+def summarize(
+    results: pd.DataFrame, only_mean: bool = False, collapse_columns: bool = False
+) -> pd.DataFrame:
     """Utility function to compute summary statistics
 
     Finds mean value and 95% interval across the runs for each draw.
@@ -313,28 +344,28 @@ def summarize(results: pd.DataFrame, only_mean: bool = False, collapse_columns: 
 
     summary = pd.concat(
         {
-            'mean': results.groupby(axis=1, by='draw', sort=False).mean(),
-            'lower': results.groupby(axis=1, by='draw', sort=False).quantile(0.025),
-            'upper': results.groupby(axis=1, by='draw', sort=False).quantile(0.975),
+            "mean": results.groupby(axis=1, by="draw", sort=False).mean(),
+            "lower": results.groupby(axis=1, by="draw", sort=False).quantile(0.025),
+            "upper": results.groupby(axis=1, by="draw", sort=False).quantile(0.975),
         },
-        axis=1
+        axis=1,
     )
     summary.columns = summary.columns.swaplevel(1, 0)
-    summary.columns.names = ['draw', 'stat']
+    summary.columns.names = ["draw", "stat"]
     summary = summary.sort_index(axis=1)
 
     if only_mean and (not collapse_columns):
         # Remove other metrics and simplify if 'only_mean' across runs for each draw is required:
         om: pd.DataFrame = summary.loc[:, (slice(None), "mean")]
         om.columns = [c[0] for c in om.columns.to_flat_index()]
-        om.columns.name = 'draw'
+        om.columns.name = "draw"
         return om
 
     elif collapse_columns and (len(summary.columns.levels[0]) == 1):
         # With 'collapse_columns', if number of draws is 1, then collapse columns multi-index:
-        summary_droppedlevel = summary.droplevel('draw', axis=1)
+        summary_droppedlevel = summary.droplevel("draw", axis=1)
         if only_mean:
-            return summary_droppedlevel['mean']
+            return summary_droppedlevel["mean"]
         else:
             return summary_droppedlevel
 
@@ -349,8 +380,10 @@ def get_grid(params: pd.DataFrame, res: pd.Series):
     :param pd.Series res: results of interest with index=draw (can be made using `extract_params()`)
     :returns: grid as dictionary
     """
-    res = pd.concat([params.pivot(columns='module_param', values='value'), res], axis=1)
-    piv = res.pivot_table(index=res.columns[0], columns=res.columns[1], values=res.columns[2])
+    res = pd.concat([params.pivot(columns="module_param", values="value"), res], axis=1)
+    piv = res.pivot_table(
+        index=res.columns[0], columns=res.columns[1], values=res.columns[2]
+    )
 
     grid = dict()
     grid[res.columns[0]], grid[res.columns[1]] = np.meshgrid(piv.index, piv.columns)
@@ -363,18 +396,20 @@ def format_gbd(gbd_df: pd.DataFrame):
     """Format GBD data to give standarize categories for age_group and period"""
 
     # Age-groups:
-    gbd_df['Age_Grp'] = gbd_df['Age_Grp'].astype(make_age_grp_types())
+    gbd_df["Age_Grp"] = gbd_df["Age_Grp"].astype(make_age_grp_types())
 
     # label periods:
     calperiods, calperiodlookup = make_calendar_period_lookup()
-    gbd_df['Period'] = gbd_df['Year'].map(calperiodlookup).astype(make_calendar_period_type())
+    gbd_df["Period"] = (
+        gbd_df["Year"].map(calperiodlookup).astype(make_calendar_period_type())
+    )
 
     return gbd_df
 
 
 def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None):
     """For a run from the Batch system that has not resulted in the creation of the pickles, reconstruct the pickles
-     locally."""
+    locally."""
 
     def turn_log_into_pickles(logfile):
         print(f"Opening {logfile}")
@@ -389,7 +424,7 @@ def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None
         """Uncompress and save a log file and return its path."""
         target = compressed_file.parent / str(compressed_file.name[0:-3])
         with open(target, "wb") as t:
-            with gzip.open(compressed_file, 'rb') as s:
+            with gzip.open(compressed_file, "rb") as s:
                 t.write(s.read())
         return target
 
@@ -399,12 +434,16 @@ def create_pickles_locally(scenario_output_dir, compressed_file_name_prefix=None
         for run_folder in run_folders:
             # Find the original log-file written by the simulation
             if compressed_file_name_prefix is None:
-                logfile = [x for x in os.listdir(run_folder) if x.endswith('.log')][0]
+                logfile = [x for x in os.listdir(run_folder) if x.endswith(".log")][0]
             else:
                 compressed_file_name = [
-                    x for x in os.listdir(run_folder) if x.startswith(compressed_file_name_prefix)
+                    x
+                    for x in os.listdir(run_folder)
+                    if x.startswith(compressed_file_name_prefix)
                 ][0]
-                logfile = uncompress_and_save_logfile(Path(run_folder) / compressed_file_name)
+                logfile = uncompress_and_save_logfile(
+                    Path(run_folder) / compressed_file_name
+                )
 
             turn_log_into_pickles(logfile)
 
@@ -420,55 +459,81 @@ def compare_number_of_deaths(logfile: Path, resourcefilepath: Path):
 
     # 1) Get model outputs:
     # - get scaling factor:
-    if 'scaling_factor' in output['tlo.methods.population']:
-        sf = output['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+    if "scaling_factor" in output["tlo.methods.population"]:
+        sf = output["tlo.methods.population"]["scaling_factor"][
+            "scaling_factor"
+        ].values[0]
     else:
         sf = 1.0
 
     # - extract number of death by period/sex/age-group
-    model = output['tlo.methods.demography']['death'].assign(
-        year=lambda x: x['date'].dt.year
-    ).groupby(
-        ['sex', 'year', 'age', 'label']
-    )['person_id'].count().mul(sf)
+    model = (
+        output["tlo.methods.demography"]["death"]
+        .assign(year=lambda x: x["date"].dt.year)
+        .groupby(["sex", "year", "age", "label"])["person_id"]
+        .count()
+        .mul(sf)
+    )
 
     # - format categories:
     agegrps, agegrplookup = make_age_grp_lookup()
     calperiods, calperiodlookup = make_calendar_period_lookup()
     model = model.reset_index()
-    model['age_grp'] = model['age'].map(agegrplookup).astype(make_age_grp_types())
-    model['period'] = model['year'].map(calperiodlookup).astype(make_calendar_period_type())
-    model = model.drop(columns=['age', 'year'])
+    model["age_grp"] = model["age"].map(agegrplookup).astype(make_age_grp_types())
+    model["period"] = (
+        model["year"].map(calperiodlookup).astype(make_calendar_period_type())
+    )
+    model = model.drop(columns=["age", "year"])
 
     # - sum over period and divide by five to give yearly averages
-    model = model.groupby(['period', 'sex', 'age_grp', 'label']).sum().div(5.0).rename(
-        columns={'person_id': 'model'}).replace({0: np.nan})
+    model = (
+        model.groupby(["period", "sex", "age_grp", "label"])
+        .sum()
+        .div(5.0)
+        .rename(columns={"person_id": "model"})
+        .replace({0: np.nan})
+    )
 
     # 2) Load comparator GBD datasets
     # - Load data, format and limit to deaths only:
-    gbd_dat = format_gbd(pd.read_csv(resourcefilepath / 'gbd' / 'ResourceFile_Deaths_And_DALYS_GBD2019.csv'))
-    gbd_dat = gbd_dat.loc[gbd_dat['measure_name'] == 'Deaths']
-    gbd_dat = gbd_dat.rename(columns={
-        'Sex': 'sex',
-        'Age_Grp': 'age_grp',
-        'Period': 'period',
-        'GBD_Est': 'mean',
-        'GBD_Lower': 'lower',
-        'GBD_Upper': 'upper'})
+    gbd_dat = format_gbd(
+        pd.read_csv(
+            resourcefilepath / "gbd" / "ResourceFile_Deaths_And_DALYS_GBD2019.csv"
+        )
+    )
+    gbd_dat = gbd_dat.loc[gbd_dat["measure_name"] == "Deaths"]
+    gbd_dat = gbd_dat.rename(
+        columns={
+            "Sex": "sex",
+            "Age_Grp": "age_grp",
+            "Period": "period",
+            "GBD_Est": "mean",
+            "GBD_Lower": "lower",
+            "GBD_Upper": "upper",
+        }
+    )
 
     # - Label GBD causes of death by 'label' defined in the simulation
     mapper_from_gbd_causes = pd.Series(
-        output['tlo.methods.demography']['mapper_from_gbd_cause_to_common_label'].drop(columns={'date'}).loc[0]
+        output["tlo.methods.demography"]["mapper_from_gbd_cause_to_common_label"]
+        .drop(columns={"date"})
+        .loc[0]
     ).to_dict()
-    gbd_dat['label'] = gbd_dat['cause_name'].map(mapper_from_gbd_causes)
-    assert not gbd_dat['label'].isna().any()
+    gbd_dat["label"] = gbd_dat["cause_name"].map(mapper_from_gbd_causes)
+    assert not gbd_dat["label"].isna().any()
 
     # - Create comparable data structure:
-    gbd = gbd_dat.groupby(['period', 'sex', 'age_grp', 'label'])[['mean', 'lower', 'upper']].sum().div(5.0)
-    gbd = gbd.add_prefix('GBD_')
+    gbd = (
+        gbd_dat.groupby(["period", "sex", "age_grp", "label"])[
+            ["mean", "lower", "upper"]
+        ]
+        .sum()
+        .div(5.0)
+    )
+    gbd = gbd.add_prefix("GBD_")
 
     # 3) Return summary
-    return gbd.merge(model, on=['period', 'sex', 'age_grp', 'label'], how='left')
+    return gbd.merge(model, on=["period", "sex", "age_grp", "label"], how="left")
 
 
 def flatten_multi_index_series_into_dict_for_logging(ser: pd.Series) -> dict:
@@ -476,18 +541,24 @@ def flatten_multi_index_series_into_dict_for_logging(ser: pd.Series) -> dict:
     It does this by converting the multi-index into keys of type `str` in a format that later be used to reconstruct
     the multi-index (using `unflatten_flattened_multi_index_in_logging`)."""
 
-    assert not ser.index.has_duplicates, "There should not be any duplicates in the multi-index. These will be lost" \
-                                         "in the conversion to a dict."
+    assert not ser.index.has_duplicates, (
+        "There should not be any duplicates in the multi-index. These will be lost"
+        "in the conversion to a dict."
+    )
 
     names_of_multi_index = ser.index.names
     _df = ser.reset_index()
     flat_index = list()
     for _, row in _df.iterrows():
-        flat_index.append('|'.join([f"{col}={row[col]}" for col in names_of_multi_index]))
+        flat_index.append(
+            "|".join([f"{col}={row[col]}" for col in names_of_multi_index])
+        )
     return dict(zip(flat_index, ser.values))
 
 
-def unflatten_flattened_multi_index_in_logging(_x: [pd.DataFrame, pd.Index]) -> [pd.DataFrame, pd.Index]:
+def unflatten_flattened_multi_index_in_logging(
+    _x: [pd.DataFrame, pd.Index]
+) -> [pd.DataFrame, pd.Index]:
     """Helper function that recreate the multi-index of logged results from a pd.DataFrame that is generated by
     `parse_log`.
 
@@ -502,9 +573,11 @@ def unflatten_flattened_multi_index_in_logging(_x: [pd.DataFrame, pd.Index]) -> 
     def gen_mutli_index(_idx: pd.Index):
         """Returns the multi-index represented by the flattened index."""
         index_value_list = list()
-        for col in _idx.str.split('|'):
-            index_value_list.append(tuple(component.split('=')[1] for component in col))
-        index_name_list = tuple(component.split('=')[0] for component in _idx[0].split('|'))
+        for col in _idx.str.split("|"):
+            index_value_list.append(tuple(component.split("=")[1] for component in col))
+        index_name_list = tuple(
+            component.split("=")[0] for component in _idx[0].split("|")
+        )
         return pd.MultiIndex.from_tuples(index_value_list, names=index_name_list)
 
     if isinstance(_x, pd.DataFrame):
@@ -518,22 +591,22 @@ def unflatten_flattened_multi_index_in_logging(_x: [pd.DataFrame, pd.Index]) -> 
 class LogsDict(Mapping):
     """Parses module-specific log files and returns Pandas dataframes.
 
-        The dictionary returned has the format::
+    The dictionary returned has the format::
 
-            {
-                <logger 1 name>: {
-                                   <log key 1>: <pandas dataframe>,
-                                   <log key 2>: <pandas dataframe>,
-                                   <log key 3>: <pandas dataframe>
-                                 },
+        {
+            <logger 1 name>: {
+                               <log key 1>: <pandas dataframe>,
+                               <log key 2>: <pandas dataframe>,
+                               <log key 3>: <pandas dataframe>
+                             },
 
-                <logger 2 name>: {
-                                   <log key 4>: <pandas dataframe>,
-                                   <log key 5>: <pandas dataframe>,
-                                   <log key 6>: <pandas dataframe>
-                                 },
-                ...
-            }
+            <logger 2 name>: {
+                               <log key 4>: <pandas dataframe>,
+                               <log key 5>: <pandas dataframe>,
+                               <log key 6>: <pandas dataframe>
+                             },
+            ...
+        }
     """
 
     def __init__(self, file_names_and_paths, level):
@@ -552,12 +625,16 @@ class LogsDict(Mapping):
         if key in self._logfile_names_and_paths:
             # check if key is found in cache
             if key not in self._results_cache:
-                result_df = _parse_log_file_inner_loop(self._logfile_names_and_paths[key], self._level)
+                result_df = _parse_log_file_inner_loop(
+                    self._logfile_names_and_paths[key], self._level
+                )
                 # get metadata for the selected log file and merge it all with the selected key
-                result_df[key]['_metadata'] = result_df['_metadata']
+                result_df[key]["_metadata"] = result_df["_metadata"]
                 if not cache:  # check if caching is disallowed
                     return result_df[key]
-                self._results_cache[key] = result_df[key]    # add key specific parsed results to cache
+                self._results_cache[key] = result_df[
+                    key
+                ]  # add key specific parsed results to cache
             return self._results_cache[key]  # return the added results
 
         else:
@@ -605,21 +682,32 @@ def get_filtered_treatment_ids(depth: Optional[int] = None) -> List[str]:
     def filter_treatments(_treatments: Iterable[str], depth: int = 1) -> List[str]:
         """Reduce an iterable of `TREATMENT_IDs` by ignoring difference beyond a certain depth of specification and
         adding '_*' to the end to serve as a wild-card.
-        N.B., The TREATMENT_ID is defined with each increasing level of specification separated by a `_`. """
-        return sorted(list(set(
-            [
-                "".join(f"{x}_" for i, x in enumerate(t.split('_')) if i < depth).rstrip('_') + '_*'
-                for t in set(_treatments)
-            ]
-        )))
+        N.B., The TREATMENT_ID is defined with each increasing level of specification separated by a `_`.
+        """
+        return sorted(
+            list(
+                set(
+                    [
+                        "".join(
+                            f"{x}_" for i, x in enumerate(t.split("_")) if i < depth
+                        ).rstrip("_")
+                        + "_*"
+                        for t in set(_treatments)
+                    ]
+                )
+            )
+        )
 
     # Get pd.DataFrame with information of all the defined HSI
     # Import within function to avoid circular import error
     from tlo.analysis.hsi_events import get_all_defined_hsi_events_as_dataframe
+
     hsi_event_details = get_all_defined_hsi_events_as_dataframe()
 
     # Return list of TREATMENT_IDs and filter to the resolution needed
-    return filter_treatments(hsi_event_details['treatment_id'], depth=depth if depth is not None else np.inf)
+    return filter_treatments(
+        hsi_event_details["treatment_id"], depth=depth if depth is not None else np.inf
+    )
 
 
 def colors_in_matplotlib() -> tuple:
@@ -633,75 +721,79 @@ def colors_in_matplotlib() -> tuple:
     )
 
 
-APPT_TYPE_TO_COARSE_APPT_TYPE_MAP = MappingProxyType({
-    'Under5OPD': 'Outpatient',
-    'Over5OPD': 'Outpatient',
-    'ConWithDCSA': 'Con w/ DCSA',
-    'AccidentsandEmerg': 'A & E',
-    'InpatientDays': 'Inpatient',
-    'IPAdmission': 'Inpatient',
-    'AntenatalFirst': 'RMNCH',
-    'ANCSubsequent': 'RMNCH',
-    'NormalDelivery': 'RMNCH',
-    'CompDelivery': 'RMNCH',
-    'Csection': 'RMNCH',
-    'EPI': 'RMNCH',
-    'FamPlan': 'RMNCH',
-    'U5Malnutr': 'RMNCH',
-    'VCTNegative': 'HIV/AIDS',
-    'VCTPositive': 'HIV/AIDS',
-    'MaleCirc': 'HIV/AIDS',
-    'NewAdult': 'HIV/AIDS',
-    'EstMedCom': 'HIV/AIDS',
-    'EstNonCom': 'HIV/AIDS',
-    'PMTCT': 'HIV/AIDS',
-    'Peds': 'HIV/AIDS',
-    'TBNew': 'Tb',
-    'TBFollowUp': 'Tb',
-    'DentAccidEmerg': 'Dental',
-    'DentSurg': 'Dental',
-    'DentalU5': 'Dental',
-    'DentalO5': 'Dental',
-    'MentOPD': 'Mental Health',
-    'MentClinic': 'Mental Health',
-    'MajorSurg': 'Surgery / Radiotherapy',
-    'MinorSurg': 'Surgery / Radiotherapy',
-    'Radiotherapy': 'Surgery / Radiotherapy',
-    'STI': 'STI',
-    'LabHaem': 'Lab / Diagnostics',
-    'LabPOC': 'Lab / Diagnostics',
-    'LabParasit': 'Lab / Diagnostics',
-    'LabBiochem': 'Lab / Diagnostics',
-    'LabMicrobio': 'Lab / Diagnostics',
-    'LabMolec': 'Lab / Diagnostics',
-    'LabTBMicro': 'Lab / Diagnostics',
-    'LabSero': 'Lab / Diagnostics',
-    'LabCyto': 'Lab / Diagnostics',
-    'LabTrans': 'Lab / Diagnostics',
-    'Ultrasound': 'Lab / Diagnostics',
-    'Mammography': 'Lab / Diagnostics',
-    'MRI': 'Lab / Diagnostics',
-    'Tomography': 'Lab / Diagnostics',
-    'DiagRadio': 'Lab / Diagnostics',
-    'PharmDispensing': 'Pharm Dispensing'
-})
+APPT_TYPE_TO_COARSE_APPT_TYPE_MAP = MappingProxyType(
+    {
+        "Under5OPD": "Outpatient",
+        "Over5OPD": "Outpatient",
+        "ConWithDCSA": "Con w/ DCSA",
+        "AccidentsandEmerg": "A & E",
+        "InpatientDays": "Inpatient",
+        "IPAdmission": "Inpatient",
+        "AntenatalFirst": "RMNCH",
+        "ANCSubsequent": "RMNCH",
+        "NormalDelivery": "RMNCH",
+        "CompDelivery": "RMNCH",
+        "Csection": "RMNCH",
+        "EPI": "RMNCH",
+        "FamPlan": "RMNCH",
+        "U5Malnutr": "RMNCH",
+        "VCTNegative": "HIV/AIDS",
+        "VCTPositive": "HIV/AIDS",
+        "MaleCirc": "HIV/AIDS",
+        "NewAdult": "HIV/AIDS",
+        "EstMedCom": "HIV/AIDS",
+        "EstNonCom": "HIV/AIDS",
+        "PMTCT": "HIV/AIDS",
+        "Peds": "HIV/AIDS",
+        "TBNew": "Tb",
+        "TBFollowUp": "Tb",
+        "DentAccidEmerg": "Dental",
+        "DentSurg": "Dental",
+        "DentalU5": "Dental",
+        "DentalO5": "Dental",
+        "MentOPD": "Mental Health",
+        "MentClinic": "Mental Health",
+        "MajorSurg": "Surgery / Radiotherapy",
+        "MinorSurg": "Surgery / Radiotherapy",
+        "Radiotherapy": "Surgery / Radiotherapy",
+        "STI": "STI",
+        "LabHaem": "Lab / Diagnostics",
+        "LabPOC": "Lab / Diagnostics",
+        "LabParasit": "Lab / Diagnostics",
+        "LabBiochem": "Lab / Diagnostics",
+        "LabMicrobio": "Lab / Diagnostics",
+        "LabMolec": "Lab / Diagnostics",
+        "LabTBMicro": "Lab / Diagnostics",
+        "LabSero": "Lab / Diagnostics",
+        "LabCyto": "Lab / Diagnostics",
+        "LabTrans": "Lab / Diagnostics",
+        "Ultrasound": "Lab / Diagnostics",
+        "Mammography": "Lab / Diagnostics",
+        "MRI": "Lab / Diagnostics",
+        "Tomography": "Lab / Diagnostics",
+        "DiagRadio": "Lab / Diagnostics",
+        "PharmDispensing": "Pharm Dispensing",
+    }
+)
 
 
-COARSE_APPT_TYPE_TO_COLOR_MAP = MappingProxyType({
-    'Outpatient': 'magenta',
-    'Con w/ DCSA': 'crimson',
-    'A & E': 'forestgreen',
-    'Inpatient': 'mediumorchid',
-    'RMNCH': 'gold',
-    'HIV/AIDS': 'darkturquoise',
-    'Tb': 'y',
-    'Dental': 'rosybrown',
-    'Mental Health': 'lightsalmon',
-    'Surgery / Radiotherapy': 'orange',
-    'STI': 'slateblue',
-    'Lab / Diagnostics': 'dodgerblue',
-    'Pharm Dispensing': 'springgreen'
-})
+COARSE_APPT_TYPE_TO_COLOR_MAP = MappingProxyType(
+    {
+        "Outpatient": "magenta",
+        "Con w/ DCSA": "crimson",
+        "A & E": "forestgreen",
+        "Inpatient": "mediumorchid",
+        "RMNCH": "gold",
+        "HIV/AIDS": "darkturquoise",
+        "Tb": "y",
+        "Dental": "rosybrown",
+        "Mental Health": "lightsalmon",
+        "Surgery / Radiotherapy": "orange",
+        "STI": "slateblue",
+        "Lab / Diagnostics": "dodgerblue",
+        "Pharm Dispensing": "springgreen",
+    }
+)
 
 
 def get_coarse_appt_type(appt_type: str) -> str:
@@ -728,47 +820,40 @@ def get_color_coarse_appt(coarse_appt_type: str) -> str:
     return COARSE_APPT_TYPE_TO_COLOR_MAP.get(coarse_appt_type, np.nan)
 
 
-SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType({
-
-    '*': 'black',
-
-    'FirstAttendance*': 'darkgrey',
-    'Inpatient*': 'silver',
-
-    'Contraception*': 'darkseagreen',
-    'AntenatalCare*': 'green',
-    'DeliveryCare*': 'limegreen',
-    'PostnatalCare*': 'springgreen',
-
-    'Alri*': 'darkorange',
-    'Diarrhoea*': 'tan',
-    'Undernutrition*': 'gold',
-    'Epi*': 'darkgoldenrod',
-
-    'Hiv*': 'deepskyblue',
-    'Malaria*': 'lightsteelblue',
-    'Measles*': 'cornflowerblue',
-    'Tb*': 'mediumslateblue',
-    'Schisto*': 'skyblue',
-
-    'CardioMetabolicDisorders*': 'brown',
-
-    'BladderCancer*': 'orchid',
-    'BreastCancer*': 'mediumvioletred',
-    'OesophagealCancer*': 'deeppink',
-    'ProstateCancer*': 'hotpink',
-    'OtherAdultCancer*': 'palevioletred',
-
-    'Depression*': 'indianred',
-    'Epilepsy*': 'red',
-    'Copd*': 'lightcoral',
-
-    'Rti*': 'lightsalmon',
-})
+SHORT_TREATMENT_ID_TO_COLOR_MAP = MappingProxyType(
+    {
+        "*": "black",
+        "FirstAttendance*": "darkgrey",
+        "Inpatient*": "silver",
+        "Contraception*": "darkseagreen",
+        "AntenatalCare*": "green",
+        "DeliveryCare*": "limegreen",
+        "PostnatalCare*": "springgreen",
+        "Alri*": "darkorange",
+        "Diarrhoea*": "tan",
+        "Undernutrition*": "gold",
+        "Epi*": "darkgoldenrod",
+        "Hiv*": "deepskyblue",
+        "Malaria*": "lightsteelblue",
+        "Measles*": "cornflowerblue",
+        "Tb*": "mediumslateblue",
+        "Schisto*": "skyblue",
+        "CardioMetabolicDisorders*": "brown",
+        "BladderCancer*": "orchid",
+        "BreastCancer*": "mediumvioletred",
+        "OesophagealCancer*": "deeppink",
+        "ProstateCancer*": "hotpink",
+        "OtherAdultCancer*": "palevioletred",
+        "Depression*": "indianred",
+        "Epilepsy*": "red",
+        "Copd*": "lightcoral",
+        "Rti*": "lightsalmon",
+    }
+)
 
 
 def _standardize_short_treatment_id(short_treatment_id):
-    return short_treatment_id.replace('_*', '*').rstrip('*') + '*'
+    return short_treatment_id.replace("_*", "*").rstrip("*") + "*"
 
 
 def order_of_short_treatment_ids(
@@ -797,48 +882,44 @@ def get_color_short_treatment_id(short_treatment_id: str) -> str:
     )
 
 
-CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP = MappingProxyType({
-    'Maternal Disorders': 'green',
-    'Neonatal Disorders': 'springgreen',
-    'Congenital birth defects': 'mediumaquamarine',
-
-    'Lower respiratory infections': 'darkorange',
-    'Childhood Diarrhoea': 'tan',
-
-    'AIDS': 'deepskyblue',
-    'Malaria': 'lightsteelblue',
-    'Measles': 'cornflowerblue',
-    'TB (non-AIDS)': 'mediumslateblue',
-    'Schistosomiasis': 'skyblue',
-
-    'Heart Disease': 'sienna',
-    'Kidney Disease': 'chocolate',
-    'Diabetes': 'peru',
-    'Stroke': 'burlywood',
-
-    'Cancer (Bladder)': 'deeppink',
-    'Cancer (Breast)': 'darkmagenta',
-    'Cancer (Oesophagus)': 'mediumvioletred',
-    'Cancer (Other)': 'crimson',
-    'Cancer (Prostate)': 'hotpink',
-
-    'Depression / Self-harm': 'goldenrod',
-    'Epilepsy': 'gold',
-    'COPD': 'khaki',
-
-    'Transport Injuries': 'lightsalmon',
-
-    'Lower Back Pain': 'slategray',
-
-    'Other': 'dimgrey',
-})
+CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP = MappingProxyType(
+    {
+        "Maternal Disorders": "green",
+        "Neonatal Disorders": "springgreen",
+        "Congenital birth defects": "mediumaquamarine",
+        "Lower respiratory infections": "darkorange",
+        "Childhood Diarrhoea": "tan",
+        "AIDS": "deepskyblue",
+        "Malaria": "lightsteelblue",
+        "Measles": "cornflowerblue",
+        "TB (non-AIDS)": "mediumslateblue",
+        "Schistosomiasis": "skyblue",
+        "Heart Disease": "sienna",
+        "Kidney Disease": "chocolate",
+        "Diabetes": "peru",
+        "Stroke": "burlywood",
+        "Cancer (Bladder)": "deeppink",
+        "Cancer (Breast)": "darkmagenta",
+        "Cancer (Oesophagus)": "mediumvioletred",
+        "Cancer (Other)": "crimson",
+        "Cancer (Prostate)": "hotpink",
+        "Depression / Self-harm": "goldenrod",
+        "Epilepsy": "gold",
+        "COPD": "khaki",
+        "Transport Injuries": "lightsalmon",
+        "Lower Back Pain": "slategray",
+        "Other": "dimgrey",
+    }
+)
 
 
 def order_of_cause_of_death_or_daly_label(
     cause_of_death_label: Union[str, pd.Index]
 ) -> Union[int, pd.Index]:
     """Define a standard order for Cause-of-Death labels."""
-    ordered_cause_of_death_labels = list(CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys())
+    ordered_cause_of_death_labels = list(
+        CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.keys()
+    )
     if isinstance(cause_of_death_label, str):
         return ordered_cause_of_death_labels.index(cause_of_death_label)
     else:
@@ -855,18 +936,29 @@ def get_color_cause_of_death_or_daly_label(cause_of_death_label: str) -> str:
     return CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP.get(cause_of_death_label, np.nan)
 
 
-def squarify_neat(sizes: np.array, label: np.array, colormap: Callable = None, numlabels: int = 5, **kwargs):
+def squarify_neat(
+    sizes: np.array,
+    label: np.array,
+    colormap: Callable = None,
+    numlabels: int = 5,
+    **kwargs,
+):
     """Pass through to squarify, with some customisation: ...
-     * Apply the colormap specified
-     * Only give label a selection of the segments
-     N.B. The package `squarify` is required.
+    * Apply the colormap specified
+    * Only give label a selection of the segments
+    N.B. The package `squarify` is required.
     """
     # Suppress labels for all but the `numlabels` largest entries.
-    to_label = set(pd.Series(index=label, data=sizes).sort_values(ascending=False).iloc[0:numlabels].index)
+    to_label = set(
+        pd.Series(index=label, data=sizes)
+        .sort_values(ascending=False)
+        .iloc[0:numlabels]
+        .index
+    )
 
     squarify.plot(
         sizes=sizes,
-        label=[_label if _label in to_label else '' for _label in label],
+        label=[_label if _label in to_label else "" for _label in label],
         color=[colormap(_x) for _x in label] if colormap is not None else None,
         **kwargs,
     )
@@ -874,7 +966,8 @@ def squarify_neat(sizes: np.array, label: np.array, colormap: Callable = None, n
 
 def get_root_path(starter_path: Optional[Path] = None) -> Path:
     """Returns the absolute path of the top level of the repository. `starter_path` optionally gives a reference
-    location from which to begin search; if omitted the location of this file is used."""
+    location from which to begin search; if omitted the location of this file is used.
+    """
 
     def get_git_root(path: Path) -> Path:
         """Return path of git repo. Based on: https://stackoverflow.com/a/41920796"""
@@ -895,7 +988,7 @@ def bin_hsi_event_details(
     get_counter_from_event_details: callable,
     start_date: Date,
     end_date: Date,
-    do_scaling: bool = False
+    do_scaling: bool = False,
 ) -> Dict[Tuple[int, int], Counter]:
     """Bin logged HSI event details into dictionary of counters for each draw and run.
 
@@ -916,27 +1009,35 @@ def bin_hsi_event_details(
     binned_counts_by_draw_and_run = {}
     for draw in range(scenario_info["number_of_draws"]):
         for run in range(scenario_info["runs_per_draw"]):
-            scaling_factor = 1 if not do_scaling else load_pickled_dataframes(
-                results_folder, draw, run, 'tlo.methods.population'
-            )['tlo.methods.population']['scaling_factor']['scaling_factor'].values[0]
+            scaling_factor = (
+                1
+                if not do_scaling
+                else load_pickled_dataframes(
+                    results_folder, draw, run, "tlo.methods.population"
+                )["tlo.methods.population"]["scaling_factor"]["scaling_factor"].values[
+                    0
+                ]
+            )
             hsi_event_counts = load_pickled_dataframes(
                 results_folder, draw, run, "tlo.methods.healthsystem.summary"
             )["tlo.methods.healthsystem.summary"]["hsi_event_counts"]
             hsi_event_counts = hsi_event_counts[
-                hsi_event_counts['date'].between(start_date, end_date)
+                hsi_event_counts["date"].between(start_date, end_date)
             ]
             hsi_event_counts_sum = sum(
                 [
                     Counter(d)
                     for d in hsi_event_counts["hsi_event_key_to_counts"].values
                 ],
-                start=Counter()
+                start=Counter(),
             )
             hsi_event_details = load_pickled_dataframes(
                 results_folder, draw, run, "tlo.methods.healthsystem.summary"
-            )[
-                "tlo.methods.healthsystem.summary"
-            ]["hsi_event_details"]["hsi_event_key_to_event_details"][0]
+            )["tlo.methods.healthsystem.summary"]["hsi_event_details"][
+                "hsi_event_key_to_event_details"
+            ][
+                0
+            ]
             binned_counts_by_draw_and_run[draw, run] = sum(
                 (
                     get_counter_from_event_details(
@@ -944,7 +1045,7 @@ def bin_hsi_event_details(
                     )
                     for key, count in hsi_event_counts_sum.items()
                 ),
-                Counter()
+                Counter(),
             )
     return binned_counts_by_draw_and_run
 
@@ -978,7 +1079,7 @@ def plot_stacked_bar_chart(
     binned_counts: Counter,
     inner_group_cmap: Optional[Dict] = None,
     bar_width: float = 0.5,
-    count_scale: float = 1.
+    count_scale: float = 1.0,
 ):
     """Plot a stacked bar chart using count data binned over two levels of grouping.
 
@@ -1020,13 +1121,16 @@ def plot_stacked_bar_chart(
     ax.legend()
 
 
-def plot_clustered_stacked(dfall, ax, color_for_column_map=None, scaled=False, legends=True, H="/", **kwargs):
+def plot_clustered_stacked(
+    dfall, ax, color_for_column_map=None, scaled=False, legends=True, H="/", **kwargs
+):
     """Given a dict of dataframes, with identical columns and index, create a clustered stacked bar plot.
     * H is the hatch used for identification of the different dataframe.
     * color_for_column_map should return a color for every column in the dataframes
     * legends=False, suppresses generation of the legends
     With `scaled=True`, the height of the stacked-bar is scaled to 1.0.
-    From: https://stackoverflow.com/questions/22787209/how-to-have-clusters-of-stacked-bars"""
+    From: https://stackoverflow.com/questions/22787209/how-to-have-clusters-of-stacked-bars
+    """
 
     n_df = len(dfall)
     n_col = len(list(dfall.values())[0].columns)
@@ -1041,18 +1145,20 @@ def plot_clustered_stacked(dfall, ax, color_for_column_map=None, scaled=False, l
             ax=ax,
             legend=False,
             color=[color_for_column_map(_label) for _label in df.columns],
-            **kwargs
+            **kwargs,
         )
 
-    _handles, _labels = ax.get_legend_handles_labels()  # get the handles we want to modify
+    _handles, _labels = (
+        ax.get_legend_handles_labels()
+    )  # get the handles we want to modify
     for i in range(0, n_df * n_col, n_col):  # len(h) = n_col * n_df
-        for j, pa in enumerate(_handles[i: i+n_col]):
+        for j, pa in enumerate(_handles[i : i + n_col]):
             for rect in pa.patches:  # for each index
                 rect.set_x(rect.get_x() + 1 / float(n_df + 1) * i / float(n_col))
                 rect.set_hatch(H * int(i / n_col))  # edited part
                 rect.set_width(1 / float(n_df + 1))
 
-    ax.set_xticks((np.arange(0, 2 * n_ind, 2) + 1 / float(n_df + 1)) / 2.)
+    ax.set_xticks((np.arange(0, 2 * n_ind, 2) + 1 / float(n_df + 1)) / 2.0)
     ax.set_xticklabels(df.index, rotation=0)
 
     if legends:
@@ -1071,27 +1177,34 @@ def get_mappers_in_fullmodel(resourcefilepath: Path, outputpath: Path):
     fullmodel."""
 
     start_date = Date(2010, 1, 1)
-    sim = Simulation(start_date=start_date, seed=0, log_config={'filename': 'test_log', 'directory': outputpath})
+    sim = Simulation(
+        start_date=start_date,
+        seed=0,
+        log_config={"filename": "test_log", "directory": outputpath},
+    )
 
     from tlo.methods.fullmodel import fullmodel
+
     sim.register(*fullmodel(resourcefilepath=resourcefilepath))
 
     sim.make_initial_population(n=10_000)
     sim.simulate(end_date=start_date)
-    demog_log = parse_log_file(sim.log_filepath)['tlo.methods.demography']
-    hb_log = parse_log_file(sim.log_filepath)['tlo.methods.healthburden']
+    demog_log = parse_log_file(sim.log_filepath)["tlo.methods.demography"]
+    hb_log = parse_log_file(sim.log_filepath)["tlo.methods.healthburden"]
 
     keys = [
-        (demog_log, 'mapper_from_tlo_cause_to_common_label'),
-        (demog_log, 'mapper_from_gbd_cause_to_common_label'),
-        (hb_log, 'disability_mapper_from_tlo_cause_to_common_label'),
-        (hb_log, 'disability_mapper_from_gbd_cause_to_common_label'),
-        (hb_log, 'daly_mapper_from_gbd_cause_to_common_label'),
-        (hb_log, 'daly_mapper_from_tlo_cause_to_common_label'),
+        (demog_log, "mapper_from_tlo_cause_to_common_label"),
+        (demog_log, "mapper_from_gbd_cause_to_common_label"),
+        (hb_log, "disability_mapper_from_tlo_cause_to_common_label"),
+        (hb_log, "disability_mapper_from_gbd_cause_to_common_label"),
+        (hb_log, "daly_mapper_from_gbd_cause_to_common_label"),
+        (hb_log, "daly_mapper_from_tlo_cause_to_common_label"),
     ]
 
     def extract_mapper(key_tuple):
-        return pd.Series(key_tuple[0].get(key_tuple[1]).drop(columns={'date'}).loc[0]).to_dict()
+        return pd.Series(
+            key_tuple[0].get(key_tuple[1]).drop(columns={"date"}).loc[0]
+        ).to_dict()
 
     return {k[1]: extract_mapper(k) for k in keys}
 
@@ -1119,7 +1232,7 @@ def get_parameters_for_status_quo() -> Dict:
             "spurious_symptoms": True,
         },
         "HealthSystem": {
-            'Service_Availability': ['*'],
+            "Service_Availability": ["*"],
             "use_funded_or_actual_staffing": "actual",
             "mode_appt_constraints": 1,
             "cons_availability": "default",
@@ -1152,16 +1265,24 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
 
     def read_value(_value):
         """Returns the value, or a dataframe if the value point to a different sheet in the workbook, or a series if the
-        value points to sheet in the workbook with only two columns (which become the index and the values)."""
-        drop_extra_columns = lambda df: df.dropna(how='all', axis=1)  # noqa E731
-        squeeze_single_col_df_to_series = lambda df: \
-            df.set_index(df[df.columns[0]])[df.columns[1]] if len(df.columns) == 2 else df  # noqa E731
+        value points to sheet in the workbook with only two columns (which become the index and the values).
+        """
+        drop_extra_columns = lambda df: df.dropna(how="all", axis=1)  # noqa E731
+        squeeze_single_col_df_to_series = lambda df: (
+            df.set_index(df[df.columns[0]])[df.columns[1]]
+            if len(df.columns) == 2
+            else df
+        )  # noqa E731
 
         def construct_multiindex_if_implied(df):
             """Detect if a multi-index is implied (by the first column header having a "/" in it) and construct this."""
-            if isinstance(df, pd.DataFrame) and (len(df.columns) > 1) and ('/' in df.columns[0]):
-                idx = df[df.columns[0]].str.split('/', expand=True)
-                idx.columns = tuple(df.columns[0].split('/'))
+            if (
+                isinstance(df, pd.DataFrame)
+                and (len(df.columns) > 1)
+                and ("/" in df.columns[0])
+            ):
+                idx = df[df.columns[0]].str.split("/", expand=True)
+                idx.columns = tuple(df.columns[0].split("/"))
 
                 # Make the dtype as `int` if possible
                 for col in idx.columns:
@@ -1176,12 +1297,14 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
                 return df
 
         if isinstance(_value, str) and _value.startswith("#"):
-            sheet_name = _value.lstrip("#").split('!')[0]
-            return \
-                squeeze_single_col_df_to_series(
-                    drop_extra_columns(
-                        construct_multiindex_if_implied(
-                            pd.read_excel(workbook, sheet_name=sheet_name))))
+            sheet_name = _value.lstrip("#").split("!")[0]
+            return squeeze_single_col_df_to_series(
+                drop_extra_columns(
+                    construct_multiindex_if_implied(
+                        pd.read_excel(workbook, sheet_name=sheet_name)
+                    )
+                )
+            )
 
         elif isinstance(_value, str) and _value.startswith("["):
             # this looks like its intended to be a list
@@ -1190,22 +1313,27 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
             return _value
 
     workbook = pd.ExcelFile(
-        resourcefilepath / 'ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx')
+        resourcefilepath
+        / "ResourceFile_Improved_Healthsystem_And_Healthcare_Seeking.xlsx"
+    )
 
     # Load the ResourceFile for the list of parameters that may change
-    mainsheet = pd.read_excel(workbook, 'main').set_index(['Module', 'Parameter'])
+    mainsheet = pd.read_excel(workbook, "main").set_index(["Module", "Parameter"])
 
     # Select which columns for parameter changes to extract
     cols = []
     if max_healthsystem_function:
-        cols.append('max_healthsystem_function')
+        cols.append("max_healthsystem_function")
 
     if max_healthcare_seeking:
-        cols.append('max_healthcare_seeking')
+        cols.append("max_healthcare_seeking")
 
     # Collect parameters that will be changed (collecting the first encountered non-NAN value)
-    params_to_change = mainsheet[cols].dropna(axis=0, how='all')\
-                                      .apply(lambda row: [v for v in row if not pd.isnull(v)][0], axis=1)
+    params_to_change = (
+        mainsheet[cols]
+        .dropna(axis=0, how="all")
+        .apply(lambda row: [v for v in row if not pd.isnull(v)][0], axis=1)
+    )
 
     # Convert to dictionary
     params = defaultdict(lambda: defaultdict(dict))
@@ -1217,9 +1345,10 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
 
 def mix_scenarios(*dicts) -> Dict:
     """Helper function to combine a Dicts that show which parameters should be over-written.
-     * If a parameter appears in more than one Dict, the value in the last-added dict is taken, and a UserWarning
-      is raised;
-     * Items under the same top-level key (i.e., for the Module) are merged rather than being over-written."""
+    * If a parameter appears in more than one Dict, the value in the last-added dict is taken, and a UserWarning
+     is raised;
+    * Items under the same top-level key (i.e., for the Module) are merged rather than being over-written.
+    """
 
     d = defaultdict(lambda: defaultdict(dict))
 
@@ -1228,8 +1357,10 @@ def mix_scenarios(*dicts) -> Dict:
             for param, value in params_in_mod.items():
                 if param in d[mod]:
                     if d[mod][param] != value:
-                        warnings.warn(f'Parameter is being updated more than once: module={mod}, parameter={param}',
-                                      UserWarning,)
+                        warnings.warn(
+                            f"Parameter is being updated more than once: module={mod}, parameter={param}",
+                            UserWarning,
+                        )
                 d[mod].update({param: value})
 
     return d

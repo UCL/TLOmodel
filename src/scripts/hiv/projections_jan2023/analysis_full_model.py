@@ -5,6 +5,7 @@ save outputs for plotting (file: output_plots_tb.py)
 
 import datetime
 import pickle
+
 # import random
 from pathlib import Path
 
@@ -47,22 +48,28 @@ log_config = {
 # seed = random.randint(0, 50000)
 seed = 32  # set seed for reproducibility
 
-sim = Simulation(start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True)
-sim.register(*fullmodel(
-    resourcefilepath=resourcefilepath,
-    use_simplified_births=False,
-    module_kwargs={
-        "SymptomManager": {"spurious_symptoms": True},
-        "HealthSystem": {"disable": False,
-                         "service_availability": ["*"],
-                         "mode_appt_constraints": 0,  # no constraints, no squeeze factor
-                         "cons_availability": "default",
-                         "beds_availability": "all",
-                         "ignore_priority": False,
-                         "use_funded_or_actual_staffing": "funded_plus",
-                         "capabilities_coefficient": 1.0},
-    },
-))
+sim = Simulation(
+    start_date=start_date, seed=seed, log_config=log_config, show_progress_bar=True
+)
+sim.register(
+    *fullmodel(
+        resourcefilepath=resourcefilepath,
+        use_simplified_births=False,
+        module_kwargs={
+            "SymptomManager": {"spurious_symptoms": True},
+            "HealthSystem": {
+                "disable": False,
+                "service_availability": ["*"],
+                "mode_appt_constraints": 0,  # no constraints, no squeeze factor
+                "cons_availability": "default",
+                "beds_availability": "all",
+                "ignore_priority": False,
+                "use_funded_or_actual_staffing": "funded_plus",
+                "capabilities_coefficient": 1.0,
+            },
+        },
+    )
+)
 
 # # set the scenario
 # sim.modules["Tb"].parameters["scenario"] = scenario

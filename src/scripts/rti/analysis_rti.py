@@ -23,14 +23,14 @@ from tlo.methods import (
 seed = 100
 
 log_config = {
-    "filename": "rti_analysis",   # The name of the output file (a timestamp will be appended).
+    "filename": "rti_analysis",  # The name of the output file (a timestamp will be appended).
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
         "tlo.methods.rti": logging.INFO,
         "tlo.methods.healthsystem": logging.CRITICAL,
-        "tlo.methods.demography": logging.CRITICAL
-    }
+        "tlo.methods.demography": logging.CRITICAL,
+    },
 }
 
 start_date = Date(2010, 1, 1)
@@ -43,21 +43,23 @@ sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
 # Path to the resource files used by the disease and intervention methods
 # resources = "./resources"
-resourcefilepath = Path('./resources')
+resourcefilepath = Path("./resources")
 
 # We register all modules in a single call to the register method, calling once with multiple
 # objects. This is preferred to registering each module in multiple calls because we will be
 # able to handle dependencies if modules are registered together
 sim.register(
-        demography.Demography(resourcefilepath=resourcefilepath),
-        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
-        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        rti.RTI(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
-        )
+    demography.Demography(resourcefilepath=resourcefilepath),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    healthsystem.HealthSystem(
+        resourcefilepath=resourcefilepath, service_availability=["*"]
+    ),
+    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+    rti.RTI(resourcefilepath=resourcefilepath),
+    simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+)
 
 # create and run the simulation
 sim.make_initial_population(n=pop_size)
@@ -70,17 +72,21 @@ log_df = parse_log_file(sim.log_filepath)
 model_rti = log_df["tlo.methods.rti"]["summary_1m"]["incidence of rti per 100,000"]
 model_date = log_df["tlo.methods.rti"]["summary_1m"]["date"]
 # ------------------------------------- PLOTS  ------------------------------------- #
-comparison = compare_number_of_deaths(logfile=sim.log_filepath, resourcefilepath=resourcefilepath)
-gbd_deaths_2010_2014 = comparison.loc[('2010-2014')]['GBD_mean'].sum()
-gbd_deaths_2015_2019 = comparison.loc[('2015-2019')]['GBD_mean'].sum()
+comparison = compare_number_of_deaths(
+    logfile=sim.log_filepath, resourcefilepath=resourcefilepath
+)
+gbd_deaths_2010_2014 = comparison.loc[("2010-2014")]["GBD_mean"].sum()
+gbd_deaths_2015_2019 = comparison.loc[("2015-2019")]["GBD_mean"].sum()
 gbd_deaths = gbd_deaths_2010_2014 + gbd_deaths_2015_2019
-model_deaths_2010_2014 = comparison.loc[('2010-2014')]['model'].sum()
-model_deaths_2015_2019 = comparison.loc[('2015-2019')]['model'].sum()
+model_deaths_2010_2014 = comparison.loc[("2010-2014")]["model"].sum()
+model_deaths_2015_2019 = comparison.loc[("2015-2019")]["model"].sum()
 model_deaths = model_deaths_2010_2014 + model_deaths_2015_2019
-plt.bar(np.arange(2), [gbd_deaths, model_deaths], color=['lightsalmon', 'lightsteelblue'])
-plt.ylabel('Number of Deaths')
-plt.xticks(np.arange(2), ['GBD', 'TLO'])
-plt.title('RTI deaths estimated by the GBD and TLO model, 2010-2019')
+plt.bar(
+    np.arange(2), [gbd_deaths, model_deaths], color=["lightsalmon", "lightsteelblue"]
+)
+plt.ylabel("Number of Deaths")
+plt.xticks(np.arange(2), ["GBD", "TLO"])
+plt.title("RTI deaths estimated by the GBD and TLO model, 2010-2019")
 plt.show()
 plt.clf()
 plt.style.use("ggplot")

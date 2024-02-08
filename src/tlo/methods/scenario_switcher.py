@@ -1,7 +1,9 @@
 import warnings
 
 from tlo import Module, Parameter, Types
-from tlo.analysis.utils import get_parameters_for_improved_healthsystem_and_healthcare_seeking
+from tlo.analysis.utils import (
+    get_parameters_for_improved_healthsystem_and_healthcare_seeking,
+)
 
 
 class ScenarioSwitcher(Module):
@@ -12,7 +14,8 @@ class ScenarioSwitcher(Module):
     and makes these changes at the point `pre_initialise_population`. As this module is declared as an (Optional)
     dependency of the module that would be loaded first in the simulation (i.e. `Demography`), this module is
     registered first and so this module's `pre_initialise_population` method is called before any other. This provides
-    a close approximation to what would happen if the parameters were being changed by the `Scenario` class."""
+    a close approximation to what would happen if the parameters were being changed by the `Scenario` class.
+    """
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
@@ -26,12 +29,14 @@ class ScenarioSwitcher(Module):
 
     PARAMETERS = {
         "max_healthsystem_function": Parameter(
-            Types.BOOL, "If True, over-writes parameters that define maximal health system function."
-                        "Parameter passed through to `get_parameters_for_improved_healthsystem_and_healthcare_seeking`."
+            Types.BOOL,
+            "If True, over-writes parameters that define maximal health system function."
+            "Parameter passed through to `get_parameters_for_improved_healthsystem_and_healthcare_seeking`.",
         ),
         "max_healthcare_seeking": Parameter(
-            Types.BOOL, "If True, over-writes parameters that define maximal healthcare-seeking behaviour. "
-                        "Parameter passed through to `get_parameters_for_improved_healthsystem_and_healthcare_seeking`."
+            Types.BOOL,
+            "If True, over-writes parameters that define maximal healthcare-seeking behaviour. "
+            "Parameter passed through to `get_parameters_for_improved_healthsystem_and_healthcare_seeking`.",
         ),
     }
 
@@ -48,9 +53,10 @@ class ScenarioSwitcher(Module):
     def pre_initialise_population(self):
         """Retrieve parameters to be updated and update them in the other registered disease modules."""
 
-        params_to_update = get_parameters_for_improved_healthsystem_and_healthcare_seeking(
-            resourcefilepath=self.resourcefilepath,
-            **self.parameters
+        params_to_update = (
+            get_parameters_for_improved_healthsystem_and_healthcare_seeking(
+                resourcefilepath=self.resourcefilepath, **self.parameters
+            )
         )
 
         for module, params in params_to_update.items():

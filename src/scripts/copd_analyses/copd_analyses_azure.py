@@ -1,6 +1,7 @@
 """
 Azure copd analyses
  """
+
 import warnings
 
 from tlo import Date, logging
@@ -36,27 +37,30 @@ class CopdAnalyses(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'copd_analyses_azure',
-            'directory': './outputs',
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.copd': logging.INFO,
-            }
+            "filename": "copd_analyses_azure",
+            "directory": "./outputs",
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.copd": logging.INFO,
+            },
         }
 
     def modules(self):
-        return [demography.Demography(resourcefilepath=self.resources),
-                simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
-                enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
-                healthsystem.HealthSystem(resourcefilepath=self.resources,
-                                          disable=False,
-                                          cons_availability='all'),
-                symptommanager.SymptomManager(resourcefilepath=self.resources),
-                healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=self.resources),
-                healthburden.HealthBurden(resourcefilepath=self.resources),
-                copd.Copd(resourcefilepath=self.resources),
-                ]
+        return [
+            demography.Demography(resourcefilepath=self.resources),
+            simplified_births.SimplifiedBirths(resourcefilepath=self.resources),
+            enhanced_lifestyle.Lifestyle(resourcefilepath=self.resources),
+            healthsystem.HealthSystem(
+                resourcefilepath=self.resources, disable=False, cons_availability="all"
+            ),
+            symptommanager.SymptomManager(resourcefilepath=self.resources),
+            healthseekingbehaviour.HealthSeekingBehaviour(
+                resourcefilepath=self.resources
+            ),
+            healthburden.HealthBurden(resourcefilepath=self.resources),
+            copd.Copd(resourcefilepath=self.resources),
+        ]
 
     # def draw_parameters(self, draw_number, rng):
     #     return {
@@ -67,7 +71,7 @@ class CopdAnalyses(BaseScenario):
     #     }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])

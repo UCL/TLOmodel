@@ -14,9 +14,10 @@ def set_output_file(log_path: Path) -> _logging.FileHandler:
     """
     file_handler = _logging.FileHandler(log_path)
     file_handler.setFormatter(_FORMATTER)
-    getLogger('tlo').handlers = [h for h in getLogger('tlo').handlers
-                                 if not isinstance(h, _logging.FileHandler)]
-    getLogger('tlo').addHandler(file_handler)
+    getLogger("tlo").handlers = [
+        h for h in getLogger("tlo").handlers if not isinstance(h, _logging.FileHandler)
+    ]
+    getLogger("tlo").addHandler(file_handler)
     return file_handler
 
 
@@ -29,12 +30,12 @@ def set_logging_levels(custom_levels: Dict[str, int]):
     loggers = {
         _logging.getLogger(name)
         for name in _logging.root.manager.loggerDict  # pylint: disable=E1101
-        if name.startswith('tlo.methods')
+        if name.startswith("tlo.methods")
     }
 
     # set the baseline logging level from methods, if it's been set
-    if '*' in custom_levels:
-        getLogger('tlo.methods').setLevel(custom_levels['*'])
+    if "*" in custom_levels:
+        getLogger("tlo.methods").setLevel(custom_levels["*"])
 
     # loop over each of the tlo loggers
     for logger in loggers:
@@ -47,16 +48,16 @@ def set_logging_levels(custom_levels: Dict[str, int]):
                 getLogger(logger_name).setLevel(custom_levels[logger_name])
                 matched = True
                 break
-            elif logger_name == 'tlo.methods':
+            elif logger_name == "tlo.methods":
                 # we've reached the top-level of the `tlo.methods` logger
                 break
             else:
                 # get the parent logger name
-                logger_name = '.'.join(logger_name.split(".")[:-1])
+                logger_name = ".".join(logger_name.split(".")[:-1])
         # if we exited without finding a matching logger in custom levels
         if not matched:
-            if '*' in custom_levels:
-                getLogger(logger.name).setLevel(custom_levels['*'])
+            if "*" in custom_levels:
+                getLogger(logger.name).setLevel(custom_levels["*"])
 
     # loggers named in custom_level but, for some reason, haven't been getLogger-ed yet
     loggers = {logger.name for logger in loggers}
@@ -73,7 +74,7 @@ def init_logging(add_stdout_handler=True):
         handler = _logging.StreamHandler(sys.stdout)
         handler.setLevel(DEBUG)
         handler.setFormatter(_FORMATTER)
-        getLogger('tlo').addHandler(handler)
+        getLogger("tlo").addHandler(handler)
     _logging.basicConfig(level=_logging.WARNING)
 
 
@@ -83,5 +84,5 @@ def set_simulation(simulation):
     :param simulation:
     :return:
     """
-    logger = getLogger('tlo')
+    logger = getLogger("tlo")
     logger.simulation = simulation

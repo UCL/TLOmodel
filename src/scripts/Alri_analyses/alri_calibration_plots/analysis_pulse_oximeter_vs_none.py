@@ -41,36 +41,41 @@ def run_scenario(**kwargs):
             "*": logging.WARNING,
             "tlo.methods.alri": logging.INFO,
             "tlo.methods.demography": logging.INFO,
-        }
+        },
     }
 
-    sim = Simulation(start_date=start_date, log_config=log_config, show_progress_bar=True)
+    sim = Simulation(
+        start_date=start_date, log_config=log_config, show_progress_bar=True
+    )
 
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
-                                                      force_any_symptom_to_lead_to_healthcareseeking=True),
+        healthseekingbehaviour.HealthSeekingBehaviour(
+            resourcefilepath=resourcefilepath,
+            force_any_symptom_to_lead_to_healthcareseeking=True,
+        ),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-        healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                  disable=True,
-                                  cons_availability='all',
-                                  ),
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath,
+            disable=True,
+            cons_availability="all",
+        ),
         alri.Alri(resourcefilepath=resourcefilepath),
-        alri.AlriPropertiesOfOtherModules()
+        alri.AlriPropertiesOfOtherModules(),
     )
 
-    sim.modules['Demography'].parameters['max_age_initial'] = 5
+    sim.modules["Demography"].parameters["max_age_initial"] = 5
 
-    if kwargs['do_make_treatment_and_diagnosis_perfect']:
-        alri._make_treatment_and_diagnosis_perfect(sim.modules['Alri'])
+    if kwargs["do_make_treatment_and_diagnosis_perfect"]:
+        alri._make_treatment_and_diagnosis_perfect(sim.modules["Alri"])
 
-    if kwargs['pulse_oximeter_and_oxygen_is_available']:
-        sim.modules['Alri'].parameters['pulse_oximeter_and_oxygen_is_available'] = 'Yes'
+    if kwargs["pulse_oximeter_and_oxygen_is_available"]:
+        sim.modules["Alri"].parameters["pulse_oximeter_and_oxygen_is_available"] = "Yes"
     else:
-        sim.modules['Alri'].parameters['pulse_oximeter_and_oxygen_is_available'] = 'No'
+        sim.modules["Alri"].parameters["pulse_oximeter_and_oxygen_is_available"] = "No"
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
@@ -82,11 +87,13 @@ def get_death_numbers_from_logfile(logfile):
     """Extract the number of deaths (total and deaths among those with untreated hypoxaemia) to Alri from the logfile,
     over the entire period of the simulation"""
     output = parse_log_file(logfile)
-    alri_event_counts = output['tlo.methods.alri']['event_counts'].sum()
+    alri_event_counts = output["tlo.methods.alri"]["event_counts"].sum()
 
     return {
-        'deaths': alri_event_counts['deaths'],
-        'deaths_among_persons_with_SpO2<90%': alri_event_counts['deaths_among_persons_with_SpO2<90%']
+        "deaths": alri_event_counts["deaths"],
+        "deaths_among_persons_with_SpO2<90%": alri_event_counts[
+            "deaths_among_persons_with_SpO2<90%"
+        ],
     }
 
 
@@ -94,9 +101,9 @@ def get_cfr_from_logfile(logfile):
     """Extract the Case Fatality Ratio (Deaths:Cases) to Alri from the logfile, over the entire period of the
     simulation."""
     output = parse_log_file(logfile)
-    alri_event_counts = output['tlo.methods.alri']['event_counts'].sum()
+    alri_event_counts = output["tlo.methods.alri"]["event_counts"].sum()
 
-    return alri_event_counts['deaths'] / alri_event_counts['incident_cases']
+    return alri_event_counts["deaths"] / alri_event_counts["incident_cases"]
 
 
 # %% Run the Scenarios
@@ -109,37 +116,42 @@ scenarios = {
     #     'pulse_oximeter_and_oxygen_is_available': True,
     #     'do_make_treatment_and_diagnosis_perfect': True,
     # },
-    'No_oximeter/oxygen_Default_treatment_effectiveness': {
-        'pulse_oximeter_and_oxygen_is_available': False,
-        'do_make_treatment_and_diagnosis_perfect': False,
+    "No_oximeter/oxygen_Default_treatment_effectiveness": {
+        "pulse_oximeter_and_oxygen_is_available": False,
+        "do_make_treatment_and_diagnosis_perfect": False,
     },
-    'With_oximeter/oxygen_Default_treatment_effectiveness': {
-        'pulse_oximeter_and_oxygen_is_available': True,
-        'do_make_treatment_and_diagnosis_perfect': False,
+    "With_oximeter/oxygen_Default_treatment_effectiveness": {
+        "pulse_oximeter_and_oxygen_is_available": True,
+        "do_make_treatment_and_diagnosis_perfect": False,
     },
 }
 outputfiles = {_name: run_scenario(**_params) for _name, _params in scenarios.items()}
 
 # %% Extract the number of deaths:
-num_deaths = {_name: get_death_numbers_from_logfile(_logfile) for _name, _logfile in outputfiles.items()}
+num_deaths = {
+    _name: get_death_numbers_from_logfile(_logfile)
+    for _name, _logfile in outputfiles.items()
+}
 cfr = {_name: get_cfr_from_logfile(_logfile) for _name, _logfile in outputfiles.items()}
 
 # %% Plot results
 
 df_num_deaths = pd.DataFrame(num_deaths)
-df_num_deaths.loc['deaths_not_among_persons_with_SpO2<90%'] = \
-    df_num_deaths.loc['deaths'] - df_num_deaths.loc['deaths_among_persons_with_SpO2<90%']
+df_num_deaths.loc["deaths_not_among_persons_with_SpO2<90%"] = (
+    df_num_deaths.loc["deaths"]
+    - df_num_deaths.loc["deaths_among_persons_with_SpO2<90%"]
+)
 
 fig, ax = plt.subplots()
 df_num_deaths.loc[
-    ['deaths_among_persons_with_SpO2<90%', 'deaths_not_among_persons_with_SpO2<90%']
+    ["deaths_among_persons_with_SpO2<90%", "deaths_not_among_persons_with_SpO2<90%"]
 ].T.plot.barh(ax=ax, stacked=True)
 fig.tight_layout()
 fig.show()
 
 fig, ax = plt.subplots()
 (100_000 * pd.Series(cfr)).T.plot.barh(ax=ax, stacked=True)
-ax.set_title('Case:Fatality Ratio')
-ax.set_xlabel('Deaths per 100k cases')
+ax.set_title("Case:Fatality Ratio")
+ax.set_xlabel("Deaths per 100k cases")
 fig.tight_layout()
 fig.show()

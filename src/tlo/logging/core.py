@@ -12,7 +12,7 @@ def disable(level):
     _logging.disable(level)
 
 
-def getLogger(name='tlo'):
+def getLogger(name="tlo"):
     """Returns a TLO logger of the specified name"""
     if name not in _LOGGERS:
         _LOGGERS[name] = Logger(name)
@@ -25,17 +25,21 @@ class _MockSim:
         @staticmethod
         def isoformat():
             return "0000-00-00T00:00:00"
+
     date = MockDate()
 
 
 class Logger:
     """A Logger for TLO log messages, with simplified usage. Outputs structured log messages in JSON
     format and is connected to the Simulation instance."""
+
     HASH_LEN = 10
 
     def __init__(self, name: str, level=_logging.NOTSET):
 
-        assert name.startswith('tlo'), f'Only logging of tlo modules is allowed; name is {name}'
+        assert name.startswith(
+            "tlo"
+        ), f"Only logging of tlo modules is allowed; name is {name}"
 
         # we build our logger on top of the standard python logging
         self._std_logger = _logging.getLogger(name=name)
@@ -43,7 +47,7 @@ class Logger:
         self.name = self._std_logger.name
 
         # don't propograte messages up from "tlo" to root logger
-        if name == 'tlo':
+        if name == "tlo":
             self._std_logger.propagate = False
 
         # the key of the structured logging calls for this logger
@@ -60,7 +64,7 @@ class Logger:
         self._disable_dataframe_logging = True
 
     def __repr__(self):
-        return f'<TLOmodel Logger `{self.name}` ({_logging.getLevelName(self.level)})>'
+        return f"<TLOmodel Logger `{self.name}` ({_logging.getLevelName(self.level)})>"
 
     @property
     def handlers(self):
@@ -102,19 +106,27 @@ class Logger:
             return data
         if isinstance(data, pd.DataFrame):
             if len(data.index) == 1:
-                return data.to_dict('records')[0]
+                return data.to_dict("records")[0]
             elif self._disable_dataframe_logging:
-                raise ValueError("Logging multirow dataframes is disabled - if you need this feature let us know")
+                raise ValueError(
+                    "Logging multirow dataframes is disabled - if you need this feature let us know"
+                )
             else:
-                return {'dataframe': data.to_dict('index')}
+                return {"dataframe": data.to_dict("index")}
         if isinstance(data, (list, set, tuple, pd.Series)):
-            return {f'item_{index + 1}': value for index, value in enumerate(data)}
+            return {f"item_{index + 1}": value for index, value in enumerate(data)}
         if isinstance(data, str):
-            return {'message': data}
+            return {"message": data}
 
-        raise ValueError(f'Unexpected type given as data:\n{data}')
+        raise ValueError(f"Unexpected type given as data:\n{data}")
 
-    def _get_json(self, level, key, data: Union[dict, pd.DataFrame, list, set, tuple, str] = None, description=None):
+    def _get_json(
+        self,
+        level,
+        key,
+        data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
+        description=None,
+    ):
         """Writes structured log message if handler allows this and logging level is allowed
 
         Will write a header line the first time a new logging key is encountered
@@ -134,7 +146,9 @@ class Logger:
 
         if key not in self.keys:
             # new log key, so create header json row
-            uuid = hashlib.md5(f"{self.name}+{key}".encode()).hexdigest()[:Logger.HASH_LEN]
+            uuid = hashlib.md5(f"{self.name}+{key}".encode()).hexdigest()[
+                : Logger.HASH_LEN
+            ]
             self.keys[key] = uuid
 
             header = {
@@ -145,7 +159,7 @@ class Logger:
                 "level": _logging.getLevelName(level),
                 # using type().__name__ so both pandas and stdlib types can be used
                 "columns": {key: type(value).__name__ for key, value in data.items()},
-                "description": description
+                "description": description,
             }
             header_json = json.dumps(header) + "\n"
 
@@ -153,22 +167,26 @@ class Logger:
 
         # create data json row; in DEBUG mode we echo the module and key for easier eyeballing
         if self._std_logger.level == DEBUG:
-            row = {"date": getLogger('tlo').simulation.date.isoformat(),
-                   "module": self.name,
-                   "key": key,
-                   "uuid": uuid,
-                   "values": list(data.values())}
+            row = {
+                "date": getLogger("tlo").simulation.date.isoformat(),
+                "module": self.name,
+                "key": key,
+                "uuid": uuid,
+                "values": list(data.values()),
+            }
         else:
-            row = {"uuid": uuid,
-                   "date": getLogger('tlo').simulation.date.isoformat(),
-                   "values": list(data.values())}
+            row = {
+                "uuid": uuid,
+                "date": getLogger("tlo").simulation.date.isoformat(),
+                "values": list(data.values()),
+            }
 
         row_json = json.dumps(row, cls=encoding.PandasEncoder)
 
         return f"{header_json}{row_json}"
 
     def _make_old_style_msg(self, level, msg):
-        return f'{level}|{self.name}|{msg}'
+        return f"{level}|{self.name}|{msg}"
 
     def _check_logging_style(self, is_structured: bool):
         """Set booleans for logging type and throw exception if both types of logging haven't been used"""
@@ -178,33 +196,103 @@ class Logger:
             self.logged_stdlib = True
 
         if self.logged_structured and self.logged_stdlib:
-            raise ValueError(f"Both oldstyle and structured logging has been used for {self.name}, "
-                             "please update all logging to use structured logging")
+            raise ValueError(
+                f"Both oldstyle and structured logging has been used for {self.name}, "
+                "please update all logging to use structured logging"
+            )
 
-    def _check_and_filter(self, msg=None, *args, key=None, data=None, description=None, level, **kwargs):
+    def _check_and_filter(
+        self, msg=None, *args, key=None, data=None, description=None, level, **kwargs
+    ):
         if self._std_logger.isEnabledFor(level):
             level_str = _logging.getLevelName(level)  # e.g. 'CRITICAL', 'INFO' etc.
-            level_function = getattr(self._std_logger, level_str.lower())  # e.g. `critical` or `info` methods
+            level_function = getattr(
+                self._std_logger, level_str.lower()
+            )  # e.g. `critical` or `info` methods
             if key is None or data is None:
-                raise ValueError("Structured logging requires `key` and `data` keyword arguments")
+                raise ValueError(
+                    "Structured logging requires `key` and `data` keyword arguments"
+                )
             self._check_logging_style(is_structured=True)
-            level_function(self._get_json(level=level, key=key, data=data, description=description))
+            level_function(
+                self._get_json(level=level, key=key, data=data, description=description)
+            )
 
-    def critical(self, msg=None, *args, key: str = None,
-                 data: Union[dict, pd.DataFrame, list, set, tuple, str] = None, description=None, **kwargs):
-        self._check_and_filter(msg, *args, key=key, data=data, description=description, level=CRITICAL, **kwargs)
+    def critical(
+        self,
+        msg=None,
+        *args,
+        key: str = None,
+        data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
+        description=None,
+        **kwargs,
+    ):
+        self._check_and_filter(
+            msg,
+            *args,
+            key=key,
+            data=data,
+            description=description,
+            level=CRITICAL,
+            **kwargs,
+        )
 
-    def debug(self, msg=None, *args, key: str = None,
-              data: Union[dict, pd.DataFrame, list, set, tuple, str] = None, description=None, **kwargs):
-        self._check_and_filter(msg, *args, key=key, data=data, description=description, level=DEBUG, **kwargs)
+    def debug(
+        self,
+        msg=None,
+        *args,
+        key: str = None,
+        data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
+        description=None,
+        **kwargs,
+    ):
+        self._check_and_filter(
+            msg,
+            *args,
+            key=key,
+            data=data,
+            description=description,
+            level=DEBUG,
+            **kwargs,
+        )
 
-    def info(self, msg=None, *args, key: str = None,
-             data: Union[dict, pd.DataFrame, list, set, tuple, str] = None, description=None, **kwargs):
-        self._check_and_filter(msg, *args, key=key, data=data, description=description, level=INFO, **kwargs)
+    def info(
+        self,
+        msg=None,
+        *args,
+        key: str = None,
+        data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
+        description=None,
+        **kwargs,
+    ):
+        self._check_and_filter(
+            msg,
+            *args,
+            key=key,
+            data=data,
+            description=description,
+            level=INFO,
+            **kwargs,
+        )
 
-    def warning(self, msg=None, *args, key: str = None,
-                data: Union[dict, pd.DataFrame, list, set, tuple, str] = None, description=None, **kwargs):
-        self._check_and_filter(msg, *args, key=key, data=data, description=description, level=WARNING, **kwargs)
+    def warning(
+        self,
+        msg=None,
+        *args,
+        key: str = None,
+        data: Union[dict, pd.DataFrame, list, set, tuple, str] = None,
+        description=None,
+        **kwargs,
+    ):
+        self._check_and_filter(
+            msg,
+            *args,
+            key=key,
+            data=data,
+            description=description,
+            level=WARNING,
+            **kwargs,
+        )
 
 
 CRITICAL = _logging.CRITICAL
@@ -213,5 +301,5 @@ FATAL = _logging.FATAL
 INFO = _logging.INFO
 WARNING = _logging.WARNING
 
-_FORMATTER = _logging.Formatter('%(message)s')
-_LOGGERS = {'tlo': Logger('tlo', WARNING)}
+_FORMATTER = _logging.Formatter("%(message)s")
+_LOGGERS = {"tlo": Logger("tlo", WARNING)}

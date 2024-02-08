@@ -28,13 +28,13 @@ from tlo.methods import (
 seed = 100
 
 log_config = {
-    "filename": "measles_analysis",   # The name of the output file (a timestamp will be appended).
+    "filename": "measles_analysis",  # The name of the output file (a timestamp will be appended).
     "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
     "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
         "tlo.methods.measles": logging.INFO,
         "tlo.methods.healthsystem": logging.INFO,
-    }
+    },
 }
 
 start_date = Date(2010, 1, 1)
@@ -47,7 +47,7 @@ sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
 
 # Path to the resource files used by the disease and intervention methods
 # resources = "./resources"
-resources = Path('./resources')
+resources = Path("./resources")
 
 # Used to configure health system behaviour
 service_availability = ["*"]
@@ -57,10 +57,8 @@ sim.register(
     simplified_births.SimplifiedBirths(resourcefilepath=resources),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
     symptommanager.SymptomManager(resourcefilepath=resources),
-
     healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-
     epi.Epi(resourcefilepath=resources),
     measles.Measles(resourcefilepath=resources),
 )

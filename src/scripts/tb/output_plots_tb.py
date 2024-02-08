@@ -417,14 +417,14 @@ deaths = deaths.set_index("date")
 
 # TB deaths will exclude TB/HIV
 # keep if cause = TB
-keep = (deaths.cause == "TB")
+keep = deaths.cause == "TB"
 deaths_TB = deaths.loc[keep].copy()
 deaths_TB["year"] = deaths_TB.index.year  # count by year
 tot_tb_non_hiv_deaths = deaths_TB.groupby(by=["year"]).size()
 tot_tb_non_hiv_deaths.index = pd.to_datetime(tot_tb_non_hiv_deaths.index, format="%Y")
 
 # TB/HIV deaths
-keep = (deaths.cause == "AIDS_TB")
+keep = deaths.cause == "AIDS_TB"
 deaths_TB_HIV = deaths.loc[keep].copy()
 deaths_TB_HIV["year"] = deaths_TB_HIV.index.year  # count by year
 tot_tb_hiv_deaths = deaths_TB_HIV.groupby(by=["year"]).size()
@@ -500,7 +500,7 @@ plt.show()
 
 
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
-list_of_paths = outputpath.glob('*.log')  # gets latest log file
+list_of_paths = outputpath.glob("*.log")  # gets latest log file
 latest_path = max(list_of_paths, key=lambda p: p.stat().st_ctime)
 
 # latest_path = sim.log_filepath
@@ -514,8 +514,12 @@ deaths2010 = death_compare.loc[("2010-2014", slice(None), slice(None), "AIDS")].
 deaths2015 = death_compare.loc[("2015-2019", slice(None), slice(None), "AIDS")].sum()
 
 # include all ages and both sexes
-deaths2010_TB = death_compare.loc[("2010-2014", slice(None), slice(None), "non_AIDS_TB")].sum()
-deaths2015_TB = death_compare.loc[("2015-2019", slice(None), slice(None), "non_AIDS_TB")].sum()
+deaths2010_TB = death_compare.loc[
+    ("2010-2014", slice(None), slice(None), "non_AIDS_TB")
+].sum()
+deaths2015_TB = death_compare.loc[
+    ("2015-2019", slice(None), slice(None), "non_AIDS_TB")
+].sum()
 
 x_vals = [1, 2, 3, 4]
 labels = ["2010-2014", "2010-2014", "2015-2019", "2015-2019"]
@@ -597,7 +601,7 @@ plt.xticks(ticks=x_vals, labels=labels)
 plt.title("Deaths per year due to non-AIDS TB")
 plt.legend(handles=[blue_patch, green_patch])
 plt.tight_layout()
-plt.savefig(outputpath / ("TB_deaths_with_GBD" + datestamp + ".png"), format='png')
+plt.savefig(outputpath / ("TB_deaths_with_GBD" + datestamp + ".png"), format="png")
 plt.show()
 
 # ---------------------------------------------------------------------- #
@@ -685,7 +689,7 @@ plt.errorbar(
     ecolor="g",
 )
 plt.ylim((20, 100))
-plt.savefig(outputpath / ("HIV_art_cascade_adults" + datestamp + ".pdf"), format='pdf')
+plt.savefig(outputpath / ("HIV_art_cascade_adults" + datestamp + ".pdf"), format="pdf")
 
 plt.show()
 
@@ -741,11 +745,13 @@ make_plot(
     model=cov_over_time["prop_men_circ"],
 )
 plt.plot(
-    cov_over_time["prop_men_circ"].index[3], 0.23,
+    cov_over_time["prop_men_circ"].index[3],
+    0.23,
     "gx",
 )
 plt.plot(
-    cov_over_time["prop_men_circ"].index[5], 0.279,
+    cov_over_time["prop_men_circ"].index[5],
+    0.279,
     "bx",
 )
 plt.ylim((0, 0.4))
@@ -760,7 +766,9 @@ blue_cross = mlines.Line2D(
 )
 # orange_ci = mlines.Line2D([], [], color="C1", marker=".", markersize=15, label="DHS")
 plt.legend(handles=[red_line, green_cross, blue_cross])
-plt.savefig(outputpath / ("Proportion_men_circumcised" + datestamp + ".png"), format='png')
+plt.savefig(
+    outputpath / ("Proportion_men_circumcised" + datestamp + ".png"), format="png"
+)
 plt.show()
 
 

@@ -34,25 +34,27 @@ def run_sim():
         start_date=start_date,
         seed=0,
         log_config={
-            'filename': 'templogfile',
-            'directory': outputpath,
-            'custom_levels': {
+            "filename": "templogfile",
+            "directory": outputpath,
+            "custom_levels": {
                 "*": logging.WARNING,
-                'tlo.methods.demography': logging.INFO
-                }
-        }
+                "tlo.methods.demography": logging.INFO,
+            },
+        },
     )
 
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-                 simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-                 enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                                           disable=True),
-                 symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-                 healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-                 healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-                 other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
-                 )
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(resourcefilepath=resourcefilepath, disable=True),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(
+            resourcefilepath=resourcefilepath
+        ),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
+    )
 
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=end_date)
@@ -62,17 +64,20 @@ def run_sim():
 
 logfile = run_sim()
 
-CAUSE_NAME = 'Cancer (Other)'
+CAUSE_NAME = "Cancer (Other)"
 
 comparison = compare_number_of_deaths(
-    logfile=logfile, resourcefilepath=resourcefilepath).fillna(0.0)
+    logfile=logfile, resourcefilepath=resourcefilepath
+).fillna(0.0)
 
 fig, axs = plt.subplots(nrows=2, ncols=2, sharey=True, sharex=True)
-for _col, sex in enumerate(('M', 'F')):
-    for _row, period in enumerate(('2010-2014', '2015-2019')):
+for _col, sex in enumerate(("M", "F")):
+    for _row, period in enumerate(("2010-2014", "2015-2019")):
         ax = axs[_col][_row]
-        comparison.loc[(period, sex, slice(None), CAUSE_NAME)].droplevel([0, 1, 3]).plot(use_index=True, ax=ax)
-        ax.set_ylabel('Deaths per year')
+        comparison.loc[(period, sex, slice(None), CAUSE_NAME)].droplevel(
+            [0, 1, 3]
+        ).plot(use_index=True, ax=ax)
+        ax.set_ylabel("Deaths per year")
         ax.set_title(f"{period}: {sex}")
         xticks = comparison.index.levels[2]
         ax.set_xticks(range(len(xticks)))

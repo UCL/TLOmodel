@@ -59,12 +59,20 @@ deaths_2010_2014 = data_tb_who.loc["2010-01-01":"2014-01-01"]
 deaths_2015_2019 = data_tb_who.loc["2015-01-01":"2019-01-01"]
 
 deaths_2010_2014_average = deaths_2010_2014.loc[:, "num_deaths_tb_nonHiv"].values.mean()
-deaths_2010_2014_average_low = deaths_2010_2014.loc[:, "num_deaths_tb_nonHiv_low"].values.mean()
-deaths_2010_2014_average_high = deaths_2010_2014.loc[:, "num_deaths_tb_nonHiv_high"].values.mean()
+deaths_2010_2014_average_low = deaths_2010_2014.loc[
+    :, "num_deaths_tb_nonHiv_low"
+].values.mean()
+deaths_2010_2014_average_high = deaths_2010_2014.loc[
+    :, "num_deaths_tb_nonHiv_high"
+].values.mean()
 
 deaths_2015_2019_average = deaths_2015_2019.loc[:, "num_deaths_tb_nonHiv"].values.mean()
-deaths_2015_2019_average_low = deaths_2015_2019.loc[:, "num_deaths_tb_nonHiv_low"].values.mean()
-deaths_2015_2019_average_high = deaths_2015_2019.loc[:, "num_deaths_tb_nonHiv_high"].values.mean()
+deaths_2015_2019_average_low = deaths_2015_2019.loc[
+    :, "num_deaths_tb_nonHiv_low"
+].values.mean()
+deaths_2015_2019_average_high = deaths_2015_2019.loc[
+    :, "num_deaths_tb_nonHiv_high"
+].values.mean()
 
 # TB treatment coverage
 data_tb_ntp = pd.read_excel(xls_tb, sheet_name="NTP2019")
@@ -216,6 +224,7 @@ model_hiv_fsw_prev.index = model_hiv_fsw_prev.index.year
 
 # ---------------------------------- PERSON-YEARS ---------------------------------- #
 
+
 # function to extract person-years by year
 # call this for each run and then take the mean to use as denominator for mortality / incidence etc.
 def get_person_years(draw, run):
@@ -226,8 +235,10 @@ def get_person_years(draw, run):
     py = pd.Series(dtype="int64", index=years)
     for year in years:
         tot_py = (
-            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series) +
-            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(pd.Series)
+            (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["M"]).apply(pd.Series)
+            + (py_.loc[pd.to_datetime(py_["date"]).dt.year == year]["F"]).apply(
+                pd.Series
+            )
         ).transpose()
         py[year] = tot_py.sum().values[0]
 
@@ -260,7 +271,9 @@ model_tb_inc = summarize(
     collapse_columns=True,
 )
 model_tb_inc.index = model_tb_inc.index.year
-activeTB_inc_rate = (model_tb_inc.divide(py_summary["mean"].values[1:10], axis=0)) * 100000
+activeTB_inc_rate = (
+    model_tb_inc.divide(py_summary["mean"].values[1:10], axis=0)
+) * 100000
 
 model_tb_mdr = summarize(
     extract_results(
@@ -297,8 +310,9 @@ results_deaths = extract_results(
     module="tlo.methods.demography",
     key="death",
     custom_generate_series=(
-        lambda df: df.assign(year=df["date"].dt.year).groupby(
-            ["year", "cause"])["person_id"].count()
+        lambda df: df.assign(year=df["date"].dt.year)
+        .groupby(["year", "cause"])["person_id"]
+        .count()
     ),
     do_scaling=False,
 )
@@ -323,12 +337,12 @@ for draw in info["number_of_draws"]:
     # select cause of death
     tmp = results_deaths.loc[
         (results_deaths.cause == "AIDS_TB") | (results_deaths.cause == "AIDS_non_TB")
-        ]
+    ]
 
     # select draw - drop columns where draw != 0, but keep year and cause
     tmp2 = tmp.loc[
-           :, ("draw" == draw)
-           ].copy()  # selects only columns for draw=0 (removes year/cause)
+        :, ("draw" == draw)
+    ].copy()  # selects only columns for draw=0 (removes year/cause)
     # join year and cause back to df - needed for groupby
     frames = [tmp["year"], tmp["cause"], tmp2]
     tmp3 = pd.concat(frames, axis=1)
@@ -362,13 +376,16 @@ for draw in info["number_of_draws"]:
 
     # AIDS mortality rates per 100k person-years
     aids_deaths[name]["aids_deaths_rate_100kpy"] = (
-            aids_deaths[name]["median"].values / py_summary["mean"].values) * 100000
+        aids_deaths[name]["median"].values / py_summary["mean"].values
+    ) * 100000
 
     aids_deaths[name]["aids_deaths_rate_100kpy_lower"] = (
-        aids_deaths[name]["lower"].values / py_summary["mean"].values) * 100000
+        aids_deaths[name]["lower"].values / py_summary["mean"].values
+    ) * 100000
 
     aids_deaths[name]["aids_deaths_rate_100kpy_upper"] = (
-        aids_deaths[name]["upper"].values / py_summary["mean"].values) * 100000
+        aids_deaths[name]["upper"].values / py_summary["mean"].values
+    ) * 100000
 
 
 # HIV/TB deaths
@@ -380,13 +397,11 @@ for draw in info["number_of_draws"]:
     # rename dataframe
     name = "model_deaths_AIDS_TB_draw" + str(draw)
     # select cause of death
-    tmp = results_deaths.loc[
-        (results_deaths.cause == "AIDS_TB")
-    ]
+    tmp = results_deaths.loc[(results_deaths.cause == "AIDS_TB")]
     # select draw - drop columns where draw != 0, but keep year and cause
     tmp2 = tmp.loc[
-           :, ("draw" == draw)
-           ].copy()  # selects only columns for draw=0 (removes year/cause)
+        :, ("draw" == draw)
+    ].copy()  # selects only columns for draw=0 (removes year/cause)
     # join year and cause back to df - needed for groupby
     frames = [tmp["year"], tmp["cause"], tmp2]
     tmp3 = pd.concat(frames, axis=1)
@@ -420,13 +435,16 @@ for draw in info["number_of_draws"]:
 
     # AIDS_TB mortality rates per 100k person-years
     aids_tb_deaths[name]["aids_TB_deaths_rate_100kpy"] = (
-            aids_tb_deaths[name]["median"].values / py_summary["mean"].values) * 100000
+        aids_tb_deaths[name]["median"].values / py_summary["mean"].values
+    ) * 100000
 
     aids_tb_deaths[name]["aids_TB_deaths_rate_100kpy_lower"] = (
-        aids_tb_deaths[name]["lower"].values / py_summary["mean"].values) * 100000
+        aids_tb_deaths[name]["lower"].values / py_summary["mean"].values
+    ) * 100000
 
     aids_tb_deaths[name]["aids_TB_deaths_rate_100kpy_upper"] = (
-        aids_tb_deaths[name]["upper"].values / py_summary["mean"].values) * 100000
+        aids_tb_deaths[name]["upper"].values / py_summary["mean"].values
+    ) * 100000
 
 
 # TB deaths excluding HIV
@@ -438,13 +456,11 @@ for draw in info["number_of_draws"]:
     # rename dataframe
     name = "model_deaths_TB_draw" + str(draw)
     # select cause of death
-    tmp = results_deaths.loc[
-        (results_deaths.cause == "TB")
-    ]
+    tmp = results_deaths.loc[(results_deaths.cause == "TB")]
     # select draw - drop columns where draw != 0, but keep year and cause
     tmp2 = tmp.loc[
-           :, ("draw" == draw)
-           ].copy()  # selects only columns for draw=0 (removes year/cause)
+        :, ("draw" == draw)
+    ].copy()  # selects only columns for draw=0 (removes year/cause)
     # join year and cause back to df - needed for groupby
     frames = [tmp["year"], tmp["cause"], tmp2]
     tmp3 = pd.concat(frames, axis=1)
@@ -478,13 +494,16 @@ for draw in info["number_of_draws"]:
 
     # AIDS_TB mortality rates per 100k person-years
     tb_deaths[name]["TB_death_rate_100kpy"] = (
-            tb_deaths[name]["median"].values / py_summary["mean"].values) * 100000
+        tb_deaths[name]["median"].values / py_summary["mean"].values
+    ) * 100000
 
     tb_deaths[name]["TB_death_rate_100kpy_lower"] = (
-        tb_deaths[name]["lower"].values / py_summary["mean"].values) * 100000
+        tb_deaths[name]["lower"].values / py_summary["mean"].values
+    ) * 100000
 
     tb_deaths[name]["TB_death_rate_100kpy_upper"] = (
-        tb_deaths[name]["upper"].values / py_summary["mean"].values) * 100000
+        tb_deaths[name]["upper"].values / py_summary["mean"].values
+    ) * 100000
 
 
 # ---------------------------------- PROGRAM COVERAGE ---------------------------------- #
@@ -876,8 +895,9 @@ results_deaths = extract_results(
     module="tlo.methods.demography",
     key="death",
     custom_generate_series=(
-        lambda df: df.assign(year=df["date"].dt.year).groupby(
-            ["year", "cause"])["person_id"].count()
+        lambda df: df.assign(year=df["date"].dt.year)
+        .groupby(["year", "cause"])["person_id"]
+        .count()
     ),
     do_scaling=True,
 )
@@ -894,11 +914,11 @@ results_deaths = results_deaths.reset_index()
 # select cause of death
 tmp = results_deaths.loc[
     (results_deaths.cause == "AIDS_TB") | (results_deaths.cause == "AIDS_non_TB")
-    ]
+]
 # select draw - drop columns where draw != 0, but keep year and cause
 tmp2 = tmp.loc[
-       :, ("draw" == draw)
-       ].copy()  # selects only columns for draw=0 (removes year/cause)
+    :, ("draw" == draw)
+].copy()  # selects only columns for draw=0 (removes year/cause)
 # join year and cause back to df - needed for groupby
 frames = [tmp["year"], tmp["cause"], tmp2]
 tmp3 = pd.concat(frames, axis=1)
@@ -924,7 +944,7 @@ model_2015_high = model_deaths_AIDS.iloc[5].quantile(0.975)
 
 # get GBD estimates from any log_filepath
 outputpath = Path("./outputs")  # folder for convenience of storing outputs
-list_of_paths = outputpath.glob('*.log')  # gets latest log file
+list_of_paths = outputpath.glob("*.log")  # gets latest log file
 latest_path = max(list_of_paths, key=lambda p: p.stat().st_ctime)
 death_compare = compare_number_of_deaths(latest_path, resourcefilepath)
 
@@ -934,8 +954,12 @@ deaths2010 = death_compare.loc[("2010-2014", slice(None), slice(None), "AIDS")].
 deaths2015 = death_compare.loc[("2015-2019", slice(None), slice(None), "AIDS")].sum()
 
 # include all ages and both sexes
-deaths2010_TB = death_compare.loc[("2010-2014", slice(None), slice(None), "TB (non-AIDS)")].sum()
-deaths2015_TB = death_compare.loc[("2015-2019", slice(None), slice(None), "TB (non-AIDS)")].sum()
+deaths2010_TB = death_compare.loc[
+    ("2010-2014", slice(None), slice(None), "TB (non-AIDS)")
+].sum()
+deaths2015_TB = death_compare.loc[
+    ("2015-2019", slice(None), slice(None), "TB (non-AIDS)")
+].sum()
 
 x_vals = [1, 2, 3, 4]
 labels = ["2010-2014", "2010-2014", "2015-2019", "2015-2019"]
@@ -965,7 +989,8 @@ y_upper = [
 ]
 plt.bar(x_vals, y_vals, color=col)
 plt.errorbar(
-    x_vals, y_vals,
+    x_vals,
+    y_vals,
     yerr=[y_lower, y_upper],
     ls="none",
     marker="o",
@@ -987,8 +1012,8 @@ plt.show()
 tmp = results_deaths.loc[(results_deaths.cause == "TB")]
 # select draw - drop columns where draw != 0, but keep year and cause
 tmp2 = tmp.loc[
-       :, ("draw" == draw)
-       ].copy()  # selects only columns for draw=0 (removes year/cause)
+    :, ("draw" == draw)
+].copy()  # selects only columns for draw=0 (removes year/cause)
 # join year and cause back to df - needed for groupby
 frames = [tmp["year"], tmp["cause"], tmp2]
 tmp3 = pd.concat(frames, axis=1)
@@ -1049,7 +1074,8 @@ y_upper = [
 
 plt.bar(x_vals, y_vals, color=col)
 plt.errorbar(
-    x_vals, y_vals,
+    x_vals,
+    y_vals,
     yerr=[y_lower, y_upper],
     ls="none",
     marker="o",

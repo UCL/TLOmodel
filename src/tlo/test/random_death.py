@@ -27,16 +27,19 @@ class RandomDeath(Module):
     # Here we declare parameters for this module. Each parameter has a name, data type,
     # and longer description.
     PARAMETERS = {
-        'death_probability': Parameter(Types.REAL, 'Fixed probability of death each month'),
+        "death_probability": Parameter(
+            Types.REAL, "Fixed probability of death each month"
+        ),
     }
 
     # Next we declare the properties of individuals that this module provides.
     # Again each has a name, type and description. In addition, properties may be marked
     # as optional if they can be undefined for a given individual.
     PROPERTIES = {
-        'is_alive': Property(Types.BOOL, 'Whether each individual is currently alive'),
-        'date_of_death': Property(
-            Types.DATE, 'When the individual died (if they have)'),
+        "is_alive": Property(Types.BOOL, "Whether each individual is currently alive"),
+        "date_of_death": Property(
+            Types.DATE, "When the individual died (if they have)"
+        ),
     }
 
     def __init__(self, *args, **kwargs):
@@ -92,7 +95,7 @@ class RandomDeath(Module):
 
         Here we add our monthly event to poll the population for deaths.
         """
-        death_poll = RandomDeathEvent(self, self.parameters['death_probability'])
+        death_poll = RandomDeathEvent(self, self.parameters["death_probability"])
         sim.schedule_event(death_poll, sim.date + DateOffset(months=1))
 
     def on_birth(self, mother_id, child_id):
@@ -104,7 +107,7 @@ class RandomDeath(Module):
         :param child_id: the new child
         """
         df = self.sim.population.props
-        df.at[child_id, 'is_alive'] = True
+        df.at[child_id, "is_alive"] = True
 
 
 class RandomDeathEvent(RegularEvent, PopulationScopeEventMixin):
@@ -143,8 +146,8 @@ class RandomDeathEvent(RegularEvent, PopulationScopeEventMixin):
         # ('deaths' here is a pandas.Series of True/False values)
         deaths = df.is_alive & (probs < self.death_probability)
         # Record their date of death
-        df.loc[deaths, 'date_of_death'] = self.sim.date
+        df.loc[deaths, "date_of_death"] = self.sim.date
         # Kill them
-        df.loc[deaths, 'is_alive'] = False
+        df.loc[deaths, "is_alive"] = False
         # We could do this more verbosely:
         # population.is_alive = population.is_alive & (probs >= self.death_probability)

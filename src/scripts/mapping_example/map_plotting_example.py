@@ -12,9 +12,11 @@ resourcefilepath = Path("./resources")
 outputfilepath = Path("./outputs")
 
 # read in the shape file for district level maps
-sf = shp.Reader(shp=open(resourcefilepath / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.shp', 'rb'),
-                dbf=open(resourcefilepath / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.dbf', 'rb'),
-                shx=open(resourcefilepath / 'ResourceFile_mwi_admbnda_adm2_nso_20181016.shx', 'rb'))
+sf = shp.Reader(
+    shp=open(resourcefilepath / "ResourceFile_mwi_admbnda_adm2_nso_20181016.shp", "rb"),
+    dbf=open(resourcefilepath / "ResourceFile_mwi_admbnda_adm2_nso_20181016.dbf", "rb"),
+    shx=open(resourcefilepath / "ResourceFile_mwi_admbnda_adm2_nso_20181016.shx", "rb"),
+)
 
 # create a figure
 plt.figure()
@@ -29,18 +31,20 @@ for shape in sf.shapeRecords():
             i_end = shape.shape.parts[i + 1]
         x = [i[0] for i in shape.shape.points[i_start:i_end]]
         y = [i[1] for i in shape.shape.points[i_start:i_end]]
-        plt.plot(x, y, color='k', linewidth=0.5)
+        plt.plot(x, y, color="k", linewidth=0.5)
 
 # remove figure axes and set the aspect ratio to equal so that the map isn't stretched
-plt.axis('off')
-plt.gca().set_aspect('equal')
+plt.axis("off")
+plt.gca().set_aspect("equal")
 
 # example of how to add data to the map using a colour map:
-paracetamol_df = pd.read_csv(resourcefilepath / 'ResourceFile_Example_Paracetamol_DataFrame.csv')
-stock_out_days = paracetamol_df['Stock Out Days']
-eastings = paracetamol_df['Eastings']
-northings = paracetamol_df['Northings']
-cm = plt.cm.get_cmap('Purples')
+paracetamol_df = pd.read_csv(
+    resourcefilepath / "ResourceFile_Example_Paracetamol_DataFrame.csv"
+)
+stock_out_days = paracetamol_df["Stock Out Days"]
+eastings = paracetamol_df["Eastings"]
+northings = paracetamol_df["Northings"]
+cm = plt.cm.get_cmap("Purples")
 sc = plt.scatter(eastings, northings, c=stock_out_days, cmap=cm, s=4)
 plt.colorbar(sc, fraction=0.01, pad=0.01, label="Stock Out Days")
 
@@ -48,7 +52,11 @@ plt.colorbar(sc, fraction=0.01, pad=0.01, label="Stock Out Days")
 plt.title("Paracetamol Stock Out Days Example")
 
 # save the figure
-plt.savefig(outputfilepath / 'Map_Paracetamol_Stock_Out_Days_Example.png', bbox_inches="tight", dpi=600)
+plt.savefig(
+    outputfilepath / "Map_Paracetamol_Stock_Out_Days_Example.png",
+    bbox_inches="tight",
+    dpi=600,
+)
 
 # display the figure in PyCharm's Plots window
 plt.show()

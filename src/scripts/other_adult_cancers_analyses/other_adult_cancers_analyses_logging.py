@@ -29,24 +29,24 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
-end_date = Date(2050,  1, 1)
+end_date = Date(2050, 1, 1)
 popsize = 1450
 
 # Establish the simulation object
 log_config = {
-    'filename': 'LogFile',
-    'directory': outputpath,
-    'custom_levels': {
-        'tlo.methods.demography': logging.CRITICAL,
-        'tlo.methods.contraception': logging.CRITICAL,
-        'tlo.methods.healthsystem': logging.CRITICAL,
-        'tlo.methods.labour': logging.CRITICAL,
-        'tlo.methods.healthburden': logging.CRITICAL,
-        'tlo.methods.symptommanager': logging.CRITICAL,
-        'tlo.methods.healthseekingbehaviour': logging.CRITICAL,
-        'tlo.methods.pregnancy_supervisor': logging.CRITICAL,
+    "filename": "LogFile",
+    "directory": outputpath,
+    "custom_levels": {
+        "tlo.methods.demography": logging.CRITICAL,
+        "tlo.methods.contraception": logging.CRITICAL,
+        "tlo.methods.healthsystem": logging.CRITICAL,
+        "tlo.methods.labour": logging.CRITICAL,
+        "tlo.methods.healthburden": logging.CRITICAL,
+        "tlo.methods.symptommanager": logging.CRITICAL,
+        "tlo.methods.healthseekingbehaviour": logging.CRITICAL,
+        "tlo.methods.pregnancy_supervisor": logging.CRITICAL,
         # 'tlo.methods.bladder_cancer': logging.INFO,
-    }
+    },
 }
 sim = Simulation(start_date=start_date, seed=2, log_config=log_config)
 
@@ -55,20 +55,23 @@ sim = Simulation(start_date=start_date, seed=2, log_config=log_config)
 # during this run. NB. These must use the exact 'registered strings' that the disease modules allow
 
 # Register the appropriate modules
-sim.register(demography.Demography(resourcefilepath=resourcefilepath),
-             contraception.Contraception(resourcefilepath=resourcefilepath),
-             enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-             healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
-             symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-             healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
-             healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-             labour.Labour(resourcefilepath=resourcefilepath),
-             pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
-             care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
-             postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
-             newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
-             other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath)
-             )
+sim.register(
+    demography.Demography(resourcefilepath=resourcefilepath),
+    contraception.Contraception(resourcefilepath=resourcefilepath),
+    enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+    healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+    symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+    healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+    labour.Labour(resourcefilepath=resourcefilepath),
+    pregnancy_supervisor.PregnancySupervisor(resourcefilepath=resourcefilepath),
+    care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(
+        resourcefilepath=resourcefilepath
+    ),
+    postnatal_supervisor.PostnatalSupervisor(resourcefilepath=resourcefilepath),
+    newborn_outcomes.NewbornOutcomes(resourcefilepath=resourcefilepath),
+    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
+)
 
 # Run the simulation and flush the logger
 sim.make_initial_population(n=popsize)

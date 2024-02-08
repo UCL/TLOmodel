@@ -40,7 +40,9 @@ popsize = 200
 
 
 # Establish the simulation object
-def run_simulation_with_set_service_coverage_parameter(service_availability, healthsystemdisable):
+def run_simulation_with_set_service_coverage_parameter(
+    service_availability, healthsystemdisable
+):
     """
     This helper function will run a simulation with a given service coverage parameter and return the path of
     the logfile.
@@ -53,16 +55,20 @@ def run_simulation_with_set_service_coverage_parameter(service_availability, hea
 
     # Register the appropriate modules
     sim.register(
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(
+            resourcefilepath=resourcefilepath
+        ),
         demography.Demography(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(
             resourcefilepath=resourcefilepath,
             service_availability=service_availability,
-            disable=healthsystemdisable
+            disable=healthsystemdisable,
         ),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(
+            resourcefilepath=resourcefilepath
+        ),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         contraception.Contraception(resourcefilepath=resourcefilepath),
         labour.Labour(resourcefilepath=resourcefilepath),
@@ -84,32 +90,39 @@ def run_simulation_with_set_service_coverage_parameter(service_availability, hea
 results_health_system_disabled = compute_key_outputs_for_last_3_years(
     parse_log_file(
         run_simulation_with_set_service_coverage_parameter(
-            service_availability=['*'],
-            healthsystemdisable=True
+            service_availability=["*"], healthsystemdisable=True
         )
     )
 )
 
 # Add in comparator Data:
-calibration_df = pd.DataFrame(data={'Model': results_health_system_disabled})
-calibration_df['Data'] = pd.Series(data=np.nan).astype(object)
-calibration_df.loc['Current prevalence of depression, aged 15+', 'Data'] = 0.09
-calibration_df.loc['Current prevalence of depression, aged 15+ males', 'Data'] = 0.06
-calibration_df.at['Current prevalence of depression, aged 15+ females', 'Data'] = [0.10, 0.08]
-calibration_df.at['Rate of suicide incidence per 100k persons aged 15+', 'Data'] = [26.1, 8.0, 3.7]
+calibration_df = pd.DataFrame(data={"Model": results_health_system_disabled})
+calibration_df["Data"] = pd.Series(data=np.nan).astype(object)
+calibration_df.loc["Current prevalence of depression, aged 15+", "Data"] = 0.09
+calibration_df.loc["Current prevalence of depression, aged 15+ males", "Data"] = 0.06
+calibration_df.at["Current prevalence of depression, aged 15+ females", "Data"] = [
+    0.10,
+    0.08,
+]
+calibration_df.at["Rate of suicide incidence per 100k persons aged 15+", "Data"] = [
+    26.1,
+    8.0,
+    3.7,
+]
 
 # %% Run a comparison model with the interventions (with all interventions turned off)
 results_no_intvs = compute_key_outputs_for_last_3_years(
     parse_log_file(
         run_simulation_with_set_service_coverage_parameter(
-            service_availability=[],
-            healthsystemdisable=False
+            service_availability=[], healthsystemdisable=False
         )
     )
 )
 
 # Make a table to compare the effects of having vs not having any interventions
-effect_of_intvs_df = pd.DataFrame(data={'Intvs_On': results_health_system_disabled, 'Intvs_Off': results_no_intvs})
+effect_of_intvs_df = pd.DataFrame(
+    data={"Intvs_On": results_health_system_disabled, "Intvs_Off": results_no_intvs}
+)
 
 
 # %% Run a comparison in which the effectiveness of interventions for depression at turned up to implausible levels
@@ -131,16 +144,18 @@ def run_simulation_with_intvs_maximised():
 
     # Register the appropriate modules
     sim.register(
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resourcefilepath),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(
+            resourcefilepath=resourcefilepath
+        ),
         demography.Demography(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
         healthsystem.HealthSystem(
-            resourcefilepath=resourcefilepath,
-            service_availability=['*'],
-            disable=True
+            resourcefilepath=resourcefilepath, service_availability=["*"], disable=True
         ),
         symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
-        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(
+            resourcefilepath=resourcefilepath
+        ),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         contraception.Contraception(resourcefilepath=resourcefilepath),
         labour.Labour(resourcefilepath=resourcefilepath),
@@ -152,11 +167,15 @@ def run_simulation_with_intvs_maximised():
         chronicsyndrome.ChronicSyndrome(),
     )
 
-    sim.modules['Depression'].parameters['rr_depr_on_antidepr'] = 50
-    sim.modules['Depression'].parameters['rr_resol_depr_on_antidepr'] = 50
-    sim.modules['Depression'].parameters['rr_resol_depr_current_talk_ther'] = 50
-    sim.modules['Depression'].parameters['sensitivity_of_assessment_of_depression'] = 1.0
-    sim.modules['Depression'].parameters['pr_assessed_for_depression_in_generic_appt_level1'] = 1.0
+    sim.modules["Depression"].parameters["rr_depr_on_antidepr"] = 50
+    sim.modules["Depression"].parameters["rr_resol_depr_on_antidepr"] = 50
+    sim.modules["Depression"].parameters["rr_resol_depr_current_talk_ther"] = 50
+    sim.modules["Depression"].parameters[
+        "sensitivity_of_assessment_of_depression"
+    ] = 1.0
+    sim.modules["Depression"].parameters[
+        "pr_assessed_for_depression_in_generic_appt_level1"
+    ] = 1.0
 
     # Run the simulation
     sim.make_initial_population(n=popsize)
@@ -166,9 +185,7 @@ def run_simulation_with_intvs_maximised():
 
 
 results_max_intvs = compute_key_outputs_for_last_3_years(
-    parse_log_file(
-        run_simulation_with_intvs_maximised()
-    )
+    parse_log_file(run_simulation_with_intvs_maximised())
 )
 
-effect_of_intvs_df['Intvs_Max'] = pd.Series(results_max_intvs)
+effect_of_intvs_df["Intvs_Max"] = pd.Series(results_max_intvs)

@@ -56,10 +56,7 @@ resourcefilepath = Path("./resources")
 log_config = {
     "filename": "for_profiling",
     "directory": "./outputs",
-    "custom_levels": {
-        "*": logging.WARNING,
-        'HealthSystem': logging.INFO
-    }
+    "custom_levels": {"*": logging.WARNING, "HealthSystem": logging.INFO},
 }
 
 sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
@@ -69,21 +66,24 @@ sim.register(
     # Standard modules:
     demography.Demography(resourcefilepath=resourcefilepath),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-    symptommanager.SymptomManager(resourcefilepath=resourcefilepath,
-                                  spurious_symptoms=True),
-    healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath,
-                                                  force_any_symptom_to_lead_to_healthcareseeking=True),
+    symptommanager.SymptomManager(
+        resourcefilepath=resourcefilepath, spurious_symptoms=True
+    ),
+    healthseekingbehaviour.HealthSeekingBehaviour(
+        resourcefilepath=resourcefilepath,
+        force_any_symptom_to_lead_to_healthcareseeking=True,
+    ),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
-
     # HealthSystem
-    healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
-                              mode_appt_constraints=0),
-
+    healthsystem.HealthSystem(
+        resourcefilepath=resourcefilepath, mode_appt_constraints=0
+    ),
     # Modules for birth/labour/newborns --> Simplified Births
     simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
-
     # Disease modules considered complete:
-    cardio_metabolic_disorders.CardioMetabolicDisorders(resourcefilepath=resourcefilepath),
+    cardio_metabolic_disorders.CardioMetabolicDisorders(
+        resourcefilepath=resourcefilepath
+    ),
     depression.Depression(resourcefilepath=resourcefilepath),
     diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
     epi.Epi(resourcefilepath=resourcefilepath),
@@ -91,7 +91,7 @@ sim.register(
     hiv.Hiv(resourcefilepath=resourcefilepath),
     malaria.Malaria(resourcefilepath=resourcefilepath),
     oesophagealcancer.OesophagealCancer(resourcefilepath=resourcefilepath),
-    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath)
+    other_adult_cancers.OtherAdultCancer(resourcefilepath=resourcefilepath),
 )
 
 # Adjust parameters so that there are lots of HSI events:
@@ -103,33 +103,32 @@ os_cancer = sim.modules["OesophagealCancer"]
 
 for param in diarrhoea.parameters:
     # Increase incidence:
-    if param.startswith('base_inc_rate_diarrhoea_by_'):
+    if param.startswith("base_inc_rate_diarrhoea_by_"):
         diarrhoea.parameters[param] = [4.0 * v for v in diarrhoea.parameters[param]]
 
     # Increase symptoms:
-    if param.startswith('proportion_AWD_by_'):
+    if param.startswith("proportion_AWD_by_"):
         diarrhoea.parameters[param] = 1.0
-    if param.startswith('fever_by_'):
+    if param.startswith("fever_by_"):
         diarrhoea.parameters[param] = 1.0
-    if param.startswith('vomiting_by_'):
+    if param.startswith("vomiting_by_"):
         diarrhoea.parameters[param] = 1.0
-    if param.startswith('dehydration_by_'):
+    if param.startswith("dehydration_by_"):
         diarrhoea.parameters[param] = 1.0
 
 # * Depression
-depression.parameters['prob_3m_selfharm_depr'] = 0.25
-depression.linearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
-    LinearModelType.MULTIPLICATIVE,
-    depression.parameters['prob_3m_selfharm_depr']
+depression.parameters["prob_3m_selfharm_depr"] = 0.25
+depression.linearModels["Risk_of_SelfHarm_per3mo"] = LinearModel(
+    LinearModelType.MULTIPLICATIVE, depression.parameters["prob_3m_selfharm_depr"]
 )
 
 # * Oesophageal Cancer
-os_cancer.parameters['init_prop_oes_cancer_stage'] = [0.1] * 6
-os_cancer.parameters['r_high_grade_dysplasia_low_grade_dysp'] *= 5
-os_cancer.parameters['r_stage1_high_grade_dysp'] *= 5
-os_cancer.parameters['r_stage2_stage1'] *= 5
-os_cancer.parameters['r_stage3_stage2'] *= 5
-os_cancer.parameters['r_stage4_stage3'] *= 5
+os_cancer.parameters["init_prop_oes_cancer_stage"] = [0.1] * 6
+os_cancer.parameters["r_high_grade_dysplasia_low_grade_dysp"] *= 5
+os_cancer.parameters["r_stage1_high_grade_dysp"] *= 5
+os_cancer.parameters["r_stage2_stage1"] *= 5
+os_cancer.parameters["r_stage3_stage2"] *= 5
+os_cancer.parameters["r_stage4_stage3"] *= 5
 
 # * Malaria
 #  Set 'malaria_testing=1' in module when created

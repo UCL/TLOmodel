@@ -26,13 +26,13 @@ datestamp = datetime.date.today().strftime("__%Y_%m_%d")
 seed = 100
 
 log_config = {
-    'filename': 'measles_analysis',  # The name of the output file (a timestamp will be appended).
-    'directory': './outputs',  # The default output path is `./outputs`. Change it here, if necessary
-    'custom_levels': {  # Customise the output of specific loggers. They are applied in order:
-        '*': logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
-        'tlo.methods.measles': logging.INFO,
-        'tlo.methods.demography': logging.INFO,
-    }
+    "filename": "measles_analysis",  # The name of the output file (a timestamp will be appended).
+    "directory": "./outputs",  # The default output path is `./outputs`. Change it here, if necessary
+    "custom_levels": {  # Customise the output of specific loggers. They are applied in order:
+        "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
+        "tlo.methods.measles": logging.INFO,
+        "tlo.methods.demography": logging.INFO,
+    },
 }
 
 start_date = Date(2010, 1, 1)
@@ -40,7 +40,7 @@ end_date = Date(2030, 12, 31)
 pop_size = 25000
 
 # Path to the resource files used by the disease and intervention methods
-resources = Path('./resources')
+resources = Path("./resources")
 
 # ------------------------------------- BASELINE  ------------------------------------- #
 sim = Simulation(start_date=start_date, seed=0, log_config=log_config)
@@ -53,10 +53,8 @@ sim.register(
     simplified_births.SimplifiedBirths(resourcefilepath=resources),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
     symptommanager.SymptomManager(resourcefilepath=resources),
-
     healthsystem.HealthSystem(resourcefilepath=resources, disable=True),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resources),
-
     epi.Epi(resourcefilepath=resources),
     measles.Measles(resourcefilepath=resources),
 )
@@ -70,26 +68,28 @@ log_df = parse_log_file(sim.log_filepath)
 
 # # ------------------------------------- BASELINE MODEL OUTPUTS  ------------------------------------- #
 
-baseline_measles = log_df['tlo.methods.measles']['incidence']['inc_1000py']
-monthly_dates = log_df['tlo.methods.measles']['incidence']['date']
+baseline_measles = log_df["tlo.methods.measles"]["incidence"]["inc_1000py"]
+monthly_dates = log_df["tlo.methods.measles"]["incidence"]["date"]
 
-baseline_measles_age = log_df['tlo.methods.measles']['measles_incidence_age_range']
-annual_dates = log_df['tlo.methods.measles']['measles_incidence_age_range']['date']
+baseline_measles_age = log_df["tlo.methods.measles"]["measles_incidence_age_range"]
+annual_dates = log_df["tlo.methods.measles"]["measles_incidence_age_range"]["date"]
 
 tmp = log_df["tlo.methods.demography"]["age_range_f"]
-del tmp['date']
+del tmp["date"]
 age_ranges = tmp.T.index.tolist()
 
 # calculate death rate
-deaths_df = log_df['tlo.methods.demography']['death']
-deaths_df['year'] = pd.to_datetime(deaths_df['date']).dt.year
+deaths_df = log_df["tlo.methods.demography"]["death"]
+deaths_df["year"] = pd.to_datetime(deaths_df["date"]).dt.year
 deaths_years = deaths_df.groupby("year")["year"].mean()
 
-baseline_deaths = deaths_df.loc[deaths_df['cause'].str.startswith('measles')].groupby('year').size()
+baseline_deaths = (
+    deaths_df.loc[deaths_df["cause"].str.startswith("measles")].groupby("year").size()
+)
 
 # symptoms
-symptoms_output = log_df['tlo.methods.measles']['measles_symptoms']
-symptoms_output.to_csv(r'./outputs/Measles_symptom_distribution.csv', index=False)
+symptoms_output = log_df["tlo.methods.measles"]["measles_symptoms"]
+symptoms_output.to_csv(r"./outputs/Measles_symptom_distribution.csv", index=False)
 
 # # ------------------------------------- STOP VACCINES FROM 2019  ------------------------------------- #
 # # vaccines still available from 2010-2018 but not through HSI from 2019 onwards

@@ -26,11 +26,11 @@ def save_arguments_to_json(arguments_dict: dict, output_path: Path):
     with open(output_path, "w") as f:
         json.dump(
             {
-                k: str(v) if isinstance(v, Path) else v 
+                k: str(v) if isinstance(v, Path) else v
                 for k, v in arguments_dict.items()
-            }, 
-            f, 
-            indent=4
+            },
+            f,
+            indent=4,
         )
 
 
@@ -89,9 +89,9 @@ def scale_run(
                     "disable": disable_health_system,
                     "mode_appt_constraints": mode_appt_constraints,
                     "capabilities_coefficient": capabilities_coefficient,
-                    "hsi_event_count_log_period": "simulation"
-                    if record_hsi_event_details
-                    else None,
+                    "hsi_event_count_log_period": (
+                        "simulation" if record_hsi_event_details else None
+                    ),
                 },
                 "SymptomManager": {"spurious_symptoms": not disable_spurious_symptoms},
             },
@@ -158,7 +158,7 @@ if __name__ == "__main__":
         "--resources-dir",
         type=Path,
         help="Directory containing resources files for simulation",
-        default=_TLO_RESOURCES_DIR
+        default=_TLO_RESOURCES_DIR,
     )
     parser.add_argument(
         "--output-dir",

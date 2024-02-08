@@ -4,7 +4,17 @@ import importlib
 import inspect
 import os
 import pkgutil
-from typing import Any, Callable, Generator, Iterable, Mapping, Optional, Set, Type, Union
+from typing import (
+    Any,
+    Callable,
+    Generator,
+    Iterable,
+    Mapping,
+    Optional,
+    Set,
+    Type,
+    Union,
+)
 
 import tlo.methods
 from tlo import Module
@@ -22,8 +32,7 @@ DependencyGetter = Callable[[Union[Module, Type[Module]], Set[str]], Set[str]]
 
 
 def get_init_dependencies(
-    module: Union[Module, Type[Module]],
-    module_names_present: Set[str]
+    module: Union[Module, Type[Module]], module_names_present: Set[str]
 ) -> Set[str]:
     """Get the initialisation dependencies for a ``Module`` subclass.
 
@@ -33,15 +42,13 @@ def get_init_dependencies(
     :return: Set of ``Module`` subclass names corresponding to initialisation
         dependencies of ``module``, including any optional dependencies present.
     """
-    return (
-        module.INIT_DEPENDENCIES
-        | (module.OPTIONAL_INIT_DEPENDENCIES & module_names_present)
+    return module.INIT_DEPENDENCIES | (
+        module.OPTIONAL_INIT_DEPENDENCIES & module_names_present
     )
 
 
 def get_all_dependencies(
-    module: Union[Module, Type[Module]],
-    module_names_present: Set[str]
+    module: Union[Module, Type[Module]], module_names_present: Set[str]
 ) -> Set[str]:
     """Get all dependencies for a ``Module`` subclass.
 
@@ -58,8 +65,7 @@ def get_all_dependencies(
 
 
 def get_all_required_dependencies(
-    module: Union[Module, Type[Module]],
-    module_names_present: Optional[Set[str]] = None
+    module: Union[Module, Type[Module]], module_names_present: Optional[Set[str]] = None
 ) -> Set[str]:
     """Get all non-optional dependencies for a ``Module`` subclass.
 
@@ -103,10 +109,10 @@ def topologically_sort_modules(
     module_instance_map = {type(module).__name__: module for module in module_instances}
     if len(module_instance_map) != len(module_instances):
         raise MultipleModuleInstanceError(
-            'Multiple instances of one or more `Module` subclasses were passed to the '
-            'Simulation.register method. If you are sure this is correct, you can '
-            'disable this check (and the automatic dependency sorting) by setting '
-            'sort_modules=False in Simulation.register.'
+            "Multiple instances of one or more `Module` subclasses were passed to the "
+            "Simulation.register method. If you are sure this is correct, you can "
+            "disable this check (and the automatic dependency sorting) by setting "
+            "sort_modules=False in Simulation.register."
         )
     visited, currently_processing = set(), set()
 
@@ -114,7 +120,7 @@ def topologically_sort_modules(
         if module not in visited:
             if module in currently_processing:
                 raise ModuleDependencyError(
-                    f'Module {module} has circular dependencies.'
+                    f"Module {module} has circular dependencies."
                 )
             currently_processing.add(module)
             dependencies = get_dependencies(
@@ -123,21 +129,22 @@ def topologically_sort_modules(
             for dependency in sorted(dependencies):
                 if dependency not in module_instance_map:
                     alternatives_with_instances = [
-                        name for name, instance in module_instance_map.items()
+                        name
+                        for name, instance in module_instance_map.items()
                         if dependency in instance.ALTERNATIVE_TO
                     ]
                     if len(alternatives_with_instances) != 1:
                         message = (
-                            f'Module {module} depends on {dependency} which is '
-                            'missing from modules to register'
+                            f"Module {module} depends on {dependency} which is "
+                            "missing from modules to register"
                         )
                         if len(alternatives_with_instances) == 0:
-                            message += f' as are any alternatives to {dependency}.'
+                            message += f" as are any alternatives to {dependency}."
                         else:
                             message += (
-                                ' and there are multiple alternatives '
-                                f'({alternatives_with_instances}) so which '
-                                'to use to resolve dependency is ambiguous.'
+                                " and there are multiple alternatives "
+                                f"({alternatives_with_instances}) so which "
+                                "to use to resolve dependency is ambiguous."
                             )
                         raise ModuleDependencyError(message)
 
@@ -187,12 +194,12 @@ def get_module_class_map(excluded_modules: Set[str]) -> Mapping[str, Type[Module
     methods_package_path = os.path.dirname(inspect.getfile(tlo.methods))
     module_classes = {}
     for _, methods_module_name, _ in pkgutil.iter_modules([methods_package_path]):
-        methods_module = importlib.import_module(f'tlo.methods.{methods_module_name}')
+        methods_module = importlib.import_module(f"tlo.methods.{methods_module_name}")
         for _, obj in inspect.getmembers(methods_module):
             if is_valid_tlo_module_subclass(obj, excluded_modules):
                 if module_classes.get(obj.__name__) not in {None, obj}:
                     raise RuntimeError(
-                        f'Multiple modules with name {obj.__name__} are defined'
+                        f"Multiple modules with name {obj.__name__} are defined"
                     )
                 else:
                     module_classes[obj.__name__] = obj
@@ -204,7 +211,7 @@ def get_dependencies_and_initialise(
     module_class_map: Mapping[str, Type[Module]],
     excluded_module_classes: Optional[Set[Module]] = None,
     get_dependencies: DependencyGetter = get_init_dependencies,
-    **module_class_kwargs
+    **module_class_kwargs,
 ) -> Generator[Module, None, None]:
     """Generate a sequence of ``Module`` instances including all dependencies.
 
@@ -234,7 +241,8 @@ def get_dependencies_and_initialise(
     def initialise_module(module_class):
         signature = inspect.signature(module_class)
         relevant_kwargs = {
-            key: value for key, value in module_class_kwargs.items()
+            key: value
+            for key, value in module_class_kwargs.items()
             if key in signature.parameters
         }
         bound_args = signature.bind(**relevant_kwargs)
@@ -280,7 +288,7 @@ def check_dependencies_present(
     if not missing_dependencies_without_alternatives_present == set():
 
         raise ModuleDependencyError(
-            'One or more required dependency is missing from the module list and no '
-            'alternative to this / these modules are available either: '
-            f'{missing_dependencies_without_alternatives_present}'
+            "One or more required dependency is missing from the module list and no "
+            "alternative to this / these modules are available either: "
+            f"{missing_dependencies_without_alternatives_present}"
         )

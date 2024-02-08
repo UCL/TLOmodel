@@ -14,6 +14,7 @@ change Nkhatabay / NkhataBay to Nkhata Bay
 2012 missing Hib estimates - assume same coverage as 2011
 
 """
+
 from pathlib import Path
 
 import numpy as np
@@ -22,21 +23,29 @@ import pandas as pd
 resourcefilepath = Path("./resources")
 
 epi = pd.read_csv(Path(resourcefilepath) / "ResourceFile_EPI_summary.csv")
-master_district_list = pd.read_csv(Path(resourcefilepath) / "ResourceFile_District_Population_Data.csv")
+master_district_list = pd.read_csv(
+    Path(resourcefilepath) / "ResourceFile_District_Population_Data.csv"
+)
 
 districts = master_district_list.District
 
-len(epi['District'].unique())  # 28
-len(master_district_list['District'].unique())  # 32
+len(epi["District"].unique())  # 28
+len(master_district_list["District"].unique())  # 32
 
 # list(set(epi['District']).difference(master_district_list['District']))
 
-print("Additional values in first list:", (set(epi['District']).difference(master_district_list['District'])))
-print("Additional values in first list:", (set(master_district_list['District']).difference(epi['District'])))
+print(
+    "Additional values in first list:",
+    (set(epi["District"]).difference(master_district_list["District"])),
+)
+print(
+    "Additional values in first list:",
+    (set(master_district_list["District"]).difference(epi["District"])),
+)
 # {'Lilongwe City', 'Mzuzu City', 'Blantyre City', 'Zomba City'}
 
-print(epi['District'].unique())
-print(master_district_list['District'].unique())
+print(epi["District"].unique())
+print(master_district_list["District"].unique())
 
 ######################################################################
 # these are the ones that need to match
@@ -51,10 +60,10 @@ print(master_district_list['District'].unique())
 ######################################################################
 # find which districts are missing in the EPI report
 map_districts = (
-    ('Lilongwe', 'Lilongwe City'),
-    ('Blantyre', 'Blantyre City'),
-    ('Zomba', 'Zomba City'),
-    ('Mzimba', 'Mzuzu City')
+    ("Lilongwe", "Lilongwe City"),
+    ("Blantyre", "Blantyre City"),
+    ("Zomba", "Zomba City"),
+    ("Mzimba", "Mzuzu City"),
 )
 
 # for each missing district in EPI report generate an identical row using the mapped district
@@ -77,7 +86,7 @@ for i in np.arange(0, len(map_districts)):
     # add to EPI data
     epi_formatted = epi_formatted.append(d1)
 
-len(epi_formatted['District'].unique())
-print(epi_formatted['District'].unique())
+len(epi_formatted["District"].unique())
+print(epi_formatted["District"].unique())
 
-epi_formatted.to_csv(Path(resourcefilepath) / 'ResourceFile_EPI_vaccine_coverage.csv')
+epi_formatted.to_csv(Path(resourcefilepath) / "ResourceFile_EPI_vaccine_coverage.csv")

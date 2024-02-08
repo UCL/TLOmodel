@@ -22,21 +22,34 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     # Define hierarchy of treatment_id (up to depth of 3)
     base = pd.Series(index=all_treatment_ids.index, data="*")
-    one_level_up = all_treatment_ids.apply(lambda s: "_".join(c for i, c in enumerate(s.split("_")) if i < 1))
-    two_level_up = all_treatment_ids.apply(lambda s: "_".join(c for i, c in enumerate(s.split("_")) if i < 2))
-    three_level_up = all_treatment_ids.apply(lambda s: "_".join(c for i, c in enumerate(s.split("_")) if i < 3))
+    one_level_up = all_treatment_ids.apply(
+        lambda s: "_".join(c for i, c in enumerate(s.split("_")) if i < 1)
+    )
+    two_level_up = all_treatment_ids.apply(
+        lambda s: "_".join(c for i, c in enumerate(s.split("_")) if i < 2)
+    )
+    three_level_up = all_treatment_ids.apply(
+        lambda s: "_".join(c for i, c in enumerate(s.split("_")) if i < 3)
+    )
 
     split = pd.concat([base, one_level_up, two_level_up, three_level_up], axis=1)
-    split = split.set_index(one_level_up + '*')  # One level up is equivalent to the Short TREATMENT_ID
+    split = split.set_index(
+        one_level_up + "*"
+    )  # One level up is equivalent to the Short TREATMENT_ID
     split = split.sort_index(key=order_of_short_treatment_ids)  # ordering
 
-    graph = pydot.Dot(graph_type='digraph',
-                      rankdir='LR',
-                      strict=True,
-                      )
+    graph = pydot.Dot(
+        graph_type="digraph",
+        rankdir="LR",
+        strict=True,
+    )
     for short_treatment_id, row in split.iterrows():
 
-        graph.add_node(pydot.Node(name="*", label="*", style='filled', fillcolor="white", shape='box'))
+        graph.add_node(
+            pydot.Node(
+                name="*", label="*", style="filled", fillcolor="white", shape="box"
+            )
+        )
 
         color = get_color_short_treatment_id(short_treatment_id)
 
@@ -44,10 +57,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             origin_node = row[_l]
             destination = row[_l + 1]
             graph.add_node(
-                pydot.Node(name=destination, label=destination, style='filled', fillcolor=color, shape='box')
+                pydot.Node(
+                    name=destination,
+                    label=destination,
+                    style="filled",
+                    fillcolor=color,
+                    shape="box",
+                )
             )
 
-            if (origin_node != destination):
+            if origin_node != destination:
                 graph.add_edge(pydot.Edge(origin_node, destination))
 
         plot_from_level(0)
@@ -58,8 +77,4 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 if __name__ == "__main__":
-    apply(
-        results_folder=None,
-        output_folder=Path('./outputs'),
-        resourcefilepath=None
-    )
+    apply(results_folder=None, output_folder=Path("./outputs"), resourcefilepath=None)

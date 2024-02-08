@@ -1,4 +1,5 @@
 """The Person and Population classes."""
+
 import math
 
 import pandas as pd
@@ -21,7 +22,14 @@ class Population:
         A Pandas DataFrame with the properties of all individuals as columns.
     """
 
-    __slots__ = ('props', 'sim', 'initial_size', 'new_row', 'next_person_id', 'new_rows')
+    __slots__ = (
+        "props",
+        "sim",
+        "initial_size",
+        "new_row",
+        "next_person_id",
+        "new_rows",
+    )
 
     def __init__(self, sim, initial_size: int, append_size: int = None):
         """Create a new population.
@@ -45,7 +53,9 @@ class Population:
             # TODO: profile adjustment of this and more clever calculation
             append_size = math.ceil(initial_size * 0.02)
 
-        assert append_size > 0, "Number of rows to append when growing must be greater than 0"
+        assert (
+            append_size > 0
+        ), "Number of rows to append when growing must be greater than 0"
 
         logger.info(key="info", data=f"Dataframe capacity append size: {append_size}")
 
@@ -67,7 +77,7 @@ class Population:
                 for module in self.sim.modules.values()
                 for property_name, property in module.PROPERTIES.items()
             },
-            index=pd.RangeIndex(stop=size, name="person")
+            index=pd.RangeIndex(stop=size, name="person"),
         )
 
     def do_birth(self):
@@ -83,9 +93,14 @@ class Population:
         # the index of the next person
         if self.next_person_id > index_of_last_row:
             # we need to add some rows
-            self.props = pd.concat((self.props, self.new_rows), ignore_index=True, sort=False)
-            self.props.index.name = 'person'
-            logger.info(key="info", data=f"Increased capacity of population dataframe to {len(self.props)}")
+            self.props = pd.concat(
+                (self.props, self.new_rows), ignore_index=True, sort=False
+            )
+            self.props.index.name = "person"
+            logger.info(
+                key="info",
+                data=f"Increased capacity of population dataframe to {len(self.props)}",
+            )
 
         new_index = self.next_person_id
         self.next_person_id += 1
@@ -107,6 +122,7 @@ class Population:
             the property
         """
         from tlo import Property
-        prop = Property(type_, 'A test property')
+
+        prop = Property(type_, "A test property")
         size = self.initial_size if self.props.empty else len(self.props)
         self.props[name] = prop.create_series(name, size)

@@ -16,27 +16,32 @@ class Cause:
     'gbd_causes': set of strings for causes in the GBD datasets to which this cause is equivalent.
     'cause_of_death': the (single) category to which this cause belongs and should be labelled in output statistics.
     """
+
     def __init__(self, label: str, gbd_causes: Union[set, str] = None):
         """Do basic type checking."""
-        assert isinstance(label, str) and (label != '')
+        assert isinstance(label, str) and (label != "")
         self.label = label
 
         if gbd_causes is None:
             gbd_causes = set()
 
         if gbd_causes:
-            gbd_causes = set(gbd_causes) if type(gbd_causes) in (list, set) else {gbd_causes}
-            assert all([isinstance(c, str) and (c != '') for c in gbd_causes])
+            gbd_causes = (
+                set(gbd_causes) if type(gbd_causes) in (list, set) else {gbd_causes}
+            )
+            assert all([isinstance(c, str) and (c != "") for c in gbd_causes])
         self.gbd_causes = gbd_causes
 
 
-def collect_causes_from_disease_modules(all_modules, collect, acceptable_causes: set = None):
+def collect_causes_from_disease_modules(
+    all_modules, collect, acceptable_causes: set = None
+):
     """Helper function used by Demography and HealthBurden modules to look through Disease Modules and register
     declarations for either 'CAUSES_OF_DEATH' or 'CAUSES_OF_DISABILITY'.
     It will check that a gbd_cause is not associated with more than label (a requirement of this scheme).
     Optionally, for each cause that is collected, it will check the gbd_causes defined within are in a set of
     acceptable causes.
-     """
+    """
 
     def check_cause(_cause: Cause, _acceptable_causes: set):
         """Helper function to check that a 'Cause' has been defined in a way that is acceptable."""
@@ -45,12 +50,16 @@ def collect_causes_from_disease_modules(all_modules, collect, acceptable_causes:
 
         # 1) Check that the declared gbd_cause is among the acceptable causes.
         for _c in _cause.gbd_causes:
-            assert _c in _acceptable_causes, f'The declared gbd_cause {_c} is not among the acceptable causes.'
+            assert (
+                _c in _acceptable_causes
+            ), f"The declared gbd_cause {_c} is not among the acceptable causes."
 
     collected_causes = dict()
     for m in all_modules:
         if Metadata.DISEASE_MODULE in m.METADATA:
-            assert hasattr(m, collect), f'Disease module {m.name} must declare {collect} (even if empty)'
+            assert hasattr(
+                m, collect
+            ), f"Disease module {m.name} must declare {collect} (even if empty)"
             declaration_in_module = getattr(m, collect)
             assert isinstance(declaration_in_module, dict)
 
@@ -62,11 +71,11 @@ def collect_causes_from_disease_modules(all_modules, collect, acceptable_causes:
                 # the same as that already registered.
                 if tlo_cause in collected_causes:
                     assert (
-                        (collected_causes[tlo_cause].gbd_causes == cause.gbd_causes) and
-                        (collected_causes[tlo_cause].label == cause.label)
-                    ), \
-                        f"Conflict in declared cause {tlo_cause} by {m.name}. " \
+                        collected_causes[tlo_cause].gbd_causes == cause.gbd_causes
+                    ) and (collected_causes[tlo_cause].label == cause.label), (
+                        f"Conflict in declared cause {tlo_cause} by {m.name}. "
                         f"A different specification has already been registered."
+                    )
 
                 # If ok, update these causes to the master dict of all causes of death  (copies to prevent any
                 # accidental editing of the modules' declarations).
@@ -77,8 +86,10 @@ def collect_causes_from_disease_modules(all_modules, collect, acceptable_causes:
     for c in collected_causes.values():
         for g in c.gbd_causes:
             if g in gbd_causes:
-                assert gbd_causes[g] == c.label, f"The gbd cause {g} is defined under more than one label: " \
-                                                 f"{gbd_causes[g]} and {c.label}."
+                assert gbd_causes[g] == c.label, (
+                    f"The gbd cause {g} is defined under more than one label: "
+                    f"{gbd_causes[g]} and {c.label}."
+                )
             else:
                 gbd_causes[g] = c.label
 
@@ -115,34 +126,48 @@ def create_mappers_from_causes_to_label(causes: dict, all_gbd_causes: set = None
 
     # 1) Reorganise the causes so that we have a dict
     # lookup: dict(<label> : dict(<tlo_causes>:<list of tlo_strings>, <gbd_causes>: <list_of_gbd_causes))
-    lookup = defaultdict(lambda: {'tlo_causes': set(), 'gbd_causes': set()})
+    lookup = defaultdict(lambda: {"tlo_causes": set(), "gbd_causes": set()})
 
     for tlo_cause_name, cause in causes.items():
         label = cause.label
         list_of_gbd_causes = cause.gbd_causes
-        lookup[label]['tlo_causes'].add(tlo_cause_name)
+        lookup[label]["tlo_causes"].add(tlo_cause_name)
         for gbd_cause in list_of_gbd_causes:
-            lookup[label]['gbd_causes'].add(gbd_cause)
+            lookup[label]["gbd_causes"].add(gbd_cause)
 
     # 2) Create dicts for mapping (gbd_cause --> label) and (tlo_cause --> label)
-    lookup_df = pd.DataFrame.from_dict(lookup, orient='index').applymap(lambda x: list(x))
+    lookup_df = pd.DataFrame.from_dict(lookup, orient="index").applymap(
+        lambda x: list(x)
+    )
 
     # Sort the lists and sort the index to provide reliable structure
     lookup_df = lookup_df.applymap(sorted).sort_index()
 
     #  - from tlo_cause --> label (key=tlo_cause, value=label)
-    mapper_from_tlo_causes = dict((v, k) for k, v in (
-        lookup_df.tlo_causes.apply(pd.Series).stack().reset_index(level=1, drop=True)
-    ).items())
+    mapper_from_tlo_causes = dict(
+        (v, k)
+        for k, v in (
+            lookup_df.tlo_causes.apply(pd.Series)
+            .stack()
+            .reset_index(level=1, drop=True)
+        ).items()
+    )
 
     #  - from gbd_cause --> label (key=gbd_cause, value=label)
-    mapper_from_gbd_causes = dict((v, k) for k, v in (
-        lookup_df.gbd_causes.apply(pd.Series).stack().reset_index(level=1, drop=True)
-    ).items())
+    mapper_from_gbd_causes = dict(
+        (v, k)
+        for k, v in (
+            lookup_df.gbd_causes.apply(pd.Series)
+            .stack()
+            .reset_index(level=1, drop=True)
+        ).items()
+    )
 
     # -- checks
     assert set(mapper_from_tlo_causes.keys()) == set(causes.keys())
-    assert set(mapper_from_gbd_causes.values()).issubset(mapper_from_tlo_causes.values())
+    assert set(mapper_from_gbd_causes.values()).issubset(
+        mapper_from_tlo_causes.values()
+    )
     if all_gbd_causes:
         assert set(mapper_from_gbd_causes.keys()) == all_gbd_causes
 

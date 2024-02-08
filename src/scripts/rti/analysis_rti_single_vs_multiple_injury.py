@@ -30,27 +30,31 @@ log_config_single = {
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
         "tlo.methods.rti": logging.INFO,
         "tlo.methods.healthsystem": logging.DEBUG,
-        "tlo.methods.healthburden": logging.INFO
-    }
+        "tlo.methods.healthburden": logging.INFO,
+    },
 }
 # The Resource files [NB. Working directory must be set to the root of TLO: TLOmodel]
-resourcefilepath = Path('./resources')
+resourcefilepath = Path("./resources")
 # Establish the simulation object
 yearsrun = 10
 start_date = Date(year=2010, month=1, day=1)
 end_date = Date(year=(2010 + yearsrun), month=1, day=1)
-service_availability = ['*']
+service_availability = ["*"]
 pop_size = 10000
 seed = 100
 
 # Create the simulation object
-sim_single_injury = Simulation(start_date=start_date, seed=seed, log_config=log_config_single)
+sim_single_injury = Simulation(
+    start_date=start_date, seed=seed, log_config=log_config_single
+)
 
 # Register the modules
 sim_single_injury.register(
     demography.Demography(resourcefilepath=resourcefilepath),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-    healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+    healthsystem.HealthSystem(
+        resourcefilepath=resourcefilepath, service_availability=["*"]
+    ),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -64,23 +68,35 @@ sim_single_injury.make_initial_population(n=pop_size)
 # alter the number of injuries given out
 # Injury vibes number of GBD injury category distribution:
 number_inj_data = [1, 0, 0, 0, 0, 0, 0, 0]
-sim_single_injury.modules['RTI'].parameters['number_of_injured_body_regions_distribution'] = \
-    [[1, 2, 3, 4, 5, 6, 7, 8], number_inj_data]
+sim_single_injury.modules["RTI"].parameters[
+    "number_of_injured_body_regions_distribution"
+] = [[1, 2, 3, 4, 5, 6, 7, 8], number_inj_data]
 
 # Run the simulation
 sim_single_injury.simulate(end_date=end_date)
 # Parse the logfile of this simulation
 log_df_single = parse_log_file(sim_single_injury.log_filepath)
 # Store the incidence of RTI per 100,000 person years in this sim
-sing_inj_incidences_of_rti = np.mean(log_df_single['tlo.methods.rti']['summary_1m']
-                                     ['incidence of rti per 100,000'].tolist())
+sing_inj_incidences_of_rti = np.mean(
+    log_df_single["tlo.methods.rti"]["summary_1m"][
+        "incidence of rti per 100,000"
+    ].tolist()
+)
 # Store the incidence of death due to RTI per 100,000 person years and the sub categories in this sim
-sing_inj_incidences_of_death = np.mean(log_df_single['tlo.methods.rti']['summary_1m']
-                                       ['incidence of rti death per 100,000'].tolist())
+sing_inj_incidences_of_death = np.mean(
+    log_df_single["tlo.methods.rti"]["summary_1m"][
+        "incidence of rti death per 100,000"
+    ].tolist()
+)
 # one injury per person implies above are equivalent
-sing_inj_incidences_of_injuries = np.mean(log_df_single['tlo.methods.rti']['summary_1m']
-                                          ['incidence of rti per 100,000'].tolist())
-sing_DALYs = log_df_single['tlo.methods.healthburden']['dalys']['Transport Injuries'].sum()
+sing_inj_incidences_of_injuries = np.mean(
+    log_df_single["tlo.methods.rti"]["summary_1m"][
+        "incidence of rti per 100,000"
+    ].tolist()
+)
+sing_DALYs = log_df_single["tlo.methods.healthburden"]["dalys"][
+    "Transport Injuries"
+].sum()
 
 # Create the simulation object
 log_config_multiple = {
@@ -90,15 +106,19 @@ log_config_multiple = {
         "*": logging.WARNING,  # Asterisk matches all loggers - we set the default level to WARNING
         "tlo.methods.rti": logging.INFO,
         "tlo.methods.healthsystem": logging.DEBUG,
-        "tlo.methods.healthburden": logging.INFO
-    }
+        "tlo.methods.healthburden": logging.INFO,
+    },
 }
-sim_multiple_injury = Simulation(start_date=start_date, seed=seed, log_config=log_config_multiple)
+sim_multiple_injury = Simulation(
+    start_date=start_date, seed=seed, log_config=log_config_multiple
+)
 # Register the modules
 sim_multiple_injury.register(
     demography.Demography(resourcefilepath=resourcefilepath),
     enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-    healthsystem.HealthSystem(resourcefilepath=resourcefilepath, service_availability=['*']),
+    healthsystem.HealthSystem(
+        resourcefilepath=resourcefilepath, service_availability=["*"]
+    ),
     symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
     healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
     healthburden.HealthBurden(resourcefilepath=resourcefilepath),
@@ -113,26 +133,62 @@ sim_multiple_injury.simulate(end_date=end_date)
 # Parse the logfile of this simulation
 log_df_multiple = parse_log_file(sim_multiple_injury.log_filepath)
 # Store the incidence of RTI per 100,000 person years in this sim
-mult_inj_incidences_of_rti = np.mean(log_df_multiple['tlo.methods.rti']['summary_1m']
-                                     ['incidence of rti per 100,000'].tolist())
+mult_inj_incidences_of_rti = np.mean(
+    log_df_multiple["tlo.methods.rti"]["summary_1m"][
+        "incidence of rti per 100,000"
+    ].tolist()
+)
 # Store the incidence of death due to RTI per 100,000 person years and the sub categories in this sim
-mult_inj_incidences_of_death = np.mean(log_df_multiple['tlo.methods.rti']['summary_1m']
-                                       ['incidence of rti death per 100,000'].tolist())
+mult_inj_incidences_of_death = np.mean(
+    log_df_multiple["tlo.methods.rti"]["summary_1m"][
+        "incidence of rti death per 100,000"
+    ].tolist()
+)
 print(f"incidence of death for multiple injuries = {mult_inj_incidences_of_death}")
-mult_inj_incidences_of_injuries = np.mean(log_df_multiple['tlo.methods.rti']['Inj_category_incidence']
-                                          ['tot_inc_injuries'].tolist())
+mult_inj_incidences_of_injuries = np.mean(
+    log_df_multiple["tlo.methods.rti"]["Inj_category_incidence"][
+        "tot_inc_injuries"
+    ].tolist()
+)
 
-mult_DALYs = log_df_multiple['tlo.methods.healthburden']['dalys']['Transport Injuries'].sum()
+mult_DALYs = log_df_multiple["tlo.methods.healthburden"]["dalys"][
+    "Transport Injuries"
+].sum()
 # compare the outputs from the single injury model run to the multiple injury model run
 
 # compare incidence of rti, incidence of death and incidence of injuries in the simulation
-data_sing = [sing_inj_incidences_of_rti, sing_inj_incidences_of_death, sing_inj_incidences_of_injuries]
-data_mult = [mult_inj_incidences_of_rti, mult_inj_incidences_of_death, mult_inj_incidences_of_injuries]
-plt.bar(np.arange(len(data_sing)), data_sing, width=0.4, color='lightsteelblue', label='single injury')
-plt.bar(np.arange(len(data_mult)) + 0.4, data_mult, width=0.4, color='lightsalmon', label='multiple injury')
-plt.ylabel('Incidence per 100,000 person years')
-plt.xticks(np.arange(len(data_sing)), ['Incidence\nof\nRTI', 'Incidence\nof\nDeath', 'Incidence\nof\nInjuries'])
+data_sing = [
+    sing_inj_incidences_of_rti,
+    sing_inj_incidences_of_death,
+    sing_inj_incidences_of_injuries,
+]
+data_mult = [
+    mult_inj_incidences_of_rti,
+    mult_inj_incidences_of_death,
+    mult_inj_incidences_of_injuries,
+]
+plt.bar(
+    np.arange(len(data_sing)),
+    data_sing,
+    width=0.4,
+    color="lightsteelblue",
+    label="single injury",
+)
+plt.bar(
+    np.arange(len(data_mult)) + 0.4,
+    data_mult,
+    width=0.4,
+    color="lightsalmon",
+    label="multiple injury",
+)
+plt.ylabel("Incidence per 100,000 person years")
+plt.xticks(
+    np.arange(len(data_sing)),
+    ["Incidence\nof\nRTI", "Incidence\nof\nDeath", "Incidence\nof\nInjuries"],
+)
 plt.legend()
-plt.title('Comparing incidence of RTI, RTI death and \nincidence of injuries for a single injury\nvs multiple injury '
-          'model run')
+plt.title(
+    "Comparing incidence of RTI, RTI death and \nincidence of injuries for a single injury\nvs multiple injury "
+    "model run"
+)
 plt.show()

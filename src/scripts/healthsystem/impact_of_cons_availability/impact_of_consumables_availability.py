@@ -27,13 +27,13 @@ class ImpactOfConsumablesAvailability(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'impact_of_consumables_availability',
-            'directory': './outputs',  # <- (specified only for local running)
-            'custom_levels': {
-                '*': logging.WARNING,
-                'tlo.methods.demography': logging.INFO,
-                'tlo.methods.healthburden': logging.INFO,
-            }
+            "filename": "impact_of_consumables_availability",
+            "directory": "./outputs",  # <- (specified only for local running)
+            "custom_levels": {
+                "*": logging.WARNING,
+                "tlo.methods.demography": logging.INFO,
+                "tlo.methods.healthburden": logging.INFO,
+            },
         }
 
     def modules(self):
@@ -41,13 +41,13 @@ class ImpactOfConsumablesAvailability(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'HealthSystem': {
-                'cons_availability': ['default', 'none', 'all'][draw_number]
-                }
+            "HealthSystem": {
+                "cons_availability": ["default", "none", "all"][draw_number]
+            }
         }
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     from tlo.cli import scenario_run
 
     scenario_run([__file__])

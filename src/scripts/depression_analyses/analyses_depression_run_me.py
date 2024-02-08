@@ -51,7 +51,9 @@ def run():
     # Register the appropriate modules
 
     sim.register(
-        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(resourcefilepath=resources),
+        care_of_women_during_pregnancy.CareOfWomenDuringPregnancy(
+            resourcefilepath=resources
+        ),
         demography.Demography(resourcefilepath=resources),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resources),
         healthsystem.HealthSystem(resourcefilepath=resources, disable=True),

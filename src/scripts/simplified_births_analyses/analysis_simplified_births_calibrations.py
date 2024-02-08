@@ -35,7 +35,7 @@ def run():
     # Registering all required modules
     sim.register(
         demography.Demography(resourcefilepath=resourcefilepath),
-        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
     )
 
     sim.make_initial_population(n=pop_size)
@@ -44,18 +44,26 @@ def run():
 
 
 def get_scaling_ratio(sim):
-    cens_tot = pd.read_csv(Path(resourcefilepath) / 'demography' / "ResourceFile_PopulationSize_2018Census.csv")[
-        'Count'].sum()
+    cens_tot = pd.read_csv(
+        Path(resourcefilepath)
+        / "demography"
+        / "ResourceFile_PopulationSize_2018Census.csv"
+    )["Count"].sum()
     cens_yr = 2018
-    cens_date = Date(cens_yr, 7, 1)  # notional date for census at midpoint of the census year.
-    assert sim.date >= cens_date, "Cannot scale if simulation does not include the census date"
+    cens_date = Date(
+        cens_yr, 7, 1
+    )  # notional date for census at midpoint of the census year.
+    assert (
+        sim.date >= cens_date
+    ), "Cannot scale if simulation does not include the census date"
 
     # Compute number of people alive in the year of census
     df = sim.population.props
-    alive_in_cens_yr = \
-        ~df.date_of_birth.isna() & \
-        (df.date_of_birth <= cens_date) & \
-        ~(df.date_of_death < cens_date)
+    alive_in_cens_yr = (
+        ~df.date_of_birth.isna()
+        & (df.date_of_birth <= cens_date)
+        & ~(df.date_of_death < cens_date)
+    )
     model_tot = alive_in_cens_yr.sum()
 
     # Calculate ratio for scaling
@@ -82,52 +90,59 @@ df = sim.population.props
 newborns = df.loc[df.date_of_birth.notna() & (df.mother_id >= 0)]
 
 # getting total number of newborns per year in the model
-births_model = pd.DataFrame(data=newborns['date_of_birth'].dt.year.value_counts())
+births_model = pd.DataFrame(data=newborns["date_of_birth"].dt.year.value_counts())
 births_model.sort_index(inplace=True)
 births_model.reset_index(inplace=True)
-births_model.rename(columns={'index': 'year', 'date_of_birth': 'total_births'}, inplace=True)
+births_model.rename(
+    columns={"index": "year", "date_of_birth": "total_births"}, inplace=True
+)
 
 # rescale the number of births in the model (so that the model population sizes matches actual population size)
-births_model['total_births'] *= get_scaling_ratio(sim)
+births_model["total_births"] *= get_scaling_ratio(sim)
 
 # Aggregate the model outputs into five year periods:
 (__tmp__, calendar_period_lookup) = make_calendar_period_lookup()
 births_model["Period"] = births_model["year"].map(calendar_period_lookup)
-births_model = births_model.groupby(by='Period')['total_births'].sum()
+births_model = births_model.groupby(by="Period")["total_births"].sum()
 births_model.index = births_model.index.astype(make_calendar_period_type())
 
 # Births over time (WPP)
-wpp = pd.read_csv(Path(resourcefilepath) / 'demography' / "ResourceFile_TotalBirths_WPP.csv")
-wpp = wpp.groupby(['Period', 'Variant'])['Total_Births'].sum().unstack()
+wpp = pd.read_csv(
+    Path(resourcefilepath) / "demography" / "ResourceFile_TotalBirths_WPP.csv"
+)
+wpp = wpp.groupby(["Period", "Variant"])["Total_Births"].sum().unstack()
 wpp.index = wpp.index.astype(make_calendar_period_type())
-wpp.columns = 'WPP_' + wpp.columns
+wpp.columns = "WPP_" + wpp.columns
 
 # Births in 2018 Census
-cens = pd.read_csv(Path(resourcefilepath) / 'demography' / "ResourceFile_Births_2018Census.csv")
-cens_per_5y = cens['Count'].sum() * 5
+cens = pd.read_csv(
+    Path(resourcefilepath) / "demography" / "ResourceFile_Births_2018Census.csv"
+)
+cens_per_5y = cens["Count"].sum() * 5
 
 # Merge in model results
 births = wpp.copy()
-births['Model'] = births_model
-births['Census'] = np.nan
-births.at[cens['Period'][0], 'Census'] = cens_per_5y
+births["Model"] = births_model
+births["Census"] = np.nan
+births.at[cens["Period"][0], "Census"] = cens_per_5y
 
 # Plot:
-cens_period = cens['Period'][0]
-ax = births.plot.line(y=['Model',  'WPP_Estimates', 'WPP_Medium variant'])
-births.plot.line(
-    y=['Census'],
-    marker='^',
-    color='red',
-    ax=ax
-)
+cens_period = cens["Period"][0]
+ax = births.plot.line(y=["Model", "WPP_Estimates", "WPP_Medium variant"])
+births.plot.line(y=["Census"], marker="^", color="red", ax=ax)
 plt.xticks(np.arange(len(births.index)), births.index)
-ax.fill_between(births.index, births['WPP_Low variant'], births['WPP_High variant'], facecolor='green', alpha=0.2)
+ax.fill_between(
+    births.index,
+    births["WPP_Low variant"],
+    births["WPP_High variant"],
+    facecolor="green",
+    alpha=0.2,
+)
 plt.xticks(rotation=90)
-ax.set_title('Number of Births Per Calendar Period')
-ax.legend(loc='upper left')
-ax.set_xlabel('Calendar Period')
-ax.set_ylabel('Number per period')
-plt.savefig(outputpath / ("Births_Over_Time_" + datestamp + ".pdf"), format='pdf')
+ax.set_title("Number of Births Per Calendar Period")
+ax.legend(loc="upper left")
+ax.set_xlabel("Calendar Period")
+ax.set_ylabel("Number per period")
+plt.savefig(outputpath / ("Births_Over_Time_" + datestamp + ".pdf"), format="pdf")
 plt.tight_layout()
 plt.show()
