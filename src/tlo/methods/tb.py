@@ -366,7 +366,7 @@ class Tb(Module):
             Types.STRING, "name of second test to be used for TB diagnosis"
         ),
         "tb_healthseekingbehaviour_cap": Parameter(
-            Types.REAL,
+            Types.INT,
             "number of repeat visits assumed for healthcare services",
         ),
         "data_end": Parameter(
@@ -2093,9 +2093,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         now = self.sim.date
         person = df.loc[person_id]
-        self.number_of_occurrences += (
-            1  # The current appointment is included in the count.
-        )
+        self.number_of_occurrences += 1  # The current appointment is included in the count.
 
         if not person["is_alive"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
@@ -2164,8 +2162,8 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                     priority=0,
                 )
 
-    def post_apply_hook(self):
-        self.number_of_occurrences += 1
+    # def post_apply_hook(self):
+    #     self.number_of_occurrences += 1
 
     def select_treatment(self, person_id):
         """

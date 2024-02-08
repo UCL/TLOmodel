@@ -384,7 +384,7 @@ class Hiv(Module):
             "probability of death if aids and tb, person on treatment for tb",
         ),
         "hiv_healthseekingbehaviour_cap": Parameter(
-            Types.REAL,
+            Types.INT,
             "number of repeat visits assumed for healthcare services",
         ),
     }
