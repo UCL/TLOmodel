@@ -106,9 +106,13 @@ class Hiv(Module):
             "ART status of person, whether on ART or not; and whether viral load is suppressed or not if on ART.",
             categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"],
         ),
+        "hv_on_cotrimoxazole": Property(
+            Types.BOOL,
+            "Whether the person is currently taking and receiving a malaria-protective effect from cotrimoxazole",
+        ),
         "hv_is_on_prep": Property(
             Types.BOOL,
-            "Whether the person is currently taking and receiving a protective effect from Pre-Exposure Prophylaxis.",
+            "Whether the person is currently taking and receiving a protective effect from Pre-Exposure Prophylaxis",
         ),
         "hv_behaviour_change": Property(
             Types.BOOL,
@@ -370,6 +374,19 @@ class Hiv(Module):
             Types.REAL,
             "probability of death if aids and tb, person on treatment for tb",
         ),
+        "scenario": Parameter(
+            Types.INT,
+            "integer value labelling the scenario to be run: default is 0"
+        ),
+        "scenario_start_date": Parameter(
+            Types.DATE,
+            "date from which different scenarios are run"
+        ),
+        # ------------------ scale-up parameters for scenario analysis ------------------ #
+        "treatment_effects": Parameter(
+            Types.DATA_FRAME,
+            "list of parameters and values changed in scenario analysis",
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -406,6 +423,9 @@ class Hiv(Module):
 
         # Load spectrum estimates of treatment cascade
         p["treatment_cascade"] = workbook["spectrum_treatment_cascade"]
+
+        # treatment effects change for scenario analysis
+        p["treatment_effects"] = workbook["treatment_effects"]
 
         # DALY weights
         # get the DALY weight that this module will use from the weight database (these codes are just random!)
@@ -479,7 +499,7 @@ class Hiv(Module):
                 "age_years",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True)
-            .when("==0", 1)   # Weibull with shape=1 equivalent to exponential distribution
+            .when("==0", 1)  # Weibull with shape=1 equivalent to exponential distribution
             .when(".between(1,4)", p["infection_to_death_infant_infection_after_birth_weibull_shape"])
             .when(".between(5, 19)", p["infection_to_death_weibull_shape_1519"])
             .when(".between(20, 24)", p["infection_to_death_weibull_shape_2024"])
@@ -836,6 +856,9 @@ class Hiv(Module):
         """
         df = sim.population.props
 
+        # Scenario change
+        sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
+
         # 1) Schedule the Main HIV Regular Polling Event
         sim.schedule_event(
             HivRegularPollingEvent(self), sim.date + DateOffset(days=0)
@@ -918,6 +941,14 @@ class Hiv(Module):
             sim.schedule_event(
                 HivAidsDeathEvent(person_id=person_id, module=self, cause=cause_of_death),
                 date=date_aids_death,
+            )
+            # schedule hospital stay for end of life care if untreated
+            beddays = self.rng.randint(low=14, high=20)
+            date_admission = date_aids_death - pd.DateOffset(days=beddays)
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self, beddays=beddays),
+                priority=0,
+                topen=date_admission if (date_admission >= self.sim.date) else self.sim.date,
             )
 
         # 5) (Optionally) Schedule the event to check the configuration of all properties
@@ -1015,6 +1046,7 @@ class Hiv(Module):
         # --- Current status
         df.at[child_id, "hv_inf"] = False
         df.at[child_id, "hv_art"] = "not"
+        df.at[child_id, "hv_on_cotrimoxazole"] = False
         df.at[child_id, "hv_date_treated"] = pd.NaT
         df.at[child_id, "hv_is_on_prep"] = False
         df.at[child_id, "hv_behaviour_change"] = False
@@ -1254,8 +1286,8 @@ class Hiv(Module):
         Assumes that the time between onset of AIDS symptoms and deaths is exponentially distributed.
         """
         mean = self.parameters["mean_months_between_aids_and_death"]
-        draw_number_of_months = int(np.round(self.rng.exponential(mean)))
-        return pd.DateOffset(months=draw_number_of_months)
+        draw_number_of_months = self.rng.exponential(mean)
+        return pd.DateOffset(days=draw_number_of_months * 30.5)
 
     def do_when_hiv_diagnosed(self, person_id):
         """Things to do when a person has been tested and found (newly) be be HIV-positive:.
@@ -1345,8 +1377,9 @@ class Hiv(Module):
                 date=self.sim.date + pd.DateOffset(months=months_to_aids),
             )
 
-        # Set that the person is no longer on ART
+        # Set that the person is no longer on ART or cotrimoxazole
         df.at[person_id, "hv_art"] = "not"
+        df.at[person_id, "hv_on_cotrimoxazole"] = "not"
 
     def per_capita_testing_rate(self):
         """This calculates the numbers of hiv tests performed in each time period.
@@ -1496,6 +1529,158 @@ class Hiv(Module):
 # ---------------------------------------------------------------------------
 #   Main Polling Event
 # ---------------------------------------------------------------------------
+
+class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
+    """ This event exists to change parameters or functions
+    depending on the scenario for projections which has been set
+    It only occurs once at param: scenario_start_date,
+    called by initialise_simulation
+    """
+
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=100))
+
+    def apply(self, population):
+
+        df = self.sim.population.props
+        p = self.module.parameters
+        scenario = p["scenario"]
+        treatment_effects = p["treatment_effects"]
+
+        logger.debug(
+            key="message", data=f"ScenarioSetupEvent: scenario {scenario}"
+        )
+
+        # baseline scenario 0: no change to parameters/functions
+        if scenario == 0:
+            return
+
+        # scenario 1: remove HIV treatment effects
+        if (scenario == 1) or (scenario == 5):
+            # HIV
+
+            # if any baseline population already assigned hv_art=on_VL_suppressed, change to not suppressed
+            df.loc[df['hv_art'] == 'on_VL_suppressed', 'hv_art'] = 'on_not_VL_suppressed'
+
+            # viral suppression rates
+            # change all column values
+            self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["virally_suppressed_on_art"] = \
+            treatment_effects.loc[
+                treatment_effects.parameter == "prob_viral_suppression", "no_effect"].values[0]
+
+            # relative risk HIV acquisition if VMMC
+            self.sim.modules["Hiv"].parameters["rr_circumcision"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_circumcision", "no_effect"].values[0]
+
+            # effects of PrEP
+            self.sim.modules["Hiv"].parameters["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = \
+            treatment_effects.loc[
+                treatment_effects.parameter == "proportion_reduction_in_risk_of_hiv_aq_if_on_prep", "no_effect"].values[
+                0]
+
+        # scenario 2: remove TB treatment effects
+        if (scenario == 2) or (scenario == 5):
+            # TB
+
+            # RR BCG
+            self.sim.modules["Tb"].parameters["rr_tb_bcg"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_tb_bcg", "no_effect"].values[0]
+
+            # RR IPT child
+            self.sim.modules["Tb"].parameters["rr_ipt_child"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_ipt_child", "no_effect"].values[0]
+
+            # RR IPT adult
+            self.sim.modules["Tb"].parameters["rr_ipt_adult"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_ipt_adult", "no_effect"].values[0]
+
+            # RR ART child
+            self.sim.modules["Tb"].parameters["rr_tb_art_child"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_tb_art_child", "no_effect"].values[0]
+
+            # RR ART adult
+            self.sim.modules["Tb"].parameters["rr_tb_art_adult"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_tb_art_adult", "no_effect"].values[0]
+
+            # RR IPT ART child
+            self.sim.modules["Tb"].parameters["rr_ipt_art_child"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_ipt_art_child", "no_effect"].values[0]
+
+            # RR IPT ART adult
+            self.sim.modules["Tb"].parameters["rr_ipt_art_adult"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_ipt_art_adult", "no_effect"].values[0]
+
+            # RR IPT child HIV
+            self.sim.modules["Tb"].parameters["rr_ipt_child_hiv"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_ipt_child_hiv", "no_effect"].values[0]
+
+            # RR IPT adult HIV
+            self.sim.modules["Tb"].parameters["rr_ipt_adult_hiv"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_ipt_adult_hiv", "no_effect"].values[0]
+
+            # treatment success rate DS
+            self.sim.modules["Tb"].parameters["tb_prob_tx_success_ds"] = treatment_effects.loc[
+                treatment_effects.parameter == "tb_prob_tx_success_ds", "no_effect"].values[0]
+
+            # treatment success rate DS
+            self.sim.modules["Tb"].parameters["tb_prob_tx_success_mdr"] = treatment_effects.loc[
+                treatment_effects.parameter == "tb_prob_tx_success_mdr", "no_effect"].values[0]
+
+            # treatment success rate DS
+            self.sim.modules["Tb"].parameters["tb_prob_tx_success_0_4"] = treatment_effects.loc[
+                treatment_effects.parameter == "tb_prob_tx_success_0_4", "no_effect"].values[0]
+
+            # treatment success rate DS
+            self.sim.modules["Tb"].parameters["tb_prob_tx_success_5_14"] = treatment_effects.loc[
+                treatment_effects.parameter == "tb_prob_tx_success_5_14", "no_effect"].values[0]
+
+            # treatment success rate DS
+            self.sim.modules["Tb"].parameters["tb_prob_tx_success_shorter"] = treatment_effects.loc[
+                treatment_effects.parameter == "tb_prob_tx_success_shorter", "no_effect"].values[0]
+
+        # scenario 3: remove malaria treatment effects
+        if (scenario == 3) or (scenario == 5):
+            # Malaria
+
+            # set IRS to 0 for all districts
+            # lookup table created in malaria read_parameters
+            # produces self.itn_irs called by malaria poll to draw incidence
+            # need to overwrite this
+            self.sim.modules["Malaria"].itn_irs['irs_rate'] = treatment_effects.loc[
+                treatment_effects.parameter == "irs_district", "no_effect"].values[0]
+
+            # set ITN to 0 for all districts
+            # itn_district
+            self.sim.modules["Malaria"].itn_irs['itn_rate'] = treatment_effects.loc[
+                treatment_effects.parameter == "itn_district", "no_effect"].values[0]
+
+            # itn rates for 2019 onwards
+            self.sim.modules["Malaria"].parameters["itn"] = treatment_effects.loc[
+                treatment_effects.parameter == "itn", "no_effect"].values[0]
+
+            # RR IPTP
+            self.sim.modules["Malaria"].parameters["rr_clinical_malaria_iptp"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_clinical_malaria_iptp", "no_effect"].values[0]
+
+            # RR cotrimoxazole
+            self.sim.modules["Malaria"].parameters["rr_clinical_malaria_cotrimoxazole"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_clinical_malaria_cotrimoxazole", "no_effect"].values[0]
+
+            # RR ART
+            self.sim.modules["Malaria"].parameters["rr_clinical_malaria_art"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_clinical_malaria_art", "no_effect"].values[0]
+
+            # RR IPTP - severe
+            self.sim.modules["Malaria"].parameters["rr_severe_malaria_iptp"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_severe_malaria_iptp", "no_effect"].values[0]
+
+            # RR effect of treatment on mortality risk for severe cases
+            self.sim.modules["Malaria"].parameters["treatment_adjustment"] = treatment_effects.loc[
+                treatment_effects.parameter == "treatment_adjustment", "no_effect"].values[0]
+
+            # RR prob of treatment success
+            self.sim.modules["Malaria"].parameters["prob_of_treatment_success"] = treatment_effects.loc[
+                treatment_effects.parameter == "prob_of_treatment_success", "no_effect"].values[0]
 
 
 class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -1850,6 +2035,16 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
                     ),
                     date=date_of_aids_death,
                 )
+                # schedule hospital stay
+                beddays = self.sim.modules["Hiv"].rng.randint(low=14, high=20)
+                date_admission = date_of_aids_death - pd.DateOffset(days=beddays)
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Hiv"],
+                                                    beddays=beddays),
+                    priority=0,
+                    topen=date_admission if (date_admission > self.sim.date) else self.sim.date,
+                    tclose=date_of_aids_death
+                )
 
             else:
                 # cause is active TB
@@ -1858,6 +2053,17 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
                         person_id=person_id, module=self.sim.modules["Hiv"], cause=self.cause
                     ),
                     date=date_of_aids_death,
+                )
+
+                # schedule hospital stay
+                beddays = self.sim.modules["Hiv"].rng.randint(low=14, high=20)
+                date_admission = date_of_aids_death - pd.DateOffset(days=beddays)
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Hiv"],
+                                                    beddays=beddays),
+                    priority=0,
+                    topen=date_admission if (date_admission >= self.sim.date) else self.sim.date,
+                    tclose=date_of_aids_death
                 )
 
 
@@ -1952,6 +2158,16 @@ class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
                         cause="AIDS_non_TB"
                     ),
                     date=date_of_aids_death,
+                )
+                # schedule hospital stay
+                beddays = self.module.rng.randint(low=14, high=20)
+                date_admission = date_of_aids_death - pd.DateOffset(days=beddays)
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_EndOfLifeCare(person_id=person_id, module=self.sim.modules["Hiv"],
+                                                    beddays=beddays),
+                    priority=0,
+                    topen=date_admission if (date_admission >= self.sim.date) else self.sim.date,
+                    tclose=date_of_aids_death
                 )
 
         # aids-tb and not on tb treatment
@@ -2446,7 +2662,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             # Try to continue the person on ART:
             drugs_were_available = self.do_at_continuation(person_id)
 
-        if drugs_were_available:
+        # if ART is available (1st item in drugs_were_available dict)
+        if list(drugs_were_available.values())[0]:
             # If person has been placed/continued on ART, schedule 'decision about whether to continue on Treatment
             self.sim.schedule_event(
                 Hiv_DecisionToContinueTreatment(
@@ -2534,13 +2751,15 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
 
-        # Check if drugs are available, and provide drugs:
+        # Check if drugs are available, and provide drugs
+        # this will return a dict where the first item is ART and the second is cotrimoxazole
         drugs_available = self.get_drugs(age_of_person=person["age_years"])
 
-        if drugs_available:
-            # Assign person to be have suppressed or un-suppressed viral load
+        # ART is first item in drugs_available dict
+        if list(drugs_available.values())[0]:
+            # Assign person to be suppressed or un-suppressed viral load
             # (If person is VL suppressed This will prevent the Onset of AIDS, or an AIDS death if AIDS has already
-            # onset,)
+            # onset)
             vl_status = self.determine_vl_status(
                 age_of_person=person["age_years"]
             )
@@ -2554,6 +2773,10 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                     person_id=person_id, disease_module=self.module
                 )
 
+        # if cotrimoxazole is available
+        if list(drugs_available.values())[1]:
+            df.at[person_id, "hv_on_cotrimoxazole"] = True
+
         # Consider if TB treatment should start
         self.consider_tb(person_id)
 
@@ -2565,12 +2788,19 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
 
+        # default to person stopping cotrimoxazole
+        df.at[person_id, "hv_on_cotrimoxazole"] = False
+
         # Viral Load Monitoring
         # NB. This does not have a direct effect on outcomes for the person.
         _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
         # Check if drugs are available, and provide drugs:
         drugs_available = self.get_drugs(age_of_person=person["age_years"])
+
+        # if cotrimoxazole is available, update person's property
+        if list(drugs_available.values())[1]:
+            df.at[person_id, "hv_on_cotrimoxazole"] = True
 
         return drugs_available
 
@@ -2587,8 +2817,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         )
 
     def get_drugs(self, age_of_person):
-        """Helper function to get the ART according to the age of the person being treated. Returns bool to indicate
-        whether drugs were available"""
+        """Helper function to get the ART according to the age of the person being treated. Returns dict to indicate
+        whether individual drugs were available"""
 
         p = self.module.parameters
 
@@ -2597,21 +2827,24 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: young child'],
                 optional_item_codes=self.module.item_codes_for_consumables_required[
-                    'First line ART regimen: young child: cotrimoxazole'])
+                    'First line ART regimen: young child: cotrimoxazole'],
+                return_individual_results=True)
 
         elif age_of_person <= p["ART_age_cutoff_older_child"]:
             # Formulation for older children
             drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: older child'],
                 optional_item_codes=self.module.item_codes_for_consumables_required[
-                    'First line ART regimen: older child: cotrimoxazole'])
+                    'First line ART regimen: older child: cotrimoxazole'],
+                return_individual_results=True)
 
         else:
             # Formulation for adults
             drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['First-line ART regimen: adult'],
                 optional_item_codes=self.module.item_codes_for_consumables_required[
-                    'First-line ART regimen: adult: cotrimoxazole'])
+                    'First-line ART regimen: adult: cotrimoxazole'],
+                return_individual_results=True)
 
         return drugs_available
 
@@ -2668,6 +2901,41 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             return self.make_appt_footprint({"NewAdult": 1})  # Adult newly starting treatment
         else:
             return self.make_appt_footprint({"EstNonCom": 1})  # Adult already on treatment
+
+
+class HSI_Hiv_EndOfLifeCare(HSI_Event, IndividualScopeEventMixin):
+    """
+    this is a hospital stay for terminally-ill patients with AHD
+    it does not affect disability weight or probability of death
+    no consumables are logged but health system capacity (HR) is allocated
+    there are no consequences if hospital bed is not available as person has scheduled death
+    already within 2 weeks
+    """
+
+    def __init__(self, module, person_id, beddays):
+        super().__init__(module, person_id=person_id)
+        assert isinstance(module, Hiv)
+
+        self.TREATMENT_ID = 'Hiv_PalliativeCare'
+        self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
+        self.ACCEPTED_FACILITY_LEVEL = '2'
+
+        self.beddays = beddays
+        self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint(
+            {'general_bed': self.beddays}) if self.beddays else self.make_beddays_footprint({'general_bed': 17})
+
+    def apply(self, person_id, squeeze_factor):
+        df = self.sim.population.props
+        hs = self.sim.modules["HealthSystem"]
+
+        if not df.at[person_id, 'is_alive']:
+            return hs.get_blank_appt_footprint()
+
+        if df.at[person_id, 'hv_art'] == 'virally_suppressed':
+            return hs.get_blank_appt_footprint()
+
+        logger.debug(key='message',
+                     data=f'HSI_Hiv_EndOfLifeCare: inpatient admission for {person_id}')
 
 
 # ---------------------------------------------------------------------------
