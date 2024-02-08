@@ -2071,7 +2071,6 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.facility_level = facility_level
 
         self.TREATMENT_ID = "Tb_Treatment"
-        self.ACCEPTED_FACILITY_LEVEL = "1a"
         self.number_of_occurrences = 0
         self.ACCEPTED_FACILITY_LEVEL = "1a" if (self.facility_level == "1a") else "2"
 
@@ -2149,21 +2148,19 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         # if treatment not available, return for treatment start in 1 week
         # cap repeated visits at 5
         else:
+
             if (
                 self.number_of_occurrences
                 <= self.module.parameters["tb_healthseekingbehaviour_cap"]
             ):
+                print(self.number_of_occurrences)
+
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Tb_StartTreatment(
-                        person_id=person_id, module=self.module, facility_level="1a"
-                    ),
+                    self,
                     topen=self.sim.date + DateOffset(weeks=1),
                     tclose=None,
                     priority=0,
                 )
-
-    # def post_apply_hook(self):
-    #     self.number_of_occurrences += 1
 
     def select_treatment(self, person_id):
         """
