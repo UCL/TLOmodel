@@ -658,9 +658,6 @@ class HealthSystem(Module):
             'Cannot adopt a priority policy if the priority will be then ignored'
         )
 
-        # Use this variable to expand HS capabilities based on past year's pop grown
-        self.last_year_pop_size = 0
-
         self.disable = disable
         self.disable_and_reject_all = disable_and_reject_all
 
@@ -2863,22 +2860,27 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to scale the daily capabilities assumed at fixed time intervals"""
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(years=1))
+        self.last_year_pop_size = self.current_pop_size  # store population size at initiation (when this class is
+        #                                                  created)
+
+    @property
+    def current_pop_size(self) -> float:
+        """Returns current population size"""
+        df = self.sim.population.props
+        return df.is_alive.sum()
 
     def apply(self, population):
 
-        df = self.sim.population.props
-        this_year_pop_size = df.is_alive.sum()
+        this_year_pop_size = self.current_pop_size
 
-        if self.sim.date.year>2010:
-        
-            # Rescale by fixed amount
-            self.module._daily_capabilities *= self.module.parameters['dynamic_HR_scaling_factor']
-            
-            # Rescale daily capabilities by population size, if this option is included
-            if self.module.parameters['scale_HR_by_popsize']:
-                self.module._daily_capabilities *= this_year_pop_size/self.module.last_year_pop_size
-                
-        self.module.last_year_pop_size = this_year_pop_size   # Save for next year
+        # Rescale by fixed amount
+        self.module._daily_capabilities *= self.module.parameters['dynamic_HR_scaling_factor']
+
+        # Rescale daily capabilities by population size, if this option is included
+        if self.module.parameters['scale_HR_by_popsize']:
+            self.module._daily_capabilities *= this_year_pop_size/self.last_year_pop_size
+
+        self.last_year_pop_size = this_year_pop_size   # Save for next year
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
