@@ -131,7 +131,6 @@ class Tb(Module):
                 "none",
                 "tb_tx_adult",
                 "tb_tx_child",
-                "tb_tx_child_shorter",
                 "tb_retx_adult",
                 "tb_retx_child",
                 "tb_mdrtx",
@@ -737,11 +736,6 @@ class Tb(Module):
             hs.get_item_code_from_item_name("Cat. I & III Patient Kit B")
         )
 
-        # child treatment - primary, shorter regimen
-        self.item_codes_for_consumables_required["tb_tx_child_shorter"] = (
-            hs.get_item_code_from_item_name("Cat. I & III Patient Kit B")
-        )
-
         # adult treatment - secondary
         self.item_codes_for_consumables_required["tb_retx_adult"] = (
             hs.get_item_code_from_item_name("Cat. II Patient Kit A1")
@@ -1182,13 +1176,6 @@ class Tb(Module):
             & (random_var < (1 - p["prob_tx_success_5_14"]))
         ].index
 
-        # children aged <16 and on shorter regimen
-        ds_tx_failure_shorter_idx = df.loc[
-            (df.index.isin(end_tx_shorter_idx))
-            & (df.age_years < 16)
-            & (random_var < (1 - p["prob_tx_success_shorter"]))
-        ].index
-
         # adults ds-tb
         ds_tx_failure_adult_idx = df.loc[
             (df.index.isin(end_ds_tx_idx))
@@ -1214,7 +1201,6 @@ class Tb(Module):
             (
                 ds_tx_failure0_4_idx,
                 ds_tx_failure5_14_idx,
-                ds_tx_failure_shorter_idx,
                 ds_tx_failure_adult_idx,
                 failure_in_mdr_with_ds_tx_idx,
                 failure_due_to_mdr_idx,
@@ -2224,17 +2210,6 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 # treatment for reinfection ds-tb: child
                 treatment_regimen = "tb_retx_child"
 
-        # -------- SHINE Trial shorter paediatric regimen -------- #
-        # shorter treatment for child with minimal tb
-        if (
-            (self.module.parameters["scenario"] == 99)
-            & (self.sim.date >= self.module.parameters["scenario_start_date"])
-            & (person["age_years"] <= 16)
-            & ~(person["tb_smear"])
-            & ~person["tb_ever_treated"]
-            & ~person["tb_diagnosed_mdr"]
-        ):
-            treatment_regimen = "tb_tx_child_shorter"
 
         return treatment_regimen
 
@@ -2301,11 +2276,6 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 
             sputum_fup = follow_up_times["mdr_sputum"].dropna()
             treatment_length = p["mdr_treatment_length"]
-
-        # if person on shorter paediatric regimen
-        elif person["tb_treatment_regimen"] == "tb_tx_child_shorter":
-            sputum_fup = follow_up_times["shine_sputum"].dropna()
-            treatment_length = p["shine_treatment_length"]
 
         # check schedule for sputum test and perform if necessary
         if months_since_tx in sputum_fup:
