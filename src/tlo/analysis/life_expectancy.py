@@ -18,10 +18,9 @@ from tlo.analysis.utils import (
 )
 
 
-# HELPER FUNCTIONS
-def _map_age_to_age_group(age: pd.Series):
+def _map_age_to_age_group(age: pd.Series) -> pd.Series:
     """
-    Maps ages to age-groups in 5-year intervals and adds a new column 'age-group' to the DataFrame.
+    Returns age-groups used in the calculation of life-expectancy.
 
     Args:
     - age (pd.Series): The pd.Series containing ages
@@ -39,18 +38,16 @@ def _map_age_to_age_group(age: pd.Series):
     )
 
 
-def _extract_person_years(results_folder, _draw, _run):
-    """Helper function to get the multiplier from the simulation
-    Note that if the scaling factor cannot be found a `KeyError` is thrown."""
+def _extract_person_years(results_folder, _draw, _run) -> pd.Series:
+    """Returns the person-years that are logged."""
     return load_pickled_dataframes(
         results_folder, _draw, _run, 'tlo.methods.demography'
     )['tlo.methods.demography']['person_years']
 
 
-def _num_deaths_by_age_group(results_folder, target_period):
-    """ produces dataframe with mean (+ 95% UI) number of deaths
-    for each draw by age-group
-    dataframe returned: rows=age-gp, columns=draw median, draw lower, draw upper
+def _num_deaths_by_age_group(results_folder, target_period) -> pd.DataFrame:
+    """Returns dataframe with number of deaths by sex/age-group within the target period for each draw/run
+    (dataframe returned: index=sex/age-grp, columns=draw/run)
     """
 
     def extract_deaths_by_age_group(df: pd.DataFrame) -> pd.Series:
