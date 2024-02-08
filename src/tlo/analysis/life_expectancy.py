@@ -6,7 +6,7 @@ produce summary statistics
 
 import datetime
 from pathlib import Path
-from typing import Tuple, Dict
+from typing import Dict, Tuple
 
 import pandas as pd
 
