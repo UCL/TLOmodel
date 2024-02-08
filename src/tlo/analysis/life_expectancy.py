@@ -256,23 +256,18 @@ def get_life_expectancy_estimates(
     person_years = _aggregate_person_years_by_age(results_folder, target_period)
 
     # Initialize an empty list to collect life expectancies
-    le_list = []
+    le_for_each_draw_and_run = dict()
 
     for draw in range(info['number_of_draws']):
         for run in range(info['runs_per_draw']):
-            le = _estimate_life_expectancy(
+            le_for_each_draw_and_run[(draw, run)] = _estimate_life_expectancy(
                 _number_of_deaths_in_interval=deaths.loc[:, (draw, run)],
-                _person_years_at_risk=person_years.loc[:, (draw, run)])
+                _person_years_at_risk=person_years.loc[:, (draw, run)]
+            )
 
-            # Append the life expectancy to the list
-            le_list.append(le)
-
-    # Concatenate the list of life expectancies into a DataFrame
-    output = pd.concat(le_list, axis=1)
-
-    multi_index_columns = _create_multi_index_columns(results_folder)
-    output.columns = multi_index_columns
-    output.index = ['M', 'F']
+    output = pd.DataFrame.from_dict(le_for_each_draw_and_run)
+    output.index.name = "sex"
+    output.columns = output.columns.set_names(level=[0, 1], names=['draw', 'run'])
 
     if not summary:
         return output
