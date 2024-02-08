@@ -354,14 +354,6 @@ class Tb(Module):
             Types.INT,
             "year from which IPT is available for paediatric contacts of diagnosed active TB cases",
         ),
-        "scenario": Parameter(
-            Types.INT,
-            "integer value labelling the scenario to be run: default is 0"
-        ),
-        "scenario_start_date": Parameter(
-            Types.DATE,
-            "date from which different scenarios are run"
-        ),
         "first_line_test": Parameter(
             Types.STRING,
             "name of first test to be used for TB diagnosis"
@@ -420,8 +412,6 @@ class Tb(Module):
         p["tb_high_risk_distr"] = workbook["all_districts"]
 
         p["ipt_coverage"] = workbook["ipt_coverage"]
-
-        p["scaleup_parameters"] = workbook["scaleup_parameters"]
 
         self.district_list = (
             self.sim.modules["Demography"]
@@ -853,11 +843,8 @@ class Tb(Module):
         sim.schedule_event(TbSelfCureEvent(self), sim.date)
         sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
 
-        # log at the end of the year
+        # 2) log at the end of the year
         sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
-
-        # 2) Scenario change
-        sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
 
         # 3) Define the DxTests and get the consumables required
         self.get_consumables_for_dx_and_tx()
@@ -1336,119 +1323,6 @@ class Tb(Module):
 # # ---------------------------------------------------------------------------
 # #   TB infection event
 # # ---------------------------------------------------------------------------
-class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
-    """ This event exists to change parameters or functions
-    depending on the scenario for projections which has been set
-    * scenario 0 is the default which uses baseline parameters
-    * scenario 1 achieves all program targets with consumables constraints
-    * scenario 2 achieves all program targets without consumables constraints
-    It only occurs once at param: scenario_start_date,
-    called by initialise_simulation
-    """
-
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(years=100))
-
-    def apply(self, population):
-
-        p = self.module.parameters
-        scenario = p["scenario"]
-        scaled_params = p["scaleup_parameters"]
-
-        logger.debug(
-            key="message", data=f"ScenarioSetupEvent: scenario {scenario}"
-        )
-
-        # baseline scenario 0: no change to parameters/functions
-        if scenario == 0:
-            return
-
-        # scenario 1 or 2 scale-up all HIV/TB program activities
-        if scenario > 0:
-            # HIV
-            # reduce risk of HIV - applies to whole adult population
-            self.sim.modules["Hiv"].parameters["beta"] = self.sim.modules["Hiv"].parameters["beta"] * scaled_params.loc[
-                scaled_params.parameter == "hiv_beta", "value"].values[0]
-
-            # increase PrEP coverage for FSW after HIV test
-            self.sim.modules["Hiv"].parameters["prob_prep_for_fsw_after_hiv_test"] = scaled_params.loc[
-                scaled_params.parameter == "prob_prep_for_fsw_after_hiv_test", "value"].values[0]
-
-            # prep poll for AGYW - target to the highest risk
-            # increase retention to 75% for FSW and AGYW
-            self.sim.modules["Hiv"].parameters["prob_prep_for_agyw"] = scaled_params.loc[
-                scaled_params.parameter == "prob_prep_for_agyw", "value"].values[0]
-            self.sim.modules["Hiv"].parameters[
-                "probability_of_being_retained_on_prep_every_3_months"] = scaled_params.loc[
-                scaled_params.parameter == "probability_of_being_retained_on_prep_every_3_months", "value"].values[0]
-
-            # increase probability of VMMC after hiv test
-            self.sim.modules["Hiv"].parameters["prob_circ_after_hiv_test"] = scaled_params.loc[
-                scaled_params.parameter == "prob_circ_after_hiv_test", "value"].values[0]
-
-            # increase testing/diagnosis rates, default 2020 0.03/0.25 -> 93% dx
-            self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_children"] = scaled_params.loc[
-                scaled_params.parameter == "annual_testing_rate_children", "value"].values[0]
-            self.sim.modules["Hiv"].parameters["hiv_testing_rates"]["annual_testing_rate_adults"] = scaled_params.loc[
-                scaled_params.parameter == "annual_testing_rate_adults", "value"].values[0]
-
-            # ANC testing - value for mothers and infants testing
-            self.sim.modules["Hiv"].parameters["prob_hiv_test_at_anc_or_delivery"] = scaled_params.loc[
-                scaled_params.parameter == "prob_hiv_test_at_anc_or_delivery", "value"].values[0]
-            self.sim.modules["Hiv"].parameters["prob_hiv_test_for_newborn_infant"] = scaled_params.loc[
-                scaled_params.parameter == "prob_hiv_test_for_newborn_infant", "value"].values[0]
-
-            # prob ART start if dx, this is already 95% at 2020
-            # self.sim.modules["Hiv"].parameters["prob_start_art_after_hiv_test"] = scaled_params.loc[
-            #                 scaled_params.parameter ==
-            #   "prob_start_art_after_hiv_test", "value"].values[0]
-
-            # viral suppression rates
-            # adults already at 95% by 2020
-            # change all column values
-            self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["virally_suppressed_on_art"] = scaled_params.loc[
-                scaled_params.parameter == "virally_suppressed_on_art", "value"].values[0]
-
-            # TB
-            # use NTP treatment rates
-            self.sim.modules["Tb"].parameters["rate_testing_active_tb"]["treatment_coverage"] = scaled_params.loc[
-                scaled_params.parameter == "tb_treatment_coverage", "value"].values[0]
-
-            # increase tb treatment success rates
-            self.sim.modules["Tb"].parameters["prob_tx_success_ds"] = scaled_params.loc[
-                scaled_params.parameter == "tb_prob_tx_success_ds", "value"].values[0]
-            self.sim.modules["Tb"].parameters["prob_tx_success_mdr"] = scaled_params.loc[
-                scaled_params.parameter == "tb_prob_tx_success_mdr", "value"].values[0]
-            self.sim.modules["Tb"].parameters["prob_tx_success_0_4"] = scaled_params.loc[
-                scaled_params.parameter == "tb_prob_tx_success_0_4", "value"].values[0]
-            self.sim.modules["Tb"].parameters["prob_tx_success_5_14"] = scaled_params.loc[
-                scaled_params.parameter == "tb_prob_tx_success_5_14", "value"].values[0]
-            self.sim.modules["Tb"].parameters["prob_tx_success_shorter"] = scaled_params.loc[
-                scaled_params.parameter == "tb_prob_tx_success_shorter", "value"].values[0]
-
-            # change first-line testing for TB to xpert
-            p["first_line_test"] = scaled_params.loc[
-                scaled_params.parameter == "first_line_test", "value"].values[0]
-            p["second_line_test"] = scaled_params.loc[
-                scaled_params.parameter == "second_line_test", "value"].values[0]
-
-            # increase coverage of IPT
-            p["ipt_coverage"]["coverage_plhiv"] = scaled_params.loc[
-                scaled_params.parameter == "ipt_coverage_plhiv", "value"].values[0]
-            p["ipt_coverage"]["coverage_paediatric"] = scaled_params.loc[
-                scaled_params.parameter == "ipt_coverage_paediatric", "value"].values[0]
-
-        # remove consumables constraints, all cons available
-        if scenario == 2:
-            # list only things that change: constraints on consumables
-            new_parameters = {
-                'cons_availability': 'all',
-            }
-            self.sim.schedule_event(
-                HealthSystemChangeParameters(
-                    self.sim.modules['HealthSystem'], parameters=new_parameters),
-                self.sim.date)
-
 
 class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
     """The Tb Regular Poll Event for assigning active infections
@@ -1578,7 +1452,7 @@ class TbActiveEvent(RegularEvent, PopulationScopeEventMixin):
             # if Hiv not registered, give HIV+ person same time to death as HIV-
             for person_id in active_and_hiv:
                 date_of_tb_death = self.sim.date + pd.DateOffset(
-                    months=int(rng.uniform(low=1, high=6))
+                    months=int(rng.uniform(low=1, high=5))
                 )
                 self.sim.schedule_event(
                     event=TbDecideDeathEvent(person_id=person_id, module=self.module, cause="AIDS_TB"),
@@ -2074,18 +1948,27 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
                 dx_tests_to_run="tb_xray_smear_negative", hsi_event=self
             )
 
-        # if consumables not available, refer to level 2
-        # return blank footprint as xray did not occur
+        # if consumables not available, either refer to level 2 or use clinical diagnosis
         if test_result is None:
 
-            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
+            # if smear-positive, assume symptoms strongly predictive of TB
+            if smear_status:
+                test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                    dx_tests_to_run="tb_clinical", hsi_event=self
+                )
+                # add another clinic appointment
+                ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+                    {"Under5OPD": 1, "DiagRadio": 1}
+                )
 
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Tb_Xray_level2(person_id=person_id, module=self.module),
-                topen=self.sim.date + pd.DateOffset(weeks=1),
-                tclose=None,
-                priority=0,
-            )
+            # if smear-negative, assume still some uncertainty around dx, refer for another x-ray
+            else:
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    HSI_Tb_Xray_level2(person_id=person_id, module=self.module),
+                    topen=self.sim.date + pd.DateOffset(weeks=1),
+                    tclose=None,
+                    priority=0,
+                )
 
         # if test returns positive result, refer for appropriate treatment
         if test_result:
@@ -2147,16 +2030,13 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
             )
 
         # if consumables not available, rely on clinical diagnosis
-        # return blank footprint as xray was not available
         if test_result is None:
-
-            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
-
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Tb_ClinicalDiagnosis(person_id=person_id, module=self.module),
-                topen=self.sim.date,
-                tclose=None,
-                priority=0,
+            test_result = self.sim.modules["HealthSystem"].dx_manager.run_dx_test(
+                dx_tests_to_run="tb_clinical", hsi_event=self
+            )
+            # add another clinic appointment
+            ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint(
+                {"Under5OPD": 1, "DiagRadio": 1}
             )
 
         # if test returns positive result, refer for appropriate treatment
@@ -2621,6 +2501,8 @@ class Tb_DecisionToContinueIPT(Event, IndividualScopeEventMixin):
 # ---------------------------------------------------------------------------
 #   Deaths
 # ---------------------------------------------------------------------------
+
+
 class TbDecideDeathEvent(Event, IndividualScopeEventMixin):
     """
     The scheduled hospitalisation and subsequent death for a tb case
@@ -2692,7 +2574,7 @@ class TbDeathEvent(Event, IndividualScopeEventMixin):
 
         logger.debug(
             key="message",
-            data=f"TbDeathEvent: checking whether death should occur for person {person_id}",
+            data=f"TbDeathEvent: cause this death for person {person_id}",
         )
 
         self.sim.modules["Demography"].do_death(
