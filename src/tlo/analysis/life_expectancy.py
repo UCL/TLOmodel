@@ -235,8 +235,8 @@ def get_life_expectancy_estimates(
     for draw in range(info['number_of_draws']):
         for run in range(info['runs_per_draw']):
             le_for_each_draw_and_run[(draw, run)] = _estimate_life_expectancy(
-                _number_of_deaths_in_interval=deaths.loc[:, (draw, run)],
-                _person_years_at_risk=person_years.loc[:, (draw, run)]
+                _number_of_deaths_in_interval=deaths[(draw, run)],
+                _person_years_at_risk=person_years[(draw, run)]
             )
 
     output = pd.DataFrame.from_dict(le_for_each_draw_and_run)
