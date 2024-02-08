@@ -135,7 +135,7 @@ def _estimate_life_expectancy(_person_years_at_risk, _number_of_deaths_in_interv
     return: pd.Series
     """
 
-    estimated_life_expectancy = pd.Series(dtype=float)
+    estimated_life_expectancy_at_birth = dict()
 
     # first age-group is 0, then 1-4, 5-9, 10-14 etc. 22 categories in total
     level_0_values = _person_years_at_risk.index.get_level_values('age_group').unique()
@@ -213,10 +213,9 @@ def _estimate_life_expectancy(_person_years_at_risk, _number_of_deaths_in_interv
         observed_life_expectancy[~condition] = py_lived_beyond_start_of_interval / number_alive_at_start_of_interval
 
         # estimated life expectancy from birth
-        # estimated_life_expectancy = pd.concat([estimated_life_expectancy, observed_life_expectancy[0]])
-        estimated_life_expectancy = estimated_life_expectancy._append(pd.Series([observed_life_expectancy[0]]))
+        estimated_life_expectancy_at_birth[sex] = observed_life_expectancy[0]
 
-    return estimated_life_expectancy
+    return estimated_life_expectancy_at_birth
 
 
 def get_life_expectancy_estimates(
