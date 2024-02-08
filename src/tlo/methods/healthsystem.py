@@ -555,12 +555,13 @@ class HealthSystem(Module):
         ),
 
         'dynamic_HR_scaling_factor': Parameter(
-            Types.REAL, "Factor by which HR capabilities are scaled at regular intervals of 1 year (in addition to the [optional] scaling with population size (controlled by `scale_HR_by_popsize`"
+            Types.REAL, "Factor by which HR capabilities are scaled at regular intervals of 1 year (in addition to the"
+                        " [optional] scaling with population size (controlled by `scale_HR_by_popsize`"
         ),
 
         'scale_HR_by_popsize': Parameter(
-            Types.BOOL, "Decide whether to scale HR capabilities by population size every year. Can be used in addition to"
-                        "dynamic_HR_scaling_factor"
+            Types.BOOL, "Decide whether to scale HR capabilities by population size every year. Can be used as well as"
+                        " the dynamic_HR_scaling_factor"
         ),
 
         'tclose_overwrite': Parameter(
