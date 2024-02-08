@@ -6,7 +6,7 @@ produce summary statistics
 
 import datetime
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Dict
 
 import pandas as pd
 
@@ -103,10 +103,13 @@ def _aggregate_person_years_by_age(results_folder, target_period) -> pd.DataFram
 
 
 
-def _estimate_life_expectancy(_person_years_at_risk, _number_of_deaths_in_interval):
+def _estimate_life_expectancy(
+    _person_years_at_risk: pd.Series,
+    _number_of_deaths_in_interval: pd.Series
+) -> Dict[str, float]:
     """
-    for a single run, estimate life expectancy for males and females
-    return: pd.Series
+    For a single run, estimate life expectancy for males and females
+    returns: Dict (keys by "M" and "F" for the sex, values the estimated life-expectancy at birth).
     """
 
     estimated_life_expectancy_at_birth = dict()
