@@ -19,24 +19,25 @@ from tlo.analysis.utils import (
 
 
 # HELPER FUNCTIONS
-def _map_age_to_age_group(_df):
+def _map_age_to_age_group(age: pd.Series):
     """
     Maps ages to age-groups in 5-year intervals and adds a new column 'age-group' to the DataFrame.
 
     Args:
-    - dataframe (pd.DataFrame): The DataFrame containing the age data.
+    - age (pd.Series): The pd.Series containing ages
 
     Returns:
-    - pd.DataFrame: The DataFrame with the 'age-group' column added.
+    - pd.Series: Series of the 'age-group', corresponding the `age` argument.
     """
     # Define age groups in 5-year intervals
     age_groups = ['0'] + ['1-4'] + [f'{start}-{start + 4}' for start in range(5, 90, 5)] + ['90']
 
-    # Create a new column 'age-group' based on the age-to-age-group mapping
-    _df['age_group'] = pd.cut(_df['age'], bins=[0] + [1] + list(range(5, 95, 5)) + [float('inf')],
-                              labels=age_groups, right=False)
+    return pd.cut(
+        age,
+        bins=[0] + [1] + list(range(5, 95, 5)) + [float('inf')],
+        labels=age_groups, right=False
+    )
 
-    return pd.Series(_df['age_group'])
 
 def _extract_person_years(results_folder, _draw, _run):
     """Helper function to get the multiplier from the simulation
@@ -46,15 +47,6 @@ def _extract_person_years(results_folder, _draw, _run):
     )['tlo.methods.demography']['person_years']
 
 
-def _create_multi_index_columns(results_folder: Path):
-    # get number of draws and numbers of runs
-    info = get_scenario_info(results_folder)
-
-    return pd.MultiIndex.from_product([range(info['number_of_draws']),
-                                       range(info['runs_per_draw'])],
-                                      names=['draw', 'run'])
-
-
 def _num_deaths_by_age_group(results_folder, target_period):
     """ produces dataframe with mean (+ 95% UI) number of deaths
     for each draw by age-group
@@ -62,9 +54,10 @@ def _num_deaths_by_age_group(results_folder, target_period):
     """
 
     def extract_deaths_by_age_group(df: pd.DataFrame) -> pd.Series:
-        # Call the function to add the 'age-group' column
-        age_group = _map_age_to_age_group(df)
-        return df.loc[pd.to_datetime(df.date).dt.date.between(*target_period, inclusive='both')].groupby([age_group, df["sex"]]).size()
+        age_group = _map_age_to_age_group(df['age'])
+        return df.loc[
+            pd.to_datetime(df.date).dt.date.between(*target_period, inclusive='both')
+        ].groupby([age_group, df["sex"]]).size()
 
     return extract_results(
         results_folder,
@@ -75,58 +68,39 @@ def _num_deaths_by_age_group(results_folder, target_period):
     )
 
 
-def _aggregate_person_years_by_age(results_folder, target_period):
-    """ extract person-years for each draw/run
-    calculate for men and women separately
-    return a dataframe with index=age-groups and columns=person-years
+def _aggregate_person_years_by_age(results_folder, target_period) -> pd.DataFrame:
+    """ Returns person-years in each sex/age-group for each draw/run (as pd.DataFrame with index=sex/age-groups and
+    columns=draw/run)
     """
-
-    # get number of draws and numbers of runs
     info = get_scenario_info(results_folder)
-
-    # Create an empty DataFrame to store all outputs
-    output = pd.DataFrame()
-
-    for draw in range(info['number_of_draws']):
-        for run in range(info['runs_per_draw']):
-
+    py_by_sex_and_agegroup = dict()
+    for draw in range(info["number_of_draws"]):
+        for run in range(info["runs_per_draw"]):
             _df = _extract_person_years(results_folder, _draw=draw, _run=run)
 
-            # create empty dataframe to store outputs from each run
-            tmp = pd.DataFrame(columns=['M', 'F'])
+            # mask for entries with dates within the target period
+            mask = _df.date.dt.date.between(*target_period, inclusive="both")
 
-            for sex in ['M', 'F']:
-                py = _df[sex]  # extract values for each sex
-                # create dataframe one row per year and one column per age_year
-                new_df = pd.DataFrame(py.tolist())
-                dates = _df.date.dt.date
-                new_df = new_df.loc[dates.between(*target_period, inclusive='both')]
+            # Compute PY within time-period and summing within age-group, for each sex
+            py_by_sex_and_agegroup[(draw, run)] = pd.concat({
+                sex: _df.loc[mask, sex]
+                        .apply(pd.Series)
+                        .sum(axis=0)
+                        .pipe(lambda x: x.groupby(_map_age_to_age_group(x.index.astype(float))).sum())
+                for sex in ["M", "F"]}
+            )
 
-                # sum values for each age (single years)
-                py_by_single_age_years = new_df.sum(numeric_only=True, axis=0).reset_index()
-                py_by_single_age_years = py_by_single_age_years.rename(columns={'index': 'age', 0: 'person_years'})
+    # Format as pd.DataFrame with multiindex in index (sex/age-group) and columns (draw/run)
+    py_by_sex_and_agegroup = pd.DataFrame.from_dict(py_by_sex_and_agegroup)
+    py_by_sex_and_agegroup.index = py_by_sex_and_agegroup.index.set_names(
+        level=[0, 1], names=["sex", "age_group"]
+    )
+    py_by_sex_and_agegroup.columns = py_by_sex_and_agegroup.columns.set_names(
+        level=[0, 1], names=["draw", "run"]
+    )
 
-                # convert single age years to float for mapping
-                py_by_single_age_years['age'] = py_by_single_age_years['age'].astype(float)
-                # map single age bands to age-groups
-                py_by_single_age_years['age_group'] = _map_age_to_age_group(py_by_single_age_years)
+    return py_by_sex_and_agegroup
 
-                summary = py_by_single_age_years.groupby(["age_group"])["person_years"].sum()
-                tmp[sex] = summary
-
-            # then join each draw/run in a new column
-            output = pd.concat([output, pd.concat([tmp['M'], tmp['F']], ignore_index=True)], axis=1)
-
-    # Create a MultiIndex for rows using age group and 'Male' and 'Female'
-    multi_index_rows_male = pd.MultiIndex.from_product([summary.index, ['M']], names=['age_group', 'sex'])
-    multi_index_rows_female = pd.MultiIndex.from_product([summary.index, ['F']], names=['age_group', 'sex'])
-    output.index = multi_index_rows_male.append(multi_index_rows_female)
-
-    # multi-index columns
-    multi_index_columns = _create_multi_index_columns(results_folder)
-    output.columns = multi_index_columns
-
-    return output
 
 
 def _estimate_life_expectancy(_person_years_at_risk, _number_of_deaths_in_interval):
