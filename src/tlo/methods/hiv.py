@@ -2453,7 +2453,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             drugs_were_available = self.do_at_continuation(person_id)
 
         # if ART is available (1st item in drugs_were_available dict)
-        if list(drugs_were_available.values())[0]:
+        if drugs_were_available.get('art', False):
             # If person has been placed/continued on ART, schedule 'decision about whether to continue on Treatment
             self.sim.schedule_event(
                 Hiv_DecisionToContinueTreatment(
@@ -2546,7 +2546,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         drugs_available = self.get_drugs(age_of_person=person["age_years"])
 
         # ART is first item in drugs_available dict
-        if list(drugs_available.values())[0]:
+        if drugs_available.get('art', False):
             # Assign person to be suppressed or un-suppressed viral load
             # (If person is VL suppressed This will prevent the Onset of AIDS, or an AIDS death if AIDS has already
             # onset)
@@ -2564,7 +2564,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 )
 
         # if cotrimoxazole is available
-        if list(drugs_available.values())[1]:
+        if drugs_available.get('cotrim', False):
             df.at[person_id, "hv_on_cotrimoxazole"] = True
 
         # Consider if TB treatment should start
@@ -2589,7 +2589,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         drugs_available = self.get_drugs(age_of_person=person["age_years"])
 
         # if cotrimoxazole is available, update person's property
-        if list(drugs_available.values())[1]:
+        if drugs_available.get('cotrim', False):
             df.at[person_id, "hv_on_cotrimoxazole"] = True
 
         return drugs_available
@@ -2635,6 +2635,12 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 optional_item_codes=self.module.item_codes_for_consumables_required[
                     'First-line ART regimen: adult: cotrimoxazole'],
                 return_individual_results=True)
+
+        # add drug names to dict
+        drugs_available = {
+            'art': list(drugs_available.values())[0],
+            'cotrim': list(drugs_available.values())[1]
+        }
 
         return drugs_available
 
