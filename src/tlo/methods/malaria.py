@@ -783,7 +783,7 @@ class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         now = self.sim.date
 
-      # select currently pregnant women without IPTp, malaria-negative, not on cotrimoxazole
+        # select currently pregnant women without IPTp, malaria-negative, not on cotrimoxazole
         p1_condition = (
             df.is_alive
             & df.is_pregnant
@@ -1408,7 +1408,7 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
         pop = len(df[df.is_alive])
 
-        inc_1000py = (tmp / pop) * 1000
+        inc_1000py = ((tmp / pop) * 1000) if pop else 0
 
         # incidence rate clinical (inc severe) in 2-10 yr olds
         tmp2 = len(
@@ -1419,7 +1419,7 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         pop2_10 = len(df[df.is_alive & (df.age_years.between(2, 10))])
-        inc_1000py_2_10 = (tmp2 / pop2_10) * 1000
+        inc_1000py_2_10 = ((tmp2 / pop2_10) * 1000) if pop2_10 else 0
 
         inc_1000py_hiv = 0  # if running without hiv/tb
 
