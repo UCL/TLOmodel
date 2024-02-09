@@ -32,7 +32,7 @@ from tlo.methods.consumables import check_format_of_consumables_file
 
 # Set local Dropbox source
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    'C:/Users/sm2511/Dropbox/Thanzi la Onse'
+    '/Users/sm2511/Dropbox/Thanzi la Onse'
     # '/Users/sejjj49/Dropbox/Thanzi la Onse'
     # 'C:/Users/tmangal/Dropbox/Thanzi la Onse'
 )
@@ -207,7 +207,7 @@ inconsistent_item_names_mapping = {
     'Unigold HIV test kits, Kit of 20 Tests': '''Unigold HIV Test Kits''',
     'Determine HIV test Kits, Kit of 100 Tests': '''Determine HIV Test Kits''',
     'Abacavir/Lamivudine (ABC/3TC), 60+30mg': '''Abacavir (ABC) + Lamivudine(3TC), 60mg+30mg, 60''S (9P)''',
-    'Atazanavir /Ritonavir (ATV/r), 300+100mg': 'Atazanavir +  Ritonavir, 300mg + 100mg, 30''S (7A)',
+    'Atazanavir /Ritonavir (ATV/r), 300+100mg': '''Atazanavir +  Ritonavir, 300mg + 100mg, 30''S (7A)''',
     'SD Bioline, Syphilis test kits, Kit of 30 Tests': 'Determine Syphillis Test Kits',
     'Isoniazid tablets, 100mg': '''Isoniazid 100mg''',
     'Isoniazid tablets, 300mg': '''Isoniazid 300mg''',
@@ -276,8 +276,16 @@ def rename_items_to_address_inconsistentencies(_df, item_dict):
     assert len(item_dict) == old_unique_item_count - new_unique_item_count
     return _collapsed_df
 
+# Hold out the dataframe with no naming inconsistencies
+list_of_items_with_inconsistent_names_zipped = list(zip(inconsistent_item_names_mapping.keys(), inconsistent_item_names_mapping.values()))
+list_of_items_with_inconsistent_names = [item for sublist in list_of_items_with_inconsistent_names_zipped for item in sublist]
 
-lmis_df_wide_flat = rename_items_to_address_inconsistentencies(lmis_df_wide_flat, inconsistent_item_names_mapping)
+df_with_consistent_item_names =  lmis_df_wide_flat[~lmis_df_wide_flat[('item',)].isin(list_of_items_with_inconsistent_names)]
+df_without_consistent_item_names = lmis_df_wide_flat[lmis_df_wide_flat[('item',)].isin(list_of_items_with_inconsistent_names)]
+
+df_without_consistent_item_names_corrected = rename_items_to_address_inconsistentencies(df_without_consistent_item_names, inconsistent_item_names_mapping)
+#lmis_df_wide_flat = rename_items_to_address_inconsistentencies(lmis_df_wide_flat, inconsistent_item_names_mapping)
+lmis_df_wide_flat = pd.concat([df_without_consistent_item_names_corrected, df_with_consistent_item_names], ignore_index=True)
 
 # --- 3.1 RULE: 1.If i) stockout is missing, ii) closing_bal, amc and received are not missing , and iii) amc !=0 and,
 #          then stkout_days[m] = (amc[m] - closing_bal[m-1] - received)/amc * number of days in the month ---
