@@ -1616,8 +1616,8 @@ class HSI_Tb_ScreeningAndRefer(HSI_Event, IndividualScopeEventMixin):
 
         smear_status = person["tb_smear"]
 
-        # If the person is already on treatment and not failing, do nothing do not occupy any resources
-        if person["tb_on_treatment"] and not person["tb_treatment_failure"]:
+        # If the person is already on treatment, do nothing do not occupy any resources
+        if person["tb_on_treatment"]:
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # ------------------------- screening ------------------------- #
@@ -2131,16 +2131,15 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
                 df.at[person_id, "tb_date_treated_mdr"] = now
 
             # schedule first follow-up appointment
-            follow_up_date = self.sim.date + DateOffset(months=1)
             logger.debug(
                 key="message",
                 data=f"HSI_Tb_StartTreatment: scheduling first follow-up "
-                f"for person {person_id} on {follow_up_date}",
+                f"for person {person_id}",
             )
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_FollowUp(person_id=person_id, module=self.module),
-                topen=follow_up_date,
+                topen=self.sim.date + DateOffset(months=1),
                 tclose=None,
                 priority=0,
             )
