@@ -1215,7 +1215,7 @@ class Tb(Module):
 
             for person in tx_failure:
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Tb_ScreeningAndRefer(person_id=person, module=self),
+                    HSI_Tb_ScreeningAndRefer(person_id=person, module=self, facility_level='2'),
                     topen=self.sim.date,
                     tclose=None,
                     priority=0,
