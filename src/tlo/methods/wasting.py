@@ -84,7 +84,7 @@ class Wasting(Module):
             Types.REAL, 'odds ratio of wasting if born term and small for gestational age'),
         'or_wasting_SGA_and_preterm': Parameter(
             Types.REAL, 'odds ratio of wasting if born preterm and small for gestational age'),
-        # incidence parameters
+        # incidence
         'base_inc_rate_wasting_by_agegp': Parameter(
             Types.LIST, 'List with baseline incidence of wasting by age group'),
         'rr_wasting_preterm_and_AGA': Parameter(
@@ -97,24 +97,15 @@ class Wasting(Module):
             Types.REAL, 'relative risk of wasting per 1 unit decrease in wealth level'),
         'min_days_duration_of_wasting': Parameter(
             Types.REAL, 'minimum duration in days of wasting (MAM and SAM)'),
+        # progression
         'average_duration_of_untreated_MAM': Parameter(
             Types.REAL, 'average duration of untreated MAM'),
-        # progression to severe parameters
-        'progression_severe_wasting_by_agegp': Parameter(
-            Types.LIST, 'List with progression rates to severe wasting by age group'),
         'average_duration_of_untreated_SAM': Parameter(
             Types.REAL, 'average duration of untreated SAM'),
+        'progression_severe_wasting_by_agegp': Parameter(
+            Types.LIST, 'List with progression rates to severe wasting by age group'),
         'prob_complications_in_SAM': Parameter(
             Types.REAL, 'probability of medical complications in SAM '),
-        # recovery parameters
-        'recovery_rate_with_standard_RUTF': Parameter(
-            Types.REAL, 'probability of recovery from wasting following treatment with standard RUTF'),
-        'recovery_rate_with_soy_RUSF': Parameter(
-            Types.REAL, 'probability of recovery from wasting following treatment with soy RUSF'),
-        'recovery_rate_with_CSB++': Parameter(
-            Types.REAL, 'probability of recovery from wasting following treatment with CSB++'),
-        'recovery_rate_with_inpatient_care': Parameter(
-            Types.REAL, 'probability of recovery from wasting following treatment with inpatient care'),
         # MUAC distributions
         'MUAC_distribution_WHZ<-3': Parameter(
             Types.LIST, 'mean and standard deviation of a normal distribution of MUAC measurements for WHZ<-3'),
@@ -123,26 +114,25 @@ class Wasting(Module):
         'MUAC_distribution_WHZ>=-2': Parameter(
             Types.LIST, 'mean and standard deviation of a normal distribution of MUAC measurements for WHZ>=-2'),
         'proportion_WHZ<-3_with_MUAC<115mm': Parameter(
-            Types.REAL, 'proportion of severe weight-for-height Z-score with MUAC<115mm'),
+            Types.REAL, 'proportion of severe wasting with MUAC<115mm'),
         'proportion_-3<=WHZ<-2_with_MUAC<115mm': Parameter(
-            Types.REAL, 'proportion of moderate weight-for-height Z-score with MUAC<115mm'),
+            Types.REAL, 'proportion of moderate wasting with MUAC<115mm'),
         'proportion_-3<=WHZ<-2_with_MUAC_115-<125mm': Parameter(
-            Types.REAL, 'proportion of moderate weight-for-height Z-score with MUAC between 115mm and 125mm'),
+            Types.REAL, 'proportion of moderate wasting with 115mm≤MUAC<125mm'),
         'proportion_mam_with_MUAC_115-<125mm_and_normal_whz': Parameter(
-            Types.REAL, 'proportion of mam cases with MUAC between 115mm and 125mm and normal/mild WHZ'),
+            Types.REAL, 'proportion of MAM cases with 115mm≤MUAC<125mm and normal/mild WHZ'),
         'proportion_mam_with_MUAC_115-<125mm_and_-3<=WHZ<-2': Parameter(
             Types.REAL,
-            'proportion of mam cases with both MUAC between 115mm and '
-            '125mm and moderate wasting'),
+            'proportion of MAM cases with both 115mm≤MUAC<125mm and moderate wasting'),
         'proportion_mam_with_-3<=WHZ<-2_and_normal_MUAC': Parameter(
             Types.REAL,
-            'proportion of mam cases with moderate wasting and normal MUAC'),
+            'proportion of MAM cases with moderate wasting and normal MUAC'),
         # bilateral oedema
         'prevalence_nutritional_oedema': Parameter(
             Types.REAL, 'prevalence of nutritional oedema in children under 5 in Malawi'),
         'proportion_oedema_with_WHZ<-2': Parameter(
             Types.REAL, 'proportion of oedematous malnutrition with concurrent wasting'),
-        # treatment parameters
+        # treatment
         'coverage_supplementary_feeding_program': Parameter(
             Types.REAL, 'coverage of supplementary feeding program for MAM in health centres'),
         'coverage_outpatient_therapeutic_care': Parameter(
@@ -153,6 +143,15 @@ class Wasting(Module):
             Types.REAL, 'probability of returning to MAM after seeking care'),
         'prob_death_after_care': Parameter(
             Types.REAL, 'probability of dying after seeking care'),
+        # recovery
+        'recovery_rate_with_standard_RUTF': Parameter(
+            Types.REAL, 'probability of recovery from wasting following treatment with standard RUTF'),
+        'recovery_rate_with_soy_RUSF': Parameter(
+            Types.REAL, 'probability of recovery from wasting following treatment with soy RUSF'),
+        'recovery_rate_with_CSB++': Parameter(
+            Types.REAL, 'probability of recovery from wasting following treatment with CSB++'),
+        'recovery_rate_with_inpatient_care': Parameter(
+            Types.REAL, 'probability of recovery from wasting following treatment with inpatient care'),
     }
 
     PROPERTIES = {
