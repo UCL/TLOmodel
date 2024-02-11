@@ -640,7 +640,8 @@ for var in ['district', 'fac_name', 'month']:
     stkout_df.loc[cond, var] = 'Aggregate'
 
 # --- 6.6 Export final stockout dataframe --- #
-stkout_df.to_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
+# stkout_df.to_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
+# <-- this line commented out as the file is very large.
 
 # Final checks
 stkout_df = stkout_df.drop(index=stkout_df.index[pd.isnull(stkout_df.available_prop)])
