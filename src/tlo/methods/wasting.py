@@ -205,7 +205,8 @@ class Wasting(Module):
         # Update parameters from the resource dataframe
         # Read parameters from the resource file
         self.load_parameters_from_dataframe(
-            pd.read_excel(Path(self.resourcefilepath) / 'ResourceFile_Wasting.xlsx', sheet_name='Parameter_values_AM'))
+            pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Wasting.csv')
+        )
 
         # Register wasting symptom(weight loss) in Symptoms Manager
         self.sim.modules['SymptomManager'].register_symptom(Symptom(name=self.wasting_symptom))
