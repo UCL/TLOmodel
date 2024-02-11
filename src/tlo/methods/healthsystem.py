@@ -541,6 +541,29 @@ class HealthSystem(Module):
                         " the priority, and on which categories of individuals classify for fast-tracking "
                         " for specific treatments"),
 
+        'const_HR_scaling_table': Parameter(
+            Types.DICT, "Factors by which capabilities of medical officer categories at different levels will be"
+                              "scaled at the start of the simulation to simulate a number of effects (e.g. absenteeism,"
+                              "boosting of specific medical cadres, etc). This is the imported from an"
+                              "Excel workbook: keys are the worksheet names and values are the worksheets in "
+                              "the format of pd.DataFrames."),
+
+        'const_HR_scaling_mode': Parameter(
+            Types.STRING, "Mode of HR scaling considered at the start of the simulation. Options are default"
+                          " (capabilities are scaled by a constaint factor of 1), data (factors informed by survey data),"
+                          "and custom (user can freely set these factors as parameters in the analysis).",
+        ),
+
+        'dynamic_HR_scaling_factor': Parameter(
+            Types.REAL, "Factor by which HR capabilities are scaled at regular intervals of 1 year (in addition to the"
+                        " [optional] scaling with population size (controlled by `scale_HR_by_popsize`"
+        ),
+
+        'scale_HR_by_popsize': Parameter(
+            Types.BOOL, "Decide whether to scale HR capabilities by population size every year. Can be used as well as"
+                        " the dynamic_HR_scaling_factor"
+        ),
+
         'tclose_overwrite': Parameter(
             Types.INT, "Decide whether to overwrite tclose variables assigned by disease modules"),
 
@@ -794,8 +817,22 @@ class HealthSystem(Module):
                                                          'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx',
                                                          sheet_name=None)
 
+        self.parameters['const_HR_scaling_table']: Dict = pd.read_excel(
+            path_to_resourcefiles_for_healthsystem /
+            "human_resources" /
+            "const_HR_scaling" /
+            "ResourceFile_const_HR_scaling.xlsx",
+            sheet_name=None  # all sheets read in
+        )
+
+
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
+
+        # Ensure the mode of HR scaling to be considered in included in the tables loaded
+        assert self.parameters['const_HR_scaling_mode'] in self.parameters['const_HR_scaling_table'], \
+            f"Value of `const_HR_scaling_mode` not recognised: {self.parameters['const_HR_scaling_mode']}"
+
         # Create dedicated RNGs for separate functions done by the HealthSystem module
         self.rng_for_hsi_queue = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
         self.rng_for_dx = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
@@ -833,6 +870,7 @@ class HealthSystem(Module):
 
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
+
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -875,6 +913,11 @@ class HealthSystem(Module):
         # Schedule a mode_appt_constraints change
         sim.schedule_event(HealthSystemChangeMode(self),
                            Date(self.parameters["year_mode_switch"], 1, 1))
+
+        # Schedule recurring event which will rescale daily capabilities at regular intervals.
+        # The first event scheduled will only be used to update self.last_year_pop_size parameter,
+        # actual scaling will only take effect from 2011 onwards
+        sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date) + pd.DateOffset(years=1))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -931,6 +974,8 @@ class HealthSystem(Module):
 
     def process_human_resources_files(self, use_funded_or_actual_staffing: str):
         """Create the data-structures needed from the information read into the parameters."""
+
+
 
         # * Define Facility Levels
         self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
@@ -1031,6 +1076,28 @@ class HealthSystem(Module):
         # never available.)
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
 
+    def adjust_for_const_HR_scaling(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Adjust the Daily_Capabilities pd.DataFrame to account for assumptions about scaling of HR resources"""
+
+        # Get the set of scaling_factors that are specified by the 'const_HR_scaling_mode' assumption
+        const_HR_scaling_factor = self.parameters['const_HR_scaling_table'][self.parameters['const_HR_scaling_mode']]
+        const_HR_scaling_factor = const_HR_scaling_factor.set_index('Officer_Category')
+
+        level_conversion = {"1a": "L1a_Av_Mins_Per_Day", "1b": "L1b_Av_Mins_Per_Day",
+                            "2": "L2_Av_Mins_Per_Day", "0": "L0_Av_Mins_Per_Day", "3": "L3_Av_Mins_Per_Day",
+                            "4": "L4_Av_Mins_Per_Day", "5": "L5_Av_Mins_Per_Day"}
+
+        scaler = df[['Officer_Category', 'Facility_Level']].apply(
+            lambda row: const_HR_scaling_factor.loc[row['Officer_Category'], level_conversion[row['Facility_Level']]],
+            axis=1
+        )
+
+        # Apply scaling to 'Total_Mins_Per_Day'
+        df['Total_Mins_Per_Day'] *= scaler
+
+        return df
+
+
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> pd.Series:
         """
         This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to include
@@ -1044,7 +1111,10 @@ class HealthSystem(Module):
 
         # Get the capabilities data imported (according to the specified underlying assumptions).
         capabilities = pool_capabilities_at_levels_1b_and_2(
-            self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}'])
+            self.adjust_for_const_HR_scaling(
+                self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
+            )
+        )
         capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
 
         # Create dataframe containing background information about facility and officer types
@@ -2785,6 +2855,33 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
 
         if 'beds_availability' in self._parameters:
             self.module.bed_days.availability = self._parameters['beds_availability']
+
+
+class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
+    """ This event exists to scale the daily capabilities assumed at fixed time intervals"""
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=1))
+        self.last_year_pop_size = self.current_pop_size  # store population size at initiation (when this class is
+        #                                                  created)
+
+    @property
+    def current_pop_size(self) -> float:
+        """Returns current population size"""
+        df = self.sim.population.props
+        return df.is_alive.sum()
+
+    def apply(self, population):
+
+        this_year_pop_size = self.current_pop_size
+
+        # Rescale by fixed amount
+        self.module._daily_capabilities *= self.module.parameters['dynamic_HR_scaling_factor']
+
+        # Rescale daily capabilities by population size, if this option is included
+        if self.module.parameters['scale_HR_by_popsize']:
+            self.module._daily_capabilities *= this_year_pop_size/self.last_year_pop_size
+
+        self.last_year_pop_size = this_year_pop_size   # Save for next year
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
