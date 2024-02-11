@@ -171,7 +171,7 @@ class Wasting(Module):
         'un_sam_death_date': Property(Types.DATE, 'death date from severe acute malnutrition'),
         'un_am_recovery_date': Property(Types.DATE, 'recovery date from acute malnutrition'),
         'un_am_discharge_date': Property(Types.DATE, 'discharge date from treatment of MAM/ SAM'),
-        'un_acute_malnutrition_tx_start_date': Property(Types.DATE, 'intervention start date'),
+        'un_am_tx_start_date': Property(Types.DATE, 'intervention start date'),
         'un_am_treatment_type': Property(Types.CATEGORICAL, 'treatment types for acute malnutrition',
                                          categories=['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care'] + [
                                              'none', 'not_applicable']),
@@ -225,7 +225,7 @@ class Wasting(Module):
         df.loc[df.is_alive, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
         df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
         df.loc[df.is_alive, 'un_last_wasting_date_of_onset'] = pd.NaT
-        df.loc[df.is_alive, 'un_acute_malnutrition_tx_start_date'] = pd.NaT
+        df.loc[df.is_alive, 'un_am_tx_start_date'] = pd.NaT
         df.loc[df.is_alive, 'un_sam_death_date'] = pd.NaT
         df.loc[df.is_alive, 'un_am_bilateral_oedema'] = False
         df.loc[df.is_alive, 'un_am_MUAC_category'] = '>=125mm'
@@ -292,7 +292,7 @@ class Wasting(Module):
         df.at[child_id, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
         df.at[child_id, 'un_clinical_acute_malnutrition'] = 'well'
         df.at[child_id, 'un_last_wasting_date_of_onset'] = pd.NaT
-        df.at[child_id, 'un_acute_malnutrition_tx_start_date'] = pd.NaT
+        df.at[child_id, 'un_am_tx_start_date'] = pd.NaT
         df.at[child_id, 'un_sam_death_date'] = pd.NaT
         df.at[child_id, 'un_am_bilateral_oedema'] = False
         df.at[child_id, 'un_am_MUAC_category'] = '>=125mm'
@@ -600,7 +600,7 @@ class Wasting(Module):
         """
         df = self.sim.population.props
         # Log that the treatment is provided:
-        df.at[person_id, 'un_acute_malnutrition_tx_start_date'] = self.sim.date
+        df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
 
         if intervention == 'SFP':
             mam_recovery = self.wasting_models.acute_malnutrition_recovery_mam_lm.predict(
@@ -610,7 +610,7 @@ class Wasting(Module):
                 # schedule recovery date
                 self.sim.schedule_event(event=ClinicalAcuteMalnutritionRecoveryEvent(
                     module=self, person_id=person_id),
-                    date=df.at[person_id, 'un_acute_malnutrition_tx_start_date'] + DateOffset(weeks=3))
+                    date=df.at[person_id, 'un_am_tx_start_date'] + DateOffset(weeks=3))
                 # cancel progression date (in ProgressionEvent)
             else:
                 # remained MAM
@@ -623,7 +623,7 @@ class Wasting(Module):
                 # schedule recovery date
                 self.sim.schedule_event(event=ClinicalAcuteMalnutritionRecoveryEvent(
                     module=self, person_id=person_id),
-                    date=df.at[person_id, 'un_acute_malnutrition_tx_start_date'] + DateOffset(weeks=3))
+                    date=df.at[person_id, 'un_am_tx_start_date'] + DateOffset(weeks=3))
                 # cancel death date
                 df.at[person_id, 'un_sam_death_date'] = pd.NaT
             else:
@@ -632,11 +632,11 @@ class Wasting(Module):
                 if outcome == 'death':
                     self.sim.schedule_event(event=SevereAcuteMalnutritionDeathEvent(
                         module=self, person_id=person_id),
-                        date=df.at[person_id, 'un_acute_malnutrition_tx_start_date'] + DateOffset(weeks=3))
+                        date=df.at[person_id, 'un_am_tx_start_date'] + DateOffset(weeks=3))
 
                 else:
                     self.sim.schedule_event(event=UpdateToMAM(module=self, person_id=person_id),
-                                            date=df.at[person_id, 'un_acute_malnutrition_tx_start_date'] +
+                                            date=df.at[person_id, 'un_am_tx_start_date'] +
                                                  DateOffset(weeks=3))
 
         if intervention == 'ITC':
@@ -646,7 +646,7 @@ class Wasting(Module):
                 # schedule recovery date
                 self.sim.schedule_event(event=ClinicalAcuteMalnutritionRecoveryEvent(
                     module=self, person_id=person_id),
-                    date=df.at[person_id, 'un_acute_malnutrition_tx_start_date'] + DateOffset(weeks=4))
+                    date=df.at[person_id, 'un_am_tx_start_date'] + DateOffset(weeks=4))
                 # cancel death date
                 df.at[person_id, 'un_sam_death_date'] = pd.NaT
             else:
@@ -656,11 +656,11 @@ class Wasting(Module):
                 if outcome == 'death':
                     self.sim.schedule_event(event=SevereAcuteMalnutritionDeathEvent(
                         module=self, person_id=person_id),
-                        date=df.at[person_id, 'un_acute_malnutrition_tx_start_date'] + DateOffset(weeks=4))
+                        date=df.at[person_id, 'un_am_tx_start_date'] + DateOffset(weeks=4))
                 else:
                     self.sim.schedule_event(
                         event=UpdateToMAM(module=self, person_id=person_id),
-                        date=df.at[person_id, 'un_acute_malnutrition_tx_start_date'] + DateOffset(weeks=4))
+                        date=df.at[person_id, 'un_am_tx_start_date'] + DateOffset(weeks=4))
 
 
 class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
@@ -786,7 +786,7 @@ class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
         # before progression to severe wasting, check those who started
         # supplementary feeding programme before today
         if df.at[person_id, 'un_last_wasting_date_of_onset'] < \
-                df.at[person_id, 'un_acute_malnutrition_tx_start_date'] < self.sim.date:
+                df.at[person_id, 'un_am_tx_start_date'] < self.sim.date:
             return
 
         # continue with progression to severe if not treated/recovered
@@ -895,7 +895,7 @@ class ClinicalAcuteMalnutritionRecoveryEvent(Event, IndividualScopeEventMixin):
         df.at[person_id, 'un_am_bilateral_oedema'] = False
         df.at[person_id, 'un_am_MUAC_category'] = '>=125mm'
         df.at[person_id, 'un_sam_with_complications'] = False
-        df.at[person_id, 'un_acute_malnutrition_tx_start_date'] = pd.NaT
+        df.at[person_id, 'un_am_tx_start_date'] = pd.NaT
         df.at[person_id, 'un_am_treatment_type'] = 'not_applicable'
 
         # this will clear all wasting symptoms
@@ -952,7 +952,7 @@ class UpdateToMAM(Event, IndividualScopeEventMixin):
         df.at[person_id, 'un_clinical_acute_malnutrition'] = 'MAM'
         df.at[person_id, 'un_am_bilateral_oedema'] = False
         df.at[person_id, 'un_sam_with_complications'] = False
-        df.at[person_id, 'un_acute_malnutrition_tx_start_date'] = pd.NaT
+        df.at[person_id, 'un_am_tx_start_date'] = pd.NaT
         df.at[person_id, 'un_am_recovery_date'] = pd.NaT
         df.at[person_id, 'un_am_discharge_date'] = pd.NaT
         # will start the process again
@@ -1005,7 +1005,7 @@ class HSI_Wasting_SupplementaryFeedingProgramme_MAM(HSI_Event, IndividualScopeEv
         if self.get_consumables([item_code1]):
             logger.debug(key='debug', data='consumables are available')
             # Log that the treatment is provided:
-            df.at[person_id, 'un_acute_malnutrition_tx_start_date'] = self.sim.date
+            df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
             df.at[person_id, 'un_am_discharge_date'] = self.sim.date + DateOffset(weeks=3)
             df.at[person_id, 'un_am_treatment_type'] = 'CSB++'
             self.module.do_when_am_treatment(person_id, intervention='SFP')
@@ -1061,7 +1061,7 @@ class HSI_Wasting_OutpatientTherapeuticProgramme_SAM(HSI_Event, IndividualScopeE
         if self.get_consumables(item_code1) and self.get_consumables(item_code2):
             logger.debug(key='debug', data='consumables are available.')
             # Log that the treatment is provided:
-            df.at[person_id, 'un_acute_malnutrition_tx_start_date'] = self.sim.date
+            df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
             df.at[person_id, 'un_am_discharge_date'] = self.sim.date + DateOffset(weeks=3)
             df.at[person_id, 'un_am_treatment_type'] = 'standard_RUTF'
             self.module.do_when_am_treatment(person_id, intervention='OTC')
@@ -1112,7 +1112,7 @@ class HSI_Wasting_InpatientCareForComplicated_SAM(HSI_Event, IndividualScopeEven
         if self.get_consumables(item_code1) and self.get_consumables(item_code2):
             logger.debug(key='debug', data='consumables available, so use it.')
             # Log that the treatment is provided:
-            df.at[person_id, 'un_acute_malnutrition_tx_start_date'] = self.sim.date
+            df.at[person_id, 'un_am_tx_start_date'] = self.sim.date
             df.at[person_id, 'un_am_discharge_date'] = self.sim.date + DateOffset(weeks=4)
             df.at[person_id, 'un_am_treatment_type'] = 'inpatient_care'
             self.module.do_when_am_treatment(person_id, intervention='ITC')
