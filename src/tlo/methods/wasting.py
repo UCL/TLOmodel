@@ -95,9 +95,9 @@ class Wasting(Module):
             Types.REAL, 'relative risk of wasting if born preterm and small for gestational age'),
         'rr_wasting_wealth_level': Parameter(
             Types.REAL, 'relative risk of wasting per 1 unit decrease in wealth level'),
+        # progression
         'min_days_duration_of_wasting': Parameter(
             Types.REAL, 'minimum duration in days of wasting (MAM and SAM)'),
-        # progression
         'average_duration_of_untreated_MAM': Parameter(
             Types.REAL, 'average duration of untreated MAM'),
         'average_duration_of_untreated_SAM': Parameter(
@@ -1195,7 +1195,7 @@ class WastingModels:
             )
 
         unscaled_lm = unscaled_wasting_lm()
-        target_mean = self.params['base_inc_rate_wasting_by_agegp'][2]
+        target_mean = self.params['base_inc_rate_wasting_by_agegp'][2]  # base inc rate for 12-23mo old
         actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1) &
                                                  (df.un_WHZ_category == 'WHZ>=-2')]).mean()
 
