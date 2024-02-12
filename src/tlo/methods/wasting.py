@@ -156,21 +156,23 @@ class Wasting(Module):
 
     PROPERTIES = {
         # Properties related to wasting
-        'un_ever_wasted': Property(Types.BOOL, 'had wasting before WHZ <-2'),
-        'un_WHZ_category': Property(Types.CATEGORICAL, 'weight-for-height z-score group',
+        'un_ever_wasted': Property(Types.BOOL, 'ever had an episode of wasting (WHZ<-2)'),
+        'un_WHZ_category': Property(Types.CATEGORICAL, 'weight-for-height z-score category',
                                     categories=['WHZ<-3', '-3<=WHZ<-2', 'WHZ>=-2']),
-        'un_last_wasting_date_of_onset': Property(Types.DATE, 'date of onset of latest wasting episode'),
+        'un_last_wasting_date_of_onset': Property(Types.DATE, 'date of onset of last episode of wasting'),
 
         # Properties related to clinical acute malnutrition
-        'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'clinical acute  malnutrition state based on WHZ',
+        'un_clinical_acute_malnutrition': Property(Types.CATEGORICAL, 'clinical acute malnutrition state base'
+                                                                      ' on WHZ and/or MUAC and/or oedema',
                                                    categories=['MAM', 'SAM'] + ['well']),
-        'un_am_bilateral_oedema': Property(Types.BOOL, 'bilateral oedema present in wasting'),
-        'un_am_MUAC_category': Property(Types.CATEGORICAL, 'MUAC measurement categories',
+        'un_am_bilateral_oedema': Property(Types.BOOL, 'bilateral pitting oedema present in wasting episode'),
+        'un_am_MUAC_category': Property(Types.CATEGORICAL, 'MUAC measurement categories, based on WHO '
+                                                           'cut-offs',
                                         categories=['<115mm', '115-<125mm', '>=125mm']),
-        'un_sam_with_complications': Property(Types.BOOL, 'medical complications in SAM'),
+        'un_sam_with_complications': Property(Types.BOOL, 'medical complications in SAM episode'),
         'un_sam_death_date': Property(Types.DATE, 'death date from severe acute malnutrition'),
         'un_am_recovery_date': Property(Types.DATE, 'recovery date from acute malnutrition'),
-        'un_am_discharge_date': Property(Types.DATE, 'discharge date from treatment of MAM/ SAM'),
+        'un_am_discharge_date': Property(Types.DATE, 'discharge date from treatment of MAM/SAM'),
         'un_am_tx_start_date': Property(Types.DATE, 'intervention start date'),
         'un_am_treatment_type': Property(Types.CATEGORICAL, 'treatment types for acute malnutrition',
                                          categories=['standard_RUTF', 'soy_RUSF', 'CSB++', 'inpatient_care'] + [
