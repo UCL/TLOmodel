@@ -174,7 +174,7 @@ def get_hcw_capability(resourcefilepath, hcwscenario='actual') -> pd.DataFrame:
         resourcefilepath / 'healthsystem' / 'human_resources' / hcwscenario / 'ResourceFile_Daily_Capabilities.csv'
     )
     hcw_capability = hcw_capability.groupby(['Facility_Level', 'Officer_Category']
-                                            )['Total_Mins_Per_Day'].sum().reset_index()
+                                            )['Total_Mins_Per_Day'].sum().reset_index()  # todo: drop facility level 5
     hcw_capability['Total_Mins_Per_Year'] = hcw_capability['Total_Mins_Per_Day'] * 365.25
     hcw_capability.drop(columns='Total_Mins_Per_Day', inplace=True)
 
