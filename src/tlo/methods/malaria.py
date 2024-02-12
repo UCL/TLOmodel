@@ -218,7 +218,7 @@ class Malaria(Module):
     }
 
     def read_parameters(self, data_folder):
-        workbook = pd.read_excel(self.resourcefilepath / 'ResourceFile_malaria.xlsx', sheet_name=None)
+        workbook = pd.read_excel(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria.xlsx', sheet_name=None)
         self.load_parameters_from_dataframe(workbook['parameters'])
 
         p = self.parameters
@@ -231,9 +231,9 @@ class Malaria(Module):
         p['sev_symp_prob'] = workbook['severe_symptoms']
         p['rdt_testing_rates'] = workbook['WHO_TestData2023']
 
-        p['inf_inc'] = pd.read_csv(self.resourcefilepath / 'ResourceFile_malaria_InfInc_expanded.csv')
-        p['clin_inc'] = pd.read_csv(self.resourcefilepath / 'ResourceFile_malaria_ClinInc_expanded.csv')
-        p['sev_inc'] = pd.read_csv(self.resourcefilepath / 'ResourceFile_malaria_SevInc_expanded.csv')
+        p['inf_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_InfInc_expanded.csv')
+        p['clin_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_ClinInc_expanded.csv')
+        p['sev_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_SevInc_expanded.csv')
 
         # check itn projected values are <=0.7 and rounded to 1dp for matching to incidence tables
         p['itn'] = round(p['itn'], 1)
