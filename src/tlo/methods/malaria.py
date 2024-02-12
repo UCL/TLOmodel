@@ -180,6 +180,10 @@ class Malaria(Module):
             Types.REAL,
             'relative risk of severe malaria with each dose of IPTp'
         ),
+        'prob_of_treatment_success': Parameter(
+            Types.REAL,
+            'probability that treatment will clear malaria symptoms'
+        )
 
     }
 
