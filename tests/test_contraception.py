@@ -918,7 +918,8 @@ def test_input_probs_sum():
 
     # Import relevant sheets from the workbook
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
-    workbook = pd.read_excel(Path(resourcefilepath) / 'ResourceFile_Contraception.xlsx', sheet_name=None)
+    workbook = pd.read_excel(Path(resourcefilepath) / 'contraception' / 'ResourceFile_Contraception.xlsx',
+                             sheet_name=None)
     sheet_names = [
         'Initiation_ByMethod',
         'Interventions_Pop',
