@@ -850,7 +850,7 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
 
         # if on treatment for severe malaria, will reduce probability of death
         # use random number generator - currently param treatment_adjustment set to 0.5
-        if df.at[individual_id, 'ma_tx'] == 'complicated':
+        if df.at[person_id, 'ma_tx'] == 'complicated':
 
             prob = self.module.rng.rand()
 
@@ -863,9 +863,9 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
 
             # else if draw does not result in death -> cure
             else:
-                df.at[individual_id, 'ma_tx'] = 'none'
-                df.at[individual_id, 'ma_inf_type'] = 'none'
-                df.at[individual_id, 'ma_is_infected'] = False
+                df.at[person_id, 'ma_tx'] = 'none'
+                df.at[person_id, 'ma_inf_type'] = 'none'
+                df.at[person_id, 'ma_is_infected'] = False
 
                 # clear symptoms
                 self.sim.modules['SymptomManager'].clear_symptoms(
