@@ -2766,9 +2766,9 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # this will give ipt among whole population - not just eligible pop
         if new_tb_ipt:
-            ipt_coverage = new_tb_ipt / len(df[df.is_alive])
+            current_ipt_coverage = new_tb_ipt / len(df[df.is_alive])
         else:
-            ipt_coverage = 0
+            current_ipt_coverage = 0
 
         logger.info(
             key="tb_treatment",
@@ -2777,7 +2777,7 @@ class TbLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 "tbNewDiagnosis": new_tb_diagnosis,
                 "tbPropDiagnosed": prop_dx,
                 "tbTreatmentCoverage": tx_coverage,
-                "tbIptCoverage": ipt_coverage,
+                "tbIptCoverage": current_ipt_coverage,
             },
         )
 
