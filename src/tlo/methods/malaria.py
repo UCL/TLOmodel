@@ -194,7 +194,8 @@ class Malaria(Module):
             Types.DATE, 'Date of symptom start for clinical infection'
         ),
         'ma_date_death': Property(Types.DATE, 'Date of death due to malaria'),
-        'ma_tx': Property(Types.BOOL, 'Currently on anti-malarial treatment'),
+        'ma_tx': Property(Types.CATEGORICAL, 'Type of anti-malarial treatment person is currently using',
+                          categories=['none', 'uncomplicated', 'complicated']),
         'ma_date_tx': Property(
             Types.DATE, 'Date treatment started for most recent malaria episode'
         ),
@@ -362,7 +363,7 @@ class Malaria(Module):
         df.loc[df.is_alive, 'ma_date_infected'] = pd.NaT
         df.loc[df.is_alive, 'ma_date_symptoms'] = pd.NaT
         df.loc[df.is_alive, 'ma_date_death'] = pd.NaT
-        df.loc[df.is_alive, 'ma_tx'] = False
+        df.loc[df.is_alive, 'ma_tx'] = 'none'
         df.loc[df.is_alive, 'ma_date_tx'] = pd.NaT
         df.loc[df.is_alive, 'ma_inf_type'] = 'none'
         df.loc[df.is_alive, 'ma_age_edited'] = 0.0
@@ -532,7 +533,7 @@ class Malaria(Module):
         # testing trends independent of any demographic characteristics
         # no rdt offered if currently on anti-malarials
         random_draw = rng.random_sample(size=len(df))
-        will_test_idx = df.loc[df.is_alive & ~df.ma_tx & (random_draw < rdt_rate)].index
+        will_test_idx = df.loc[df.is_alive & (df.ma_tx == 'none') & (random_draw < rdt_rate)].index
 
         for person_id in will_test_idx:
             date_test = self.sim.date + pd.DateOffset(
@@ -623,7 +624,7 @@ class Malaria(Module):
         df.at[child_id, 'ma_date_infected'] = pd.NaT
         df.at[child_id, 'ma_date_symptoms'] = pd.NaT
         df.at[child_id, 'ma_date_death'] = pd.NaT
-        df.at[child_id, 'ma_tx'] = False
+        df.at[child_id, 'ma_tx'] = 'none'
         df.at[child_id, 'ma_date_tx'] = pd.NaT
         df.at[child_id, 'ma_inf_type'] = 'none'
         df.at[child_id, 'ma_age_edited'] = 0.0
@@ -707,7 +708,7 @@ class Malaria(Module):
 
         df = self.sim.population.props
 
-        if not df.at[person_id, 'ma_tx']:
+        if df.at[person_id, 'ma_tx'] == 'none':
             malaria_test_result = self.check_if_fever_is_caused_by_malaria(person_id=person_id, hsi_event=hsi_event)
 
             # Treat / refer based on diagnosis
@@ -738,7 +739,7 @@ class Malaria(Module):
         """
         df = self.sim.population.props
 
-        if not df.at[person_id, 'ma_tx']:
+        if df.at[person_id, 'ma_tx'] == 'none':
             # Check if malaria parasitaemia:
             malaria_test_result = self.check_if_fever_is_caused_by_malaria(person_id=person_id, hsi_event=hsi_event)
 
@@ -847,9 +848,10 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
         if not df.at[person_id, 'is_alive'] or (df.at[person_id, 'ma_inf_type'] == 'none'):
             return
 
-        # if on treatment, will reduce probability of death
+        # if on treatment for severe malaria, will reduce probability of death
         # use random number generator - currently param treatment_adjustment set to 0.5
-        if df.at[person_id, 'ma_tx']:
+        if df.at[person_id, 'ma_tx'] == 'complicated':
+
             prob = self.module.rng.rand()
 
             # if draw -> death
@@ -861,7 +863,7 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
 
             # else if draw does not result in death -> cure
             else:
-                df.at[person_id, 'ma_tx'] = False
+                df.at[person_id, 'ma_tx'] = 'none'
                 df.at[person_id, 'ma_inf_type'] = 'none'
                 df.at[person_id, 'ma_is_infected'] = False
 
@@ -910,7 +912,7 @@ class HSI_Malaria_rdt(HSI_Event, IndividualScopeEventMixin):
         hs = self.sim.modules['HealthSystem']
 
         # Ignore this event if the person is no longer alive or already on treatment
-        if not df.at[person_id, 'is_alive'] or df.at[person_id, 'ma_tx']:
+        if not df.at[person_id, 'is_alive'] or (df.at[person_id, 'ma_tx'] != 'none'):
             return hs.get_blank_appt_footprint()
 
         district = df.at[person_id, 'district_num_of_residence']
@@ -1007,7 +1009,7 @@ class HSI_Malaria_rdt_community(HSI_Event, IndividualScopeEventMixin):
         hs = self.sim.modules['HealthSystem']
 
         # Ignore this event if the person is no longer alive or already on treatment
-        if not df.at[person_id, 'is_alive'] or df.at[person_id, 'ma_tx']:
+        if not df.at[person_id, 'is_alive'] or not (df.at[person_id, 'ma_tx'] == 'none'):
             return hs.get_blank_appt_footprint()
 
         # call the DxTest RDT to diagnose malaria
@@ -1058,7 +1060,8 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
 
-        if not person['ma_tx']:
+        # if not on treatment already - request treatment
+        if person['ma_tx'] == 'none':
 
             logger.debug(key='message',
                          data=f'HSI_Malaria_Treatment: requesting malaria treatment for {person_id}')
@@ -1072,7 +1075,7 @@ class HSI_Malaria_Treatment(HSI_Event, IndividualScopeEventMixin):
                              data=f'HSI_Malaria_Treatment: giving malaria treatment for {person_id}')
 
                 if df.at[person_id, 'is_alive']:
-                    df.at[person_id, 'ma_tx'] = True
+                    df.at[person_id, 'ma_tx'] = 'uncomplicated'
                     df.at[person_id, 'ma_date_tx'] = self.sim.date
                     df.at[person_id, 'ma_tx_counter'] += 1
 
@@ -1148,7 +1151,9 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
-        if not df.at[person_id, 'ma_tx'] and df.at[person_id, 'is_alive']:
+
+        # if person is not on treatment and still alive
+        if (df.at[person_id, 'ma_tx'] == 'none') and df.at[person_id, 'is_alive']:
 
             logger.debug(key='message',
                          data=f'HSI_Malaria_Treatment_Complicated: requesting complicated malaria treatment for '
@@ -1163,7 +1168,7 @@ class HSI_Malaria_Treatment_Complicated(HSI_Event, IndividualScopeEventMixin):
                              data=f'HSI_Malaria_Treatment_Complicated: giving complicated malaria treatment for '
                                   f' {person_id}')
 
-                df.at[person_id, 'ma_tx'] = True
+                df.at[person_id, 'ma_tx'] = 'complicated'
                 df.at[person_id, 'ma_date_tx'] = self.sim.date
                 df.at[person_id, 'ma_tx_counter'] += 1
 
@@ -1203,7 +1208,7 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         p = self.module.parameters
 
-        if not df.at[person_id, 'is_alive'] or df.at[person_id, 'ma_tx']:
+        if not df.at[person_id, 'is_alive'] or (df.at[person_id, 'ma_tx'] != 'none'):
             return
 
         # IPTp contra-indicated if currently on cotrimoxazole
@@ -1337,21 +1342,29 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
             )
 
         # TREATED
-        # select people with malaria and treatment for at least 5 days
+        # select people with clinical malaria and treatment for at least 5 days
         # if treated, will clear symptoms and parasitaemia
         # this will also clear parasitaemia for asymptomatic cases picked up by routine rdt
-        infected_and_treated = df.index[df.is_alive &
+        clinical_and_treated = df.index[df.is_alive &
                                         (df.ma_date_tx < (self.sim.date - DateOffset(days=5))) &
-                                        (df.ma_inf_type != 'severe')]
+                                        (df.ma_inf_type == 'clinical')]
+
+        # select people with severe malaria and treatment for at least 7 days
+        severe_and_treated = df.index[df.is_alive &
+                                      (df.ma_date_tx < (self.sim.date - DateOffset(days=7))) &
+                                      (df.ma_inf_type == 'severe')]
+
+        # create list of all cases to be resolved through treatment
+        infections_to_clear = sorted(set(clinical_and_treated).union(severe_and_treated))
 
         self.sim.modules['SymptomManager'].clear_symptoms(
-            person_id=infected_and_treated, disease_module=self.module
+            person_id=infections_to_clear, disease_module=self.module
         )
 
         # change properties
-        df.loc[infected_and_treated, 'ma_tx'] = False
-        df.loc[infected_and_treated, 'ma_is_infected'] = False
-        df.loc[infected_and_treated, 'ma_inf_type'] = 'none'
+        df.loc[infections_to_clear, 'ma_tx'] = 'none'
+        df.loc[infections_to_clear, 'ma_is_infected'] = False
+        df.loc[infections_to_clear, 'ma_inf_type'] = 'none'
 
         # UNTREATED
         # if not treated, self-cure occurs after 6 days of symptoms
@@ -1359,7 +1372,7 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         clinical_not_treated = df.index[df.is_alive &
                                         (df.ma_inf_type == 'clinical') &
                                         (df.ma_date_symptoms < (self.sim.date - DateOffset(days=6))) &
-                                        ~df.ma_tx]
+                                        (df.ma_tx == 'none')]
 
         self.sim.modules['SymptomManager'].clear_symptoms(
             person_id=clinical_not_treated, disease_module=self.module

@@ -108,7 +108,7 @@ def test_sims(sim):
         assert not df.at[person, "ma_inf_type"] == "none"
 
     # if on treatment, must have treatment start date
-    for person in df.index[df.ma_tx]:
+    for person in df.index[(df.ma_tx == 'uncomplicated')]:
         assert not pd.isnull(df.at[person, "ma_date_tx"])
 
 
@@ -192,7 +192,7 @@ def test_schedule_rdt_for_all(sim):
     df = sim.population.props
 
     # check no treatment unless infected
-    for person in df.index[df.ma_tx]:
+    for person in df.index[(df.ma_tx == 'uncomplicated')]:
         assert not pd.isnull(df.at[person, "ma_date_infected"])
 
     # check clinical counter is working
@@ -405,7 +405,7 @@ def test_severe_malaria_deaths_perfect_treatment(sim):
     treatment_appt = malaria.HSI_Malaria_Treatment_Complicated(person_id=person_id,
                                                                module=sim.modules['Malaria'])
     treatment_appt.apply(person_id=person_id, squeeze_factor=0.0)
-    assert df.at[person_id, 'ma_tx']
+    assert df.at[person_id, 'ma_tx'] == 'complicated'
     assert df.at[person_id, "ma_date_tx"] == sim.date
     assert df.at[person_id, "ma_tx_counter"] > 0
 
@@ -440,7 +440,7 @@ def test_severe_malaria_deaths_treatment_failure(sim):
     treatment_appt = malaria.HSI_Malaria_Treatment_Complicated(person_id=person_id,
                                                                module=sim.modules['Malaria'])
     treatment_appt.apply(person_id=person_id, squeeze_factor=0.0)
-    assert df.at[person_id, 'ma_tx']
+    assert df.at[person_id, 'ma_tx'] == 'complicated'
     assert df.at[person_id, "ma_date_tx"] == sim.date
     assert df.at[person_id, "ma_tx_counter"] > 0
 
@@ -459,7 +459,7 @@ def test_severe_malaria_deaths_treatment_failure(sim):
     person_id = 1
     df.loc[person_id, ["ma_is_infected", "ma_inf_type"]] = (True, "severe")
 
-    assert not df.at[person_id, 'ma_tx']
+    assert not df.at[person_id, 'ma_tx'] == 'complicated'
     assert df.at[person_id, "ma_date_tx"] is pd.NaT
     assert df.at[person_id, "ma_tx_counter"] == 0
 
@@ -561,7 +561,7 @@ def test_individual_testing_and_treatment(sim):
     tx_event.run(squeeze_factor=0.0)
 
     assert df.at[person_id, "ma_tx_counter"] == 1
-    assert df.at[person_id, "ma_tx"]
+    assert df.at[person_id, "ma_tx"] != 'none'
 
     # -------- asymptomatic infection
     person_id = 1
@@ -604,7 +604,7 @@ def test_individual_testing_and_treatment(sim):
     tx_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
     assert df.at[person_id, "ma_tx_counter"] == 1
-    assert df.at[person_id, "ma_tx"]
+    assert df.at[person_id, "ma_tx"] != 'none'
 
     # -------- severe infection
     person_id = 2
@@ -651,7 +651,7 @@ def test_individual_testing_and_treatment(sim):
     tx_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
     assert df.at[person_id, "ma_tx_counter"] == 1
-    assert df.at[person_id, "ma_tx"]
+    assert df.at[person_id, "ma_tx"] == 'complicated'
 
 
 def test_population_testing_and_treatment(sim):
