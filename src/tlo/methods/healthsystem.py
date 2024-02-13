@@ -554,6 +554,16 @@ class HealthSystem(Module):
                           "and custom (user can freely set these factors as parameters in the analysis).",
         ),
 
+        'dynamic_HR_scaling_factor': Parameter(
+            Types.REAL, "Factor by which HR capabilities are scaled at regular intervals of 1 year (in addition to the"
+                        " [optional] scaling with population size (controlled by `scale_HR_by_popsize`"
+        ),
+
+        'scale_HR_by_popsize': Parameter(
+            Types.BOOL, "Decide whether to scale HR capabilities by population size every year. Can be used as well as"
+                        " the dynamic_HR_scaling_factor"
+        ),
+
         'tclose_overwrite': Parameter(
             Types.INT, "Decide whether to overwrite tclose variables assigned by disease modules"),
 
@@ -903,6 +913,11 @@ class HealthSystem(Module):
         # Schedule a mode_appt_constraints change
         sim.schedule_event(HealthSystemChangeMode(self),
                            Date(self.parameters["year_mode_switch"], 1, 1))
+
+        # Schedule recurring event which will rescale daily capabilities at regular intervals.
+        # The first event scheduled will only be used to update self.last_year_pop_size parameter,
+        # actual scaling will only take effect from 2011 onwards
+        sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date) + pd.DateOffset(years=1))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -2840,6 +2855,33 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
 
         if 'beds_availability' in self._parameters:
             self.module.bed_days.availability = self._parameters['beds_availability']
+
+
+class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
+    """ This event exists to scale the daily capabilities assumed at fixed time intervals"""
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=1))
+        self.last_year_pop_size = self.current_pop_size  # store population size at initiation (when this class is
+        #                                                  created)
+
+    @property
+    def current_pop_size(self) -> float:
+        """Returns current population size"""
+        df = self.sim.population.props
+        return df.is_alive.sum()
+
+    def apply(self, population):
+
+        this_year_pop_size = self.current_pop_size
+
+        # Rescale by fixed amount
+        self.module._daily_capabilities *= self.module.parameters['dynamic_HR_scaling_factor']
+
+        # Rescale daily capabilities by population size, if this option is included
+        if self.module.parameters['scale_HR_by_popsize']:
+            self.module._daily_capabilities *= this_year_pop_size/self.last_year_pop_size
+
+        self.last_year_pop_size = this_year_pop_size   # Save for next year
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
