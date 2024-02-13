@@ -574,7 +574,7 @@ class Malaria(Module):
             )
 
             death_event = MalariaDeathEvent(
-                self, individual_id=person, cause="Malaria"
+                self, person_id=person, cause="Malaria"
             )  # make that death event
             self.sim.schedule_event(death_event, date_death)  # schedule the death
 
@@ -940,53 +940,53 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
     Performs the Death operation on an individual and logs it.
     """
 
-    def __init__(self, module, individual_id, cause):
-        super().__init__(module, person_id=individual_id)
+    def __init__(self, module, person_id, cause):
+        super().__init__(module, person_id=person_id)
         self.cause = cause
 
-    def apply(self, individual_id):
+    def apply(self, person_id):
         df = self.sim.population.props
 
-        if not df.at[individual_id, "is_alive"] or (
-            df.at[individual_id, "ma_inf_type"] == "none"
+        if not df.at[person_id, "is_alive"] or (
+            df.at[person_id, "ma_inf_type"] == "none"
         ):
             return
 
         # if on treatment for severe malaria, will reduce probability of death
         # use random number generator - currently param treatment_adjustment set to 0.5
-        if df.at[individual_id, "ma_tx"] == "complicated":
+        if df.at[person_id, "ma_tx"] == "complicated":
             prob = self.module.rng.rand()
 
             # if draw -> death
             if prob < self.module.parameters["treatment_adjustment"]:
                 self.sim.modules["Demography"].do_death(
-                    individual_id=individual_id,
+                    person_id=person_id,
                     cause=self.cause,
                     originating_module=self.module,
                 )
 
-                df.at[individual_id, "ma_date_death"] = self.sim.date
+                df.at[person_id, "ma_date_death"] = self.sim.date
 
             # else if draw does not result in death -> cure
             else:
-                df.at[individual_id, "ma_tx"] = "none"
-                df.at[individual_id, "ma_inf_type"] = "none"
-                df.at[individual_id, "ma_is_infected"] = False
+                df.at[person_id, "ma_tx"] = "none"
+                df.at[person_id, "ma_inf_type"] = "none"
+                df.at[person_id, "ma_is_infected"] = False
 
                 # clear symptoms
                 self.sim.modules["SymptomManager"].clear_symptoms(
-                    person_id=individual_id, disease_module=self.module
+                    person_id=person_id, disease_module=self.module
                 )
 
         # if not on treatment - death will occur
         else:
             self.sim.modules["Demography"].do_death(
-                individual_id=individual_id,
+                person_id=person_id,
                 cause=self.cause,
                 originating_module=self.module,
             )
 
-            df.at[individual_id, "ma_date_death"] = self.sim.date
+            df.at[person_id, "ma_date_death"] = self.sim.date
 
 
 # ---------------------------------------------------------------------------------
