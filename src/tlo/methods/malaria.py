@@ -960,7 +960,7 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
             # if draw -> death
             if prob < self.module.parameters["treatment_adjustment"]:
                 self.sim.modules["Demography"].do_death(
-                    person_id=person_id,
+                    individual_id=person_id,
                     cause=self.cause,
                     originating_module=self.module,
                 )
@@ -981,7 +981,7 @@ class MalariaDeathEvent(Event, IndividualScopeEventMixin):
         # if not on treatment - death will occur
         else:
             self.sim.modules["Demography"].do_death(
-                person_id=person_id,
+                individual_id=person_id,
                 cause=self.cause,
                 originating_module=self.module,
             )
