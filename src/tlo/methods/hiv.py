@@ -106,9 +106,13 @@ class Hiv(Module):
             "ART status of person, whether on ART or not; and whether viral load is suppressed or not if on ART.",
             categories=["not", "on_VL_suppressed", "on_not_VL_suppressed"],
         ),
+        "hv_on_cotrimoxazole": Property(
+            Types.BOOL,
+            "Whether the person is currently taking and receiving a malaria-protective effect from cotrimoxazole",
+        ),
         "hv_is_on_prep": Property(
             Types.BOOL,
-            "Whether the person is currently taking and receiving a protective effect from Pre-Exposure Prophylaxis.",
+            "Whether the person is currently taking and receiving a protective effect from Pre-Exposure Prophylaxis",
         ),
         "hv_behaviour_change": Property(
             Types.BOOL,
@@ -479,7 +483,7 @@ class Hiv(Module):
                 "age_years",
                 conditions_are_mutually_exclusive=True,
                 conditions_are_exhaustive=True)
-            .when("==0", 1)   # Weibull with shape=1 equivalent to exponential distribution
+            .when("==0", 1)  # Weibull with shape=1 equivalent to exponential distribution
             .when(".between(1,4)", p["infection_to_death_infant_infection_after_birth_weibull_shape"])
             .when(".between(5, 19)", p["infection_to_death_weibull_shape_1519"])
             .when(".between(20, 24)", p["infection_to_death_weibull_shape_2024"])
@@ -545,7 +549,7 @@ class Hiv(Module):
                       external=True,
                       conditions_are_mutually_exclusive=True,
                       conditions_are_exhaustive=True).when("<2020", p["prob_circ_for_child_before_2020"])
-                                                     .otherwise(p["prob_circ_for_child_from_2020"])
+            .otherwise(p["prob_circ_for_child_from_2020"])
         )
 
     def initialise_population(self, population):
@@ -1015,6 +1019,7 @@ class Hiv(Module):
         # --- Current status
         df.at[child_id, "hv_inf"] = False
         df.at[child_id, "hv_art"] = "not"
+        df.at[child_id, "hv_on_cotrimoxazole"] = False
         df.at[child_id, "hv_date_treated"] = pd.NaT
         df.at[child_id, "hv_is_on_prep"] = False
         df.at[child_id, "hv_behaviour_change"] = False
@@ -1075,7 +1080,7 @@ class Hiv(Module):
             # usually performed by care_of_women_during_pregnancy module
             if not mother.hv_diagnosed and \
                 mother.is_alive and (
-                    self.rng.random_sample() < p["prob_hiv_test_at_anc_or_delivery"]):
+                self.rng.random_sample() < p["prob_hiv_test_at_anc_or_delivery"]):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=abs(mother_id),  # Pass mother's id, whether from true or direct birth
@@ -1100,8 +1105,7 @@ class Hiv(Module):
             )
 
             if "newborn_outcomes" not in self.sim.modules and (
-                    self.rng.random_sample() < p['prob_hiv_test_for_newborn_infant']):
-
+                self.rng.random_sample() < p['prob_hiv_test_for_newborn_infant']):
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_TestAndRefer(
                         person_id=child_id,
@@ -1345,8 +1349,9 @@ class Hiv(Module):
                 date=self.sim.date + pd.DateOffset(months=months_to_aids),
             )
 
-        # Set that the person is no longer on ART
+        # Set that the person is no longer on ART or cotrimoxazole
         df.at[person_id, "hv_art"] = "not"
+        df.at[person_id, "hv_on_cotrimoxazole"] = False
 
     def per_capita_testing_rate(self):
         """This calculates the numbers of hiv tests performed in each time period.
@@ -1392,7 +1397,7 @@ class Hiv(Module):
         df = self.sim.population.props
 
         if not df.at[person_id, 'hv_diagnosed'] and (
-                self.rng.random_sample() < self.parameters['prob_hiv_test_at_anc_or_delivery']):
+            self.rng.random_sample() < self.parameters['prob_hiv_test_at_anc_or_delivery']):
 
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Hiv_TestAndRefer(
@@ -1420,8 +1425,7 @@ class Hiv(Module):
         if not df.at[child_id, 'hv_diagnosed'] and \
             df.at[mother_id, 'hv_diagnosed'] and (
             df.at[child_id, 'nb_pnc_check'] == 1) and (
-                self.rng.random_sample() < self.parameters['prob_hiv_test_for_newborn_infant']):
-
+            self.rng.random_sample() < self.parameters['prob_hiv_test_for_newborn_infant']):
             self.sim.modules['HealthSystem'].schedule_hsi_event(
                 HSI_Hiv_TestAndRefer(
                     person_id=child_id,
@@ -1600,8 +1604,8 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
             test_rates = p["hiv_testing_rates"]
 
             testing_rate_adults = test_rates.loc[
-                test_rates.year == current_year, "annual_testing_rate_adults"
-            ].values[0] * p["hiv_testing_rate_adjustment"]
+                                      test_rates.year == current_year, "annual_testing_rate_adults"
+                                  ].values[0] * p["hiv_testing_rate_adjustment"]
 
             # adult testing trends also informed by demographic characteristics
             # relative probability of testing - this may skew testing rates higher or lower than moh reports
@@ -1682,7 +1686,7 @@ class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     & (df.sex == "M")
                     & (df.age_years < 15)
                     & (~df.li_is_circ)
-                ],
+                    ],
                 self.module.rng,
                 year=self.sim.date.year,
             )
@@ -1809,7 +1813,7 @@ class HivAidsOnsetEvent(Event, IndividualScopeEventMixin):
 
         # need to delay onset of AIDS (non-tb) to compensate for AIDS-TB
         if (self.cause == "AIDS_non_TB") and (
-                self.sim.modules["Hiv"].rng.rand() < self.sim.modules["Hiv"].parameters["prop_delayed_aids_onset"]):
+            self.sim.modules["Hiv"].rng.rand() < self.sim.modules["Hiv"].parameters["prop_delayed_aids_onset"]):
 
             # redraw time to aids and reschedule
             months_to_aids = int(
@@ -1885,12 +1889,12 @@ class HivAidsDeathEvent(Event, IndividualScopeEventMixin):
         # Do nothing if person is now on ART and VL suppressed (non VL suppressed has no effect)
         # only if no current TB infection
         if (df.at[person_id, "hv_art"] == "on_VL_suppressed") and (
-                df.at[person_id, "tb_inf"] != "active"):
+            df.at[person_id, "tb_inf"] != "active"):
             return
 
         # off ART, no TB infection
         if (df.at[person_id, "hv_art"] != "on_VL_suppressed") and (
-                df.at[person_id, "tb_inf"] != "active"):
+            df.at[person_id, "tb_inf"] != "active"):
             # cause is HIV (no TB)
             self.sim.modules["Demography"].do_death(
                 individual_id=person_id,
@@ -2306,8 +2310,8 @@ class HSI_Hiv_StartInfantProphylaxis(HSI_Event, IndividualScopeEventMixin):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # if breastfeeding has ceased or child >18 months, no further prophylaxis required
-        if (df.at[person_id, "nb_breastfeeding_status"] == "none")\
-                or (df.at[person_id, "age_years"] >= 1.5):
+        if (df.at[person_id, "nb_breastfeeding_status"] == "none") \
+            or (df.at[person_id, "age_years"] >= 1.5):
             return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
 
         # Check that infant prophylaxis is available and if it is, initiate:
@@ -2446,7 +2450,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             # Try to continue the person on ART:
             drugs_were_available = self.do_at_continuation(person_id)
 
-        if drugs_were_available:
+        # if ART is available (1st item in drugs_were_available dict)
+        if drugs_were_available.get('art', False):
             # If person has been placed/continued on ART, schedule 'decision about whether to continue on Treatment
             self.sim.schedule_event(
                 Hiv_DecisionToContinueTreatment(
@@ -2534,13 +2539,15 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
 
-        # Check if drugs are available, and provide drugs:
+        # Check if drugs are available, and provide drugs
+        # this will return a dict where the first item is ART and the second is cotrimoxazole
         drugs_available = self.get_drugs(age_of_person=person["age_years"])
 
-        if drugs_available:
-            # Assign person to be have suppressed or un-suppressed viral load
+        # ART is first item in drugs_available dict
+        if drugs_available.get('art', False):
+            # Assign person to be suppressed or un-suppressed viral load
             # (If person is VL suppressed This will prevent the Onset of AIDS, or an AIDS death if AIDS has already
-            # onset,)
+            # onset)
             vl_status = self.determine_vl_status(
                 age_of_person=person["age_years"]
             )
@@ -2554,6 +2561,10 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                     person_id=person_id, disease_module=self.module
                 )
 
+        # if cotrimoxazole is available
+        if drugs_available.get('cotrim', False):
+            df.at[person_id, "hv_on_cotrimoxazole"] = True
+
         # Consider if TB treatment should start
         self.consider_tb(person_id)
 
@@ -2565,12 +2576,19 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         df = self.sim.population.props
         person = df.loc[person_id]
 
+        # default to person stopping cotrimoxazole
+        df.at[person_id, "hv_on_cotrimoxazole"] = False
+
         # Viral Load Monitoring
         # NB. This does not have a direct effect on outcomes for the person.
         _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
         # Check if drugs are available, and provide drugs:
         drugs_available = self.get_drugs(age_of_person=person["age_years"])
+
+        # if cotrimoxazole is available, update person's property
+        if drugs_available.get('cotrim', False):
+            df.at[person_id, "hv_on_cotrimoxazole"] = True
 
         return drugs_available
 
@@ -2587,8 +2605,8 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         )
 
     def get_drugs(self, age_of_person):
-        """Helper function to get the ART according to the age of the person being treated. Returns bool to indicate
-        whether drugs were available"""
+        """Helper function to get the ART according to the age of the person being treated. Returns dict to indicate
+        whether individual drugs were available"""
 
         p = self.module.parameters
 
@@ -2597,21 +2615,30 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: young child'],
                 optional_item_codes=self.module.item_codes_for_consumables_required[
-                    'First line ART regimen: young child: cotrimoxazole'])
+                    'First line ART regimen: young child: cotrimoxazole'],
+                return_individual_results=True)
 
         elif age_of_person <= p["ART_age_cutoff_older_child"]:
             # Formulation for older children
             drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: older child'],
                 optional_item_codes=self.module.item_codes_for_consumables_required[
-                    'First line ART regimen: older child: cotrimoxazole'])
+                    'First line ART regimen: older child: cotrimoxazole'],
+                return_individual_results=True)
 
         else:
             # Formulation for adults
             drugs_available = self.get_consumables(
                 item_codes=self.module.item_codes_for_consumables_required['First-line ART regimen: adult'],
                 optional_item_codes=self.module.item_codes_for_consumables_required[
-                    'First-line ART regimen: adult: cotrimoxazole'])
+                    'First-line ART regimen: adult: cotrimoxazole'],
+                return_individual_results=True)
+
+        # add drug names to dict
+        drugs_available = {
+            'art': list(drugs_available.values())[0],
+            'cotrim': list(drugs_available.values())[1]
+        }
 
         return drugs_available
 
