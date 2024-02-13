@@ -313,8 +313,7 @@ def test_get_parameter_functions(seed):
 
                 # Check that the parameter identified exists in the simulation
                 assert name in sim.modules[module].parameters, f"Parameter not recognised: {module}:{name}."
-                if module == 'Tb':
-                    print('TB')
+
                 # Check that the original value and the updated value are of the same type.
                 original = sim.modules[module].parameters[name]
 
