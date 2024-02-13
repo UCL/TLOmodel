@@ -1447,7 +1447,8 @@ def test_manipulation_of_service_availability(seed, tmpdir):
            get_set_of_treatment_ids_that_run(service_availability=["Hiv_Test_*"]) - generic_first_appts
 
     # Allow all `Hiv` things (but nothing else)
-    assert set({'Hiv_Test', 'Hiv_Treatment', 'Hiv_Prevention_Circumcision'}) == \
+    # for pop=500 over 7 days, Hiv_Prevention_Circumcision will not occur
+    assert set({'Hiv_Test', 'Hiv_Treatment'}) == \
            get_set_of_treatment_ids_that_run(service_availability=["Hiv_*"]) - generic_first_appts
 
     # Allow all except `Hiv_Test`
