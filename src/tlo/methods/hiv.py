@@ -2740,6 +2740,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # if ART is available (1st item in drugs_were_available dict)
         if list(drugs_were_available.values())[0]:
+
             # If person has been placed/continued on ART, schedule 'decision about whether to continue on Treatment
             self.sim.schedule_event(
                 Hiv_DecisionToContinueTreatment(
