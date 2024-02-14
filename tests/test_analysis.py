@@ -388,6 +388,37 @@ def test_mix_scenarios():
     assert 1 == len(record)
     assert record.list[0].message.args[0] == 'Parameter is being updated more than once: module=Mod1, parameter=param_b'
 
+    # Test the behaviour of the `mix_scenarios` taking the value in the right-most dict.
+    assert mix_scenarios(
+        {'Mod1': {
+            'param_a': 'value_in_dict1',
+            'param_b': 'value_in_dict1',
+            'param_c': 'value_in_dict1',
+        }},
+        {'Mod1': {
+            'param_a': 'value_in_dict2',
+            'param_b': 'value_in_dict2',
+            'param_c': 'value_in_dict2',
+        }},
+        {'Mod1': {
+            'param_a': 'value_in_dict3',
+            'param_b': 'value_in_dict_right_most',
+            'param_c': 'value_in_dict3',
+        }},
+        {'Mod1': {
+            'param_a': 'value_in_dict_right_most',
+            'param_c': 'value_in_dict4',
+        }},
+        {"Mod1": {
+            "param_c": "value_in_dict_right_most",
+        }},
+    ) == {
+        'Mod1': {'param_a': 'value_in_dict_right_most',
+                 'param_b': 'value_in_dict_right_most',
+                 'param_c': 'value_in_dict_right_most',
+                 }
+    }
+
 
 def test_scenario_switcher(seed):
     """Check the `ScenarioSwitcher` module can update parameter values in a manner similar to them being changed
