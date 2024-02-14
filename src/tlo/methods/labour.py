@@ -2917,7 +2917,7 @@ class HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(HSI_Event, Individua
             self.module, self, self.module.item_codes_lab_consumables, core='delivery_core',
             optional='delivery_optional')
 
-        # Log required equipment
+        # Add used equipment
         self.add_equipment({'Delivery set', 'Weighing scale', 'Stethoscope, foetal, monaural, Pinard, plastic',
                                'Resuscitaire', 'Sphygmomanometer', 'Tray, emergency', 'Suction machine',
                                'Thermometer', 'Drip stand', 'Infusion pump'})
