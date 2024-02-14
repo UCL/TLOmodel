@@ -10,12 +10,15 @@ from tlo.methods import (
     demography,
     diarrhoea,
     enhanced_lifestyle,
+    epi,
     healthburden,
     healthseekingbehaviour,
     healthsystem,
+    hiv,
     malaria,
     simplified_births,
     symptommanager,
+    tb,
 )
 from tlo.methods.healthsystem import HSI_Event
 
@@ -54,7 +57,10 @@ def sim(seed):
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath)
+        malaria.Malaria(resourcefilepath=resourcefilepath),
+        tb.Tb(resourcefilepath=resourcefilepath),
+        hiv.Hiv(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
     )
     return sim
 
@@ -102,7 +108,7 @@ def test_sims(sim):
         assert not df.at[person, "ma_inf_type"] == "none"
 
     # if on treatment, must have treatment start date
-    for person in df.index[df.ma_tx]:
+    for person in df.index[(df.ma_tx == 'uncomplicated')]:
         assert not pd.isnull(df.at[person, "ma_date_tx"])
 
 
@@ -132,7 +138,10 @@ def test_remove_malaria_test(seed):
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath)
+        malaria.Malaria(resourcefilepath=resourcefilepath),
+        tb.Tb(resourcefilepath=resourcefilepath),
+        hiv.Hiv(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
     )
     # Run the simulation and flush the logger
     sim.make_initial_population(n=2000)
@@ -183,50 +192,50 @@ def test_schedule_rdt_for_all(sim):
     df = sim.population.props
 
     # check no treatment unless infected
-    for person in df.index[df.ma_tx]:
+    for person in df.index[(df.ma_tx == 'uncomplicated')]:
         assert not pd.isnull(df.at[person, "ma_date_infected"])
 
     # check clinical counter is working
     assert sum(df["ma_clinical_counter"]) > 0
 
 
-def test_dx_algorithm_for_malaria_outcomes(sim):
-    """Create a person and check if the functions in dx_algorithm_child return the correct diagnosis"""
+def _setup_simulation_for_dx_algorithm_test(sim):
+    popsize = 200  # smallest population size that works
 
-    def make_blank_simulation():
-        popsize = 200  # smallest population size that works
+    sim.make_initial_population(n=popsize)
+    sim.modules['Malaria'].parameters['sensitivity_rdt'] = 1.0
+    sim.simulate(end_date=start_date)
 
-        sim.make_initial_population(n=popsize)
-        sim.modules['Malaria'].parameters['sensitivity_rdt'] = 1.0
-        sim.simulate(end_date=start_date)
+    # Create the HSI event that is notionally doing the call on diagnostic algorithm
+    class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'DummyHSIEvent'
 
-        # Create the HSI event that is notionally doing the call on diagnostic algorithm
-        class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
-            def __init__(self, module, person_id):
-                super().__init__(module, person_id=person_id)
-                self.TREATMENT_ID = 'DummyHSIEvent'
+            the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+            the_appt_footprint["Under5OPD"] = 1  # This requires one out patient
 
-                the_appt_footprint = self.sim.modules["HealthSystem"].get_blank_appt_footprint()
-                the_appt_footprint["Under5OPD"] = 1  # This requires one out patient
+            self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
+            self.ACCEPTED_FACILITY_LEVEL = '1a'
 
-                self.EXPECTED_APPT_FOOTPRINT = the_appt_footprint
-                self.ACCEPTED_FACILITY_LEVEL = '1a'
-                self.ALERT_OTHER_DISEASES = []
+        def apply(self, person_id, squeeze_factor):
+            pass
 
-            def apply(self, person_id, squeeze_factor):
-                pass
+    hsi_event = DummyHSIEvent(module=sim.modules['Malaria'], person_id=0)
 
-        hsi_event = DummyHSIEvent(module=sim.modules['Malaria'], person_id=0)
+    # check that the queue of events is empty
+    assert 0 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
 
-        # check that the queue of events is empty
-        assert 0 == len(sim.modules['HealthSystem'].HSI_EVENT_QUEUE)
+    return sim, hsi_event
 
-        return sim, hsi_event
 
-    # ----------------- Person with clinical malaria -----------------
-    #
+def test_dx_algorithm_for_malaria_outcomes_clinical(sim):
+    """
+    Create a person with clinical malaria and check if the functions in 
+    dx_algorithm_child return the correct diagnosis.
+    """
     # Set up the simulation:
-    sim, hsi_event = make_blank_simulation()
+    sim, hsi_event = _setup_simulation_for_dx_algorithm_test(sim)
 
     # Set up the person - clinical malaria and aged <5 years:
     df = sim.population.props
@@ -254,10 +263,14 @@ def test_dx_algorithm_for_malaria_outcomes(sim):
         hsi_event=hsi_event
     ) == "clinical_malaria"
 
-    # ----------------- Person with severe malaria -----------------
-    #
+
+def test_dx_algorithm_for_malaria_outcomes_severe(sim):
+    """
+    Create a person with severe malaria and check if the functions in 
+    dx_algorithm_child return the correct diagnosis.
+    """
     # Set up the simulation:
-    sim, hsi_event = make_blank_simulation()
+    sim, hsi_event = _setup_simulation_for_dx_algorithm_test(sim)
 
     # Set up the person - clinical malaria and aged <5 years:
     df = sim.population.props
@@ -315,8 +328,11 @@ def test_dx_algorithm_for_non_malaria_outcomes(seed):
                      diarrhoea.Diarrhoea(resourcefilepath=resourcefilepath),
 
                      # Supporting modules:
-                     diarrhoea.DiarrhoeaPropertiesOfOtherModules()
-                     )
+                     diarrhoea.DiarrhoeaPropertiesOfOtherModules(),
+                     tb.Tb(resourcefilepath=resourcefilepath),
+                     hiv.Hiv(resourcefilepath=resourcefilepath),
+                     epi.Epi(resourcefilepath=resourcefilepath),
+                     ),
 
         sim.make_initial_population(n=popsize)
         sim.simulate(end_date=start_date)
@@ -389,13 +405,13 @@ def test_severe_malaria_deaths_perfect_treatment(sim):
     treatment_appt = malaria.HSI_Malaria_Treatment_Complicated(person_id=person_id,
                                                                module=sim.modules['Malaria'])
     treatment_appt.apply(person_id=person_id, squeeze_factor=0.0)
-    assert df.at[person_id, 'ma_tx']
+    assert df.at[person_id, 'ma_tx'] == 'complicated'
     assert df.at[person_id, "ma_date_tx"] == sim.date
     assert df.at[person_id, "ma_tx_counter"] > 0
 
     # run the death event
     death_event = malaria.MalariaDeathEvent(
-        module=sim.modules['Malaria'], individual_id=person_id, cause="Malaria")
+        module=sim.modules['Malaria'], person_id=person_id, cause="Malaria")
     death_event.apply(person_id)
 
     # should not cause death but result in cure
@@ -424,13 +440,13 @@ def test_severe_malaria_deaths_treatment_failure(sim):
     treatment_appt = malaria.HSI_Malaria_Treatment_Complicated(person_id=person_id,
                                                                module=sim.modules['Malaria'])
     treatment_appt.apply(person_id=person_id, squeeze_factor=0.0)
-    assert df.at[person_id, 'ma_tx']
+    assert df.at[person_id, 'ma_tx'] == 'complicated'
     assert df.at[person_id, "ma_date_tx"] == sim.date
     assert df.at[person_id, "ma_tx_counter"] > 0
 
     # run the death event
     death_event = malaria.MalariaDeathEvent(
-        module=sim.modules['Malaria'], individual_id=person_id, cause="Malaria")
+        module=sim.modules['Malaria'], person_id=person_id, cause="Malaria")
     death_event.apply(person_id)
 
     # should cause death - no cure
@@ -443,13 +459,13 @@ def test_severe_malaria_deaths_treatment_failure(sim):
     person_id = 1
     df.loc[person_id, ["ma_is_infected", "ma_inf_type"]] = (True, "severe")
 
-    assert not df.at[person_id, 'ma_tx']
+    assert not df.at[person_id, 'ma_tx'] == 'complicated'
     assert df.at[person_id, "ma_date_tx"] is pd.NaT
     assert df.at[person_id, "ma_tx_counter"] == 0
 
     # run the death event
     death_event = malaria.MalariaDeathEvent(
-        module=sim.modules['Malaria'], individual_id=person_id, cause="Malaria")
+        module=sim.modules['Malaria'], person_id=person_id, cause="Malaria")
     death_event.apply(person_id)
 
     # should cause death - no cure
@@ -478,7 +494,10 @@ def get_sim(seed):
         healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
         healthburden.HealthBurden(resourcefilepath=resourcefilepath),
         enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
-        malaria.Malaria(resourcefilepath=resourcefilepath)
+        malaria.Malaria(resourcefilepath=resourcefilepath),
+        tb.Tb(resourcefilepath=resourcefilepath),
+        hiv.Hiv(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
     )
 
     return sim
@@ -542,7 +561,7 @@ def test_individual_testing_and_treatment(sim):
     tx_event.run(squeeze_factor=0.0)
 
     assert df.at[person_id, "ma_tx_counter"] == 1
-    assert df.at[person_id, "ma_tx"]
+    assert df.at[person_id, "ma_tx"] != 'none'
 
     # -------- asymptomatic infection
     person_id = 1
@@ -585,7 +604,7 @@ def test_individual_testing_and_treatment(sim):
     tx_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
     assert df.at[person_id, "ma_tx_counter"] == 1
-    assert df.at[person_id, "ma_tx"]
+    assert df.at[person_id, "ma_tx"] != 'none'
 
     # -------- severe infection
     person_id = 2
@@ -632,7 +651,7 @@ def test_individual_testing_and_treatment(sim):
     tx_appt.apply(person_id=person_id, squeeze_factor=0.0)
 
     assert df.at[person_id, "ma_tx_counter"] == 1
-    assert df.at[person_id, "ma_tx"]
+    assert df.at[person_id, "ma_tx"] == 'complicated'
 
 
 def test_population_testing_and_treatment(sim):
@@ -700,3 +719,36 @@ def test_population_testing_and_treatment(sim):
         tx_appt.apply(person_id=person, squeeze_factor=0.0)
 
     assert df["ma_tx_counter"].sum() == pop
+
+
+def test_linear_model_for_clinical_malaria(sim):
+    sim = get_sim(seed)
+
+    # -------------- Perfect protection through IPTp -------------- #
+    # set perfect protection for IPTp against clinical malaria - no cases should occur
+    sim.modules['Malaria'].parameters['rr_clinical_malaria_iptp'] = 0
+
+    # set clinical incidence probability to very high value
+    sim.modules['Malaria'].parameters['clin_inc']['monthly_prob_clin'] = 0.99
+
+    # Run the simulation and flush the logger
+    sim.make_initial_population(n=10)
+    # simulate for 0 days, just get everything set up (dxtests etc)
+    sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
+
+    df = sim.population.props
+
+    # make the whole population infected with parasitaemia
+    # and therefore eligible for clinical/severe malaria poll
+    df.loc[df.is_alive, "ma_is_infected"] = True
+    df.loc[df.is_alive, "ma_date_infected"] = sim.date
+    df.loc[df.is_alive, "ma_inf_type"] = "asym"
+    df.loc[df.is_alive, "is_pregnant"] = True
+    df.loc[df.is_alive, "ma_iptp"] = True
+
+    # run malaria poll
+    pollevent = malaria.MalariaPollingEventDistrict(module=sim.modules['Malaria'])
+    pollevent.run()
+
+    # make sure no-one assigned clinical or severe malaria
+    assert not (df.loc[df.is_alive, 'ma_inf_type'].isin({'clinical', 'severe'})).any()

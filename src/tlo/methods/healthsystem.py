@@ -353,7 +353,7 @@ class HSI_Event:
             # If there are bed-days specified, add (if needed) the in-patient admission and in-patient day Appointment
             # Types.
             # (HSI that require a bed for one or more days always need such appointments, but this may have been
-            # missed in the declaration of the `EXPECTED_APPPT_FOOTPRINT` in the HSI.)
+            # missed in the declaration of the `EXPECTED_APPT_FOOTPRINT` in the HSI.)
             # NB. The in-patient day Appointment time is automatically applied on subsequent days.
             if sum(self.BEDDAYS_FOOTPRINT.values()):
                 self.EXPECTED_APPT_FOOTPRINT = health_system.bed_days.add_first_day_inpatient_appts_to_footprint(
@@ -532,16 +532,37 @@ class HealthSystem(Module):
 
         'policy_name': Parameter(
             Types.STRING, "Name of priority policy assumed to have been adopted until policy switch"),
-        'policy_name_post_switch': Parameter(
-            Types.STRING, "Name of priority policy to be adopted from policy switch year onwards"),
-        'year_policy_switch': Parameter(
-            Types.INT, "Year in which priority policy switch in enforced"),
+        'year_mode_switch': Parameter(
+            Types.INT, "Year in which mode switch in enforced"),
 
         'priority_rank': Parameter(
             Types.DICT, "Data on the priority ranking of each of the Treatment_IDs to be adopted by "
                         " the queueing system under different policies, where the lower the number the higher"
                         " the priority, and on which categories of individuals classify for fast-tracking "
                         " for specific treatments"),
+
+        'const_HR_scaling_table': Parameter(
+            Types.DICT, "Factors by which capabilities of medical officer categories at different levels will be"
+                              "scaled at the start of the simulation to simulate a number of effects (e.g. absenteeism,"
+                              "boosting of specific medical cadres, etc). This is the imported from an"
+                              "Excel workbook: keys are the worksheet names and values are the worksheets in "
+                              "the format of pd.DataFrames."),
+
+        'const_HR_scaling_mode': Parameter(
+            Types.STRING, "Mode of HR scaling considered at the start of the simulation. Options are default"
+                          " (capabilities are scaled by a constaint factor of 1), data (factors informed by survey data),"
+                          "and custom (user can freely set these factors as parameters in the analysis).",
+        ),
+
+        'dynamic_HR_scaling_factor': Parameter(
+            Types.REAL, "Factor by which HR capabilities are scaled at regular intervals of 1 year (in addition to the"
+                        " [optional] scaling with population size (controlled by `scale_HR_by_popsize`"
+        ),
+
+        'scale_HR_by_popsize': Parameter(
+            Types.BOOL, "Decide whether to scale HR capabilities by population size every year. Can be used as well as"
+                        " the dynamic_HR_scaling_factor"
+        ),
 
         'tclose_overwrite': Parameter(
             Types.INT, "Decide whether to overwrite tclose variables assigned by disease modules"),
@@ -559,8 +580,7 @@ class HealthSystem(Module):
                        ' to the module initialiser.',
         ),
         'mode_appt_constraints_postSwitch': Parameter(
-            Types.INT, 'If considering a mode switch alongside priority policy switch, specify in this parameter. '
-                       'The switch occcurs in the year given in `year_policy_switch`.')
+            Types.INT, 'Mode considered after a mode switch in year_mode_switch.')
     }
 
     PROPERTIES = {
@@ -660,7 +680,7 @@ class HealthSystem(Module):
         # Check that the name of policy being evaluated is included
         self.priority_policy = None
         if policy_name is not None:
-            assert policy_name in ['', 'Default', 'Test', 'Random', 'Naive', 'RMNCH',
+            assert policy_name in ['', 'Default', 'Test', 'Test Mode 1', 'Random', 'Naive', 'RMNCH',
                                        'VerticalProgrammes', 'ClinicallyVulnerable', 'EHP_III',
                                        'LCOA_EHP']
         self.arg_policy_name = policy_name
@@ -672,7 +692,7 @@ class HealthSystem(Module):
         self.list_fasttrack = []  # provided so that there is a default even before simulation is run
 
         # Store the argument provided for service_availability
-        self.arg_service_availabily = service_availability
+        self.arg_service_availability = service_availability
         self.service_availability = ['*']  # provided so that there is a default even before simulation is run
 
         # Check that the capabilities coefficient is correct
@@ -797,8 +817,22 @@ class HealthSystem(Module):
                                                          'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx',
                                                          sheet_name=None)
 
+        self.parameters['const_HR_scaling_table']: Dict = pd.read_excel(
+            path_to_resourcefiles_for_healthsystem /
+            "human_resources" /
+            "const_HR_scaling" /
+            "ResourceFile_const_HR_scaling.xlsx",
+            sheet_name=None  # all sheets read in
+        )
+
+
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
+
+        # Ensure the mode of HR scaling to be considered in included in the tables loaded
+        assert self.parameters['const_HR_scaling_mode'] in self.parameters['const_HR_scaling_table'], \
+            f"Value of `const_HR_scaling_mode` not recognised: {self.parameters['const_HR_scaling_mode']}"
+
         # Create dedicated RNGs for separate functions done by the HealthSystem module
         self.rng_for_hsi_queue = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
         self.rng_for_dx = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
@@ -833,10 +867,10 @@ class HealthSystem(Module):
         # Ensure name of policy we want to consider before/after switch is among the policies loaded
         # in the self.parameters['priority_rank']
         assert self.parameters['policy_name'] in self.parameters['priority_rank']
-        assert self.parameters['policy_name_post_switch'] in self.parameters['priority_rank']
 
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
+
 
     def initialise_population(self, population):
         self.bed_days.initialise_population(population.props)
@@ -876,9 +910,14 @@ class HealthSystem(Module):
             self.healthsystemscheduler = HealthSystemScheduler(self)
             sim.schedule_event(self.healthsystemscheduler, sim.date)
 
-        # Schedule priority policy and mode_appt_constraints change
-        sim.schedule_event(HealthSystemChangePriorityPolicyAndMode(self),
-                           Date(self.parameters["year_policy_switch"], 1, 1))
+        # Schedule a mode_appt_constraints change
+        sim.schedule_event(HealthSystemChangeMode(self),
+                           Date(self.parameters["year_mode_switch"], 1, 1))
+
+        # Schedule recurring event which will rescale daily capabilities at regular intervals.
+        # The first event scheduled will only be used to update self.last_year_pop_size parameter,
+        # actual scaling will only take effect from 2011 onwards
+        sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date) + pd.DateOffset(years=1))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -935,6 +974,8 @@ class HealthSystem(Module):
 
     def process_human_resources_files(self, use_funded_or_actual_staffing: str):
         """Create the data-structures needed from the information read into the parameters."""
+
+
 
         # * Define Facility Levels
         self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
@@ -1035,6 +1076,28 @@ class HealthSystem(Module):
         # never available.)
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
 
+    def adjust_for_const_HR_scaling(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Adjust the Daily_Capabilities pd.DataFrame to account for assumptions about scaling of HR resources"""
+
+        # Get the set of scaling_factors that are specified by the 'const_HR_scaling_mode' assumption
+        const_HR_scaling_factor = self.parameters['const_HR_scaling_table'][self.parameters['const_HR_scaling_mode']]
+        const_HR_scaling_factor = const_HR_scaling_factor.set_index('Officer_Category')
+
+        level_conversion = {"1a": "L1a_Av_Mins_Per_Day", "1b": "L1b_Av_Mins_Per_Day",
+                            "2": "L2_Av_Mins_Per_Day", "0": "L0_Av_Mins_Per_Day", "3": "L3_Av_Mins_Per_Day",
+                            "4": "L4_Av_Mins_Per_Day", "5": "L5_Av_Mins_Per_Day"}
+
+        scaler = df[['Officer_Category', 'Facility_Level']].apply(
+            lambda row: const_HR_scaling_factor.loc[row['Officer_Category'], level_conversion[row['Facility_Level']]],
+            axis=1
+        )
+
+        # Apply scaling to 'Total_Mins_Per_Day'
+        df['Total_Mins_Per_Day'] *= scaler
+
+        return df
+
+
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> pd.Series:
         """
         This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to include
@@ -1048,7 +1111,10 @@ class HealthSystem(Module):
 
         # Get the capabilities data imported (according to the specified underlying assumptions).
         capabilities = pool_capabilities_at_levels_1b_and_2(
-            self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}'])
+            self.adjust_for_const_HR_scaling(
+                self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
+            )
+        )
         capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
 
         # Create dataframe containing background information about facility and officer types
@@ -1162,10 +1228,10 @@ class HealthSystem(Module):
         """Returns service availability. (Should be equal to what is specified by the parameter, but overwrite with what
         was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
 
-        if self.arg_service_availabily is None:
+        if self.arg_service_availability is None:
             service_availability = self.parameters['Service_Availability']
         else:
-            service_availability = self.arg_service_availabily
+            service_availability = self.arg_service_availability
 
         assert isinstance(service_availability, list)
 
@@ -1313,8 +1379,8 @@ class HealthSystem(Module):
         # Check that priority is in valid range
         assert priority >= 0
 
-        # If priority of HSI_Event lower than the lowest one considered, ignore event in scheduling
-        if priority > self.lowest_priority_considered:
+        # If priority of HSI_Event lower than the lowest one considered, ignore event in scheduling under mode 2
+        if (self.mode_appt_constraints == 2) and (priority > self.lowest_priority_considered):
             self.schedule_to_call_never_ran_on_date(hsi_event=hsi_event, tdate=tclose)  # Call this on tclose
             return
 
@@ -1996,7 +2062,7 @@ class HealthSystem(Module):
     def run_individual_level_events_in_mode_0_or_1(self,
                                                    _list_of_individual_hsi_event_tuples:
                                                    List[HSIEventQueueItem]) -> List:
-        """Run a list of individual level events. Returns: list of events that did not run (maybe an empty a list)."""
+        """Run a list of individual level events. Returns: list of events that did not run (maybe an empty list)."""
         _to_be_held_over = list()
         assert self.mode_appt_constraints in (0, 1)
 
@@ -2113,7 +2179,7 @@ class HealthSystem(Module):
                     # add to the hold-over queue.
                     # Otherwise (disease module returns "FALSE") the event is not rescheduled and will not run.
 
-                    if not (rtn_from_did_not_run is False):
+                    if rtn_from_did_not_run is not False:
                         # reschedule event
                         hp.heappush(_to_be_held_over, _list_of_individual_hsi_event_tuples[ev_num])
 
@@ -2194,9 +2260,9 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
     If the event is to be run, then the following events occur:
         * The HSI event itself is run.
-        * The occurence of the event is logged
+        * The occurrence of the event is logged
         * The resources used are 'occupied' (if individual level HSI event)
-        * Other disease modules are alerted of the occurence of the HSI event (if individual level HSI event)
+        * Other disease modules are alerted of the occurrence of the HSI event (if individual level HSI event)
 
     Here is where we can have multiple types of assumption regarding how these capabilities are modelled.
     """
@@ -2260,12 +2326,6 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 # The event is not yet due (before topen)
                 hp.heappush(_list_of_events_not_due_today, next_event_tuple)
 
-                if next_event_tuple.priority == self.module.lowest_priority_considered:
-                    # Check the priority
-                    # If the next event is not due and has lowest allowed priority, then stop looking
-                    # through the heapq as all other events will also not be due.
-                    break
-
             else:
                 # The event is now due to run today and the person is confirmed to be still alive
                 # Add it to the list of events due today (individual or population level)
@@ -2312,7 +2372,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
         set_capabilities_still_available = {k for k, v in capabilities_monitor.items() if v > 0.0}
 
         # Here use different approach for appt_mode_constraints = 2: rather than collecting events
-        # due today all at once, run event immediately at time of querying. This ensure that no
+        # due today all at once, run event immediately at time of querying. This ensures that no
         # artificial "midday effects" are introduced when evaluating priority policies.
 
         # To avoid repeated dataframe accesses in subsequent loop, assemble set of alive
@@ -2365,15 +2425,14 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
                     if next_event_tuple.priority == self.module.lowest_priority_considered:
                         # Check the priority
-                        # If the next event is not due and has lowest allowed priority, then stop looking
+                        # If the next event is not due and has the lowest allowed priority, then stop looking
                         # through the heapq as all other events will also not be due.
                         break
 
                 else:
-                    # The event is now due to run today and the person is confirmed to be still alive
+                    # The event is now due to run today and the person is confirmed to be still alive.
                     # Add it to the list of events due today if at population level.
                     # Otherwise, run event immediately.
-
                     is_pop_level_hsi_event = isinstance(event.target, tlo.population.Population)
                     if is_pop_level_hsi_event:
                         list_of_population_hsi_event_tuples_due_today.append(next_event_tuple)
@@ -2386,7 +2445,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         # based on queue information, and we assume no squeeze ever takes place.
                         squeeze_factor = 0.
 
-                        # Check if any of the officers required have ran out.
+                        # Check if any of the officers required have run out.
                         out_of_resources = False
                         for officer, call in original_call.items():
                             # If any of the officers are not available, then out of resources
@@ -2408,7 +2467,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             # Otherwise (disease module returns "FALSE") the event is not rescheduled and
                             # will not run.
 
-                            if not (rtn_from_did_not_run is False):
+                            if rtn_from_did_not_run is not False:
                                 # reschedule event
                                 # Add the event to the queue:
                                 hp.heappush(hold_over, next_event_tuple)
@@ -2466,7 +2525,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             # Subtract this from capabilities used so-far today
                             capabilities_monitor.subtract(updated_call)
 
-                            # If any of the officers have ran out of time by performing this hsi,
+                            # If any of the officers have run out of time by performing this hsi,
                             # remove them from list of available officers.
                             for officer, call in updated_call.items():
                                 if capabilities_monitor[officer] <= 0:
@@ -2479,7 +2538,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                                   f"officers than expected_footprint.")
                                         )
 
-                            # Update today's footprint based on actuall call and squeeze factor
+                            # Update today's footprint based on actual call and squeeze factor
                             self.module.running_total_footprint -= original_call
                             self.module.running_total_footprint += updated_call
 
@@ -2497,13 +2556,13 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             else:
                 break
 
-        # Traverse the queue again to check all appts which have expired are removed from the queue,
-        # and call did_not_run() for all those that were postponed.
         # In previous iteration, we stopped querying the queue once capabilities
-        # were exhausted, so here ensure if any events expired were left unchecked they are properly
-        # removed from the queue, and did_not_run() is invoked for all postponed events.
-        # (This should still be more efficient than querying the queue as done in mode_appt_constraints
-        #  = 0 and 1 while ensuring mid-day effects are avoided.)
+        # were exhausted, so here we traverse the queue again to ensure that if any events expired were
+        # left unchecked they are properly removed from the queue, and did_not_run() is invoked for all
+        # postponed events. (This should still be more efficient than querying the queue as done in
+        # mode_appt_constraints = 0 and 1 while ensuring mid-day effects are avoided.)
+        # We also schedule a call_never_run for any HSI below the lowest_priority_considered,
+        # in case any of them where left in the queue due to a transition from mode 0/1 to mode 2
         while len(self.module.HSI_EVENT_QUEUE) > 0:
 
             next_event_tuple = hp.heappop(self.module.HSI_EVENT_QUEUE)
@@ -2511,7 +2570,15 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
 
             event = next_event_tuple.hsi_event
 
-            if self.sim.date > next_event_tuple.tclose:
+            # If the priority of the event is lower than lowest_priority_considered, schedule a call_never_ran
+            # on tclose regardless of whether appt is due today or any other time. (Although in mode 2 HSIs with
+            # priority > lowest_priority_considered are never added to the queue, some such HSIs may still be present
+            # in the queue if mode 2 was preceded by a period in mode 1).
+            if next_event_tuple.priority > self.module.lowest_priority_considered:
+                self.module.schedule_to_call_never_ran_on_date(hsi_event=event,
+                                                               tdate=next_event_tuple.tclose)
+
+            elif self.sim.date > next_event_tuple.tclose:
                 # The event has expired (after tclose) having never been run. Call the 'never_ran' function
                 self.module.call_and_record_never_ran_hsi_event(
                       hsi_event=event,
@@ -2527,25 +2594,19 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                 pass
 
             elif self.sim.date < next_event_tuple.topen:
-                # The event is not yet due (before topen)
+                # The event is not yet due (before topen). Do not stop querying the queue here if we have
+                # reached the lowest_priority_considered, as we want to make sure HSIs with lower priority
+                # (which may have been scheduled during a prior mode 0/1 period) are flushed from the queue.
                 hp.heappush(list_of_events_not_due_today, next_event_tuple)
 
-                if next_event_tuple.priority == self.module.lowest_priority_considered:
-                    # Check the priority
-                    # If the next event is not due and has lowest allowed priority, then stop looking
-                    # through the heapq as all other events will also not be due.
-                    break
-
             else:
-                # The event is now due to run today and the person is confirmed to be still alive
                 # Add it to the list of events due today if at population level.
                 # Otherwise, run event immediately.
-
                 is_pop_level_hsi_event = isinstance(event.target, tlo.population.Population)
                 if is_pop_level_hsi_event:
                     list_of_population_hsi_event_tuples_due_today.append(next_event_tuple)
                 else:
-                    # In previous iteration, have already ran all the events for today that could run
+                    # In previous iteration, have already run all the events for today that could run
                     # given capabilities available, so put back any remaining events due today to the
                     # hold_over queue as it would not be possible to run them today.
 
@@ -2558,7 +2619,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                     # Otherwise (disease module returns "FALSE") the event is not rescheduled and
                     # will not run.
 
-                    if not (rtn_from_did_not_run is False):
+                    if rtn_from_did_not_run is not False:
                         # reschedule event
                         # Add the event to the queue:
                         hp.heappush(hold_over, next_event_tuple)
@@ -2663,13 +2724,13 @@ class HealthSystemSummaryCounter:
         self._treatment_ids = defaultdict(int)  # Running record of the `TREATMENT_ID`s of `HSI_Event`s
         self._appts = defaultdict(int)  # Running record of the Appointments of `HSI_Event`s that have run
         self._appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
+        # <--Same as `self._appts` but also split by facility_level
 
         # Log HSI_Events that never ran to monitor shortcoming of Health System
         self._never_ran_treatment_ids = defaultdict(int)  # As above, but for `HSI_Event`s that never ran
         self._never_ran_appts = defaultdict(int)  # As above, but for `HSI_Event`s that have never ran
         self._never_ran_appts_by_level = {_level: defaultdict(int) for _level in ('0', '1a', '1b', '2', '3', '4')}
 
-        # <--Same as `self._appts` but also split by facility_level
         self._frac_time_used_overall = []  # Running record of the usage of the healthcare system
         self._squeeze_factor_by_hsi_event_name = defaultdict(list)  # Running record the squeeze-factor applying to each
         #                                                           treatment_id. Key is of the form:
@@ -2796,7 +2857,34 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
             self.module.bed_days.availability = self._parameters['beds_availability']
 
 
-class HealthSystemChangePriorityPolicyAndMode(RegularEvent, PopulationScopeEventMixin):
+class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
+    """ This event exists to scale the daily capabilities assumed at fixed time intervals"""
+    def __init__(self, module):
+        super().__init__(module, frequency=DateOffset(years=1))
+        self.last_year_pop_size = self.current_pop_size  # store population size at initiation (when this class is
+        #                                                  created)
+
+    @property
+    def current_pop_size(self) -> float:
+        """Returns current population size"""
+        df = self.sim.population.props
+        return df.is_alive.sum()
+
+    def apply(self, population):
+
+        this_year_pop_size = self.current_pop_size
+
+        # Rescale by fixed amount
+        self.module._daily_capabilities *= self.module.parameters['dynamic_HR_scaling_factor']
+
+        # Rescale daily capabilities by population size, if this option is included
+        if self.module.parameters['scale_HR_by_popsize']:
+            self.module._daily_capabilities *= this_year_pop_size/self.last_year_pop_size
+
+        self.last_year_pop_size = this_year_pop_size   # Save for next year
+
+
+class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to change the priority policy adopted by the
     HealthSystem at a given year.    """
 
@@ -2808,16 +2896,9 @@ class HealthSystemChangePriorityPolicyAndMode(RegularEvent, PopulationScopeEvent
         # Change mode_appt_constraints
         self.module.mode_appt_constraints = self.module.parameters["mode_appt_constraints_postSwitch"]
 
-        # If policy has changed, update it
-        if self.module.parameters["policy_name"] != self.module.parameters["policy_name_post_switch"]:
-            self.module.priority_policy = self.module.parameters["policy_name_post_switch"]
-            self.module.load_priority_policy(self.module.priority_policy)
-
         logger.info(key="message",
-                    data=f"Switched policy at sim date: "
+                    data=f"Switched mode at sim date: "
                          f"{self.sim.date}"
-                         f"Now using policy: "
-                         f"{self.module.priority_policy}"
-                         f"and mode: "
+                         f"Now using mode: "
                          f"{self.module.mode_appt_constraints}"
                     )
