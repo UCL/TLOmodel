@@ -382,6 +382,10 @@ class Hiv(Module):
             Types.INT,
             "number of repeat visits assumed for healthcare services",
         ),
+        "dispensation_period_months": Parameter(
+            Types.REAL,
+            "length of prescription for ARVs in months, same for all PLHIV",
+        ),
     }
 
     def read_parameters(self, data_folder):
@@ -2716,6 +2720,12 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # Confirm that the person is diagnosed (this should not run if they are not)
         assert person["hv_diagnosed"]
 
+        # check whether person had Rx at least 3 months ago and is now due repeat prescription
+        # alternate routes into testing/tx may mean person already has recent ARV dispensation
+        if person['hv_date_last_ART'] >= (
+            self.sim.date - pd.DateOffset(months=self.module.parameters['dispensation_period_months'])):
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
         if art_status_at_beginning_of_hsi == "not":
 
             assert person[
@@ -2735,7 +2745,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 Hiv_DecisionToContinueTreatment(
                     person_id=person_id, module=self.module
                 ),
-                self.sim.date + pd.DateOffset(months=3),
+                self.sim.date + pd.DateOffset(months=self.module.parameters['dispensation_period_months']),
             )
         else:
             # logger for drugs not available
