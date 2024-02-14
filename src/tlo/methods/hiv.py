@@ -126,6 +126,7 @@ class Hiv(Module):
         "hv_last_test_date": Property(Types.DATE, "Date of last HIV test"),
         "hv_date_inf": Property(Types.DATE, "Date infected with HIV"),
         "hv_date_treated": Property(Types.DATE, "date hiv treatment started"),
+        "hv_date_last_ART": Property(Types.DATE, "date of last ART dispensation"),
     }
 
     PARAMETERS = {
@@ -373,6 +374,10 @@ class Hiv(Module):
         "aids_tb_treatment_adjustment": Parameter(
             Types.REAL,
             "probability of death if aids and tb, person on treatment for tb",
+        ),
+        "dispensation_period_months": Parameter(
+            Types.REAL,
+            "length of prescription for ARVs in months, same for all PLHIV",
         ),
     }
 
@@ -750,7 +755,7 @@ class Hiv(Module):
         # all those on ART need to have event scheduled for continuation/cessation of treatment
         # this window is 1-90 days (3-monthly prescribing)
         for person in art_idx:
-            days = self.rng.randint(low=1, high=90, dtype=np.int64)
+            days = self.rng.randint(low=1, high=self.parameters['dispensation_period_months'] * 30.5, dtype=np.int64)
             self.sim.schedule_event(
                 Hiv_DecisionToContinueTreatment(person_id=person, module=self),
                 self.sim.date + pd.to_timedelta(days, unit="days"),
@@ -2438,6 +2443,12 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
         # Confirm that the person is diagnosed (this should not run if they are not)
         assert person["hv_diagnosed"]
 
+        # check whether person had Rx at least 3 months ago and is now due repeat prescription
+        # alternate routes into testing/tx may mean person already has recent ARV dispensation
+        if person['hv_date_last_ART'] >= (
+            self.sim.date - pd.DateOffset(months=self.module.parameters['dispensation_period_months'])):
+            return self.sim.modules["HealthSystem"].get_blank_appt_footprint()
+
         if art_status_at_beginning_of_hsi == "not":
 
             assert person[
@@ -2452,14 +2463,18 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # if ART is available (1st item in drugs_were_available dict)
         if drugs_were_available.get('art', False):
+            df.at[person_id, 'hv_date_last_ART'] = self.sim.date
+
             # If person has been placed/continued on ART, schedule 'decision about whether to continue on Treatment
             self.sim.schedule_event(
                 Hiv_DecisionToContinueTreatment(
                     person_id=person_id, module=self.module
                 ),
-                self.sim.date + pd.DateOffset(months=3),
+                self.sim.date + pd.DateOffset(months=self.module.parameters['dispensation_period_months']),
             )
+
         else:
+
             # logger for drugs not available
             person_details_for_tx = {
                 'age': person['age_years'],
@@ -2471,57 +2486,57 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             }
             logger.info(key='hiv_arv_NA', data=person_details_for_tx)
 
-            # As drugs were not available, the person will default to being off ART (...if they were on ART at the
-            # beginning of the HSI.)
-            # NB. If the person was not on ART at the beginning of the HSI, then there is no need to stop them (which
-            #  causes a new AIDSOnsetEvent to be scheduled.)
-            self.counter_for_drugs_not_available += 1  # The current appointment is included in the count.
+        # As drugs were not available, the person will default to being off ART (...if they were on ART at the
+        # beginning of the HSI.)
+        # NB. If the person was not on ART at the beginning of the HSI, then there is no need to stop them (which
+        #  causes a new AIDSOnsetEvent to be scheduled.)
+        self.counter_for_drugs_not_available += 1  # The current appointment is included in the count.
 
-            if art_status_at_beginning_of_hsi != "not":
-                self.module.stops_treatment(person_id)
+        if art_status_at_beginning_of_hsi != "not":
+            self.module.stops_treatment(person_id)
 
-            p = self.module.parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"]
+        p = self.module.parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"]
 
-            if self.module.rng.random_sample() >= p:
+        if self.module.rng.random_sample() >= p:
 
-                # add in referral straight back to tx
-                # if defaulting, seek another treatment appointment in 6 months
+            # add in referral straight back to tx
+            # if defaulting, seek another treatment appointment in 6 months
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                hsi_event=HSI_Hiv_StartOrContinueTreatment(
+                    person_id=person_id, module=self.module,
+                    facility_level_of_this_hsi="1a",
+                ),
+                topen=self.sim.date + pd.DateOffset(months=6),
+                priority=0,
+            )
+
+        else:
+            # If person 'decides to' seek another treatment appointment,
+            # schedule a new HSI appointment for next month
+            # NB. With a probability of 1.0, this will keep occurring,
+            # if person has already tried unsuccessfully to get ART at level 1a 2 times
+            #  then refer to level 1b
+            if self.counter_for_drugs_not_available <= 2:
+                # repeat attempt for ARVs at level 1a
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_StartOrContinueTreatment(
                         person_id=person_id, module=self.module,
-                        facility_level_of_this_hsi="1a",
+                        facility_level_of_this_hsi="1a"
                     ),
-                    topen=self.sim.date + pd.DateOffset(months=6),
+                    topen=self.sim.date + pd.DateOffset(months=1),
                     priority=0,
                 )
 
             else:
-                # If person 'decides to' seek another treatment appointment,
-                # schedule a new HSI appointment for next month
-                # NB. With a probability of 1.0, this will keep occurring,
-                # if person has already tried unsuccessfully to get ART at level 1a 2 times
-                #  then refer to level 1b
-                if self.counter_for_drugs_not_available <= 2:
-                    # repeat attempt for ARVs at level 1a
-                    self.sim.modules["HealthSystem"].schedule_hsi_event(
-                        hsi_event=HSI_Hiv_StartOrContinueTreatment(
-                            person_id=person_id, module=self.module,
-                            facility_level_of_this_hsi="1a"
-                        ),
-                        topen=self.sim.date + pd.DateOffset(months=1),
-                        priority=0,
-                    )
-
-                else:
-                    # refer to higher facility level
-                    self.sim.modules["HealthSystem"].schedule_hsi_event(
-                        hsi_event=HSI_Hiv_StartOrContinueTreatment(
-                            person_id=person_id, module=self.module,
-                            facility_level_of_this_hsi="2"
-                        ),
-                        topen=self.sim.date + pd.DateOffset(days=1),
-                        priority=0,
-                    )
+                # refer to higher facility level
+                self.sim.modules["HealthSystem"].schedule_hsi_event(
+                    hsi_event=HSI_Hiv_StartOrContinueTreatment(
+                        person_id=person_id, module=self.module,
+                        facility_level_of_this_hsi="2"
+                    ),
+                    topen=self.sim.date + pd.DateOffset(days=1),
+                    priority=0,
+                )
 
         # also screen for tb
         if "Tb" in self.sim.modules:

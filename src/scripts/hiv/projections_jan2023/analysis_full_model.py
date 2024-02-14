@@ -23,14 +23,14 @@ resourcefilepath = Path("./resources")
 
 # %% Run the simulation
 start_date = Date(2010, 1, 1)
-end_date = Date(2018, 1, 1)
+end_date = Date(2020, 1, 1)
 popsize = 5000
-scenario = 0
+# scenario = 0
 
 # set up the log config
 # add deviance measure logger if needed
 log_config = {
-    "filename": "tb_transmission_runs",
+    "filename": "hiv_test_runs",
     "directory": outputpath,
     "custom_levels": {
         "*": logging.WARNING,
@@ -55,12 +55,11 @@ sim.register(*fullmodel(
         "SymptomManager": {"spurious_symptoms": True},
         "HealthSystem": {"disable": False,
                          "service_availability": ["*"],
-                         "mode_appt_constraints": 0,  # no constraints, no squeeze factor
+                         "mode_appt_constraints": 1,
                          "cons_availability": "default",
                          "beds_availability": "all",
                          "ignore_priority": False,
-                         "use_funded_or_actual_staffing": "funded_plus",
-                         "capabilities_coefficient": 1.0},
+                         "use_funded_or_actual_staffing": "actual"},
     },
 ))
 
