@@ -29,10 +29,10 @@ from tlo.scenario import BaseScenario
 class Calibration(BaseScenario):
     def __init__(self):
         super().__init__()
-        self.seed = 6742
+        self.seed = 2466
         self.start_date = Date(2010, 1, 1)
-        self.end_date = Date(2021, 1, 1)
-        self.pop_size = 100_000
+        self.end_date = Date(2023, 1, 1)
+        self.pop_size = 50_000
         self.number_of_draws = 1
         self.runs_per_draw = 20
 
