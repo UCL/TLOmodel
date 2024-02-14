@@ -182,7 +182,7 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
 
     pregnancy_helper_functions.update_mni_dictionary(sim.modules['PregnancySupervisor'], mother_id)
 
-    # Set some complications that should be be detected in ANC leading to further action
+    # Set some complications that should be detected in ANC leading to further action
     df.at[mother_id, 'ps_htn_disorders'] = 'mild_pre_eclamp'
     df.at[mother_id, 'de_depr'] = True
 
@@ -199,7 +199,6 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     params['prob_intervention_delivered_urine_ds'] = 1.0
     params['prob_intervention_delivered_bp'] = 1.0
     params['prob_intervention_delivered_depression_screen'] = 1.0
-    params['prob_intervention_delivered_ifa'] = 1.0
     params['prob_intervention_delivered_gdm_test'] = 1.0
     params['prob_adherent_ifa'] = 1.0
     params['prob_intervention_delivered_bep'] = 1.0
@@ -251,7 +250,7 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     # specifically due to her complications (pre-eclampsia and depression)
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
 
-    # Should should have undergone depression screening, and then (via the depression module) been diagnosed and
+    # Individual should have undergone depression screening, and then (via the depression module) been diagnosed and
     # started on treatment
     assert (df.at[mother_id, 'de_ever_diagnosed_depression'])
     assert depression.HSI_Depression_TalkingTherapy in hsi_events
@@ -417,10 +416,6 @@ def test_perfect_run_of_anc_contacts_no_constraints(seed):
     eight_anc.apply(person_id=updated_mother_id, squeeze_factor=0.0)
     assert (df.at[mother_id, 'ac_total_anc_visits_current_pregnancy'] == 8)
 
-    # TODO: test that TB screening is happening correctly (not coded in TB yet)
-    # TODO: test that other blood tests are occuring (hep b and syphilis- currently not linked to anything)
-    # todo: test with probabilities low/0? same with dx test?
-
 
 def test_anc_contacts_that_should_not_run_wont_run(seed):
     """This test checks the inbuilt functions within ANC1 and ANC subsequent that should block, and in some cases
@@ -517,8 +512,6 @@ def test_anc_contacts_that_should_not_run_wont_run(seed):
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_SecondAntenatalCareContact in hsi_events
     assert not pd.isnull(df.at[mother_id, 'ac_date_next_contact'])
 
-    # todo: expand this test
-
 
 def test_daisy_chain_care_seeking_logic_to_ensure_certain_number_of_contact(seed):
     """This test checks the logic around care seeking for the next ANC visit in the schedule. We test that women who are
@@ -535,7 +528,7 @@ def test_daisy_chain_care_seeking_logic_to_ensure_certain_number_of_contact(seed
     # This woman has been determined to attend at least four visits
     df.at[mother_id, 'ps_anc4'] = True
 
-    # call the function called by all ANC HSIs to scheduled the next visit
+    # call the function called by all ANC HSIs to schedule the next visit
     sim.modules['CareOfWomenDuringPregnancy'].antenatal_care_scheduler(individual_id=updated_mother_id,
                                                                        visit_to_be_scheduled=2,
                                                                        recommended_gestation_next_anc=20)
@@ -582,7 +575,6 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
 
     # Set treatment parameters to 1
     params['treatment_effect_blood_transfusion_anaemia'] = 1.0
-    params['prob_intervention_delivered_ifa'] = 1.0
     params['prob_adherent_ifa'] = 1.0
 
     sim.simulate(end_date=sim.date + pd.DateOffset(days=0))
@@ -596,11 +588,9 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
     # set key pregnancy characteristics
     df.at[mother_id, 'is_pregnant'] = True
     df.at[mother_id, 'ps_gestational_age_in_weeks'] = 22
-    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'severe_anaemia_resolution': pd.NaT,
-                                                                             'delay_one_two': False,
-                                                                             'delay_three': False}
+    sim.modules['PregnancySupervisor'].mother_and_newborn_info[mother_id] = {'severe_anaemia_resolution': pd.NaT}
 
-    # and over ride quality parameters
+    # and override quality parameters
     lparams = sim.modules['Labour'].current_parameters
     lparams['prob_hcw_avail_blood_tran'] = 1.0
     lparams['mean_hcw_competence_hp'] = [1.0, 1.0]
@@ -625,7 +615,8 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
     # And finally check she has been scheduled to return for follow up testing in 1 months time
     date_event = check_event_queue_for_event_and_return_scheduled_event_date(
         sim, queue_of_interest='hsi', individual_id=updated_mother_id,
-        event_of_interest=care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia)  # noqa: E501
+        event_of_interest=
+        care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia)  # noqa: E501
 
     assert date_event == (sim.date + pd.DateOffset(days=28))
 
@@ -637,7 +628,8 @@ def test_initiation_of_treatment_for_maternal_anaemia_during_antenatal_inpatient
     df.at[mother_id, 'ac_date_next_contact'] = sim.date + pd.DateOffset(weeks=2)
 
     # Run the outpatient appointment
-    outpatient_check = care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(  # noqa: E501
+    outpatient_check = \
+        care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfAnaemia(  # noqa: E501
         module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     outpatient_check.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
@@ -680,7 +672,7 @@ def test_initiation_of_treatment_for_hypertensive_disorder_during_antenatal_inpa
         module=sim.modules['CareOfWomenDuringPregnancy'], person_id=updated_mother_id)
     inpatient_hsi.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
-    # Check that she has been started on treatment and that no futher HSIs have been scheduled (i.e. her treatment is
+    # Check that she has been started on treatment and that no further HSIs have been scheduled (i.e. her treatment is
     # complete)
     assert df.at[mother_id, 'ac_gest_htn_on_treatment']
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
@@ -690,7 +682,7 @@ def test_initiation_of_treatment_for_hypertensive_disorder_during_antenatal_inpa
     df.at[mother_id, 'ps_htn_disorders'] = 'severe_gest_htn'
     inpatient_hsi.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
-    # Check treatment has been given and the womans hypertension has been set to mild
+    # Check treatment has been given and the woman's hypertension has been set to mild
     assert (df.at[mother_id, 'ps_htn_disorders'] == 'gest_htn')
 
     # Set hypertension status to severe pre-eclampsia and run the event
@@ -737,7 +729,7 @@ def test_initiation_of_treatment_for_gestational_diabetes_during_antenatal_inpat
     events = find_and_return_events_list(sim, mother_id)
     hsi_events = find_and_return_hsi_events_list(sim, mother_id)
 
-    # Check bother the glycaemic control event and outpatient follow up events are scheduled
+    # Check bother the glycaemic control event and outpatient follow-up events are scheduled
     assert pregnancy_supervisor.GestationalDiabetesGlycaemicControlEvent in events
     assert care_of_women_during_pregnancy.HSI_CareOfWomenDuringPregnancy_AntenatalOutpatientManagementOfGestationalDiabetes in hsi_events  # noqa: E501
 
@@ -745,7 +737,7 @@ def test_initiation_of_treatment_for_gestational_diabetes_during_antenatal_inpat
     sim.modules['HealthSystem'].HSI_EVENT_QUEUE.clear()
     sim.event_queue.queue.clear()
 
-    # Set the probability that diet and exercise alone will controll this womans diabetes to 0
+    # Set the probability that diet and exercise alone will control this woman's diabetes to 0
     params = sim.modules['PregnancySupervisor'].current_parameters
     params['prob_glycaemic_control_diet_exercise'] = 0.0
 
@@ -834,6 +826,7 @@ def test_initiation_of_treatment_for_prom_with_or_without_chorioamnionitis_durin
     sim.event_queue.queue.clear()
 
     # Set the woman to have an infection and run the event
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 29
     df.at[mother_id, 'ps_chorioamnionitis'] = True
     inpatient_hsi.apply(person_id=updated_mother_id, squeeze_factor=0.0)
 
@@ -855,7 +848,7 @@ def test_initiation_of_treatment_for_antepartum_haemorrhage_during_antenatal_inp
     # set key pregnancy characteristics
     df = sim.population.props
     df.at[mother_id, 'is_pregnant'] = True
-    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 22
+    df.at[mother_id, 'ps_gestational_age_in_weeks'] = 28
 
     # set complication properties
     df.at[mother_id, 'ps_antepartum_haemorrhage'] = 'severe'
