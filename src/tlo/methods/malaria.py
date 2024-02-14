@@ -215,7 +215,7 @@ class Malaria(Module):
     }
 
     def read_parameters(self, data_folder):
-        workbook = pd.read_excel(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria.xlsx', sheet_name=None)
+        workbook = pd.read_excel(self.resourcefilepath / "malaria" / "ResourceFile_malaria.xlsx", sheet_name=None)
 
         self.load_parameters_from_dataframe(workbook["parameters"])
 
@@ -229,9 +229,9 @@ class Malaria(Module):
         p["sev_symp_prob"] = workbook["severe_symptoms"]
         p["rdt_testing_rates"] = workbook["WHO_TestData2023"]
 
-        p['inf_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_InfInc_expanded.csv')
-        p['clin_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_ClinInc_expanded.csv')
-        p['sev_inc'] = pd.read_csv(self.resourcefilepath / 'malaria' / 'ResourceFile_malaria_SevInc_expanded.csv')
+        p["inf_inc"] = pd.read_csv(self.resourcefilepath / "malaria" / "ResourceFile_malaria_InfInc_expanded.csv")
+        p["clin_inc"] = pd.read_csv(self.resourcefilepath / "malaria" / "ResourceFile_malaria_ClinInc_expanded.csv")
+        p["sev_inc"] = pd.read_csv(self.resourcefilepath / "malaria" / "ResourceFile_malaria_SevInc_expanded.csv")
 
         # check itn projected values are <=0.7 and rounded to 1dp for matching to incidence tables
         p["itn"] = round(p["itn"], 1)
@@ -290,7 +290,7 @@ class Malaria(Module):
         sev_inc = sev_inc.loc[:, ["monthly_prob_sev"]]
 
         all_inc = pd.concat([inf_inc, clin_inc, sev_inc], axis=1)
-        # we don't want age to be part of index
+        # we don"t want age to be part of index
         all_inc = all_inc.reset_index()
 
         all_inc["district_num"] = all_inc["admin"].map(mapper_district_name_to_num)
@@ -426,7 +426,7 @@ class Malaria(Module):
         itn_irs_curr = self.itn_irs.loc[pd.IndexSlice[:, current_year], :]
         itn_irs_curr = itn_irs_curr.reset_index().drop(
             "Year", axis=1
-        )  # we don't use the year column
+        )  # we don"t use the year column
         itn_irs_curr.insert(
             0, "month", now.month
         )  # add current month for the incidence index lookup
@@ -459,7 +459,7 @@ class Malaria(Module):
             )
             # get the monthly incidence probabilities for these individuals
             monthly_prob = curr_inc.loc[district_age_lookup, _col]
-            # update the index so it's the same as the original population dataframe for these individuals
+            # update the index so it"s the same as the original population dataframe for these individuals
             monthly_prob = monthly_prob.set_axis(df.index[_where])
 
             # the linear models only apply to clinical and severe malaria risk
@@ -485,7 +485,7 @@ class Malaria(Module):
 
             return selected
 
-        # we don't have incidence data for over 80s
+        # we don"t have incidence data for over 80s
         alive = df.is_alive & (df.age_years < 80)
 
         alive_over_one = alive & (df.age_exact_years >= 1)
@@ -723,7 +723,7 @@ class Malaria(Module):
         df.at[child_id, "ma_tx_counter"] = 0
         df.at[child_id, "ma_iptp"] = False
 
-        # reset mother's IPTp status to False
+        # reset mother"s IPTp status to False
         if mother_id >= 0:  # exclude direct births
             df.at[mother_id, "ma_iptp"] = False
 
@@ -814,7 +814,7 @@ class Malaria(Module):
                     tclose=None,
                 )
 
-            # return type 'clinical_malaria' includes asymptomatic infection
+            # return type "clinical_malaria" includes asymptomatic infection
             elif malaria_test_result == "clinical_malaria":
                 df.at[person_id, "ma_dx_counter"] += 1
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -892,7 +892,7 @@ class MalariaIPTp(RegularEvent, PopulationScopeEventMixin):
             & ~df.ma_iptp
             & (
                 ~df.hv_on_cotrimoxazole
-                if 'Hiv' in self.sim.modules
+                if "Hiv" in self.sim.modules
                 else True
             )
         )
@@ -1380,7 +1380,7 @@ class HSI_MalariaIPTp(HSI_Event, IndividualScopeEventMixin):
             return
 
         # IPTp contra-indicated if currently on cotrimoxazole
-        if 'Hiv' in self.sim.modules and df.at[person_id, "hv_on_cotrimoxazole"]:
+        if "Hiv" in self.sim.modules and df.at[person_id, "hv_on_cotrimoxazole"]:
             return
 
         logger.debug(
