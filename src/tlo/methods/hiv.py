@@ -2549,174 +2549,167 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
                 priority=0,
             )
 
+    def do_at_initiation(self, person_id):
+        """Things to do when this the first appointment ART"""
+        df = self.sim.population.props
+        person = df.loc[person_id]
 
-def do_at_initiation(self, person_id):
-    """Things to do when this the first appointment ART"""
-    df = self.sim.population.props
-    person = df.loc[person_id]
+        # Check if drugs are available, and provide drugs
+        # this will return a dict where the first item is ART and the second is cotrimoxazole
+        drugs_available = self.get_drugs(age_of_person=person["age_years"])
 
-    # Check if drugs are available, and provide drugs
-    # this will return a dict where the first item is ART and the second is cotrimoxazole
-    drugs_available = self.get_drugs(age_of_person=person["age_years"])
-
-    # ART is first item in drugs_available dict
-    if drugs_available.get('art', False):
-        # Assign person to be suppressed or un-suppressed viral load
-        # (If person is VL suppressed This will prevent the Onset of AIDS, or an AIDS death if AIDS has already
-        # onset)
-        vl_status = self.determine_vl_status(
-            age_of_person=person["age_years"]
-        )
-
-        df.at[person_id, "hv_art"] = vl_status
-        df.at[person_id, "hv_date_treated"] = self.sim.date
-
-        # If VL suppressed, remove any symptoms caused by this module
-        if vl_status == "on_VL_suppressed":
-            self.sim.modules["SymptomManager"].clear_symptoms(
-                person_id=person_id, disease_module=self.module
+        # ART is first item in drugs_available dict
+        if drugs_available.get('art', False):
+            # Assign person to be suppressed or un-suppressed viral load
+            # (If person is VL suppressed This will prevent the Onset of AIDS, or an AIDS death if AIDS has already
+            # onset)
+            vl_status = self.determine_vl_status(
+                age_of_person=person["age_years"]
             )
 
-    # if cotrimoxazole is available
-    if drugs_available.get('cotrim', False):
-        df.at[person_id, "hv_on_cotrimoxazole"] = True
+            df.at[person_id, "hv_art"] = vl_status
+            df.at[person_id, "hv_date_treated"] = self.sim.date
 
-    # Consider if TB treatment should start
-    self.consider_tb(person_id)
+            # If VL suppressed, remove any symptoms caused by this module
+            if vl_status == "on_VL_suppressed":
+                self.sim.modules["SymptomManager"].clear_symptoms(
+                    person_id=person_id, disease_module=self.module
+                )
 
-    return drugs_available
+        # if cotrimoxazole is available
+        if drugs_available.get('cotrim', False):
+            df.at[person_id, "hv_on_cotrimoxazole"] = True
 
+        # Consider if TB treatment should start
+        self.consider_tb(person_id)
 
-def do_at_continuation(self, person_id):
-    """Things to do when the person is already on ART"""
+        return drugs_available
 
-    df = self.sim.population.props
-    person = df.loc[person_id]
+    def do_at_continuation(self, person_id):
+        """Things to do when the person is already on ART"""
 
-    # default to person stopping cotrimoxazole
-    df.at[person_id, "hv_on_cotrimoxazole"] = False
+        df = self.sim.population.props
+        person = df.loc[person_id]
 
-    # Viral Load Monitoring
-    # NB. This does not have a direct effect on outcomes for the person.
-    _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
+        # default to person stopping cotrimoxazole
+        df.at[person_id, "hv_on_cotrimoxazole"] = False
 
-    # Check if drugs are available, and provide drugs:
-    drugs_available = self.get_drugs(age_of_person=person["age_years"])
+        # Viral Load Monitoring
+        # NB. This does not have a direct effect on outcomes for the person.
+        _ = self.get_consumables(item_codes=self.module.item_codes_for_consumables_required['vl_measurement'])
 
-    # if cotrimoxazole is available, update person's property
-    if drugs_available.get('cotrim', False):
-        df.at[person_id, "hv_on_cotrimoxazole"] = True
+        # Check if drugs are available, and provide drugs:
+        drugs_available = self.get_drugs(age_of_person=person["age_years"])
 
-    return drugs_available
+        # if cotrimoxazole is available, update person's property
+        if drugs_available.get('cotrim', False):
+            df.at[person_id, "hv_on_cotrimoxazole"] = True
 
+        return drugs_available
 
-def determine_vl_status(self, age_of_person):
-    """Helper function to determine the VL status that the person will have.
-    Return what will be the status of "hv_art"
-    """
-    prob_vs = self.module.prob_viral_suppression(self.sim.date.year, age_of_person)
+    def determine_vl_status(self, age_of_person):
+        """Helper function to determine the VL status that the person will have.
+        Return what will be the status of "hv_art"
+        """
+        prob_vs = self.module.prob_viral_suppression(self.sim.date.year, age_of_person)
 
-    return (
-        "on_VL_suppressed"
-        if (self.module.rng.random_sample() < prob_vs)
-        else "on_not_VL_suppressed"
-    )
-
-
-def get_drugs(self, age_of_person):
-    """Helper function to get the ART according to the age of the person being treated. Returns dict to indicate
-    whether individual drugs were available"""
-
-    p = self.module.parameters
-
-    if age_of_person < p["ART_age_cutoff_young_child"]:
-        # Formulation for young children
-        drugs_available = self.get_consumables(
-            item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: young child'],
-            optional_item_codes=self.module.item_codes_for_consumables_required[
-                'First line ART regimen: young child: cotrimoxazole'],
-            return_individual_results=True)
-
-    elif age_of_person <= p["ART_age_cutoff_older_child"]:
-        # Formulation for older children
-        drugs_available = self.get_consumables(
-            item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: older child'],
-            optional_item_codes=self.module.item_codes_for_consumables_required[
-                'First line ART regimen: older child: cotrimoxazole'],
-            return_individual_results=True)
-
-    else:
-        # Formulation for adults
-        drugs_available = self.get_consumables(
-            item_codes=self.module.item_codes_for_consumables_required['First-line ART regimen: adult'],
-            optional_item_codes=self.module.item_codes_for_consumables_required[
-                'First-line ART regimen: adult: cotrimoxazole'],
-            return_individual_results=True)
-
-    # add drug names to dict
-    drugs_available = {
-        'art': list(drugs_available.values())[0],
-        'cotrim': list(drugs_available.values())[1]
-    }
-
-    return drugs_available
-
-
-def consider_tb(self, person_id):
-    """
-    screen for tb
-    Consider whether IPT is needed at this time. This is run only when treatment is initiated.
-    """
-
-    if "Tb" in self.sim.modules:
-        self.sim.modules["Tb"].consider_ipt_for_those_initiating_art(
-            person_id=person_id
+        return (
+            "on_VL_suppressed"
+            if (self.module.rng.random_sample() < prob_vs)
+            else "on_not_VL_suppressed"
         )
 
+    def get_drugs(self, age_of_person):
+        """Helper function to get the ART according to the age of the person being treated. Returns dict to indicate
+        whether individual drugs were available"""
 
-def never_ran(self):
-    """This is called if this HSI was never run.
-    * Default the person to being off ART.
-    * Determine if they will re-seek care themselves in the future:
-    """
-    # stop treatment for this person
-    person_id = self.target
-    self.module.stops_treatment(person_id)
+        p = self.module.parameters
 
-    # sample whether person will seek further appt
-    if self.module.rng.random_sample() < self.module.parameters[
-        "probability_of_seeking_further_art_appointment_if_appointment_not_available"
-    ]:
-        # schedule HSI
-        self.sim.modules["HealthSystem"].schedule_hsi_event(
-            HSI_Hiv_StartOrContinueTreatment(
-                person_id=person_id, module=self.module, facility_level_of_this_hsi="1a"
-            ),
-            topen=self.sim.date + pd.DateOffset(days=14),
-            tclose=self.sim.date + pd.DateOffset(days=21),
-            priority=1,
-        )
+        if age_of_person < p["ART_age_cutoff_young_child"]:
+            # Formulation for young children
+            drugs_available = self.get_consumables(
+                item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: young child'],
+                optional_item_codes=self.module.item_codes_for_consumables_required[
+                    'First line ART regimen: young child: cotrimoxazole'],
+                return_individual_results=True)
 
+        elif age_of_person <= p["ART_age_cutoff_older_child"]:
+            # Formulation for older children
+            drugs_available = self.get_consumables(
+                item_codes=self.module.item_codes_for_consumables_required['First line ART regimen: older child'],
+                optional_item_codes=self.module.item_codes_for_consumables_required[
+                    'First line ART regimen: older child: cotrimoxazole'],
+                return_individual_results=True)
 
-@property
-def EXPECTED_APPT_FOOTPRINT(self):
-    """Returns the appointment footprint for this person according to their current status:
-     * `NewAdult` for an adult, newly starting treatment
-     * `EstNonCom` for an adult, re-starting treatment or already on treatment
-     (NB. This is an appointment type that assumes that the patient does not have complications.)
-     * `Peds` for a child - whether newly starting or already on treatment
-    """
-    person_id = self.target
+        else:
+            # Formulation for adults
+            drugs_available = self.get_consumables(
+                item_codes=self.module.item_codes_for_consumables_required['First-line ART regimen: adult'],
+                optional_item_codes=self.module.item_codes_for_consumables_required[
+                    'First-line ART regimen: adult: cotrimoxazole'],
+                return_individual_results=True)
 
-    if self.sim.population.props.at[person_id, 'age_years'] < 15:
-        return self.make_appt_footprint({"Peds": 1})  # Child
+        # add drug names to dict
+        drugs_available = {
+            'art': list(drugs_available.values())[0],
+            'cotrim': list(drugs_available.values())[1]
+        }
 
-    if (self.sim.population.props.at[person_id, 'hv_art'] == "not") & (
-        pd.isna(self.sim.population.props.at[person_id, 'hv_date_treated'])
-    ):
-        return self.make_appt_footprint({"NewAdult": 1})  # Adult newly starting treatment
-    else:
-        return self.make_appt_footprint({"EstNonCom": 1})  # Adult already on treatment
+        return drugs_available
+
+    def consider_tb(self, person_id):
+        """
+        screen for tb
+        Consider whether IPT is needed at this time. This is run only when treatment is initiated.
+        """
+
+        if "Tb" in self.sim.modules:
+            self.sim.modules["Tb"].consider_ipt_for_those_initiating_art(
+                person_id=person_id
+            )
+
+    def never_ran(self):
+        """This is called if this HSI was never run.
+        * Default the person to being off ART.
+        * Determine if they will re-seek care themselves in the future:
+        """
+        # stop treatment for this person
+        person_id = self.target
+        self.module.stops_treatment(person_id)
+
+        # sample whether person will seek further appt
+        if self.module.rng.random_sample() < self.module.parameters[
+            "probability_of_seeking_further_art_appointment_if_appointment_not_available"
+        ]:
+            # schedule HSI
+            self.sim.modules["HealthSystem"].schedule_hsi_event(
+                HSI_Hiv_StartOrContinueTreatment(
+                    person_id=person_id, module=self.module, facility_level_of_this_hsi="1a"
+                ),
+                topen=self.sim.date + pd.DateOffset(days=14),
+                tclose=self.sim.date + pd.DateOffset(days=21),
+                priority=1,
+            )
+
+    @property
+    def EXPECTED_APPT_FOOTPRINT(self):
+        """Returns the appointment footprint for this person according to their current status:
+         * `NewAdult` for an adult, newly starting treatment
+         * `EstNonCom` for an adult, re-starting treatment or already on treatment
+         (NB. This is an appointment type that assumes that the patient does not have complications.)
+         * `Peds` for a child - whether newly starting or already on treatment
+        """
+        person_id = self.target
+
+        if self.sim.population.props.at[person_id, 'age_years'] < 15:
+            return self.make_appt_footprint({"Peds": 1})  # Child
+
+        if (self.sim.population.props.at[person_id, 'hv_art'] == "not") & (
+            pd.isna(self.sim.population.props.at[person_id, 'hv_date_treated'])
+        ):
+            return self.make_appt_footprint({"NewAdult": 1})  # Adult newly starting treatment
+        else:
+            return self.make_appt_footprint({"EstNonCom": 1})  # Adult already on treatment
 
 
 # ---------------------------------------------------------------------------
