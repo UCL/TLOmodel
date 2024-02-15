@@ -127,6 +127,7 @@ class Hiv(Module):
         "hv_last_test_date": Property(Types.DATE, "Date of last HIV test"),
         "hv_date_inf": Property(Types.DATE, "Date infected with HIV"),
         "hv_date_treated": Property(Types.DATE, "date hiv treatment started"),
+        "hv_date_last_ART": Property(Types.DATE, "date of last ART dispensation"),
     }
 
     PARAMETERS = {
@@ -589,7 +590,6 @@ class Hiv(Module):
         # --- Current status
         df.loc[df.is_alive, "hv_inf"] = False
         df.loc[df.is_alive, "hv_art"] = "not"
-        df.loc[df.is_alive, "hv_date_treated"] = pd.NaT
         df.loc[df.is_alive, "hv_is_on_prep"] = False
         df.loc[df.is_alive, "hv_behaviour_change"] = False
         df.loc[df.is_alive, "hv_diagnosed"] = False
@@ -598,6 +598,8 @@ class Hiv(Module):
         # --- Dates on which things have happened
         df.loc[df.is_alive, "hv_date_inf"] = pd.NaT
         df.loc[df.is_alive, "hv_last_test_date"] = pd.NaT
+        df.loc[df.is_alive, "hv_date_treated"] = pd.NaT
+        df.loc[df.is_alive, "hv_date_last_ART"] = pd.NaT
 
         # Launch sub-routines for allocating the right number of people into each category
         self.initialise_baseline_prevalence(population)  # allocate baseline prevalence
@@ -1122,7 +1124,6 @@ class Hiv(Module):
         df.at[child_id, "hv_inf"] = False
         df.at[child_id, "hv_art"] = "not"
         df.at[child_id, "hv_on_cotrimoxazole"] = False
-        df.at[child_id, "hv_date_treated"] = pd.NaT
         df.at[child_id, "hv_is_on_prep"] = False
         df.at[child_id, "hv_behaviour_change"] = False
         df.at[child_id, "hv_diagnosed"] = False
@@ -1131,6 +1132,8 @@ class Hiv(Module):
         # --- Dates on which things have happened
         df.at[child_id, "hv_date_inf"] = pd.NaT
         df.at[child_id, "hv_last_test_date"] = pd.NaT
+        df.at[child_id, "hv_date_treated"] = pd.NaT
+        df.at[child_id, "hv_date_last_ART"] = pd.NaT
 
         # ----------------------------------- MTCT - AT OR PRIOR TO BIRTH --------------------------
         #  DETERMINE IF THE CHILD IS INFECTED WITH HIV FROM THEIR MOTHER DURING PREGNANCY / DELIVERY
@@ -2740,6 +2743,7 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
 
         # if ART is available (1st item in drugs_were_available dict)
         if list(drugs_were_available.values())[0]:
+            df.at[person_id, 'hv_date_last_ART'] = self.sim.date
 
             # If person has been placed/continued on ART, schedule 'decision about whether to continue on Treatment
             self.sim.schedule_event(
