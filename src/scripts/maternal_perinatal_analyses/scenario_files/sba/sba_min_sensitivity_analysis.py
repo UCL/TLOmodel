@@ -26,7 +26,7 @@ from tlo.methods import (
 from tlo.scenario import BaseScenario
 
 
-class Increased(BaseScenario):
+class SBAMinSensitivityAnalysis(BaseScenario):
     def __init__(self):
         super().__init__()
         self.seed = 661184
@@ -38,7 +38,7 @@ class Increased(BaseScenario):
 
     def log_configuration(self):
         return {
-            'filename': 'increased_anc_qual_250k', 'directory': './outputs',
+            'filename': 'min_sens_analysis_250k', 'directory': './outputs',
             "custom_levels": {
                 "*": logging.WARNING,
                 "tlo.methods.demography": logging.INFO,
@@ -90,15 +90,15 @@ class Increased(BaseScenario):
 
     def draw_parameters(self, draw_number, rng):
         return {
-            'PregnancySupervisor': {'alternative_anc_coverage': True,
-                                    'alternative_anc_quality': True,
-                                    'alternative_ip_anc_quality': True,
-                                    'anc_availability_odds': 9.0,
-                                    'anc_availability_probability': 1.0,
-                                    'ip_anc_availability_probability': 1.0,
-                                    'analysis_year': 2023},
+            'Labour': {'alternative_bemonc_availability': True,
+                       'alternative_cemonc_availability': True,
+                       'bemonc_availability': 0.0,
+                       'cemonc_availability': 0.0,
+                       'bemonc_cons_availability': 0.0,
+                       'cemonc_cons_availability': 0.0,
+                       'analysis_year': 2023},
 
-            'Labour': {'analysis_year': 2023},
+            'PregnancySupervisor': {'analysis_year': 2023}
         }
 
 
