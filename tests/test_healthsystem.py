@@ -130,6 +130,7 @@ def test_all_treatment_ids_defined_in_priority_policies(seed, tmpdir):
     clean_set_of_filtered_treatment_ids.add("Alri_Pneumonia_Treatment_Inpatient")
     clean_set_of_filtered_treatment_ids.add("Alri_Pneumonia_Treatment_Inpatient_Followup")
     clean_set_of_filtered_treatment_ids.add("DeliveryCare_Comprehensive")
+    clean_set_of_filtered_treatment_ids.add("PostnatalCare_Comprehensive")
 
     for policy_name in sim.modules['HealthSystem'].parameters['priority_rank'].keys():
         sim.modules['HealthSystem'].load_priority_policy(policy_name)
