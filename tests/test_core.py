@@ -51,7 +51,7 @@ class TestLoadParametersFromDataframe:
 
     No explicit tests for correct parsing of boolean because of how python evaluates truthiness
     """
-    def setup(self):
+    def setup_method(self):
         class ParameterModule(Module):
             def __init__(self):
                 super().__init__(name=None)
@@ -169,7 +169,7 @@ class TestLoadParametersFromDataframe:
 
 class TestLoadParametersFromDataframe_Bools_From_Csv:
     """Tests for the load_parameters_from_dataframe method, including handling of bools when loading from csv"""
-    def setup(self):
+    def setup_method(self):
         class ParameterModule(Module):
             def __init__(self):
                 super().__init__(name=None)
