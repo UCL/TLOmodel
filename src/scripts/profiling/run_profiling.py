@@ -176,7 +176,7 @@ def run_profiling(
     output_name: str = "profiling",
     write_html: bool = False,
     write_pyisession: bool = False,
-    interval: float = 1e-1,
+    interval: float = 2e-1,
     initial_population: int = 50000,
     simulation_years: int = 5,
     simulation_months: int = 0,
