@@ -92,6 +92,78 @@ baseline_all = extract_outputs(results_folder=results_folder,
                                column="outputs_age15_64")
 
 
+def extract_hiv_pop(results_folder: Path,
+                    module: str,
+                    key: str,
+                    column: str) -> pd.DataFrame:
+    # get number of draws and numbers of runs
+    info = get_scenario_info(results_folder)
+
+    df_pop = pd.DataFrame()
+    df_out = pd.DataFrame()
+
+    # 5 draws, 1 run each
+    run = 0
+    for draw in range(info['number_of_draws']):
+        # load the log file
+        df: pd.DataFrame = load_pickled_dataframes(results_folder, draw, run, module)[module][key]
+        # first column is mean
+
+        tmp = pd.DataFrame(df[column].to_list(), columns=['num_infected', 'num_not_diagnosed', 'num_dx_no_art',
+                    'num_art_not_vs', 'num_art_vs',
+                    'num_art_under_6mths_not_vs', 'num_art_under_6mths_vs',
+                    'num_art_over_6mths_not_vs', 'num_art_over_6mths_vs',
+                    'num_any_interruption'])
+
+        df_pop[draw] = tmp["num_infected"]
+
+    df_out["mean_pop"] = df_pop.mean(axis=1) * scaling_factor
+
+    return df_out
+
+
+hiv_15_24M = extract_hiv_pop(results_folder=results_folder,
+                               module="tlo.methods.hiv",
+                               key="hiv_detailed_outputs",
+                               column="outputs_age15_24_M")
+
+
+hiv_15_24F = extract_hiv_pop(results_folder=results_folder,
+                               module="tlo.methods.hiv",
+                               key="hiv_detailed_outputs",
+                               column="outputs_age15_24_F")
+
+
+hiv_25_34M = extract_hiv_pop(results_folder=results_folder,
+                               module="tlo.methods.hiv",
+                               key="hiv_detailed_outputs",
+                               column="outputs_age25_34_M")
+
+hiv_25_34F = extract_hiv_pop(results_folder=results_folder,
+                               module="tlo.methods.hiv",
+                               key="hiv_detailed_outputs",
+                               column="outputs_age25_34_F")
+
+hiv_35_44M = extract_hiv_pop(results_folder=results_folder,
+                               module="tlo.methods.hiv",
+                               key="hiv_detailed_outputs",
+                               column="outputs_age35_44_M")
+
+hiv_35_44F = extract_hiv_pop(results_folder=results_folder,
+                               module="tlo.methods.hiv",
+                               key="hiv_detailed_outputs",
+                               column="outputs_age35_44_F")
+
+hiv_45M = extract_hiv_pop(results_folder=results_folder,
+                               module="tlo.methods.hiv",
+                               key="hiv_detailed_outputs",
+                               column="outputs_age45_100_M")
+
+hiv_45F = extract_hiv_pop(results_folder=results_folder,
+                               module="tlo.methods.hiv",
+                               key="hiv_detailed_outputs",
+                               column="outputs_age45_100_F")
+
 # extract deaths by age-group
 def calculate_counts(df):
 
@@ -134,16 +206,16 @@ def calculate_counts(df):
         name='art_recent_no_aids')
 
     # on ART VL <1000
-    art_VL= df[(df['hiv_diagnosed'] == True) &
+    art_VS= df[(df['hiv_diagnosed'] == True) &
                          (df['art_status'] == 'on_VL_suppressed')]
-    df_art_VL = art_VL.groupby(['age_group', 'sex', 'year']).size().reset_index(
-        name='art_VL')
+    df_art_VS = art_VS.groupby(['age_group', 'sex', 'year']).size().reset_index(
+        name='art_VS')
 
     # on ART VL >1000
-    art_no_VL= df[(df['hiv_diagnosed'] == True) &
+    art_not_VS= df[(df['hiv_diagnosed'] == True) &
                          (df['art_status'] == 'on_not_VL_suppressed')]
-    df_art_no_VL = art_no_VL.groupby(['age_group', 'sex', 'year']).size().reset_index(
-        name='art_no_VL')
+    df_art_not_VS = art_not_VS.groupby(['age_group', 'sex', 'year']).size().reset_index(
+        name='art_not_VS')
 
     # on ART <6 months VL <1000
     art_recent_VL_low = df[(df['hiv_diagnosed'] == True) &
@@ -223,7 +295,7 @@ def calculate_counts(df):
     dataframes = [df_total_deaths,
                   df_undx, df_dx,
                   df_art_recent_aids, df_art_recent_no_aids,
-                  df_art_VL, df_art_no_VL,
+                  df_art_VS, df_art_not_VS,
                   df_art_recent_VL_low, df_art_recent_VL_high,
                   df_art_VL_low, df_art_VL_high,
                   df_art_aids_at_death, df_art_no_aids_at_death,
@@ -255,6 +327,7 @@ def extract_deaths(results_folder: Path) -> pd.DataFrame:
 
     # get number of draws and numbers of runs
     info = get_scenario_info(results_folder)
+    dfs = []
 
     # 5 runs
     draw = 0
@@ -280,15 +353,9 @@ def extract_deaths(results_folder: Path) -> pd.DataFrame:
         # subsequent draws need to be added (excluding age_group sex, year)
         df_out = calculate_counts(aids_deaths)
 
-        # dynamically name the DataFrame based on the loop index
-        df_name = f"df{run}"
-        # create DataFrame
-        exec(f"{df_name} = pd.DataFrame(df_out)")
+        # Append DataFrame to the list
+        dfs.append(pd.DataFrame(df_out))
 
-    # list of DataFrames
-    dfs = [df0, df1, df2, df3, df4]
-
-    # iterate over DataFrames and perform element-wise addition while excluding columns [age, sex, year]
     # resulting dataframe represents population 5*150_000
     result = dfs[0].copy()
     for df in dfs[1:]:
@@ -302,18 +369,12 @@ def extract_deaths(results_folder: Path) -> pd.DataFrame:
     return result
 
 
-
-
-
-
-
-
 deaths = extract_deaths(results_folder=results_folder)
-deaths.to_csv(outputspath / ("MIHPSA_deaths_Feb2024" + ".csv"), index=None)
 
 # write to excel
-with pd.ExcelWriter(outputspath / ("MIHPSA_outputs2" + ".xlsx"), engine='openpyxl') as writer:
-    baseline_outputs.to_excel(writer, sheet_name='Sheet1', index=False)
-    detailed_outputs.to_excel(writer, sheet_name='Sheet2', index=False)
-    deaths.to_excel(writer, sheet_name='Sheet3', index=False)
-    writer.save()
+with pd.ExcelWriter(outputspath / ("MIHPSA_deaths_Feb2024" + ".xlsx"), engine='openpyxl') as writer:
+    baseline_m.to_excel(writer, sheet_name='baseline_m', index=False)
+    baseline_f.to_excel(writer, sheet_name='baseline_f', index=False)
+    baseline_all.to_excel(writer, sheet_name='baseline_all', index=False)
+    deaths.to_excel(writer, sheet_name='deaths', index=False)
+writer.save()
