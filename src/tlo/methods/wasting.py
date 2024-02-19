@@ -203,7 +203,6 @@ class Wasting(Module):
         modules would read a particular file within here.
         :return:
         """
-        # Update parameters from the resource dataframe
         # Read parameters from the resource file
         self.load_parameters_from_dataframe(
             pd.read_csv(Path(self.resourcefilepath) / 'ResourceFile_Wasting.csv')
@@ -247,7 +246,7 @@ class Wasting(Module):
                                                              inclusive='left'))
             prevalence_of_wasting = self.wasting_models.get_wasting_prevalence(agegp=agegp).predict(df.loc[mask])
 
-            # categorize into moderate (-3<=WHZ<-2) or severe (WHZ<-3) wasting
+            # categorize into moderate (-3 <= WHZ <- 2) or severe (WHZ <- 3) wasting
             wasted = self.rng.random_sample(len(prevalence_of_wasting)) < prevalence_of_wasting
             for idx in prevalence_of_wasting.index[wasted]:
                 probability_of_severe = self.get_probs_or_odds_wasting(agegp=agegp)
@@ -332,8 +331,8 @@ class Wasting(Module):
 
     def muac_cutoff_by_WHZ(self, idx, whz):
         """
-        Proportion of MUAC<115mm in WHZ<-3 and -3<=WHZ<-2, and proportion of wasted children with oedematous
-        malnutrition ( Kwashiokor, marasmic-kwashiorkor)
+        Proportion of MUAC < 115 mm in WHZ < -3 and -3 <= WHZ < -2,
+        and proportion of wasted children with oedematous malnutrition (kwashiokor, marasmic kwashiorkor)
 
         :param idx: index of children ages 6-59 months or person_id
         :param whz: weight for height category
@@ -341,36 +340,37 @@ class Wasting(Module):
         df = self.sim.population.props
         p = self.parameters
 
-        # -- MUAC <115mm in severe wasting (WHZ<-3) and moderate (-3<=WHZ<-2)--
+        # ----- MUAC < 115 mm in severe wasting (WHZ < -3) and moderate (-3 <= WHZ < -2) ------
         if whz == 'WHZ<-3':
-            # apply probability of MUAC<115mm in severe wasting
+            # apply probability of MUAC < 115 mm in severe wasting
             low_muac_in_severe_wasting = self.rng.random_sample(size=len(idx)) < p['proportion_WHZ<-3_with_MUAC<115mm']
 
             df.loc[idx[low_muac_in_severe_wasting], 'un_am_MUAC_category'] = '<115mm'
-            # other severe wasting will have MUAC between 115-<125mm
+            # other with severe wasting will have MUAC between 115-<125mm
             df.loc[idx[~low_muac_in_severe_wasting], 'un_am_MUAC_category'] = '115-<125mm'
 
         if whz == '-3<=WHZ<-2':
-            # apply probability of MUAC<115mm in moderate wasting
+            # apply probability of MUAC < 115 mm in moderate wasting
             low_muac_in_moderate_wasting = self.rng.random_sample(size=len(idx)) < \
                                            p['proportion_-3<=WHZ<-2_with_MUAC<115mm']
             df.loc[idx[low_muac_in_moderate_wasting], 'un_am_MUAC_category'] = '<115mm'
 
-            # apply probability of MUAC between 115-<125mm in moderate wasting
+            # apply probability of MUAC within [115 mm; 125 mm) in moderate wasting
             moderate_low_muac_in_moderate_wasting = \
                 self.rng.random_sample(size=len(idx[~low_muac_in_moderate_wasting])) < \
                 p['proportion_-3<=WHZ<-2_with_MUAC_115-<125mm']
             df.loc[idx[~low_muac_in_moderate_wasting][moderate_low_muac_in_moderate_wasting], 'un_am_MUAC_category'] \
                 = '115-<125mm'
-            # other moderate wasting will have normal MUAC
+            # other with moderate wasting will have normal MUAC
             df.loc[idx[~low_muac_in_moderate_wasting][~moderate_low_muac_in_moderate_wasting], 'un_am_MUAC_category'] \
                 = '>=125mm'
 
+        # ----- MUAC distribution for WHZ >= -2 -----
         if whz == 'WHZ>=-2':
-            # Give MUAC distribution for WHZ>=-2 ('well' group) ---------
+
             muac_distribution_in_well_group = norm(loc=p['MUAC_distribution_WHZ>=-2'][0],
                                                    scale=p['MUAC_distribution_WHZ>=-2'][1])
-            # get probability of MUAC <115mm
+            # get probability of MUAC < 115 mm
             probability_over_or_equal_115 = muac_distribution_in_well_group.sf(11.5)
             probability_over_or_equal_125 = muac_distribution_in_well_group.sf(12.5)
 
@@ -426,8 +426,7 @@ class Wasting(Module):
                 (df.at[person_id, 'un_am_MUAC_category'] == '>=125mm') & (~df.at[person_id, 'un_am_bilateral_oedema'])):
             df.at[person_id, 'un_clinical_acute_malnutrition'] = 'well'
 
-        # severe acute malnutrition - MUAC<115mm and/or WHZ<-3 and/or
-        # bilateral oedema
+        # severe acute malnutrition -- MUAC < 115 mm and/or WHZ < -3 and/or bilateral oedema
         elif ((df.at[person_id, 'un_am_MUAC_category'] == '<115mm') | (df.at[person_id, 'un_WHZ_category'] == 'WHZ<-3')
               | (df.at[person_id, 'un_am_bilateral_oedema'])):
             df.at[person_id, 'un_clinical_acute_malnutrition'] = 'SAM'
@@ -449,7 +448,7 @@ class Wasting(Module):
 
     def date_of_outcome_for_untreated_am(self, person_id, duration_am):
         """
-        helper funtion to get the duration and the wasting episode and date of outcome (recovery, progression, or death)
+        helper function to get duration and wasting episode and date of outcome (recovery, progression, or death)
         :param person_id:
         :param duration_am:
         :return:
@@ -457,8 +456,7 @@ class Wasting(Module):
         df = self.sim.population.props
         p = self.parameters
 
-        # moderate wasting (for progression to severe, or recovery from
-        # MAM) -----
+        # moderate wasting (for progression to severe, or recovery from MAM) -----
         if duration_am == 'MAM':
             # Allocate the duration of the moderate wasting episode
             duration_mam = int(max(p['min_days_duration_of_wasting'], p['average_duration_of_untreated_MAM']))
@@ -668,9 +666,9 @@ class Wasting(Module):
 
 class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """
-    Regular event that determines new cases of wasting (WHZ<-2) to the under-5 population, and schedules
+    Regular event that determines new cases of wasting (WHZ < -2) to the under-5 population, and schedules
     individual incident cases to represent onset. It determines those who will progress to severe wasting
-    (WHZ<-3) and schedules the event to update on properties. These are events occurring without the input
+    (WHZ < -3) and schedules the event to update on properties. These are events occurring without the input
     of interventions, these events reflect the natural history only.
     """
     AGE_GROUPS = {0: '0y', 1: '1y', 2: '2y', 3: '3y', 4: '4y'}
@@ -706,7 +704,7 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # start without treatment
         df.loc[wasting_idx[incidence_of_wasting], 'un_am_treatment_type'] = 'none'
         # --------------------------------------------------------------------
-        # Add this incident case to the tracker
+        # Add these incident cases to the tracker
         for person in wasting_idx:
             wasting_severity = df.at[person, 'un_WHZ_category']
             age_group = WastingPollingEvent.AGE_GROUPS.get(df.loc[person].age_years, '5+y')
@@ -715,10 +713,8 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
         # ---------------------------------------------------------------------
 
-        # # # # # # # #PROGRESS TO SEVERE WASTING # # # # # # # # # # # # # # #
-
-        # Determine those that will progress to severe wasting ( WHZ<-3)
-        # and schedule progression event ---------
+        # # # PROGRESS TO SEVERE WASTING # # # # # # # # # # # # # # # # # #
+        # Determine those that will progress to severe wasting (WHZ < -3) and schedule progression event ---------
         progression_sev_wasting = df.loc[df.is_alive & (df.age_exact_years < 5) &
                                          (df.un_WHZ_category == '-3<=WHZ<-2')]
         progression_severe_wasting = self.module.wasting_models.severe_wasting_progression_lm.predict(
@@ -740,9 +736,8 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
                     event=ProgressionSevereWastingEvent(
                         module=self.module, person_id=person), date=outcome_date)
 
-        # # # # # # #MODERATE WASTING NATURAL RECOVERY # # # # # # # # # # # #
-
-        # moderate wasting not progressed to severe, schedule recovery
+        # # # MODERATE WASTING NATURAL RECOVERY # # # # # # # # # # # # # #
+        # Schedule recovery from moderate wasting for those not progressing to severe wasting ---------
         for person in progression_sev_wasting.index[~progression_severe_wasting]:
             outcome_date = self.module.date_of_outcome_for_untreated_am(person_id=person, duration_am='MAM')
             if outcome_date <= self.sim.date:
