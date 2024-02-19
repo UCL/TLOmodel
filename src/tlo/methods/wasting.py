@@ -232,6 +232,7 @@ class Wasting(Module):
         df.loc[df.is_alive, 'un_sam_death_date'] = pd.NaT
         df.loc[df.is_alive, 'un_am_tx_start_date'] = pd.NaT
         df.loc[df.is_alive, 'un_am_treatment_type'] = 'not_applicable'
+        # TODO: What about 'un_sam_with_complications'? There are no such cases when population is initialised?
 
         # initialise wasting linear models.
         self.wasting_models = WastingModels(self)
