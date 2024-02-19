@@ -82,5 +82,5 @@ def collapse_stockout_data(_df, groupby_list, columns_to_preserve):
 groupby_list = ['Facility_Level', 'consumable_name_tlo', 'item_code']
 columns_to_preserve = ['module_name', 'category']
 hivtb_df_small = collapse_stockout_data(hivtb_df, groupby_list, columns_to_preserve)
-
+# Export as csv
 hivtb_df_small.to_csv(outputfilepath / "tara_consumable_comparison/tlo_hivtb_data.csv")
