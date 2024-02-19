@@ -225,12 +225,12 @@ class Wasting(Module):
         # Set initial properties
         df.loc[df.is_alive, 'un_ever_wasted'] = False
         df.loc[df.is_alive, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
-        df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
         df.loc[df.is_alive, 'un_last_wasting_date_of_onset'] = pd.NaT
-        df.loc[df.is_alive, 'un_am_tx_start_date'] = pd.NaT
-        df.loc[df.is_alive, 'un_sam_death_date'] = pd.NaT
+        df.loc[df.is_alive, 'un_clinical_acute_malnutrition'] = 'well'
         df.loc[df.is_alive, 'un_am_bilateral_oedema'] = False
         df.loc[df.is_alive, 'un_am_MUAC_category'] = '>=125mm'
+        df.loc[df.is_alive, 'un_sam_death_date'] = pd.NaT
+        df.loc[df.is_alive, 'un_am_tx_start_date'] = pd.NaT
         df.loc[df.is_alive, 'un_am_treatment_type'] = 'not_applicable'
 
         # initialise wasting linear models.
