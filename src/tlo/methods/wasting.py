@@ -29,8 +29,8 @@ class Wasting(Module):
     """
     This module applies the prevalence of wasting at the population-level, based on the Malawi DHS Survey 2015-2016.
     The definitions:
-    - moderate wasting: weight_for_height Z-score (WHZ) <-2 SD from the reference mean
-    - severe wasting: weight_for_height Z-score (WHZ) <-3 SD from the reference mean
+    - moderate wasting: weight_for_height Z-score (WHZ) < -2 SD from the reference mean
+    - severe wasting: weight_for_height Z-score (WHZ) < -3 SD from the reference mean
 
     """
 
@@ -90,7 +90,7 @@ class Wasting(Module):
         'rr_wasting_preterm_and_AGA': Parameter(
             Types.REAL, 'relative risk of wasting if born preterm and adequate for gestational age'),
         'rr_wasting_SGA_and_term': Parameter(
-            Types.REAL, 'relative risk of wasting if born term and small for geatational age'),
+            Types.REAL, 'relative risk of wasting if born term and small for gestational age'),
         'rr_wasting_SGA_and_preterm': Parameter(
             Types.REAL, 'relative risk of wasting if born preterm and small for gestational age'),
         'rr_wasting_wealth_level': Parameter(
@@ -108,25 +108,26 @@ class Wasting(Module):
             Types.REAL, 'probability of medical complications in SAM '),
         # MUAC distributions
         'MUAC_distribution_WHZ<-3': Parameter(
-            Types.LIST, 'mean and standard deviation of a normal distribution of MUAC measurements for WHZ<-3'),
+            Types.LIST,
+            'mean and standard deviation of a normal distribution of MUAC measurements for WHZ < -3'),
         'MUAC_distribution_-3<=WHZ<-2': Parameter(
-            Types.LIST, 'mean and standard deviation of a normal distribution of MUAC measurements for -3<=WHZ<-2'),
+            Types.LIST,
+            'mean and standard deviation of a normal distribution of MUAC measurements for -3 <= WHZ < -2'),
         'MUAC_distribution_WHZ>=-2': Parameter(
-            Types.LIST, 'mean and standard deviation of a normal distribution of MUAC measurements for WHZ>=-2'),
+            Types.LIST,
+            'mean and standard deviation of a normal distribution of MUAC measurements for WHZ >= -2'),
         'proportion_WHZ<-3_with_MUAC<115mm': Parameter(
-            Types.REAL, 'proportion of severe wasting with MUAC<115mm'),
+            Types.REAL, 'proportion of severe wasting with MUAC < 115mm'),
         'proportion_-3<=WHZ<-2_with_MUAC<115mm': Parameter(
-            Types.REAL, 'proportion of moderate wasting with MUAC<115mm'),
+            Types.REAL, 'proportion of moderate wasting with MUAC < 115mm'),
         'proportion_-3<=WHZ<-2_with_MUAC_115-<125mm': Parameter(
-            Types.REAL, 'proportion of moderate wasting with 115mm≤MUAC<125mm'),
+            Types.REAL, 'proportion of moderate wasting with 115 mm ≤ MUAC < 125mm'),
         'proportion_mam_with_MUAC_115-<125mm_and_normal_whz': Parameter(
-            Types.REAL, 'proportion of MAM cases with 115mm≤MUAC<125mm and normal/mild WHZ'),
+            Types.REAL, 'proportion of MAM cases with 115 mm ≤ MUAC < 125 mm and normal/mild WHZ'),
         'proportion_mam_with_MUAC_115-<125mm_and_-3<=WHZ<-2': Parameter(
-            Types.REAL,
-            'proportion of MAM cases with both 115mm≤MUAC<125mm and moderate wasting'),
+            Types.REAL, 'proportion of MAM cases with both 115 mm ≤ MUAC < 125 mm and moderate wasting'),
         'proportion_mam_with_-3<=WHZ<-2_and_normal_MUAC': Parameter(
-            Types.REAL,
-            'proportion of MAM cases with moderate wasting and normal MUAC'),
+            Types.REAL, 'proportion of MAM cases with moderate wasting and normal MUAC'),
         # bilateral oedema
         'prevalence_nutritional_oedema': Parameter(
             Types.REAL, 'prevalence of nutritional oedema in children under 5 in Malawi'),
@@ -156,8 +157,8 @@ class Wasting(Module):
 
     PROPERTIES = {
         # Properties related to wasting
-        'un_ever_wasted': Property(Types.BOOL, 'ever had an episode of wasting (WHZ<-2)'),
-        'un_WHZ_category': Property(Types.CATEGORICAL, 'weight-for-height z-score category',
+        'un_ever_wasted': Property(Types.BOOL, 'ever had an episode of wasting (WHZ < -2)'),
+        'un_WHZ_category': Property(Types.CATEGORICAL, 'weight-for-height Z-score category',
                                     categories=['WHZ<-3', '-3<=WHZ<-2', 'WHZ>=-2']),
         'un_last_wasting_date_of_onset': Property(Types.DATE, 'date of onset of last episode of wasting'),
 
@@ -396,7 +397,7 @@ class Wasting(Module):
         p = self.parameters
 
         # Knowing the prevalence of nutritional oedema in under 5
-        # population, apply the probability of oedema in WHZ<-2
+        # population, apply the probability of oedema in WHZ < -2
         # get those children with wasting
         children_with_wasting = idx.intersection(df.index[df.un_WHZ_category != 'WHZ>=-2'])
         children_without_wasting = idx.intersection(df.index[df.un_WHZ_category == 'WHZ>=-2'])
@@ -729,13 +730,13 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # determine those individuals who will progress to severe wasting and time of progression
         for person in progression_sev_wasting.index[progression_severe_wasting]:
             outcome_date = self.module.date_of_outcome_for_untreated_am(person_id=person, duration_am='MAM')
-            # schedule severe wasting WHZ<-3 onset
+            # schedule severe wasting WHZ < -3 onset
             if outcome_date <= self.sim.date:
-                # schedule severe wasting WHZ<-3 onset today
+                # schedule severe wasting (WHZ < -3) onset today
                 self.sim.schedule_event(event=ProgressionSevereWastingEvent(
                     module=self.module, person_id=person), date=self.sim.date)
             else:
-                # schedule severe wasting WHZ<-3 onset according to duration
+                # schedule severe wasting WHZ < -3 onset according to duration
                 self.sim.schedule_event(
                     event=ProgressionSevereWastingEvent(
                         module=self.module, person_id=person), date=outcome_date)
@@ -773,7 +774,7 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
 
 class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
     """
-    This Event is for the onset of severe wasting (WHZ <-3).
+    This Event is for the onset of severe wasting (WHZ < -3).
      * Refreshes all the properties so that they pertain to this current episode of wasting
      * Imposes wasting symptom
     """
@@ -796,7 +797,7 @@ class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
             # update properties
             df.at[person_id, 'un_WHZ_category'] = 'WHZ<-3'
 
-            # Give MUAC measurement category for WHZ<-3
+            # Give MUAC measurement category for WHZ < -3
             if df.at[person_id, 'age_exact_years'] > 0.5:
                 m.muac_cutoff_by_WHZ(idx=df.loc[[person_id]].index, whz='WHZ<-3')
 
