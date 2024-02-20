@@ -5,7 +5,7 @@ Run on the batch system using:
 ```tlo batch-submit src/scripts/costing/example_costing_scenario.py```
 
 or locally using:
-    ```tlo batch-submit src/scripts/costing/example_costing_scenario.py```
+    ```tlo scenario-run src/scripts/costing/example_costing_scenario.py```
 
 '''
 
@@ -39,7 +39,11 @@ class SampleCostingScenario(BaseScenario):
         return fullmodel(resourcefilepath=self.resources)
 
     def draw_parameters(self, draw_number, rng):
-        return get_parameters_for_status_quo()
+        return {
+            'HealthSystem': {
+                'cons_availability': ['default'][draw_number]
+            }
+        }
 
 
 if __name__ == '__main__':
