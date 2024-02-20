@@ -150,7 +150,7 @@ jobs:
           user_name:  rc-softdev-admin
 
       - name: Trigger website rebuild
-        uses: peter-evans/repository-dispatch@v2
+        uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.PROFILING_REPO_ACCESS }}
           repository: UCL/TLOmodel-profiling
