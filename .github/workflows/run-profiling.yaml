@@ -91,6 +91,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
+          lfs: true
 
       ## The profile environment produces outputs in the /results directory
       - name: Run profiling in dev environment
