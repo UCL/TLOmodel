@@ -47,11 +47,6 @@ params = extract_params(results_folder)
 
 
 # 1. HR cost
-'''
-Notes:
-1. Ignore squeeze factor, i.e. the actual capability used is costed
-2. ? capabilities_coefficient
-'''
 # 1.1 Overall HR Cost
 # Annual salary by officer type and facility level
 workbook = pd.read_excel((resourcefilepath / "ResourceFile_Costing.xlsx"),
@@ -68,28 +63,52 @@ aggregate_frac_time_used_by_officer_type['OfficerType_FacilityLevel'] = aggregat
 salary_df = pd.merge(hr_annual_salary, aggregate_frac_time_used_by_officer_type, on = ['OfficerType_FacilityLevel'])
 salary_df['Total_salary_by_cadre_and_level'] = salary_df['Salary_USD'] * salary_df['Value']
 scenario_cost = pd.DataFrame()
-scenario_cost['HR'] = salary_df['Total_salary_by_cadre_and_level'].sum() # Need to fix this!
+scenario_cost['HR'] = salary_df['Total_salary_by_cadre_and_level'].sum()
+
+# Plot salary costs by cadre and facility level
+# Group by cadre and level
+total_salary_by_cadre = salary_df.groupby('Officer_Category')['Total_salary_by_cadre_and_level'].sum()
+total_salary_by_level = salary_df.groupby('Facility_Level')['Total_salary_by_cadre_and_level'].sum()
+
+# If the folder doesn't exist, create it
+costing_outputs_folder = Path('./outputs/costing')
+if not os.path.exists(costing_outputs_folder):
+    os.makedirs(costing_outputs_folder)
+
+# Plot by cadre
+total_salary_by_cadre.plot(kind='bar')
+plt.xlabel('Officer_category')
+plt.ylabel('Total Salary')
+plt.title('Total Salary by Cadre')
+plt.savefig(costing_outputs_folder /  'total_salary_by_cadre.png')
+
+# Plot by level
+total_salary_by_level.plot(kind='bar')
+plt.xlabel('Facility_Level')
+plt.ylabel('Total Salary')
+plt.title('Total Salary by Facility_Level')
+plt.savefig(costing_outputs_folder /  'total_salary_by_level.png')
+
+# TODO Disaggregate by district using 'Frac_Time_Used_By_Facility_ID'
+# TODO Disaggregate by Treatment_ID - will need this for cost-effectiveness estimates - current log does not provide this
+
+
+
+'''
+# Scratch pad
 
 log['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_By_Facility_ID'] # for district disaggregation
-log['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_By_OfficerType'][0]
 
 # Aggregate Daily capabilities to total used by cadre and facility level
-# Multiply these with the correct salary figure - need dictionary mapping (or read costing as a csv)
-
-# Bar plot of salary costs by cadre and facility level
 
 # log['tlo.methods.healthsystem.summary']['Capacity']['Frac_Time_Used_By_OfficerType']
 # 1.2 HR cost by Treatment_ID
 # For HR cost by Treatment_ID, multiply total cost by Officer type by fraction of time used for treatment_ID
-log['tlo.methods.healthsystem.summary']['HSI_Event']['TREATMENT_ID'][0] # what does this represent? why are there 3 rows (2 scenarios)
+log['tlo.methods.healthsystem.summary']['HSI_Event']['TREATMENT_ID'] # what does this represent? why are there 3 rows (2 scenarios)
 # But what we need is the HR use by Treatment_ID  - Leave this for later?
 
 # log['tlo.scenario']
 log['tlo.methods.healthsystem.summary']['HSI_Event']['Number_By_Appt_Type_Code']
-
-
-
-
 
 
 df = pd.DataFrame(log['tlo.methods.healthsystem.summary'])
@@ -112,3 +131,6 @@ def read_parameters(self, data_folder):
 workbook = pd.read_excel((resourcefilepath / "ResourceFile_Costing.xlsx"),
                                     sheet_name = None)
 human_resources = workbook["human_resources"]
+
+'''
+
