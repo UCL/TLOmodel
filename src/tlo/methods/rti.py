@@ -3128,7 +3128,7 @@ class HSI_RTI_Imaging_Event(HSI_Event, IndividualScopeEventMixin):
         road_traffic_injuries = self.sim.modules['RTI']
         road_traffic_injuries.rti_injury_diagnosis(person_id, self.EXPECTED_APPT_FOOTPRINT)
 
-        if 'DiagRadio'in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
+        if 'DiagRadio' in list(self.EXPECTED_APPT_FOOTPRINT.keys()):
             # TODO: use xray package when available
             # TODO: robbie did not log the 'xray consumable' here as done in other modules (Tb)
             self.add_equipment({'X-ray machine', 'X-ray viewer'})
@@ -4029,9 +4029,9 @@ class HSI_RTI_Open_Fracture_Treatment(HSI_Event, IndividualScopeEventMixin):
                          data=f"Fracture casts available for person {person_id} {open_fracture_counts} open fractures"
                          )
 
-            # TODO: open fractures are usually treated surgically so more equipment is likely required.
-            #  Not immediately clear if these individuals are also scheduled to the surgical HSIs. will leave for now
-            self.add_equipment({'Infusion pump', 'Drip stand'})
+            # Todo: link to surgical equipment package when that exsists
+            self.add_equipment(
+                {'Infusion pump', 'Drip stand', 'Laparotomy Set', 'Blood pressure machine', 'Pulse oximeter'})
 
             person = df.loc[person_id]
             # update the dataframe to show this person is recieving treatment
