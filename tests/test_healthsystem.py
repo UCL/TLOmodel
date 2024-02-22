@@ -2021,9 +2021,7 @@ def test_task_shifting_in_mode_2(seed, tmpdir):
 
     for i in range(0, int(tot_population)):
         sim.population.props.at[i, 'district_of_residence'] = keys_district[0]
-        
-    # Get facility ID
-    facID = int((re.search(r'\d+', next(iter(hsi1.expected_time_requests)))).group())
+
 
     # Schedule an identical appointment for all individuals
     for i in range(0, tot_population):
@@ -2046,6 +2044,9 @@ def test_task_shifting_in_mode_2(seed, tmpdir):
                          appt_type='MinorSurg',
                          level='1a')
     hsi1.initialise()
+    
+    # Get facility ID
+    facID = int((re.search(r'\d+', next(iter(hsi1.expected_time_requests)))).group())
 
     pharmacy_task_time = hsi1.expected_time_requests['FacilityID_' + str(facID) + '_Officer_Pharmacy']
     nursing_task_time = hsi1.expected_time_requests['FacilityID_' + str(facID) + '_Officer_Nursing_and_Midwifery']
