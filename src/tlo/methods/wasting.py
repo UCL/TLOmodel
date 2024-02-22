@@ -249,7 +249,7 @@ class Wasting(Module):
             # categorize into moderate (-3<=WHZ<-2) or severe (WHZ<-3) wasting
             wasted = self.rng.random_sample(len(prevalence_of_wasting)) < prevalence_of_wasting
             for idx in prevalence_of_wasting.index[wasted]:
-                probability_of_severe = self.get_odds_probs_wasting(agegp=agegp)
+                probability_of_severe = self.get_prob_severe_wasting_or_odds_wasting(agegp=agegp)
                 wasted_category = self.rng.choice(['WHZ<-3', '-3<=WHZ<-2'], p=[probability_of_severe,
                                                                                1 - probability_of_severe])
                 df.at[idx, 'un_WHZ_category'] = wasted_category
@@ -300,7 +300,7 @@ class Wasting(Module):
         df.at[child_id, 'un_am_MUAC_category'] = '>=125mm'
         df.at[child_id, 'un_am_treatment_type'] = 'not_applicable'
 
-    def get_odds_probs_wasting(self, agegp: str, lm_scaling: bool = False) -> Union[float, int]:
+    def get_prob_severe_wasting_or_odds_wasting(self, agegp: str, lm_scaling: bool = False) -> Union[float, int]:
         """
         This function will calculate the WHZ scores by categories and return probability or odds of severe wasting
         for those with wasting status
@@ -323,7 +323,7 @@ class Wasting(Module):
         probability_less_than_minus3sd = 1 - whz_normal_distribution.sf(-3)
 
         # make WHZ <-2 as the 100% and get the adjusted probability of severe wasting within overall wasting
-        proportion_severe_in_overall_wasting = probability_less_than_minus3sd * probability_less_than_minus2sd
+        proportion_severe_in_overall_wasting = probability_less_than_minus3sd / probability_less_than_minus2sd
 
         # get the probability of severe wasting
         return proportion_severe_in_overall_wasting
@@ -693,7 +693,7 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         inc_wasting = df.loc[df.is_alive & (df.age_exact_years < 5) & (
                 df.un_WHZ_category == 'WHZ>=-2')]
         incidence_of_wasting = self.module.wasting_models.wasting_incidence_lm.predict(inc_wasting,
-                                                                                       rng=self.module.rng
+                                                                                       rng=rng
                                                                                        )
         wasting_idx = inc_wasting.index
         # update the properties for wasted children
@@ -1229,9 +1229,9 @@ class WastingModels:
                                  self.params['or_wasting_preterm_and_AGA'])
             )
 
-        get_odds_wasting = self.module.get_odds_probs_wasting(agegp=agegp, lm_scaling=True)
+        get_odds_wasting = self.module.get_prob_severe_wasting_or_odds_wasting(agegp=agegp, lm_scaling=True)
         unscaled_lm = make_linear_model_wasting(intercept=get_odds_wasting)
-        target_mean = self.module.get_odds_probs_wasting(agegp='12_23mo', lm_scaling=True)
+        target_mean = self.module.get_prob_severe_wasting_or_odds_wasting(agegp='12_23mo', lm_scaling=True)
         actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1)]).mean()
         scaled_intercept = get_odds_wasting * (target_mean / actual_mean) if \
             (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else get_odds_wasting
