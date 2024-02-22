@@ -299,7 +299,7 @@ class Wasting(Module):
         df.at[child_id, 'un_am_MUAC_category'] = '>=125mm'
         df.at[child_id, 'un_am_treatment_type'] = 'not_applicable'
 
-    def get_prob_severe_wasting_or_odds_wasting(self, agegp: str, lm_scaling: bool = False) -> Union[float, int]:
+    def get_prob_severe_wasting_or_odds_wasting(self, agegp: str, get_odds: bool = False) -> Union[float, int]:
         """
         This function will calculate the WHZ scores by categories and return probability or odds of severe wasting
         for those with wasting status
