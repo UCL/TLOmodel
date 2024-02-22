@@ -6,6 +6,7 @@ from typing import Set, Tuple
 import numpy as np
 import pandas as pd
 import pytest
+import re
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.hsi_events import get_details_of_defined_hsi_events
@@ -1257,6 +1258,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
     initial_parameters = {
         'mode_appt_constraints': 0,
         'ignore_priority': False,
+        'include_task_shifting': False,
         'capabilities_coefficient': 0.5,
         'cons_availability': 'all',
         'beds_availability': 'default',
@@ -1264,6 +1266,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
     new_parameters = {
         'mode_appt_constraints': 2,
         'ignore_priority': True,
+        'include_task_shifting': True,
         'capabilities_coefficient': 1.0,
         'cons_availability': 'none',
         'beds_availability': 'none',
@@ -1279,6 +1282,7 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
             _params = dict()
             _params['mode_appt_constraints'] = hs.mode_appt_constraints
             _params['ignore_priority'] = hs.ignore_priority
+            _params['include_task_shifting'] = hs.include_task_shifting
             _params['capabilities_coefficient'] = hs.capabilities_coefficient
             _params['cons_availability'] = hs.consumables.cons_availability
             _params['beds_availability'] = hs.bed_days.availability
@@ -1950,6 +1954,127 @@ def test_mode_appt_constraints2_on_healthsystem(seed, tmpdir):
     # appointments were allowed and no priority=3, to verify that the maximum squeeze
     # allowed in queue given priority is correct.
     assert (Nran_w_priority2 == int(tot_population/4)) & (Nran_w_priority3 == 0)
+
+
+def test_task_shifting_in_mode_2(seed, tmpdir):
+    """Test that in mode 2 task-shifting takes place as expected even if capabilities for
+    required officer are no longer available, provided an alternative officer still is.
+    By "as expected" we mean that the first alternative officer listed is chosen preferentially.
+    """
+
+    # Create Dummy Module to host the HSI
+    class DummyModule(Module):
+        METADATA = {Metadata.DISEASE_MODULE, Metadata.USES_HEALTHSYSTEM}
+
+        def read_parameters(self, data_folder):
+            pass
+
+        def initialise_population(self, population):
+            pass
+
+        def initialise_simulation(self, sim):
+            pass
+
+    # Create a dummy HSI event class
+    class DummyHSIEvent(HSI_Event, IndividualScopeEventMixin):
+        def __init__(self, module, person_id, appt_type, level):
+            super().__init__(module, person_id=person_id)
+            self.TREATMENT_ID = 'DummyHSIEvent'
+            self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({appt_type: 1})
+            self.ACCEPTED_FACILITY_LEVEL = level
+
+            self.this_hsi_event_ran = False
+
+        def apply(self, person_id, squeeze_factor):
+            self.this_hsi_event_ran = True
+
+    log_config = {
+        "filename": "log",
+        "directory": tmpdir,
+        "custom_levels": {"tlo.methods.healthsystem": logging.DEBUG},
+    }
+    sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
+
+    # Register the core modules and simulate for 0 days
+    sim.register(demography.Demography(resourcefilepath=resourcefilepath),
+                 healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
+                                           capabilities_coefficient=1.0,
+                                           mode_appt_constraints=2,
+                                           include_task_shifting=True,
+                                           ignore_priority=False,
+                                           randomise_queue=True,
+                                           policy_name="",
+                                           use_funded_or_actual_staffing='funded_plus'),
+                 DummyModule()
+                 )
+
+    tot_population = 100
+    sim.make_initial_population(n=tot_population)
+    sim.simulate(end_date=sim.start_date)
+
+    # Get pointer to the HealthSystemScheduler event
+    healthsystemscheduler = sim.modules['HealthSystem'].healthsystemscheduler
+
+    # Force entire population in one district (keys_district[0]) and get facility ID
+    person_for_district = {d: i for i, d in enumerate(sim.population.props['district_of_residence'].cat.categories)}
+    keys_district = list(person_for_district.keys())
+
+    for i in range(0, int(tot_population)):
+        sim.population.props.at[i, 'district_of_residence'] = keys_district[0]
+        
+    # Get facility ID
+    facID = int((re.search(r'\d+', next(iter(hsi1.expected_time_requests)))).group())
+
+    # Schedule an identical appointment for all individuals
+    for i in range(0, tot_population):
+
+        hsi = DummyHSIEvent(module=sim.modules['DummyModule'],
+                            person_id=i,
+                            appt_type='MinorSurg',
+                            level='1a')
+
+        sim.modules['HealthSystem'].schedule_hsi_event(
+            hsi,
+            topen=sim.date,
+            tclose=sim.date + pd.DateOffset(days=1),
+            # Assign equal priority
+            priority=0
+        )
+
+    hsi1 = DummyHSIEvent(module=sim.modules['DummyModule'],
+                         person_id=0,  # Ensures call is on officers in first district
+                         appt_type='MinorSurg',
+                         level='1a')
+    hsi1.initialise()
+
+    pharmacy_task_time = hsi1.expected_time_requests['FacilityID_' + str(facID) + '_Officer_Pharmacy']
+    nursing_task_time = hsi1.expected_time_requests['FacilityID_' + str(facID) + '_Officer_Nursing_and_Midwifery']
+    clinical_task_time = hsi1.expected_time_requests['FacilityID_' + str(facID) + '_Officer_Clinical']
+ 
+     # Check that first choice of task-shifting officer for Pharmacy is Nursing_and_Midwifery, and get their factor
+    assert 'Nursing_and_Midwifery' == sim.modules['HealthSystem'].global_task_shifting.get('Pharmacy')[0][0]
+    nursing_task_shift_factor = sim.modules['HealthSystem'].global_task_shifting.get('Pharmacy')[1][0]
+ 
+    # Number of appts that want to see delivered if pharmacy time is set to zero,
+    # clinical time is set to perform 50 appts, and nursing time is set to perform 50 appts including
+    # both nursing and pharmacy tasks.
+    Ntarget = 50
+    
+    sim.modules['HealthSystem']._daily_capabilities['FacilityID_' + str(facID) + '_Officer_Pharmacy'] = 0.0
+    sim.modules['HealthSystem']._daily_capabilities['FacilityID_' + str(facID) + '_Officer_Clinical'] = Ntarget*(clinical_task_time)
+    sim.modules['HealthSystem']._daily_capabilities['FacilityID_' + str(facID) + '_Officer_Nursing_and_Midwifery'] = Ntarget*(nursing_task_time + nursing_task_shift_factor*pharmacy_task_time)
+
+    # Run healthsystemscheduler
+    healthsystemscheduler.apply(sim.population)
+
+    # read the results
+    output = parse_log_file(sim.log_filepath, level=logging.DEBUG)
+    hs_output = output['tlo.methods.healthsystem']['HSI_Event']
+
+    # Check that all events could run, even if Pharmacy capabilities were set to zero,
+    # and that when task-shifting first option (nurses) where always preferentially chosen over second
+    # one (clinicians)
+    assert hs_output['did_run'].sum() == Ntarget
 
 
 @pytest.mark.slow

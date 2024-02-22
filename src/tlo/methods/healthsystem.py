@@ -563,6 +563,10 @@ class HealthSystem(Module):
             Types.BOOL, "Decide whether to scale HR capabilities by population size every year. Can be used as well as"
                         " the dynamic_HR_scaling_factor"
         ),
+        
+        'include_task_shifting': Parameter(
+            Types.BOOL, "Decide whether to allow for task-shifting in mode 2"
+        ),
 
         'tclose_overwrite': Parameter(
             Types.INT, "Decide whether to overwrite tclose variables assigned by disease modules"),
@@ -599,6 +603,7 @@ class HealthSystem(Module):
         beds_availability: Optional[str] = None,
         randomise_queue: bool = True,
         ignore_priority: bool = False,
+        include_task_shifting: bool = False,
         policy_name: Optional[str] = None,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = None,
@@ -625,6 +630,8 @@ class HealthSystem(Module):
             and priority
         :param ignore_priority: If ``True`` do not use the priority information in HSI
             event to schedule
+        :param include_task_shifting: If ``True`` when in mode 2 consider task-shifting of officers if one originally
+            required is not available
         :param policy_name: Name of priority policy that will be adopted if any
         :param capabilities_coefficient: Multiplier for the capabilities of health
             officers, if ``None`` set to ratio of initial population to estimated 2010
@@ -658,6 +665,14 @@ class HealthSystem(Module):
         assert not (ignore_priority and policy_name is not None), (
             'Cannot adopt a priority policy if the priority will be then ignored'
         )
+        
+        # Global task-shifting options. The key in the dictionary refers to the officer
+        # eligible for task shifting, while the values refer to the officers that can take
+        # over the officer's tasks. The numbers refer to the factor by which appt time will
+        # have to be scaled if task is performed by alternative officer.
+        self.global_task_shifting = {
+            'Pharmacy': (['Nursing_and_Midwifery', 'Clinical'], [1.5,1]),
+        }
 
         self.disable = disable
         self.disable_and_reject_all = disable_and_reject_all
@@ -673,6 +688,8 @@ class HealthSystem(Module):
         self.randomise_queue = randomise_queue
 
         self.ignore_priority = ignore_priority
+        
+        self.include_task_shifting = include_task_shifting
 
         # This default value will be overwritten if assumed policy is not None
         self.lowest_priority_considered = 2
@@ -2367,7 +2384,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             hold_over.extend(_to_be_held_over)
 
     def process_events_mode_2(self, hold_over: List[HSIEventQueueItem]) -> None:
-
+        
         capabilities_monitor = Counter(self.module.capabilities_today.to_dict())
         set_capabilities_still_available = {k for k, v in capabilities_monitor.items() if v > 0.0}
 
@@ -2445,17 +2462,58 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         # based on queue information, and we assume no squeeze ever takes place.
                         squeeze_factor = 0.
 
-                        # Check if any of the officers required have run out.
+                        # Check if any of the officers required have run out. If including task-shifting,
+                        # this will involve checking if alternative capabilities are available for officers
+                        # that are no longer available.
                         out_of_resources = False
+                        
+                        # This dictionary stores all task-shifting officers considered for this appointment
+                        task_shifting_adopted = {}
                         for officer, call in original_call.items():
-                            # If any of the officers are not available, then out of resources
+                            # If any of the officers are not available, then out of resources, unless these can be
+                            # task-shifted
                             if officer not in set_capabilities_still_available:
+                            
+                                # Set this to True for now, however if:
+                                # 1. Task-shifting is included,
+                                # 2. Task-shifting is available for this officer/treatment,
+                                # 3. Alternative officers are still available
+                                # then will reset to False
                                 out_of_resources = True
+
+                                if self.sim.modules['HealthSystem'].include_task_shifting:
+                                
+                                    # Get officer type only
+                                    officer_no_facility = officer.split("Officer_")[1]
+                                    
+                                    # Extract task-shifting options for this officer
+                                    task_shift_options_for_officer = self.sim.modules['HealthSystem'].global_task_shifting.get(officer_no_facility)
+
+                                    # Check if possible alternatives to officer are available
+                                    # If they are, must register that we'll be using alternative.
+                                    if task_shift_options_for_officer:
+                                        
+                                        # Unpack values
+                                        new_officer_no_facility, time_scaling = task_shift_options_for_officer
+                                        
+                                        for new_officer_no_facility, time_scaling in zip(new_officer_no_facility, time_scaling):
+                                            # Get the task-shifting officer
+                                            shift_target_officer = officer.replace(officer_no_facility, new_officer_no_facility)
+                                            
+                                            # Check if this task-shifting officer is available, and save task_shift
+                                            if shift_target_officer in set_capabilities_still_available:
+                                                # Record task-shifting
+                                                task_shifting_adopted[officer] = (shift_target_officer, time_scaling)
+                                                out_of_resources = False
+                                                
+                                                # Once we've found available officer to replace, no need to go through other
+                                                # options
+                                                break
+                                
                         # If officers still available, run event. Note: in current logic, a little
                         # overtime is allowed to run last event of the day. This seems more realistic
                         # than medical staff leaving earlier than
                         # planned if seeing another patient would take them into overtime.
-
                         if out_of_resources:
 
                             # Do not run,
@@ -2499,6 +2557,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
 
                             # Expected appt footprint before running event
+                            # NOTE-TO-ADD: This appt footprint needs to reflect that a different officer was used
                             _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
                             # Run event & get actual footprint
                             actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
@@ -2521,7 +2580,40 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             # Recalculate call on officers based on squeeze factor.
                             for k in updated_call.keys():
                                 updated_call[k] = updated_call[k]/(squeeze_factor + 1.)
+                                
+                            # Recalculate call on officers including task shifting, which may result in
+                            # a change to required time
+                            if task_shifting_adopted:
+                                updated_call_inc_task_shift = {}
+                                # Go over all officers in updated_call
+                                for k in updated_call.keys():
+                                
+                                    # If task-shifting was requested for this officer, change name
+                                    # of officer and rescale original task by relevant factor
+                                    if k in task_shifting_adopted.keys():
+                                    
+                                        task_for_officer = updated_call[k]*task_shifting_adopted[k][1]
+                                        j = task_shifting_adopted[k][0]
+                                        
+                                        if j in updated_call_inc_task_shift.keys():
+                                        # If officer is already included in updated_call_inc_task_shift
+                                        # (e.g. because it was already performing own tasks as well as
+                                        # taking over that of officer not available) add to original task
+                                            updated_call_inc_task_shift[j] += task_for_officer
+                                        else:
+                                            updated_call_inc_task_shift[j] = task_for_officer
+                                    
+                                    # Else simply add original requirement to new call
+                                    else:
+                                        if k in updated_call_inc_task_shift.keys():
+                                            # Ensure that if this officer already present in dictionary
+                                            # this task is added, not overwritten
+                                            updated_call_inc_task_shift[k] += updated_call[k]
+                                        else:
+                                            updated_call_inc_task_shift[k] = updated_call[k]
 
+                                updated_call = updated_call_inc_task_shift
+                            
                             # Subtract this from capabilities used so-far today
                             capabilities_monitor.subtract(updated_call)
 
@@ -2543,6 +2635,8 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             self.module.running_total_footprint += updated_call
 
                             # Write to the log
+                            # WARNING: the logged appt footprint does not contain information
+                            # on whether task-shifting was performed or not.
                             self.module.record_hsi_event(
                                 hsi_event=event,
                                 actual_appt_footprint=actual_appt_footprint,
@@ -2550,6 +2644,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 did_run=True,
                                 priority=_priority
                             )
+                            
 
             # Don't have any capabilities at all left for today, no
             # point in going through the queue to check what's left to do today.
@@ -2827,6 +2922,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
     """Event that causes certain internal parameters of the HealthSystem to be changed; specifically:
         * `mode_appt_constraints`
         * `ignore_priority`
+        * `include_task_shifting`
         * `capabilities_coefficient`
         * `cons_availability`
         * `beds_availability`
@@ -2843,6 +2939,9 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
 
         if 'ignore_priority' in self._parameters:
             self.module.ignore_priority = self._parameters['ignore_priority']
+            
+        if 'include_task_shifting' in self._parameters:
+            self.module.include_task_shifting = self._parameters['include_task_shifting']
 
         if 'capabilities_coefficient' in self._parameters:
             self.module.capabilities_coefficient = self._parameters['capabilities_coefficient']
