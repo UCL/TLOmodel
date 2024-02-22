@@ -1,12 +1,12 @@
 import heapq as hp
 import os
+import re
 from pathlib import Path
 from typing import Set, Tuple
 
 import numpy as np
 import pandas as pd
 import pytest
-import re
 
 from tlo import Date, Module, Simulation, logging
 from tlo.analysis.hsi_events import get_details_of_defined_hsi_events
