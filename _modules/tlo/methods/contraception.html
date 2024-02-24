@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.contraception &mdash; TLOmodel 0.1.dev2353+gfac71f8 documentation</title>
+  <title>tlo.methods.contraception &mdash; TLOmodel 0.1.dev2373+g8473a31 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=61a1be14"></script>
+        <script src="../../../_static/documentation_options.js?v=812bb691"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -260,7 +260,7 @@
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Import the relevant sheets from the ResourceFile (excel workbook) and declare values for other parameters</span>
 <span class="sd">        (CSV ResourceFile).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">workbook</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Contraception.xlsx&#39;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">workbook</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;contraception&#39;</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_Contraception.xlsx&#39;</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
         <span class="c1"># Import selected sheets from the workbook as the parameters</span>
         <span class="n">sheet_names</span> <span class="o">=</span> <span class="p">[</span>
@@ -284,7 +284,7 @@
 
         <span class="c1"># Declare values for other parameters</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">load_parameters_from_dataframe</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span>
-            <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_ContraceptionParams.csv&#39;</span>
+            <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">resourcefilepath</span><span class="p">)</span> <span class="o">/</span> <span class="s1">&#39;contraception&#39;</span> <span class="o">/</span> <span class="s1">&#39;ResourceFile_ContraceptionParams.csv&#39;</span>
         <span class="p">))</span>
 
         <span class="c1"># Import the Age-specific fertility rate data from WPP</span>
@@ -467,7 +467,7 @@
             <span class="c1"># Increase prob of &#39;female_sterilization&#39; in older women accordingly</span>
             <span class="n">probs_30plus</span> <span class="o">=</span> <span class="n">probs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
             <span class="n">probs_30plus</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">probs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">]</span> <span class="o">/</span> 
+                <span class="n">probs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">]</span> <span class="o">/</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">ratio_n_females_30_49_to_15_49_in_2010</span>
             <span class="p">)</span>
             <span class="c1"># Scale so that the probability of all outcomes sum to 1.0</span>
@@ -713,122 +713,37 @@
 
         <span class="n">processed_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processed_params</span>
 
-        <span class="k">def</span> <span class="nf">expand_to_age_years</span><span class="p">(</span><span class="n">values_by_age_groups</span><span class="p">,</span> <span class="n">ages_by_year</span><span class="p">):</span>
-            <span class="n">_d</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">([</span><span class="s1">&#39;15-19&#39;</span><span class="p">,</span> <span class="s1">&#39;20-24&#39;</span><span class="p">,</span> <span class="s1">&#39;25-29&#39;</span><span class="p">,</span> <span class="s1">&#39;30-34&#39;</span><span class="p">,</span> <span class="s1">&#39;35-39&#39;</span><span class="p">,</span> <span class="s1">&#39;40-44&#39;</span><span class="p">,</span> <span class="s1">&#39;45-49&#39;</span><span class="p">],</span> <span class="n">values_by_age_groups</span><span class="p">))</span>
-            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-                <span class="p">[</span><span class="n">_d</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Demography&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">AGE_RANGE_LOOKUP</span><span class="p">[</span><span class="n">_age_year</span><span class="p">]]</span> <span class="k">for</span> <span class="n">_age_year</span> <span class="ow">in</span> <span class="n">ages_by_year</span><span class="p">]</span>
-            <span class="p">)</span>
+        <span class="k">def</span> <span class="nf">contraception_initiation_with_interv</span><span class="p">(</span><span class="n">p_start_per_month_without_interv</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Increase the probabilities of a woman starting modern contraceptives due to Pop intervention being</span>
+<span class="sd">            applied.&quot;&quot;&quot;</span>
+            <span class="n">p_start_per_month_with_interv</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">year</span><span class="p">,</span> <span class="n">age_method_df</span> <span class="ow">in</span> <span class="n">p_start_per_month_without_interv</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">year</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="p">:</span>
+                    <span class="n">p_start_per_month_with_interv</span><span class="p">[</span><span class="n">year</span><span class="p">]</span> <span class="o">=</span> <span class="n">age_method_df</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Interventions_Pop&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">p_start_per_month_with_interv</span>
 
-        <span class="k">def</span> <span class="nf">time_age_trend_in_initiation</span><span class="p">():</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;The age-specific effect of calendar year on the probability of starting use of contraceptive</span>
-<span class="sd">            (multiplicative effect). Values are chosen to induce a trend in age-specific fertility consistent with</span>
-<span class="sd">             the WPP estimates.&quot;&quot;&quot;</span>
+        <span class="k">def</span> <span class="nf">contraception_initiation_after_birth_with_interv</span><span class="p">(</span><span class="n">p_start_after_birth_without_interv</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Increase the probabilities of a woman starting modern contraceptives following giving birth due to PPFP</span>
+<span class="sd">            intervention being applied.&quot;&quot;&quot;</span>
+            <span class="c1"># Exclude prob of &#39;not_using&#39;</span>
+            <span class="n">p_start_after_birth_with_interv</span> <span class="o">=</span> <span class="n">p_start_after_birth_without_interv</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s1">&#39;not_using&#39;</span><span class="p">)</span>
 
-            <span class="n">_years</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">2010</span><span class="p">,</span> <span class="mi">2101</span><span class="p">)</span>
-            <span class="n">_ages</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+            <span class="c1"># Apply PPFP intervention multipliers (ie increase probs of modern methods)</span>
+            <span class="n">p_start_after_birth_with_interv</span> <span class="o">=</span> \
+                <span class="n">p_start_after_birth_with_interv</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Interventions_PPFP&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 
-            <span class="n">_init_over_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">+</span><span class="mf">0.05</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="mi">2020</span> <span class="o">-</span> <span class="mi">2010</span><span class="p">,</span> <span class="p">(</span><span class="n">_years</span> <span class="o">-</span> <span class="mi">2010</span><span class="p">)))</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
-                <span class="o">+</span><span class="mf">0.01</span> <span class="o">*</span> <span class="p">(</span><span class="n">_years</span> <span class="o">-</span> <span class="mi">2020</span><span class="p">)))</span>
-            <span class="n">_init_over_time_modification_by_age</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">expand_to_age_years</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">],</span> <span class="n">_ages</span><span class="p">)</span>
-            <span class="n">_init</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">_init_over_time</span><span class="p">,</span> <span class="n">_init_over_time_modification_by_age</span><span class="p">)</span>
+            <span class="c1"># Return reduced prob of &#39;not_using&#39;</span>
+            <span class="n">p_start_after_birth_with_interv</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">p_start_after_birth_with_interv</span><span class="o">.</span><span class="n">sum</span><span class="p">()),</span>
+                                                        <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;not_using&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p_start_after_birth_with_interv</span><span class="p">)</span>
 
-            <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">_years</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">_ages</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">_init</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">p_start_after_birth_with_interv</span>
 
-        <span class="k">def</span> <span class="nf">avoid_sterilization_below30</span><span class="p">(</span><span class="n">probs</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Prevent women below 30 years having female sterilization and adjust the probability for women 30 and over</span>
-<span class="sd">            to preserve the overall probability of initiating sterilization.&quot;&quot;&quot;</span>
-            <span class="c1"># Input &#39;probs&#39; must include probs for all methods including &#39;not_using&#39;</span>
-            <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">probs</span><span class="o">.</span><span class="n">index</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_contraception_states</span><span class="p">)</span>
-
-            <span class="c1"># Prevent women below 30 years having &#39;female_sterilization&#39;</span>
-            <span class="n">probs_below30</span> <span class="o">=</span> <span class="n">probs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-            <span class="n">probs_below30</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
-            <span class="c1"># Scale so that the probability of all outcomes sum to 1.0</span>
-            <span class="n">probs_below30</span> <span class="o">=</span> <span class="n">probs_below30</span> <span class="o">/</span> <span class="n">probs_below30</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">probs_below30</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-
-            <span class="c1"># Increase prob of &#39;female_sterilization&#39; in older women accordingly</span>
-            <span class="n">probs_30plus</span> <span class="o">=</span> <span class="n">probs</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-            <span class="n">probs_30plus</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">probs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;female_sterilization&#39;</span><span class="p">]</span> <span class="o">/</span> 
-                <span class="bp">self</span><span class="o">.</span><span class="n">ratio_n_females_30_49_to_15_49_in_2010</span>
-            <span class="p">)</span>
-            <span class="c1"># Scale so that the probability of all outcomes sum to 1.0</span>
-            <span class="n">probs_30plus</span> <span class="o">=</span> <span class="n">probs_30plus</span> <span class="o">/</span> <span class="n">probs_30plus</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-            <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">probs_30plus</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
-
-            <span class="k">return</span> <span class="n">probs_below30</span><span class="p">,</span> <span class="n">probs_30plus</span>
-
-        <span class="k">def</span> <span class="nf">contraception_initiation_with_interv</span><span class="p">():</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Generate the probability per month of a woman initiating onto each contraceptive, by the age (in whole</span>
-<span class="sd">             years) if FP interventions are applied.&quot;&quot;&quot;</span>
-
-            <span class="c1"># Probability of initiation by method per month (average over all ages)</span>
-            <span class="n">p_init_by_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Initiation_ByMethod&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-
-            <span class="c1"># Prevent women below 30 years having &#39;female_sterilization&#39; while preserving the overall probability of</span>
-            <span class="c1"># &#39;female_sterilization&#39; initiation</span>
-            <span class="n">p_init_by_method_below30</span><span class="p">,</span> <span class="n">p_init_by_method_30plus</span> <span class="o">=</span> <span class="n">avoid_sterilization_below30</span><span class="p">(</span><span class="n">p_init_by_method</span><span class="p">)</span>
-
-            <span class="c1"># Effect of age</span>
-            <span class="n">age_effect</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Initiation_ByAge&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">set_index</span><span class="p">(</span><span class="s1">&#39;age&#39;</span><span class="p">)[</span><span class="s1">&#39;r_init1_age&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">rename_axis</span><span class="p">(</span>
-                <span class="s2">&quot;age_years&quot;</span><span class="p">)</span>
-
-            <span class="c1"># Year effect</span>
-            <span class="n">year_effect</span> <span class="o">=</span> <span class="n">time_age_trend_in_initiation</span><span class="p">()</span>
-
-            <span class="k">def</span> <span class="nf">apply_intervention_age_year_effects</span><span class="p">(</span><span class="n">probs_below30</span><span class="p">,</span> <span class="n">probs_30plus</span><span class="p">):</span>
-                <span class="c1"># Apply Pop intervention</span>
-                <span class="n">probs_by_method_below30</span> <span class="o">=</span> \
-                    <span class="n">probs_below30</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s1">&#39;not_using&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Interventions_Pop&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-                <span class="n">probs_by_method_30plus</span> <span class="o">=</span> \
-                    <span class="n">probs_30plus</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s1">&#39;not_using&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Interventions_Pop&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-                <span class="c1"># Assemble into age-specific data-frame:</span>
-                <span class="n">p_init</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-                <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="n">year_effect</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
-
-                    <span class="n">p_init_this_year</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
-                    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">age_effect</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
-                        <span class="k">if</span> <span class="n">a</span> <span class="o">&lt;</span> <span class="mi">30</span><span class="p">:</span>
-                            <span class="n">p_init_this_year</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="n">probs_by_method_below30</span> <span class="o">*</span> <span class="n">age_effect</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">*</span> <span class="n">year_effect</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">year</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span>
-                        <span class="k">else</span><span class="p">:</span>
-                            <span class="n">p_init_this_year</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">=</span> <span class="n">probs_by_method_30plus</span> <span class="o">*</span> <span class="n">age_effect</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">*</span> <span class="n">year_effect</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">year</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span>
-                    <span class="n">p_init_this_year_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">p_init_this_year</span><span class="p">,</span> <span class="n">orient</span><span class="o">=</span><span class="s1">&#39;index&#39;</span><span class="p">)</span>
-
-                    <span class="c1"># Check correct format of age/method data-frame</span>
-                    <span class="k">assert</span> <span class="nb">set</span><span class="p">(</span><span class="n">p_init_this_year_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">all_contraception_states</span> <span class="o">-</span> <span class="p">{</span><span class="s1">&#39;not_using&#39;</span><span class="p">})</span>
-                    <span class="k">assert</span> <span class="p">(</span><span class="n">p_init_this_year_df</span><span class="o">.</span><span class="n">index</span> <span class="o">==</span> <span class="nb">range</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">50</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
-                    <span class="k">assert</span> <span class="p">(</span><span class="n">p_init_this_year_df</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
-
-                    <span class="n">p_init</span><span class="p">[</span><span class="n">year</span><span class="p">]</span> <span class="o">=</span> <span class="n">p_init_this_year_df</span>
-
-                <span class="k">return</span> <span class="n">p_init</span>
-
-            <span class="k">return</span> <span class="n">apply_intervention_age_year_effects</span><span class="p">(</span><span class="n">p_init_by_method_below30</span><span class="p">,</span> <span class="n">p_init_by_method_30plus</span><span class="p">)</span>
-
-        <span class="k">def</span> <span class="nf">contraception_initiation_after_birth_with_interv</span><span class="p">():</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Get the probability of a woman starting a contraceptive following giving birth if FP interventions are</span>
-<span class="sd">            applied. Avoid sterilization in women below 30 years old.&quot;&quot;&quot;</span>
-
-            <span class="c1"># Get initiation probabilities of contraception methods after birth from read-in Excel sheet</span>
-            <span class="n">p_start_after_birth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Initiation_AfterBirth&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s1">&#39;not_using&#39;</span><span class="p">)</span>
-
-            <span class="c1"># Apply PPFP intervention multipliers</span>
-            <span class="n">p_start_after_birth</span> <span class="o">=</span> <span class="n">p_start_after_birth</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s1">&#39;Interventions_PPFP&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-
-            <span class="c1"># Add &#39;not_using&#39; to initiation probabilities of contraception methods after birth</span>
-            <span class="n">p_start_after_birth</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
-                <span class="p">(</span>
-                    <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">((</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">p_start_after_birth</span><span class="o">.</span><span class="n">sum</span><span class="p">()),</span> <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;not_using&#39;</span><span class="p">]),</span>
-                    <span class="n">p_start_after_birth</span>
-                <span class="p">)</span>
-            <span class="p">)</span>
-
-            <span class="k">return</span> <span class="n">avoid_sterilization_below30</span><span class="p">(</span><span class="n">p_start_after_birth</span><span class="p">)</span>
-
-        <span class="n">processed_params</span><span class="p">[</span><span class="s1">&#39;p_start_per_month&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">contraception_initiation_with_interv</span><span class="p">()</span>
-        <span class="n">processed_params</span><span class="p">[</span><span class="s1">&#39;p_start_after_birth_below30&#39;</span><span class="p">],</span> <span class="n">processed_params</span><span class="p">[</span><span class="s1">&#39;p_start_after_birth_30plus&#39;</span><span class="p">]</span> <span class="o">=</span>\
-            <span class="n">contraception_initiation_after_birth_with_interv</span><span class="p">()</span>
+        <span class="n">processed_params</span><span class="p">[</span><span class="s1">&#39;p_start_per_month&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">contraception_initiation_with_interv</span><span class="p">(</span><span class="n">processed_params</span><span class="p">[</span><span class="s1">&#39;p_start_per_month&#39;</span><span class="p">])</span>
+        <span class="n">processed_params</span><span class="p">[</span><span class="s1">&#39;p_start_after_birth_below30&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">contraception_initiation_after_birth_with_interv</span><span class="p">(</span><span class="n">processed_params</span><span class="p">[</span><span class="s1">&#39;p_start_after_birth_below30&#39;</span><span class="p">])</span>
+        <span class="n">processed_params</span><span class="p">[</span><span class="s1">&#39;p_start_after_birth_30plus&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">contraception_initiation_after_birth_with_interv</span><span class="p">(</span><span class="n">processed_params</span><span class="p">[</span><span class="s1">&#39;p_start_after_birth_30plus&#39;</span><span class="p">])</span>
 
         <span class="k">return</span> <span class="n">processed_params</span></div>
 
@@ -1597,6 +1512,7 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.contraception.html#tlo.methods.contraception.SimplifiedPregnancyAndLabour.read_parameters">[docs]</a>
     <span class="k">def</span> <span class="nf">read_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
         <span class="n">parameter_dataframe</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Contraception&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">resourcefilepath</span> <span class="o">/</span>
+                                            <span class="s1">&#39;contraception&#39;</span> <span class="o">/</span>
                                             <span class="s1">&#39;ResourceFile_Contraception.xlsx&#39;</span><span class="p">,</span>
                                             <span class="n">sheet_name</span><span class="o">=</span><span class="s1">&#39;simplified_labour_parameters&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">load_parameters_from_dataframe</span><span class="p">(</span><span class="n">parameter_dataframe</span><span class="p">)</span></div>
@@ -1721,7 +1637,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Jan 25, 2024.
+      <span class="lastupdated">Last updated on Feb 24, 2024.
       </span></p>
   </div>
 

@@ -279,30 +279,15 @@ tlo.methods.pregnancy_supervisor module
         * - aor_early_anc4_parity_6+
           - LIST
           - adjusted odds ratio of EANC4+ in women with a parity of 6+
-        * - aor_early_anc4_primary_edu
-          - LIST
-          - adjusted odds ratio of EANC4+ in women with primary education
         * - aor_early_anc4_secondary_edu
           - LIST
           - adjusted odds ratio of EANC4+ in women with secondary education
         * - aor_early_anc4_tertiary_edu
           - LIST
           - adjusted odds ratio of EANC4+ in women with tertiary education
-        * - aor_early_anc4_middle_wealth
-          - LIST
-          - adjusted odds ratio of EANC4+ in women in the middle wealth quintile
-        * - aor_early_anc4_richer_wealth
-          - LIST
-          - adjusted odds ratio of EANC4+ in women in the richer wealth quintile
         * - aor_early_anc4_richest_wealth
           - LIST
           - adjusted odds ratio of EANC4+ in women in the richest wealth quintile
-        * - aor_early_anc4_married
-          - LIST
-          - adjusted odds ratio of EANC4+ in women who are married
-        * - aor_early_anc4_previously_married
-          - LIST
-          - adjusted odds ratio of EANC4+ in women who were previously married (divorced/widowed)
         * - prob_late_initiation_anc4
           - LIST
           - probability a woman will undertake 4 or more ANC visits with the first being after 4 months
@@ -342,12 +327,6 @@ tlo.methods.pregnancy_supervisor module
         * - treatment_effect_still_birth_food_sups
           - LIST
           - risk reduction of still birth for women receiving nutritional supplements
-        * - treatment_effect_modifier_all_delays
-          - LIST
-          - factor by which treatment effectiveness is reduced in the presences of multiple delays
-        * - treatment_effect_modifier_one_delay
-          - LIST
-          - factor by which treatment effectiveness is reduced in the presences of one delays
         * - anc_service_structure
           - INT
           - stores type of ANC service being delivered in the model (anc4 or anc8) and is used in analysisscripts to change ANC structure
@@ -369,6 +348,18 @@ tlo.methods.pregnancy_supervisor module
         * - anc_availability_probability
           - REAL
           - Target probability of quality/consumables when analysis is being conducted - only applied if alternative_anc_quality is true
+        * - alternative_ip_anc_quality
+          - BOOL
+          - Signals within the analysis event that an alternative level of inpatient ANC quality has been determined following the events run
+        * - ip_anc_availability_probability
+          - REAL
+          - Target probability of quality/consumables when analysis is being conducted - only applied if alternative_ip_anc_quality is true
+        * - sens_analysis_min
+          - BOOL
+          - Signals within the analysis event and code that sensitivity analysis is being undertaken in which ANC is blocked from occurring
+        * - sens_analysis_max
+          - BOOL
+          - Signals within the analysis event and code that sensitivity analysis is being undertaken in which the maximum coverage of ANC is enforced
 
 
      **PROPERTIES:**
@@ -430,7 +421,7 @@ tlo.methods.pregnancy_supervisor module
           - Whether this woman is experiencing placental abruption
         * - ps_antepartum_haemorrhage
           - CATEGORICAL
-          - severity of this woman antepartum haemorrhage.  Possible values are: [none, mild_moderate, severe, ]
+          - severity of this womans antepartum haemorrhage.  Possible values are: [none, mild_moderate, severe, ]
         * - ps_premature_rupture_of_membranes
           - BOOL
           - whether this woman has experience rupture of membranes before the onset of labour. If this is <37 weeks from gestation the woman has preterm premature rupture of membranes
@@ -445,17 +436,17 @@ tlo.methods.pregnancy_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Contraception', 'Labour', 'Lifestyle', 'HealthSystem', 'CareOfWomenDuringPregnancy'}
+     ADDITIONAL_DEPENDENCIES : {'CareOfWomenDuringPregnancy', 'HealthSystem', 'Labour', 'Contraception', 'Lifestyle'}
 
-     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x12cdef750>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x12cdeed50>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x12cdef9d0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12cded550>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x12cdedb90>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x12cded190>, 'eclampsia': <tlo.methods.causes.Cause object at 0x12cded150>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x12cdecf90>}
+     CAUSES_OF_DEATH : {'ectopic_pregnancy': <tlo.methods.causes.Cause object at 0x1304c0710>, 'spontaneous_abortion': <tlo.methods.causes.Cause object at 0x1304c24d0>, 'induced_abortion': <tlo.methods.causes.Cause object at 0x1304c0510>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x1304c0290>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x1304c1150>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x1304c3f50>, 'eclampsia': <tlo.methods.causes.Cause object at 0x1304c2650>, 'antenatal_sepsis': <tlo.methods.causes.Cause object at 0x1304c3990>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x12cdee510>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x1304c0f90>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>}
 
-     OPTIONAL_INIT_DEPENDENCIES : {'Hiv', 'HealthBurden', 'CardioMetabolicDisorders', 'Malaria'}
+     OPTIONAL_INIT_DEPENDENCIES : {'Hiv', 'CardioMetabolicDisorders', 'HealthBurden', 'Malaria'}
 
      **Functions (defined or overridden in class PregnancySupervisor):**
 

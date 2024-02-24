@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.pregnancy_supervisor &mdash; TLOmodel 0.1.dev2353+gfac71f8 documentation</title>
+  <title>tlo.methods.pregnancy_supervisor &mdash; TLOmodel 0.1.dev2373+g8473a31 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=61a1be14"></script>
+        <script src="../../../_static/documentation_options.js?v=812bb691"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -394,22 +394,12 @@
             <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;adjusted odds ratio of EANC4+ in women with a parity of 4-5&#39;</span><span class="p">),</span>
         <span class="s1">&#39;aor_early_anc4_parity_6+&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;adjusted odds ratio of EANC4+ in women with a parity of 6+&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;aor_early_anc4_primary_edu&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;adjusted odds ratio of EANC4+ in women with primary education&#39;</span><span class="p">),</span>
         <span class="s1">&#39;aor_early_anc4_secondary_edu&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;adjusted odds ratio of EANC4+ in women with secondary education&#39;</span><span class="p">),</span>
         <span class="s1">&#39;aor_early_anc4_tertiary_edu&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;adjusted odds ratio of EANC4+ in women with tertiary education&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;aor_early_anc4_middle_wealth&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;adjusted odds ratio of EANC4+ in women in the middle wealth quintile&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;aor_early_anc4_richer_wealth&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;adjusted odds ratio of EANC4+ in women in the richer wealth quintile&#39;</span><span class="p">),</span>
         <span class="s1">&#39;aor_early_anc4_richest_wealth&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;adjusted odds ratio of EANC4+ in women in the richest wealth quintile&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;aor_early_anc4_married&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;adjusted odds ratio of EANC4+ in women who are married&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;aor_early_anc4_previously_married&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;adjusted odds ratio of EANC4+ in women who were previously married (divorced/widowed)&#39;</span><span class="p">),</span>
         <span class="s1">&#39;prob_late_initiation_anc4&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;probability a woman will undertake 4 or more ANC visits with the first being after 4 months&#39;</span><span class="p">),</span>
         <span class="s1">&#39;prob_early_initiation_anc_below4&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
@@ -443,12 +433,6 @@
         <span class="s1">&#39;treatment_effect_still_birth_food_sups&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;risk reduction of still birth for women receiving nutritional supplements&#39;</span><span class="p">),</span>
 
-        <span class="c1"># EFFECT OF DELAYS...</span>
-        <span class="s1">&#39;treatment_effect_modifier_all_delays&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;factor by which treatment effectiveness is reduced in the presences of multiple delays&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;treatment_effect_modifier_one_delay&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;factor by which treatment effectiveness is reduced in the presences of one delays&#39;</span><span class="p">),</span>
-
         <span class="c1"># ANALYSIS PARAMETERS...</span>
         <span class="s1">&#39;anc_service_structure&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s1">&#39;stores type of ANC service being delivered in the model (anc4 or anc8) and is used in analysis&#39;</span>
@@ -471,7 +455,18 @@
         <span class="s1">&#39;anc_availability_probability&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;Target probability of quality/consumables when analysis is being conducted - only applied if &#39;</span>
                         <span class="s1">&#39;alternative_anc_quality is true&#39;</span><span class="p">),</span>
-
+        <span class="s1">&#39;alternative_ip_anc_quality&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;Signals within the analysis event that an alternative level of inpatient ANC quality has been &#39;</span>
+                        <span class="s1">&#39;determined following the events run&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;ip_anc_availability_probability&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">REAL</span><span class="p">,</span> <span class="s1">&#39;Target probability of quality/consumables when analysis is being conducted - only applied if &#39;</span>
+                        <span class="s1">&#39;alternative_ip_anc_quality is true&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;sens_analysis_min&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;Signals within the analysis event and code that sensitivity analysis is being undertaken in &#39;</span>
+                        <span class="s1">&#39;which ANC is blocked from occurring&#39;</span><span class="p">),</span>
+        <span class="s1">&#39;sens_analysis_max&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
+            <span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;Signals within the analysis event and code that sensitivity analysis is being undertaken in &#39;</span>
+                        <span class="s1">&#39;which the maximum coverage of ANC is enforced&#39;</span><span class="p">),</span>
     <span class="p">}</span>
 
     <span class="n">PROPERTIES</span> <span class="o">=</span> <span class="p">{</span>
@@ -507,7 +502,7 @@
         <span class="s1">&#39;ps_prev_gest_diab&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;whether this woman has ever suffered from gestational diabetes &#39;</span>
                                                   <span class="s1">&#39;during a previous pregnancy&#39;</span><span class="p">),</span>
         <span class="s1">&#39;ps_placental_abruption&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;Whether this woman is experiencing placental abruption&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;ps_antepartum_haemorrhage&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span> <span class="s1">&#39;severity of this woman antepartum haemorrhage&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;ps_antepartum_haemorrhage&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span> <span class="s1">&#39;severity of this womans antepartum haemorrhage&#39;</span><span class="p">,</span>
                                               <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="s1">&#39;mild_moderate&#39;</span><span class="p">,</span> <span class="s1">&#39;severe&#39;</span><span class="p">]),</span>
         <span class="s1">&#39;ps_premature_rupture_of_membranes&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;whether this woman has experience rupture of &#39;</span>
                                                                   <span class="s1">&#39;membranes before the onset of labour. If this is &#39;</span>
@@ -755,8 +750,10 @@
             <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;ps_date_of_anc1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">NaT</span>
 
             <span class="c1"># And store her anaemia status to calculate the prevalence of anaemia on birth</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;anaemia_on_birth&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;mother&#39;</span><span class="p">:</span> <span class="n">mother_id</span><span class="p">,</span>
-                                                      <span class="s1">&#39;anaemia_status&#39;</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;ps_anaemia_in_pregnancy&#39;</span><span class="p">]})</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;conditions_on_birth&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;mother&#39;</span><span class="p">:</span> <span class="n">mother_id</span><span class="p">,</span>
+                                                         <span class="s1">&#39;anaemia_status&#39;</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;ps_anaemia_in_pregnancy&#39;</span><span class="p">],</span>
+                                                         <span class="s1">&#39;gdm_status&#39;</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;ps_gest_diab&#39;</span><span class="p">],</span>
+                                                         <span class="s1">&#39;htn_status&#39;</span><span class="p">:</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;ps_htn_disorders&#39;</span><span class="p">]})</span>
 
             <span class="c1"># We currently assume that hyperglycemia due to gestational diabetes resolves following birth</span>
             <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">mother_id</span><span class="p">,</span> <span class="s1">&#39;ps_gest_diab&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
@@ -796,7 +793,7 @@
 
         <span class="c1"># First we define a function that calculates disability associated with &#39;acute&#39; complications of pregnancy</span>
         <span class="k">def</span> <span class="nf">acute_daly_calculation</span><span class="p">(</span><span class="n">person</span><span class="p">,</span> <span class="n">complication</span><span class="p">):</span>
-            <span class="c1"># If the woman has not experience the complication of interest in the past month she does not accrue dalys</span>
+            <span class="c1"># If the woman has not experienced the complication of interest in the past month she does not accrue dalys</span>
             <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isnull</span><span class="p">(</span><span class="n">mni</span><span class="p">[</span><span class="n">person</span><span class="p">][</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">complication</span><span class="si">}</span><span class="s1">_onset&#39;</span><span class="p">]):</span>
                 <span class="k">return</span>
 
@@ -1248,7 +1245,7 @@
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
         <span class="c1">#  ----------------------------------- RISK OF PRE-ECLAMPSIA ----------------------------------------------</span>
-        <span class="c1"># We assume all women must developed a mild pre-eclampsia/gestational hypertension before progressing to a more</span>
+        <span class="c1"># We assume all women must develop mild pre-eclampsia/gestational hypertension before progressing to a more</span>
         <span class="c1"># severe disease</span>
         <span class="n">pre_eclampsia</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_linear_model</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ps_linear_models</span><span class="p">[</span><span class="s1">&#39;pre_eclampsia&#39;</span><span class="p">],</span>
@@ -1302,10 +1299,9 @@
             <span class="n">risk_ghtn_remains_mild</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="p">(</span><span class="n">risk_of_gest_htn_progression</span> <span class="o">+</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;probs_for_mgh_matrix&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span>
 
             <span class="c1"># We reset the parameter here to allow for testing with the original parameter</span>
-            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;probs_for_mgh_matrix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">risk_ghtn_remains_mild</span><span class="p">,</span> <span class="n">risk_of_gest_htn_progression</span><span class="p">,</span>
-                                              <span class="n">params</span><span class="p">[</span><span class="s1">&#39;probs_for_mgh_matrix&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span>
 
-            <span class="n">prob_matrix</span><span class="p">[</span><span class="s1">&#39;gest_htn&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;probs_for_mgh_matrix&#39;</span><span class="p">]</span>
+            <span class="n">prob_matrix</span><span class="p">[</span><span class="s1">&#39;gest_htn&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">risk_ghtn_remains_mild</span><span class="p">,</span> <span class="n">risk_of_gest_htn_progression</span><span class="p">,</span>
+                                       <span class="n">params</span><span class="p">[</span><span class="s1">&#39;probs_for_mgh_matrix&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">],</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span>
             <span class="n">prob_matrix</span><span class="p">[</span><span class="s1">&#39;severe_gest_htn&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;probs_for_sgh_matrix&#39;</span><span class="p">]</span>
             <span class="n">prob_matrix</span><span class="p">[</span><span class="s1">&#39;mild_pre_eclamp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;probs_for_mpe_matrix&#39;</span><span class="p">]</span>
             <span class="n">prob_matrix</span><span class="p">[</span><span class="s1">&#39;severe_pre_eclamp&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;probs_for_spe_matrix&#39;</span><span class="p">]</span>
@@ -1713,9 +1709,6 @@
             <span class="n">care_seeking</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_seek_care_pregnancy_loss&#39;</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="n">care_seeking</span><span class="p">:</span>
-            <span class="c1"># check for delay</span>
-            <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">check_if_delayed_careseeking</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">)</span>
-
             <span class="c1"># We assume women will seek care via HSI_GenericEmergencyFirstApptAtFacilityLevel1 and will be admitted for</span>
             <span class="c1"># care in CareOfWomenDuringPregnancy module</span>
             <span class="kn">from</span> <span class="nn">tlo.methods.hsi_generic_first_appts</span> <span class="kn">import</span> <span class="n">HSI_GenericEmergencyFirstAppt</span>
@@ -1752,7 +1745,7 @@
         <span class="c1"># Function checks df for any potential cause of death, uses CFR parameters to determine risk of death</span>
         <span class="c1"># (either from one or multiple causes) and if death occurs returns the cause</span>
         <span class="n">potential_cause_of_death</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">check_for_risk_of_death_from_cause_maternal</span><span class="p">(</span>
-                <span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">)</span>
+                <span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">,</span> <span class="n">timing</span><span class="o">=</span><span class="s1">&#39;antenatal&#39;</span><span class="p">)</span>
 
         <span class="c1"># If a cause is returned death is scheduled</span>
         <span class="k">if</span> <span class="n">potential_cause_of_death</span><span class="p">:</span>
@@ -1764,10 +1757,6 @@
         <span class="c1"># If not we reset variables and the woman survives</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;didnt_seek_care&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-
-            <span class="c1"># If a death does not occur we reset the death causing properties (if appropriate)</span>
-            <span class="k">if</span> <span class="n">mother</span><span class="o">.</span><span class="n">ps_antepartum_haemorrhage</span> <span class="o">!=</span> <span class="s1">&#39;none&#39;</span><span class="p">:</span>
-                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;ps_antepartum_haemorrhage&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
 
             <span class="k">if</span> <span class="p">(</span><span class="n">mother</span><span class="o">.</span><span class="n">ps_htn_disorders</span> <span class="o">==</span> <span class="s1">&#39;severe_pre_eclamp&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;new_onset_spe&#39;</span><span class="p">]:</span>
                 <span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;new_onset_spe&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1790,58 +1779,69 @@
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
         <span class="n">params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_parameters</span>
 
-        <span class="c1"># First we identify all the women predicted to attend ANC, with the first visit occurring before 4 months</span>
-        <span class="n">early_initiation_anc4</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_linear_model</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">ps_linear_models</span><span class="p">[</span><span class="s1">&#39;early_initiation_anc4&#39;</span><span class="p">],</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;is_alive&#39;</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;is_pregnant&#39;</span><span class="p">]</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;ps_gestational_age_in_weeks&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">gestation_of_interest</span><span class="p">)</span> <span class="o">&amp;</span>
-                   <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;ps_ectopic_pregnancy&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">)])</span>
-
-        <span class="c1"># Of the women who will not attend ANC4 early, we determine who will attend ANC4 later in pregnancy</span>
-        <span class="n">late_initiation_anc4</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span>
-            <span class="nb">len</span><span class="p">(</span><span class="n">early_initiation_anc4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">early_initiation_anc4</span><span class="p">]))</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_late_initiation_anc4&#39;</span><span class="p">],</span>
-                                        <span class="n">index</span><span class="o">=</span><span class="n">early_initiation_anc4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">early_initiation_anc4</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-
-        <span class="c1"># Check there are no duplicates</span>
-        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">late_initiation_anc4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">late_initiation_anc4</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">early_initiation_anc4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">early_initiation_anc4</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;Probability of ANC4 is being applied to some women twice&#39;</span><span class="p">)</span>
-
-        <span class="c1"># Update this variable used in the ANC HSIs for scheduling the next visits</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">early_initiation_anc4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">early_initiation_anc4</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;ps_anc4&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">late_initiation_anc4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">late_initiation_anc4</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;ps_anc4&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-
-        <span class="c1"># Select any women who are not predicted to attend ANC4</span>
-        <span class="n">anc_below_4</span> <span class="o">=</span> \
-            <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">is_pregnant</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ps_gestational_age_in_weeks</span> <span class="o">==</span> <span class="n">gestation_of_interest</span><span class="p">)</span> <span class="o">&amp;</span>\
-            <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ps_ectopic_pregnancy</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">ps_anc4</span>
-
-        <span class="c1"># See if any of the women who wont attend ANC4 will still attend their first visit early in pregnancy</span>
-        <span class="n">early_initiation_anc_below_4</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">anc_below_4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">anc_below_4</span><span class="p">]))</span>
-                                                 <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_early_initiation_anc_below4&#39;</span><span class="p">],</span>
-                                                 <span class="n">index</span><span class="o">=</span><span class="n">anc_below_4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">anc_below_4</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
-
-        <span class="c1"># Call the functions that schedule the HSIs according to the predicted month of gestation at which each woman</span>
-        <span class="c1"># will attend her first visit</span>
-        <span class="k">def</span> <span class="nf">schedule_early_visit</span><span class="p">(</span><span class="n">df_slice</span><span class="p">):</span>
+        <span class="c1"># In analysis is occuring where ANC4+ should occur for all women this is set here</span>
+        <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;ps_analysis_in_progress&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sens_analysis_max&#39;</span><span class="p">]:</span>
+            <span class="n">df_slice</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;is_alive&#39;</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;is_pregnant&#39;</span><span class="p">]</span> <span class="o">&amp;</span>
+                              <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;ps_gestational_age_in_weeks&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">gestation_of_interest</span><span class="p">)</span> <span class="o">&amp;</span>
+                              <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;ps_ectopic_pregnancy&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">)]</span>
             <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">df_slice</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
-                <span class="n">random_draw_gest_at_anc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_anc1_months_2_to_4&#39;</span><span class="p">])</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">schedule_anc_one</span><span class="p">(</span><span class="n">individual_id</span><span class="o">=</span><span class="n">person</span><span class="p">,</span> <span class="n">anc_month</span><span class="o">=</span><span class="n">random_draw_gest_at_anc</span><span class="p">)</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person</span><span class="p">,</span> <span class="s1">&#39;ps_anc4&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">schedule_anc_one</span><span class="p">(</span><span class="n">individual_id</span><span class="o">=</span><span class="n">person</span><span class="p">,</span> <span class="n">anc_month</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="n">early_initiation_anc4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">early_initiation_anc4</span><span class="p">],</span>
-                  <span class="n">early_initiation_anc_below_4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">early_initiation_anc_below_4</span><span class="p">]]:</span>
-            <span class="n">schedule_early_visit</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># First we identify all the women predicted to attend ANC, with the first visit occurring before 4 months</span>
+            <span class="n">early_initiation_anc4</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_linear_model</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">ps_linear_models</span><span class="p">[</span><span class="s1">&#39;early_initiation_anc4&#39;</span><span class="p">],</span>
+                <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;is_alive&#39;</span><span class="p">]</span> <span class="o">&amp;</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;is_pregnant&#39;</span><span class="p">]</span> <span class="o">&amp;</span>
+                       <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;ps_gestational_age_in_weeks&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">gestation_of_interest</span><span class="p">)</span> <span class="o">&amp;</span>
+                       <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;ps_ectopic_pregnancy&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">)])</span>
 
-        <span class="k">def</span> <span class="nf">schedule_late_visit</span><span class="p">(</span><span class="n">df_slice</span><span class="p">):</span>
-            <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">df_slice</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
-                <span class="n">random_draw_gest_at_anc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_anc1_months_5_to_9&#39;</span><span class="p">])</span>
+            <span class="c1"># Of the women who will not attend ANC4 early, we determine who will attend ANC4 later in pregnancy</span>
+            <span class="n">late_initiation_anc4</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span>
+                <span class="nb">len</span><span class="p">(</span><span class="n">early_initiation_anc4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">early_initiation_anc4</span><span class="p">]))</span> <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_late_initiation_anc4&#39;</span><span class="p">],</span>
+                                            <span class="n">index</span><span class="o">=</span><span class="n">early_initiation_anc4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">early_initiation_anc4</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
 
-                <span class="c1"># We use month ten to capture women who will never attend ANC during their pregnancy</span>
-                <span class="k">if</span> <span class="n">random_draw_gest_at_anc</span> <span class="o">!=</span> <span class="mi">10</span><span class="p">:</span>
+            <span class="c1"># Check there are no duplicates</span>
+            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">late_initiation_anc4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">late_initiation_anc4</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">early_initiation_anc4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">early_initiation_anc4</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s1">&#39;error&#39;</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="s1">&#39;Probability of ANC4 is being applied to some women twice&#39;</span><span class="p">)</span>
+
+            <span class="c1"># Update this variable used in the ANC HSIs for scheduling the next visits</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">early_initiation_anc4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">early_initiation_anc4</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;ps_anc4&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">late_initiation_anc4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">late_initiation_anc4</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;ps_anc4&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+            <span class="c1"># Select any women who are not predicted to attend ANC4</span>
+            <span class="n">anc_below_4</span> <span class="o">=</span> \
+                <span class="n">df</span><span class="o">.</span><span class="n">is_alive</span> <span class="o">&amp;</span> <span class="n">df</span><span class="o">.</span><span class="n">is_pregnant</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ps_gestational_age_in_weeks</span> <span class="o">==</span> <span class="n">gestation_of_interest</span><span class="p">)</span> <span class="o">&amp;</span>\
+                <span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">ps_ectopic_pregnancy</span> <span class="o">==</span> <span class="s1">&#39;none&#39;</span><span class="p">)</span> <span class="o">&amp;</span> <span class="o">~</span><span class="n">df</span><span class="o">.</span><span class="n">ps_anc4</span>
+
+            <span class="c1"># See if any of the women who wont attend ANC4 will still attend their first visit early in pregnancy</span>
+            <span class="n">early_initiation_anc_below_4</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">anc_below_4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">anc_below_4</span><span class="p">]))</span>
+                                                     <span class="o">&lt;</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_early_initiation_anc_below4&#39;</span><span class="p">],</span>
+                                                     <span class="n">index</span><span class="o">=</span><span class="n">anc_below_4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">anc_below_4</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+            <span class="c1"># Call the functions that schedule the HSIs according to the predicted month of gestation at which each</span>
+            <span class="c1"># woman will attend her first visit</span>
+            <span class="k">def</span> <span class="nf">schedule_early_visit</span><span class="p">(</span><span class="n">df_slice</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">df_slice</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+                    <span class="n">random_draw_gest_at_anc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_anc1_months_2_to_4&#39;</span><span class="p">])</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">schedule_anc_one</span><span class="p">(</span><span class="n">individual_id</span><span class="o">=</span><span class="n">person</span><span class="p">,</span> <span class="n">anc_month</span><span class="o">=</span><span class="n">random_draw_gest_at_anc</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="n">late_initiation_anc4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">late_initiation_anc4</span><span class="p">],</span>
-                  <span class="n">early_initiation_anc_below_4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">early_initiation_anc_below_4</span><span class="p">]]:</span>
-            <span class="n">schedule_late_visit</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></div>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="n">early_initiation_anc4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">early_initiation_anc4</span><span class="p">],</span>
+                      <span class="n">early_initiation_anc_below_4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">early_initiation_anc_below_4</span><span class="p">]]:</span>
+                <span class="n">schedule_early_visit</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+
+            <span class="k">def</span> <span class="nf">schedule_late_visit</span><span class="p">(</span><span class="n">df_slice</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">df_slice</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+                    <span class="n">random_draw_gest_at_anc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="n">p</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_anc1_months_5_to_9&#39;</span><span class="p">])</span>
+
+                    <span class="c1"># We use month ten to capture women who will never attend ANC during their pregnancy</span>
+                    <span class="k">if</span> <span class="n">random_draw_gest_at_anc</span> <span class="o">!=</span> <span class="mi">10</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">schedule_anc_one</span><span class="p">(</span><span class="n">individual_id</span><span class="o">=</span><span class="n">person</span><span class="p">,</span> <span class="n">anc_month</span><span class="o">=</span><span class="n">random_draw_gest_at_anc</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="p">[</span><span class="n">late_initiation_anc4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">late_initiation_anc4</span><span class="p">],</span>
+                      <span class="n">early_initiation_anc_below_4</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="o">~</span><span class="n">early_initiation_anc_below_4</span><span class="p">]]:</span>
+                <span class="n">schedule_late_visit</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></div>
 </div>
 
 
@@ -1983,7 +1983,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">apply_risk_of_induced_abortion</span><span class="p">(</span><span class="n">gestation_of_interest</span><span class="o">=</span><span class="n">gestation_of_interest</span><span class="p">)</span>
 
         <span class="c1"># Next, at 8 weeks gestation, we determine if/when women will seek antenatal care</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">schedule_first_anc_contact_for_new_pregnancy</span><span class="p">(</span><span class="n">gestation_of_interest</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;ps_analysis_in_progress&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;ps_analysis_in_progress&#39;</span><span class="p">]</span> <span class="ow">and</span>
+                                                     <span class="ow">not</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sens_analysis_min&#39;</span><span class="p">]):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">schedule_first_anc_contact_for_new_pregnancy</span><span class="p">(</span><span class="n">gestation_of_interest</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
 
         <span class="c1"># Every month a risk of maternal anaemia is applied</span>
         <span class="k">for</span> <span class="n">gestation_of_interest</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">17</span><span class="p">,</span> <span class="mi">22</span><span class="p">,</span> <span class="mi">27</span><span class="p">,</span> <span class="mi">31</span><span class="p">,</span> <span class="mi">35</span><span class="p">,</span> <span class="mi">40</span><span class="p">]:</span>
@@ -2037,9 +2039,6 @@
         <span class="c1"># We assume women who seek care will present to a form of Maternal Assessment Unit- not through normal A&amp;E</span>
         <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">care_seeking</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">care_seeking</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person</span><span class="p">,</span> <span class="s1">&#39;hs_is_inpatient&#39;</span><span class="p">]:</span>
-
-                <span class="c1"># Determine if care seeking is delayed</span>
-                <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">check_if_delayed_careseeking</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">person</span><span class="p">)</span>
 
                 <span class="kn">from</span> <span class="nn">tlo.methods.care_of_women_during_pregnancy</span> <span class="kn">import</span> <span class="p">(</span>
                     <span class="n">HSI_CareOfWomenDuringPregnancy_AntenatalWardInpatientCare</span><span class="p">,</span>
@@ -2106,7 +2105,7 @@
         <span class="p">):</span>
             <span class="k">return</span>
 
-        <span class="c1"># reset pregnancy variables and store onset for daly calculation</span>
+        <span class="c1"># Reset pregnancy variables and store onset for daly calculation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Contraception&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">end_pregnancy</span><span class="p">(</span><span class="n">individual_id</span><span class="p">)</span>
         <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">store_dalys_in_mni</span><span class="p">(</span><span class="n">individual_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">mother_and_newborn_info</span><span class="p">,</span>
                                                       <span class="s1">&#39;ectopic_onset&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
@@ -2194,9 +2193,7 @@
 
         <span class="c1"># Individual risk of death is calculated through the linear model</span>
         <span class="n">risk_of_death</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">ps_linear_models</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">cause</span><span class="si">}</span><span class="s1">_death&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span>
-            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[[</span><span class="n">individual_id</span><span class="p">]],</span>
-            <span class="n">delay_one_two</span><span class="o">=</span><span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;delay_one_two&#39;</span><span class="p">],</span>
-            <span class="n">delay_three</span><span class="o">=</span><span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;delay_three&#39;</span><span class="p">])[</span><span class="n">individual_id</span><span class="p">]</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[[</span><span class="n">individual_id</span><span class="p">]])[</span><span class="n">individual_id</span><span class="p">]</span>
 
         <span class="c1"># If the death occurs we record it here</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">risk_of_death</span><span class="p">:</span>
@@ -2216,8 +2213,6 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">abortion_complications</span><span class="o">.</span><span class="n">unset</span><span class="p">(</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;sepsis&#39;</span><span class="p">,</span> <span class="s1">&#39;haemorrhage&#39;</span><span class="p">,</span> <span class="s1">&#39;injury&#39;</span><span class="p">)</span>
                 <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;ac_received_post_abortion_care&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-                <span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;delay_one_two&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-                <span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;delay_three&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
 
             <span class="k">if</span> <span class="n">individual_id</span> <span class="ow">in</span> <span class="n">mni</span><span class="p">:</span>
                 <span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;delete_mni&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></div>
@@ -2322,7 +2317,7 @@
                        <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PostnatalSupervisor&#39;</span><span class="p">]]:</span>
             <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">update_current_parameter_dictionary</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">list_position</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
-        <span class="c1"># scale the linear models again according to the distribution of the population</span>
+        <span class="c1"># Scale the linear models again according to the distribution of the population</span>
         <span class="n">mod_ps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">ps_linear_models</span>
         <span class="n">mod_la</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Labour&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">la_linear_models</span>
 
@@ -2374,7 +2369,11 @@
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">population</span><span class="o">.</span><span class="n">props</span>
 
         <span class="c1"># Check if either of the analysis parameters are set to True</span>
-        <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;alternative_anc_coverage&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;alternative_anc_quality&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;alternative_anc_coverage&#39;</span><span class="p">]</span> <span class="ow">or</span> \
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;alternative_anc_quality&#39;</span><span class="p">]</span> <span class="ow">or</span> \
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;alternative_ip_anc_quality&#39;</span><span class="p">]</span> <span class="ow">or</span> \
+            <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sens_analysis_max&#39;</span><span class="p">]</span> <span class="ow">or</span> \
+           <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sens_analysis_min&#39;</span><span class="p">]:</span>
 
             <span class="c1"># Update this parameter which is a signal used in the pregnancy_helper_function_file to ensure that</span>
             <span class="c1"># alternative functionality for determining availability of interventions only occurs when analysis is</span>
@@ -2400,7 +2399,12 @@
                 <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_anc1_months_2_to_4&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
                 <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_late_initiation_anc4&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
 
-            <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;alternative_anc_quality&#39;</span><span class="p">]:</span>
+                <span class="c1"># Finally, remove squeeze factor threshold for ANC attendance to ensure that higher levels of ANC</span>
+                <span class="c1"># coverage can  be reached with current logic</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;CareOfWomenDuringPregnancy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">current_parameters</span><span class="p">[</span><span class="s1">&#39;squeeze_factor_threshold_anc&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="mi">10_000</span>
+
+            <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;alternative_anc_quality&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sens_analysis_max&#39;</span><span class="p">]:</span>
 
                 <span class="c1"># Override the availability of IPTp consumables with the set level of coverage</span>
                 <span class="k">if</span> <span class="s1">&#39;Malaria&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
@@ -2410,12 +2414,26 @@
 
                 <span class="c1"># And then override the quality parameters in the model</span>
                 <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;prob_intervention_delivered_urine_ds&#39;</span><span class="p">,</span> <span class="s1">&#39;prob_intervention_delivered_bp&#39;</span><span class="p">,</span>
-                                  <span class="s1">&#39;prob_intervention_delivered_ifa&#39;</span><span class="p">,</span> <span class="s1">&#39;prob_intervention_delivered_llitn&#39;</span><span class="p">,</span>
-                                  <span class="s1">&#39;prob_intervention_delivered_llitn&#39;</span><span class="p">,</span> <span class="s1">&#39;prob_intervention_delivered_tt&#39;</span><span class="p">,</span>
-                                  <span class="s1">&#39;prob_intervention_delivered_poct&#39;</span><span class="p">,</span> <span class="s1">&#39;prob_intervention_delivered_syph_test&#39;</span><span class="p">,</span>
-                                  <span class="s1">&#39;prob_intervention_delivered_iptp&#39;</span><span class="p">,</span> <span class="s1">&#39;prob_intervention_delivered_gdm_test&#39;</span><span class="p">]:</span>
+                                  <span class="s1">&#39;prob_intervention_delivered_syph_test&#39;</span><span class="p">,</span> <span class="s1">&#39;prob_intervention_delivered_gdm_test&#39;</span><span class="p">]:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;CareOfWomenDuringPregnancy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">current_parameters</span><span class="p">[</span><span class="n">parameter</span><span class="p">]</span> <span class="o">=</span> \
-                        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;anc_availability_probability&#39;</span><span class="p">]</span></div>
+                        <span class="n">params</span><span class="p">[</span><span class="s1">&#39;anc_availability_probability&#39;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;alternative_ip_anc_quality&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;CareOfWomenDuringPregnancy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">current_parameters</span><span class="p">[</span><span class="s1">&#39;squeeze_factor_threshold_an&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="mi">10_000</span>
+
+            <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sens_analysis_max&#39;</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;prob_seek_anc5&#39;</span><span class="p">,</span> <span class="s1">&#39;prob_seek_anc6&#39;</span><span class="p">,</span> <span class="s1">&#39;prob_seek_anc7&#39;</span><span class="p">,</span> <span class="s1">&#39;prob_seek_anc8&#39;</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;CareOfWomenDuringPregnancy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">current_parameters</span><span class="p">[</span><span class="n">parameter</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;CareOfWomenDuringPregnancy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">current_parameters</span><span class="p">[</span><span class="s1">&#39;squeeze_factor_threshold_anc&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="mi">10_000</span>
+
+                <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_seek_care_pregnancy_complication&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;CareOfWomenDuringPregnancy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">current_parameters</span><span class="p">[</span><span class="s1">&#39;prob_adherent_ifa&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+            <span class="k">if</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;sens_analysis_min&#39;</span><span class="p">]:</span>
+                <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_seek_care_pregnancy_complication&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span></div>
 </div>
 
 
@@ -2482,7 +2500,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Jan 25, 2024.
+      <span class="lastupdated">Last updated on Feb 24, 2024.
       </span></p>
   </div>
 

@@ -11,7 +11,7 @@ tlo.methods.healthsystem module
 
      **Class attributes:**
 
-     bed_days_allocated_to_this_event : <property object at 0x11b9745e0>
+     bed_days_allocated_to_this_event : <property object at 0x11eefcea0>
 
      **Functions (defined or overridden in class HSI_Event):**
 
@@ -134,6 +134,18 @@ tlo.methods.healthsystem module
         * - priority_rank
           - DICT
           - Data on the priority ranking of each of the Treatment_IDs to be adopted by  the queueing system under different policies, where the lower the number the higher the priority, and on which categories of individuals classify for fast-tracking  for specific treatments
+        * - const_HR_scaling_table
+          - DICT
+          - Factors by which capabilities of medical officer categories at different levels will bescaled at the start of the simulation to simulate a number of effects (e.g. absenteeism,boosting of specific medical cadres, etc). This is the imported from anExcel workbook: keys are the worksheet names and values are the worksheets in the format of pd.DataFrames.
+        * - const_HR_scaling_mode
+          - STRING
+          - Mode of HR scaling considered at the start of the simulation. Options are default (capabilities are scaled by a constaint factor of 1), data (factors informed by survey data),and custom (user can freely set these factors as parameters in the analysis).
+        * - dynamic_HR_scaling_factor
+          - REAL
+          - Factor by which HR capabilities are scaled at regular intervals of 1 year (in addition to the [optional] scaling with population size (controlled by `scale_HR_by_popsize`
+        * - scale_HR_by_popsize
+          - BOOL
+          - Decide whether to scale HR capabilities by population size every year. Can be used as well as the dynamic_HR_scaling_factor
         * - tclose_overwrite
           - INT
           - Decide whether to overwrite tclose variables assigned by disease modules
@@ -167,11 +179,11 @@ tlo.methods.healthsystem module
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     capabilities_today : <property object at 0x11b80ebb0>
+     capabilities_today : <property object at 0x11eefcfe0>
 
-     hsi_event_counts : <property object at 0x11b974810>
+     hsi_event_counts : <property object at 0x11eefd170>
 
-     never_ran_hsi_event_counts : <property object at 0x11b974860>
+     never_ran_hsi_event_counts : <property object at 0x11eefd1c0>
 
      **Functions (defined or overridden in class HealthSystem):**
 
@@ -192,6 +204,8 @@ tlo.methods.healthsystem module
      .. automethod:: setup_priority_policy
 
      .. automethod:: process_human_resources_files
+
+     .. automethod:: adjust_for_const_HR_scaling
 
      .. automethod:: format_daily_capabilities
 
@@ -322,6 +336,31 @@ tlo.methods.healthsystem module
      __annotations__ : {}
 
      **Functions (defined or overridden in class HealthSystemChangeParameters):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: DynamicRescalingHRCapabilities
+
+     Bases: :class:`tlo.events.RegularEvent`, :class:`tlo.events.Event`, :class:`tlo.events.PopulationScopeEventMixin`
+
+
+
+     **Class attributes:**
+
+     __annotations__ : {}
+
+     current_pop_size : <property object at 0x11eefd4e0>
+
+     **Functions (defined or overridden in class DynamicRescalingHRCapabilities):**
 
      .. automethod:: __init__
 

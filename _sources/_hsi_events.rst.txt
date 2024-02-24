@@ -109,9 +109,9 @@ Labour
 ******
 
 * ``DeliveryCare_Basic`` at facility level ? with appointment footprint: ``NormalDelivery`` and bed days footprint: ``maternity_bed`` (2 days).
-* ``DeliveryCare_Comprehensive`` at facility level 1b with appointment footprint: ``MajorSurg``.
+* ``PostnatalCare_Comprehensive`` at facility level ? with appointment footprint: ``MajorSurg``.
 * ``PostnatalCare_Maternal`` at facility level 1a with appointment footprint: ``Over5OPD``.
-* ``PostnatalCare_Maternal_Inpatient`` at facility level 1b with appointment footprint:  and bed days footprint: ``maternity_bed`` (5 days).
+* ``PostnatalCare_Maternal_Inpatient`` at facility level ? with appointment footprint:  and bed days footprint: ``maternity_bed`` (5 days).
 
 Malaria
 *******
@@ -131,7 +131,7 @@ NewbornOutcomes
 ***************
 
 * ``PostnatalCare_Neonatal`` at facility level 1a with appointment footprint: ``Under5OPD``.
-* ``PostnatalCare_Neonatal_Inpatient`` at facility level 1b with appointment footprint:  and bed days footprint: ``general_bed`` (5 days).
+* ``PostnatalCare_Neonatal_Inpatient`` at facility level ? with appointment footprint:  and bed days footprint: ``general_bed`` (5 days).
 
 OesophagealCancer
 *****************

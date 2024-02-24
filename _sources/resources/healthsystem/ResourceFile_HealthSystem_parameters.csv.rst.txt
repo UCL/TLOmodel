@@ -16,4 +16,7 @@ HealthSystem parameters (.csv)
    7  beds\_availability                   default
    8  tclose\_overwrite                    0
    9  tclose\_days\_offset\_overwrite      7
+  10  const\_HR\_scaling\_mode             default
+  11  dynamic\_HR\_scaling\_factor         1
+  12  scale\_HR\_by\_popsize               FALSE
 ====  ===================================  ============

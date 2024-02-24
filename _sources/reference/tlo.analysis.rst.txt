@@ -8,6 +8,7 @@ Submodules
    :maxdepth: 4
 
    tlo.analysis.hsi_events
+   tlo.analysis.life_expectancy
    tlo.analysis.utils
 
 Module contents

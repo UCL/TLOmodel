@@ -6,7 +6,6 @@ consumables
 
     .ResourceFile_consumables_matched.csv.un~
     ResourceFile_Consumables_Items_and_Packages.csv
-    ResourceFile_Consumables_availability_and_usage.csv
     ResourceFile_Consumables_availability_small.csv
     ResourceFile_consumables_matched.csv
 

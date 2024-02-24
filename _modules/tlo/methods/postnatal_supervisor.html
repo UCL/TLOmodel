@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.postnatal_supervisor &mdash; TLOmodel 0.1.dev2353+gfac71f8 documentation</title>
+  <title>tlo.methods.postnatal_supervisor &mdash; TLOmodel 0.1.dev2373+g8473a31 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../../../_static/theme_overrides.css?v=6ea10ece" />
@@ -16,7 +16,7 @@
   
         <script src="../../../_static/jquery.js?v=5d32c60e"></script>
         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../../../_static/documentation_options.js?v=61a1be14"></script>
+        <script src="../../../_static/documentation_options.js?v=812bb691"></script>
         <script src="../../../_static/doctools.js?v=888ff710"></script>
         <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../_static/js/theme.js"></script>
@@ -182,8 +182,6 @@
             <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;probability of mild, moderate or severe secondary PPH&#39;</span><span class="p">),</span>
         <span class="s1">&#39;cfr_secondary_postpartum_haemorrhage&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
             <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;case fatality rate for secondary pph&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;rr_death_from_pph_with_anaemia&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
-            <span class="n">Types</span><span class="o">.</span><span class="n">LIST</span><span class="p">,</span> <span class="s1">&#39;relative risk of death from PPH in women with anaemia&#39;</span><span class="p">),</span>
 
         <span class="c1"># HYPERTENSIVE DISORDERS</span>
         <span class="s1">&#39;prob_htn_resolves&#39;</span><span class="p">:</span> <span class="n">Parameter</span><span class="p">(</span>
@@ -319,12 +317,6 @@
                                                          <span class="s1">&#39; sepsis during week one of life&#39;</span><span class="p">),</span>
         <span class="s1">&#39;pn_sepsis_late_neonatal&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;Whether this neonate has developed late neonatal sepsis &#39;</span>
                                                         <span class="s1">&#39;following discharge&#39;</span><span class="p">),</span>
-        <span class="s1">&#39;pn_neonatal_sepsis_disab&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span> <span class="s1">&#39;Level of disability experience from a neonate post &#39;</span>
-                                                                <span class="s1">&#39;sepsis&#39;</span><span class="p">,</span> <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="s1">&#39;mild_motor_and_cog&#39;</span><span class="p">,</span>
-                                                                                      <span class="s1">&#39;mild_motor&#39;</span><span class="p">,</span> <span class="s1">&#39;moderate_motor&#39;</span><span class="p">,</span>
-                                                                                      <span class="s1">&#39;severe_motor&#39;</span><span class="p">]),</span>
-        <span class="s1">&#39;pn_deficiencies_following_pregnancy&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">INT</span><span class="p">,</span> <span class="s1">&#39;bitset column, stores types of anaemia causing &#39;</span>
-                                                                   <span class="s1">&#39;deficiencies following pregnancy&#39;</span><span class="p">),</span>
         <span class="s1">&#39;pn_anaemia_following_pregnancy&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">CATEGORICAL</span><span class="p">,</span> <span class="s1">&#39;severity of anaemia following pregnancy&#39;</span><span class="p">,</span>
                                                    <span class="n">categories</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="s1">&#39;mild&#39;</span><span class="p">,</span> <span class="s1">&#39;moderate&#39;</span><span class="p">,</span> <span class="s1">&#39;severe&#39;</span><span class="p">]),</span>
         <span class="s1">&#39;pn_emergency_event_mother&#39;</span><span class="p">:</span> <span class="n">Property</span><span class="p">(</span><span class="n">Types</span><span class="o">.</span><span class="n">BOOL</span><span class="p">,</span> <span class="s1">&#39;Whether a mother is experiencing an emergency complication&#39;</span>
@@ -348,7 +340,6 @@
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;pn_htn_disorders&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;pn_postpartum_haem_secondary&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;pn_sepsis_late_postpartum&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;pn_neonatal_sepsis_disab&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;pn_sepsis_early_neonatal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;pn_sepsis_late_neonatal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="o">.</span><span class="n">is_alive</span><span class="p">,</span> <span class="s1">&#39;pn_sepsis_late_neonatal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
@@ -436,7 +427,6 @@
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;pn_sepsis_late_postpartum&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;pn_sepsis_early_neonatal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;pn_sepsis_late_neonatal&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;pn_neonatal_sepsis_disab&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;pn_obstetric_fistula&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;pn_anaemia_following_pregnancy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">child_id</span><span class="p">,</span> <span class="s1">&#39;pn_emergency_event_mother&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span></div>
@@ -686,7 +676,7 @@
 
         <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">resolvers</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">resolvers</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="s1">&#39;pn_htn_disorders&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;resolved&#39;</span>
 
-        <span class="c1"># And for the women who&#39;s hypertension doesnt resolve we now see if it will progress to a worsened state</span>
+        <span class="c1"># And for the women whose hypertension doesn&#39;t resolve we now see if it will progress to a worsened state</span>
 
         <span class="k">def</span> <span class="nf">apply_risk</span><span class="p">(</span><span class="n">selected</span><span class="p">,</span> <span class="n">risk_of_gest_htn_progression</span><span class="p">):</span>
             <span class="c1"># This function uses the transition_states function to move women between states based on the</span>
@@ -818,10 +808,6 @@
         <span class="c1"># Schedule the HSI event</span>
         <span class="k">for</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">care_seekers</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">care_seekers</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
             <span class="kn">from</span> <span class="nn">tlo.methods.labour</span> <span class="kn">import</span> <span class="n">HSI_Labour_ReceivesPostnatalCheck</span>
-
-            <span class="c1"># check if care seeking is delayed</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Labour&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">current_parameters</span><span class="p">[</span><span class="s1">&#39;prob_delay_one_two_fd&#39;</span><span class="p">]:</span>
-                <span class="n">mni</span><span class="p">[</span><span class="n">person</span><span class="p">][</span><span class="s1">&#39;delay_one_two&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
             <span class="n">postnatal_check</span> <span class="o">=</span> <span class="n">HSI_Labour_ReceivesPostnatalCheck</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;Labour&#39;</span><span class="p">],</span> <span class="n">person_id</span><span class="o">=</span><span class="n">person</span><span class="p">)</span>
@@ -967,7 +953,7 @@
             <span class="c1"># Function checks df for any potential cause of death, uses CFR parameters to determine risk of death</span>
             <span class="c1"># (either from one or multiple causes) and if death occurs returns the cause</span>
             <span class="n">potential_cause_of_death</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">check_for_risk_of_death_from_cause_maternal</span><span class="p">(</span>
-                <span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">)</span>
+                <span class="bp">self</span><span class="p">,</span> <span class="n">individual_id</span><span class="o">=</span><span class="n">individual_id</span><span class="p">,</span> <span class="n">timing</span><span class="o">=</span><span class="s1">&#39;postnatal&#39;</span><span class="p">)</span>
 
             <span class="c1"># If a cause is returned death is scheduled</span>
             <span class="k">if</span> <span class="n">potential_cause_of_death</span><span class="p">:</span>
@@ -1021,10 +1007,10 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.PostnatalSupervisorEvent">[docs]</a>
 <span class="k">class</span> <span class="nc">PostnatalSupervisorEvent</span><span class="p">(</span><span class="n">RegularEvent</span><span class="p">,</span> <span class="n">PopulationScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This is the PostnatalSupervisorEvent. This event runs every week and is responsible for apply risk of complications</span>
-<span class="sd">    to mothers and newborns in the postnatal and neonatal periods. Risk is applied after the first week of life as this</span>
-<span class="sd">    is managed via PostnatalWeekOneMaternalEvent and PostnatalWeekOneNeonatalEvent. In addition this event ensures that</span>
-<span class="sd">    the relevant postnatal/neonatal variables are reset for those who survive.</span>
+<span class="sd">    This is the PostnatalSupervisorEvent. This event runs every week and is responsible for applying risk of</span>
+<span class="sd">    complications to mothers and newborns in the postnatal and neonatal periods. Risk is applied after the first week of</span>
+<span class="sd">     life as this is managed via PostnatalWeekOneMaternalEvent and PostnatalWeekOneNeonatalEvent. In addition this</span>
+<span class="sd">      event ensures that the relevant postnatal/neonatal variables are reset for those who survive.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="PostnatalSupervisorEvent.__init__">
 <a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.PostnatalSupervisorEvent.__init__">[docs]</a>
@@ -1257,7 +1243,7 @@
                 <span class="n">prob_matrix</span><span class="p">[</span><span class="s1">&#39;eclampsia&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">params</span><span class="p">[</span><span class="s1">&#39;probs_for_ec_matrix_pn&#39;</span><span class="p">]</span>
 
                 <span class="c1"># We modify the probability of progressing from mild to severe gestational hypertension for women</span>
-                <span class="c1"># who are on anti hypertensives</span>
+                <span class="c1"># who are on antihypertensives</span>
                 <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">individual_id</span><span class="p">,</span> <span class="s1">&#39;la_gest_htn_on_treatment&#39;</span><span class="p">]:</span>
                     <span class="n">treatment_reduced_risk</span> <span class="o">=</span> <span class="n">prob_matrix</span><span class="p">[</span><span class="s1">&#39;gest_htn&#39;</span><span class="p">][</span><span class="s1">&#39;severe_gest_htn&#39;</span><span class="p">]</span> <span class="o">*</span> \
                                              <span class="n">params</span><span class="p">[</span><span class="s1">&#39;treatment_effect_anti_htns_progression_pn&#39;</span><span class="p">]</span>
@@ -1332,9 +1318,6 @@
             <span class="k">if</span> <span class="p">(</span><span class="n">mni</span><span class="p">[</span><span class="n">individual_id</span><span class="p">][</span><span class="s1">&#39;will_receive_pnc&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;late&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">random_sample</span><span class="p">()</span> <span class="o">&lt;</span>
                                                                       <span class="n">params</span><span class="p">[</span><span class="s1">&#39;prob_care_seeking_postnatal_emergency&#39;</span><span class="p">]):</span>
 
-                <span class="c1"># If care will be sought, check if they experience delay seeking care</span>
-                <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">check_if_delayed_careseeking</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">module</span><span class="p">,</span> <span class="n">individual_id</span><span class="p">)</span>
-
                 <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;HealthSystem&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">schedule_hsi_event</span><span class="p">(</span>
                     <span class="n">pnc_one_maternal</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">topen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">,</span> <span class="n">tclose</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span> <span class="o">+</span> <span class="n">pd</span><span class="o">.</span><span class="n">DateOffset</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 
@@ -1356,10 +1339,10 @@
 <a class="viewcode-back" href="../../../reference/tlo.methods.postnatal_supervisor.html#tlo.methods.postnatal_supervisor.PostnatalWeekOneNeonatalEvent">[docs]</a>
 <span class="k">class</span> <span class="nc">PostnatalWeekOneNeonatalEvent</span><span class="p">(</span><span class="n">Event</span><span class="p">,</span> <span class="n">IndividualScopeEventMixin</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This is PostnatalWeekOneEvent. It is scheduled for all newborns who survive labour and the first 48 hours after</span>
-<span class="sd">    birth. This event applies risk of key complications that can occur in the first week after birth. This event also</span>
-<span class="sd">    schedules postnatal care for those newborns predicted to attend after 48 hours or in the situation where they have</span>
-<span class="sd">    developed a complication. For newborns who dont seek care for themselves risk of death is applied.</span>
+<span class="sd">    This is PostnatalWeekOneNeonatalEvent. It is scheduled for all newborns who survive labour and the first 48 hours</span>
+<span class="sd">     after birth. This event applies risk of key complications that can occur in the first week after birth. This event</span>
+<span class="sd">     also schedules postnatal care for those newborns predicted to attend after 48 hours or in the situation where they</span>
+<span class="sd">      have developed a complication. For newborns who don&#39;t seek care for themselves risk of death is applied.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="PostnatalWeekOneNeonatalEvent.__init__">
@@ -1455,10 +1438,31 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">mother</span><span class="o">.</span><span class="n">is_alive</span><span class="p">:</span>
             <span class="k">return</span>
 
+        <span class="c1"># Define the consumables</span>
+        <span class="n">of_repair_cons</span> <span class="o">=</span> <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">get_list_of_items</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;Scalpel blade size 22 (individually wrapped)_100_CMST&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;Halothane (fluothane)_250ml_CMST&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;Ceftriaxone 1g, PFR_each_CMST&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;Metronidazole 200mg_1000_CMST&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;Cannula iv  (winged with injection pot) 18_each_CMST&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;Paracetamol, tablet, 500 mg&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;Declofenac injection_each_CMST&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;Pethidine, 50 mg/ml, 2 ml ampoule&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;Foley catheter&#39;</span><span class="p">,</span>
+                   <span class="s1">&#39;Bag, urine, collecting, 2000 ml&#39;</span><span class="p">,</span>
+                   <span class="s2">&quot;ringer&#39;s lactate (Hartmann&#39;s solution), 1000 ml_12_IDA&quot;</span><span class="p">,</span>
+                   <span class="s1">&#39;Sodium chloride, injectable solution, 0,9 %, 500 ml&#39;</span><span class="p">,</span>
+                   <span class="s2">&quot;Giving set iv administration + needle 15 drops/ml_each_CMST&quot;</span><span class="p">,</span>
+                   <span class="s2">&quot;Chlorhexidine 1.5</span><span class="si">% s</span><span class="s2">olution_5_CMST&quot;</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_consumables</span><span class="p">(</span><span class="n">item_codes</span><span class="o">=</span><span class="n">of_repair_cons</span><span class="p">)</span>
+
+        <span class="c1"># Log the end of disability in the MNI</span>
         <span class="n">pregnancy_helper_functions</span><span class="o">.</span><span class="n">store_dalys_in_mni</span><span class="p">(</span>
             <span class="n">person_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="s1">&#39;PregnancySupervisor&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mother_and_newborn_info</span><span class="p">,</span>
             <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;pn_obstetric_fistula&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1">_fistula_resolution&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sim</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
 
+        <span class="c1"># Reset property</span>
         <span class="n">df</span><span class="o">.</span><span class="n">at</span><span class="p">[</span><span class="n">person_id</span><span class="p">,</span> <span class="s1">&#39;pn_obstetric_fistula&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span></div>
 </div>
 
@@ -1472,7 +1476,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Jan 25, 2024.
+      <span class="lastupdated">Last updated on Feb 24, 2024.
       </span></p>
   </div>
 

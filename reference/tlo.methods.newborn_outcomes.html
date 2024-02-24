@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.newborn_outcomes module &mdash; TLOmodel 0.1.dev2353+gfac71f8 documentation</title>
+  <title>tlo.methods.newborn_outcomes module &mdash; TLOmodel 0.1.dev2373+g8473a31 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=61a1be14"></script>
+        <script src="../_static/documentation_options.js?v=812bb691"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -101,9 +101,7 @@ following birth (either at home or in a health facility). Important predictors o
 this model include low birth weight and small for gestational age. Complications modelled include early-onset
 neonatal sepsis, neonatal encephalopathy, congenital birth anomalies, failure to breathe at birth and complications
 of prematurity (respiratory distress syndrome and retinopathy) This module also manages any interventions that are
-delivered by skilled birth  attendants to newborns following a facility delivery via
-HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth and interventions delivered as part of postnatal care
-via HSI_NewbornOutcomes_ReceivesPostnatalCheck.</p>
+delivered as part of postnatal care via HSI_NewbornOutcomes_ReceivesPostnatalCheck.</p>
 <p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
 <p><strong>PARAMETERS:</strong></p>
 <table class="docutils align-default">
@@ -150,6 +148,14 @@ via HSI_NewbornOutcomes_ReceivesPostnatalCheck.</p>
 <tr class="row-odd"><td><p>cfr_late_onset_sepsis</p></td>
 <td><p>LIST</p></td>
 <td><p>case fatality rate for a neonate due to neonatal sepsis</p></td>
+</tr>
+<tr class="row-even"><td><p>prob_mild_impairment_post_sepsis</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of the mild neurodevelopmental impairment in survivors of sepsis</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_mod_severe_impairment_post_sepsis</p></td>
+<td><p>LIST</p></td>
+<td><p>probability of the moderate or severe neurodevelopmental impairment in survivors of sepsis</p></td>
 </tr>
 <tr class="row-even"><td><p>prob_failure_to_transition</p></td>
 <td><p>LIST</p></td>
@@ -203,41 +209,49 @@ via HSI_NewbornOutcomes_ReceivesPostnatalCheck.</p>
 <td><p>LIST</p></td>
 <td><p>probability that a preterm infant will experience respiratory distress at birth</p></td>
 </tr>
-<tr class="row-odd"><td><p>rr_rds_maternal_diabetes_mellitus</p></td>
+<tr class="row-odd"><td><p>rr_rds_early_preterm</p></td>
+<td><p>LIST</p></td>
+<td><p>relative risk of RDS in a preterm newborn born before 34 weeks</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_rds_maternal_diabetes_mellitus</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of RDS in a preterm newborn whose mother has DM</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_rds_maternal_gestational_diab</p></td>
+<tr class="row-odd"><td><p>rr_rds_maternal_gestational_diab</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of RDS in a preterm newborn whose mother has gestational diabetes</p></td>
 </tr>
-<tr class="row-odd"><td><p>cfr_respiratory_distress_syndrome</p></td>
+<tr class="row-even"><td><p>cfr_respiratory_distress_syndrome</p></td>
 <td><p>LIST</p></td>
 <td><p>case fatality rate for respiratory distress syndrome of prematurity</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_mild_disability_preterm_&lt;32weeks</p></td>
+<tr class="row-odd"><td><p>prob_mild_disability_preterm_&lt;32weeks</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of mild long term neurodevelopmental disability in preterm infants born at less than 32 weeks gestation</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_mod_severe_disability_preterm_&lt;32weeks</p></td>
+<tr class="row-even"><td><p>prob_mod_severe_disability_preterm_&lt;32weeks</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of moderate/severe longterm neurodevelopmental disability in preterm infants born at less than 32 weeks gestation</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_mild_disability_preterm_32_36weeks</p></td>
+<tr class="row-odd"><td><p>prob_mild_disability_preterm_32_36weeks</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of mild long term neurodevelopmental disability in preterm infants born between 32 and 36 weeks gestation</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_mod_severe_disability_preterm_32_36weeks</p></td>
+<tr class="row-even"><td><p>prob_mod_severe_disability_preterm_32_36weeks</p></td>
 <td><p>LIST</p></td>
 <td><p>probability of moderate/severe long term neurodevelopmental disability in preterm infants born between 32 and 36 weeks gestation</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_retinopathy_preterm</p></td>
+<tr class="row-odd"><td><p>prob_retinopathy_preterm_early</p></td>
 <td><p>LIST</p></td>
-<td><p>baseline probability of a preterm neonate developing retinopathy of prematurity</p></td>
+<td><p>Probability that a neonate born at less than 32 weeks who survives the neonatal period will develop retinopathy</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_retinopathy_severity</p></td>
+<tr class="row-even"><td><p>prob_retinopathy_preterm_late</p></td>
 <td><p>LIST</p></td>
-<td><p>probabilities of severity of retinopathy</p></td>
+<td><p>Probability that a neonate born at less than 32 weeks who survives the neonatal period will develop retinopathy</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_retinopathy_severity_no_treatment</p></td>
+<td><p>LIST</p></td>
+<td><p>Probabilities that a preterm neonate who developed retinopathy will experience the following vision impairments: none, mild, moderate or blindness</p></td>
 </tr>
 <tr class="row-even"><td><p>cfr_preterm_birth</p></td>
 <td><p>LIST</p></td>
@@ -315,85 +329,49 @@ via HSI_NewbornOutcomes_ReceivesPostnatalCheck.</p>
 <td><p>LIST</p></td>
 <td><p>probabilities that a postnatal check will happen before or after 48 hours alive</p></td>
 </tr>
-<tr class="row-odd"><td><p>probs_for_mild_preterm_daly_wts_&lt;32wks</p></td>
+<tr class="row-odd"><td><p>prob_kmc_available</p></td>
 <td><p>LIST</p></td>
-<td><p>Probabilities (sum to one) that a newborn delivered at less than 32 weeks AND experiencing mild impairment will accrue the DALY weight 357 (“mild motor and cognitive impairment”) or DALY weight 371 (“mild motor impairment”)</p></td>
+<td><p>probability that KMC can be delivered in a given hospital</p></td>
 </tr>
-<tr class="row-even"><td><p>probs_for_sev_preterm_daly_wts_&lt;32wks</p></td>
-<td><p>LIST</p></td>
-<td><p>Probabilities (sum to one) that a newborn delivered at less than 32 weeks AND experiencing moderate/severe impairment will accrue the DALY weight 378 (“moderate motor impairment”) or DALY weight 383 (“severe motor impairment”)</p></td>
-</tr>
-<tr class="row-odd"><td><p><a href="#id1"><span class="problematic" id="id2">probs_for_mild_preterm_daly_wts_</span></a>&gt;32wks</p></td>
-<td><p>LIST</p></td>
-<td><p>Probabilities (sum to one) that a newborn delivered at greater than 32 weeks AND experiencing mild impairment will accrue the DALY weight 357 (“mild motor and cognitive impairment”) or DALY weight 371 (“mild motor impairment”)</p></td>
-</tr>
-<tr class="row-even"><td><p><a href="#id3"><span class="problematic" id="id4">probs_for_sev_preterm_daly_wts_</span></a>&gt;32wks</p></td>
-<td><p>LIST</p></td>
-<td><p>Probabilities (sum to one) that a newborn delivered at less than 32 weeks AND experiencing moderate/severe impairment will accrue the DALY weight 378 (“moderate motor impairment”) or DALY weight 383 (“severe motor impairment”)</p></td>
-</tr>
-<tr class="row-odd"><td><p>probs_for_mild_enceph_daly_wts</p></td>
-<td><p>LIST</p></td>
-<td><p>Probabilities (sum to one) that a newborn delivered who develops encephalopathy AND experiencing mild impairment will accrue the DALY weight 419 (“mild motor and cognitive impairment”) or DALY weight 416 (“mild motor impairment”)</p></td>
-</tr>
-<tr class="row-even"><td><p>probs_for_sev_enceph_daly_wts</p></td>
-<td><p>LIST</p></td>
-<td><p>Probabilities (sum to one) that a newborn delivered who develops encephalopathy AND experiencing moderate/severe impairment will accrue the DALY weight 411 (“moderate motor   impairment”) or DALY weight 410 (“severe motor impairment”)</p></td>
-</tr>
-<tr class="row-odd"><td><p>probs_for_mild_sepsis_daly_wts</p></td>
-<td><p>LIST</p></td>
-<td><p>Probabilities (sum to one) that a newborn delivered who develops sepsis AND experiencing mild impairment will accrue the DALY weight 411 (“mild motor and cognitive impairment”) or DALY weight 431 (“mild motor impairment”)</p></td>
-</tr>
-<tr class="row-even"><td><p>probs_for_sev_sepsis_daly_wts</p></td>
-<td><p>LIST</p></td>
-<td><p>Probabilities (sum to one) that a newborn delivered who develops sepsis AND experiencing moderate/severe impairment will accrue the DALY weight 438 (“moderate motor   impairment”) or DALY weight 435 (“severe motor impairment”)</p></td>
-</tr>
-<tr class="row-odd"><td><p>treatment_effect_inj_abx_sep</p></td>
+<tr class="row-even"><td><p>treatment_effect_inj_abx_sep</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of injectable antibiotics treatment on reducing mortality from sepsis</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_effect_supp_care_sep</p></td>
+<tr class="row-odd"><td><p>treatment_effect_supp_care_sep</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of full supportive care treatment on reducing mortality from sepsis</p></td>
 </tr>
-<tr class="row-odd"><td><p>treatment_effect_cord_care</p></td>
+<tr class="row-even"><td><p>treatment_effect_cord_care</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of full supportive care treatment on reducing incidence of sepsis</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_effect_clean_birth</p></td>
+<tr class="row-odd"><td><p>treatment_effect_clean_birth</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of clean birth practices on reducing incidence of sepsis</p></td>
 </tr>
-<tr class="row-odd"><td><p>treatment_effect_early_init_bf</p></td>
+<tr class="row-even"><td><p>treatment_effect_early_init_bf</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of early initiation of breastfeeding on reducing incidence of sepsis</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_effect_resuscitation</p></td>
+<tr class="row-odd"><td><p>treatment_effect_resuscitation</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of resuscitation on newborn mortality associated with encephalopathy</p></td>
 </tr>
-<tr class="row-odd"><td><p>treatment_effect_resuscitation_preterm</p></td>
+<tr class="row-even"><td><p>treatment_effect_resuscitation_preterm</p></td>
 <td><p>LIST</p></td>
-<td><p>effect of delayed resuscitation on newborn mortality associated with prematurity</p></td>
+<td><p>effect of resuscitation on newborn mortality associated with prematurity</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_effect_abx_prom</p></td>
+<tr class="row-odd"><td><p>treatment_effect_abx_prom</p></td>
 <td><p>LIST</p></td>
 <td><p>effect of antibiotics given to mothers experience PROM on risk of newborn sepsis</p></td>
 </tr>
-<tr class="row-odd"><td><p>treatment_effect_steroid_preterm</p></td>
+<tr class="row-even"><td><p>treatment_effect_steroid_preterm</p></td>
 <td><p>LIST</p></td>
 <td><p>relative risk of death for preterm neonates following administration of antenatal corticosteroids</p></td>
 </tr>
-<tr class="row-even"><td><p>treatment_effect_kmc</p></td>
+<tr class="row-odd"><td><p>treatment_effect_kmc</p></td>
 <td><p>LIST</p></td>
 <td><p>treatment effect of kangaroo mother care on preterm mortality</p></td>
-</tr>
-<tr class="row-odd"><td><p>squeeze_threshold_for_delay_three_nb_care</p></td>
-<td><p>LIST</p></td>
-<td><p>squeeze factor value over which an individual within a newborn HSI is said to experience type 3 delay i.e. delay in receiving appropriate care</p></td>
-</tr>
-<tr class="row-even"><td><p>treatment_effect_modifier_one_delay</p></td>
-<td><p>LIST</p></td>
-<td><p>factor by which treatment effectiveness is reduced in the presences of one delays</p></td>
 </tr>
 </tbody>
 </table>
@@ -499,26 +477,22 @@ via HSI_NewbornOutcomes_ReceivesPostnatalCheck.</p>
 <td><p>BOOL</p></td>
 <td><p>whether this neonate received clean birth practices at delivery</p></td>
 </tr>
-<tr class="row-even"><td><p>nb_received_cord_care</p></td>
-<td><p>BOOL</p></td>
-<td><p>whether this neonate received chlorhexidine cord care</p></td>
-</tr>
-<tr class="row-odd"><td><p>nb_death_after_birth</p></td>
+<tr class="row-even"><td><p>nb_death_after_birth</p></td>
 <td><p>BOOL</p></td>
 <td><p>whether this child has died following complications after birth</p></td>
 </tr>
-<tr class="row-even"><td><p>nb_pnc_check</p></td>
+<tr class="row-odd"><td><p>nb_pnc_check</p></td>
 <td><p>INT</p></td>
 <td><p>Number of postnatal checks received in the postnatal period</p></td>
 </tr>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘PregnancySupervisor’, ‘Labour’, ‘PostnatalSupervisor’, ‘CareOfWomenDuringPregnancy’}</p>
-<p>CAUSES_OF_DEATH : {‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x12d11ad50&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x12d11bb10&gt;, ‘encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x12d118090&gt;, ‘neonatal_respiratory_depression’: &lt;tlo.methods.causes.Cause object at 0x12d1180d0&gt;, ‘preterm_other’: &lt;tlo.methods.causes.Cause object at 0x12d119590&gt;, ‘respiratory_distress_syndrome’: &lt;tlo.methods.causes.Cause object at 0x12d11b590&gt;, ‘congenital_heart_anomaly’: &lt;tlo.methods.causes.Cause object at 0x12d119a10&gt;, ‘limb_or_musculoskeletal_anomaly’: &lt;tlo.methods.causes.Cause object at 0x12d118890&gt;, ‘urogenital_anomaly’: &lt;tlo.methods.causes.Cause object at 0x12d11a010&gt;, ‘digestive_anomaly’: &lt;tlo.methods.causes.Cause object at 0x12d118c50&gt;, ‘other_anomaly’: &lt;tlo.methods.causes.Cause object at 0x12d119cd0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘Retinopathy of Prematurity’: &lt;tlo.methods.causes.Cause object at 0x12d11aed0&gt;, ‘Neonatal Encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x12d1188d0&gt;, ‘Neonatal Sepsis Long term Disability’: &lt;tlo.methods.causes.Cause object at 0x12d11b490&gt;, ‘Preterm Birth Disability’: &lt;tlo.methods.causes.Cause object at 0x12d119250&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘PregnancySupervisor’, ‘Labour’, ‘CareOfWomenDuringPregnancy’, ‘PostnatalSupervisor’}</p>
+<p>CAUSES_OF_DEATH : {‘early_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x130537b90&gt;, ‘late_onset_sepsis’: &lt;tlo.methods.causes.Cause object at 0x130535390&gt;, ‘encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x130536a90&gt;, ‘neonatal_respiratory_depression’: &lt;tlo.methods.causes.Cause object at 0x130534850&gt;, ‘preterm_other’: &lt;tlo.methods.causes.Cause object at 0x1305375d0&gt;, ‘respiratory_distress_syndrome’: &lt;tlo.methods.causes.Cause object at 0x130537f10&gt;, ‘congenital_heart_anomaly’: &lt;tlo.methods.causes.Cause object at 0x130534c90&gt;, ‘limb_or_musculoskeletal_anomaly’: &lt;tlo.methods.causes.Cause object at 0x1305364d0&gt;, ‘urogenital_anomaly’: &lt;tlo.methods.causes.Cause object at 0x130537190&gt;, ‘digestive_anomaly’: &lt;tlo.methods.causes.Cause object at 0x1305345d0&gt;, ‘other_anomaly’: &lt;tlo.methods.causes.Cause object at 0x130534910&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘Retinopathy of Prematurity’: &lt;tlo.methods.causes.Cause object at 0x130536dd0&gt;, ‘Neonatal Encephalopathy’: &lt;tlo.methods.causes.Cause object at 0x130536610&gt;, ‘Neonatal Sepsis Long term Disability’: &lt;tlo.methods.causes.Cause object at 0x130536690&gt;, ‘Preterm Birth Disability’: &lt;tlo.methods.causes.Cause object at 0x130537510&gt;}</p>
 <p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class NewbornOutcomes):</strong></p>
 <dl class="py method">
@@ -604,7 +578,7 @@ It is called during the on_birth function.
 <dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.NewbornOutcomes.apply_risk_of_neonatal_infection_and_sepsis">
 <span class="sig-name descname"><span class="pre">apply_risk_of_neonatal_infection_and_sepsis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#NewbornOutcomes.apply_risk_of_neonatal_infection_and_sepsis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.NewbornOutcomes.apply_risk_of_neonatal_infection_and_sepsis" title="Link to this definition"></a></dt>
 <dd><p>This function uses the linear model to determines if a neonate will develop early onset neonatal sepsis.
-It is called during the on_birth function or during HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAt
+It is called during the on_birth function or during HSI_NewbornOutcomes_ReceivesPostnatalCheck
 Birth dependent on delivery setting.
 :param child_id: child_id</p>
 </dd></dl>
@@ -615,8 +589,7 @@ Birth dependent on delivery setting.
 <dd><p>This function determines if a neonate will develop neonatal encephalopathy on birth or after birth
 (if they were not breathing), at what severity, and makes the appropriate changes to the data frame.</p>
 <blockquote>
-<div><p>It is called during the on_birth function or  during HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAt
-Birth dependent on delivery setting.</p>
+<div><p>It is called during the on_birth function.</p>
 </div></blockquote>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -632,8 +605,7 @@ Birth dependent on delivery setting.</p>
 <dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.NewbornOutcomes.apply_risk_of_preterm_respiratory_distress_syndrome">
 <span class="sig-name descname"><span class="pre">apply_risk_of_preterm_respiratory_distress_syndrome</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#NewbornOutcomes.apply_risk_of_preterm_respiratory_distress_syndrome"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.NewbornOutcomes.apply_risk_of_preterm_respiratory_distress_syndrome" title="Link to this definition"></a></dt>
 <dd><p>This function uses the linear model to determine if a preterm neonate will develop respiratory distress
-syndrome. It is called during the on_birth function or during
-HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendantAtBirth
+syndrome. It is called during the on_birth function.
 dependent on delivery setting.
 :param child_id: child_id</p>
 </dd></dl>
@@ -642,11 +614,14 @@ dependent on delivery setting.
 <dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.NewbornOutcomes.apply_risk_of_not_breathing_at_birth">
 <span class="sig-name descname"><span class="pre">apply_risk_of_not_breathing_at_birth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">child_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#NewbornOutcomes.apply_risk_of_not_breathing_at_birth"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.NewbornOutcomes.apply_risk_of_not_breathing_at_birth" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
-<dt>This function uses the linear model to determines if a neonate will not sufficiently initiate breathing at birth</dt><dd><p>and makes the appropriate changes to the data frame. It is called during the on_birth function or</p>
+<dt>This function uses the linear model to determines if a neonate will not sufficiently initiate breathing at birth</dt><dd><p>and makes the appropriate changes to the data frame. It is called during the on_birth.</p>
 </dd>
 </dl>
-<p>during HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant dependent on delivery setting.
-:param child_id: child_id</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>child_id</strong> – child_id</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -692,17 +667,14 @@ called at the end of the neonatal period by the PostnatalSupervisor event for su
 <span class="sig-name descname"><span class="pre">essential_newborn_care</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#NewbornOutcomes.essential_newborn_care"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.NewbornOutcomes.essential_newborn_care" title="Link to this definition"></a></dt>
 <dd><p>This function contains interventions delivered as part of ‘essential newborn care’. These include clean birth
 practices, cord care, vitamin k and eye care
-:param hsi_event:  The HSI event in which this function is called
-(HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant)</p>
+:param hsi_event:  The HSI event in which this function is called (HSI_NewbornOutcomes_ReceivesPostnatalCheck)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.NewbornOutcomes.breast_feeding">
 <span class="sig-name descname"><span class="pre">breast_feeding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">birth_setting</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#NewbornOutcomes.breast_feeding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.NewbornOutcomes.breast_feeding" title="Link to this definition"></a></dt>
 <dd><p>This function is used to set breastfeeding status for newborns. It schedules the BreastfeedingStatusUpdateEvent
-for breastfed newborns. It is called during the
-on_birth function or during HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant dependent on delivery
-setting.
+for breastfed newborns. It is called during the on_birth function.
 :param person_id: person_id
 :param birth_setting: hf (health facility) or hb (home birth)</p>
 </dd></dl>
@@ -711,7 +683,7 @@ setting.
 <dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.NewbornOutcomes.kangaroo_mother_care">
 <span class="sig-name descname"><span class="pre">kangaroo_mother_care</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#NewbornOutcomes.kangaroo_mother_care"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.NewbornOutcomes.kangaroo_mother_care" title="Link to this definition"></a></dt>
 <dd><p>This function manages the diagnosis and treatment of low birth weight neonates who have
-delivered in a facility. It is called by the HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant.
+delivered in a facility. It is called by the HSI_NewbornOutcomes_ReceivesPostnatalCheck.
 The intervention delivered is Kangaroo Mother Care (KMC) which includes skin-to-skin nursing and encouragement
 of frequent and exclusive breastfeeding
 :param hsi_event: The HSI event in which this function is called
@@ -736,8 +708,8 @@ of frequent and exclusive breastfeeding
 <dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.NewbornOutcomes.apply_effect_of_neonatal_resus">
 <span class="sig-name descname"><span class="pre">apply_effect_of_neonatal_resus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#NewbornOutcomes.apply_effect_of_neonatal_resus"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.NewbornOutcomes.apply_effect_of_neonatal_resus" title="Link to this definition"></a></dt>
 <dd><p>This function manages the diagnosis of failure to transition/encephalopathy and the administration of neonatal
-resuscitation for neonates delivered in a facility. It is called by the HSI_NewbornOutcomes_CareOfTheNewborn
-BySkilledAttendant.
+resuscitation for neonates delivered in a facility. It is called by the on_birth function depending on if a
+mother delivered in a facility
 :param hsi_event: The HSI event in which this function is called
 (HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant)</p>
 </dd></dl>
@@ -746,25 +718,25 @@ BySkilledAttendant.
 <dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.NewbornOutcomes.assessment_and_treatment_newborn_sepsis">
 <span class="sig-name descname"><span class="pre">assessment_and_treatment_newborn_sepsis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hsi_event</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#NewbornOutcomes.assessment_and_treatment_newborn_sepsis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.NewbornOutcomes.assessment_and_treatment_newborn_sepsis" title="Link to this definition"></a></dt>
 <dd><dl class="simple">
-<dt>This function manages the treatment of early onset neonatal sepsis for neonates delivered in a facility.</dt><dd><p>It is called by the</p>
-</dd>
-<dt>HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant. Treatment for sepsis includes either injectable</dt><dd><p>antibiotics or full supportive care (antibiotics, fluids, oxygen etc) and varies between facility level.</p>
+<dt>This function manages the treatment of early onset neonatal sepsis for neonates delivered in a facility.</dt><dd><p>It is called by the HSI_NewbornOutcomes_ReceivesPostnatalCheck. Treatment for sepsis includes either injectable
+antibiotics or full supportive care (antibiotics, fluids, oxygen etc) and varies between facility level.</p>
 </dd>
 </dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>hsi_event</strong> – The HSI event in which this function is called</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>hsi_event</strong> – The HSI event in which this function is called - HSI_NewbornOutcomes_ReceivesPostnatalCheck</p></li>
+<li><p><strong>facility_type</strong> – health centre (hc) or hospital (hp)</p></li>
+</ul>
 </dd>
 </dl>
-<p>(HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant)
-:param facility_type: health centre (hc) or hospital (hp)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.NewbornOutcomes.link_twins">
 <span class="sig-name descname"><span class="pre">link_twins</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">child_one</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">child_two</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mother_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#NewbornOutcomes.link_twins"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.NewbornOutcomes.link_twins" title="Link to this definition"></a></dt>
 <dd><p>This function links twin pairs via sibling IDs and is called by the BirthEvent in the Labour module
-:param child_one: individual_id of the first born child in a twin pair
+:param child_one: individual_id of the first-born child in a twin pair
 :param child_two: individual_id of the second born child in a twin pair
 :param mother_id: individual_id of the mother of the twin pair</p>
 </dd></dl>
@@ -790,9 +762,8 @@ HSI_NewbornOutcomes_ReceivesPostnatalCheck accordingly</p>
 <dd><p>The on_birth function of this module sets key properties of all newborns, including prematurity
 status and schedules functions to set weight and size. For newborns delivered at home it determines if they will
 experience complications following birth (early onset sepsis, encephalopathy, failure to transition) and if
-these complications will lead to death or disability .For newborns delivered in facility it schedules
-HSI_NewbornOutcomes_CareOfTheNewbornBySkilledAttendant which represents the care newborns should receive
-after being delivered in a facility.
+these complications will lead to death or disability .For newborns who will receive early PNC this function
+also scheduled HSI_NewbornOutcomes_ReceivesPostnatalCheck.
 :param mother_id: mother_id
 :param child_id: child_id</p>
 </dd></dl>
@@ -878,7 +849,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
 <dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_NeonatalWardInpatientCare">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_NewbornOutcomes_NeonatalWardInpatientCare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#HSI_NewbornOutcomes_NeonatalWardInpatientCare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_NeonatalWardInpatientCare" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_NewbornOutcomes_NeonatalWardInpatientCare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#HSI_NewbornOutcomes_NeonatalWardInpatientCare"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_NeonatalWardInpatientCare" title="Link to this definition"></a></dt>
 <dd><p>This is HSI_PostnatalSupervisor_NeonatalWardInpatientCare. It is scheduled by any of the PNC HSIs for neonates
 who are require inpatient care due to a complication of the postnatal period. Treatment is delivered in this
 event</p>
@@ -886,7 +857,7 @@ event</p>
 <p><strong>Functions (defined or overridden in class HSI_NewbornOutcomes_NeonatalWardInpatientCare):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_NeonatalWardInpatientCare.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#HSI_NewbornOutcomes_NeonatalWardInpatientCare.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_NeonatalWardInpatientCare.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/newborn_outcomes.html#HSI_NewbornOutcomes_NeonatalWardInpatientCare.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.newborn_outcomes.HSI_NewbornOutcomes_NeonatalWardInpatientCare.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -1013,7 +984,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Jan 25, 2024.
+      <span class="lastupdated">Last updated on Feb 24, 2024.
       </span></p>
   </div>
 

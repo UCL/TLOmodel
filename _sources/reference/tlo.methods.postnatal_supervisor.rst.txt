@@ -39,9 +39,6 @@ tlo.methods.postnatal_supervisor module
         * - cfr_secondary_postpartum_haemorrhage
           - LIST
           - case fatality rate for secondary pph
-        * - rr_death_from_pph_with_anaemia
-          - LIST
-          - relative risk of death from PPH in women with anaemia
         * - prob_htn_resolves
           - LIST
           - Weekly probability of resolution of hypertension
@@ -212,12 +209,6 @@ tlo.methods.postnatal_supervisor module
         * - pn_sepsis_late_neonatal
           - BOOL
           - Whether this neonate has developed late neonatal sepsis following discharge
-        * - pn_neonatal_sepsis_disab
-          - CATEGORICAL
-          - Level of disability experience from a neonate post sepsis.  Possible values are: [none, mild_motor_and_cog, mild_motor, moderate_motor, severe_motor, ]
-        * - pn_deficiencies_following_pregnancy
-          - INT
-          - bitset column, stores types of anaemia causing deficiencies following pregnancy
         * - pn_anaemia_following_pregnancy
           - CATEGORICAL
           - severity of anaemia following pregnancy.  Possible values are: [none, mild, moderate, severe, ]
@@ -229,15 +220,15 @@ tlo.methods.postnatal_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Labour', 'PregnancySupervisor', 'Lifestyle', 'NewbornOutcomes'}
+     ADDITIONAL_DEPENDENCIES : {'PregnancySupervisor', 'Labour', 'NewbornOutcomes', 'Lifestyle'}
 
-     CAUSES_OF_DEATH : {'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12cb66fd0>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x12cb67050>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x12cb67290>, 'eclampsia': <tlo.methods.causes.Cause object at 0x12cb672d0>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x12cb67310>, 'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x12cb67350>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x12cb67390>}
+     CAUSES_OF_DEATH : {'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x1300ab6d0>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x1300ab9d0>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x1300aba10>, 'eclampsia': <tlo.methods.causes.Cause object at 0x1300aba50>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x1300aba90>, 'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x1300abad0>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x1300abb10>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x12cb673d0>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x1300abb50>}
 
      INIT_DEPENDENCIES : {'HealthSystem', 'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      **Functions (defined or overridden in class PostnatalSupervisor):**
 

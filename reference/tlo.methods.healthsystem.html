@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.healthsystem module &mdash; TLOmodel 0.1.dev2353+gfac71f8 documentation</title>
+  <title>tlo.methods.healthsystem module &mdash; TLOmodel 0.1.dev2373+g8473a31 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=61a1be14"></script>
+        <script src="../_static/documentation_options.js?v=812bb691"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -100,7 +100,7 @@
 <p>Concrete subclasses should also inherit from one of the EventMixin classes
 defined below, and implement at least an <cite>apply</cite> and <cite>did_not_run</cite> method.</p>
 <p><strong>Class attributes:</strong></p>
-<p>bed_days_allocated_to_this_event : &lt;property object at 0x11b9745e0&gt;</p>
+<p>bed_days_allocated_to_this_event : &lt;property object at 0x11eefcea0&gt;</p>
 <p><strong>Functions (defined or overridden in class HSI_Event):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.__init__">
@@ -356,6 +356,22 @@ The execution of all health systems interactions are controlled through this mod
 <td><p>DICT</p></td>
 <td><p>Data on the priority ranking of each of the Treatment_IDs to be adopted by  the queueing system under different policies, where the lower the number the higher the priority, and on which categories of individuals classify for fast-tracking  for specific treatments</p></td>
 </tr>
+<tr class="row-even"><td><p>const_HR_scaling_table</p></td>
+<td><p>DICT</p></td>
+<td><p>Factors by which capabilities of medical officer categories at different levels will bescaled at the start of the simulation to simulate a number of effects (e.g. absenteeism,boosting of specific medical cadres, etc). This is the imported from anExcel workbook: keys are the worksheet names and values are the worksheets in the format of pd.DataFrames.</p></td>
+</tr>
+<tr class="row-odd"><td><p>const_HR_scaling_mode</p></td>
+<td><p>STRING</p></td>
+<td><p>Mode of HR scaling considered at the start of the simulation. Options are default (capabilities are scaled by a constaint factor of 1), data (factors informed by survey data),and custom (user can freely set these factors as parameters in the analysis).</p></td>
+</tr>
+<tr class="row-even"><td><p>dynamic_HR_scaling_factor</p></td>
+<td><p>REAL</p></td>
+<td><p>Factor by which HR capabilities are scaled at regular intervals of 1 year (in addition to the [optional] scaling with population size (controlled by <cite>scale_HR_by_popsize</cite></p></td>
+</tr>
+<tr class="row-odd"><td><p>scale_HR_by_popsize</p></td>
+<td><p>BOOL</p></td>
+<td><p>Decide whether to scale HR capabilities by population size every year. Can be used as well as the dynamic_HR_scaling_factor</p></td>
+</tr>
 <tr class="row-even"><td><p>tclose_overwrite</p></td>
 <td><p>INT</p></td>
 <td><p>Decide whether to overwrite tclose variables assigned by disease modules</p></td>
@@ -396,9 +412,9 @@ The execution of all health systems interactions are controlled through this mod
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
-<p>capabilities_today : &lt;property object at 0x11b80ebb0&gt;</p>
-<p>hsi_event_counts : &lt;property object at 0x11b974810&gt;</p>
-<p>never_ran_hsi_event_counts : &lt;property object at 0x11b974860&gt;</p>
+<p>capabilities_today : &lt;property object at 0x11eefcfe0&gt;</p>
+<p>hsi_event_counts : &lt;property object at 0x11eefd170&gt;</p>
+<p>never_ran_hsi_event_counts : &lt;property object at 0x11eefd1c0&gt;</p>
 <p><strong>Functions (defined or overridden in class HealthSystem):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.__init__">
@@ -533,6 +549,12 @@ It is a good place to add initial events to the event queue.</p>
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.process_human_resources_files">
 <span class="sig-name descname"><span class="pre">process_human_resources_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">use_funded_or_actual_staffing</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.process_human_resources_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.process_human_resources_files" title="Link to this definition"></a></dt>
 <dd><p>Create the data-structures needed from the information read into the parameters.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.adjust_for_const_HR_scaling">
+<span class="sig-name descname"><span class="pre">adjust_for_const_HR_scaling</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystem.adjust_for_const_HR_scaling"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystem.adjust_for_const_HR_scaling" title="Link to this definition"></a></dt>
+<dd><p>Adjust the Daily_Capabilities pd.DataFrame to account for assumptions about scaling of HR resources</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1021,6 +1043,44 @@ constructor, but may also take further keyword arguments.</p></li>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.DynamicRescalingHRCapabilities">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DynamicRescalingHRCapabilities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#DynamicRescalingHRCapabilities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.DynamicRescalingHRCapabilities" title="Link to this definition"></a></dt>
+<dd><p>This event exists to scale the daily capabilities assumed at fixed time intervals</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
+<p><strong>Class attributes:</strong></p>
+<p>__annotations__ : {}</p>
+<p>current_pop_size : &lt;property object at 0x11eefd4e0&gt;</p>
+<p><strong>Functions (defined or overridden in class DynamicRescalingHRCapabilities):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.DynamicRescalingHRCapabilities.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#DynamicRescalingHRCapabilities.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.DynamicRescalingHRCapabilities.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new regular event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event</p></li>
+<li><p><strong>frequency</strong> (<em>pandas.tseries.offsets.DateOffset</em>) – the interval from one occurrence to the next
+(must be supplied as a keyword argument)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.healthsystem.DynamicRescalingHRCapabilities.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">population</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#DynamicRescalingHRCapabilities.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.DynamicRescalingHRCapabilities.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the given target.</p>
+<p>This is a no-op; subclasses should override this method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystemChangeMode">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HealthSystemChangeMode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/healthsystem.html#HealthSystemChangeMode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.healthsystem.HealthSystemChangeMode" title="Link to this definition"></a></dt>
 <dd><p>This event exists to change the priority policy adopted by the
@@ -1072,7 +1132,7 @@ HealthSystem at a given year.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Jan 25, 2024.
+      <span class="lastupdated">Last updated on Feb 24, 2024.
       </span></p>
   </div>
 

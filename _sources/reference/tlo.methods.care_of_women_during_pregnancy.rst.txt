@@ -42,24 +42,15 @@ tlo.methods.care_of_women_during_pregnancy module
         * - treatment_effect_blood_transfusion_anaemia
           - LIST
           - treatment effectiveness of blood transfusion for anaemia in pregnancy
-        * - squeeze_factor_threshold_anc
-          - INT
-          - squeeze factor threshold over which an ANC appointment cannot run
         * - prob_intervention_delivered_urine_ds
           - LIST
           - probability a woman will receive the intervention "urine dipstick" given that the HSI has ran and the consumables are available (proxy for clinical quality)
         * - prob_intervention_delivered_bp
           - LIST
           - probability a woman will receive the intervention "blood pressure measurement" given that the HSI has ran and the consumables are available (proxy for clinical quality)
-        * - prob_intervention_delivered_ifa
-          - LIST
-          - probability a woman will receive the intervention "iron and folic acid" given that the HSI has ran and the consumables are available (proxy for clinical quality)
         * - prob_adherent_ifa
           - LIST
           - probability a woman who is given iron and folic acid will adhere to the treatment for their pregnancy
-        * - prob_intervention_delivered_poct
-          - LIST
-          - probability a woman will receive the intervention "point of care Hb testing" given that the HSI has ran and the consumables are available (proxy for clinical quality)
         * - prob_intervention_delivered_syph_test
           - LIST
           - probability a woman will receive the intervention "Syphilis test" given that the HSI has ran and the consumables are available (proxy for clinical quality)
@@ -108,9 +99,6 @@ tlo.methods.care_of_women_during_pregnancy module
         * - specificity_blood_test_syphilis
           - LIST
           - specificity of a blood test to detect syphilis
-        * - squeeze_threshold_for_delay_three_an
-          - LIST
-          - squeeze factor value over which an individual within a antenatal HSI is said to experience type 3 delay i.e. delay in receiving appropriate care
 
 
      **PROPERTIES:**
@@ -169,7 +157,7 @@ tlo.methods.care_of_women_during_pregnancy module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Contraception', 'Labour', 'Lifestyle'}
+     ADDITIONAL_DEPENDENCIES : {'Labour', 'Contraception', 'Lifestyle'}
 
      INIT_DEPENDENCIES : {'HealthSystem', 'PregnancySupervisor', 'Demography'}
 

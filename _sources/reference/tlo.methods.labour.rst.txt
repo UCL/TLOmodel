@@ -57,6 +57,12 @@ tlo.methods.labour module
         * - risk_post_term_labour
           - LIST
           - risk of remaining pregnant past 42 weeks
+        * - rr_potl_bmi_30_35
+          - LIST
+          - effect of maternal BMI being between 30 and 35 on risk of post term labour
+        * - rr_potl_bmi_35+
+          - LIST
+          - effect of maternal BMI being between above 35 on risk of post term labour
         * - list_limits_for_defining_term_status
           - LIST
           - List of number of days of gestation used to define term, early preterm, late preterm and post term delivery
@@ -231,7 +237,7 @@ tlo.methods.labour module
         * - cfr_pp_pph
           - LIST
           - case fatality rate for postpartum haemorrhage
-        * - rr_pph_death_anaemia
+        * - rr_death_from_haem_with_anaemia
           - LIST
           - relative risk increase of death in women who are anaemic at time of PPH
         * - odds_deliver_in_health_centre
@@ -333,18 +339,6 @@ tlo.methods.labour module
         * - probability_delivery_hospital
           - LIST
           - probability of delivering in a hospital
-        * - prob_delay_one_two_fd
-          - LIST
-          - probability a woman seeking care during pregnancy will experience a type 1 or 2 delay when choosing to seek care (i.e. she is delayed in reaching the facility
-        * - squeeze_threshold_for_delay_three_bemonc
-          - LIST
-          - squeeze factor value over which an individual within a EMoNC HSI is said to experience type 3 delay i.e. delay in receiving appropriate care
-        * - squeeze_threshold_for_delay_three_cemonc
-          - LIST
-          - squeeze factor value over which an individual within a CEMoNC HSI is said to experience type 3 delay i.e. delay in receiving appropriate car1e
-        * - squeeze_threshold_for_delay_three_pn
-          - LIST
-          - squeeze factor value over which an individual within a postnatal HSI is said to experience type 3 delay i.e. delay in receiving appropriate care
         * - prob_timings_pnc
           - LIST
           - probabilities that a woman who will receive a PNC check will receive care <48hrs post birth or > 48hrs post birth
@@ -513,12 +507,6 @@ tlo.methods.labour module
         * - mean_hcw_competence_hp
           - LIST
           - mean competence of HCW at delivering EmONC care at a hospital. A draw below this level prevents intervention delivery
-        * - treatment_effect_modifier_all_delays
-          - LIST
-          - factor by which treatment effectiveness is reduced in the presences of multiple delays
-        * - treatment_effect_modifier_one_delay
-          - LIST
-          - factor by which treatment effectiveness is reduced in the presences of one delays
         * - prob_intervention_delivered_anaemia_assessment_pnc
           - LIST
           - probability a woman will have their Hb levels checked during PNC given that the HSI has ran and the consumables are available (proxy for clinical quality)
@@ -540,6 +528,12 @@ tlo.methods.labour module
         * - cemonc_availability
           - REAL
           - set probability of CEmONC intervention being delivered during analysis
+        * - bemonc_cons_availability
+          - REAL
+          - set probability of BEmONC consumables being available
+        * - cemonc_cons_availability
+          - REAL
+          - set probability of CEmONC consumables being available
         * - alternative_pnc_coverage
           - BOOL
           - Signals within the analysis event that an alternative level of PNC coverage has been determined following the events run
@@ -552,6 +546,15 @@ tlo.methods.labour module
         * - pnc_availability_probability
           - REAL
           - Target probability of quality/consumables when analysis is being conducted - only applied if alternative_pnc_coverage is true
+        * - sba_sens_analysis_max
+          - BOOL
+          - Signals that max coverage of SBA is being forced for sensitivity analysis
+        * - pnc_sens_analysis_max
+          - BOOL
+          - Signals that max coverage of PNC is being forced for sensitivity analysis
+        * - pnc_sens_analysis_min
+          - BOOL
+          - Signals that min coverage of SBA is being forced for sensitivity analysis
 
 
      **PROPERTIES:**
@@ -578,9 +581,6 @@ tlo.methods.labour module
         * - la_previous_cs_delivery
           - INT
           - total number of previous deliveries
-        * - la_has_previously_delivered_preterm
-          - BOOL
-          - whether the woman has had a previous preterm delivery for any of her previous deliveries
         * - la_obstructed_labour
           - BOOL
           - Whether this woman is experiencing obstructed labour
@@ -590,9 +590,6 @@ tlo.methods.labour module
         * - la_antepartum_haem
           - CATEGORICAL
           - whether the woman has experienced an antepartum haemorrhage in this delivery and it severity.  Possible values are: [none, mild_moderate, severe, ]
-        * - la_antepartum_haem_treatment
-          - BOOL
-          - whether this womans antepartum haemorrhage has been treated
         * - la_uterine_rupture
           - BOOL
           - whether the woman has experienced uterine rupture in this delivery
@@ -623,9 +620,6 @@ tlo.methods.labour module
         * - la_postpartum_haem
           - BOOL
           - whether the woman has experienced an postpartum haemorrhage in thisdelivery
-        * - la_postpartum_haem_cause
-          - INT
-          - bitset column holding causes of postpartum haemorrhage
         * - la_postpartum_haem_treatment
           - INT
           -  Treatment for received for postpartum haemorrhage (bitset)
@@ -649,15 +643,15 @@ tlo.methods.labour module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'Contraception', 'PregnancySupervisor', 'Lifestyle', 'NewbornOutcomes', 'HealthSystem', 'PostnatalSupervisor', 'CareOfWomenDuringPregnancy'}
+     ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes', 'PostnatalSupervisor', 'Contraception', 'Lifestyle', 'PregnancySupervisor', 'CareOfWomenDuringPregnancy', 'HealthSystem'}
 
-     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x12cb84750>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x12cb84790>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12cb847d0>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x12cb84810>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12cb84850>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x12cb84890>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x12cb848d0>, 'eclampsia': <tlo.methods.causes.Cause object at 0x12cb84910>}
+     CAUSES_OF_DEATH : {'uterine_rupture': <tlo.methods.causes.Cause object at 0x1300c4e90>, 'intrapartum_sepsis': <tlo.methods.causes.Cause object at 0x1300c4ed0>, 'antepartum_haemorrhage': <tlo.methods.causes.Cause object at 0x1300c4f10>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x1300c4f50>, 'postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x1300c4f90>, 'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x1300c4fd0>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x1300c5010>, 'eclampsia': <tlo.methods.causes.Cause object at 0x1300c5050>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x12cb84990>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x1300c50d0>}
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'Stunting'}
 

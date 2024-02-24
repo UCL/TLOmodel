@@ -1,0 +1,7 @@
+tlo.analysis.life\_expectancy module
+====================================
+
+.. automodule:: tlo.analysis.life_expectancy
+   :members:
+   :undoc-members:
+   :show-inheritance:

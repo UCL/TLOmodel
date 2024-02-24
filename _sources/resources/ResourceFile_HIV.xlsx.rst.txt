@@ -73,6 +73,7 @@ parameters
   59  aids\_tb\_treatment\_adjustment                                                          0.5
   60  prob\_circ\_for\_child\_before\_2020                                                     0.0128   This is estimated using DHIS2 vmmc cases and world bank population data 2015-2019.
   61  prob\_circ\_for\_child\_from\_2020                                                       0.0008   From 2020 on, as indicated by DHIS2 data and PEPFAR 2020 Country Operational Plan, the <15 yrs circ cases should decline dramatically. The probability derived from 2020-2022 data is 0.0008, using the same estimation method.
+  62  dispensation\_period\_months                                                             3
 ====  ====================================================================================  ==========  ===============================================================================================================================================================================================================================  =================
 
 LHC_samples

@@ -42,6 +42,12 @@ tlo.methods.newborn_outcomes module
         * - cfr_late_onset_sepsis
           - LIST
           - case fatality rate for a neonate due to neonatal sepsis
+        * - prob_mild_impairment_post_sepsis
+          - LIST
+          - probability of the mild neurodevelopmental impairment in survivors of sepsis
+        * - prob_mod_severe_impairment_post_sepsis
+          - LIST
+          - probability of the moderate or severe neurodevelopmental impairment in survivors of sepsis
         * - prob_failure_to_transition
           - LIST
           - baseline probability of a neonate developing intrapartum related complications (previously birth asphyxia) following delivery 
@@ -81,6 +87,9 @@ tlo.methods.newborn_outcomes module
         * - prob_respiratory_distress_preterm
           - LIST
           - probability that a preterm infant will experience respiratory distress at birth
+        * - rr_rds_early_preterm
+          - LIST
+          - relative risk of RDS in a preterm newborn born before 34 weeks
         * - rr_rds_maternal_diabetes_mellitus
           - LIST
           - relative risk of RDS in a preterm newborn whose mother has DM
@@ -102,12 +111,15 @@ tlo.methods.newborn_outcomes module
         * - prob_mod_severe_disability_preterm_32_36weeks
           - LIST
           - probability of moderate/severe long term neurodevelopmental disability in preterm infants born between 32 and 36 weeks gestation
-        * - prob_retinopathy_preterm
+        * - prob_retinopathy_preterm_early
           - LIST
-          - baseline probability of a preterm neonate developing retinopathy of prematurity 
-        * - prob_retinopathy_severity
+          - Probability that a neonate born at less than 32 weeks who survives the neonatal period will develop retinopathy
+        * - prob_retinopathy_preterm_late
           - LIST
-          - probabilities of severity of retinopathy
+          - Probability that a neonate born at less than 32 weeks who survives the neonatal period will develop retinopathy
+        * - prob_retinopathy_severity_no_treatment
+          - LIST
+          - Probabilities that a preterm neonate who developed retinopathy will experience the following vision impairments: none, mild, moderate or blindness
         * - cfr_preterm_birth
           - LIST
           - case fatality rate for a neonate born prematurely
@@ -165,30 +177,9 @@ tlo.methods.newborn_outcomes module
         * - prob_timings_pnc_newborns
           - LIST
           - probabilities that a postnatal check will happen before or after 48 hours alive
-        * - probs_for_mild_preterm_daly_wts_<32wks
+        * - prob_kmc_available
           - LIST
-          - Probabilities (sum to one) that a newborn delivered at less than 32 weeks AND experiencing mild impairment will accrue the DALY weight 357 ("mild motor and cognitive impairment") or DALY weight 371 ("mild motor impairment")
-        * - probs_for_sev_preterm_daly_wts_<32wks
-          - LIST
-          - Probabilities (sum to one) that a newborn delivered at less than 32 weeks AND experiencing moderate/severe impairment will accrue the DALY weight 378 ("moderate motor impairment") or DALY weight 383 ("severe motor impairment")
-        * - probs_for_mild_preterm_daly_wts_>32wks
-          - LIST
-          - Probabilities (sum to one) that a newborn delivered at greater than 32 weeks AND experiencing mild impairment will accrue the DALY weight 357 ("mild motor and cognitive impairment") or DALY weight 371 ("mild motor impairment")
-        * - probs_for_sev_preterm_daly_wts_>32wks
-          - LIST
-          - Probabilities (sum to one) that a newborn delivered at less than 32 weeks AND experiencing moderate/severe impairment will accrue the DALY weight 378 ("moderate motor impairment") or DALY weight 383 ("severe motor impairment")
-        * - probs_for_mild_enceph_daly_wts
-          - LIST
-          - Probabilities (sum to one) that a newborn delivered who develops encephalopathy AND experiencing mild impairment will accrue the DALY weight 419 ("mild motor and cognitive impairment") or DALY weight 416 ("mild motor impairment")
-        * - probs_for_sev_enceph_daly_wts
-          - LIST
-          - Probabilities (sum to one) that a newborn delivered who develops encephalopathy AND experiencing moderate/severe impairment will accrue the DALY weight 411 ("moderate motor   impairment") or DALY weight 410 ("severe motor impairment")
-        * - probs_for_mild_sepsis_daly_wts
-          - LIST
-          - Probabilities (sum to one) that a newborn delivered who develops sepsis AND experiencing mild impairment will accrue the DALY weight 411 ("mild motor and cognitive impairment") or DALY weight 431 ("mild motor impairment")
-        * - probs_for_sev_sepsis_daly_wts
-          - LIST
-          - Probabilities (sum to one) that a newborn delivered who develops sepsis AND experiencing moderate/severe impairment will accrue the DALY weight 438 ("moderate motor   impairment") or DALY weight 435 ("severe motor impairment")
+          - probability that KMC can be delivered in a given hospital
         * - treatment_effect_inj_abx_sep
           - LIST
           - effect of injectable antibiotics treatment on reducing mortality from sepsis
@@ -209,7 +200,7 @@ tlo.methods.newborn_outcomes module
           - effect of resuscitation on newborn mortality associated with encephalopathy
         * - treatment_effect_resuscitation_preterm
           - LIST
-          - effect of delayed resuscitation on newborn mortality associated with prematurity
+          - effect of resuscitation on newborn mortality associated with prematurity
         * - treatment_effect_abx_prom
           - LIST
           - effect of antibiotics given to mothers experience PROM on risk of newborn sepsis 
@@ -219,12 +210,6 @@ tlo.methods.newborn_outcomes module
         * - treatment_effect_kmc
           - LIST
           - treatment effect of kangaroo mother care on preterm mortality
-        * - squeeze_threshold_for_delay_three_nb_care
-          - LIST
-          - squeeze factor value over which an individual within a newborn HSI is said to experience type 3 delay i.e. delay in receiving appropriate care
-        * - treatment_effect_modifier_one_delay
-          - LIST
-          - factor by which treatment effectiveness is reduced in the presences of one delays
 
 
      **PROPERTIES:**
@@ -302,9 +287,6 @@ tlo.methods.newborn_outcomes module
         * - nb_clean_birth
           - BOOL
           - whether this neonate received clean birth practices at delivery
-        * - nb_received_cord_care
-          - BOOL
-          - whether this neonate received chlorhexidine cord care
         * - nb_death_after_birth
           - BOOL
           - whether this child has died following complications after birth
@@ -316,15 +298,15 @@ tlo.methods.newborn_outcomes module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'PregnancySupervisor', 'Labour', 'PostnatalSupervisor', 'CareOfWomenDuringPregnancy'}
+     ADDITIONAL_DEPENDENCIES : {'PregnancySupervisor', 'Labour', 'CareOfWomenDuringPregnancy', 'PostnatalSupervisor'}
 
-     CAUSES_OF_DEATH : {'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x12d11ad50>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x12d11bb10>, 'encephalopathy': <tlo.methods.causes.Cause object at 0x12d118090>, 'neonatal_respiratory_depression': <tlo.methods.causes.Cause object at 0x12d1180d0>, 'preterm_other': <tlo.methods.causes.Cause object at 0x12d119590>, 'respiratory_distress_syndrome': <tlo.methods.causes.Cause object at 0x12d11b590>, 'congenital_heart_anomaly': <tlo.methods.causes.Cause object at 0x12d119a10>, 'limb_or_musculoskeletal_anomaly': <tlo.methods.causes.Cause object at 0x12d118890>, 'urogenital_anomaly': <tlo.methods.causes.Cause object at 0x12d11a010>, 'digestive_anomaly': <tlo.methods.causes.Cause object at 0x12d118c50>, 'other_anomaly': <tlo.methods.causes.Cause object at 0x12d119cd0>}
+     CAUSES_OF_DEATH : {'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x130537b90>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x130535390>, 'encephalopathy': <tlo.methods.causes.Cause object at 0x130536a90>, 'neonatal_respiratory_depression': <tlo.methods.causes.Cause object at 0x130534850>, 'preterm_other': <tlo.methods.causes.Cause object at 0x1305375d0>, 'respiratory_distress_syndrome': <tlo.methods.causes.Cause object at 0x130537f10>, 'congenital_heart_anomaly': <tlo.methods.causes.Cause object at 0x130534c90>, 'limb_or_musculoskeletal_anomaly': <tlo.methods.causes.Cause object at 0x1305364d0>, 'urogenital_anomaly': <tlo.methods.causes.Cause object at 0x130537190>, 'digestive_anomaly': <tlo.methods.causes.Cause object at 0x1305345d0>, 'other_anomaly': <tlo.methods.causes.Cause object at 0x130534910>}
 
-     CAUSES_OF_DISABILITY : {'Retinopathy of Prematurity': <tlo.methods.causes.Cause object at 0x12d11aed0>, 'Neonatal Encephalopathy': <tlo.methods.causes.Cause object at 0x12d1188d0>, 'Neonatal Sepsis Long term Disability': <tlo.methods.causes.Cause object at 0x12d11b490>, 'Preterm Birth Disability': <tlo.methods.causes.Cause object at 0x12d119250>}
+     CAUSES_OF_DISABILITY : {'Retinopathy of Prematurity': <tlo.methods.causes.Cause object at 0x130536dd0>, 'Neonatal Encephalopathy': <tlo.methods.causes.Cause object at 0x130536610>, 'Neonatal Sepsis Long term Disability': <tlo.methods.causes.Cause object at 0x130536690>, 'Preterm Birth Disability': <tlo.methods.causes.Cause object at 0x130537510>}
 
      INIT_DEPENDENCIES : {'HealthSystem', 'Demography'}
 
-     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 

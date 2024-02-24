@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.malaria module &mdash; TLOmodel 0.1.dev2353+gfac71f8 documentation</title>
+  <title>tlo.methods.malaria module &mdash; TLOmodel 0.1.dev2373+g8473a31 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=61a1be14"></script>
+        <script src="../_static/documentation_options.js?v=812bb691"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -162,57 +162,101 @@ including the malaria RDT using DxTest</p>
 <td><p>REAL</p></td>
 <td><p>duration (days) of parasitaemia for clinical malaria cases</p></td>
 </tr>
-<tr class="row-even"><td><p>rr_hiv</p></td>
-<td><p>REAL</p></td>
-<td><p>relative risk of clinical malaria if hiv-positive</p></td>
-</tr>
-<tr class="row-odd"><td><p>treatment_adjustment</p></td>
+<tr class="row-even"><td><p>treatment_adjustment</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of death from severe malaria if on treatment</p></td>
 </tr>
-<tr class="row-even"><td><p>p_sev_anaemia_preg</p></td>
+<tr class="row-odd"><td><p>p_sev_anaemia_preg</p></td>
 <td><p>REAL</p></td>
 <td><p>probability of severe anaemia in pregnant women with clinical malaria</p></td>
 </tr>
-<tr class="row-odd"><td><p>itn_proj</p></td>
+<tr class="row-even"><td><p>itn_proj</p></td>
 <td><p>REAL</p></td>
 <td><p>coverage of ITN for projections 2020 onwards</p></td>
 </tr>
-<tr class="row-even"><td><p>mortality_adjust</p></td>
+<tr class="row-odd"><td><p>mortality_adjust</p></td>
 <td><p>REAL</p></td>
 <td><p>adjustment of case-fatality rate to match WHO/MAP</p></td>
 </tr>
-<tr class="row-odd"><td><p>data_end</p></td>
+<tr class="row-even"><td><p>data_end</p></td>
 <td><p>REAL</p></td>
 <td><p>final year of ICL malaria model outputs, after 2018 = projections</p></td>
 </tr>
-<tr class="row-even"><td><p>irs_rates_boundary</p></td>
+<tr class="row-odd"><td><p>irs_rates_boundary</p></td>
 <td><p>REAL</p></td>
 <td><p>threshold for indoor residual spraying coverage</p></td>
 </tr>
-<tr class="row-odd"><td><p>irs_rates_upper</p></td>
+<tr class="row-even"><td><p>irs_rates_upper</p></td>
 <td><p>REAL</p></td>
 <td><p>indoor residual spraying high coverage</p></td>
 </tr>
-<tr class="row-even"><td><p>irs_rates_lower</p></td>
+<tr class="row-odd"><td><p>irs_rates_lower</p></td>
 <td><p>REAL</p></td>
 <td><p>indoor residual spraying low coverage</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_malaria_case_tests</p></td>
+<tr class="row-even"><td><p>prob_malaria_case_tests</p></td>
 <td><p>REAL</p></td>
 <td><p>probability that a malaria case will have a scheduled rdt</p></td>
 </tr>
-<tr class="row-even"><td><p>itn</p></td>
+<tr class="row-odd"><td><p>itn</p></td>
 <td><p>REAL</p></td>
 <td><p>projected future itn coverage</p></td>
 </tr>
-<tr class="row-odd"><td><p>rdt_testing_rates</p></td>
+<tr class="row-even"><td><p>rdt_testing_rates</p></td>
 <td><p>REAL</p></td>
 <td><p>per capita rdt testing rate of general population</p></td>
 </tr>
-<tr class="row-even"><td><p>scaling_factor_for_rdt_availability</p></td>
+<tr class="row-odd"><td><p>scaling_factor_for_rdt_availability</p></td>
 <td><p>REAL</p></td>
 <td><p>scaling factor applied to the reports of rdt usage to compensate fornon-availability of rdts at some facilities</p></td>
+</tr>
+<tr class="row-even"><td><p>duration_iptp_protection_weeks</p></td>
+<td><p>REAL</p></td>
+<td><p>duration of protection against clinical malaria conferred by each dose of IPTp</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_clinical_malaria_hiv_under5</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of clinical malaria if HIV+ and aged under 5 years</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_clinical_malaria_hiv_over5</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of clinical malaria if HIV+ and aged over 5 years</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_clinical_malaria_hiv_pregnant</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of clinical malaria if HIV+ and pregnant</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_clinical_malaria_cotrimoxazole</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of clinical malaria if on cotrimoxazole</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_clinical_malaria_art</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of clinical malaria if HIV+ and on ART and virally suppressed</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_clinical_malaria_iptp</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of clinical malaria with each dose of IPTp</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_severe_malaria_hiv_under5</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of severe malaria if HIV+ and aged under 5 years</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_severe_malaria_hiv_over5</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of severe malaria if HIV+ and aged over 5 years</p></td>
+</tr>
+<tr class="row-odd"><td><p>rr_severe_malaria_hiv_pregnant</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of clinical malaria if HIV+ and pregnant</p></td>
+</tr>
+<tr class="row-even"><td><p>rr_severe_malaria_iptp</p></td>
+<td><p>REAL</p></td>
+<td><p>relative risk of severe malaria with each dose of IPTp</p></td>
+</tr>
+<tr class="row-odd"><td><p>prob_of_treatment_success</p></td>
+<td><p>REAL</p></td>
+<td><p>probability that treatment will clear malaria symptoms</p></td>
 </tr>
 </tbody>
 </table>
@@ -247,8 +291,8 @@ including the malaria RDT using DxTest</p>
 <td><p>Date of death due to malaria</p></td>
 </tr>
 <tr class="row-even"><td><p>ma_tx</p></td>
-<td><p>BOOL</p></td>
-<td><p>Currently on anti-malarial treatment</p></td>
+<td><p>CATEGORICAL</p></td>
+<td><p>Type of anti-malarial treatment person is currently using.  Possible values are: [none, uncomplicated, complicated, ]</p></td>
 </tr>
 <tr class="row-odd"><td><p>ma_date_tx</p></td>
 <td><p>DATE</p></td>
@@ -285,10 +329,11 @@ including the malaria RDT using DxTest</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>CAUSES_OF_DEATH : {‘Malaria’: &lt;tlo.methods.causes.Cause object at 0x12cb8eb10&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘Malaria’: &lt;tlo.methods.causes.Cause object at 0x12cb8ec10&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Contraception’, ‘Demography’, ‘SymptomManager’}</p>
-<p>METADATA : {&lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Hiv’, ‘Tb’}</p>
+<p>CAUSES_OF_DEATH : {‘Malaria’: &lt;tlo.methods.causes.Cause object at 0x1300cb510&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘Malaria’: &lt;tlo.methods.causes.Cause object at 0x1300cb610&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘Contraception’, ‘SymptomManager’, ‘Demography’}</p>
+<p>METADATA : {&lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class Malaria):</strong></p>
 <dl class="py method">
@@ -316,6 +361,16 @@ including the malaria RDT using DxTest</p>
 Typically, modules would read a particular file within here.</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.malaria.Malaria.pre_initialise_population">
+<span class="sig-name descname"><span class="pre">pre_initialise_population</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#Malaria.pre_initialise_population"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.Malaria.pre_initialise_population" title="Link to this definition"></a></dt>
+<dd><ul class="simple">
+<li><p>Establish the Linear Models</p></li>
+</ul>
+<p>if HIV is registered, the conditional predictors will apply
+otherwise only IPTp will affect risk of clinical/severe malaria</p>
 </dd></dl>
 
 <dl class="py method">
@@ -497,14 +552,54 @@ and schedules rdt at a community level (non-symptom driven)</p>
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="tlo.methods.malaria.MalariaEndIPTpProtection">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MalariaEndIPTpProtection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaEndIPTpProtection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaEndIPTpProtection" title="Link to this definition"></a></dt>
+<dd><p>This resets the properties of a person on IPTp
+the protective effects ends after 6 weeks and so the property is reset to prevent the
+malaria poll assuming that this person still has reduced susceptibility to malaria infection</p>
+<p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
+<p><strong>Functions (defined or overridden in class MalariaEndIPTpProtection):</strong></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.malaria.MalariaEndIPTpProtection.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaEndIPTpProtection.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaEndIPTpProtection.__init__" title="Link to this definition"></a></dt>
+<dd><p>Create a new event.</p>
+<p>Note that just creating an event does not schedule it to happen; that
+must be done by calling Simulation.schedule_event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>module</strong> – the module that created this event.
+All subclasses of Event take this as the first argument in their
+constructor, but may also take further keyword arguments.</p></li>
+<li><p><strong>priority</strong> – a keyword-argument to set the priority (see Priority enum)</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="tlo.methods.malaria.MalariaEndIPTpProtection.apply">
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaEndIPTpProtection.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaEndIPTpProtection.apply" title="Link to this definition"></a></dt>
+<dd><p>Apply this event to the given target.</p>
+<p>Must be implemented by subclasses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>target</strong> – the target of the event</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="tlo.methods.malaria.MalariaDeathEvent">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MalariaDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaDeathEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaDeathEvent" title="Link to this definition"></a></dt>
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MalariaDeathEvent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaDeathEvent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaDeathEvent" title="Link to this definition"></a></dt>
 <dd><p>Performs the Death operation on an individual and logs it.</p>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Functions (defined or overridden in class MalariaDeathEvent):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.malaria.MalariaDeathEvent.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaDeathEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaDeathEvent.__init__" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaDeathEvent.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaDeathEvent.__init__" title="Link to this definition"></a></dt>
 <dd><p>Create a new event.</p>
 <p>Note that just creating an event does not schedule it to happen; that
 must be done by calling Simulation.schedule_event.</p>
@@ -522,7 +617,7 @@ constructor, but may also take further keyword arguments.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.malaria.MalariaDeathEvent.apply">
-<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaDeathEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaDeathEvent.apply" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/malaria.html#MalariaDeathEvent.apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.malaria.MalariaDeathEvent.apply" title="Link to this definition"></a></dt>
 <dd><p>Apply this event to the given target.</p>
 <p>Must be implemented by subclasses.</p>
 <dl class="field-list simple">
@@ -917,7 +1012,7 @@ to allow the rescheduling. This is called each time that the event is tried to b
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Jan 25, 2024.
+      <span class="lastupdated">Last updated on Feb 24, 2024.
       </span></p>
   </div>
 

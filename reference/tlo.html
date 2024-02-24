@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo package &mdash; TLOmodel 0.1.dev2353+gfac71f8 documentation</title>
+  <title>tlo package &mdash; TLOmodel 0.1.dev2373+g8473a31 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=61a1be14"></script>
+        <script src="../_static/documentation_options.js?v=812bb691"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -108,6 +108,10 @@
 <li class="toctree-l4"><a class="reference internal" href="tlo.analysis.hsi_events.html#tlo.analysis.hsi_events.merge_hsi_event_details"><code class="docutils literal notranslate"><span class="pre">merge_hsi_event_details()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.analysis.hsi_events.html#tlo.analysis.hsi_events.get_all_defined_hsi_events_as_dataframe"><code class="docutils literal notranslate"><span class="pre">get_all_defined_hsi_events_as_dataframe()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.analysis.hsi_events.html#tlo.analysis.hsi_events.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.analysis.life_expectancy.html">tlo.analysis.life_expectancy module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="tlo.analysis.life_expectancy.html#tlo.analysis.life_expectancy.get_life_expectancy_estimates"><code class="docutils literal notranslate"><span class="pre">get_life_expectancy_estimates()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.analysis.utils.html">tlo.analysis.utils module</a><ul>
@@ -381,6 +385,7 @@
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem"><code class="docutils literal notranslate"><span class="pre">HealthSystem</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemScheduler"><code class="docutils literal notranslate"><span class="pre">HealthSystemScheduler</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeParameters"><code class="docutils literal notranslate"><span class="pre">HealthSystemChangeParameters</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.DynamicRescalingHRCapabilities"><code class="docutils literal notranslate"><span class="pre">DynamicRescalingHRCapabilities</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeMode"><code class="docutils literal notranslate"><span class="pre">HealthSystemChangeMode</span></code></a></li>
 </ul>
 </li>
@@ -433,6 +438,7 @@
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.Malaria"><code class="docutils literal notranslate"><span class="pre">Malaria</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.MalariaPollingEventDistrict"><code class="docutils literal notranslate"><span class="pre">MalariaPollingEventDistrict</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.MalariaIPTp"><code class="docutils literal notranslate"><span class="pre">MalariaIPTp</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.MalariaEndIPTpProtection"><code class="docutils literal notranslate"><span class="pre">MalariaEndIPTpProtection</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.MalariaDeathEvent"><code class="docutils literal notranslate"><span class="pre">MalariaDeathEvent</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_rdt"><code class="docutils literal notranslate"><span class="pre">HSI_Malaria_rdt</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.HSI_Malaria_rdt_community"><code class="docutils literal notranslate"><span class="pre">HSI_Malaria_rdt_community</span></code></a></li>
@@ -968,7 +974,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Jan 25, 2024.
+      <span class="lastupdated">Last updated on Feb 24, 2024.
       </span></p>
   </div>
 

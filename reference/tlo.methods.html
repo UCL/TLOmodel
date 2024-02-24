@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods package &mdash; TLOmodel 0.1.dev2353+gfac71f8 documentation</title>
+  <title>tlo.methods package &mdash; TLOmodel 0.1.dev2373+g8473a31 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=61a1be14"></script>
+        <script src="../_static/documentation_options.js?v=812bb691"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -1068,6 +1068,7 @@
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.on_simulation_end"><code class="docutils literal notranslate"><span class="pre">HealthSystem.on_simulation_end()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.setup_priority_policy"><code class="docutils literal notranslate"><span class="pre">HealthSystem.setup_priority_policy()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.process_human_resources_files"><code class="docutils literal notranslate"><span class="pre">HealthSystem.process_human_resources_files()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.adjust_for_const_HR_scaling"><code class="docutils literal notranslate"><span class="pre">HealthSystem.adjust_for_const_HR_scaling()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.format_daily_capabilities"><code class="docutils literal notranslate"><span class="pre">HealthSystem.format_daily_capabilities()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.update_consumables_availability_to_represent_merging_of_levels_1b_and_2"><code class="docutils literal notranslate"><span class="pre">HealthSystem.update_consumables_availability_to_represent_merging_of_levels_1b_and_2()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystem.get_service_availability"><code class="docutils literal notranslate"><span class="pre">HealthSystem.get_service_availability()</span></code></a></li>
@@ -1122,6 +1123,11 @@
 <li class="toctree-l2"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeParameters"><code class="docutils literal notranslate"><span class="pre">HealthSystemChangeParameters</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeParameters.__init__"><code class="docutils literal notranslate"><span class="pre">HealthSystemChangeParameters.__init__()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeParameters.apply"><code class="docutils literal notranslate"><span class="pre">HealthSystemChangeParameters.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.DynamicRescalingHRCapabilities"><code class="docutils literal notranslate"><span class="pre">DynamicRescalingHRCapabilities</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.DynamicRescalingHRCapabilities.__init__"><code class="docutils literal notranslate"><span class="pre">DynamicRescalingHRCapabilities.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.DynamicRescalingHRCapabilities.apply"><code class="docutils literal notranslate"><span class="pre">DynamicRescalingHRCapabilities.apply()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HealthSystemChangeMode"><code class="docutils literal notranslate"><span class="pre">HealthSystemChangeMode</span></code></a><ul>
@@ -1397,6 +1403,7 @@
 <li class="toctree-l2"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.Malaria"><code class="docutils literal notranslate"><span class="pre">Malaria</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.Malaria.__init__"><code class="docutils literal notranslate"><span class="pre">Malaria.__init__()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.Malaria.read_parameters"><code class="docutils literal notranslate"><span class="pre">Malaria.read_parameters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.Malaria.pre_initialise_population"><code class="docutils literal notranslate"><span class="pre">Malaria.pre_initialise_population()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.Malaria.initialise_population"><code class="docutils literal notranslate"><span class="pre">Malaria.initialise_population()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.Malaria.malaria_poll2"><code class="docutils literal notranslate"><span class="pre">Malaria.malaria_poll2()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.Malaria.general_population_rdt_scheduler"><code class="docutils literal notranslate"><span class="pre">Malaria.general_population_rdt_scheduler()</span></code></a></li>
@@ -1416,6 +1423,11 @@
 <li class="toctree-l2"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.MalariaIPTp"><code class="docutils literal notranslate"><span class="pre">MalariaIPTp</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.MalariaIPTp.__init__"><code class="docutils literal notranslate"><span class="pre">MalariaIPTp.__init__()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.MalariaIPTp.apply"><code class="docutils literal notranslate"><span class="pre">MalariaIPTp.apply()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.MalariaEndIPTpProtection"><code class="docutils literal notranslate"><span class="pre">MalariaEndIPTpProtection</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.MalariaEndIPTpProtection.__init__"><code class="docutils literal notranslate"><span class="pre">MalariaEndIPTpProtection.__init__()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.MalariaEndIPTpProtection.apply"><code class="docutils literal notranslate"><span class="pre">MalariaEndIPTpProtection.apply()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="tlo.methods.malaria.html#tlo.methods.malaria.MalariaDeathEvent"><code class="docutils literal notranslate"><span class="pre">MalariaDeathEvent</span></code></a><ul>
@@ -2419,7 +2431,7 @@
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Jan 25, 2024.
+      <span class="lastupdated">Last updated on Feb 24, 2024.
       </span></p>
   </div>
 

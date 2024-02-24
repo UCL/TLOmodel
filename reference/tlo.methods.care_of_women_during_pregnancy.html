@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.care_of_women_during_pregnancy module &mdash; TLOmodel 0.1.dev2353+gfac71f8 documentation</title>
+  <title>tlo.methods.care_of_women_during_pregnancy module &mdash; TLOmodel 0.1.dev2373+g8473a31 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=61a1be14"></script>
+        <script src="../_static/documentation_options.js?v=812bb691"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -114,9 +114,9 @@ premature of membranes, chorioamnionitis)</p>
 </dl>
 </dd>
 </dl>
-<p>Additionally the module stores a number of HSIs which represent follow up for women who are scheduled for additional
-testing following an admission and initiation of treatment (i.e. anaemia or gestational diabetes). Individual
-interventions are stored as functions within the module to prevent repetition.</p>
+<p>Additionally, the module stores a number of HSIs which represent follow up for women who are scheduled for
+additional testing following an admission and initiation of treatment (i.e. anaemia or gestational diabetes).
+Individual interventions are stored as functions within the module to prevent repetition.</p>
 <p>Bases: <a class="reference internal" href="tlo.core.html#tlo.core.Module" title="tlo.core.Module"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.core.Module</span></code></a></p>
 <p><strong>PARAMETERS:</strong></p>
 <table class="docutils align-default">
@@ -164,97 +164,81 @@ interventions are stored as functions within the module to prevent repetition.</
 <td><p>LIST</p></td>
 <td><p>treatment effectiveness of blood transfusion for anaemia in pregnancy</p></td>
 </tr>
-<tr class="row-even"><td><p>squeeze_factor_threshold_anc</p></td>
-<td><p>INT</p></td>
-<td><p>squeeze factor threshold over which an ANC appointment cannot run</p></td>
-</tr>
-<tr class="row-odd"><td><p>prob_intervention_delivered_urine_ds</p></td>
+<tr class="row-even"><td><p>prob_intervention_delivered_urine_ds</p></td>
 <td><p>LIST</p></td>
 <td><p>probability a woman will receive the intervention “urine dipstick” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_intervention_delivered_bp</p></td>
+<tr class="row-odd"><td><p>prob_intervention_delivered_bp</p></td>
 <td><p>LIST</p></td>
 <td><p>probability a woman will receive the intervention “blood pressure measurement” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
-</tr>
-<tr class="row-odd"><td><p>prob_intervention_delivered_ifa</p></td>
-<td><p>LIST</p></td>
-<td><p>probability a woman will receive the intervention “iron and folic acid” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
 </tr>
 <tr class="row-even"><td><p>prob_adherent_ifa</p></td>
 <td><p>LIST</p></td>
 <td><p>probability a woman who is given iron and folic acid will adhere to the treatment for their pregnancy</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_intervention_delivered_poct</p></td>
-<td><p>LIST</p></td>
-<td><p>probability a woman will receive the intervention “point of care Hb testing” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
-</tr>
-<tr class="row-even"><td><p>prob_intervention_delivered_syph_test</p></td>
+<tr class="row-odd"><td><p>prob_intervention_delivered_syph_test</p></td>
 <td><p>LIST</p></td>
 <td><p>probability a woman will receive the intervention “Syphilis test” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_intervention_delivered_gdm_test</p></td>
+<tr class="row-even"><td><p>prob_intervention_delivered_gdm_test</p></td>
 <td><p>LIST</p></td>
 <td><p>probability a woman will receive the intervention “GDM screening” given that the HSI has ran and the consumables are available (proxy for clinical quality)</p></td>
 </tr>
-<tr class="row-even"><td><p>prob_delivery_modes_ec</p></td>
+<tr class="row-odd"><td><p>prob_delivery_modes_ec</p></td>
 <td><p>LIST</p></td>
 <td><p>probabilities that a woman admitted with eclampsia will deliver normally, via caesarean or via assisted vaginal delivery</p></td>
 </tr>
-<tr class="row-odd"><td><p>prob_delivery_modes_spe</p></td>
+<tr class="row-even"><td><p>prob_delivery_modes_spe</p></td>
 <td><p>LIST</p></td>
 <td><p>probabilities that a woman admitted with severe pre-eclampsia will deliver normally, via caesarean or via assisted vaginal delivery</p></td>
 </tr>
-<tr class="row-even"><td><p>sensitivity_bp_monitoring</p></td>
+<tr class="row-odd"><td><p>sensitivity_bp_monitoring</p></td>
 <td><p>LIST</p></td>
 <td><p>sensitivity of blood pressure monitoring to detect hypertension</p></td>
 </tr>
-<tr class="row-odd"><td><p>specificity_bp_monitoring</p></td>
+<tr class="row-even"><td><p>specificity_bp_monitoring</p></td>
 <td><p>LIST</p></td>
 <td><p>specificity of blood pressure monitoring to detect hypertension</p></td>
 </tr>
-<tr class="row-even"><td><p>sensitivity_urine_protein_1_plus</p></td>
+<tr class="row-odd"><td><p>sensitivity_urine_protein_1_plus</p></td>
 <td><p>LIST</p></td>
 <td><p>sensitivity of a urine dipstick test to detect proteinuria at 1+</p></td>
 </tr>
-<tr class="row-odd"><td><p>specificity_urine_protein_1_plus</p></td>
+<tr class="row-even"><td><p>specificity_urine_protein_1_plus</p></td>
 <td><p>LIST</p></td>
 <td><p>specificity of a urine dipstick test to detect proteinuria at 1+</p></td>
 </tr>
-<tr class="row-even"><td><p>sensitivity_poc_hb_test</p></td>
+<tr class="row-odd"><td><p>sensitivity_poc_hb_test</p></td>
 <td><p>LIST</p></td>
 <td><p>sensitivity of a point of care Hb test to detect anaemia</p></td>
 </tr>
-<tr class="row-odd"><td><p>specificity_poc_hb_test</p></td>
+<tr class="row-even"><td><p>specificity_poc_hb_test</p></td>
 <td><p>LIST</p></td>
 <td><p>specificity of a point of care Hb test to detect anaemia</p></td>
 </tr>
-<tr class="row-even"><td><p>sensitivity_fbc_hb_test</p></td>
+<tr class="row-odd"><td><p>sensitivity_fbc_hb_test</p></td>
 <td><p>LIST</p></td>
 <td><p>sensitivity of a Full Blood Count test to detect anaemia</p></td>
 </tr>
-<tr class="row-odd"><td><p>specificity_fbc_hb_test</p></td>
+<tr class="row-even"><td><p>specificity_fbc_hb_test</p></td>
 <td><p>LIST</p></td>
 <td><p>specificity of a Full Blood Count test to detect anaemia</p></td>
 </tr>
-<tr class="row-even"><td><p>sensitivity_blood_test_glucose</p></td>
+<tr class="row-odd"><td><p>sensitivity_blood_test_glucose</p></td>
 <td><p>LIST</p></td>
 <td><p>sensitivity of a blood test to detect raised blood glucose</p></td>
 </tr>
-<tr class="row-odd"><td><p>specificity_blood_test_glucose</p></td>
+<tr class="row-even"><td><p>specificity_blood_test_glucose</p></td>
 <td><p>LIST</p></td>
 <td><p>specificity of a blood test to detect raised blood glucose</p></td>
 </tr>
-<tr class="row-even"><td><p>sensitivity_blood_test_syphilis</p></td>
+<tr class="row-odd"><td><p>sensitivity_blood_test_syphilis</p></td>
 <td><p>LIST</p></td>
 <td><p>sensitivity of a blood test to detect syphilis</p></td>
 </tr>
-<tr class="row-odd"><td><p>specificity_blood_test_syphilis</p></td>
+<tr class="row-even"><td><p>specificity_blood_test_syphilis</p></td>
 <td><p>LIST</p></td>
 <td><p>specificity of a blood test to detect syphilis</p></td>
-</tr>
-<tr class="row-even"><td><p>squeeze_threshold_for_delay_three_an</p></td>
-<td><p>LIST</p></td>
-<td><p>squeeze factor value over which an individual within a antenatal HSI is said to experience type 3 delay i.e. delay in receiving appropriate care</p></td>
 </tr>
 </tbody>
 </table>
@@ -331,7 +315,7 @@ interventions are stored as functions within the module to prevent repetition.</
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘Contraception’, ‘Labour’, ‘Lifestyle’}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Labour’, ‘Contraception’, ‘Lifestyle’}</p>
 <p>INIT_DEPENDENCIES : {‘HealthSystem’, ‘PregnancySupervisor’, ‘Demography’}</p>
 <p>METADATA : {&lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p><strong>Functions (defined or overridden in class CareOfWomenDuringPregnancy):</strong></p>
@@ -645,24 +629,21 @@ from ANC visit 2
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.check_anc1_can_run">
-<span class="sig-name descname"><span class="pre">check_anc1_can_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gest_age_next_contact</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.check_anc1_can_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.check_anc1_can_run" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">check_anc1_can_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gest_age_next_contact</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.check_anc1_can_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.check_anc1_can_run" title="Link to this definition"></a></dt>
 <dd><p>This function is called by the first ANC contact and runs a series of checks to determine if the HSI should run
 on the date it has been scheduled for
 :param individual_id: individual id
-:param squeeze_factor: squeeze_factor of the HSI calling this function
 :param gest_age_next_contact: gestational age, in weeks, this woman is due to return for her next ANC
 :returns True/False as to whether the event can run</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.check_subsequent_anc_can_run">
-<span class="sig-name descname"><span class="pre">check_subsequent_anc_can_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">this_contact</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">this_visit_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">squeeze_factor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gest_age_next_contact</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.check_subsequent_anc_can_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.check_subsequent_anc_can_run" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">check_subsequent_anc_can_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">individual_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">this_visit_number</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gest_age_next_contact</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/care_of_women_during_pregnancy.html#CareOfWomenDuringPregnancy.check_subsequent_anc_can_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.care_of_women_during_pregnancy.CareOfWomenDuringPregnancy.check_subsequent_anc_can_run" title="Link to this definition"></a></dt>
 <dd><p>This function is called by the subsequent ANC contacts and runs a series of checks to determine if the HSI
 should run on the date it has been scheduled for
 :param individual_id: individual id
-:param this_contact: HSI object of the current ANC contact that needs to be rebooked
 :param this_visit_number: Number of the next ANC contact in the schedule
-:param squeeze_factor: squeeze_factor of the HSI calling this function
 :param gest_age_next_contact: gestational age, in weeks, this woman is due to return for her next ANC
 :returns True/False as to whether the event can run</p>
 </dd></dl>
@@ -1491,7 +1472,7 @@ have ran (and interventions are delivered) for women during pregnancy.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Jan 25, 2024.
+      <span class="lastupdated">Last updated on Feb 24, 2024.
       </span></p>
   </div>
 

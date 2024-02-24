@@ -54,9 +54,6 @@ tlo.methods.malaria module
         * - dur_clin_para
           - REAL
           - duration (days) of parasitaemia for clinical malaria cases
-        * - rr_hiv
-          - REAL
-          - relative risk of clinical malaria if hiv-positive
         * - treatment_adjustment
           - REAL
           - probability of death from severe malaria if on treatment
@@ -93,6 +90,42 @@ tlo.methods.malaria module
         * - scaling_factor_for_rdt_availability
           - REAL
           - scaling factor applied to the reports of rdt usage to compensate fornon-availability of rdts at some facilities
+        * - duration_iptp_protection_weeks
+          - REAL
+          - duration of protection against clinical malaria conferred by each dose of IPTp
+        * - rr_clinical_malaria_hiv_under5
+          - REAL
+          - relative risk of clinical malaria if HIV+ and aged under 5 years
+        * - rr_clinical_malaria_hiv_over5
+          - REAL
+          - relative risk of clinical malaria if HIV+ and aged over 5 years
+        * - rr_clinical_malaria_hiv_pregnant
+          - REAL
+          - relative risk of clinical malaria if HIV+ and pregnant
+        * - rr_clinical_malaria_cotrimoxazole
+          - REAL
+          - relative risk of clinical malaria if on cotrimoxazole
+        * - rr_clinical_malaria_art
+          - REAL
+          - relative risk of clinical malaria if HIV+ and on ART and virally suppressed
+        * - rr_clinical_malaria_iptp
+          - REAL
+          - relative risk of clinical malaria with each dose of IPTp
+        * - rr_severe_malaria_hiv_under5
+          - REAL
+          - relative risk of severe malaria if HIV+ and aged under 5 years
+        * - rr_severe_malaria_hiv_over5
+          - REAL
+          - relative risk of severe malaria if HIV+ and aged over 5 years
+        * - rr_severe_malaria_hiv_pregnant
+          - REAL
+          - relative risk of clinical malaria if HIV+ and pregnant
+        * - rr_severe_malaria_iptp
+          - REAL
+          - relative risk of severe malaria with each dose of IPTp
+        * - prob_of_treatment_success
+          - REAL
+          - probability that treatment will clear malaria symptoms
 
 
      **PROPERTIES:**
@@ -117,8 +150,8 @@ tlo.methods.malaria module
           - DATE
           - Date of death due to malaria
         * - ma_tx
-          - BOOL
-          - Currently on anti-malarial treatment
+          - CATEGORICAL
+          - Type of anti-malarial treatment person is currently using.  Possible values are: [none, uncomplicated, complicated, ]
         * - ma_date_tx
           - DATE
           - Date treatment started for most recent malaria episode
@@ -148,13 +181,15 @@ tlo.methods.malaria module
 
      **Class attributes:**
 
-     CAUSES_OF_DEATH : {'Malaria': <tlo.methods.causes.Cause object at 0x12cb8eb10>}
+     ADDITIONAL_DEPENDENCIES : {'Hiv', 'Tb'}
 
-     CAUSES_OF_DISABILITY : {'Malaria': <tlo.methods.causes.Cause object at 0x12cb8ec10>}
+     CAUSES_OF_DEATH : {'Malaria': <tlo.methods.causes.Cause object at 0x1300cb510>}
 
-     INIT_DEPENDENCIES : {'HealthSystem', 'Contraception', 'Demography', 'SymptomManager'}
+     CAUSES_OF_DISABILITY : {'Malaria': <tlo.methods.causes.Cause object at 0x1300cb610>}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     INIT_DEPENDENCIES : {'HealthSystem', 'Contraception', 'SymptomManager', 'Demography'}
+
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -163,6 +198,8 @@ tlo.methods.malaria module
      .. automethod:: __init__
 
      .. automethod:: read_parameters
+
+     .. automethod:: pre_initialise_population
 
      .. automethod:: initialise_population
 
@@ -223,6 +260,24 @@ tlo.methods.malaria module
      __annotations__ : {}
 
      **Functions (defined or overridden in class MalariaIPTp):**
+
+     .. automethod:: __init__
+
+     .. automethod:: apply
+
+
+
+
+
+
+
+
+.. autoclass:: MalariaEndIPTpProtection
+
+     Bases: :class:`tlo.events.Event`, :class:`tlo.events.IndividualScopeEventMixin`
+
+
+     **Functions (defined or overridden in class MalariaEndIPTpProtection):**
 
      .. automethod:: __init__
 

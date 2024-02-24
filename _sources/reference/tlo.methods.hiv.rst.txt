@@ -219,6 +219,9 @@ tlo.methods.hiv module
         * - aids_tb_treatment_adjustment
           - REAL
           - probability of death if aids and tb, person on treatment for tb
+        * - dispensation_period_months
+          - REAL
+          - length of prescription for ARVs in months, same for all PLHIV
 
 
      **PROPERTIES:**
@@ -236,9 +239,12 @@ tlo.methods.hiv module
         * - hv_art
           - CATEGORICAL
           - ART status of person, whether on ART or not; and whether viral load is suppressed or not if on ART..  Possible values are: [not, on_VL_suppressed, on_not_VL_suppressed, ]
+        * - hv_on_cotrimoxazole
+          - BOOL
+          - Whether the person is currently taking and receiving a malaria-protective effect from cotrimoxazole
         * - hv_is_on_prep
           - BOOL
-          - Whether the person is currently taking and receiving a protective effect from Pre-Exposure Prophylaxis.
+          - Whether the person is currently taking and receiving a protective effect from Pre-Exposure Prophylaxis
         * - hv_behaviour_change
           - BOOL
           - Has this person been exposed to HIV prevention counselling following a negative HIV test result
@@ -257,20 +263,23 @@ tlo.methods.hiv module
         * - hv_date_treated
           - DATE
           - date hiv treatment started
+        * - hv_date_last_ART
+          - DATE
+          - date of last ART dispensation
 
 
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'NewbornOutcomes', 'Tb'}
+     ADDITIONAL_DEPENDENCIES : {'Tb', 'NewbornOutcomes'}
 
-     CAUSES_OF_DEATH : {'AIDS_non_TB': <tlo.methods.causes.Cause object at 0x12cbbbe10>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x12cbbbe90>}
+     CAUSES_OF_DEATH : {'AIDS_non_TB': <tlo.methods.causes.Cause object at 0x130130ad0>, 'AIDS_TB': <tlo.methods.causes.Cause object at 0x130130b50>}
 
-     CAUSES_OF_DISABILITY : {'HIV': <tlo.methods.causes.Cause object at 0x12cbbbf10>}
+     CAUSES_OF_DISABILITY : {'HIV': <tlo.methods.causes.Cause object at 0x130130bd0>}
 
-     INIT_DEPENDENCIES : {'SymptomManager', 'HealthSystem', 'Lifestyle', 'Demography'}
+     INIT_DEPENDENCIES : {'HealthSystem', 'SymptomManager', 'Lifestyle', 'Demography'}
 
-     METADATA : {<Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>, <Metadata.DISEASE_MODULE: 1>}
+     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_SYMPTOMMANAGER: 2>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      OPTIONAL_INIT_DEPENDENCIES : {'HealthBurden'}
 
@@ -562,7 +571,7 @@ tlo.methods.hiv module
 
      **Class attributes:**
 
-     EXPECTED_APPT_FOOTPRINT : <property object at 0x12cbf02c0>
+     EXPECTED_APPT_FOOTPRINT : <property object at 0x13012d580>
 
      **Functions (defined or overridden in class HSI_Hiv_StartOrContinueTreatment):**
 
