@@ -228,6 +228,8 @@ class Simulation:
                     )
                 progress_bar.update(simulation_day, stats_dict=stats_dict)
 
+#           print(stats_dict)
+
             if date >= end_date:
                 self.date = end_date
                 break

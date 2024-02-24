@@ -332,8 +332,114 @@ class Lifestyle(Module):
         'li_date_acquire_clean_drinking_water': Property(Types.DATE, 'date acquire clean drinking water'),
         'li_date_acquire_non_wood_burn_stove': Property(Types.DATE, 'date acquire non-wood burning stove'),
         "li_is_sexworker": Property(Types.BOOL, "Is the person a sex worker"),
-        "li_is_circ": Property(Types.BOOL, "Is the person circumcised if they are male (False for all females)"),
+        "li_is_circ": Property(Types.BOOL, "Is the person circumcised if they are male (False for all females)")
     }
+
+    """
+        "li_1": Property(Types.INT, "1"),
+        "li_2": Property(Types.INT, "2"),
+        "li_3": Property(Types.INT, "3"),
+        "li_4": Property(Types.INT, "4"),
+        "li_5": Property(Types.INT, "5"),
+        "li_6": Property(Types.INT, "6"),
+        "li_7": Property(Types.INT, "7"),
+        "li_8": Property(Types.INT, "8"),
+        "li_9": Property(Types.INT, "9"),
+        "li_10": Property(Types.INT, "10"),
+        "li_11": Property(Types.INT, "11"),
+        "li_12": Property(Types.INT, "12"),
+        "li_13": Property(Types.INT, "13"),
+        "li_14": Property(Types.INT, "14"),
+        "li_15": Property(Types.INT, "15"),
+        "li_16": Property(Types.INT, "16"),
+        "li_17": Property(Types.INT, "17"),
+        "li_18": Property(Types.INT, "18"),
+        "li_19": Property(Types.INT, "19"),
+        "li_20": Property(Types.INT, "20"),
+        "li_21": Property(Types.INT, "21"),
+        "li_22": Property(Types.INT, "22"),
+        "li_23": Property(Types.INT, "23"),
+        "li_24": Property(Types.INT, "24"),
+        "li_25": Property(Types.INT, "25"),
+        "li_26": Property(Types.INT, "26"),
+        "li_27": Property(Types.INT, "27"),
+        "li_28": Property(Types.INT, "28"),
+        "li_29": Property(Types.INT, "29"),
+        "li_30": Property(Types.INT, "30"),
+        "li_31": Property(Types.INT, "31"),
+        "li_32": Property(Types.INT, "32"),
+        "li_33": Property(Types.INT, "33"),
+        "li_34": Property(Types.INT, "34"),
+        "li_35": Property(Types.INT, "35"),
+        "li_36": Property(Types.INT, "36"),
+        "li_37": Property(Types.INT, "37"),
+        "li_38": Property(Types.INT, "38"),
+        "li_39": Property(Types.INT, "39"),
+        "li_40": Property(Types.INT, "40"),
+        "li_41": Property(Types.INT, "41"),
+        "li_42": Property(Types.INT, "42"),
+        "li_43": Property(Types.INT, "43"),
+        "li_44": Property(Types.INT, "44"),
+        "li_45": Property(Types.INT, "45"),
+        "li_46": Property(Types.INT, "46"),
+        "li_47": Property(Types.INT, "47"),
+        "li_48": Property(Types.INT, "48"),
+        "li_49": Property(Types.INT, "49"),
+        "li_50": Property(Types.INT, "50"),
+        "li_51": Property(Types.INT, "51"),
+        "li_52": Property(Types.INT, "52"),
+        "li_53": Property(Types.INT, "53"),
+        "li_54": Property(Types.INT, "54"),
+        "li_55": Property(Types.INT, "55"),
+        "li_56": Property(Types.INT, "56"),
+        "li_57": Property(Types.INT, "57"),
+        "li_58": Property(Types.INT, "58"),
+        "li_59": Property(Types.INT, "59"),
+        "li_60": Property(Types.INT, "60"),
+        "li_61": Property(Types.INT, "61"),
+        "li_62": Property(Types.INT, "62"),
+        "li_63": Property(Types.INT, "63"),
+        "li_64": Property(Types.INT, "64"),
+        "li_65": Property(Types.INT, "65"),
+        "li_66": Property(Types.INT, "66"),
+        "li_67": Property(Types.INT, "67"),
+        "li_68": Property(Types.INT, "68"),
+        "li_69": Property(Types.INT, "69"),
+        "li_70": Property(Types.INT, "70"),
+        "li_71": Property(Types.INT, "71"),
+        "li_72": Property(Types.INT, "72"),
+        "li_73": Property(Types.INT, "73"),
+        "li_74": Property(Types.INT, "74"),
+        "li_75": Property(Types.INT, "75"),
+        "li_76": Property(Types.INT, "76"),
+        "li_77": Property(Types.INT, "77"),
+        "li_78": Property(Types.INT, "78"),
+        "li_79": Property(Types.INT, "79"),
+        "li_80": Property(Types.INT, "80"),
+        "li_81": Property(Types.INT, "81"),
+        "li_82": Property(Types.INT, "82"),
+        "li_83": Property(Types.INT, "83"),
+        "li_84": Property(Types.INT, "84"),
+        "li_85": Property(Types.INT, "85"),
+        "li_86": Property(Types.INT, "86"),
+        "li_87": Property(Types.INT, "87"),
+        "li_88": Property(Types.INT, "88"),
+        "li_89": Property(Types.INT, "89"),
+        "li_90": Property(Types.INT, "90"),
+        "li_91": Property(Types.INT, "91"),
+        "li_92": Property(Types.INT, "92"),
+        "li_93": Property(Types.INT, "93"),
+        "li_94": Property(Types.INT, "94"),
+        "li_95": Property(Types.INT, "95"),
+        "li_96": Property(Types.INT, "96"),
+        "li_97": Property(Types.INT, "97"),
+        "li_98": Property(Types.INT, "98"),
+        "li_99": Property(Types.INT, "99"),
+        "li_100": Property(Types.INT, "100")
+    """
+
+
+
 
     def read_parameters(self, data_folder):
         p = self.parameters
@@ -387,6 +493,110 @@ class Lifestyle(Module):
         df['li_date_acquire_non_wood_burn_stove'] = pd.NaT
         df['li_is_sexworker'] = False
         df['li_is_circ'] = False
+
+        """
+        df['l1'] = 1
+        df['l2'] = 2
+        df['l3'] = 3
+        df['l4'] = 4
+        df['l5'] = 5
+        df['l6'] = 6
+        df['l7'] = 7
+        df['l8'] = 8
+        df['l9'] = 9
+        df['l10'] = 10
+        df['l11'] = 11
+        df['l12'] = 12
+        df['l13'] = 13
+        df['l14'] = 14
+        df['l15'] = 15
+        df['l16'] = 16
+        df['l17'] = 17
+        df['l18'] = 18
+        df['l19'] = 19
+        df['l20'] = 20
+        df['l21'] = 21
+        df['l22'] = 22
+        df['l23'] = 23
+        df['l24'] = 24
+        df['l25'] = 25
+        df['l26'] = 26
+        df['l27'] = 27
+        df['l28'] = 28
+        df['l29'] = 29
+        df['l30'] = 30
+        df['l31'] = 31
+        df['l32'] = 32
+        df['l33'] = 33
+        df['l34'] = 34
+        df['l35'] = 35
+        df['l36'] = 36
+        df['l37'] = 37
+        df['l38'] = 38
+        df['l39'] = 39
+        df['l40'] = 40
+        df['l41'] = 41
+        df['l42'] = 42
+        df['l43'] = 43
+        df['l44'] = 44
+        df['l45'] = 45
+        df['l46'] = 46
+        df['l47'] = 47
+        df['l48'] = 48
+        df['l49'] = 49
+        df['l50'] = 50
+        df['l51'] = 51
+        df['l52'] = 52
+        df['l53'] = 53
+        df['l54'] = 54
+        df['l55'] = 55
+        df['l56'] = 56
+        df['l57'] = 57
+        df['l58'] = 58
+        df['l59'] = 59
+        df['l60'] = 60
+        df['l61'] = 61
+        df['l62'] = 62
+        df['l63'] = 63
+        df['l64'] = 64
+        df['l65'] = 65
+        df['l66'] = 66
+        df['l67'] = 67
+        df['l68'] = 68
+        df['l69'] = 69
+        df['l70'] = 70
+        df['l71'] = 71
+        df['l72'] = 72
+        df['l73'] = 73
+        df['l74'] = 74
+        df['l75'] = 75
+        df['l76'] = 76
+        df['l77'] = 77
+        df['l78'] = 78
+        df['l79'] = 79
+        df['l80'] = 80
+        df['l81'] = 81
+        df['l82'] = 82
+        df['l83'] = 83
+        df['l84'] = 84
+        df['l85'] = 85
+        df['l86'] = 86
+        df['l87'] = 87
+        df['l88'] = 88
+        df['l89'] = 89
+        df['l90'] = 90
+        df['l91'] = 91
+        df['l92'] = 92
+        df['l93'] = 93
+        df['l94'] = 94
+        df['l95'] = 95
+        df['l96'] = 96
+        df['l97'] = 97
+        df['l98'] = 98
+        df['l99'] = 99
+        df['l100'] = 100
+        """
+
         # todo: express all rates per year and divide by 4 inside program
 
         # -------------------- URBAN-RURAL STATUS --------------------------------------------------
@@ -824,6 +1034,109 @@ class Lifestyle(Module):
         df.at[child_id, 'li_is_circ'] = (
             self.rng.rand() < self.parameters['proportion_of_men_that_are_assumed_to_be_circumcised_at_birth']
         )
+
+        """
+        df.at[child_id, 'li_1'] = 1
+        df.at[child_id, 'li_2'] = 2
+        df.at[child_id, 'li_3'] = 3
+        df.at[child_id, 'li_4'] = 4
+        df.at[child_id, 'li_5'] = 5
+        df.at[child_id, 'li_6'] = 6
+        df.at[child_id, 'li_7'] = 7
+        df.at[child_id, 'li_8'] = 8
+        df.at[child_id, 'li_9'] = 9
+        df.at[child_id, 'li_10'] = 10
+        df.at[child_id, 'li_11'] = 11
+        df.at[child_id, 'li_12'] = 12
+        df.at[child_id, 'li_13'] = 13
+        df.at[child_id, 'li_14'] = 14
+        df.at[child_id, 'li_15'] = 15
+        df.at[child_id, 'li_16'] = 16
+        df.at[child_id, 'li_17'] = 17
+        df.at[child_id, 'li_18'] = 18
+        df.at[child_id, 'li_19'] = 19
+        df.at[child_id, 'li_20'] = 20
+        df.at[child_id, 'li_21'] = 21
+        df.at[child_id, 'li_22'] = 22
+        df.at[child_id, 'li_23'] = 23
+        df.at[child_id, 'li_24'] = 24
+        df.at[child_id, 'li_25'] = 25
+        df.at[child_id, 'li_26'] = 26
+        df.at[child_id, 'li_27'] = 27
+        df.at[child_id, 'li_28'] = 28
+        df.at[child_id, 'li_29'] = 29
+        df.at[child_id, 'li_30'] = 30
+        df.at[child_id, 'li_31'] = 31
+        df.at[child_id, 'li_32'] = 32
+        df.at[child_id, 'li_33'] = 33
+        df.at[child_id, 'li_34'] = 34
+        df.at[child_id, 'li_35'] = 35
+        df.at[child_id, 'li_36'] = 36
+        df.at[child_id, 'li_37'] = 37
+        df.at[child_id, 'li_38'] = 38
+        df.at[child_id, 'li_39'] = 39
+        df.at[child_id, 'li_40'] = 40
+        df.at[child_id, 'li_41'] = 41
+        df.at[child_id, 'li_42'] = 42
+        df.at[child_id, 'li_43'] = 43
+        df.at[child_id, 'li_44'] = 44
+        df.at[child_id, 'li_45'] = 45
+        df.at[child_id, 'li_46'] = 46
+        df.at[child_id, 'li_47'] = 47
+        df.at[child_id, 'li_48'] = 48
+        df.at[child_id, 'li_49'] = 49
+        df.at[child_id, 'li_50'] = 50
+        df.at[child_id, 'li_51'] = 51
+        df.at[child_id, 'li_52'] = 52
+        df.at[child_id, 'li_53'] = 53
+        df.at[child_id, 'li_54'] = 54
+        df.at[child_id, 'li_55'] = 55
+        df.at[child_id, 'li_56'] = 56
+        df.at[child_id, 'li_57'] = 57
+        df.at[child_id, 'li_58'] = 58
+        df.at[child_id, 'li_59'] = 59
+        df.at[child_id, 'li_60'] = 60
+        df.at[child_id, 'li_61'] = 61
+        df.at[child_id, 'li_62'] = 62
+        df.at[child_id, 'li_63'] = 63
+        df.at[child_id, 'li_64'] = 64
+        df.at[child_id, 'li_65'] = 65
+        df.at[child_id, 'li_66'] = 66
+        df.at[child_id, 'li_67'] = 67
+        df.at[child_id, 'li_68'] = 68
+        df.at[child_id, 'li_69'] = 69
+        df.at[child_id, 'li_70'] = 70
+        df.at[child_id, 'li_71'] = 71
+        df.at[child_id, 'li_72'] = 72
+        df.at[child_id, 'li_73'] = 73
+        df.at[child_id, 'li_74'] = 74
+        df.at[child_id, 'li_75'] = 75
+        df.at[child_id, 'li_76'] = 76
+        df.at[child_id, 'li_77'] = 77
+        df.at[child_id, 'li_78'] = 78
+        df.at[child_id, 'li_79'] = 79
+        df.at[child_id, 'li_80'] = 80
+        df.at[child_id, 'li_81'] = 81
+        df.at[child_id, 'li_82'] = 82
+        df.at[child_id, 'li_83'] = 83
+        df.at[child_id, 'li_84'] = 84
+        df.at[child_id, 'li_85'] = 85
+        df.at[child_id, 'li_86'] = 86
+        df.at[child_id, 'li_87'] = 87
+        df.at[child_id, 'li_88'] = 88
+        df.at[child_id, 'li_89'] = 89
+        df.at[child_id, 'li_90'] = 90
+        df.at[child_id, 'li_91'] = 91
+        df.at[child_id, 'li_92'] = 92
+        df.at[child_id, 'li_93'] = 93
+        df.at[child_id, 'li_94'] = 94
+        df.at[child_id, 'li_95'] = 95
+        df.at[child_id, 'li_96'] = 96
+        df.at[child_id, 'li_97'] = 97
+        df.at[child_id, 'li_98'] = 98
+        df.at[child_id, 'li_99'] = 99
+        df.at[child_id, 'li_100'] = 100
+        """
 
     def determine_who_will_be_sexworker(self, months_since_last_poll):
         """Determine which women will be sex workers.
@@ -1353,6 +1666,10 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # --- FSW ---
         self.module.determine_who_will_be_sexworker(months_since_last_poll=self.repeat_months)
 
+#       for i in range(1, 100):
+#           df[f'li_{i}'] += 1
+
+#       print(self.sim.date)
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
@@ -1415,3 +1732,4 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 key='proportion_1549_women_sexworker',
                 data=[0]
             )
+
