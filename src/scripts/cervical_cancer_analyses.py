@@ -21,7 +21,7 @@ from tlo import Date, Simulation
 from tlo.analysis.utils import make_age_grp_types, parse_log_file
 from tlo.methods import (
     cervical_cancer,
-    cc_test,
+#   cc_test,
     demography,
     enhanced_lifestyle,
     healthburden,
@@ -57,7 +57,7 @@ def run_sim(service_availability):
     # Register the appropriate modules
     sim.register(demography.Demography(resourcefilepath=resourcefilepath),
                  cervical_cancer.CervicalCancer(resourcefilepath=resourcefilepath),
-                 cc_test.CervicalCancer(resourcefilepath=resourcefilepath),
+#                cc_test.CervicalCancer(resourcefilepath=resourcefilepath),
                  simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
                  enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
                  healthsystem.HealthSystem(resourcefilepath=resourcefilepath,

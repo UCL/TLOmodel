@@ -3,7 +3,17 @@ Cervical Cancer Disease Module
 
 Limitations to note:
 * Footprints of HSI -- pending input from expert on resources required.
+at some point we may need to specify the treatment eg total hysterectomy plus or minus chemotherapy
+but we agree not now
 """
+
+
+#todo: add probability of seeking care given vaginal bleeding (victor guesses ~ 30% seek care promptly)
+#todo: vary odds_ratio_health_seeking_in_adults=4.00
+
+#todo: add probability of referral for biopsy given presentation with vaginal bleeding
+
+
 
 from pathlib import Path
 from datetime import datetime
@@ -156,6 +166,9 @@ class CervicalCancer(Module):
         ),
         "rr_vaginal_bleeding_cc_stage4": Parameter(
             Types.REAL, "rate ratio for vaginal bleeding if have stage 4 cervical cancer"
+        ),
+        "prob_referral_biopsy_given_vaginal_bleeding": Parameter(
+            Types.REAL, "probability of being referred for a biopsy if presenting with vaginal bleeding"
         ),
         "sensitivity_of_biopsy_for_cervical_cancer": Parameter(
             Types.REAL, "sensitivity of biopsy for diagnosis of cervical cancer"
@@ -774,8 +787,9 @@ class CervicalCancerMainPollingEvent(RegularEvent, PopulationScopeEventMixin):
 class HSI_CervicalCancer_AceticAcidScreening(HSI_Event, IndividualScopeEventMixin):
 
     # todo: make this event scheduled by contraception module
-
     # todo: revisit Warning from healthsystem.py "Couldn't find priority ranking for TREATMENT_ID"
+    # todo: may want to modify slightly to reflect this: biopsy is taken if via looks abnormal and the facility
+    # todo: has the capacity to take a biopsy - otherwise cryotherapy is performed
 
     """
     This event will be scheduled by family planning HSI - for now we determine at random a screening event
@@ -938,12 +952,16 @@ class HSI_CervicalCancerPresentationVaginalBleeding(HSI_Event, IndividualScopeEv
         df = self.sim.population.props
         person = df.loc[person_id]
         hs = self.sim.modules["HealthSystem"]
+        p = self.sim.modules['CervicalCancer'].parameters
 
         # Ignore this event if the person is no longer alive:
         if not person.is_alive:
             return hs.get_blank_appt_footprint()
 
-        hs.schedule_hsi_event(
+        random_value = random.random()
+
+        if random_value <= p['prob_referral_biopsy_given_vaginal_bleeding']:
+            hs.schedule_hsi_event(
                 hsi_event=HSI_CervicalCancer_Biopsy(
                     module=self.module,
                     person_id=person_id
@@ -951,9 +969,7 @@ class HSI_CervicalCancerPresentationVaginalBleeding(HSI_Event, IndividualScopeEv
                 priority=0,
                 topen=self.sim.date,
                 tclose=None
-        )
-
-
+            )
 
 class HSI_CervicalCancer_Biopsy(HSI_Event, IndividualScopeEventMixin):
 
