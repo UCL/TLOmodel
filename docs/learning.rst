@@ -19,8 +19,6 @@ Health-Economics
 Modelling
 =========
 
-0. Tutorial introduction to individual-based modelled [`Video <https://youtu.be/Qwkcut56kro>`_] (:download:`Slides <./background/introduction-to-individual-based-models.pdf>`)
-
 1. `Mathematical models in the evaluation of health programmes <https://www.sciencedirect.com/science/article/pii/S014067361061505X?via%3Dihub>`_
 
 2. `Agent-Based Modelling in Public Health: Current Applications and Future Directions <https://www.annualreviews.org/doi/10.1146/annurev-publhealth-040617-014317>`_
