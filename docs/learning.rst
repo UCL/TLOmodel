@@ -1,5 +1,5 @@
 =================
-Background
+Learning Resources
 =================
 
 We provide here resources that provide a background to the type of modelling and health-economics work we are undertaken.

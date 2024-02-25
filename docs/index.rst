@@ -45,7 +45,7 @@ Contents
    azure_batch
    reference/index
    resources/index
-   background
+   learning
    publications
    contributors
    contributing
