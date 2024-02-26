@@ -282,10 +282,11 @@ class CervicalCancer(Module):
                           sheet_name="parameter_values")
         )
 
+        # todo: specify this odds ratio in parameter file if possible'
         # Register Symptom that this module will use
         self.sim.modules['SymptomManager'].register_symptom(
             Symptom(name='vaginal_bleeding',
-                    odds_ratio_health_seeking_in_adults=4.00)
+                    odds_ratio_health_seeking_in_adults=2.00)
         )
 
 # todo: in order to implement screening for cervical cancer creating a dummy symptom - likely there is a better way
