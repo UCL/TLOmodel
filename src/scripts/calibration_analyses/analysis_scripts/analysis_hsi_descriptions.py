@@ -17,6 +17,7 @@ from tlo.analysis.utils import (
     extract_results,
     get_coarse_appt_type,
     get_color_short_treatment_id,
+    load_pickled_dataframes,
     order_of_short_treatment_ids,
     plot_stacked_bar_chart,
     squarify_neat,
@@ -50,6 +51,57 @@ def formatting_hsi_df(_df):
     _df['TREATMENT_ID_SHORT'] = _df['TREATMENT_ID'].str.split('_').apply(lambda x: x[0])
 
     return _df
+
+
+def table1_description_of_hsi_events(
+    results_folder: Path,
+    output_folder: Path,
+    resourcefilepath: Path
+):
+    """ `Table 1`: A summary table of all the HSI Events seen in the simulation.
+    This is similar to that created by `hsi_events.py` but records all the different forms (levels/appt-type) that
+    an HSI Event can take."""
+
+    # Pick the first draw/run only -- assume that it is indicative of all the HSI Events seen in a simulation
+    log = load_pickled_dataframes(results_folder, 0, 0)
+    h = pd.DataFrame(
+        log['tlo.methods.healthsystem.summary']['hsi_event_details'].iloc[0]['hsi_event_key_to_event_details']
+    ).T
+
+    # Re-order columns & sort; Remove 'HSI_' prefix from event name
+    h = h[['module_name', 'treatment_id', 'event_name', 'facility_level', 'appt_footprint', 'beddays_footprint']]
+    h = h.sort_values(['module_name', 'treatment_id', 'event_name', 'facility_level']).reset_index(drop=True)
+    h['event_name'] = h['event_name'].str.replace('HSI_', '')
+
+    # Rename columns
+    h = h.rename(columns={
+        "module_name": 'Module',
+        "treatment_id": 'TREATMENT_ID',
+        "event_name": 'HSI Event',
+        "facility_level": 'Facility Level',
+        "appt_footprint": 'Appointment Types',
+        "beddays_footprint": 'Bed-Days',
+    })
+
+    # Reformat 'Appointment Types' and 'Bed-types' column to remove the number and then remove duplicate rows
+    # (otherwise there are many rows with similar number of appointments, especially from Schistosomiasis.)
+    def reformat_col(col):
+        return col.apply(pd.Series) \
+                  .applymap(lambda x: x[0], na_action='ignore') \
+                  .apply(lambda row: ', '.join(_r for _r in row.sort_values() if not pd.isnull(_r)), axis=1)
+
+    h['Appointment Types'] = h['Appointment Types'].pipe(reformat_col)
+    h["Bed-Days"] = h["Bed-Days"].pipe(reformat_col)
+    h = h.drop_duplicates()
+
+    # Put something in for blanks/nan (helps with imported into Excel/Word)
+    h = h.fillna('-').replace('', '-')
+
+    # Save table as csv
+    h.to_csv(
+        output_folder / f"{PREFIX_ON_FILENAME}_Table1.csv",
+        index=False
+    )
 
 
 def figure1_distribution_of_hsi_event_by_treatment_id(results_folder: Path, output_folder: Path,
@@ -196,7 +248,7 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
     plot_stacked_bar_chart(
         ax,
         counts_by_coarse_appt_type_and_treatment_id,
-        # SHORT_TREATMENT_ID_TO_COLOR_MAP,
+        SHORT_TREATMENT_ID_TO_COLOR_MAP,
         count_scale=1e-6
     )
     ax.spines['top'].set_visible(False)
@@ -204,10 +256,12 @@ def figure2_appointments_used(results_folder: Path, output_folder: Path, resourc
     ax.tick_params(axis='x', labelrotation=90)
     ax.legend(ncol=2, prop={'size': 8}, loc='upper left')
     ax.legend().set_visible(False)  # suppress legend
-    ax.set_ylabel('Number of appointments (millions)')
-    ax.set_xlabel('Appointment Types')
-    ax.set_ylim(0, 600)
+    ax.set_ylabel('Number (/millions)')
+    ax.set_xlabel('Appointment Type')
+    ax.set_ylim(0, 150)
+    ax.set_yticks(np.arange(0, 151, 50))
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
+    ax.grid(axis='y')
     fig.tight_layout()
     fig.savefig(
         output_folder
@@ -530,13 +584,20 @@ def figure6_cons_use(results_folder: Path, output_folder: Path, resourcefilepath
         resourcefilepath / 'healthsystem' / 'consumables' / 'ResourceFile_Consumables_Items_and_Packages.csv'
     )[['Item_Code', 'Items']].set_index('Item_Code').drop_duplicates()
     cons = cons.merge(cons_names, left_index=True, right_index=True, how='left').set_index('Items').astype(int)
-    cons = cons.assign(total=cons.sum(1)).sort_values('total').drop(columns='total')
+    cons = cons.assign(total=cons.sum(1)).sort_values('total', ascending=False).drop(columns='total')
+
+    # Find top 30 most requested items
+    top30 = (cons / 1e6).head(30)
+    top30.index = top30.index.str.replace("(country-specific)", '')  # remove confusing suffix
+    top30.index = (
+        pd.Series(top30.index).apply(lambda x: x if len(x) < 30 else x[0:30] + '...')
+    )  # shorten the names for plotting
 
     fig, ax = plt.subplots()
     name_of_plot = 'Demand For Consumables'
-    (cons / 1e6).head(20).plot.barh(ax=ax, stacked=True)
+    top30.plot.barh(ax=ax, stacked=True)
     ax.set_title(name_of_plot)
-    ax.set_ylabel('Item (20 most requested)')
+    ax.set_ylabel('Item (30 most requested)')
     ax.set_xlabel('Number of requests (Millions)')
     ax.yaxis.set_tick_params(labelsize=7)
     ax.spines['top'].set_visible(False)
@@ -630,14 +691,16 @@ def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcef
     # Add in short TREATMENT_ID
     squeeze_factor_by_hsi['TREATMENT_ID'] = squeeze_factor_by_hsi['_TREATMENT_ID'].map(lambda x: x.split('_')[0] + "*")
 
-    # Sort to collect the same TREATMENT_ID together
-    squeeze_factor_by_hsi = squeeze_factor_by_hsi.sort_values('TREATMENT_ID',
-                                                              key=order_of_short_treatment_ids,
-                                                              ascending=False).reset_index(drop=True)
+    # Could Sort to collect the same TREATMENT_ID together
+    # squeeze_factor_by_hsi = squeeze_factor_by_hsi.sort_values('TREATMENT_ID',
+    #                                                           key=order_of_short_treatment_ids,
+    #                                                           ascending=False).reset_index(drop=True)
+    # But, we sort by the value of squeeze_factor
+    sorted_squeeze_factors = squeeze_factor_by_hsi.sort_values(['squeeze_factor']).reset_index(drop=True)
 
     fig, ax = plt.subplots(figsize=(7.2, 10.5))
     name_of_plot = 'Average Squeeze Factors for each Health System Interaction Event'
-    for i, row in squeeze_factor_by_hsi.iterrows():
+    for i, row in sorted_squeeze_factors.iterrows():
         ax.plot(
             row['squeeze_factor'],
             i,
@@ -645,16 +708,15 @@ def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcef
             markersize=10,
             color=get_color_short_treatment_id(row['TREATMENT_ID'])
         )
-    ax.set_xscale('log')
-    ax.set_xlabel('Average Squeeze Factor (Log Scale)')
+    # ax.set_xscale('log')
+    ax.set_xlabel('Average Squeeze Factor')
     ax.set_ylabel('Health System Interaction Event')
-    ax.set_yticks(squeeze_factor_by_hsi.index)
-    ax.set_yticklabels(squeeze_factor_by_hsi['HSI'], fontsize=6)
+    ax.set_yticks(sorted_squeeze_factors.index)
+    ax.set_yticklabels(sorted_squeeze_factors['HSI'].str.replace('HSI_', ''), fontsize=6)
     ax.grid(axis='x', which='both')
     ax.grid(axis='y')
-    ax.set_xticks([1.0, 10.0, 100.0])
-    ax.set_xticklabels(['1.0', 'x10', 'x100'])
-    ax.axvline(1.0, color='black', linewidth=2)
+    ax.set_xlim([0, 60])
+    ax.axvline(0.0, color='black', linewidth=2)
     fig.suptitle(name_of_plot, fontsize=12, weight='bold')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
@@ -663,6 +725,10 @@ def figure7_squeeze_factors(results_folder: Path, output_folder: Path, resourcef
 
 def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Description of the usage of healthcare system resources."""
+
+    table1_description_of_hsi_events(
+        results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath
+    )
 
     figure1_distribution_of_hsi_event_by_treatment_id(
         results_folder=results_folder, output_folder=output_folder, resourcefilepath=resourcefilepath

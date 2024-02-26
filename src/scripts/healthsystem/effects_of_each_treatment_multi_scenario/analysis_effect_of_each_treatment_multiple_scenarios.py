@@ -12,6 +12,10 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from scripts.calibration_analyses.analysis_scripts import plot_legends
+from scripts.healthsystem.effects_of_each_treatment_multi_scenario.scenario_effect_of_each_treatment_status_quo import (
+    EffectOfEachTreatmentStatusQuo,
+)
+from scripts.healthsystem.org_chart_of_hsi import plot_org_chart_treatment_ids
 from tlo import Date
 from tlo.analysis.utils import (
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
@@ -51,16 +55,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def get_parameter_names_from_scenario_file() -> Tuple[str]:
         """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-        # TBH: This is Margherita's script, but I noticed that it was reading here a Scenario file for (seemingly) a
-        # different analysis.
-        # I have caused this function to raise an error to alert Margherita in the event that any of her code rely
-        # on this function.
-        # Original content:
-        # from scripts.healthsystem.finding_effects_of_each_treatment.scenario_effect_of_each_treatment_status_quo \
-        # import EffectOfEachTreatment
-        # e = EffectOfEachTreatment()
-        # return tuple(e._scenarios.keys())
-        raise NotImplementedError
+        e = EffectOfEachTreatmentStatusQuo()
+        return tuple(e._scenarios.keys())
 
     def format_scenario_name(_sn: str) -> str:
         """Return a reformatted scenario name ready for plotting.
@@ -732,6 +728,10 @@ if __name__ == "__main__":
     # Plot the legends
     plot_legends.apply(
         results_folder=None, output_folder=results_path, resourcefilepath=rfp)
+
+    # Plot the organisation chart of the TREATMENT_IDs
+    plot_org_chart_treatment_ids.apply(
+        results_folder=None, output_folder=results_path, resourcefilepath=None)
 
     with zipfile.ZipFile(output_path / f"images_{output_path.parts[-1]}.zip", mode="w") as archive:
         for filename in sorted(glob.glob(str(output_path / "*.png"))):
