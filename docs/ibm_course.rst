@@ -70,7 +70,7 @@ Building a transmission model
 
 Acknowledgments
 ====================================
-This content was created by `Prof Andrew Phillips <https://profiles.ucl.ac.uk/5430>`_ and `Dr Loveleen Bansi-Mantharu <https://profiles.ucl.ac.uk/1985-loveleen-bansi-matharu>`_ (both at University College London).
+This content was created by George Phillips, `Loveleen Bansi-Matharu <https://profiles.ucl.ac.uk/1985-loveleen-bansi-matharu>`_ and `Andrew Phillips <https://profiles.ucl.ac.uk/5430>`_.
 
 
 
