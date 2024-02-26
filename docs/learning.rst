@@ -8,7 +8,7 @@ We provide here resources that provide a background to the type of modelling and
 
 Online Course in Individual-Based Modelling
 ===========================================
-- :ref: `Building and Understanding Individual Based Models to Inform Health Policy`_
+:ref:`ibm_course`
 
 Health-Economics
 ================

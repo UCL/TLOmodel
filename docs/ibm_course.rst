@@ -1,3 +1,5 @@
+.. _ibm_course:
+
 ===========================================
 Building and Understanding Individual Based Models to Inform Health Policy
 ===========================================
