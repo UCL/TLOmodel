@@ -220,15 +220,15 @@ tlo.methods.postnatal_supervisor module
 
      **Class attributes:**
 
-     ADDITIONAL_DEPENDENCIES : {'PregnancySupervisor', 'Labour', 'NewbornOutcomes', 'Lifestyle'}
+     ADDITIONAL_DEPENDENCIES : {'Labour', 'NewbornOutcomes', 'PregnancySupervisor', 'Lifestyle'}
 
-     CAUSES_OF_DEATH : {'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x1300ab6d0>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x1300ab9d0>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x1300aba10>, 'eclampsia': <tlo.methods.causes.Cause object at 0x1300aba50>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x1300aba90>, 'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x1300abad0>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x1300abb10>}
+     CAUSES_OF_DEATH : {'secondary_postpartum_haemorrhage': <tlo.methods.causes.Cause object at 0x130ba3b10>, 'postpartum_sepsis': <tlo.methods.causes.Cause object at 0x130ba3ad0>, 'severe_pre_eclampsia': <tlo.methods.causes.Cause object at 0x130ba3b90>, 'eclampsia': <tlo.methods.causes.Cause object at 0x130ba3dd0>, 'severe_gestational_hypertension': <tlo.methods.causes.Cause object at 0x130ba3e10>, 'early_onset_sepsis': <tlo.methods.causes.Cause object at 0x130ba3e50>, 'late_onset_sepsis': <tlo.methods.causes.Cause object at 0x130ba3e90>}
 
-     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x1300abb50>}
+     CAUSES_OF_DISABILITY : {'maternal': <tlo.methods.causes.Cause object at 0x130ba3ed0>}
 
      INIT_DEPENDENCIES : {'HealthSystem', 'Demography'}
 
-     METADATA : {<Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHBURDEN: 4>, <Metadata.USES_HEALTHSYSTEM: 3>}
+     METADATA : {<Metadata.USES_HEALTHBURDEN: 4>, <Metadata.DISEASE_MODULE: 1>, <Metadata.USES_HEALTHSYSTEM: 3>}
 
      **Functions (defined or overridden in class PostnatalSupervisor):**
 

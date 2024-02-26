@@ -11,7 +11,7 @@ tlo.methods.healthsystem module
 
      **Class attributes:**
 
-     bed_days_allocated_to_this_event : <property object at 0x11eefcea0>
+     bed_days_allocated_to_this_event : <property object at 0x11f93d120>
 
      **Functions (defined or overridden in class HSI_Event):**
 
@@ -179,11 +179,11 @@ tlo.methods.healthsystem module
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     capabilities_today : <property object at 0x11eefcfe0>
+     capabilities_today : <property object at 0x11f93d350>
 
-     hsi_event_counts : <property object at 0x11eefd170>
+     hsi_event_counts : <property object at 0x11f93d4e0>
 
-     never_ran_hsi_event_counts : <property object at 0x11eefd1c0>
+     never_ran_hsi_event_counts : <property object at 0x11f93d530>
 
      **Functions (defined or overridden in class HealthSystem):**
 
@@ -358,7 +358,7 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     current_pop_size : <property object at 0x11eefd4e0>
+     current_pop_size : <property object at 0x11f93d850>
 
      **Functions (defined or overridden in class DynamicRescalingHRCapabilities):**
 
