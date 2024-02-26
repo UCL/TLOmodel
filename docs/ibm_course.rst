@@ -72,5 +72,8 @@ Acknowledgments
 ====================================
 This content was created by George Phillips, `Loveleen Bansi-Matharu <https://profiles.ucl.ac.uk/1985-loveleen-bansi-matharu>`_ and `Andrew Phillips <https://profiles.ucl.ac.uk/5430>`_.
 
+Suggested Citation
+====================================
+Phillips G, Bansi-Matharu, Phillips AN. (2024) Building and Understanding Individual Based Models to Inform Health Policy. Available on www.tlomodel.org
 
 
