@@ -386,20 +386,26 @@ class BladderCancer(Module):
         p = self.parameters
         lm = self.linear_models_for_progession_of_bc_status
 
-        lm['tis_t1'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['r_tis_t1_bladder_cancer_none'],
-            # todo: add in when schisto is in
-            # Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
+        predictors = [
             Predictor('age_years', conditions_are_mutually_exclusive=True)
             .when('.between(30,49)', p['rp_bladder_cancer_age3049'])
             .when('.between(50,69)', p['rp_bladder_cancer_age5069'])
             .when('.between(70,120)', p['rp_bladder_cancer_agege70'])
             .when('.between(0,14)', 0.0),
             Predictor('li_tob').when(True, p['rr_tis_t1_bladder_cancer_none_tobacco']),
-            # todo: add in when schisto module in master
-            # Predictor('sh_').when(True, p['rr_tis_t1_bladder_cancer_none_ex_alc']),
-            Predictor('bc_status').when('none', 1.0).otherwise(0.0)
+            # todo:
+            # Predictor('tmp_').when(True, p['rr_tis_t1_bladder_cancer_none_ex_alc']),
+            Predictor('bc_status').when('none', 1.0).otherwise(0.0),
+        ]
+
+        conditional_predictors = [
+            Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
+        ] if "Schisto" in self.sim.modules else []
+
+        lm["tis_t1"] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['r_tis_t1_bladder_cancer_none'],
+            *(predictors + conditional_predictors)
         )
 
         lm['t2p'] = LinearModel(
