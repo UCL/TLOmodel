@@ -308,7 +308,7 @@ class Schisto(Module):
 
     def _get_item_code_for_praziquantel(self) -> int:
         """Look-up the item code for Praziquantel"""
-        return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel, 600 mg (donated)")
+        return self.sim.modules['HealthSystem'].get_item_code_from_item_name("Praziquantel 600mg_1000_CMST")
 
     def _schedule_mda_events(self) -> None:
         """Schedule MDA events, historical and prognosed."""
