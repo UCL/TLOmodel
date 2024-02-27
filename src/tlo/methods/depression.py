@@ -138,6 +138,8 @@ class Depression(Module):
 
         'rr_depr_agege60': Parameter(Types.REAL, 'Relative rate of depression associated with age > 60'),
 
+        'rr_depr_hiv': Parameter(Types.REAL, 'Relative rate of depression associated with HIV infection'),
+
         'depr_resolution_rates': Parameter(
             Types.LIST,
             'Risk of depression resolving in 3 months if no chronic conditions and no treatments.'
@@ -237,7 +239,8 @@ class Depression(Module):
             .when('.between(0, 14)', 0)
             .when('.between(15, 19)', 1.0)
             .when('.between(20, 59)', p['init_rp_depr_age2059'])
-            .when('>= 60', p['init_rp_depr_agege60'])
+            .when('>= 60', p['init_rp_depr_agege60']),
+            Predictor("hv_inf").when(True, p["rr_depr_hiv"]),
         )
 
         self.linearModels['Depression_Ever_At_Population_Initialisation_Males'] = LinearModel.multiplicative(
