@@ -241,7 +241,6 @@ class Depression(Module):
             .when('.between(15, 19)', 1.0)
             .when('.between(20, 59)', p['init_rp_depr_age2059'])
             .when('>= 60', p['init_rp_depr_agege60']),
-            Predictor("hv_inf").when(True, p["rr_depr_hiv"]),
         ]
 
         conditional_predictors = [
