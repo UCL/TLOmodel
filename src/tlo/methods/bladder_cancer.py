@@ -399,7 +399,7 @@ class BladderCancer(Module):
         ]
 
         conditional_predictors = [
-            Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
+            Predictor('ss_sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
         ] if "Schisto" in self.sim.modules else []
 
         lm["tis_t1"] = LinearModel(
