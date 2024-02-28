@@ -86,7 +86,7 @@ aggregate_frac_time_used_by_officer_type.columns = ['Value']
 aggregate_frac_time_used_by_officer_type['OfficerType_FacilityLevel'] = aggregate_frac_time_used_by_officer_type.index
 
 salary_staffneeded_df = pd.merge(hr_annual_salary, aggregate_frac_time_used_by_officer_type, on = ['OfficerType_FacilityLevel'])
-salary_staffneeded_df['Total_salary_by_cadre_and_level'] = salary_df['Salary_USD'] * salary_df['Value']  * log['tlo.methods.population']['scaling_factor']['scaling_factor']
+salary_staffneeded_df['Total_salary_by_cadre_and_level'] = salary_df['Salary_USD'] * salary_df['Value']
 
 # Create a dataframe to store economic costs
 scenario_cost_economic = pd.DataFrame({'HR': salary_staffneeded_df['Total_salary_by_cadre_and_level'].sum()}, index=[0])
