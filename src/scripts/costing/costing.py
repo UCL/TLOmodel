@@ -30,6 +30,9 @@ print('Script Start', datetime.datetime.now().strftime('%H:%M'))
 outputfilepath = Path('./outputs/sakshi.mohan@york.ac.uk')
 resourcefilepath = Path("./resources")
 path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
+costing_outputs_folder = Path('./outputs/costing')
+if not os.path.exists(costing_outputs_folder):
+    os.makedirs(costing_outputs_folder)
 
 # %% Gathering basic information
 
@@ -72,7 +75,7 @@ salary_actualstaff_df = pd.merge(hr_annual_salary, current_staff_count_by_level_
 salary_actualstaff_df['Total_salary_by_cadre_and_level'] = salary_actualstaff_df['Salary_USD'] * salary_actualstaff_df['Staff_Count']
 
 # Create a dataframe to store financial costs
-scenario_cost_actual = pd.DataFrame({'HR': salary_actualstaff_df['Total_salary_by_cadre_and_level'].sum()}, index=[0])
+scenario_cost_financial = pd.DataFrame({'HR': salary_actualstaff_df['Total_salary_by_cadre_and_level'].sum()}, index=[0])
 
 # 1.2 HR Cost - Economic (Staff needed for interventions delivered in the simulation)
 # For total HR cost, multiply above with total capabilities X 'Frac_Time_Used_By_OfficerType' by facility leve
@@ -88,15 +91,40 @@ salary_staffneeded_df['Total_salary_by_cadre_and_level'] = salary_df['Salary_USD
 # Create a dataframe to store economic costs
 scenario_cost_economic = pd.DataFrame({'HR': salary_staffneeded_df['Total_salary_by_cadre_and_level'].sum()}, index=[0])
 
+# Compare financial costs with actual budget data
+####################################################
+salary_budget_2018 = 69478749
+consuambles_budget_2018 = 228934188
+real_budget = [salary_budget_2018, consuambles_budget_2018]
+model_cost = [scenario_cost_financial['HR'][0], 0]
+labels = ['HR_salary', 'Consumables']
+
+plt.scatter(real_budget, model_cost)
+# Plot a line representing a 45-degree angle
+min_val = min(min(real_budget), min(model_cost))
+max_val = max(max(real_budget), max(model_cost))
+plt.plot([min_val, max_val], [min_val, max_val], 'r--', label='45-degree line')
+
+# Format x and y axis labels to display in millions
+formatter = FuncFormatter(lambda x, _: '{:,.0f}M'.format(x / 1e6))
+plt.gca().xaxis.set_major_formatter(formatter)
+plt.gca().yaxis.set_major_formatter(formatter)
+# Add labels for each point
+hr_label = 'HR_salary ' + f'{round(model_cost[0] / real_budget[0], 2)}'
+plotlabels = [hr_label, 'Consumables']
+for i, txt in enumerate(plotlabels):
+    plt.text(real_budget[i], model_cost[i], txt, ha='right')
+
+plt.xlabel('Real Budget')
+plt.ylabel('Model Cost')
+plt.title('Real Budget vs Model Cost')
+plt.savefig(costing_outputs_folder /  'Cost_validation.png')
+
+
 # Plot salary costs by cadre and facility level
 # Group by cadre and level
 total_salary_by_cadre = salary_df.groupby('Officer_Category')['Total_salary_by_cadre_and_level'].sum()
 total_salary_by_level = salary_df.groupby('Facility_Level')['Total_salary_by_cadre_and_level'].sum()
-
-# If the folder doesn't exist, create it
-costing_outputs_folder = Path('./outputs/costing')
-if not os.path.exists(costing_outputs_folder):
-    os.makedirs(costing_outputs_folder)
 
 # Plot by cadre
 total_salary_by_cadre.plot(kind='bar')
