@@ -1258,7 +1258,6 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
     initial_parameters = {
         'mode_appt_constraints': 0,
         'ignore_priority': False,
-        'include_task_shifting': False,
         'capabilities_coefficient': 0.5,
         'cons_availability': 'all',
         'beds_availability': 'default',
@@ -1266,7 +1265,6 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
     new_parameters = {
         'mode_appt_constraints': 2,
         'ignore_priority': True,
-        'include_task_shifting': True,
         'capabilities_coefficient': 1.0,
         'cons_availability': 'none',
         'beds_availability': 'none',
@@ -1282,7 +1280,6 @@ def test_HealthSystemChangeParameters(seed, tmpdir):
             _params = dict()
             _params['mode_appt_constraints'] = hs.mode_appt_constraints
             _params['ignore_priority'] = hs.ignore_priority
-            _params['include_task_shifting'] = hs.include_task_shifting
             _params['capabilities_coefficient'] = hs.capabilities_coefficient
             _params['cons_availability'] = hs.consumables.cons_availability
             _params['beds_availability'] = hs.bed_days.availability
@@ -2003,7 +2000,7 @@ def test_task_shifting_in_mode_2(seed, tmpdir):
                      healthsystem.HealthSystem(resourcefilepath=resourcefilepath,
                                                capabilities_coefficient=1.0,
                                                mode_appt_constraints=2,
-                                               include_task_shifting=task_shifting_option,
+                                               global_task_shifting_mode=task_shifting_option,
                                                ignore_priority=False,
                                                randomise_queue=True,
                                                policy_name="",
@@ -2055,14 +2052,16 @@ def test_task_shifting_in_mode_2(seed, tmpdir):
         nursing_task_time = hsi1.expected_time_requests['FacilityID_' + str(facID) + '_Officer_Nursing_and_Midwifery']
         clinical_task_time = hsi1.expected_time_requests['FacilityID_' + str(facID) + '_Officer_Clinical']
      
-         # Check that first choice of task-shifting officer for Pharmacy is Nursing_and_Midwifery, and get their factor
-        assert 'Nursing_and_Midwifery' == sim.modules['HealthSystem'].global_task_shifting.get('Pharmacy')[0][0]
-        nursing_task_shift_factor = sim.modules['HealthSystem'].global_task_shifting.get('Pharmacy')[1][0]
+        if task_shifting_option == 'default':
+            nursing_task_shift_factor = 0
+        else:
+            assert 'Nursing_and_Midwifery' == sim.modules['HealthSystem'].global_task_shifting.get('Pharmacy')[0][0]
+            nursing_task_shift_factor = sim.modules['HealthSystem'].global_task_shifting.get('Pharmacy')[1][0]
      
         # Always set Pharmacy capabilities to zero. Set Clinical and Nursing capabilities such that Ntarget appointments
         # can be delivered by relying on task-shifting from Nursing only. Setting Clinical time to Ntarget x clinical_task_time
         # checks that when task-shifting first option (nurses) where always preferentially chosen over second.
-    # one (clinicians)
+        # one (clinicians)
         sim.modules['HealthSystem']._daily_capabilities['FacilityID_' + str(facID) + '_Officer_Pharmacy'] = 0.0
         sim.modules['HealthSystem']._daily_capabilities['FacilityID_' + str(facID) + '_Officer_Clinical'] = Ntarget*(clinical_task_time)
         sim.modules['HealthSystem']._daily_capabilities['FacilityID_' + str(facID) + '_Officer_Nursing_and_Midwifery'] = Ntarget*(nursing_task_time + nursing_task_shift_factor*pharmacy_task_time)
@@ -2080,14 +2079,14 @@ def test_task_shifting_in_mode_2(seed, tmpdir):
     # appointments can be performed iff using task-shifting
     Ntarget = 50
     
-    # Allow for task-shifting to take place, and check that all Ntarget events could run, even if Pharmacy
+    # Allow for task-shifting to take place (by adopting the naive mode), and check that all Ntarget events could run, even if Pharmacy
     # capabilities were set to zero,
-    hs_output = simulate(task_shifting_option=True, Ntarget=Ntarget)
+    hs_output = simulate(task_shifting_option='naive', Ntarget=Ntarget)
     assert hs_output['did_run'].sum() == Ntarget
     
-    # Do not allow for task-shifting to take place, and check that as a result no events could run, since
-    # Pharmacy capabilities were set to zero.
-    hs_output = simulate(task_shifting_option=False, Ntarget=Ntarget)
+    # Do not allow for task-shifting to take place (by adopting the default mode), and check that as a
+    # result no events could run, since Pharmacy capabilities were set to zero.
+    hs_output = simulate(task_shifting_option='default', Ntarget=Ntarget)
     assert hs_output['did_run'].sum() == 0
 
 

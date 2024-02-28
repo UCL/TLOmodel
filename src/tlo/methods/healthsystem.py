@@ -564,9 +564,14 @@ class HealthSystem(Module):
                         " the dynamic_HR_scaling_factor"
         ),
         
-        'include_task_shifting': Parameter(
-            Types.BOOL, "Decide whether to allow for task-shifting in mode 2"
-        ),
+        'global_task_shifting_mode': Parameter(
+            Types.STRING, "Name of global task-shifting mode adopted"),
+        
+        'global_task_shifting': Parameter(
+            Types.DICT, "Global task-shifting policy adopted by the health care system. It includes a list of the officers"
+                        " eligible for task shifting. For each of those officers, it specifies which officers"
+                        " can take over the officer's tasks, and a factor explaining how the originally scheduled time "
+                        " should be scaled if performed by a different officer."),
 
         'tclose_overwrite': Parameter(
             Types.INT, "Decide whether to overwrite tclose variables assigned by disease modules"),
@@ -603,7 +608,7 @@ class HealthSystem(Module):
         beds_availability: Optional[str] = None,
         randomise_queue: bool = True,
         ignore_priority: bool = False,
-        include_task_shifting: bool = False,
+        global_task_shifting_mode: Optional[str] = None,
         policy_name: Optional[str] = None,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = None,
@@ -665,14 +670,6 @@ class HealthSystem(Module):
         assert not (ignore_priority and policy_name is not None), (
             'Cannot adopt a priority policy if the priority will be then ignored'
         )
-        
-        # Global task-shifting options. The key in the dictionary refers to the officer
-        # eligible for task shifting, while the values refer to the officers that can take
-        # over the officer's tasks. The numbers refer to the factor by which appt time will
-        # have to be scaled if task is performed by alternative officer.
-        self.global_task_shifting = {
-            'Pharmacy': (['Nursing_and_Midwifery', 'Clinical'], [1.5,1]),
-        }
 
         self.disable = disable
         self.disable_and_reject_all = disable_and_reject_all
@@ -689,8 +686,6 @@ class HealthSystem(Module):
 
         self.ignore_priority = ignore_priority
         
-        self.include_task_shifting = include_task_shifting
-
         # This default value will be overwritten if assumed policy is not None
         self.lowest_priority_considered = 2
 
@@ -701,6 +696,8 @@ class HealthSystem(Module):
                                        'VerticalProgrammes', 'ClinicallyVulnerable', 'EHP_III',
                                        'LCOA_EHP']
         self.arg_policy_name = policy_name
+        
+        self.arg_global_task_shifting_mode = global_task_shifting_mode
 
         self.tclose_overwrite = None
         self.tclose_days_offset_overwrite = None
@@ -833,6 +830,11 @@ class HealthSystem(Module):
         self.parameters['priority_rank'] = pd.read_excel(path_to_resourcefiles_for_healthsystem / 'priority_policies' /
                                                          'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx',
                                                          sheet_name=None)
+                                                         
+        self.parameters['global_task_shifting'] = pd.read_excel(path_to_resourcefiles_for_healthsystem / 'human_resources'/
+                                                         'task_shifting'/'ResourceFile_GlobalTaskShifting.xlsx',
+                                                         sheet_name=None)
+
 
         self.parameters['const_HR_scaling_table']: Dict = pd.read_excel(
             path_to_resourcefiles_for_healthsystem /
@@ -887,6 +889,9 @@ class HealthSystem(Module):
 
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
+        
+        # Set up framework for considering a global task-shifting policy
+        self.setup_global_task_shifting(self.parameters['global_task_shifting_mode'])
 
 
     def initialise_population(self, population):
@@ -988,6 +993,37 @@ class HealthSystem(Module):
             self.list_fasttrack.append(('hv_diagnosed', 'FT_if_Hivdiagnosed'))
         if 'Tb' in self.sim.modules:
             self.list_fasttrack.append(('tb_diagnosed', 'FT_if_tbdiagnosed'))
+            
+    def setup_global_task_shifting(self,mode):
+    
+        # Select the global task shifting mode to be considered
+        self.global_task_shifting_mode = self.get_global_task_shifting_mode_initial()
+    
+        # Load relevant sheet from resource file
+        df = self.parameters['global_task_shifting'][self.global_task_shifting_mode]
+
+        self.global_task_shifting = {}
+
+        # Iterate through the rows of the DataFrame and populate the dictionary
+        for index, row in df.iterrows():
+            officer = row['Officer']
+            alternative_officers = row['Alternative_officer'].split(',')
+            time_factor_str = str(row['Time_factor'])
+
+            # Split the string into a list of floats
+            time_factors = [float(factor) for factor in time_factor_str.split(',')]
+
+            # Create the entry in the dictionary
+            self.global_task_shifting[officer] = (alternative_officers, time_factors)
+
+        if len(self.global_task_shifting) == 0:
+            self.include_task_shifting = False
+        else:
+            self.include_task_shifting = True
+
+        # Print the resulting dictionary
+        print("self.global_task_shifting =", self.global_task_shifting)
+    
 
     def process_human_resources_files(self, use_funded_or_actual_staffing: str):
         """Create the data-structures needed from the information read into the parameters."""
@@ -1324,6 +1360,14 @@ class HealthSystem(Module):
         return self.parameters['policy_name'] \
             if self.arg_policy_name is None \
             else self.arg_policy_name
+            
+    def get_global_task_shifting_mode_initial(self) -> str:
+        """Returns `priority_policy`. (Should be equal to what is specified by the parameter, but
+        overwrite with what was provided in argument if an argument was specified -- provided for backward
+        compatibility/debugging.)"""
+        return self.parameters['global_task_shifting_mode'] \
+            if self.arg_global_task_shifting_mode is None \
+            else self.arg_global_task_shifting_mode
 
     def load_priority_policy(self, policy):
 
@@ -2922,7 +2966,6 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
     """Event that causes certain internal parameters of the HealthSystem to be changed; specifically:
         * `mode_appt_constraints`
         * `ignore_priority`
-        * `include_task_shifting`
         * `capabilities_coefficient`
         * `cons_availability`
         * `beds_availability`
@@ -2939,9 +2982,6 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
 
         if 'ignore_priority' in self._parameters:
             self.module.ignore_priority = self._parameters['ignore_priority']
-            
-        if 'include_task_shifting' in self._parameters:
-            self.module.include_task_shifting = self._parameters['include_task_shifting']
 
         if 'capabilities_coefficient' in self._parameters:
             self.module.capabilities_coefficient = self._parameters['capabilities_coefficient']
