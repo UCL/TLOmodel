@@ -381,15 +381,23 @@ class OtherAdultCancer(Module):
         p = self.parameters
         lm = self.linear_models_for_progession_of_oac_status
 
-        lm['site_confined'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['r_site_confined_none'],
+        predictors = [
             Predictor('age_years', conditions_are_mutually_exclusive=True)
             .when('.between(30,49)', p['rr_site_confined_age3049'])
             .when('.between(50,69)', p['rr_site_confined_age5069'])
             .when('.between(0,14)', 0.0)
             .when('.between(70,120)', p['rr_site_confined_agege70']),
             Predictor('oac_status').when('none', 1.0).otherwise(0.0)
+        ]
+
+        conditional_predictors = [
+            Predictor('hv_inf').when(True, p['rr_site_confined_hiv']),
+        ] if "Hiv" in self.sim.modules else []
+
+        lm['site_confined'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['r_site_confined_none'],
+            *(predictors + conditional_predictors)
         )
 
         lm['local_ln'] = LinearModel(
