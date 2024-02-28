@@ -394,7 +394,10 @@ class OtherAdultCancer(Module):
         ]
 
         conditional_predictors = [
-            Predictor('hv_inf').when(True, p['rr_site_confined_hiv']),
+            Predictor().when(
+                'hv_inf & '
+                '(hv_art != "on_VL_suppressed")',
+                p["rr_site_confined_hiv"]),
         ] if "Hiv" in self.sim.modules else []
 
         lm['site_confined'] = LinearModel(
