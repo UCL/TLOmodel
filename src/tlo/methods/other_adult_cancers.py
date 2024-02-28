@@ -113,6 +113,9 @@ class OtherAdultCancer(Module):
         "rr_site_confined_agege70": Parameter(
             Types.REAL, "rate ratio for site-confined other_adult cancer for age ge 70"
         ),
+        "rr_site_confined_hiv": Parameter(
+            Types.REAL, "rate ratio for site-confined other_adult_cancer if infected with HIV"
+        ),
         "r_local_ln_site_confined_other_adult_ca": Parameter(
             Types.REAL,
             "probabilty per 3 months of local ln other_adult cancer amongst people with site confined",
