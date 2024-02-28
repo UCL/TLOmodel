@@ -81,12 +81,13 @@ scenario_cost_financial = pd.DataFrame({'HR': salary_actualstaff_df['Total_salar
 # For total HR cost, multiply above with total capabilities X 'Frac_Time_Used_By_OfficerType' by facility leve
 # Use log['tlo.methods.population']['scaling_factor']
 frac_time_used_by_officer_type = pd.DataFrame(log['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_By_OfficerType'].to_list())
-aggregate_frac_time_used_by_officer_type = pd.DataFrame(frac_time_used_by_officer_type.sum(axis=0))
+aggregate_frac_time_used_by_officer_type = pd.DataFrame(frac_time_used_by_officer_type.sum(axis=0))/len(frac_time_used_by_officer_type)
 aggregate_frac_time_used_by_officer_type.columns = ['Value']
 aggregate_frac_time_used_by_officer_type['OfficerType_FacilityLevel'] = aggregate_frac_time_used_by_officer_type.index
 
 salary_staffneeded_df = pd.merge(hr_annual_salary, aggregate_frac_time_used_by_officer_type, on = ['OfficerType_FacilityLevel'])
-salary_staffneeded_df['Total_salary_by_cadre_and_level'] = salary_df['Salary_USD'] * salary_df['Value']
+salary_staffneeded_df = pd.merge(salary_staffneeded_df, current_staff_count_by_level_and_officer_type, on = ['Officer_Category', 'Facility_Level'])
+salary_staffneeded_df['Total_salary_by_cadre_and_level'] = salary_staffneeded_df['Salary_USD'] * salary_staffneeded_df['Value'] * salary_staffneeded_df['Staff_Count']
 
 # Create a dataframe to store economic costs
 scenario_cost_economic = pd.DataFrame({'HR': salary_staffneeded_df['Total_salary_by_cadre_and_level'].sum()}, index=[0])
@@ -120,6 +121,12 @@ plt.ylabel('Model Cost')
 plt.title('Real Budget vs Model Cost')
 plt.savefig(costing_outputs_folder /  'Cost_validation.png')
 
+# Plot fraction staff time used
+fraction_stafftime_average = salary_staffneeded_df.groupby('Officer_Category')['Value'].sum()
+fraction_stafftime_average. plot(kind = "bar")
+plt.xlabel('Cadre')
+plt.ylabel('Fraction time needed')
+plt.savefig(costing_outputs_folder /  'hr_time_need_economic_cost.png')
 
 # Plot salary costs by cadre and facility level
 # Group by cadre and level
