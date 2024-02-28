@@ -1001,10 +1001,28 @@ class Alri(Module):
             Parameter(Types.REAL,
                       'Successfully referred % of severe pneumonia diagnosed in health centres'
                       ),
+        'prop_facility_referred_to':
+            Parameter(Types.LIST,
+                      'Proportions of referred cases to respective facility levels 2, 1b'
+                      ),
+        'sought_follow_up_care':
+            Parameter(Types.REAL,
+                      'Sought follow-up care after oral treatment failure'
+                      ),
         'pulse_oximeter_usage_rate':
             Parameter(Types.REAL,
                       'Health worker usage rate of pulse oximeter'
                       ),
+        'or_tf_non_stabilised_with_oxygen_prior_to_referral':
+            Parameter(Types.REAL,
+                      'Odds ratio of treatment failure for non-stabilised hypoxaemia cases at the health centres '
+                      'prior to referral'
+                      ),
+        'or_tf_at_follow_up_care_with_previous_oral_antibiotic':
+            Parameter(Types.REAL,
+                      'Odds ratio of treatment failure for severe cases with initial treatment with oral antibiotics'
+                      ),
+
         'availability_amoxicillin_tablet_by_facility_level':
             Parameter(Types.LIST,
                       'Probability of availability of oral amoxicillin tablet by facility level [0, 1a, 1b, 2, 3]'
@@ -1808,7 +1826,8 @@ class Alri(Module):
 
         # referral of cases at the lower level to district and rural hospitals
         referral = p['referral_rate_severe_cases_from_hc'] > self.rng.random_sample()
-        referred_to_level = self.rng.choice(['2', '1b'], p=[0.35, 0.65])
+        referred_to_level = self.rng.choice(['2', '1b'], p=[p['prop_facility_referred_to'][0],
+                                                            p['prop_facility_referred_to'][1]])
 
         # get those that need referral based on classification given
         needs_referral = True if classification_for_treatment_decision == 'danger_signs_pneumonia' and \
@@ -1826,80 +1845,21 @@ class Alri(Module):
         else:
             return needs_referral, False, facility_level
 
-    # def antibiotic_availability(self, facility_level, ultimate_treatment):
-    #     """
-    #     Availability of antibiotics at this level
-    #     :param facility_level:
-    #     :return:
-    #     """
-    #     p = self.parameters
-    #
-    #     facility_level_dict = {'0': 0, '1a': 1, '1b': 2, '2': 3, '3': 4}
-    #     element = facility_level_dict[facility_level]
-    #
-    #     iv_antibiotics = ultimate_treatment['antibiotic_indicated'][0].startswith('1st_line_IV')
-    #     oral_antibiotics = ultimate_treatment['antibiotic_indicated'][0].startswith('Amoxicillin')
-    #
-    #     # Oral antibiotics
-    #     amoxicillin_tab_available = p['availability_amoxicillin_tablet_by_facility_level'] > self.rng.random_sample(
-    #         len(p['availability_amoxicillin_tablet_by_facility_level']))
-    #
-    #     amoxicillin_susp_available = p['availability_amoxicillin_suspension_by_facility_level'] > self.rng.random_sample(
-    #         len(p['availability_amoxicillin_suspension_by_facility_level']))
-    #
-    #     oral_amoxicillin_available = any([amoxicillin_tab_available[element],
-    #                                       amoxicillin_susp_available[element]])
-    #
-    #     # IV antibiotics
-    #
-    #     # 1st line - gentamicin to use with benzylpenicillin or ampicillin
-    #     gentamicin_available = p['availability_gentamicin_by_facility_level'] > self.rng.random_sample(
-    #         len(p['availability_gentamicin_by_facility_level']))
-    #
-    #     # 1st line - benzylpenicillin
-    #     benzylpenicillin_3g_available = p['availability_benzylpenicillin_3g_by_facility_level'] > self.rng.random_sample(
-    #         len(p['availability_benzylpenicillin_3g_by_facility_level']))
-    #     benzylpenicillin_1g_available = p['availability_benzylpenicillin_1g_by_facility_level'] > self.rng.random_sample(
-    #         len(p['availability_benzylpenicillin_1g_by_facility_level']))
-    #
-    #     benzylpenicillin_available = any([benzylpenicillin_3g_available[element], benzylpenicillin_1g_available[element]])
-    #
-    #     ampicillin_available = p['availability_ampicillin_by_facility_level'] > self.rng.random_sample(
-    #         len(p['availability_ampicillin_by_facility_level']))
-    #
-    #     # 1st line IV antibiotic available
-    #     full_first_line_IV = gentamicin_available[element] and any(
-    #         [ampicillin_available[element], benzylpenicillin_3g_available[element], benzylpenicillin_1g_available[element]])
-    #
-    #     at_least_one_first_line_IV = any([ampicillin_available[element],
-    #          benzylpenicillin_3g_available[element], benzylpenicillin_1g_available[element]])
-    #
-    #     # 2nd line - ceftriaxone
-    #     ceftriaxone_available = p['availability_ceftriaxone_by_facility_level'] > self.rng.random_sample(
-    #         len(p['availability_ceftriaxone_by_facility_level']))
-    #
-    #     # 2nd line - to use with gentamicin
-    #     fluoxacillin_available = p['availability_fluoxacillin_by_facility_level'] > self.rng.random_sample(
-    #         len(p['availability_fluoxacillin_by_facility_level']))
-    #
-    #     gentamicin_and_fluoxacillin = gentamicin_available[element] and fluoxacillin_available[element]
-    #
-    #     # 2nd line IV antibiotic available
-    #     second_line_available = any([ceftriaxone_available[element], gentamicin_and_fluoxacillin])
-    #
-    #     if oral_antibiotics:
-    #         return oral_amoxicillin_available,
-    #     else:
-    #         return full_first_line_IV, at_least_one_first_line_IV, second_line_available,
-
-    def follow_up_treatment_failure(self, original_classification_given):
+    def follow_up_treatment_failure(self, original_classification_given, symptoms):
 
         """ function in static simulation - follow-up of cases with treatment failure
         Apply classification of chest-indrawing to previous fast-breathing pneumonia HW classification
         Apply classification danger signs pneumonia to previous chest-indrawing or danger signs HW given classifications """
 
         # apply a porportion that will seek care:
-        sought_follow_up_care = 1.0 > self.rng.random_sample()
+        p = self.parameters
+        prob_sought_fup_care = p['sought_follow_up_care'] > self.rng.random_sample()
+
+        if any(sev_symptom in ['danger_signs', 'chest_indrawing', 'respiratory_distress'] for sev_symptom in symptoms):
+            prob_sought_fup_care = p['sought_follow_up_care'] * p['or_care_seeking_perceived_severe_illness']
+
+        prob_fup_care = min(1.0, prob_sought_fup_care)
+        sought_follow_up_care = prob_fup_care > self.rng.random_sample()
 
         # get a follow-up classification
         # cough or cold, and fast-breathing pneumonia classifications will be given oral antibiotics, treat outpatient
@@ -1971,7 +1931,7 @@ class Alri(Module):
                     ),
                     'oxygen_indicated': oxygen_indicated
                 }
-            elif facility_level in ('1a', '0'):  # TODO: REMOVE THIS??? IS THIS FINAL FACILITY LEVEL?
+            elif facility_level in ('1a', '0'):
                 return {
                     'antibiotic_indicated': (
                         'Amoxicillin_tablet_or_suspension_5days',  # <-- # <-- First choice antibiotic
@@ -2809,61 +2769,8 @@ class Models:
 
         p = self.p
         oxygen_available = list()
-        # oxygen_available = p[f'scenario_{scenario}_ox_coverage_by_facility'] > self.rng.random_sample(
-        #     len(p[f'scenario_{scenario}_ox_coverage_by_facility']))
-
-        # oxygen_available_1b_with_coverage_at_2 = p[f'scenario_{scenario}_ox_coverage_by_facility'][1] > self.rng.random_sample()
-
-        prob_availability = p[f'scenario_{scenario}_ox_coverage_by_facility']
-
-        cum_prob = np.cumsum(prob_availability)
-        availability_at_1b_if_covered_at_2 = cum_prob[1] if 0 < cum_prob[1] < 1 else 1.0
-        availability_at_1a_if_covered_at_2_and_1b = cum_prob[2] if 0 < cum_prob[2] < 1 else 1.0
-
-        excess_cum_prob = cum_prob - 1.0
-        extra_availability1 = [0, 0, 0]
-
-        excess_cum_prob2 = excess_cum_prob - 1.0
-        extra_availability2 = [0, 0, 0]
-
-        for i, prob in enumerate(excess_cum_prob):
-            if 0 < prob < 1:
-                extra_availability1[i] = prob
-            elif prob >= 1:
-                extra_availability1[i] = 1.0
-            else:
-                extra_availability1[i] = 0
-
-        for i, prob in enumerate(excess_cum_prob2):
-            if 0 < prob < 1:
-                extra_availability2[i] = prob
-            else:
-                extra_availability2[i] = 0
-
-        # availabilities if level 2 has available oxygen
-        oxygen_available_2 = p[f'scenario_{scenario}_ox_coverage_by_facility'][0] > self.rng.random_sample()
-        oxygen_available_1b_with_coverage_at_2 = availability_at_1b_if_covered_at_2 > self.rng.random_sample()
-        oxygen_available_1a_with_coverage_at_2_and_1b = availability_at_1a_if_covered_at_2_and_1b > self.rng.random_sample()
-
-        # extra availabilities for 1b and 1a
-        extra_1b_availability_not_covered_at_2 = extra_availability1[1] > self.rng.random_sample()
-        extra_1a_availability_not_covered_at_2 = extra_availability1[2] > self.rng.random_sample()
-        extra_1a_availability_not_covered_at_2_and_1b = extra_availability2[2] > self.rng.random_sample()
-        oxygen_available_1b = bool
-        oxygen_available_1a = bool
-
-        if oxygen_available_2:
-            oxygen_available_1b = oxygen_available_1b_with_coverage_at_2
-            if oxygen_available_1b_with_coverage_at_2:
-                oxygen_available_1a = oxygen_available_1a_with_coverage_at_2_and_1b
-        else:
-            oxygen_available_1b = extra_1b_availability_not_covered_at_2
-            if extra_1b_availability_not_covered_at_2:
-                oxygen_available_1a = extra_1a_availability_not_covered_at_2
-            else:
-                oxygen_available_1a = extra_1a_availability_not_covered_at_2_and_1b
-
-        oxygen_available = [oxygen_available_2, oxygen_available_1b, oxygen_available_1a]
+        oxygen_available = p[f'scenario_{scenario}_ox_coverage_by_facility'] > self.rng.random_sample(
+            len(p[f'scenario_{scenario}_ox_coverage_by_facility']))
 
         return oxygen_available
 
@@ -2935,6 +2842,30 @@ class Models:
                 or_if_does_not_get_oxygen_but_might_need_oxygen = 1.0 / assumed_or_tf_if_oxygen_provided_to_SpO2_90_92
                 return min(1.0, to_prob(to_odds(_risk) * or_if_does_not_get_oxygen_but_might_need_oxygen))
 
+        def modify_failure_risk_when_follow_up(_risk):
+
+            # if the risk of treatment failure is already 1.0, return that value
+            if _risk == 1.0:
+                return _risk
+
+            if this_is_follow_up:
+                _risk = to_prob(to_odds(_risk) * p['or_tf_at_follow_up_care_with_previous_oral_antibiotic'])
+                return min(1.0, _risk)
+                # assume a risk of increase failure for oral antibiotics if no care was provided at the first appt
+            else:
+                return _risk
+
+        def modify_failure_risk_when_stabilised_with_ox_at_hc(_risk):
+            # if the risk of treatment failure is already 1.0, return that value
+            if _risk == 1.0:
+                return _risk
+
+            if needs_oxygen and pre_referral_oxygen == 'not_provided':
+                _risk = to_prob(to_odds(_risk) * p['or_tf_non_stabilised_with_oxygen_prior_to_referral'])
+                return min(1.0, _risk)
+            else:
+                return _risk
+
         def _treatment_failure_oral_antibiotics(risk_tf_oral_antibiotics):
             """Return the risk of treatment failure by oral antibiotics for non-severe pneumonia classification"""
 
@@ -2962,9 +2893,6 @@ class Models:
 
             if any(c in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for c in complications):
                 risk_tf_oral_antibiotics *= p['rr_tf_1st_line_antibiotics_if_any_pulmonary_complications']
-
-            if this_is_follow_up:
-                risk_tf_oral_antibiotics *= 1.78
 
             # return risk_tf_oral_antibiotics
             return min(1.0, risk_tf_oral_antibiotics)
@@ -2999,14 +2927,6 @@ class Models:
             if hiv_infected_and_not_on_art:
                 risk_tf_iv_antibiotics *= p['rr_tf_1st_line_antibiotics_if_HIV/AIDS']
 
-            # add a clause for cases referred from health centres and not stabilised
-            if pre_referral_oxygen == 'not_provided' and needs_oxygen:
-                risk_tf_iv_antibiotics = to_prob(to_odds(risk_tf_iv_antibiotics) * 1.72)
-
-            if this_is_follow_up:
-                risk_tf_iv_antibiotics = to_prob(to_odds(risk_tf_iv_antibiotics) * 1.47)
-                risk_tf_iv_antibiotics *= 1.78
-
             return min(1.0, risk_tf_iv_antibiotics)
 
         def _prob_treatment_fails_when_danger_signs_pneumonia():
@@ -3019,6 +2939,9 @@ class Models:
             elif antibiotic_provided_grp in ('1st_line_IV_antibiotics', '2nd_line_IV_antibiotics'):
                 # danger_signs_pneumonia given 1st line IV antibiotic:
                 iv_tf_ = _treatment_failure_IV_antibiotics()
+                iv_tf_ = modify_failure_risk_when_follow_up(iv_tf_)
+                iv_tf_ = modify_failure_risk_when_stabilised_with_ox_at_hc(iv_tf_)
+
                 if any([needs_oxygen, might_need_oxygen]) and not oxygen_provided:
                     return modify_failure_risk_when_does_not_get_oxygen_but_needs_oxygen(iv_tf_)
                 else:
@@ -3044,7 +2967,10 @@ class Models:
                 # fraction to adjust for the differences in the TF model for oral vs IV
                 fraction = (average_oral_tf / iv_tf_) if (iv_tf_ != 0) else 1
 
-                oral_tf_ = iv_tf_ * (1 / (0.55 * fraction))
+                adjusted_oral_tf_ = iv_tf_ * (1 / (0.55 * fraction))
+
+                oral_tf_ = modify_failure_risk_when_follow_up(adjusted_oral_tf_)
+                oral_tf_ = modify_failure_risk_when_stabilised_with_ox_at_hc(oral_tf_)
 
                 return oral_tf_
             else:
@@ -3077,18 +3003,8 @@ class Models:
                         p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) * rr_tf_iv
 
                 iv_tf_ = min(1.0, iv_tf_)
-
-                if iv_tf_ < 1.0:
-                    if this_is_follow_up:
-                        iv_tf_ = to_prob(to_odds(iv_tf_) * 1.47)
-                        iv_tf_ *= 1.78
-                        iv_tf_ = min(1.0, iv_tf_)
-
-                if iv_tf_ < 1.0:
-                    # add a clause for cases referred from health centres and not stabilised
-                    if pre_referral_oxygen == 'not_provided' and needs_oxygen:
-                        iv_tf_ = to_prob(to_odds(iv_tf_) * 1.72)
-                        iv_tf_ = min(1.0, iv_tf_)
+                iv_tf_ = modify_failure_risk_when_follow_up(iv_tf_)
+                iv_tf_ = modify_failure_risk_when_stabilised_with_ox_at_hc(iv_tf_)
 
                 # adjust the TF base on oxygen provision
                 if any([needs_oxygen, might_need_oxygen]) and not oxygen_provided:
@@ -3098,10 +3014,13 @@ class Models:
 
             # oral antibiotics
             elif antibiotic_provided_grp == 'oral_antibiotics':
-                return _treatment_failure_oral_antibiotics(
+                oral_tf_ = _treatment_failure_oral_antibiotics(
                     p['tf_7day_amoxicillin_for_fast_breathing_pneumonia_in_young_infants']) if \
                     age_exact_years < 1 / 6 else \
                     _treatment_failure_oral_antibiotics(p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%'])
+                oral_tf_ = modify_failure_risk_when_follow_up(oral_tf_)
+                oral_tf_ = modify_failure_risk_when_stabilised_with_ox_at_hc(oral_tf_)
+                return oral_tf_
 
             else:
                 raise ValueError(f'Unrecognised antibiotic{antibiotic_provided_grp}.')
@@ -3116,11 +3035,18 @@ class Models:
             # oral antibiotics
             elif antibiotic_provided_grp == 'oral_antibiotics':
                 if antibiotic_provided == 'Amoxicillin_tablet_or_suspension_3days':
-                    return _treatment_failure_oral_antibiotics(
+                    oral_tf_3days = _treatment_failure_oral_antibiotics(
                         p['tf_3day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'])
+                    oral_tf_3days = modify_failure_risk_when_follow_up(oral_tf_3days)
+                    oral_tf_3days = modify_failure_risk_when_stabilised_with_ox_at_hc(oral_tf_3days)
+                    return oral_tf_3days
+
                 elif antibiotic_provided == 'Amoxicillin_tablet_or_suspension_5days':
-                    return _treatment_failure_oral_antibiotics(
+                    oral_tf_5days = _treatment_failure_oral_antibiotics(
                         p['tf_5day_amoxicillin_for_chest_indrawing_with_SpO2>=90%'])
+                    oral_tf_5days = modify_failure_risk_when_follow_up(oral_tf_5days)
+                    oral_tf_5days = modify_failure_risk_when_stabilised_with_ox_at_hc(oral_tf_5days)
+                    return oral_tf_5days
                 else:
                     raise ValueError(f'Unrecognised antibiotic{antibiotic_provided}.')
 
@@ -3142,17 +3068,8 @@ class Models:
 
                 iv_tf_ = min(1.0, iv_tf_)
 
-                if iv_tf_ < 1.0:
-                    if this_is_follow_up:
-                        iv_tf_ = to_prob(to_odds(iv_tf_) * 1.47)
-                        iv_tf_ *= 1.78
-                        iv_tf_ = min(1.0, iv_tf_)
-
-                if iv_tf_ < 1.0:
-                    # add a clause for cases referred from health centres and not stabilised
-                    if pre_referral_oxygen == 'not_provided' and needs_oxygen:
-                        iv_tf_ = to_prob(to_odds(iv_tf_) * 1.72)
-                        iv_tf_ = min(1.0, iv_tf_)
+                iv_tf_ = modify_failure_risk_when_follow_up(iv_tf_)
+                iv_tf_ = modify_failure_risk_when_stabilised_with_ox_at_hc(iv_tf_)
 
                 # adjust the TF base on oxygen provision
                 if any([needs_oxygen, might_need_oxygen]) and not oxygen_provided:
@@ -3170,11 +3087,15 @@ class Models:
 
             # oral antibiotics (use TF for most non-severe pneumonia treatment)
             elif antibiotic_provided_grp == 'oral_antibiotics':
-                return _treatment_failure_oral_antibiotics(
+                oral_tf_ = _treatment_failure_oral_antibiotics(
                     p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%'])
+                oral_tf_ = modify_failure_risk_when_follow_up(oral_tf_)
+                oral_tf_ = modify_failure_risk_when_stabilised_with_ox_at_hc(oral_tf_)
+                return oral_tf_
 
             # If symptom-based classification == cough/cold classification with SpO2<90% - give IV antibiotics + oxygen
             elif antibiotic_provided_grp in ('1st_line_IV_antibiotics', '2nd_line_IV_antibiotics'):
+
                 # base TF for SpO2<90% or SpO2>=90%
                 rr_tf_iv = p['rr_tf_if_given_1st_line_IV_antibiotics_for_pneumonia_with_SpO2<90%'] if \
                     antibiotic_provided_grp == '1st_line_IV_antibiotics' and needs_oxygen \
@@ -3190,18 +3111,8 @@ class Models:
                     p['tf_3day_amoxicillin_for_fast_breathing_with_SpO2>=90%']) * rr_tf_iv
 
                 iv_tf_ = min(1.0, iv_tf_)
-
-                if iv_tf_ < 1.0:
-                    if this_is_follow_up:
-                        iv_tf_ = to_prob(to_odds(iv_tf_) * 1.47)
-                        iv_tf_ *= 1.78
-                        iv_tf_ = min(1.0, iv_tf_)
-
-                if iv_tf_ < 1.0:
-                    # add a clause for cases referred from health centres and not stabilised
-                    if pre_referral_oxygen == 'not_provided' and needs_oxygen:
-                        iv_tf_ = to_prob(to_odds(iv_tf_) * 1.72)
-                        iv_tf_ = min(1.0, iv_tf_)
+                iv_tf_ = modify_failure_risk_when_follow_up(iv_tf_)
+                iv_tf_ = modify_failure_risk_when_stabilised_with_ox_at_hc(iv_tf_)
 
                 # adjust the TF base on oxygen provision
                 if any([needs_oxygen, might_need_oxygen]) and not oxygen_provided:
@@ -4586,8 +4497,6 @@ def _make_hw_diagnosis_perfect(alri_module):
     p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 1.0
     p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 1.0
     p['prob_hw_decision_for_oxygen_provision_when_po_unavailable'] = 1.0
-    p['referral_rate_severe_cases_from_hc'] = 1.0
-    p['pulse_oximeter_usage_rate'] = 1.0
 
 
 def _set_current_policy(alri_module):
@@ -4606,6 +4515,44 @@ def _set_new_policy(alri_module):
 
     p['apply_oxygen_indication_to_SpO2_measurement'] = '<93%'
     # p['allow_use_oximetry_for_non_severe_classifications'] = True
+
+
+def _reduce_hw_dx_sensitivity(alri_module):
+    """Modify the parameters of an instance of the Alri module so that sensitivity of
+    health workers diagnostic accuracy is at 30%"""
+    p = alri_module.parameters
+
+    p['sensitivity_of_classification_of_fast_breathing_pneumonia_facility_level0'] = 0.3
+    p['sensitivity_of_classification_of_danger_signs_pneumonia_facility_level0'] = 0.3
+    p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level1'] = 0.3
+    p['sensitivity_of_classification_of_severe_pneumonia_facility_level1'] = 0.3
+    p['sensitivity_of_classification_of_non_severe_pneumonia_facility_level2'] = 0.3
+    p['sensitivity_of_classification_of_severe_pneumonia_facility_level2'] = 0.3
+
+    # Change respective cost for this condition
+    p['oxygen_unit_cost_by_po_implementation_existing_psa_imperfect_hw_dx'] = \
+        [0.0167841508524565, 0.00926022115997598, 0.00635414926419273, 0.00446207421001029, 0.00429132200096448]
+    p['oxygen_unit_cost_by_po_implementation_planned_psa_imperfect_hw_dx'] = \
+        [0.0142747188864335, 0.00826537109557841, 0.00551370534960769, 0.00383253630298794, 0.0036877605349842]
+    p['oxygen_unit_cost_by_po_implementation_all_district_psa_imperfect_hw_dx'] = \
+        [0.0286146949852482, 0.0165326378779786, 0.0110544589933642, 0.00769319228358011, 0.00723704307846086]
+
+
+def _prioritise_oxygen_to_hospitals(alri_module):
+    """Modify the parameters of an instance of the Alri module so that coverage of oxygen is
+    higher at the hospital levels"""
+    p = alri_module.parameters
+
+    p['scenario_existing_psa_ox_coverage_by_facility'] = [1, 0.03, 0]
+    p['scenario_planned_psa_ox_coverage_by_facility'] = [1, 1, 0.94]
+
+    # Change respective cost for this condition
+    p['oxygen_unit_cost_by_po_implementation_existing_psa_imperfect_hw_dx'] = \
+        [0.00645054596605153, 0.00603118423066993, 0.00519326397877533, 0.00394158505920955, 0.00380774765607967]
+    p['oxygen_unit_cost_by_po_implementation_planned_psa_imperfect_hw_dx'] = \
+        [0.00547761189189517, 0.0051350610605493, 0.00436034217101729, 0.00329684408052527, 0.00318278915942758]
+    p['oxygen_unit_cost_by_po_implementation_all_district_psa_imperfect_hw_dx'] = \
+        [0.0109790253401836, 0.0102926367248479, 0.00874632510421351, 0.00661490893230276, 0.00638693209973874]
 
 
 def _make_treatment_perfect(alri_module):
@@ -4639,6 +4586,17 @@ def _make_treatment_and_diagnosis_perfect(alri_module):
 
     _make_hw_diagnosis_perfect(alri_module)
     _make_treatment_perfect(alri_module)
+    _make_perfect_conditions(alri_module)
+
+
+def _make_perfect_conditions(alri_module):
+    """Modify the parameters of an instance of the Alri module so that consitions are perfect:
+    - referral rate, pulse oximeter usage rate, and follow-up care."""
+    p = alri_module.parameters
+
+    p['referral_rate_severe_cases_from_hc'] = 1.0
+    p['pulse_oximeter_usage_rate'] = 1.0
+    p['sought_follow_up_care'] = 1.0
 
 
 def _make_high_risk_of_death(alri_module):

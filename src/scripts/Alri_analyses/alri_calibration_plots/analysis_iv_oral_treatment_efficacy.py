@@ -438,7 +438,7 @@ if __name__ == "__main__":
     # Treatment efficacies table
     risk_of_death = summarize_by(
         df=table,
-        by=['oxygen_saturation', 'classification_for_treatment_decision_without_oximeter_perfect_accuracy'],
+        by=['oxygen_saturation', 'classification_for_treatment_decision_without_oximeter_perfect_accuracy', 'disease_type'],
         columns=[
             'prob_die_if_no_treatment',
             'treatment_efficacy_iv_antibiotics_with_oxygen',

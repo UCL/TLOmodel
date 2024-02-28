@@ -30,9 +30,11 @@ from tlo.methods.alri import (
     AlriPropertiesOfOtherModules,
     HSI_Alri_Treatment,
     _make_hw_diagnosis_perfect,
+    _make_perfect_conditions,
     _make_treatment_and_diagnosis_perfect,
-    _set_current_policy,
-    _set_new_policy
+    _reduce_hw_dx_sensitivity,
+    _prioritise_oxygen_to_hospitals
+
 )
 from tlo.util import sample_outcome
 
@@ -45,11 +47,11 @@ NUM_REPS_FOR_EACH_CASE = 20
 # scenario = 'baseline_ant_with_po_level1b'
 # scenario = 'baseline_ant_with_po_level1a'
 # scenario = 'baseline_ant_with_po_level0'
-# scenario = 'existing_psa'
+scenario = 'existing_psa'
 # scenario = 'existing_psa_with_po_level2'
 # scenario = 'existing_psa_with_po_level1b'
 # scenario = 'existing_psa_with_po_level1a'
-scenario = 'existing_psa_with_po_level0'
+# scenario = 'existing_psa_with_po_level0'
 # scenario = 'planned_psa'
 # scenario = 'planned_psa_with_po_level2'
 # scenario = 'planned_psa_with_po_level1b'
@@ -62,6 +64,11 @@ scenario = 'existing_psa_with_po_level0'
 # scenario = 'all_district_psa_with_po_level0'
 
 dx_accuracy = 'imperfect'
+
+# False if main analysis, True if a sensitivity analysis (HW Dx Accuracy, or Prioritise oxygen in Hospitals)
+sensitivity_analysis = False
+
+sensitivity_analysis_hw_dx = True  # change to False if analysing Oxygen prioritisation
 
 oximeter_available = True if 'with_po' in scenario else False
 
@@ -110,15 +117,31 @@ def get_sim(popsize):
 # Alri module.)
 
 # Alri module with default values (imperfect diagnosis/ imperfect treatment)
-sim0 = get_sim(popsize=MODEL_POPSIZE)
-alri_module_with_imperfect_diagnosis_and_imperfect_treatment = sim0.modules['Alri']
+sim = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_and_imperfect_treatment = sim.modules['Alri']
 hsi_with_imperfect_diagnosis_and_imperfect_treatment = HSI_Alri_Treatment(
     module=alri_module_with_imperfect_diagnosis_and_imperfect_treatment, person_id=None)
+
+# Alri module setting for sensitivity analysis - imperfect Hw Dx accuracy -30%
+sim0 = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_30 = sim0.modules['Alri']
+_reduce_hw_dx_sensitivity(alri_module_with_imperfect_diagnosis_30)
+hsi_with_imperfect_diagnosis_30 = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_30, person_id=None)
+
+# Alri module setting for sensitivity analysis - prioritise oxygen at hospitals
+sim3 = get_sim(popsize=MODEL_POPSIZE)
+alri_module_with_imperfect_diagnosis_prioritise_hosp = sim3.modules['Alri']
+_prioritise_oxygen_to_hospitals(alri_module_with_imperfect_diagnosis_prioritise_hosp)
+hsi_with_imperfect_diagnosis_prioritise_hosp = HSI_Alri_Treatment(
+    module=alri_module_with_imperfect_diagnosis_prioritise_hosp, person_id=None)
+
 
 # Alri module with perfect diagnosis (and imperfect treatment)
 sim1 = get_sim(popsize=MODEL_POPSIZE)
 alri_module_with_perfect_diagnosis = sim1.modules['Alri']
 _make_hw_diagnosis_perfect(alri_module_with_perfect_diagnosis)
+_make_perfect_conditions(alri_module_with_perfect_diagnosis)
 hsi_with_perfect_diagnosis = HSI_Alri_Treatment(module=alri_module_with_perfect_diagnosis, person_id=None)
 
 # Alri module with perfect diagnosis and perfect treatment
@@ -218,12 +241,20 @@ def configuration_to_use(treatment_perfect, hw_dx_perfect):
         alri_module = alri_module_with_perfect_treatment_and_diagnosis
 
     else:
-        if hw_dx_perfect:
-            hsi = hsi_with_perfect_diagnosis
-            alri_module = alri_module_with_perfect_diagnosis
+        if not sensitivity_analysis:
+            if hw_dx_perfect:
+                hsi = hsi_with_perfect_diagnosis
+                alri_module = alri_module_with_perfect_diagnosis
+            else:
+                hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment
+                alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment
         else:
-            hsi = hsi_with_imperfect_diagnosis_and_imperfect_treatment
-            alri_module = alri_module_with_imperfect_diagnosis_and_imperfect_treatment
+            if sensitivity_analysis_hw_dx:
+                hsi = hsi_with_imperfect_diagnosis_30
+                alri_module = alri_module_with_imperfect_diagnosis_30
+            else:
+                hsi = hsi_with_imperfect_diagnosis_prioritise_hosp
+                alri_module = alri_module_with_imperfect_diagnosis_prioritise_hosp
 
     return alri_module, hsi
 
@@ -292,7 +323,7 @@ def treatment_efficacy(
         'no referral needed' if not needs_referral else None
 
     # Provision for pre-referral oxygen treatment
-    if referred_up and (oxygen_saturation == '<90%'):
+    if needs_referral and (oxygen_saturation == '<90%'):
         if oxygen_available_by_level[facility_level]:
             pre_referral_oxygen = 'provided'
         else:
@@ -307,6 +338,8 @@ def treatment_efficacy(
         facility_level=new_facility_level,
         oxygen_saturation=oxygen_saturation,
     )
+
+    first_line_iv_failed = False
 
     # "Treatment Fails" is the probability that a death is averted (if one is schedule)
     treatment_fails = alri_module.models.treatment_fails(
@@ -341,20 +374,34 @@ def treatment_efficacy(
     if ultimate_treatment['antibiotic_indicated'][0].startswith('1st_line_IV'):
         if treatment_fails:
             treatment_fails = second_line_treatment_fails
+            first_line_iv_failed = True
 
     # follow-up oral TF --------------------------------------------------
-    # eligible_for_follow_up_care = all([not ultimate_treatment['antibiotic_indicated'][0].startswith('1st_line_IV'),
-    #                                    treatment_fails, sought_follow_up_care, duration_in_days_of_alri > 5])
 
     # do follow-up care for oral TF
     follow_up_care = alri_module.follow_up_treatment_failure(
-        original_classification_given=classification_for_treatment_decision)
+        original_classification_given=classification_for_treatment_decision,
+        symptoms=symptoms)
 
     sought_follow_up_care = follow_up_care[0]
     follow_up_classification = follow_up_care[1]
 
-    eligible_for_follow_up_care = all([not ultimate_treatment['antibiotic_indicated'][0].startswith('1st_line_IV'),
-                                       treatment_fails, sought_follow_up_care, duration_in_days_of_alri > 5])
+    eligible_for_follow_up_care_3_day_amox = all([ultimate_treatment['antibiotic_indicated'][0].endswith('_3days'),
+                                                  treatment_fails, sought_follow_up_care, duration_in_days_of_alri > 3])
+    eligible_for_follow_up_care_7_day_amox = all([ultimate_treatment['antibiotic_indicated'][0].endswith('_7days'),
+                                                  treatment_fails, sought_follow_up_care, duration_in_days_of_alri > 7])
+    eligible_for_follow_up_care_5_day_amox = all([ultimate_treatment['antibiotic_indicated'][0].endswith('_5days'),
+                                                  treatment_fails, sought_follow_up_care, duration_in_days_of_alri > 5])
+    eligible_for_follow_up_care_no_amox = all([ultimate_treatment['antibiotic_indicated'][0] == '',
+                                               treatment_fails, sought_follow_up_care, duration_in_days_of_alri > 3])
+
+    # eligible_for_follow_up_care = all([not ultimate_treatment['antibiotic_indicated'][0].startswith('1st_line_IV'),
+    #                                    treatment_fails, sought_follow_up_care, duration_in_days_of_alri > 5])
+
+    eligible_for_follow_up_care = any([eligible_for_follow_up_care_3_day_amox,
+                                       eligible_for_follow_up_care_5_day_amox,
+                                       eligible_for_follow_up_care_7_day_amox,
+                                       eligible_for_follow_up_care_no_amox])
 
     # change facility_level if there was a referral
     referral_info_follow_up = alri_module.referral_from_hc(
@@ -370,7 +417,7 @@ def treatment_efficacy(
         'no referral needed' if not needs_referral_follow_up else None
 
     # Provision for pre-referral oxygen treatment
-    if referred_up_follow_up and (oxygen_saturation == '<90%'):
+    if needs_referral_follow_up and (oxygen_saturation == '<90%'):
         if oxygen_available_by_level[new_facility_level]:
             pre_referral_oxygen_follow_up = 'provided'
         else:
@@ -385,11 +432,15 @@ def treatment_efficacy(
         facility_level=new_facility_level_follow_up,
         oxygen_saturation=oxygen_saturation,
     )
+    first_line_iv_failed_follow_up = False
+
     # apply the TFs:
     # "Treatment Fails" is the probability that a death is averted (if one is schedule)
     treatment_fails_at_follow_up = alri_module.models.treatment_fails(
         antibiotic_provided=ultimate_treatment_follow_up['antibiotic_indicated'][0],
-        oxygen_provided=ultimate_treatment_follow_up['oxygen_indicated'] if oxygen_available_by_level[new_facility_level_follow_up]  and new_facility_level_follow_up in ('2', '1b') else False,
+        oxygen_provided=ultimate_treatment_follow_up['oxygen_indicated'] if
+        oxygen_available_by_level[new_facility_level_follow_up] and new_facility_level_follow_up in ('2', '1b')
+        else False,
         imci_symptom_based_classification=imci_symptom_based_classification,
         SpO2_level=oxygen_saturation,
         disease_type=disease_type,
@@ -421,25 +472,29 @@ def treatment_efficacy(
     if ultimate_treatment_follow_up['antibiotic_indicated'][0].startswith('1st_line_IV'):
         if treatment_fails_at_follow_up:
             treatment_fails_at_follow_up = second_line_treatment_fails_at_follow_up
+            first_line_iv_failed_follow_up = True
 
     if not eligible_for_follow_up_care:
         return (treatment_fails,
                 ultimate_treatment['oxygen_indicated'] if oxygen_available_by_level[new_facility_level] else False,
                 new_facility_level,
+                first_line_iv_failed,
                 (referral_status, pre_referral_oxygen),
                 eligible_for_follow_up_care,
-                None, None, None, None)
+                None, None, None, None, None)
 
     else:
         return (treatment_fails,
                 ultimate_treatment['oxygen_indicated'] if oxygen_available_by_level[new_facility_level] else False,
                 new_facility_level,
+                first_line_iv_failed,
                 (referral_status, pre_referral_oxygen),
                 (eligible_for_follow_up_care, follow_up_classification),
                 treatment_fails_at_follow_up,
                 ultimate_treatment_follow_up['oxygen_indicated'] if oxygen_available_by_level[new_facility_level_follow_up] else False,
                 new_facility_level_follow_up,
-                (referral_status_follow_up, pre_referral_oxygen_follow_up))
+                (referral_status_follow_up, pre_referral_oxygen_follow_up),
+                first_line_iv_failed_follow_up)
 
 
 def generate_table():
@@ -468,7 +523,7 @@ def generate_table():
     hw_dx_perfect = True if dx_accuracy == 'perfect' else False
 
     for x in df.itertuples():
-        v0, v1, v2, v3, v4, v5, v6, v7, v8 = treatment_efficacy(
+        v0, v1, v2, v3, v4, v5, v6, v7, v8, v9, v10 = treatment_efficacy(
             # Information about the patient:
             age_exact_years=x.age_exact_years,
             symptoms=x.symptoms,
@@ -508,19 +563,25 @@ def generate_table():
             # Referred facility level (either 1b or 2)
             f'final_facility_scenario_{scenario}_{dx_accuracy}_hw_dx': v2,
 
+            # First line IV failed
+            f'first_line_iv_failed_scenario_{scenario}_{dx_accuracy}_hw_dx': v3,
+
             # needs referral and referred status
-            f'referral_status_and_oxygen_scenario_{scenario}_{dx_accuracy}_hw_dx': v3,
+            f'referral_status_and_oxygen_scenario_{scenario}_{dx_accuracy}_hw_dx': v4,
 
             # Follow-up properties (ORAL TF) -------------------------------
-            f'eligible_for_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx': v4,
+            f'eligible_for_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx': v5,
 
-            f'follow_up_treatment_failure_scenario_{scenario}_{dx_accuracy}_hw_dx': v5,
+            f'follow_up_treatment_failure_scenario_{scenario}_{dx_accuracy}_hw_dx': v6,
 
-            f'oxygen_provided_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx': v6,
+            f'oxygen_provided_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx': v7,
 
-            f'final_facility_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx': v7,
+            f'final_facility_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx': v8,
 
-            f'referral_status_and_oxygen_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx': v8,
+            f'referral_status_and_oxygen_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx': v9,
+
+            # First line IV failed
+            f'first_line_iv_failed_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx': v10,
 
             f'po_available_seek_level_{scenario}_hw_dx':
                 True if oximeter_available and x.seek_level in implementation_level else False,
@@ -643,30 +704,74 @@ if __name__ == "__main__":
             lambda x: (1 * 2 * 5 * 0.022448) if x < 1 else (2 * 2 * 5 * 0.022448) if 1 <= x < 2 else
             (3 * 2 * 5 * 0.022448))
 
-        table['iv_antibiotics_cost'] = table['age_exact_years'].apply(
-            lambda x: (((1 / 2.5) * 4 * 5 * 0.2114321) + ((1 / 2) * 5 * 0.2114321)) if x < 1 / 3 else
-            (((2 / 2.5) * 4 * 5 * 0.2114321) + ((1.8 / 2) * 5 * 0.1464)) if 1 / 3 <= x < 1 else
-            (((3 / 2.5) * 4 * 5 * 0.2114321) + ((2.7 / 2) * 5 * 0.1464)) if 1 <= x < 3 else
-            (((5 / 2.5) * 4 * 5 * 0.2114321) + ((3.5 / 2) * 5 * 0.1464)))  # ampicillin + gentamicin
-
         oral_antibiotics_cost = table.loc[
             ((table[f'classification_in_{scenario}_{dx_accuracy}_hw_dx'] == 'fast_breathing_pneumonia') |
-            (table[f'classification_in_{scenario}_{dx_accuracy}_hw_dx'] == 'chest_indrawing_pneumonia')),
+             (table[f'classification_in_{scenario}_{dx_accuracy}_hw_dx'] == 'chest_indrawing_pneumonia')),
             'oral_amox_cost'].sum()
 
-        iv_antibiotic_cost = table.loc[
-            (table[f'classification_in_{scenario}_{dx_accuracy}_hw_dx'] == 'danger_signs_pneumonia'),
-            'iv_antibiotics_cost'].sum()
+        # IV antibiotics - 1st line - amp + gent , 2nd line - ceftri
+        table['ampicillin_unit_cost'] = table['age_exact_years'].apply(
+            lambda x: ((1 / 2.5) * 0.2114321) if x < 1 / 3 else
+            ((2 / 2.5) * 0.2114321) if 1 / 3 <= x < 1 else
+            ((3 / 2.5) * 0.2114321) if 1 <= x < 3 else
+            ((5 / 2.5) * 0.2114321))  # ampicillin
 
+        table['gentamycin_unit_cost'] = table['age_exact_years'].apply(
+            lambda x: ((1 / 2) * 0.123464) if x < 1 / 3 else
+            ((1.8 / 2) * 0.123464) if 1 / 3 <= x < 1 else
+            ((2.7 / 2) * 0.123464) if 1 <= x < 3 else
+            ((3.5 / 2) * 0.123464))  # gentamicin 0.1464
+
+        table['ceftriaxone_unit_cost'] = table['age_exact_years'].apply(
+            lambda x: ((3 / 10) * 0.557845) if x < 1 / 3 else
+            ((6 / 10) * 0.557845) if 1 / 3 <= x < 1 else
+            ((10 / 10) * 0.557845) if 1 <= x < 3 else
+            ((14 / 10) * 0.557845))  # ceftriaxone 0.43466343
+
+        first_line_total_cost = table[[f'classification_in_{scenario}_{dx_accuracy}_hw_dx',
+                                       f'first_line_iv_failed_scenario_{scenario}_{dx_accuracy}_hw_dx',
+                                       'ampicillin_unit_cost',
+                                       'gentamycin_unit_cost',
+                                       f'final_facility_scenario_{scenario}_{dx_accuracy}_hw_dx']].apply(
+            lambda x: (x[2] * 4 * 5) + (x[3] * 5) if ((x[0] == 'danger_signs_pneumonia') and (x[1] == False) and
+                                                      (x[4] == '2' or x[4] == '1b'))
+            else (x[2] * 4 * 2) + (x[3] * 2) if ((x[0] == 'danger_signs_pneumonia') and x[1] == True) else 0,
+            axis=1).sum()
+
+        second_line_total_cost = table[[f'classification_in_{scenario}_{dx_accuracy}_hw_dx',
+                                        f'first_line_iv_failed_scenario_{scenario}_{dx_accuracy}_hw_dx',
+                                        'ceftriaxone_unit_cost',
+                                        f'final_facility_scenario_{scenario}_{dx_accuracy}_hw_dx']].apply(
+            lambda x: (x[2] * 5) if ((x[0] == 'danger_signs_pneumonia') and (x[1] == True) and
+                                     (x[3] == '2' or x[3] == '1b')) else 0, axis=1).sum()
+
+        iv_antibiotic_cost = first_line_total_cost + second_line_total_cost
+
+        # Oral antibiotic cost at follow-up care
         follow_up_oral_antibiotics_cost = table.loc[
             (table[f'eligible_for_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx'].str[0] == True) &
             (table[f'eligible_for_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx'].str[1] == 'chest_indrawing_pneumonia'),
             'oral_amox_cost'].sum()
 
-        follow_up_iv_antibiotics_cost = table.loc[
-            (table[f'eligible_for_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx'].str[0] == True) &
-            (table[f'eligible_for_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx'].str[1] == 'danger_signs_pneumonia'),
-            'iv_antibiotics_cost'].sum()
+        # IV antibiotic cost at follow-up care
+        first_line_total_cost_fu = table[[f'eligible_for_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx',
+                                          f'first_line_iv_failed_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx',
+                                          'ampicillin_unit_cost',
+                                          'gentamycin_unit_cost',
+                                          f'final_facility_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx']].apply(
+            lambda x: (x[2] * 4 * 5) + (x[3] * 5) if ((x[0] != False) and (x[0][1] == 'danger_signs_pneumonia') and
+                                                      (x[1] == False) and (x[4] == '2' or x[4] == '1b'))
+            else (x[2] * 4 * 2) + (x[3] * 2) if ((x[0] != False) and (x[0][1] == 'danger_signs_pneumonia') and (x[1] == True)) else 0,
+            axis=1).sum()
+
+        second_line_total_cost_fu = table[[f'eligible_for_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx',
+                                           f'first_line_iv_failed_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx',
+                                           'ceftriaxone_unit_cost',
+                                           f'final_facility_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx']].apply(
+            lambda x: (x[2] * 5) if ((x[0] != False) and (x[0][1] == 'danger_signs_pneumonia') and
+                                     (x[1] == True) and (x[3] == '2' or x[3] == '1b')) else 0, axis=1).sum()
+
+        follow_up_iv_antibiotics_cost = first_line_total_cost_fu + second_line_total_cost_fu
 
         # OUTPATIENT CONSULTATION COST ------------
         table['consultation_cost_seek_level'] = table['seek_level'].apply(
@@ -719,19 +824,35 @@ if __name__ == "__main__":
             (final_facility == final_facility_follow_up), 'consultation_cost_final_facility'].sum()
 
         # INPATIENT BED/DAY COST ------------
-        table['inpatient_bed_cost'] = table[f'final_facility_scenario_{scenario}_{dx_accuracy}_hw_dx'].apply(
-            lambda x: 6.81 * 5 if x == '2' else 6.53 * 5 if x == '1b' else 0
-        )
+        table['inpatient_bed_cost_per_day'] = table[f'final_facility_scenario_{scenario}_{dx_accuracy}_hw_dx'].apply(
+            lambda x: 7.52577 if x == '2' else 6.53 if x == '1b' else 0)
+
+        table['inpatient_bed_cost'] = table[
+            ['inpatient_bed_cost_per_day',
+             f'first_line_iv_failed_scenario_{scenario}_{dx_accuracy}_hw_dx',
+             f'classification_in_{scenario}_{dx_accuracy}_hw_dx',
+             f'final_facility_scenario_{scenario}_{dx_accuracy}_hw_dx']].apply(
+            lambda x: (x[0] * 5) if (x[1] == False and x[2] == 'danger_signs_pneumonia') else
+            (x[0] * 7) if (x[1] == True and (x[2] == 'danger_signs_pneumonia') and (x[3] == '2' or x[3] == '1b'))
+            else 0, axis=1)
 
         hospitalisation_cost = table.loc[
             (table[f'classification_in_{scenario}_{dx_accuracy}_hw_dx'] == 'danger_signs_pneumonia') &
-            ((table[f'final_facility_scenario_{scenario}_{dx_accuracy}_hw_dx'] == '2') |
-             (table[f'final_facility_scenario_{scenario}_{dx_accuracy}_hw_dx'] == '1b')),  'inpatient_bed_cost'].sum()
+            ((final_facility == '2') | (final_facility == '1b')), 'inpatient_bed_cost'].sum()
 
         # follow-up inpatient bed days costs --------
-        table['inpatient_bed_cost_follow_up'] = table[f'final_facility_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx'].apply(
-            lambda x: 6.81 * 5 if x == '2' else 6.53 * 5 if x == '1b' else 0
-        )
+        table['inpatient_bed_cost_per_day_fu'] = table[
+            f'final_facility_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx'].apply(
+            lambda x: 7.52577 if x == '2' else 6.53 if x == '1b' else 0)
+
+        table['inpatient_bed_cost_follow_up'] = table[
+            ['inpatient_bed_cost_per_day_fu',
+             f'first_line_iv_failed_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx',
+             f'eligible_for_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx',
+             f'final_facility_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx']].apply(
+            lambda x: (x[0] * 5) if ((x[1] == False) and (x[2] != False) and x[2][1] == 'danger_signs_pneumonia') else
+            (x[0] * 7) if ((x[1] == True) and (x[2] != False) and (x[2][1] == 'danger_signs_pneumonia') and
+                           (x[3] == '2' or x[3] == '1b')) else 0, axis=1)
 
         follow_up_hospitalisation_cost = table.loc[
             (table[f'eligible_for_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx'].str[0] == True) &
@@ -740,13 +861,24 @@ if __name__ == "__main__":
             'inpatient_bed_cost_follow_up'].sum()
 
         # PULSE OXIMETRY COST ----------------------
+        po_cost_by_usage_rate = {'perfect': [0.15897, 0.08667, 0.06025], 'imperfect': [0.17663, 0.0963, 0.06694]}
+
         table['PO_cost_seek_level'] = table['seek_level'].apply(
-            lambda x: 0.15897 if x in ('2', '1b') else 0.08667 if x == '1a' else 0.06025)
+            lambda x: po_cost_by_usage_rate[dx_accuracy][0] if x in ('2', '1b') else
+            po_cost_by_usage_rate[dx_accuracy][1] if x == '1a' else po_cost_by_usage_rate[dx_accuracy][2])
         table['PO_cost_final_level'] = table[f'final_facility_scenario_{scenario}_{dx_accuracy}_hw_dx'].apply(
-            lambda x: 0.15897 if x in ('2', '1b') else 0.08667 if x == '1a' else 0.06025)
+            lambda x: po_cost_by_usage_rate[dx_accuracy][0] if x in ('2', '1b') else
+            po_cost_by_usage_rate[dx_accuracy][1] if x == '1a' else po_cost_by_usage_rate[dx_accuracy][2])
         table['PO_cost_final_level_follow_up'] = table[
             f'final_facility_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx'].apply(
-            lambda x: 0.15897 if x in ('2', '1b') else 0.08667 if x == '1a' else 0.06025 if x == '0' else 0)
+            lambda x: po_cost_by_usage_rate[dx_accuracy][0] if x in ('2', '1b') else
+            po_cost_by_usage_rate[dx_accuracy][1] if x == '1a' else po_cost_by_usage_rate[dx_accuracy][2])
+
+        # table['PO_cost_final_level'] = table[f'final_facility_scenario_{scenario}_{dx_accuracy}_hw_dx'].apply(
+        #     lambda x: 0.15897 if x in ('2', '1b') else 0.08667 if x == '1a' else 0.06025)
+        # table['PO_cost_final_level_follow_up'] = table[
+        #     f'final_facility_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx'].apply(
+        #     lambda x: 0.15897 if x in ('2', '1b') else 0.08667 if x == '1a' else 0.06025 if x == '0' else 0)
 
         table['po_available_referral_level'] = table[f'final_facility_scenario_{scenario}_{dx_accuracy}_hw_dx'].apply(
             lambda x: True if oximeter_available and x[0] in implementation_level else False)
@@ -855,7 +987,40 @@ if __name__ == "__main__":
 
     debug_point = 0
 
-    # need_oxygen_ds_with_SpO2lt90 for baseline = 2765
+    # get descriptives
+    pathogen_distributon = table.groupby('pathogen').size() / table.groupby('pathogen').size().sum()
+    coinfection = table.groupby('bacterial_coinfection').size().sum()   # 8.5%?
+    disease_type_prop = table.groupby('disease_type').size() / table.groupby('disease_type').size().sum()
+    mean_duration = table['duration_in_days_of_alri'].mean()
+    sd_duration = table['duration_in_days_of_alri'].std()
+    care_seeking_level = table.groupby('seek_level').size() / table.groupby('seek_level').size().sum()
+    hypoxaemia = table.groupby('oxygen_saturation').size() / table.groupby('oxygen_saturation').size().sum()
+    pc_complications = table['complications'].apply(lambda x: 1 if any(
+        e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax', 'bacteraemia'] for e in x) else 0).sum()
+
+    # checks:
+
+    table.groupby(f'referral_status_and_oxygen_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx').size()
+    # (needs referral, referred, not_applicable)     485 , 485
+    # (needs referral, referred, not_provided)       166, 77
+    # (needs referral, referred, provided)           N/A, 89
+    # (no referral needed, not_applicable)          1853, 1853
+    table.groupby(f'referral_status_and_oxygen_scenario_{scenario}_{dx_accuracy}_hw_dx').size()
+    # (needs referral, referred, not_applicable)     4698, 4698
+    # (needs referral, referred, not_provided)        849, 435
+    # (needs referral, referred, provided)           N/A, 414
+    # (no referral needed, not_applicable)          42413
+
+    table[f'first_line_iv_failed_scenario_{scenario}_{dx_accuracy}_hw_dx'].sum()
+    # 2973, 2782
+    table[f'first_line_iv_failed_follow_up_scenario_{scenario}_{dx_accuracy}_hw_dx'].sum()
+    # 448, 436
+
+    table.loc[table[f'classification_in_{scenario}_{dx_accuracy}_hw_dx'] != 'danger_signs_pneumonia',
+              f'treatment_efficacy_scenario_{scenario}_{dx_accuracy}_hw_dx'].sum()
+    # 5198 / 6178, 5198 / 6054
+
+
 
     def scaled_baseline_tf(df, unscaled_intercept):
         """" scale the treatment failure of IV antibiotics for danger signs pneumonia """
@@ -1014,3 +1179,83 @@ check = tlo_availability_df.groupby(['Facility_Level', 'item_code']).mean()
 # erythromycin 123 --- 0: 0.15414, 1a: 0.30827, 1b: 0.43940, 2: 0.59340, 3: 0.84973
 # azithromycin --- 1a and 1b 0.5077 - assume 1a: 0.4577, 1b: 0.5577, half of 1a for 0: 0.22885, 2: 0.78655, 3: 0.900975
 
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Define the dataset
+interventions = ['Scenario 0', 'Scenario 0.PO-2', 'Scenario 0.PO-1b', 'Scenario 0.PO-1a', 'Scenario 0.PO-0',
+                 'Scenario 1', 'Scenario 1.PO-2', 'Scenario 1.PO-1b', 'Scenario 1.PO-1a', 'Scenario 1.PO-0',
+                 'Scenario 2', 'Scenario 2.PO-2', 'Scenario 2.PO-1b', 'Scenario 2.PO-1a', 'Scenario 2.PO-0',
+                 'Scenario 3', 'Scenario 3.PO-2', 'Scenario 3.PO-1b', 'Scenario 3.PO-1a', 'Scenario 3.PO-0']
+costs = [832300.817, 843773.248, 868415.539, 916512.278, 923313.384,
+         913758.772, 925209.575, 949688.096, 994772.516, 1001151.764,
+         973034.166, 984282.582, 1008389.223, 1050203.791, 1056056.903,
+         1123030.591,
+         1134348.459,
+         1158582.825,
+         1196655.298,
+         1201932.238]
+
+effects = [66785,
+           66108,
+           65246,
+           64139,
+           64016,
+           58231,
+           57554,
+           56262,
+           54539,
+           54108,
+           49124,
+           48386,
+           46416,
+           43893,
+           43463,
+           49063,
+           48324,
+           46355,
+           43893,
+           47278
+           ]
+
+# Calculate the incremental cost-effectiveness ratio (ICER)
+ICERs = []
+for i in range(len(interventions)-1):
+    ICER = (costs[i+1] - costs[0]) / (effects[0] - effects[i+1])
+    ICERs.append(ICER)
+
+dalys_averteds = []
+for i in range(len(interventions)-1):
+    dalys_averted = effects[0] - effects[i+1]
+    dalys_averteds.append(dalys_averted)
+
+# Create a cost-effectiveness plane
+plt.scatter(effects, costs)
+plt.xlabel('Effectiveness')
+plt.ylabel('Cost')
+plt.title('Cost-Effectiveness Plane')
+for i in range(len(interventions)):
+    plt.annotate(interventions[i], (effects[i], costs[i]))
+
+# Calculate the net monetary benefit (NMB)
+WTP = np.linspace(0, 1000, 101)
+NMBs = []
+for i in range(len(interventions)-1):
+    NMB = dalys_averteds[i] * WTP - costs[i+1]
+    NMBs.append(NMB)
+
+# Plot the cost-effectiveness acceptability curve (CEAC)
+CEAC = []
+for wtp in WTP:
+    num = sum([1 for i in range(len(interventions)-1) if any(NMBs[i] >= wtp)])
+    prob = num / (len(interventions)-1)
+    CEAC.append(prob)
+
+plt.figure()
+plt.plot(WTP, CEAC)
+plt.xlabel('Willingness-to-Pay')
+plt.ylabel('Probability of Cost-Effectiveness')
+plt.title('Cost-Effectiveness Acceptability Curve')
+
+# Show the plots
+plt.show()
