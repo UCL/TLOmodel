@@ -568,7 +568,7 @@ class HealthSystem(Module):
             Types.STRING, "Name of global task-shifting mode adopted"),
         
         'global_task_shifting': Parameter(
-            Types.DICT, "Global task-shifting policy adopted by the health care system. It includes a list of the officers"
+            Types.DICT, " Global task-shifting policy adopted by the health care system. It includes a list of the officers"
                         " eligible for task shifting. For each of those officers, it specifies which officers"
                         " can take over the officer's tasks, and a factor explaining how the originally scheduled time "
                         " should be scaled if performed by a different officer."),
