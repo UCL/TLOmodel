@@ -352,15 +352,23 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     tclose=None,
                 )
 
+        # Changes the pop dataframe!
         if "Depression" in simulation_modules:
             simulation_modules["Depression"].do_on_presentation_to_care(
                 person_id=person_id, hsi_event=hsi_event
             )
 
         if "CardioMetabolicDisorders" in simulation_modules:
-            simulation_modules[
+            event = simulation_modules[
                 "CardioMetabolicDisorders"
             ].determine_if_will_be_investigated(person_id=person_id)
+            if event:
+                schedule_hsi(
+                    event,
+                    priority=0,
+                    topen=sim_date,
+                    tclose=None,
+                )
 
         if "Copd" in simulation_modules:
             if ("breathless_moderate" in symptoms) or ("breathless_severe" in symptoms):
