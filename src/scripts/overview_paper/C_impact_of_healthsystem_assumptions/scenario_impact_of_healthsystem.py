@@ -3,15 +3,13 @@ impact that is achieved under each, relative to there being no health system.
 
 Run on the batch system using:
 ```
-tlo batch-submit src/scripts/healthsystem/impact_of_healthsystem_under_diff_scenarios/scenario_impact_of_healthsystem.py
+tlo batch-submit src/scripts/overview_paper/C_impact_of_healthsystem_assumptions/scenario_impact_of_healthsystem.py
 ```
 
 or locally using:
 ```
-tlo scenario-run src/scripts/healthsystem/impact_of_healthsystem_under_diff_scenarios/scenario_impact_of_healthsystem.py
-```
-
-
+tlo scenario-run src/scripts/overview_paper/C_impact_of_healthsystem_assumptions/scenario_impact_of_healthsystem.py
+ ```
 
 """
 
@@ -31,15 +29,15 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
         self.seed = 0
         self.start_date = Date(2010, 1, 1)
         self.end_date = Date(2020, 1, 1)
-        self.pop_size = 100_000
+        self.pop_size = 50_000  # Note smaller population size (should be 100_000 but runs on draws did not complete)
         self._scenarios = self._get_scenarios()
         self.number_of_draws = len(self._scenarios)
-        self.runs_per_draw = 5
+        self.runs_per_draw = 10
 
     def log_configuration(self):
         return {
-            'filename': 'effect_of_healthsystem_under_different_modes',
-            'directory': Path('./outputs'),  # <- (specified only for local running)
+            'filename': 'healthsystem_under_different_assumptions',
+            'directory': Path('./outputs'),
             'custom_levels': {
                 '*': logging.WARNING,
                 'tlo.methods.demography': logging.INFO,
@@ -53,27 +51,32 @@ class ImpactOfHealthSystemAssumptions(BaseScenario):
         return fullmodel(resourcefilepath=self.resources) + [ScenarioSwitcher(resourcefilepath=self.resources)]
 
     def draw_parameters(self, draw_number, rng):
-        return list(self._scenarios.values())[draw_number]
+        if draw_number < len(self._scenarios):
+            return list(self._scenarios.values())[draw_number]
 
     def _get_scenarios(self) -> Dict[str, Dict]:
         """Return the Dict with values for the parameters that are changed, keyed by a name for the scenario."""
 
         return {
-            "No Healthcare System": {
-                'HealthSystem': {
-                    'Service_Availability': []
-                },
-            },
+            "No Healthcare System":
+                mix_scenarios(
+                    get_parameters_for_status_quo(),
+                    {
+                        'HealthSystem': {
+                            'Service_Availability': []
+                        }
+                    },
+                ),
 
             "With Hard Constraints":
+                # N.B. This is for Mode 2 on continuously from the beginning of the simulation.
+                # ... And with the "natural" (i.e., as coded in each disease module and not-overwritten) `tclose`
                 mix_scenarios(
                     get_parameters_for_status_quo(),
                     {
                      'HealthSystem': {
                         'mode_appt_constraints': 2,
-                        "Policy_Name_from2023": "Naive",
-                        'tclose_overwrite': 1,
-                        'tclose_days_offset_overwrite': 1,
+                        "policy_name": "Naive",
                         }
                     },
                 ),
