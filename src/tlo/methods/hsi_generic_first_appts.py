@@ -209,6 +209,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
         if event:
             schedule_hsi(event, topen=sim_date, tclose=None, priority=0)
 
+    # Sets dataframe values in method!
     if "Malaria" in simulation_modules:
         malaria_associated_symptoms = {
             "fever",
@@ -226,9 +227,18 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
         # ----------------------------------- CHILD < 5 -----------------------------------
         if "Diarrhoea" in simulation_modules:
             if "diarrhoea" in symptoms:
-                simulation_modules["Diarrhoea"].do_when_presentation_with_diarrhoea(
+                event = simulation_modules[
+                    "Diarrhoea"
+                ].do_when_presentation_with_diarrhoea(
                     person_id=person_id, hsi_event=hsi_event
                 )
+                if event:
+                    schedule_hsi(
+                        event,
+                        priority=0,
+                        topen=sim_date,
+                        tclose=None,
+                    )
 
         if "Alri" in simulation_modules:
             if ("cough" in symptoms) or ("difficult_breathing" in symptoms):
