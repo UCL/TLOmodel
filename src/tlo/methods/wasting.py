@@ -323,7 +323,7 @@ class Wasting(Module):
         probability_less_than_minus3sd = 1 - whz_normal_distribution.sf(-3)
 
         # make WHZ <-2 as the 100% and get the adjusted probability of severe wasting within overall wasting
-        proportion_severe_in_overall_wasting = probability_less_than_minus3sd / probability_less_than_minus2sd
+        proportion_severe_in_overall_wasting = probability_less_than_minus3sd * probability_less_than_minus2sd
 
         # get the probability of severe wasting
         return proportion_severe_in_overall_wasting
@@ -1229,9 +1229,9 @@ class WastingModels:
                                  self.params['or_wasting_preterm_and_AGA'])
             )
 
-        get_odds_wasting = self.module.get_odds_probs_wasting(agegp=agegp, lm_scaling=True)
+        get_odds_wasting = self.module.get_prob_severe_wasting_or_odds_wasting(agegp=agegp, get_odds=True)
         unscaled_lm = make_linear_model_wasting(intercept=get_odds_wasting)
-        target_mean = self.module.get_odds_probs_wasting(agegp='12_23mo', lm_scaling=True)
+        target_mean = self.module.get_prob_severe_wasting_or_odds_wasting(agegp='12_23mo', get_odds=True)
         actual_mean = unscaled_lm.predict(df.loc[df.is_alive & (df.age_years == 1)]).mean()
         scaled_intercept = get_odds_wasting * (target_mean / actual_mean) if \
             (target_mean != 0 and actual_mean != 0 and ~np.isnan(actual_mean)) else get_odds_wasting
