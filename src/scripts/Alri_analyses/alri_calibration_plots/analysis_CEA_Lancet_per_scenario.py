@@ -47,7 +47,7 @@ NUM_REPS_FOR_EACH_CASE = 20
 # scenario = 'baseline_ant_with_po_level1b'
 # scenario = 'baseline_ant_with_po_level1a'
 # scenario = 'baseline_ant_with_po_level0'
-scenario = 'existing_psa'
+# scenario = 'existing_psa'
 # scenario = 'existing_psa_with_po_level2'
 # scenario = 'existing_psa_with_po_level1b'
 # scenario = 'existing_psa_with_po_level1a'
@@ -57,7 +57,7 @@ scenario = 'existing_psa'
 # scenario = 'planned_psa_with_po_level1b'
 # scenario = 'planned_psa_with_po_level1a'
 # scenario = 'planned_psa_with_po_level0'
-# scenario = 'all_district_psa'
+scenario = 'all_district_psa'
 # scenario = 'all_district_psa_with_po_level2'
 # scenario = 'all_district_psa_with_po_level1b'
 # scenario = 'all_district_psa_with_po_level1a'
@@ -996,7 +996,14 @@ if __name__ == "__main__":
     care_seeking_level = table.groupby('seek_level').size() / table.groupby('seek_level').size().sum()
     hypoxaemia = table.groupby('oxygen_saturation').size() / table.groupby('oxygen_saturation').size().sum()
     pc_complications = table['complications'].apply(lambda x: 1 if any(
-        e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax', 'bacteraemia'] for e in x) else 0).sum()
+        e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax'] for e in x) else 0).sum()
+    all_complications = table['complications'].apply(lambda x: 1 if any(
+        e in ['pleural_effusion', 'empyema', 'lung_abscess', 'pneumothorax', 'bacteraemia', 'hypoxaemia'] for e in x) else 0).sum()
+
+    malnutrition = table.groupby('un_clinical_acute_malnutrition').size()
+
+    hiv_pos = table.groupby('hv_inf').size()
+    hiv_pos_art = table.groupby('hiv_not_on_art').size()
 
     # checks:
 
