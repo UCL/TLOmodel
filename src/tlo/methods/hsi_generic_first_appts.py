@@ -370,6 +370,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     tclose=None,
                 )
 
+        # Changes population dataframe!
         if "Copd" in simulation_modules:
             if ("breathless_moderate" in symptoms) or ("breathless_severe" in symptoms):
                 simulation_modules["Copd"].do_when_present_with_breathless(
