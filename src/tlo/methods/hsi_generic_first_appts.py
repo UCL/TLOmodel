@@ -278,7 +278,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         module=simulation_modules["OesophagealCancer"],
                     ),
                     priority=0,
-                    topen=sim.date,
+                    topen=sim_date,
                     tclose=None,
                 )
 
@@ -290,7 +290,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         person_id=person_id, module=simulation_modules["BladderCancer"]
                     ),
                     priority=0,
-                    topen=sim.date,
+                    topen=sim_date,
                     tclose=None,
                 )
 
@@ -301,7 +301,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         person_id=person_id, module=simulation_modules["BladderCancer"]
                     ),
                     priority=0,
-                    topen=sim.date,
+                    topen=sim_date,
                     tclose=None,
                 )
 
@@ -313,7 +313,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         person_id=person_id, module=simulation_modules["ProstateCancer"]
                     ),
                     priority=0,
-                    topen=sim.date,
+                    topen=sim_date,
                     tclose=None,
                 )
 
@@ -323,7 +323,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         person_id=person_id, module=simulation_modules["ProstateCancer"]
                     ),
                     priority=0,
-                    topen=sim.date,
+                    topen=sim_date,
                     tclose=None,
                 )
 
@@ -335,7 +335,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         module=simulation_modules["OtherAdultCancer"],
                     ),
                     priority=0,
-                    topen=sim.date,
+                    topen=sim_date,
                     tclose=None,
                 )
 
@@ -348,7 +348,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                         module=simulation_modules["BreastCancer"],
                     ),
                     priority=0,
-                    topen=sim.date,
+                    topen=sim_date,
                     tclose=None,
                 )
 
