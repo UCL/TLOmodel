@@ -6,6 +6,8 @@ This file contains the HSI events that represent the first contact with the Heal
 the onset of symptoms. Non-emergency symptoms lead to `HSI_GenericFirstApptAtFacilityLevel0` and emergency symptoms
 lead to `HSI_GenericEmergencyFirstApptAtFacilityLevel1`.
 """
+from collections import namedtuple
+
 import pandas as pd
 
 from tlo import logging
@@ -128,16 +130,38 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
     age = df.at[person_id, 'age_years']
     schedule_hsi = hsi_event.sim.modules["HealthSystem"].schedule_hsi_event
 
+    # Current simulation date
+    sim_date = hsi_event.sim.date
+
+    # Module list
+    simulation_modules = hsi_event.sim.modules
+
+    # Symptom list
+    symptoms = simulation_modules['SymptomManager'].has_what(person_id)
+
+    # TODO: This can likely be refactored into the init, or a property that creates such
+    # a tuple once the simulation modules are known
+    Person = namedtuple(
+        "Person",
+        df.columns
+    )
+    # Properties are now accessed using the . notation
+    # EG person.age_years for the age.
+    person = Person(*df.loc[person_id])
+
     # ----------------------------------- ALL AGES -----------------------------------
     # Consider Measles if rash.
-    if 'Measles' in sim.modules:
+    if 'Measles' in simulation_modules:
         if "rash" in symptoms:
-            schedule_hsi(
-                HSI_Measles_Treatment(
+            event = HSI_Measles_Treatment(
                     person_id=person_id,
-                    module=hsi_event.sim.modules['Measles']),
+                    module=simulation_modules['Measles'],
+                    person_details=person,
+                )
+            schedule_hsi(
+                event,                
                 priority=0,
-                topen=hsi_event.sim.date,
+                topen=sim_date,
                 tclose=None)
 
     # 'Automatic' testing for HIV for everyone attending care with AIDS symptoms:

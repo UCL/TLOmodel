@@ -410,13 +410,13 @@ class HSI_Measles_Treatment(HSI_Event, IndividualScopeEventMixin):
     It is the event when a person with diagnosed measles receives treatment
     """
 
-    def __init__(self, module, person_id):
+    def __init__(self, module, person_id, person_details):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Measles)
 
         self.TREATMENT_ID = "Measles_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({
-            ('Under5OPD' if self.sim.population.props.at[person_id, "age_years"] < 5 else 'Over5OPD'): 1})
+            ('Under5OPD' if person_details.age_years < 5 else 'Over5OPD'): 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
 
     def apply(self, person_id, squeeze_factor):
