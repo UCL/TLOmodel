@@ -257,9 +257,15 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
 
         # Routine assessments
         if "Stunting" in simulation_modules:
-            simulation_modules[
+            event = simulation_modules[
                 "Stunting"
             ].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
+            if event:
+                schedule_hsi(
+                    event,
+                    priority=2,  # <-- lower priority that for wasting and most other HSI
+                    topen=sim_date,
+                )
 
     else:
         # ----------------------------------- ADULT -----------------------------------
