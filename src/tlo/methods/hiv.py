@@ -2090,7 +2090,12 @@ class HSI_Hiv_TestAndRefer(HSI_Event, IndividualScopeEventMixin):
     """
 
     def __init__(
-        self, module, person_id, do_not_refer_if_neg=False, suppress_footprint=False, referred_from=None,
+        self,
+        module,
+        person_id,
+        do_not_refer_if_neg: bool=False,
+        suppress_footprint: bool=False,
+        referred_from: bool=None,
     ):
         super().__init__(module, person_id=person_id)
         assert isinstance(module, Hiv)

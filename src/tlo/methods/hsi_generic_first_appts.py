@@ -167,67 +167,70 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
     # 'Automatic' testing for HIV for everyone attending care with AIDS symptoms:
     #  - suppress the footprint (as it done as part of another appointment)
     #  - do not do referrals if the person is HIV negative (assumed not time for counselling etc).
-    if 'Hiv' in sim.modules:
+    if 'Hiv' in simulation_modules:
         if 'aids_symptoms' in symptoms:
-            schedule_hsi(
+            event = (
                 HSI_Hiv_TestAndRefer(
                     person_id=person_id,
-                    module=hsi_event.sim.modules['Hiv'],
+                    module=simulation_modules["Hiv"],
                     referred_from="hsi_generic_first_appt",
                     suppress_footprint=True,
-                    do_not_refer_if_neg=True),
-                topen=hsi_event.sim.date,
+                    do_not_refer_if_neg=True,
+                ),
+            )
+            schedule_hsi(event,
+                topen=sim_date,
                 tclose=None,
                 priority=0)
 
     if 'injury' in symptoms:
-        if 'RTI' in sim.modules:
-            sim.modules['RTI'].do_rti_diagnosis_and_treatment(person_id)
+        if 'RTI' in simulation_modules:
+            simulation_modules['RTI'].do_rti_diagnosis_and_treatment(person_id)
 
-    if 'Schisto' in sim.modules:
-        sim.modules['Schisto'].do_on_presentation_with_symptoms(person_id=person_id, symptoms=symptoms)
+    if 'Schisto' in simulation_modules:
+        simulation_modules['Schisto'].do_on_presentation_with_symptoms(person_id=person_id, symptoms=symptoms)
 
-    if "Malaria" in sim.modules:
+    if "Malaria" in simulation_modules:
         malaria_associated_symptoms = {'fever', 'headache', 'stomachache', 'diarrhoea', 'vomiting'}
         if bool(set(symptoms) & malaria_associated_symptoms):
-            sim.modules['Malaria'].do_for_suspected_malaria_case(person_id=person_id, hsi_event=hsi_event)
+            simulation_modules['Malaria'].do_for_suspected_malaria_case(person_id=person_id, hsi_event=hsi_event)
 
-    if age <= 5:
+    if person.age_years <= 5:
         # ----------------------------------- CHILD < 5 -----------------------------------
-        if 'Diarrhoea' in sim.modules:
+        if 'Diarrhoea' in simulation_modules:
             if 'diarrhoea' in symptoms:
-                sim.modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
+                simulation_modules['Diarrhoea'].do_when_presentation_with_diarrhoea(
                     person_id=person_id, hsi_event=hsi_event)
 
-        if 'Alri' in sim.modules:
+        if 'Alri' in simulation_modules:
             if ('cough' in symptoms) or ('difficult_breathing' in symptoms):
-                sim.modules['Alri'].on_presentation(person_id=person_id, hsi_event=hsi_event)
+                simulation_modules['Alri'].on_presentation(person_id=person_id, hsi_event=hsi_event)
 
         # Routine assessments
-        if 'Stunting' in sim.modules:
-            sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
+        if 'Stunting' in simulation_modules:
+            simulation_modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
 
     else:
         # ----------------------------------- ADULT -----------------------------------
-        if 'OesophagealCancer' in sim.modules:
+        if 'OesophagealCancer' in simulation_modules:
             # If the symptoms include dysphagia, then begin investigation for Oesophageal Cancer:
             if 'dysphagia' in symptoms:
                 schedule_hsi(
                     HSI_OesophagealCancer_Investigation_Following_Dysphagia(
                         person_id=person_id,
-                        module=sim.modules['OesophagealCancer']),
+                        module=simulation_modules['OesophagealCancer']),
                     priority=0,
                     topen=sim.date,
                     tclose=None
                 )
 
-        if 'BladderCancer' in sim.modules:
+        if 'BladderCancer' in simulation_modules:
             # If the symptoms include blood_urine, then begin investigation for Bladder Cancer:
             if 'blood_urine' in symptoms:
                 schedule_hsi(
                     HSI_BladderCancer_Investigation_Following_Blood_Urine(
                         person_id=person_id,
-                        module=sim.modules['BladderCancer']),
+                        module=simulation_modules['BladderCancer']),
                     priority=0,
                     topen=sim.date,
                     tclose=None
@@ -238,18 +241,18 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                 schedule_hsi(
                     HSI_BladderCancer_Investigation_Following_pelvic_pain(
                         person_id=person_id,
-                        module=sim.modules['BladderCancer']),
+                        module=simulation_modules['BladderCancer']),
                     priority=0,
                     topen=sim.date,
                     tclose=None)
 
-        if 'ProstateCancer' in sim.modules:
+        if 'ProstateCancer' in simulation_modules:
             # If the symptoms include urinary, then begin investigation for prostate cancer:
             if 'urinary' in symptoms:
                 schedule_hsi(
                     HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(
                         person_id=person_id,
-                        module=sim.modules['ProstateCancer']),
+                        module=simulation_modules['ProstateCancer']),
                     priority=0,
                     topen=sim.date,
                     tclose=None)
@@ -258,44 +261,44 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                 schedule_hsi(
                     HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
                         person_id=person_id,
-                        module=sim.modules['ProstateCancer']),
+                        module=simulation_modules['ProstateCancer']),
                     priority=0,
                     topen=sim.date,
                     tclose=None)
 
-        if 'OtherAdultCancer' in sim.modules:
+        if 'OtherAdultCancer' in simulation_modules:
             if 'early_other_adult_ca_symptom' in symptoms:
                 schedule_hsi(
                     HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
                         person_id=person_id,
-                        module=sim.modules['OtherAdultCancer']
+                        module=simulation_modules['OtherAdultCancer']
                     ),
                     priority=0,
                     topen=sim.date,
                     tclose=None)
 
-        if 'BreastCancer' in sim.modules:
+        if 'BreastCancer' in simulation_modules:
             # If the symptoms include breast lump discernible:
             if 'breast_lump_discernible' in symptoms:
                 schedule_hsi(
                     HSI_BreastCancer_Investigation_Following_breast_lump_discernible(
                         person_id=person_id,
-                        module=sim.modules['BreastCancer'],
+                        module=simulation_modules['BreastCancer'],
                     ),
                     priority=0,
                     topen=sim.date,
                     tclose=None)
 
-        if 'Depression' in sim.modules:
-            sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
+        if 'Depression' in simulation_modules:
+            simulation_modules['Depression'].do_on_presentation_to_care(person_id=person_id,
                                                                  hsi_event=hsi_event)
 
-        if 'CardioMetabolicDisorders' in sim.modules:
-            sim.modules['CardioMetabolicDisorders'].determine_if_will_be_investigated(person_id=person_id)
+        if 'CardioMetabolicDisorders' in simulation_modules:
+            simulation_modules['CardioMetabolicDisorders'].determine_if_will_be_investigated(person_id=person_id)
 
-        if 'Copd' in sim.modules:
+        if 'Copd' in simulation_modules:
             if ('breathless_moderate' in symptoms) or ('breathless_severe' in symptoms):
-                sim.modules['Copd'].do_when_present_with_breathless(person_id=person_id, hsi_event=hsi_event)
+                simulation_modules['Copd'].do_when_present_with_breathless(person_id=person_id, hsi_event=hsi_event)
 
 
 def do_at_generic_first_appt_emergency(hsi_event, squeeze_factor):
