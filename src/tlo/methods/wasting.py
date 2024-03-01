@@ -233,7 +233,6 @@ class Wasting(Module):
         df.loc[df.is_alive, 'un_sam_death_date'] = pd.NaT
         df.loc[df.is_alive, 'un_am_tx_start_date'] = pd.NaT
         df.loc[df.is_alive, 'un_am_treatment_type'] = 'not_applicable'
-        # TODO: What about 'un_sam_with_complications'? There are no such cases when population is initialised?
 
         # initialise wasting linear models.
         self.wasting_models = WastingModels(self)
@@ -327,9 +326,7 @@ class Wasting(Module):
         probability_less_than_minus3sd = 1 - whz_normal_distribution.sf(-3)
 
         # make WHZ < -2 as the 100% and get the adjusted probability of severe wasting within overall wasting
-        proportion_severe_in_overall_wasting = probability_less_than_minus3sd * probability_less_than_minus2sd
-        # TODO: this doesn't seem right, shouldn't be this
-        #  proportion_severe_in_overall_wasting = probability_less_than_minus3sd / probability_less_than_minus2sd ?
+        proportion_severe_in_overall_wasting = probability_less_than_minus3sd / probability_less_than_minus2sd
 
         # return the probability of severe wasting among all wasting cases
         return proportion_severe_in_overall_wasting
