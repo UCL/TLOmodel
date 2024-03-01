@@ -241,9 +241,18 @@ def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
                     )
 
         if "Alri" in simulation_modules:
-            if ("cough" in symptoms) or ("difficult_breathing" in symptoms):
-                simulation_modules["Alri"].on_presentation(
-                    person_id=person_id, hsi_event=hsi_event
+            event = simulation_modules["Alri"].on_presentation(
+                person_id=person_id,
+                person_details=person,
+                symptoms=symptoms,
+                hsi_event=hsi_event,
+            )
+            if event:
+                schedule_hsi(
+                    event,
+                    topen=sim_date,
+                    tclose=sim_date + pd.DateOffset(days=1),
+                    priority=1,
                 )
 
         # Routine assessments
