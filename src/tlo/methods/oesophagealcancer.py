@@ -91,9 +91,6 @@ class OesophagealCancer(Module):
         "rr_low_grade_dysplasia_none_ex_alc": Parameter(
             Types.REAL, "rate ratio for low grade oesophageal dysplasia for no excess alcohol"
         ),
-        "rr_low_grade_dysplasia_none_hiv": Parameter(
-            Types.REAL, "rate ratio for low grade oesophageal dysplasia for HIV infection"
-        ),
         "r_high_grade_dysplasia_low_grade_dysp": Parameter(
             Types.REAL,
             "probabilty per 3 months of high grade oesophageal dysplasia, amongst people with low grade dysplasia",
