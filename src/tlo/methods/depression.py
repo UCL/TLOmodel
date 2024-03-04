@@ -244,7 +244,9 @@ class Depression(Module):
         ]
 
         conditional_predictors = [
-            Predictor('hv_inf').when(True, p['rr_depr_hiv']),
+            Predictor().when(
+                'hv_inf & hv_diagnosed',
+                p["rr_depr_hiv"]),
         ] if "Hiv" in self.sim.modules else []
 
         self.linearModels["Depression_At_Population_Initialisation"] = LinearModel(
@@ -309,6 +311,12 @@ class Depression(Module):
 
         conditional_predictors = [
             Predictor('hv_inf').when(True, p['rr_depr_hiv']),
+        ] if "Hiv" in self.sim.modules else []
+
+        conditional_predictors = [
+            Predictor().when(
+                'hv_inf & hv_diagnosed',
+                p["rr_depr_hiv"]),
         ] if "Hiv" in self.sim.modules else []
 
         self.linearModels["Risk_of_Depression_Onset_per3mo"] = LinearModel(
