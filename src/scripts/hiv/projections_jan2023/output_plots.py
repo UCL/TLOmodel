@@ -519,7 +519,7 @@ latest_path = max(list_of_paths, key=lambda p: p.stat().st_ctime)
 # latest_path = sim.log_filepath
 # tlo.methods.deviance_measure.log written after log file below:
 # outputs\deviance__2022-01-20T105927.log
-# latest_path = "outputs\tb_transmission_runs__2023-01-23T132304.log"
+latest_path = "outputs/hiv_test_runs__2023-11-03T160819.log"
 death_compare = compare_number_of_deaths(latest_path, resourcefilepath)
 
 # include all ages and both sexes

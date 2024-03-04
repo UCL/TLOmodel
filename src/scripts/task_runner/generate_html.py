@@ -37,15 +37,17 @@ def get_html_for_commit(commit_dir: Path) -> str:
     if (commit_dir / "info.txt").is_file():
         with open(commit_dir / "info.txt") as info_file:
             commit_id, _, *commit_msg = info_file.readline().strip().split()
+            gha_link = info_file.readline().strip()
             commit_msg = " ".join(commit_msg)
         commit_title = f"{date} - {commit_msg}"
         gh_link = f"https://github.com/UCL/TLOmodel/commit/{commit_id}"
-        commit_links.append(f"<a href='{gh_link}'>gh</a>")
+        commit_links.append(f"<a href='{gh_link}'>commit</a>")
+        commit_links.append(f"<a href='{gha_link}'>run</a>")
 
     # link to raw log files
     logs_dir = "021_long_run_all_diseases_run/0"
     if (commit_dir / logs_dir).is_dir():
-        commit_links.append(f"<a href='./{logs_dir}'>logs</a>")
+        commit_links.append(f"<a href='./{commit_dir.stem}/{logs_dir}'>logs</a>")
 
     # if the post-process step has been completed, link to the results
     results_file = "022_long_run_all_diseases_process/index.html"
