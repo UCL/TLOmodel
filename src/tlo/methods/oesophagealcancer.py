@@ -376,7 +376,9 @@ class OesophagealCancer(Module):
         p = self.parameters
         lm = self.linear_models_for_progession_of_oc_status
 
-        predictors = [
+        lm['low_grade_dysplasia'] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['r_low_grade_dysplasia_none'],
             Predictor('age_years').apply(
                 lambda x: 0 if x < 20 else (x - 20) ** p['rr_low_grade_dysplasia_none_per_year_older']
             ),
@@ -385,19 +387,6 @@ class OesophagealCancer(Module):
             Predictor('li_ex_alc').when(True, p['rr_low_grade_dysplasia_none_ex_alc']),
             Predictor('oc_status').when('none', 1.0)
                                   .otherwise(0.0)
-        ]
-
-        conditional_predictors = [
-            Predictor().when(
-                'hv_inf & '
-                '(hv_art != "on_VL_suppressed")',
-                p["rr_low_grade_dysplasia_none_hiv"]),
-        ] if "Hiv" in self.sim.modules else []
-
-        lm['low_grade_dysplasia'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['r_low_grade_dysplasia_none'],
-            *(predictors + conditional_predictors)
         )
 
         lm['high_grade_dysplasia'] = LinearModel(
