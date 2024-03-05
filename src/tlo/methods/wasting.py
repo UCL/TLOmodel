@@ -714,10 +714,8 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         progression_sev_wasting = df.loc[df.is_alive & (df.age_exact_years < 5) &
                                          (df.un_WHZ_category == '-3<=WHZ<-2')]
         progression_severe_wasting = self.module.wasting_models.severe_wasting_progression_lm.predict(
-            progression_sev_wasting)
+            progression_sev_wasting, rng=rng)
 
-        progression_severe_wasting = \
-            rng.random_sample(len(progression_sev_wasting)) < progression_severe_wasting
         # determine those individuals who will progress to severe wasting and time of progression
         for person in progression_sev_wasting.index[progression_severe_wasting]:
             outcome_date = self.module.date_of_outcome_for_untreated_am(person_id=person, duration_am='MAM')
