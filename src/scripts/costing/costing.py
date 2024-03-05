@@ -149,7 +149,7 @@ plt.savefig(costing_outputs_folder /  'total_salary_by_level.png')
 
 # TODO Disaggregate by district using 'Frac_Time_Used_By_Facility_ID'
 # TODO Disaggregate by Treatment_ID - will need this for cost-effectiveness estimates - current log does not provide this
-# TODO Add scaling factor
+# TODO Add economic cost to figure?
 
 # Consumables
 log['tlo.methods.healthsystem']['Consumables']
@@ -195,4 +195,3 @@ workbook = pd.read_excel((resourcefilepath / "ResourceFile_Costing.xlsx"),
 human_resources = workbook["human_resources"]
 
 '''
-
