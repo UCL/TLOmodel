@@ -7,13 +7,10 @@ disease modules.
 
 import json
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, List, NamedTuple, Optional, Tuple
+from typing import Optional
 
 import numpy as np
 import pandas as pd
-
-if TYPE_CHECKING:
-    from tlo.methods.hsi_event import HSI_Event
 
 
 class Types(Enum):
