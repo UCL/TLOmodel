@@ -1,6 +1,5 @@
 from collections import Counter
-from typing import TYPE_CHECKING
-from typing import Dict, Literal, Optional, NamedTuple, Tuple, Union
+from typing import TYPE_CHECKING, Dict, Literal, NamedTuple, Optional, Tuple, Union
 
 import numpy as np
 

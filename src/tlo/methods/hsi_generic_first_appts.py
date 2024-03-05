@@ -22,18 +22,14 @@ from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
     HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
 )
-from tlo.methods.chronicsyndrome import (
-    HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment,
-)
+from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.epilepsy import HSI_Epilepsy_Start_Anti_Epileptic
-from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.hiv import HSI_Hiv_TestAndRefer
+from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.labour import HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour
 from tlo.methods.measles import HSI_Measles_Treatment
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
-from tlo.methods.oesophagealcancer import (
-    HSI_OesophagealCancer_Investigation_Following_Dysphagia,
-)
+from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
 from tlo.methods.other_adult_cancers import (
     HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom,
 )

@@ -26,8 +26,14 @@ from tlo.methods.consumables import (
     get_item_codes_from_package_name,
 )
 from tlo.methods.dxmanager import DxManager
-from tlo.methods.hsi_event import LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2, FacilityInfo
-from tlo.methods.hsi_event import HSIEventDetails, HSIEventQueueItem, HSI_Event, HSIEventWrapper
+from tlo.methods.hsi_event import (
+    LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2,
+    FacilityInfo,
+    HSI_Event,
+    HSIEventDetails,
+    HSIEventQueueItem,
+    HSIEventWrapper,
+)
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)

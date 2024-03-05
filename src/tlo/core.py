@@ -6,9 +6,8 @@ disease modules.
 """
 
 import json
-from typing import TYPE_CHECKING
-from typing import Any, Callable, List, Optional, NamedTuple, Tuple
 from enum import Enum, auto
+from typing import TYPE_CHECKING, Any, Callable, List, NamedTuple, Optional, Tuple
 
 import numpy as np
 import pandas as pd
