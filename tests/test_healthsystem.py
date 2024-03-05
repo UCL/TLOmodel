@@ -2045,7 +2045,6 @@ def test_task_shifting_in_mode_2(seed, tmpdir):
                              level='1a')
         hsi1.initialise()
         
-        # Get facility ID
         facID = int((re.search(r'\d+', next(iter(hsi1.expected_time_requests)))).group())
 
         pharmacy_task_time = hsi1.expected_time_requests['FacilityID_' + str(facID) + '_Officer_Pharmacy']
