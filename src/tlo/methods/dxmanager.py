@@ -90,7 +90,7 @@ class DxManager:
             self.print_info_about_dx_test(dx_test)
 
     def run_dx_test(self, dx_tests_to_run, hsi_event, use_dict_for_single=False, report_dxtest_tried=False):
-        from tlo.methods.healthsystem import HSI_Event
+        from tlo.methods.hsi_event import HSI_Event
 
         # Check that the thing passed to hsi_event is usable as an hsi_event
         assert isinstance(hsi_event, HSI_Event)

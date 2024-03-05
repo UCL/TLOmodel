@@ -26,7 +26,7 @@ except NameError:
 def get_dummy_hsi(sim, mother_id, id, fl):
     """create dummy HSI to test that consumables truly are unavailable when using standard method"""
     from tlo.events import IndividualScopeEventMixin
-    from tlo.methods.healthsystem import HSI_Event
+    from tlo.methods.hsi_event import HSI_Event
 
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):

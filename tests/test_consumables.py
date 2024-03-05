@@ -19,7 +19,7 @@ from tlo.methods.consumables import (
     get_item_code_from_item_name,
     get_item_codes_from_package_name,
 )
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
