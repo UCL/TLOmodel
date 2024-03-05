@@ -1,6 +1,6 @@
 from collections import Counter
 from typing import TYPE_CHECKING
-from typing import Dict, Optional, NamedTuple, Tuple, Union
+from typing import Dict, Literal, Optional, NamedTuple, Tuple, Union
 
 import numpy as np
 
@@ -145,18 +145,18 @@ class HSI_Event:
         """
         raise NotImplementedError
 
-    def did_not_run(self, *args, **kwargs):
+    def did_not_run(self, *args, **kwargs) -> Literal[True]:
         """Called when this event is due but it is not run. Return False to prevent the event being rescheduled, or True
         to allow the rescheduling. This is called each time that the event is tried to be run but it cannot be.
         """
         logger.debug(key="message", data=f"{self.__class__.__name__}: did not run.")
         return True
 
-    def never_ran(self):
+    def never_ran(self) -> None:
         """Called when this event is was entered to the HSI Event Queue, but was never run."""
         logger.debug(key="message", data=f"{self.__class__.__name__}: was never run.")
 
-    def post_apply_hook(self):
+    def post_apply_hook(self) -> None:
         """Impose the bed-days footprint (if target of the HSI is a person_id)"""
         if isinstance(self.target, int):
             self.healthcare_system.bed_days.impose_beddays_footprint(
@@ -215,7 +215,7 @@ class HSI_Event:
         else:
             return rtn
 
-    def make_beddays_footprint(self, dict_of_beddays):
+    def make_beddays_footprint(self, dict_of_beddays) -> Dict[str, Union[float, int]]:
         """Helper function to make a correctly-formed 'bed-days footprint'"""
 
         # get blank footprint
@@ -232,14 +232,14 @@ class HSI_Event:
 
         return footprint
 
-    def is_all_beddays_allocated(self):
+    def is_all_beddays_allocated(self) -> bool:
         """Check if the entire footprint requested is allocated"""
         return all(
             self.bed_days_allocated_to_this_event[k] == self.BEDDAYS_FOOTPRINT[k]
             for k in self.BEDDAYS_FOOTPRINT
         )
 
-    def make_appt_footprint(self, dict_of_appts):
+    def make_appt_footprint(self, dict_of_appts) -> Counter:
         """Helper function to make appointment footprint in format expected downstream.
 
         Should be passed a dictionary keyed by appointment type codes with non-negative
@@ -254,7 +254,7 @@ class HSI_Event:
             "values"
         )
 
-    def initialise(self):
+    def initialise(self) -> None:
         """Initialise the HSI:
         * Set the facility_info
         * Compute appt-footprint time requirements
@@ -288,9 +288,9 @@ class HSI_Event:
             )
 
         # Do checks
-        _ = self._check_if_appt_footprint_can_run()
+        self._check_if_appt_footprint_can_run()
 
-    def _check_if_appt_footprint_can_run(self):
+    def _check_if_appt_footprint_can_run(self) -> bool:
         """Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
         this does not demand officers that are _never_ available), and issue warning if not.
         """
