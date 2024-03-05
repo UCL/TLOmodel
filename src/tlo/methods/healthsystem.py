@@ -1016,15 +1016,14 @@ class HealthSystem(Module):
             self.global_task_shifting[officer] = (alternative_officers, time_factors)
         
         # If task-shifting is considered, expand the number of possible appt_footprints
-        # to include potential task-shiftin
+        # to include potential task-shifting
         if self.global_task_shifting:
 
             _appt_times_expand = {_facility_level: defaultdict(list) for _facility_level in
                                          self._facility_levels}
+                                         
             for level in self._facility_levels:
 
-
-            
                 for appt_footprint in self._appt_times[level]:
                     # Get all officers required for this appointment
                     officers_required = [subunit.officer_type for subunit in self._appt_times[level][appt_footprint]]
@@ -1039,47 +1038,36 @@ class HealthSystem(Module):
                             tags.append(officer[:4] + "-" + officer_ts[:4])
                         tags_dictionary[officer] = tags
 
-                    # Calculate all possible appt footprints that may result from task-shifting
+                    # Calculate all possible appt footprints that may result from task-shifting, accounting
+                    # for the fact that more than one requested officer may be eligible for task-shifting.
                     new_footprints = []
                     for r in range(1, len(officers_eligible_for_ts)+1):
                         # Each combination illustrates potentially unavailable officers
                         for combination in combinations(officers_eligible_for_ts, r):
-                            #product_options = product(*(map(str, tags_dictionary[key]) for key in combination))
-                            #result_strings = [appt_footprint + '_withTS_' + '_and_'.join(option) for option in product_options#]
-                            #new_footprints.extend(result_strings)
-                            
                             product_options = product(*(map(str, tags_dictionary[key]) for key in combination))
-            
-                            # Sort the individual substrings alphabetically
-                            sorted_substrings = sorted('_and_'.join(option) for option in product_options)
-                            
-                            # Create result strings and add to new_footprints
-                            result_strings = [appt_footprint + '_withTS_' + option for option in sorted_substrings]
+                            result_strings = [appt_footprint + '_withTS_' + '_and_'.join(option) for option in product_options]
                             new_footprints.extend(result_strings)
                             
-                    # Add all these new footprints to the table and correct times required
-                    
-                    # Initially assume this original call. This will have to be updated as
-                    # multiple officers may potentially be replaced.
-                    original_call = self._appt_times[level][appt_footprint]
+                    # For all these new footprints now obtain an updated call.
                     
                     # Task-shifting is logged in appt_footprint name as "xxxx-yyyy", where xxxx
                     # are the first four letters of officer-type being task-shifted, and yyyy
                     # are the first four letters of officer-type taking over tasks
                     pattern = re.compile(r'(?<=[-_])(\w{4}-\w{4})')
-                    
+          
+                    # Initially assume this original call. This will be updated
+                    # depending on task-shifting considered.
+                    original_call = self._appt_times[level][appt_footprint]
                     # Get the officers and times associated with the original footprint
                     appt_footprint_times = Counter()
-                    appt_info_list = self._appt_times[level][appt_footprint]
-                    for appt_info in appt_info_list:
+                    for appt_info in original_call:
                         appt_footprint_times[
                             f"{appt_info.officer_type}"
                         ] += appt_info.time_taken
 
-
                     for new_footprint in new_footprints:
                     
-                        # Get all instances of task-shifting taking place in this appt footprint
+                        # Store all instances of task-shifting taking place in this appt footprint
                         task_shifting_adopted = {}
                     
                         # Find all instances of task-shifting in string
@@ -1091,11 +1079,11 @@ class HealthSystem(Module):
 
                             # Get the full name of the original medical officer
                             original_officer = (next((subunit for subunit in original_call if subunit.officer_type.startswith(short_original_officer)), None)).officer_type
-                            
+
+                            # Iterate through officers eligible for task shiting and find the appropriate time factor
+                            # linked to this task-shifting
                             officer_types, factors = self.global_task_shifting[original_officer]
 
-                            # Iterate through officer_types and find the appropriate time factor
-                            # linked to this task-shifting
                             for i, officer_type in enumerate(officer_types):
                                 if officer_type.startswith(short_new_officer):
                                     new_officer = officer_type
@@ -1107,7 +1095,7 @@ class HealthSystem(Module):
                             
                         if task_shifting_adopted:
                             updated_call_inc_task_shift = {}
-                            # Go over all officers in updated_call
+                            # Go over all officers required for this appointment
                             for k in appt_footprint_times.keys():
                             
                                 # If task-shifting was requested for this officer, change name
@@ -1148,8 +1136,6 @@ class HealthSystem(Module):
 
     def process_human_resources_files(self, use_funded_or_actual_staffing: str):
         """Create the data-structures needed from the information read into the parameters."""
-
-
 
         # * Define Facility Levels
         self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
