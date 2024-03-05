@@ -336,7 +336,7 @@ class HSIEventWrapper(Event):
      1) When the healthsystem is in mode 'disabled=True' such that HSI events sent to the health system scheduler are
      passed to the main simulation scheduler for running on the date of `topen`. (Note, it is run with
      squeeze_factor=0.0.)
-     2) When the healthsystem is in mode `diable_and_reject_all=True` such that HSI are not run but the `never_ran`
+     2) When the healthsystem is in mode `disable_and_reject_all=True` such that HSI are not run but the `never_ran`
      method is run on the date of `tclose`.
      3) When an HSI has been submitted to `schedule_hsi_event` but the service is not available.
     """
