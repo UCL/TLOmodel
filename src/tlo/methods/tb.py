@@ -218,6 +218,9 @@ class Tb(Module):
         "death_rate_adult_treated": Parameter(
             Types.REAL, "probability of death in adult aged >=15 years with treated tb"
         ),
+        "rr_death_diabetes": Parameter(
+            Types.REAL, "additional risk of death if person has diabetes (treated/untreated)"
+        ),
         # ------------------ progression to active disease ------------------ #
         "rr_tb_bcg": Parameter(
             Types.REAL,
@@ -550,22 +553,6 @@ class Tb(Module):
             *(predictors + conditional_predictors))
 
         # risk of relapse <2 years following treatment
-        # self.lm["risk_relapse_2yrs"] = LinearModel(
-        #     LinearModelType.MULTIPLICATIVE,
-        #     p["monthly_prob_relapse_tx_complete"],
-        #     Predictor("hv_inf").when(True, p["rr_relapse_hiv"]),
-        #     Predictor("tb_treatment_failure")
-        #     .when(True, (p["monthly_prob_relapse_tx_incomplete"] / p["monthly_prob_relapse_tx_complete"])),
-        #     Predictor().when(
-        #         'tb_on_ipt & '
-        #         'age_years <= 15',
-        #         p["rr_ipt_child"]),
-        #     Predictor().when(
-        #         'tb_on_ipt & '
-        #         'age_years > 15',
-        #         p["rr_ipt_adult"]),
-        # )
-
         predictors = [
             Predictor("hv_inf").when(True, p["rr_relapse_hiv"]),
             Predictor("tb_treatment_failure")
@@ -605,9 +592,7 @@ class Tb(Module):
         )
 
         # probability of death
-        self.lm["death_rate"] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            1,
+        predictors = [
             Predictor().when(
                 "(tb_on_treatment == True) & "
                 "(age_years <=4)",
@@ -633,7 +618,14 @@ class Tb(Module):
                 "(tb_smear == False)",
                 p["death_rate_smear_neg_untreated"],
             ),
-        )
+        ]
+
+        conditional_predictors = [
+            Predictor("nc_diabetes").when(True, p['rr_death_diabetes']),
+        ] if "CardioMetabolicDisorders" in self.sim.modules else []
+
+        self.lm["death_rate"] = LinearModel.multiplicative(
+            *(predictors + conditional_predictors))
 
 
 def send_for_screening_general(self, population):
