@@ -219,9 +219,7 @@ class HSI_Event:
         """Helper function to make a correctly-formed 'bed-days footprint'"""
 
         # get blank footprint
-        footprint = self.sim_modules[
-            "HealthSystem"
-        ].bed_days.get_blank_beddays_footprint()
+        footprint = self.healthcare_system.bed_days.get_blank_beddays_footprint()
 
         # do checks on the dict_of_beddays provided.
         assert isinstance(dict_of_beddays, dict)
