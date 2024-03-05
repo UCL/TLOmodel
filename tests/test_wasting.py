@@ -186,6 +186,12 @@ def test_wasting_incidence(tmpdir):
     sim.make_initial_population(n=popsize)
     sim.simulate(end_date=start_date + dur)
 
+    # reset properties of all individuals so that they are don't have wasting
+    df = sim.population.props
+    df.loc[df.is_alive, 'un_WHZ_category'] = 'WHZ>=-2'  # not undernourished
+    df.loc[df.is_alive, 'un_ever_wasted'] = False
+    df.loc[df.is_alive, 'un_last_wasting_date_of_onset'] = pd.NaT
+
     # Set incidence of wasting at 100%
     sim.modules['Wasting'].wasting_models.wasting_incidence_lm = LinearModel.multiplicative()
 
@@ -194,7 +200,6 @@ def test_wasting_incidence(tmpdir):
     polling.apply(sim.population)
 
     # Check properties of individuals: should now be moderately wasted
-    df = sim.population.props
     under5s = df.loc[df.is_alive & (df['age_years'] < 5)]
     assert all(under5s['un_ever_wasted'])
     assert all(under5s['un_WHZ_category'] == '-3<=WHZ<-2')
@@ -420,7 +425,7 @@ def test_recovery_severe_wasting_without_complications(tmpdir):
     ge.run(squeeze_factor=0.0)
 
     # check HSI event is scheduled
-    assert isinstance(sim.modules['HealthSystem'].find_events_for_person(person_id)[0][1],
+    assert isinstance(sim.modules['HealthSystem'].find_events_for_person(person_id)[1][1],
                       HSI_Wasting_OutpatientTherapeuticProgramme_SAM)
 
     # Run the created instance of HSI_Wasting_OutpatientTherapeuticProgramme_SAM and check care was sought
@@ -479,9 +484,6 @@ def test_recovery_severe_wasting_with_complications(tmpdir):
 
     # assign diagnosis
     wmodule.clinical_acute_malnutrition_state(person_id, df)
-
-    # apply symptoms
-    wmodule.wasting_clinical_symptoms(person_id)
 
     # by having severe wasting, this individual should be diagnosed as SAM
     assert df.loc[person_id, 'un_clinical_acute_malnutrition'] == 'SAM'
@@ -571,9 +573,10 @@ def test_nat_hist_death(tmpdir):
 
     # make an individual diagnosed as SAM by WHZ category.
     # We want to make this individual qualify for death
-    df.loc[person_id, 'un_ever_wasted'] = True
     df.loc[person_id, 'un_WHZ_category'] = 'WHZ<-3'
-    df.loc[person_id, 'un_clinical_acute_malnutrition'] = 'SAM'
+
+    # assign diagnosis
+    wmodule.clinical_acute_malnutrition_state(person_id, df)
 
     # apply wasting symptoms to this individual
     wmodule.wasting_clinical_symptoms(person_id)
@@ -768,7 +771,7 @@ def test_nat_hist_cure_if_death_scheduled(tmpdir):
     ge.run(squeeze_factor=0.0)
 
     # check inpatient care event is scheduled
-    assert isinstance(sim.modules['HealthSystem'].find_events_for_person(person_id)[0][1],
+    assert isinstance(sim.modules['HealthSystem'].find_events_for_person(person_id)[1][1],
                       HSI_Wasting_OutpatientTherapeuticProgramme_SAM)
 
     # Run the created instance of HSI_Wasting_OutpatientTherapeuticProgramme_SAM and check care was sought

@@ -262,12 +262,6 @@ class Wasting(Module):
         # acute malnutrition state # # # # #
         self.population_poll_clinical_am(df)
 
-        children_with_sam = df.loc[df.is_alive & (df.age_exact_years < 5)
-                                   & (df.un_clinical_acute_malnutrition == 'SAM')]
-        for person in children_with_sam.index:
-            # update clinical symptoms for severe wasting
-            self.wasting_clinical_symptoms(person_id=person)
-
     def initialise_simulation(self, sim):
         """Prepares for simulation:
         * Schedules the main polling event
@@ -323,10 +317,8 @@ class Wasting(Module):
         probability_less_than_minus3sd = 1 - whz_normal_distribution.sf(-3)
 
         # make WHZ <-2 as the 100% and get the adjusted probability of severe wasting within overall wasting
-        proportion_severe_in_overall_wasting = probability_less_than_minus3sd * probability_less_than_minus2sd
-
-        # get the probability of severe wasting
-        return proportion_severe_in_overall_wasting
+        # return the probability of severe wasting
+        return probability_less_than_minus3sd / probability_less_than_minus2sd
 
     def muac_cutoff_by_WHZ(self, idx, whz):
         """
@@ -429,6 +421,8 @@ class Wasting(Module):
         elif ((df.at[person_id, 'un_am_MUAC_category'] == '<115mm') | (df.at[person_id, 'un_WHZ_category'] == 'WHZ<-3')
               | (df.at[person_id, 'un_am_bilateral_oedema'])):
             df.at[person_id, 'un_clinical_acute_malnutrition'] = 'SAM'
+            # apply symptoms to all SAM cases
+            self.wasting_clinical_symptoms(person_id=person_id)
 
         else:
             df.at[person_id, 'un_clinical_acute_malnutrition'] = 'MAM'
@@ -762,13 +756,6 @@ class WastingPollingEvent(RegularEvent, PopulationScopeEventMixin):
         # determine the clinical state of acute malnutrition, and check complications if SAM
         self.module.population_poll_clinical_am(df)
 
-        # then, update clinical symptoms for those with severe acute
-        # malnutrition
-        children_with_sam = df.loc[df.is_alive & (df.age_exact_years < 5)
-                                   & (df.un_clinical_acute_malnutrition == 'SAM')]
-        for person in children_with_sam.index:
-            self.module.wasting_clinical_symptoms(person_id=person)
-
 
 class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
     """
@@ -802,9 +789,6 @@ class ProgressionSevereWastingEvent(Event, IndividualScopeEventMixin):
             # update the clinical state of acute malnutrition, and check
             # complications if SAM
             m.clinical_acute_malnutrition_state(person_id=person_id, pop_dataframe=df)
-
-            # update clinical symptoms for severe wasting
-            m.wasting_clinical_symptoms(person_id=person_id)
 
             # -------------------------------------------------------------------------------------------
             # Add this incident case to the tracker
