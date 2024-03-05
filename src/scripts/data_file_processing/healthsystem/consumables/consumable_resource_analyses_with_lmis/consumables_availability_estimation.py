@@ -32,7 +32,7 @@ from tlo.methods.consumables import check_format_of_consumables_file
 
 # Set local Dropbox source
 path_to_dropbox = Path(  # <-- point to the TLO dropbox locally
-    'C:/Users/sm2511/Dropbox/Thanzi la Onse'
+    '/Users/sm2511/Dropbox/Thanzi la Onse'
     # '/Users/sejjj49/Dropbox/Thanzi la Onse'
     # 'C:/Users/tmangal/Dropbox/Thanzi la Onse'
 )
@@ -207,7 +207,7 @@ inconsistent_item_names_mapping = {
     'Unigold HIV test kits, Kit of 20 Tests': '''Unigold HIV Test Kits''',
     'Determine HIV test Kits, Kit of 100 Tests': '''Determine HIV Test Kits''',
     'Abacavir/Lamivudine (ABC/3TC), 60+30mg': '''Abacavir (ABC) + Lamivudine(3TC), 60mg+30mg, 60''S (9P)''',
-    'Atazanavir /Ritonavir (ATV/r), 300+100mg': 'Atazanavir +  Ritonavir, 300mg + 100mg, 30''S (7A)',
+    'Atazanavir /Ritonavir (ATV/r), 300+100mg': '''Atazanavir +  Ritonavir, 300mg + 100mg, 30''S (7A)''',
     'SD Bioline, Syphilis test kits, Kit of 30 Tests': 'Determine Syphillis Test Kits',
     'Isoniazid tablets, 100mg': '''Isoniazid 100mg''',
     'Isoniazid tablets, 300mg': '''Isoniazid 300mg''',
