@@ -1,11 +1,15 @@
 from collections import Counter
-from typing import Optional, NamedTuple, Tuple, Union
+from typing import TYPE_CHECKING
+from typing import Dict, Optional, NamedTuple, Tuple, Union
 
 import numpy as np
 
 from tlo import Date, logging
 from tlo.events import Event
 from tlo.population import Population
+
+if TYPE_CHECKING:
+    from tlo import Module, Simulation
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -15,6 +19,15 @@ logger_summary.setLevel(logging.INFO)
 
 # Declare the level which will be used to represent the merging of levels '1b' and '2'
 LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2 = "2"
+
+
+class FacilityInfo(NamedTuple):
+    """Information about a specific health facility."""
+
+    id: int
+    name: str
+    level: str
+    region: str
 
 
 class HSIEventDetails(NamedTuple):
@@ -60,6 +73,21 @@ class HSI_Event:
     defined below, and implement at least an `apply` and `did_not_run` method.
     """
 
+    # Information received about this HSI:
+    _received_info_about_bed_days: Dict[str, Union[float, int]] = None
+    expected_time_requests: Counter = {}
+    facility_info: FacilityInfo = None
+
+    module: "Module"
+    target: int = None  # Will be overwritten by the mixin on derived classes
+
+    # Default values for documentation
+    TREATMENT_ID: str = ""
+    ACCEPTED_FACILITY_LEVEL: str = None
+    # These values need to be set at runtime as they depend on the modules
+    # which have been loaded.
+    BEDDAYS_FOOTPRINT: Dict[str, Union[float, int]]
+
     def __init__(self, module, *args, **kwargs):
         """Create a new event.
 
@@ -71,22 +99,10 @@ class HSI_Event:
             constructor, but may also take further keyword arguments.
         """
         self.module = module
-        self.sim = module.sim
-        self.target = None  # Overwritten by the mixin
         super().__init__(*args, **kwargs)  # Call the mixin's constructors
 
-        # Defaults for the HSI information:
-        self.TREATMENT_ID = ""
-        # self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})  # HSI needs this property, but it is not defined
-        #                                                                 in the Base class to allow overwriting with a
-        #                                                                 property function.
-        self.ACCEPTED_FACILITY_LEVEL = None
+        # Set "dynamic" default value
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
-
-        # Information received about this HSI:
-        self._received_info_about_bed_days = None
-        self.expected_time_requests = {}
-        self.facility_info = None
 
     @property
     def bed_days_allocated_to_this_event(self):
@@ -96,7 +112,23 @@ class HSI_Event:
 
         return self._received_info_about_bed_days
 
-    def adjust_facility_level_to_merge_1b_and_2(self) -> str:
+    @property
+    def target_is_alive(self) -> bool:
+        """Return True if the target of this HSI event is alive,
+        otherwise False.
+        """
+        return self.sim.population.props.at[self.target, "is_alive"]
+
+    @property
+    def sim(self) -> "Simulation":
+        return self.module.sim
+
+    @property
+    def healthcare_system(self) -> "Module":
+        """The healthcare module being used by the Simulation."""
+        return self.sim.modules["HealthSystem"]
+
+    def _adjust_facility_level_to_merge_1b_and_2(self) -> str:
         """Adjust the facility level of the HSI_Event,
         so that HSI_Events scheduled at level '1b' and '2' are both directed to level '2'
         """
@@ -110,7 +142,6 @@ class HSI_Event:
         """Apply this event to the population.
 
         Must be implemented by subclasses.
-
         """
         raise NotImplementedError
 
@@ -128,7 +159,7 @@ class HSI_Event:
     def post_apply_hook(self):
         """Impose the bed-days footprint (if target of the HSI is a person_id)"""
         if isinstance(self.target, int):
-            self.module.sim.modules["HealthSystem"].bed_days.impose_beddays_footprint(
+            self.healthcare_system.bed_days.impose_beddays_footprint(
                 person_id=self.target, footprint=self.bed_days_allocated_to_this_event
             )
 
@@ -163,54 +194,14 @@ class HSI_Event:
         Note that disease module can use the `get_item_codes_from_package_name` and `get_item_code_from_item_name`
          methods in the `HealthSystem` module to find item_codes.
         """
-
-        def _return_item_codes_in_dict(
-            item_codes: Union[None, np.integer, int, list, set, dict]
-        ) -> dict:
-            """Convert an argument for 'item_codes` (provided as int, list, set or dict) into the format
-            dict(<item_code>:quantity)."""
-
-            if item_codes is None:
-                return {}
-
-            if isinstance(item_codes, (int, np.integer)):
-                return {int(item_codes): 1}
-
-            elif isinstance(item_codes, list):
-                if not all([isinstance(i, (int, np.integer)) for i in item_codes]):
-                    raise ValueError("item_codes must be integers")
-                return {int(i): 1 for i in item_codes}
-
-            elif isinstance(item_codes, dict):
-                if not all(
-                    [
-                        (
-                            isinstance(code, (int, np.integer))
-                            and isinstance(
-                                quantity, (float, np.floating, int, np.integer)
-                            )
-                        )
-                        for code, quantity in item_codes.items()
-                    ]
-                ):
-                    raise ValueError(
-                        "item_codes must be integers and quantities must be integers or floats."
-                    )
-                return {int(i): float(q) for i, q in item_codes.items()}
-
-            else:
-                raise ValueError("The item_codes are given in an unrecognised format")
-
-        hs_module = self.sim.modules["HealthSystem"]
-
-        _item_codes = _return_item_codes_in_dict(item_codes)
-        _optional_item_codes = _return_item_codes_in_dict(optional_item_codes)
+        _item_codes = return_item_codes_in_dict(item_codes)
+        _optional_item_codes = return_item_codes_in_dict(optional_item_codes)
 
         # Determine if the request should be logged (over-ride argument provided if HealthSystem is disabled).
-        _to_log = to_log if not hs_module.disable else False
+        _to_log = to_log if not self.healthcare_system.disable else False
 
         # Checking the availability and logging:
-        rtn = hs_module.consumables._request_consumables(
+        rtn = self.healthcare_system.consumables._request_consumables(
             item_codes={**_item_codes, **_optional_item_codes},
             to_log=_to_log,
             facility_info=self.facility_info,
@@ -228,7 +219,7 @@ class HSI_Event:
         """Helper function to make a correctly-formed 'bed-days footprint'"""
 
         # get blank footprint
-        footprint = self.sim.modules[
+        footprint = self.sim_modules[
             "HealthSystem"
         ].bed_days.get_blank_beddays_footprint()
 
@@ -256,8 +247,7 @@ class HSI_Event:
         Should be passed a dictionary keyed by appointment type codes with non-negative
         values.
         """
-        health_system = self.sim.modules["HealthSystem"]
-        if health_system.appt_footprint_is_valid(dict_of_appts):
+        if self.healthcare_system.appt_footprint_is_valid(dict_of_appts):
             return Counter(dict_of_appts)
 
         raise ValueError(
@@ -271,10 +261,10 @@ class HSI_Event:
         * Set the facility_info
         * Compute appt-footprint time requirements
         """
-        health_system = self.sim.modules["HealthSystem"]
+        health_system = self.healthcare_system
 
         # Over-write ACCEPTED_FACILITY_LEVEL to to redirect all '1b' appointments to '2'
-        self.adjust_facility_level_to_merge_1b_and_2()
+        self._adjust_facility_level_to_merge_1b_and_2()
 
         if not isinstance(self.target, Population):
             self.facility_info = health_system.get_facility_info(self)
@@ -306,9 +296,8 @@ class HSI_Event:
         """Check that event (if individual level) is able to run with this configuration of officers (i.e. check that
         this does not demand officers that are _never_ available), and issue warning if not.
         """
-        health_system = self.sim.modules["HealthSystem"]
         if not isinstance(self.target, Population):
-            if health_system._officers_with_availability.issuperset(
+            if self.healthcare_system._officers_with_availability.issuperset(
                 self.expected_time_requests.keys()
             ):
                 return True
@@ -381,3 +370,39 @@ class HSIEventWrapper(Event):
                 ].call_and_record_never_ran_hsi_event(
                     hsi_event=self.hsi_event, priority=-1
                 )
+
+
+def return_item_codes_in_dict(
+    item_codes: Union[None, np.integer, int, list, set, dict]
+) -> dict:
+    """Convert an argument for 'item_codes` (provided as int, list, set or dict) into the format
+    dict(<item_code>:quantity)."""
+
+    if item_codes is None:
+        return {}
+
+    if isinstance(item_codes, (int, np.integer)):
+        return {int(item_codes): 1}
+
+    elif isinstance(item_codes, list):
+        if not all([isinstance(i, (int, np.integer)) for i in item_codes]):
+            raise ValueError("item_codes must be integers")
+        return {int(i): 1 for i in item_codes}
+
+    elif isinstance(item_codes, dict):
+        if not all(
+            [
+                (
+                    isinstance(code, (int, np.integer))
+                    and isinstance(quantity, (float, np.floating, int, np.integer))
+                )
+                for code, quantity in item_codes.items()
+            ]
+        ):
+            raise ValueError(
+                "item_codes must be integers and quantities must be integers or floats."
+            )
+        return {int(i): float(q) for i, q in item_codes.items()}
+
+    else:
+        raise ValueError("The item_codes are given in an unrecognised format")

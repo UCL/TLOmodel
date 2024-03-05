@@ -26,7 +26,7 @@ from tlo.methods.consumables import (
     get_item_codes_from_package_name,
 )
 from tlo.methods.dxmanager import DxManager
-from tlo.methods.hsi_event import LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2
+from tlo.methods.hsi_event import LABEL_FOR_MERGED_FACILITY_LEVELS_1B_AND_2, FacilityInfo
 from tlo.methods.hsi_event import HSIEventDetails, HSIEventQueueItem, HSI_Event, HSIEventWrapper
 
 logger = logging.getLogger(__name__)
@@ -94,14 +94,6 @@ def pool_capabilities_at_levels_1b_and_2(df_original: pd.DataFrame) -> pd.DataFr
     )
 
     return df_updated
-
-
-class FacilityInfo(NamedTuple):
-    """Information about a specific health facility."""
-    id: int
-    name: str
-    level: str
-    region: str
 
 
 class AppointmentSubunit(NamedTuple):
