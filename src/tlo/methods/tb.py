@@ -180,6 +180,9 @@ class Tb(Module):
         "rr_relapse_hiv": Parameter(
             Types.REAL, "relative risk of relapse for HIV-positive people"
         ),
+        "rr_relapse_diabetes": Parameter(
+            Types.REAL, "relative risk of relapse for people with diabetes (treated/untreated)"
+        ),
         # ------------------ active disease ------------------ #
         "scaling_factor_WHO": Parameter(
             Types.REAL,
@@ -238,9 +241,9 @@ class Tb(Module):
         "rr_tb_obese": Parameter(
             Types.REAL, "relative risk of progression to active disease if obese"
         ),
-        "rr_tb_diabetes1": Parameter(
+        "rr_tb_diabetes": Parameter(
             Types.REAL,
-            "relative risk of progression to active disease with type 1 diabetes",
+            "relative risk of progression to active disease with any type diabetes",
         ),
         "rr_tb_alcohol": Parameter(
             Types.REAL,
@@ -540,16 +543,30 @@ class Tb(Module):
             ),
         ]
         conditional_predictors = [
-            Predictor("nc_diabetes").when(True, p['rr_tb_diabetes1']),
+            Predictor("nc_diabetes").when(True, p['rr_tb_diabetes']),
         ] if "CardioMetabolicDisorders" in self.sim.modules else []
 
         self.lm["active_tb"] = LinearModel.multiplicative(
             *(predictors + conditional_predictors))
 
         # risk of relapse <2 years following treatment
-        self.lm["risk_relapse_2yrs"] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p["monthly_prob_relapse_tx_complete"],
+        # self.lm["risk_relapse_2yrs"] = LinearModel(
+        #     LinearModelType.MULTIPLICATIVE,
+        #     p["monthly_prob_relapse_tx_complete"],
+        #     Predictor("hv_inf").when(True, p["rr_relapse_hiv"]),
+        #     Predictor("tb_treatment_failure")
+        #     .when(True, (p["monthly_prob_relapse_tx_incomplete"] / p["monthly_prob_relapse_tx_complete"])),
+        #     Predictor().when(
+        #         'tb_on_ipt & '
+        #         'age_years <= 15',
+        #         p["rr_ipt_child"]),
+        #     Predictor().when(
+        #         'tb_on_ipt & '
+        #         'age_years > 15',
+        #         p["rr_ipt_adult"]),
+        # )
+
+        predictors = [
             Predictor("hv_inf").when(True, p["rr_relapse_hiv"]),
             Predictor("tb_treatment_failure")
             .when(True, (p["monthly_prob_relapse_tx_incomplete"] / p["monthly_prob_relapse_tx_complete"])),
@@ -561,7 +578,16 @@ class Tb(Module):
                 'tb_on_ipt & '
                 'age_years > 15',
                 p["rr_ipt_adult"]),
-        )
+        ]
+
+        conditional_predictors = [
+            Predictor("nc_diabetes").when(True, p['rr_relapse_diabetes']),
+        ] if "CardioMetabolicDisorders" in self.sim.modules else []
+
+        self.lm["risk_relapse_2yrs"] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p["monthly_prob_relapse_tx_complete"],
+            *(predictors + conditional_predictors))
 
         # risk of relapse if >=2 years post treatment
         self.lm["risk_relapse_late"] = LinearModel(
@@ -609,720 +635,730 @@ class Tb(Module):
             ),
         )
 
-    def send_for_screening_general(self, population):
 
-        df = population.props
-        p = self.parameters
-        rng = self.rng
+def send_for_screening_general(self, population):
+    df = population.props
+    p = self.parameters
+    rng = self.rng
 
-        random_draw = rng.random_sample(size=len(df))
+    random_draw = rng.random_sample(size=len(df))
 
-        # randomly select some individuals for screening and testing
-        # this may include some newly infected active tb cases (that's fine)
-        screen_idx = df.index[
-            df.is_alive
-            & ~df.tb_diagnosed
-            & ~df.tb_on_treatment
-            & (random_draw < p["rate_testing_general_pop"])
-            ]
+    # randomly select some individuals for screening and testing
+    # this may include some newly infected active tb cases (that's fine)
+    screen_idx = df.index[
+        df.is_alive
+        & ~df.tb_diagnosed
+        & ~df.tb_on_treatment
+        & (random_draw < p["rate_testing_general_pop"])
+        ]
 
-        for person in screen_idx:
+    for person in screen_idx:
+        self.sim.modules["HealthSystem"].schedule_hsi_event(
+            HSI_Tb_ScreeningAndRefer(person_id=person, module=self),
+            topen=random_date(self.sim.date, self.sim.date + DateOffset(months=1), self.rng),
+            tclose=None,
+            priority=0,
+        )
+
+
+def select_tb_test(self, person_id):
+    df = self.sim.population.props
+    p = self.parameters
+    person = df.loc[person_id]
+
+    # xpert tests limited to 60% coverage
+    # if selected test is xpert, check for availability
+    # give sputum smear as back-up
+    # assume sputum smear always available
+
+    # previously diagnosed/treated or hiv+ -> xpert
+    if person["tb_ever_treated"] or person["hv_diagnosed"] or (p["first_line_test"] == 'xpert'):
+        return "xpert"
+    else:
+        return "sputum"
+
+
+def get_consumables_for_dx_and_tx(self):
+    p = self.parameters
+    # consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
+    hs = self.sim.modules["HealthSystem"]
+
+    # TB Sputum smear test
+    # assume that if smear-positive, sputum smear test is 100% specific and sensitive
+    self.item_codes_for_consumables_required['sputum_test'] = \
+        hs.get_item_codes_from_package_name("Microscopy Test")
+
+    self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+        tb_sputum_test_smear_positive=DxTest(
+            property='tb_inf',
+            target_categories=["active"],
+            sensitivity=p["sens_sputum_smear_positive"],
+            specificity=p["spec_sputum_smear_positive"],
+            item_codes=self.item_codes_for_consumables_required['sputum_test']
+        )
+    )
+    self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
+        tb_sputum_test_smear_negative=DxTest(
+            property='tb_inf',
+            target_categories=["active"],
+            sensitivity=0.0,
+            specificity=1.0,
+            item_codes=self.item_codes_for_consumables_required['sputum_test']
+        )
+    )
+
+    # TB GeneXpert
+    self.item_codes_for_consumables_required['xpert_test'] = \
+        hs.get_item_codes_from_package_name("Xpert test")
+
+    # sensitivity/specificity set for smear status of cases
+    self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
+        tb_xpert_test_smear_positive=DxTest(
+            property="tb_inf",
+            target_categories=["active"],
+            sensitivity=p["sens_xpert_smear_positive"],
+            specificity=p["spec_xpert_smear_positive"],
+            item_codes=self.item_codes_for_consumables_required['xpert_test']
+        )
+    )
+    self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
+        tb_xpert_test_smear_negative=DxTest(
+            property="tb_inf",
+            target_categories=["active"],
+            sensitivity=p["sens_xpert_smear_negative"],
+            specificity=p["spec_xpert_smear_negative"],
+            item_codes=self.item_codes_for_consumables_required['xpert_test']
+        )
+    )
+
+    # TB Chest x-ray
+    self.item_codes_for_consumables_required['chest_xray'] = {
+        hs.get_item_code_from_item_name("X-ray"): 1}
+
+    # sensitivity/specificity set for smear status of cases
+    self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
+        tb_xray_smear_positive=DxTest(
+            property="tb_inf",
+            target_categories=["active"],
+            sensitivity=p["sens_xray_smear_positive"],
+            specificity=p["spec_xray_smear_positive"],
+            item_codes=self.item_codes_for_consumables_required['chest_xray']
+        )
+    )
+    self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
+        tb_xray_smear_negative=DxTest(
+            property="tb_inf",
+            target_categories=["active"],
+            sensitivity=p["sens_xray_smear_negative"],
+            specificity=p["spec_xray_smear_negative"],
+            item_codes=self.item_codes_for_consumables_required['chest_xray']
+        )
+    )
+
+    # TB clinical diagnosis
+    self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
+        tb_clinical=DxTest(
+            property="tb_inf",
+            target_categories=["active"],
+            sensitivity=p["sens_clinical"],
+            specificity=p["spec_clinical"],
+            item_codes=[]
+        )
+    )
+
+    # 4) -------- Define the treatment options --------
+    # adult treatment - primary
+    self.item_codes_for_consumables_required['tb_tx_adult'] = \
+        hs.get_item_code_from_item_name("Cat. I & III Patient Kit A")
+
+    # child treatment - primary
+    self.item_codes_for_consumables_required['tb_tx_child'] = \
+        hs.get_item_code_from_item_name("Cat. I & III Patient Kit B")
+
+    # child treatment - primary, shorter regimen
+    self.item_codes_for_consumables_required['tb_tx_child_shorter'] = \
+        hs.get_item_code_from_item_name("Cat. I & III Patient Kit B")
+
+    # adult treatment - secondary
+    self.item_codes_for_consumables_required['tb_retx_adult'] = \
+        hs.get_item_code_from_item_name("Cat. II Patient Kit A1")
+
+    # child treatment - secondary
+    self.item_codes_for_consumables_required['tb_retx_child'] = \
+        hs.get_item_code_from_item_name("Cat. II Patient Kit A2")
+
+    # mdr treatment
+    self.item_codes_for_consumables_required['tb_mdrtx'] = {
+        hs.get_item_code_from_item_name("Treatment: second-line drugs"): 1}
+
+    # ipt
+    self.item_codes_for_consumables_required['tb_ipt'] = {
+        hs.get_item_code_from_item_name("Isoniazid/Pyridoxine, tablet 300 mg"): 1}
+
+
+def initialise_population(self, population):
+    df = population.props
+    p = self.parameters
+
+    # if HIV is not registered, create a dummy property
+    if "Hiv" not in self.sim.modules:
+        population.make_test_property("hv_inf", Types.BOOL)
+        population.make_test_property("sy_aids_symptoms", Types.INT)
+        population.make_test_property("hv_art", Types.STRING)
+
+        df["hv_inf"] = False
+        df["sy_aids_symptoms"] = 0
+        df["hv_art"] = "not"
+
+    # Set our property values for the initial population
+    df["tb_inf"].values[:] = "uninfected"
+    df["tb_strain"].values[:] = "none"
+
+    df["tb_date_latent"] = pd.NaT
+    df["tb_scheduled_date_active"] = pd.NaT
+    df["tb_date_active"] = pd.NaT
+    df["tb_smear"] = False
+
+    # ------------------ testing status ------------------ #
+    df["tb_date_tested"] = pd.NaT
+    df["tb_diagnosed"] = False
+    df["tb_date_diagnosed"] = pd.NaT
+    df["tb_diagnosed_mdr"] = False
+
+    # ------------------ treatment status ------------------ #
+    df["tb_on_treatment"] = False
+    df["tb_date_treated"] = pd.NaT
+    df["tb_treatment_regimen"].values[:] = "none"
+    df["tb_ever_treated"] = False
+    df["tb_treatment_failure"] = False
+
+    df["tb_on_ipt"] = False
+    df["tb_date_ipt"] = pd.NaT
+
+    # # ------------------ infection status ------------------ #
+    # WHO estimates of active TB for 2010 to get infected initial population
+    # don't need to scale or include treated proportion as no-one on treatment yet
+    inc_estimates = p["who_incidence_estimates"]
+    incidence_year = (inc_estimates.loc[
+        (inc_estimates.year == self.sim.date.year), "incidence_per_100k"
+    ].values[0]) / 100_000
+
+    incidence_year = incidence_year * p["scaling_factor_WHO"]
+
+    self.assign_active_tb(
+        population,
+        strain="ds",
+        incidence=incidence_year)
+
+    self.assign_active_tb(
+        population,
+        strain="mdr",
+        incidence=incidence_year * p['prop_mdr2010'])
+
+    self.send_for_screening_general(
+        population
+    )  # send some baseline population for screening
+
+
+def initialise_simulation(self, sim):
+    """
+    * 1) Schedule the regular TB events
+    * 2) Schedule the scenario change
+    * 3) Define the DxTests and treatment options
+    """
+
+    # 1) Regular events
+    sim.schedule_event(TbActiveEvent(self), sim.date)
+    sim.schedule_event(TbTreatmentAndRelapseEvents(self), sim.date)
+    sim.schedule_event(TbSelfCureEvent(self), sim.date)
+    sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
+
+    # log at the end of the year
+    sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
+
+    # 2) Scenario change
+    sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
+
+    # 3) Define the DxTests and get the consumables required
+    self.get_consumables_for_dx_and_tx()
+
+    # 4) (Optionally) Schedule the event to check the configuration of all properties
+    if self.run_with_checks:
+        sim.schedule_event(
+            TbCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1)
+        )
+
+
+def on_birth(self, mother_id, child_id):
+    """Initialise properties for a newborn individual
+    allocate IPT for child if mother diagnosed with TB
+    """
+
+    df = self.sim.population.props
+    now = self.sim.date
+
+    df.at[child_id, "tb_inf"] = "uninfected"
+    df.at[child_id, "tb_strain"] = "none"
+
+    df.at[child_id, "tb_date_latent"] = pd.NaT
+    df.at[child_id, "tb_scheduled_date_active"] = pd.NaT
+    df.at[child_id, "tb_date_active"] = pd.NaT
+    df.at[child_id, "tb_smear"] = False
+
+    # ------------------ testing status ------------------ #
+    df.at[child_id, "tb_date_tested"] = pd.NaT
+
+    df.at[child_id, "tb_diagnosed"] = False
+    df.at[child_id, "tb_date_diagnosed"] = pd.NaT
+    df.at[child_id, "tb_diagnosed_mdr"] = False
+
+    # ------------------ treatment status ------------------ #
+    df.at[child_id, "tb_on_treatment"] = False
+    df.at[child_id, "tb_date_treated"] = pd.NaT
+    df.at[child_id, "tb_treatment_regimen"] = "none"
+    df.at[child_id, "tb_treatment_failure"] = False
+    df.at[child_id, "tb_ever_treated"] = False
+
+    df.at[child_id, "tb_on_ipt"] = False
+    df.at[child_id, "tb_date_ipt"] = pd.NaT
+
+    if "Hiv" not in self.sim.modules:
+        df.at[child_id, "hv_inf"] = False
+        df.at[child_id, "sy_aids_symptoms"] = 0
+        df.at[child_id, "hv_art"] = "not"
+
+    # Not interested in whether true or direct birth
+    # give IPT to child of TB diagnosed mother if 2014 or later
+    if df.at[abs(mother_id), "tb_diagnosed"] and (now.year >= self.parameters["ipt_start_date"]):
+        event = HSI_Tb_Start_or_Continue_Ipt(self, person_id=child_id)
+        self.sim.modules["HealthSystem"].schedule_hsi_event(
+            event,
+            priority=1,
+            topen=now,
+            tclose=now + DateOffset(days=28),
+        )
+
+
+def report_daly_values(self):
+    """
+    This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
+    experienced by persons in the previous month. Only rows for alive-persons must be returned.
+    The names of the series of columns is taken to be the label of the cause of this disability.
+    It will be recorded by the healthburden module as <ModuleName>_<Cause>.
+    """
+    df = self.sim.population.props  # shortcut to population properties dataframe
+
+    # to avoid errors when hiv module not running
+    df_tmp = df.loc[df.is_alive]
+    health_values = pd.Series(0, index=df_tmp.index)
+
+    # hiv-negative
+    health_values.loc[
+        (df_tmp.tb_inf == "active")
+        & (df_tmp.tb_strain == "ds")
+        & ~df_tmp.hv_inf
+        ] = self.daly_wts["daly_tb"]
+
+    health_values.loc[
+        (df_tmp.tb_inf == "active")
+        & (df_tmp.tb_strain == "mdr")
+        & ~df_tmp.hv_inf
+        ] = self.daly_wts["daly_tb"]
+
+    # hiv-positive
+    health_values.loc[
+        (df_tmp.tb_inf == "active")
+        & (df_tmp.tb_strain == "ds")
+        & df_tmp.hv_inf
+        ] = self.daly_wts["daly_tb_hiv"]
+
+    health_values.loc[
+        (df_tmp.tb_inf == "active")
+        & (df_tmp.tb_strain == "mdr")
+        & df_tmp.hv_inf
+        ] = self.daly_wts["daly_mdr_tb_hiv"]
+
+    return health_values.loc[df.is_alive]
+
+
+def calculate_untreated_proportion(self, population, strain):
+    """
+    calculate the proportion of active TB cases not on correct treatment
+    if mdr-tb and on first-line treatment, count case as untreated
+    they will continue to contribute to transmission
+    """
+    df = population.props
+
+    # sum active tb cases
+    num_active_tb_cases = len(df[(df.tb_inf == "active") &
+                                 (df.tb_strain == strain) &
+                                 df.is_alive])
+
+    # sum treated active tb cases
+    # if mdr-tb must be on mdr treatment, otherwise consider as untreated case
+    if strain == "mdr":
+        num_treated_tb_cases = len(df[(df.tb_inf == "active") &
+                                      (df.tb_strain == strain) &
+                                      df.tb_on_treatment &
+                                      (df.tb_treatment_regimen == "tb_mdrtx") &
+                                      df.is_alive])
+    else:
+        num_treated_tb_cases = len(df[(df.tb_inf == "active") &
+                                      (df.tb_strain == strain) &
+                                      df.tb_on_treatment &
+                                      df.is_alive])
+
+    prop_untreated = 1 - (num_treated_tb_cases / num_active_tb_cases) if num_active_tb_cases else 1
+
+    return prop_untreated
+
+
+def assign_active_tb(self, population, strain, incidence):
+    """
+    select individuals to be infected
+    assign scheduled date of active tb onset
+    update properties as needed
+    symptoms and smear status are assigned in the TbActiveEvent
+    """
+
+    df = population.props
+    rng = self.rng
+    now = self.sim.date
+
+    # identify eligible people, not currently with active tb infection
+    eligible = df.loc[
+        df.is_alive
+        & (df.tb_inf != "active")
+        ].index
+
+    # weight risk by individual characteristics
+    # Compute chance that each susceptible person becomes infected:
+    rr_of_infection = self.lm["active_tb"].predict(
+        df.loc[eligible]
+    )
+
+    #  probability of infection
+    p_infection = (rr_of_infection * incidence)
+
+    # New infections:
+    will_be_infected = (
+        self.rng.random_sample(len(p_infection)) < p_infection
+    )
+    idx_new_infection = will_be_infected[will_be_infected].index
+
+    df.loc[idx_new_infection, "tb_strain"] = strain
+
+    # schedule onset of active tb, time now up to 1 year
+    for person_id in idx_new_infection:
+        date_progression = now + pd.DateOffset(
+            days=rng.randint(0, 365)
+        )
+
+        # set date of active tb - properties will be updated at TbActiveEvent poll daily
+        df.at[person_id, "tb_scheduled_date_active"] = date_progression
+
+
+def consider_ipt_for_those_initiating_art(self, person_id):
+    """
+    this is called by HIV when person is initiating ART
+    checks whether person is eligible for IPT
+    """
+    df = self.sim.population.props
+
+    if df.loc[person_id, "tb_diagnosed"] or df.loc[person_id, "tb_diagnosed_mdr"]:
+        pass
+
+    high_risk_districts = self.parameters["tb_high_risk_distr"]
+    district = df.at[person_id, "district_of_residence"]
+    eligible = df.at[person_id, "tb_inf"] != "active"
+
+    # select coverage rate by year:
+    now = self.sim.date
+    year = now.year if now.year <= 2050 else 2050
+
+    ipt = self.parameters["ipt_coverage"]
+    ipt_year = ipt.loc[ipt.year == year]
+    ipt_coverage_plhiv = ipt_year.coverage_plhiv
+
+    if (
+        (district in high_risk_districts.district_name.values)
+        & eligible
+        & (self.rng.rand() < ipt_coverage_plhiv.values)
+    ):
+        # Schedule the TB treatment event:
+        self.sim.modules["HealthSystem"].schedule_hsi_event(
+            HSI_Tb_Start_or_Continue_Ipt(self, person_id=person_id),
+            priority=1,
+            topen=self.sim.date,
+            tclose=None,
+        )
+
+
+def relapse_event(self, population):
+    """The Tb Regular Relapse Event
+    runs every month to randomly sample amongst those previously infected with active tb
+    * Schedules persons who have previously been infected to relapse with a set probability
+    * Sets a scheduled_date_active which is picked up by TbActiveEvent
+    """
+
+    df = population.props
+    rng = self.rng
+    now = self.sim.date
+
+    # need a monthly relapse for every person in df
+    # should return risk=0 for everyone not eligible for relapse
+
+    # risk of relapse if <2 years post treatment start, includes risk if HIV+
+    risk_of_relapse_early = self.lm["risk_relapse_2yrs"].predict(
+        df.loc[df.is_alive
+               & df.tb_ever_treated
+               & (df.tb_inf == "latent")
+               & (now < (df.tb_date_treated + pd.DateOffset(years=2)))]
+    )
+
+    will_relapse = (
+        rng.random_sample(len(risk_of_relapse_early)) < risk_of_relapse_early
+    )
+    idx_will_relapse_early = will_relapse[will_relapse].index
+
+    # risk of relapse if >=2 years post treatment start, includes risk if HIV+
+    risk_of_relapse_later = self.lm["risk_relapse_late"].predict(
+        df.loc[df.is_alive
+               & df.tb_ever_treated
+               & (df.tb_inf == "latent")
+               & (now >= (df.tb_date_treated + pd.DateOffset(years=2)))]
+    )
+
+    will_relapse_later = (
+        rng.random_sample(len(risk_of_relapse_later)) < risk_of_relapse_later
+    )
+    idx_will_relapse_late2 = will_relapse_later[will_relapse_later].index
+
+    # join both indices
+    idx_will_relapse = idx_will_relapse_early.union(
+        idx_will_relapse_late2
+    ).drop_duplicates()
+
+    # set date of scheduled active tb
+    # properties will be updated at TbActiveEvent every month
+    df.loc[idx_will_relapse, "tb_scheduled_date_active"] = now
+
+
+def end_treatment(self, population):
+    """
+     * check for those eligible to finish treatment
+     * sample for treatment failure and refer for follow-up screening/testing
+     * if treatment has finished, change individual properties
+     """
+
+    df = population.props
+    rng = self.rng
+    now = self.sim.date
+    p = self.parameters
+
+    # check across population on tb treatment and end treatment if required
+    # if current date is after (treatment start date + treatment length) -> end tx
+
+    # ---------------------- treatment end: first case ds-tb (6 months) ---------------------- #
+    # end treatment for new tb (ds) cases
+    end_ds_tx_idx = df.loc[
+        df.is_alive
+        & df.tb_on_treatment
+        & ((df.tb_treatment_regimen == "tb_tx_adult") | (df.tb_treatment_regimen == "tb_tx_child"))
+        & (
+            now
+            > (df.tb_date_treated + pd.DateOffset(months=p["ds_treatment_length"]))
+        )
+        ].index
+
+    # ---------------------- treatment end: retreatment ds-tb (7 months) ---------------------- #
+    # end treatment for retreatment cases
+    end_ds_retx_idx = df.loc[
+        df.is_alive
+        & df.tb_on_treatment
+        & ((df.tb_treatment_regimen == "tb_retx_adult") | (df.tb_treatment_regimen == "tb_retx_child"))
+        & (
+            now
+            > (
+                df.tb_date_treated
+                + pd.DateOffset(months=p["ds_retreatment_length"])
+            )
+        )
+        ].index
+
+    # ---------------------- treatment end: mdr-tb (24 months) ---------------------- #
+    # end treatment for mdr-tb cases
+    end_mdr_tx_idx = df.loc[
+        df.is_alive
+        & df.tb_on_treatment
+        & (df.tb_treatment_regimen == "tb_mdrtx")
+        & (
+            now
+            > (df.tb_date_treated + pd.DateOffset(months=p["mdr_treatment_length"]))
+        )
+        ].index
+
+    # ---------------------- treatment end: shorter paediatric regimen ---------------------- #
+    # end treatment for paediatric cases on 4 month regimen
+    end_tx_shorter_idx = df.loc[
+        df.is_alive
+        & df.tb_on_treatment
+        & (df.tb_treatment_regimen == "tb_tx_child_shorter")
+        & (
+            now
+            > (df.tb_date_treated + pd.DateOffset(months=p["child_shorter_treatment_length"]))
+        )
+        ].index
+
+    # join indices
+    end_tx_idx = end_ds_tx_idx.union(end_ds_retx_idx)
+    end_tx_idx = end_tx_idx.union(end_mdr_tx_idx)
+    end_tx_idx = end_tx_idx.union(end_tx_shorter_idx)
+
+    # ---------------------- treatment failure ---------------------- #
+    # sample some to have treatment failure
+    # assume all retreatment cases will cure
+    random_var = rng.random_sample(size=len(df))
+
+    # children aged 0-4 ds-tb
+    ds_tx_failure0_4_idx = df.loc[
+        (df.index.isin(end_ds_tx_idx))
+        & (df.age_years < 5)
+        & (random_var < (1 - p["prob_tx_success_0_4"]))
+        ].index
+
+    # children aged 5-14 ds-tb
+    ds_tx_failure5_14_idx = df.loc[
+        (df.index.isin(end_ds_tx_idx))
+        & (df.age_years.between(5, 14))
+        & (random_var < (1 - p["prob_tx_success_5_14"]))
+        ].index
+
+    # children aged <16 and on shorter regimen
+    ds_tx_failure_shorter_idx = df.loc[
+        (df.index.isin(end_tx_shorter_idx))
+        & (df.age_years < 16)
+        & (random_var < (1 - p["prob_tx_success_shorter"]))
+        ].index
+
+    # adults ds-tb
+    ds_tx_failure_adult_idx = df.loc[
+        (df.index.isin(end_ds_tx_idx))
+        & (df.age_years >= 15)
+        & (random_var < (1 - p["prob_tx_success_ds"]))
+        ].index
+
+    # all mdr cases on ds tx will fail
+    failure_in_mdr_with_ds_tx_idx = df.loc[
+        (df.index.isin(end_ds_tx_idx))
+        & (df.tb_strain == "mdr")
+        ].index
+
+    # some mdr cases on mdr treatment will fail
+    failure_due_to_mdr_idx = df.loc[
+        (df.index.isin(end_mdr_tx_idx))
+        & (df.tb_strain == "mdr")
+        & (random_var < (1 - p["prob_tx_success_mdr"]))
+
+        ].index
+
+    # join indices of failing cases together
+    tx_failure = reduce(
+        pd.Index.union,
+        (
+            ds_tx_failure0_4_idx,
+            ds_tx_failure5_14_idx,
+            ds_tx_failure_shorter_idx,
+            ds_tx_failure_adult_idx,
+            failure_in_mdr_with_ds_tx_idx,
+            failure_due_to_mdr_idx,
+        )
+    )
+
+    if not tx_failure.empty:
+        df.loc[tx_failure, "tb_treatment_failure"] = True
+        df.loc[
+            tx_failure, "tb_ever_treated"
+        ] = True  # ensure classed as retreatment case
+
+        for person in tx_failure:
             self.sim.modules["HealthSystem"].schedule_hsi_event(
                 HSI_Tb_ScreeningAndRefer(person_id=person, module=self),
-                topen=random_date(self.sim.date, self.sim.date + DateOffset(months=1), self.rng),
+                topen=self.sim.date,
                 tclose=None,
                 priority=0,
             )
 
-    def select_tb_test(self, person_id):
+    # remove any treatment failure indices from the treatment end indices
+    cure_idx = end_tx_idx.difference(tx_failure)
 
-        df = self.sim.population.props
-        p = self.parameters
-        person = df.loc[person_id]
+    # change individual properties for all to off treatment
+    df.loc[end_tx_idx, "tb_diagnosed"] = False
+    df.loc[end_tx_idx, "tb_on_treatment"] = False
+    df.loc[end_tx_idx, "tb_treated_mdr"] = False
+    # this will indicate that this person has had one complete course of tb treatment
+    # subsequent infections will be classified as retreatment
+    df.loc[end_tx_idx, "tb_ever_treated"] = True
 
-        # xpert tests limited to 60% coverage
-        # if selected test is xpert, check for availability
-        # give sputum smear as back-up
-        # assume sputum smear always available
+    # if cured, move infection status back to latent
+    # leave tb_strain property set in case of relapse
+    df.loc[cure_idx, "tb_inf"] = "latent"
+    df.loc[cure_idx, "tb_date_latent"] = now
+    df.loc[cure_idx, "tb_smear"] = False
 
-        # previously diagnosed/treated or hiv+ -> xpert
-        if person["tb_ever_treated"] or person["hv_diagnosed"] or (p["first_line_test"] == 'xpert'):
-            return "xpert"
-        else:
-            return "sputum"
+    # this will clear all tb symptoms
+    self.sim.modules["SymptomManager"].clear_symptoms(
+        person_id=cure_idx, disease_module=self
+    )
 
-    def get_consumables_for_dx_and_tx(self):
-        p = self.parameters
-        # consumables = self.sim.modules["HealthSystem"].parameters["Consumables"]
-        hs = self.sim.modules["HealthSystem"]
-
-        # TB Sputum smear test
-        # assume that if smear-positive, sputum smear test is 100% specific and sensitive
-        self.item_codes_for_consumables_required['sputum_test'] = \
-            hs.get_item_codes_from_package_name("Microscopy Test")
-
-        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            tb_sputum_test_smear_positive=DxTest(
-                property='tb_inf',
-                target_categories=["active"],
-                sensitivity=p["sens_sputum_smear_positive"],
-                specificity=p["spec_sputum_smear_positive"],
-                item_codes=self.item_codes_for_consumables_required['sputum_test']
-            )
-        )
-        self.sim.modules['HealthSystem'].dx_manager.register_dx_test(
-            tb_sputum_test_smear_negative=DxTest(
-                property='tb_inf',
-                target_categories=["active"],
-                sensitivity=0.0,
-                specificity=1.0,
-                item_codes=self.item_codes_for_consumables_required['sputum_test']
-            )
-        )
-
-        # TB GeneXpert
-        self.item_codes_for_consumables_required['xpert_test'] = \
-            hs.get_item_codes_from_package_name("Xpert test")
-
-        # sensitivity/specificity set for smear status of cases
-        self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
-            tb_xpert_test_smear_positive=DxTest(
-                property="tb_inf",
-                target_categories=["active"],
-                sensitivity=p["sens_xpert_smear_positive"],
-                specificity=p["spec_xpert_smear_positive"],
-                item_codes=self.item_codes_for_consumables_required['xpert_test']
-            )
-        )
-        self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
-            tb_xpert_test_smear_negative=DxTest(
-                property="tb_inf",
-                target_categories=["active"],
-                sensitivity=p["sens_xpert_smear_negative"],
-                specificity=p["spec_xpert_smear_negative"],
-                item_codes=self.item_codes_for_consumables_required['xpert_test']
-            )
-        )
-
-        # TB Chest x-ray
-        self.item_codes_for_consumables_required['chest_xray'] = {
-            hs.get_item_code_from_item_name("X-ray"): 1}
-
-        # sensitivity/specificity set for smear status of cases
-        self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
-            tb_xray_smear_positive=DxTest(
-                property="tb_inf",
-                target_categories=["active"],
-                sensitivity=p["sens_xray_smear_positive"],
-                specificity=p["spec_xray_smear_positive"],
-                item_codes=self.item_codes_for_consumables_required['chest_xray']
-            )
-        )
-        self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
-            tb_xray_smear_negative=DxTest(
-                property="tb_inf",
-                target_categories=["active"],
-                sensitivity=p["sens_xray_smear_negative"],
-                specificity=p["spec_xray_smear_negative"],
-                item_codes=self.item_codes_for_consumables_required['chest_xray']
-            )
-        )
-
-        # TB clinical diagnosis
-        self.sim.modules["HealthSystem"].dx_manager.register_dx_test(
-            tb_clinical=DxTest(
-                property="tb_inf",
-                target_categories=["active"],
-                sensitivity=p["sens_clinical"],
-                specificity=p["spec_clinical"],
-                item_codes=[]
-            )
-        )
-
-        # 4) -------- Define the treatment options --------
-        # adult treatment - primary
-        self.item_codes_for_consumables_required['tb_tx_adult'] = \
-            hs.get_item_code_from_item_name("Cat. I & III Patient Kit A")
-
-        # child treatment - primary
-        self.item_codes_for_consumables_required['tb_tx_child'] = \
-            hs.get_item_code_from_item_name("Cat. I & III Patient Kit B")
-
-        # child treatment - primary, shorter regimen
-        self.item_codes_for_consumables_required['tb_tx_child_shorter'] = \
-            hs.get_item_code_from_item_name("Cat. I & III Patient Kit B")
-
-        # adult treatment - secondary
-        self.item_codes_for_consumables_required['tb_retx_adult'] = \
-            hs.get_item_code_from_item_name("Cat. II Patient Kit A1")
-
-        # child treatment - secondary
-        self.item_codes_for_consumables_required['tb_retx_child'] = \
-            hs.get_item_code_from_item_name("Cat. II Patient Kit A2")
-
-        # mdr treatment
-        self.item_codes_for_consumables_required['tb_mdrtx'] = {
-            hs.get_item_code_from_item_name("Treatment: second-line drugs"): 1}
-
-        # ipt
-        self.item_codes_for_consumables_required['tb_ipt'] = {
-            hs.get_item_code_from_item_name("Isoniazid/Pyridoxine, tablet 300 mg"): 1}
-
-    def initialise_population(self, population):
-
-        df = population.props
-        p = self.parameters
-
-        # if HIV is not registered, create a dummy property
-        if "Hiv" not in self.sim.modules:
-            population.make_test_property("hv_inf", Types.BOOL)
-            population.make_test_property("sy_aids_symptoms", Types.INT)
-            population.make_test_property("hv_art", Types.STRING)
-
-            df["hv_inf"] = False
-            df["sy_aids_symptoms"] = 0
-            df["hv_art"] = "not"
-
-        # Set our property values for the initial population
-        df["tb_inf"].values[:] = "uninfected"
-        df["tb_strain"].values[:] = "none"
-
-        df["tb_date_latent"] = pd.NaT
-        df["tb_scheduled_date_active"] = pd.NaT
-        df["tb_date_active"] = pd.NaT
-        df["tb_smear"] = False
-
-        # ------------------ testing status ------------------ #
-        df["tb_date_tested"] = pd.NaT
-        df["tb_diagnosed"] = False
-        df["tb_date_diagnosed"] = pd.NaT
-        df["tb_diagnosed_mdr"] = False
-
-        # ------------------ treatment status ------------------ #
-        df["tb_on_treatment"] = False
-        df["tb_date_treated"] = pd.NaT
-        df["tb_treatment_regimen"].values[:] = "none"
-        df["tb_ever_treated"] = False
-        df["tb_treatment_failure"] = False
-
-        df["tb_on_ipt"] = False
-        df["tb_date_ipt"] = pd.NaT
-
-        # # ------------------ infection status ------------------ #
-        # WHO estimates of active TB for 2010 to get infected initial population
-        # don't need to scale or include treated proportion as no-one on treatment yet
-        inc_estimates = p["who_incidence_estimates"]
-        incidence_year = (inc_estimates.loc[
-            (inc_estimates.year == self.sim.date.year), "incidence_per_100k"
-        ].values[0]) / 100_000
-
-        incidence_year = incidence_year * p["scaling_factor_WHO"]
-
-        self.assign_active_tb(
-            population,
-            strain="ds",
-            incidence=incidence_year)
-
-        self.assign_active_tb(
-            population,
-            strain="mdr",
-            incidence=incidence_year * p['prop_mdr2010'])
-
-        self.send_for_screening_general(
-            population
-        )  # send some baseline population for screening
-
-    def initialise_simulation(self, sim):
-        """
-        * 1) Schedule the regular TB events
-        * 2) Schedule the scenario change
-        * 3) Define the DxTests and treatment options
-        """
-
-        # 1) Regular events
-        sim.schedule_event(TbActiveEvent(self), sim.date)
-        sim.schedule_event(TbTreatmentAndRelapseEvents(self), sim.date)
-        sim.schedule_event(TbSelfCureEvent(self), sim.date)
-        sim.schedule_event(TbActiveCasePoll(self), sim.date + DateOffset(years=1))
-
-        # log at the end of the year
-        sim.schedule_event(TbLoggingEvent(self), sim.date + DateOffset(years=1))
-
-        # 2) Scenario change
-        sim.schedule_event(ScenarioSetupEvent(self), self.parameters["scenario_start_date"])
-
-        # 3) Define the DxTests and get the consumables required
-        self.get_consumables_for_dx_and_tx()
-
-        # 4) (Optionally) Schedule the event to check the configuration of all properties
-        if self.run_with_checks:
-            sim.schedule_event(
-                TbCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1)
-            )
-
-    def on_birth(self, mother_id, child_id):
-        """Initialise properties for a newborn individual
-        allocate IPT for child if mother diagnosed with TB
-        """
-
-        df = self.sim.population.props
-        now = self.sim.date
-
-        df.at[child_id, "tb_inf"] = "uninfected"
-        df.at[child_id, "tb_strain"] = "none"
-
-        df.at[child_id, "tb_date_latent"] = pd.NaT
-        df.at[child_id, "tb_scheduled_date_active"] = pd.NaT
-        df.at[child_id, "tb_date_active"] = pd.NaT
-        df.at[child_id, "tb_smear"] = False
-
-        # ------------------ testing status ------------------ #
-        df.at[child_id, "tb_date_tested"] = pd.NaT
-
-        df.at[child_id, "tb_diagnosed"] = False
-        df.at[child_id, "tb_date_diagnosed"] = pd.NaT
-        df.at[child_id, "tb_diagnosed_mdr"] = False
-
-        # ------------------ treatment status ------------------ #
-        df.at[child_id, "tb_on_treatment"] = False
-        df.at[child_id, "tb_date_treated"] = pd.NaT
-        df.at[child_id, "tb_treatment_regimen"] = "none"
-        df.at[child_id, "tb_treatment_failure"] = False
-        df.at[child_id, "tb_ever_treated"] = False
-
-        df.at[child_id, "tb_on_ipt"] = False
-        df.at[child_id, "tb_date_ipt"] = pd.NaT
-
-        if "Hiv" not in self.sim.modules:
-            df.at[child_id, "hv_inf"] = False
-            df.at[child_id, "sy_aids_symptoms"] = 0
-            df.at[child_id, "hv_art"] = "not"
-
-        # Not interested in whether true or direct birth
-        # give IPT to child of TB diagnosed mother if 2014 or later
-        if df.at[abs(mother_id), "tb_diagnosed"] and (now.year >= self.parameters["ipt_start_date"]):
-            event = HSI_Tb_Start_or_Continue_Ipt(self, person_id=child_id)
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                event,
-                priority=1,
-                topen=now,
-                tclose=now + DateOffset(days=28),
-            )
-
-    def report_daly_values(self):
-        """
-        This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
-        experienced by persons in the previous month. Only rows for alive-persons must be returned.
-        The names of the series of columns is taken to be the label of the cause of this disability.
-        It will be recorded by the healthburden module as <ModuleName>_<Cause>.
-        """
-        df = self.sim.population.props  # shortcut to population properties dataframe
-
-        # to avoid errors when hiv module not running
-        df_tmp = df.loc[df.is_alive]
-        health_values = pd.Series(0, index=df_tmp.index)
-
-        # hiv-negative
-        health_values.loc[
-            (df_tmp.tb_inf == "active")
-            & (df_tmp.tb_strain == "ds")
-            & ~df_tmp.hv_inf
-            ] = self.daly_wts["daly_tb"]
-
-        health_values.loc[
-            (df_tmp.tb_inf == "active")
-            & (df_tmp.tb_strain == "mdr")
-            & ~df_tmp.hv_inf
-            ] = self.daly_wts["daly_tb"]
-
-        # hiv-positive
-        health_values.loc[
-            (df_tmp.tb_inf == "active")
-            & (df_tmp.tb_strain == "ds")
-            & df_tmp.hv_inf
-            ] = self.daly_wts["daly_tb_hiv"]
-
-        health_values.loc[
-            (df_tmp.tb_inf == "active")
-            & (df_tmp.tb_strain == "mdr")
-            & df_tmp.hv_inf
-            ] = self.daly_wts["daly_mdr_tb_hiv"]
-
-        return health_values.loc[df.is_alive]
-
-    def calculate_untreated_proportion(self, population, strain):
-        """
-        calculate the proportion of active TB cases not on correct treatment
-        if mdr-tb and on first-line treatment, count case as untreated
-        they will continue to contribute to transmission
-        """
-        df = population.props
-
-        # sum active tb cases
-        num_active_tb_cases = len(df[(df.tb_inf == "active") &
-                                     (df.tb_strain == strain) &
-                                     df.is_alive])
-
-        # sum treated active tb cases
-        # if mdr-tb must be on mdr treatment, otherwise consider as untreated case
-        if strain == "mdr":
-            num_treated_tb_cases = len(df[(df.tb_inf == "active") &
-                                          (df.tb_strain == strain) &
-                                          df.tb_on_treatment &
-                                          (df.tb_treatment_regimen == "tb_mdrtx") &
-                                          df.is_alive])
-        else:
-            num_treated_tb_cases = len(df[(df.tb_inf == "active") &
-                                          (df.tb_strain == strain) &
-                                          df.tb_on_treatment &
-                                          df.is_alive])
-
-        prop_untreated = 1 - (num_treated_tb_cases / num_active_tb_cases) if num_active_tb_cases else 1
-
-        return prop_untreated
-
-    def assign_active_tb(self, population, strain, incidence):
-        """
-        select individuals to be infected
-        assign scheduled date of active tb onset
-        update properties as needed
-        symptoms and smear status are assigned in the TbActiveEvent
-        """
-
-        df = population.props
-        rng = self.rng
-        now = self.sim.date
-
-        # identify eligible people, not currently with active tb infection
-        eligible = df.loc[
+    # if HIV+ and on ART (virally suppressed), remove AIDS symptoms if cured of TB
+    hiv_tb_infected = cure_idx.intersection(
+        df.loc[
             df.is_alive
-            & (df.tb_inf != "active")
+            & df.hv_inf
+            & (df.hv_art == "on_VL_suppressed")
             ].index
+    )
 
-        # weight risk by individual characteristics
-        # Compute chance that each susceptible person becomes infected:
-        rr_of_infection = self.lm["active_tb"].predict(
-            df.loc[eligible]
+    self.sim.modules["SymptomManager"].clear_symptoms(
+        person_id=hiv_tb_infected, disease_module=self.sim.modules["Hiv"]
+    )
+
+
+def check_config_of_properties(self):
+    """check that the properties are currently configured correctly"""
+    df = self.sim.population.props
+    df_alive = df.loc[df.is_alive]
+
+    # basic check types of columns and dtypes
+    orig = self.sim.population.new_row
+    assert (df.dtypes == orig.dtypes).all()
+
+    def is_subset(col_for_set, col_for_subset):
+        # Confirms that the series of col_for_subset is true only for a subset of the series for col_for_set
+        return set(col_for_subset.loc[col_for_subset].index).issubset(
+            col_for_set.loc[col_for_set].index
         )
 
-        #  probability of infection
-        p_infection = (rr_of_infection * incidence)
+    # Check that core properties of current status are never None/NaN/NaT
+    assert not df_alive.tb_inf.isna().any()
+    assert not df_alive.tb_strain.isna().any()
+    assert not df_alive.tb_smear.isna().any()
+    assert not df_alive.tb_on_treatment.isna().any()
+    assert not df_alive.tb_treatment_regimen.isna().any()
+    assert not df_alive.tb_ever_treated.isna().any()
+    assert not df_alive.tb_on_ipt.isna().any()
 
-        # New infections:
-        will_be_infected = (
-            self.rng.random_sample(len(p_infection)) < p_infection
-        )
-        idx_new_infection = will_be_infected[will_be_infected].index
+    # Check that the core TB properties are 'nested' in the way expected.
+    assert is_subset(
+        col_for_set=(df_alive.tb_inf != "uninfected"), col_for_subset=df_alive.tb_diagnosed
+    )
+    assert is_subset(
+        col_for_set=df_alive.tb_diagnosed, col_for_subset=df_alive.tb_on_treatment
+    )
 
-        df.loc[idx_new_infection, "tb_strain"] = strain
-
-        # schedule onset of active tb, time now up to 1 year
-        for person_id in idx_new_infection:
-            date_progression = now + pd.DateOffset(
-                days=rng.randint(0, 365)
-            )
-
-            # set date of active tb - properties will be updated at TbActiveEvent poll daily
-            df.at[person_id, "tb_scheduled_date_active"] = date_progression
-
-    def consider_ipt_for_those_initiating_art(self, person_id):
-        """
-        this is called by HIV when person is initiating ART
-        checks whether person is eligible for IPT
-        """
-        df = self.sim.population.props
-
-        if df.loc[person_id, "tb_diagnosed"] or df.loc[person_id, "tb_diagnosed_mdr"]:
-            pass
-
-        high_risk_districts = self.parameters["tb_high_risk_distr"]
-        district = df.at[person_id, "district_of_residence"]
-        eligible = df.at[person_id, "tb_inf"] != "active"
-
-        # select coverage rate by year:
-        now = self.sim.date
-        year = now.year if now.year <= 2050 else 2050
-
-        ipt = self.parameters["ipt_coverage"]
-        ipt_year = ipt.loc[ipt.year == year]
-        ipt_coverage_plhiv = ipt_year.coverage_plhiv
-
-        if (
-            (district in high_risk_districts.district_name.values)
-            & eligible
-            & (self.rng.rand() < ipt_coverage_plhiv.values)
-        ):
-            # Schedule the TB treatment event:
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                HSI_Tb_Start_or_Continue_Ipt(self, person_id=person_id),
-                priority=1,
-                topen=self.sim.date,
-                tclose=None,
-            )
-
-    def relapse_event(self, population):
-        """The Tb Regular Relapse Event
-        runs every month to randomly sample amongst those previously infected with active tb
-        * Schedules persons who have previously been infected to relapse with a set probability
-        * Sets a scheduled_date_active which is picked up by TbActiveEvent
-        """
-
-        df = population.props
-        rng = self.rng
-        now = self.sim.date
-
-        # need a monthly relapse for every person in df
-        # should return risk=0 for everyone not eligible for relapse
-
-        # risk of relapse if <2 years post treatment start, includes risk if HIV+
-        risk_of_relapse_early = self.lm["risk_relapse_2yrs"].predict(
-            df.loc[df.is_alive
-                   & df.tb_ever_treated
-                   & (df.tb_inf == "latent")
-                   & (now < (df.tb_date_treated + pd.DateOffset(years=2)))]
-        )
-
-        will_relapse = (
-            rng.random_sample(len(risk_of_relapse_early)) < risk_of_relapse_early
-        )
-        idx_will_relapse_early = will_relapse[will_relapse].index
-
-        # risk of relapse if >=2 years post treatment start, includes risk if HIV+
-        risk_of_relapse_later = self.lm["risk_relapse_late"].predict(
-            df.loc[df.is_alive
-                   & df.tb_ever_treated
-                   & (df.tb_inf == "latent")
-                   & (now >= (df.tb_date_treated + pd.DateOffset(years=2)))]
-        )
-
-        will_relapse_later = (
-            rng.random_sample(len(risk_of_relapse_later)) < risk_of_relapse_later
-        )
-        idx_will_relapse_late2 = will_relapse_later[will_relapse_later].index
-
-        # join both indices
-        idx_will_relapse = idx_will_relapse_early.union(
-            idx_will_relapse_late2
-        ).drop_duplicates()
-
-        # set date of scheduled active tb
-        # properties will be updated at TbActiveEvent every month
-        df.loc[idx_will_relapse, "tb_scheduled_date_active"] = now
-
-    def end_treatment(self, population):
-        """
-         * check for those eligible to finish treatment
-         * sample for treatment failure and refer for follow-up screening/testing
-         * if treatment has finished, change individual properties
-         """
-
-        df = population.props
-        rng = self.rng
-        now = self.sim.date
-        p = self.parameters
-
-        # check across population on tb treatment and end treatment if required
-        # if current date is after (treatment start date + treatment length) -> end tx
-
-        # ---------------------- treatment end: first case ds-tb (6 months) ---------------------- #
-        # end treatment for new tb (ds) cases
-        end_ds_tx_idx = df.loc[
-            df.is_alive
-            & df.tb_on_treatment
-            & ((df.tb_treatment_regimen == "tb_tx_adult") | (df.tb_treatment_regimen == "tb_tx_child"))
-            & (
-                now
-                > (df.tb_date_treated + pd.DateOffset(months=p["ds_treatment_length"]))
-            )
-            ].index
-
-        # ---------------------- treatment end: retreatment ds-tb (7 months) ---------------------- #
-        # end treatment for retreatment cases
-        end_ds_retx_idx = df.loc[
-            df.is_alive
-            & df.tb_on_treatment
-            & ((df.tb_treatment_regimen == "tb_retx_adult") | (df.tb_treatment_regimen == "tb_retx_child"))
-            & (
-                now
-                > (
-                    df.tb_date_treated
-                    + pd.DateOffset(months=p["ds_retreatment_length"])
-                )
-            )
-            ].index
-
-        # ---------------------- treatment end: mdr-tb (24 months) ---------------------- #
-        # end treatment for mdr-tb cases
-        end_mdr_tx_idx = df.loc[
-            df.is_alive
-            & df.tb_on_treatment
-            & (df.tb_treatment_regimen == "tb_mdrtx")
-            & (
-                now
-                > (df.tb_date_treated + pd.DateOffset(months=p["mdr_treatment_length"]))
-            )
-            ].index
-
-        # ---------------------- treatment end: shorter paediatric regimen ---------------------- #
-        # end treatment for paediatric cases on 4 month regimen
-        end_tx_shorter_idx = df.loc[
-            df.is_alive
-            & df.tb_on_treatment
-            & (df.tb_treatment_regimen == "tb_tx_child_shorter")
-            & (
-                now
-                > (df.tb_date_treated + pd.DateOffset(months=p["child_shorter_treatment_length"]))
-            )
-            ].index
-
-        # join indices
-        end_tx_idx = end_ds_tx_idx.union(end_ds_retx_idx)
-        end_tx_idx = end_tx_idx.union(end_mdr_tx_idx)
-        end_tx_idx = end_tx_idx.union(end_tx_shorter_idx)
-
-        # ---------------------- treatment failure ---------------------- #
-        # sample some to have treatment failure
-        # assume all retreatment cases will cure
-        random_var = rng.random_sample(size=len(df))
-
-        # children aged 0-4 ds-tb
-        ds_tx_failure0_4_idx = df.loc[
-            (df.index.isin(end_ds_tx_idx))
-            & (df.age_years < 5)
-            & (random_var < (1 - p["prob_tx_success_0_4"]))
-            ].index
-
-        # children aged 5-14 ds-tb
-        ds_tx_failure5_14_idx = df.loc[
-            (df.index.isin(end_ds_tx_idx))
-            & (df.age_years.between(5, 14))
-            & (random_var < (1 - p["prob_tx_success_5_14"]))
-            ].index
-
-        # children aged <16 and on shorter regimen
-        ds_tx_failure_shorter_idx = df.loc[
-            (df.index.isin(end_tx_shorter_idx))
-            & (df.age_years < 16)
-            & (random_var < (1 - p["prob_tx_success_shorter"]))
-            ].index
-
-        # adults ds-tb
-        ds_tx_failure_adult_idx = df.loc[
-            (df.index.isin(end_ds_tx_idx))
-            & (df.age_years >= 15)
-            & (random_var < (1 - p["prob_tx_success_ds"]))
-            ].index
-
-        # all mdr cases on ds tx will fail
-        failure_in_mdr_with_ds_tx_idx = df.loc[
-            (df.index.isin(end_ds_tx_idx))
-            & (df.tb_strain == "mdr")
-            ].index
-
-        # some mdr cases on mdr treatment will fail
-        failure_due_to_mdr_idx = df.loc[
-            (df.index.isin(end_mdr_tx_idx))
-            & (df.tb_strain == "mdr")
-            & (random_var < (1 - p["prob_tx_success_mdr"]))
-
-            ].index
-
-        # join indices of failing cases together
-        tx_failure = reduce(
-            pd.Index.union,
-            (
-                ds_tx_failure0_4_idx,
-                ds_tx_failure5_14_idx,
-                ds_tx_failure_shorter_idx,
-                ds_tx_failure_adult_idx,
-                failure_in_mdr_with_ds_tx_idx,
-                failure_due_to_mdr_idx,
-            )
-        )
-
-        if not tx_failure.empty:
-            df.loc[tx_failure, "tb_treatment_failure"] = True
-            df.loc[
-                tx_failure, "tb_ever_treated"
-            ] = True  # ensure classed as retreatment case
-
-            for person in tx_failure:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    HSI_Tb_ScreeningAndRefer(person_id=person, module=self),
-                    topen=self.sim.date,
-                    tclose=None,
-                    priority=0,
-                )
-
-        # remove any treatment failure indices from the treatment end indices
-        cure_idx = end_tx_idx.difference(tx_failure)
-
-        # change individual properties for all to off treatment
-        df.loc[end_tx_idx, "tb_diagnosed"] = False
-        df.loc[end_tx_idx, "tb_on_treatment"] = False
-        df.loc[end_tx_idx, "tb_treated_mdr"] = False
-        # this will indicate that this person has had one complete course of tb treatment
-        # subsequent infections will be classified as retreatment
-        df.loc[end_tx_idx, "tb_ever_treated"] = True
-
-        # if cured, move infection status back to latent
-        # leave tb_strain property set in case of relapse
-        df.loc[cure_idx, "tb_inf"] = "latent"
-        df.loc[cure_idx, "tb_date_latent"] = now
-        df.loc[cure_idx, "tb_smear"] = False
-
-        # this will clear all tb symptoms
-        self.sim.modules["SymptomManager"].clear_symptoms(
-            person_id=cure_idx, disease_module=self
-        )
-
-        # if HIV+ and on ART (virally suppressed), remove AIDS symptoms if cured of TB
-        hiv_tb_infected = cure_idx.intersection(
-            df.loc[
-                df.is_alive
-                & df.hv_inf
-                & (df.hv_art == "on_VL_suppressed")
-                ].index
-        )
-
-        self.sim.modules["SymptomManager"].clear_symptoms(
-            person_id=hiv_tb_infected, disease_module=self.sim.modules["Hiv"]
-        )
-
-    def check_config_of_properties(self):
-        """check that the properties are currently configured correctly"""
-        df = self.sim.population.props
-        df_alive = df.loc[df.is_alive]
-
-        # basic check types of columns and dtypes
-        orig = self.sim.population.new_row
-        assert (df.dtypes == orig.dtypes).all()
-
-        def is_subset(col_for_set, col_for_subset):
-            # Confirms that the series of col_for_subset is true only for a subset of the series for col_for_set
-            return set(col_for_subset.loc[col_for_subset].index).issubset(
-                col_for_set.loc[col_for_set].index
-            )
-
-        # Check that core properties of current status are never None/NaN/NaT
-        assert not df_alive.tb_inf.isna().any()
-        assert not df_alive.tb_strain.isna().any()
-        assert not df_alive.tb_smear.isna().any()
-        assert not df_alive.tb_on_treatment.isna().any()
-        assert not df_alive.tb_treatment_regimen.isna().any()
-        assert not df_alive.tb_ever_treated.isna().any()
-        assert not df_alive.tb_on_ipt.isna().any()
-
-        # Check that the core TB properties are 'nested' in the way expected.
-        assert is_subset(
-            col_for_set=(df_alive.tb_inf != "uninfected"), col_for_subset=df_alive.tb_diagnosed
-        )
-        assert is_subset(
-            col_for_set=df_alive.tb_diagnosed, col_for_subset=df_alive.tb_on_treatment
-        )
-
-        # Check that if person is infected, the dates of active TB is NOT missing
-        assert not df.loc[(df.tb_inf == "active"), "tb_date_active"].isna().all()
+    # Check that if person is infected, the dates of active TB is NOT missing
+    assert not df.loc[(df.tb_inf == "active"), "tb_date_active"].isna().all()
 
 
 # # ---------------------------------------------------------------------------
@@ -1463,11 +1499,11 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         prop_untreated_mdr = self.module.calculate_untreated_proportion(population, strain="mdr")
 
         scaled_incidence_ds = incidence_year * \
-            p["scaling_factor_WHO"] * prop_untreated_ds
+                              p["scaling_factor_WHO"] * prop_untreated_ds
         scaled_incidence_mdr = incidence_year * \
-            p["prop_mdr2010"] * \
-            p["scaling_factor_WHO"] * \
-            prop_untreated_mdr
+                               p["prop_mdr2010"] * \
+                               p["scaling_factor_WHO"] * \
+                               prop_untreated_mdr
 
         # transmission ds-tb
         self.module.assign_active_tb(population, strain="ds", incidence=scaled_incidence_ds)
@@ -2048,7 +2084,6 @@ class HSI_Tb_Xray_level1b(HSI_Event, IndividualScopeEventMixin):
         # if consumables not available, refer to level 2
         # return blank footprint as xray did not occur
         if test_result is None:
-
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2119,7 +2154,6 @@ class HSI_Tb_Xray_level2(HSI_Event, IndividualScopeEventMixin):
         # if consumables not available, rely on clinical diagnosis
         # return blank footprint as xray was not available
         if test_result is None:
-
             ACTUAL_APPT_FOOTPRINT = self.make_appt_footprint({})
 
             self.sim.modules["HealthSystem"].schedule_hsi_event(
@@ -2285,7 +2319,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             & (person["age_years"] <= 16) \
             & ~(person["tb_smear"]) \
             & ~person["tb_ever_treated"] \
-                & ~person["tb_diagnosed_mdr"]:
+            & ~person["tb_diagnosed_mdr"]:
             treatment_regimen = "tb_tx_child_shorter"
 
         return treatment_regimen
@@ -2341,7 +2375,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 
         # if previously treated:
         if ((person["tb_treatment_regimen"] == "tb_retx_adult") or
-                (person["tb_treatment_regimen"] == "tb_retx_child")):
+            (person["tb_treatment_regimen"] == "tb_retx_child")):
 
             # if strain is ds and person previously treated:
             sputum_fup = follow_up_times["ds_retreatment_sputum"].dropna()

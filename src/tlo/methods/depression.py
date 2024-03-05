@@ -225,6 +225,7 @@ class Depression(Module):
         # Build the Linear Models
 
         # ----- Initialisation of population -----
+        self.linearModels = dict()
 
         # risk of depression in initial population
         predictors = [
