@@ -126,11 +126,11 @@ class Wasting(Module):
             Types.REAL, 'proportion of severe weight-for-height Z-score with MUAC<115mm'),
         'proportion_-3<=WHZ<-2_with_MUAC<115mm': Parameter(
             Types.REAL, 'proportion of moderate weight-for-height Z-score with MUAC<115mm'),
-        'proportion_-3<=WHZ<-2_with_MUAC_115-<125mm': Parameter(
+        'proportion_-3<=WHZ<-2_with_MUAC_[115,125)mm': Parameter(
             Types.REAL, 'proportion of moderate weight-for-height Z-score with MUAC between 115mm and 125mm'),
-        'proportion_mam_with_MUAC_115-<125mm_and_normal_whz': Parameter(
+        'proportion_mam_with_MUAC_[115,125)mm_and_normal_whz': Parameter(
             Types.REAL, 'proportion of mam cases with MUAC between 115mm and 125mm and normal/mild WHZ'),
-        'proportion_mam_with_MUAC_115-<125mm_and_-3<=WHZ<-2': Parameter(
+        'proportion_mam_with_MUAC_[115,125)mm_and_-3<=WHZ<-2': Parameter(
             Types.REAL,
             'proportion of mam cases with both MUAC between 115mm and '
             '125mm and moderate wasting'),
@@ -167,7 +167,7 @@ class Wasting(Module):
                                                    categories=['MAM', 'SAM'] + ['well']),
         'un_am_bilateral_oedema': Property(Types.BOOL, 'bilateral oedema present in wasting'),
         'un_am_MUAC_category': Property(Types.CATEGORICAL, 'MUAC measurement categories',
-                                        categories=['<115mm', '115-<125mm', '>=125mm']),
+                                        categories=['<115mm', '[115,125)mm', '>=125mm']),
         'un_sam_with_complications': Property(Types.BOOL, 'medical complications in SAM'),
         'un_sam_death_date': Property(Types.DATE, 'death date from severe acute malnutrition'),
         'un_am_recovery_date': Property(Types.DATE, 'recovery date from acute malnutrition'),
@@ -337,8 +337,8 @@ class Wasting(Module):
             low_muac_in_severe_wasting = self.rng.random_sample(size=len(idx)) < p['proportion_WHZ<-3_with_MUAC<115mm']
 
             df.loc[idx[low_muac_in_severe_wasting], 'un_am_MUAC_category'] = '<115mm'
-            # other severe wasting will have MUAC between 115-<125mm
-            df.loc[idx[~low_muac_in_severe_wasting], 'un_am_MUAC_category'] = '115-<125mm'
+            # other severe wasting will have MUAC between [115,125)mm
+            df.loc[idx[~low_muac_in_severe_wasting], 'un_am_MUAC_category'] = '[115,125)mm'
 
         if whz == '-3<=WHZ<-2':
             # apply probability of MUAC<115mm in moderate wasting
@@ -346,12 +346,12 @@ class Wasting(Module):
                                            p['proportion_-3<=WHZ<-2_with_MUAC<115mm']
             df.loc[idx[low_muac_in_moderate_wasting], 'un_am_MUAC_category'] = '<115mm'
 
-            # apply probability of MUAC between 115-<125mm in moderate wasting
+            # apply probability of MUAC between [115,125)mm in moderate wasting
             moderate_low_muac_in_moderate_wasting = \
                 self.rng.random_sample(size=len(idx[~low_muac_in_moderate_wasting])) < \
-                p['proportion_-3<=WHZ<-2_with_MUAC_115-<125mm']
+                p['proportion_-3<=WHZ<-2_with_MUAC_[115,125)mm']
             df.loc[idx[~low_muac_in_moderate_wasting][moderate_low_muac_in_moderate_wasting], 'un_am_MUAC_category'] \
-                = '115-<125mm'
+                = '[115,125)mm'
             # other moderate wasting will have normal MUAC
             df.loc[idx[~low_muac_in_moderate_wasting][~moderate_low_muac_in_moderate_wasting], 'un_am_MUAC_category'] \
                 = '>=125mm'
@@ -368,7 +368,7 @@ class Wasting(Module):
             pro_between_115_125 = probability_over_or_equal_115 - probability_over_or_equal_125
 
             for pid in idx:
-                muac_cat = self.rng.choice(['<115mm', '115-<125mm', '>=125mm'],
+                muac_cat = self.rng.choice(['<115mm', '[115,125)mm', '>=125mm'],
                                            p=[prob_less_than_115, pro_between_115_125, probability_over_or_equal_125])
                 df.at[pid, 'un_am_MUAC_category'] = muac_cat
 
@@ -519,7 +519,7 @@ class Wasting(Module):
         total_daly_values.loc[df.is_alive & (
                 ((df.un_WHZ_category == '-3<=WHZ<-2') & (df.un_am_MUAC_category != "<115mm")) | (
                 (df.un_WHZ_category != 'WHZ<-3') & (
-                df.un_am_MUAC_category != "115-<125mm"))) & df.un_am_bilateral_oedema] = daly_wts[
+                df.un_am_MUAC_category != "[115,125)mm"))) & df.un_am_bilateral_oedema] = daly_wts[
             'MAM_with_oedema']
         return total_daly_values
 
@@ -911,23 +911,23 @@ class UpdateToMAM(Event, IndividualScopeEventMixin):
         # oedema, or low muac - do not change the WHZ
         if df.at[person_id, 'un_WHZ_category'] == 'WHZ>=-2':
             # mam by muac only
-            df.at[person_id, 'un_am_MUAC_category'] = '115-<125mm'
+            df.at[person_id, 'un_am_MUAC_category'] = '[115,125)mm'
 
         else:
             # using the probability of mam classification by anthropometric
             # indices
             mam_classification = rng.choice(['mam_by_muac_only', 'mam_by_muac_and_whz', 'mam_by_whz_only'],
-                                            p=[p['proportion_mam_with_MUAC_115-<125mm_and_normal_whz'],
-                                               p['proportion_mam_with_MUAC_115-<125mm_and_-3<=WHZ<-2'],
+                                            p=[p['proportion_mam_with_MUAC_[115,125)mm_and_normal_whz'],
+                                               p['proportion_mam_with_MUAC_[115,125)mm_and_-3<=WHZ<-2'],
                                                p['proportion_mam_with_-3<=WHZ<-2_and_normal_MUAC']])
 
             if mam_classification == 'mam_by_muac_only':
                 df.at[person_id, 'un_WHZ_category'] = 'WHZ>=-2'
-                df.at[person_id, 'un_am_MUAC_category'] = '115-<125mm'
+                df.at[person_id, 'un_am_MUAC_category'] = '[115,125)mm'
 
             if mam_classification == 'mam_by_muac_and_whz':
                 df.at[person_id, 'un_WHZ_category'] = '-3<=WHZ<-2'
-                df.at[person_id, 'un_am_MUAC_category'] = '115-<125mm'
+                df.at[person_id, 'un_am_MUAC_category'] = '[115,125)mm'
 
             if mam_classification == 'mam_by_whz_only':
                 df.at[person_id, 'un_WHZ_category'] = '-3<=WHZ<-2'
