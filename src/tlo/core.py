@@ -383,25 +383,3 @@ class Module:
     def on_simulation_end(self):
         """This is called after the simulation has ended.
         Modules do not need to declare this."""
-
-    def do_at_first_appointment_non_emergency(
-        self,
-        patient_id: int,
-        details: NamedTuple = None,
-        symptoms: List[str] = None,
-        dx_function: Callable[[str, bool, bool], Any] = None,
-    ) -> Tuple["HSI_Event", NamedTuple]:
-        """Actions that should be taken during the non-emergency generic HSI.
-
-        Must be implemented by subclasses that want to be used by the HeathSystem module.
-
-        Function should return:
-        - A HSI_Event instance if the patient's symptoms indicate that a further HSI event should be scheduled. This should return None otherwise.
-        - A Tuple of key-value pairs containing any updates that should be made to the patient's data after running this check. Return None if there are no updates to be applied.
-
-        :param patient_id: Population DataFrame row identifier of the patient the HSI targets.
-        :param details: Population DataFrame key-value pairs corresponding to the target patient.
-        :param symptoms: List of symptoms the patient is experiencing.
-        :param dx_function: Function that can run diagnosis tests.
-        """
-        pass
