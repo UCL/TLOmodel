@@ -1934,16 +1934,21 @@ class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props
+        p = self.sim.modules["Hiv"].parameters
 
         # Check person is_alive
         if not df.at[person_id, "is_alive"]:
             return
 
         if df.at[person_id, 'tb_on_treatment']:
-            prob = self.module.rng.rand()
+
+            risk_of_death = p["aids_tb_treatment_adjustment"]
+
+            if "CardioMetabolicDisorders" in self.sim.modules and df.at[person_id, "nc_diabetes"]:
+                risk_of_death *= self.sim.modules["Tb"].parameters["rr_death_diabetes"]
 
             # treatment adjustment reduces probability of death
-            if prob < self.sim.modules["Hiv"].parameters["aids_tb_treatment_adjustment"]:
+            if self.module.rng.rand() < risk_of_death:
                 self.sim.modules["Demography"].do_death(
                     individual_id=person_id,
                     cause="AIDS_TB",
