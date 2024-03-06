@@ -11,7 +11,7 @@ tlo.methods.healthsystem module
 
      **Class attributes:**
 
-     bed_days_allocated_to_this_event : <property object at 0x11f93d120>
+     bed_days_allocated_to_this_event : <property object at 0x124cd5580>
 
      **Functions (defined or overridden in class HSI_Event):**
 
@@ -127,7 +127,7 @@ tlo.methods.healthsystem module
           - List of services to be available. NB. This parameter is over-ridden if an argument is provided to the module initialiser.
         * - policy_name
           - STRING
-          - Name of priority policy assumed to have been adopted until policy switch
+          - Name of priority policy adopted
         * - year_mode_switch
           - INT
           - Year in which mode switch in enforced
@@ -179,11 +179,11 @@ tlo.methods.healthsystem module
 
      INIT_DEPENDENCIES : {'Demography'}
 
-     capabilities_today : <property object at 0x11f93d350>
+     capabilities_today : <property object at 0x124cd57b0>
 
-     hsi_event_counts : <property object at 0x11f93d4e0>
+     hsi_event_counts : <property object at 0x124cd5940>
 
-     never_ran_hsi_event_counts : <property object at 0x11f93d530>
+     never_ran_hsi_event_counts : <property object at 0x124cd5990>
 
      **Functions (defined or overridden in class HealthSystem):**
 
@@ -358,7 +358,7 @@ tlo.methods.healthsystem module
 
      __annotations__ : {}
 
-     current_pop_size : <property object at 0x11f93d850>
+     current_pop_size : <property object at 0x124cd5cb0>
 
      **Functions (defined or overridden in class DynamicRescalingHRCapabilities):**
 

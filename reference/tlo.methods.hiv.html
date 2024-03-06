@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.hiv module &mdash; TLOmodel 0.1.dev2374+g0d5bd0d documentation</title>
+  <title>tlo.methods.hiv module &mdash; TLOmodel 0.1.dev2378+g25dce3d documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=25a06c1d"></script>
+        <script src="../_static/documentation_options.js?v=c93bd2cd"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -58,7 +58,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../background.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../learning.html">Learning Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
@@ -483,11 +483,11 @@ still occur.</p>
 </tbody>
 </table>
 <p><strong>Class attributes:</strong></p>
-<p>ADDITIONAL_DEPENDENCIES : {‘NewbornOutcomes’, ‘Tb’}</p>
-<p>CAUSES_OF_DEATH : {‘AIDS_non_TB’: &lt;tlo.methods.causes.Cause object at 0x130c28d50&gt;, ‘AIDS_TB’: &lt;tlo.methods.causes.Cause object at 0x130c28dd0&gt;}</p>
-<p>CAUSES_OF_DISABILITY : {‘HIV’: &lt;tlo.methods.causes.Cause object at 0x130c28e50&gt;}</p>
-<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘HealthSystem’, ‘Lifestyle’, ‘Demography’}</p>
-<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
+<p>ADDITIONAL_DEPENDENCIES : {‘Tb’, ‘NewbornOutcomes’}</p>
+<p>CAUSES_OF_DEATH : {‘AIDS_non_TB’: &lt;tlo.methods.causes.Cause object at 0x135f08ed0&gt;, ‘AIDS_TB’: &lt;tlo.methods.causes.Cause object at 0x135f08f50&gt;}</p>
+<p>CAUSES_OF_DISABILITY : {‘HIV’: &lt;tlo.methods.causes.Cause object at 0x135f08fd0&gt;}</p>
+<p>INIT_DEPENDENCIES : {‘SymptomManager’, ‘HealthSystem’, ‘Demography’, ‘Lifestyle’}</p>
+<p>METADATA : {&lt;Metadata.USES_HEALTHBURDEN: 4&gt;, &lt;Metadata.USES_SYMPTOMMANAGER: 2&gt;, &lt;Metadata.DISEASE_MODULE: 1&gt;, &lt;Metadata.USES_HEALTHSYSTEM: 3&gt;}</p>
 <p>OPTIONAL_INIT_DEPENDENCIES : {‘HealthBurden’}</p>
 <p><strong>Functions (defined or overridden in class Hiv):</strong></p>
 <dl class="py method">
@@ -1218,7 +1218,7 @@ Default the person to being off PrEP</p>
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HSI_Hiv_StartOrContinueTreatment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">module</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">facility_level_of_this_hsi</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tlo/methods/hiv.html#HSI_Hiv_StartOrContinueTreatment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment" title="Link to this definition"></a></dt>
 <dd><p>Bases: <a class="reference internal" href="tlo.methods.healthsystem.html#tlo.methods.healthsystem.HSI_Event" title="tlo.methods.healthsystem.HSI_Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.methods.healthsystem.HSI_Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.IndividualScopeEventMixin" title="tlo.events.IndividualScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.IndividualScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
-<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x130c21b20&gt;</p>
+<p>EXPECTED_APPT_FOOTPRINT : &lt;property object at 0x135f056c0&gt;</p>
 <p><strong>Functions (defined or overridden in class HSI_Hiv_StartOrContinueTreatment):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.hiv.HSI_Hiv_StartOrContinueTreatment.__init__">
@@ -1466,7 +1466,7 @@ It is a good place to add initial events to the event queue.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Feb 26, 2024.
+      <span class="lastupdated">Last updated on Mar 06, 2024.
       </span></p>
   </div>
 

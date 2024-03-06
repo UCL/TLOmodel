@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>tlo.methods.healthsystem module &mdash; TLOmodel 0.1.dev2374+g0d5bd0d documentation</title>
+  <title>tlo.methods.healthsystem module &mdash; TLOmodel 0.1.dev2378+g25dce3d documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d10597a4" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
       <link rel="stylesheet" type="text/css" href="../_static/theme_overrides.css?v=6ea10ece" />
@@ -17,7 +17,7 @@
   
         <script src="../_static/jquery.js?v=5d32c60e"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-        <script src="../_static/documentation_options.js?v=25a06c1d"></script>
+        <script src="../_static/documentation_options.js?v=c93bd2cd"></script>
         <script src="../_static/doctools.js?v=888ff710"></script>
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
@@ -58,7 +58,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../azure_batch.html">Using Azure Batch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="index.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../resources/index.html">Resource files</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../background.html">Background</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../learning.html">Learning Resources</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../publications.html">Publications</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributors.html">Contributors</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../contributing.html">Contributing</a></li>
@@ -100,7 +100,7 @@
 <p>Concrete subclasses should also inherit from one of the EventMixin classes
 defined below, and implement at least an <cite>apply</cite> and <cite>did_not_run</cite> method.</p>
 <p><strong>Class attributes:</strong></p>
-<p>bed_days_allocated_to_this_event : &lt;property object at 0x11f93d120&gt;</p>
+<p>bed_days_allocated_to_this_event : &lt;property object at 0x124cd5580&gt;</p>
 <p><strong>Functions (defined or overridden in class HSI_Event):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HSI_Event.__init__">
@@ -346,7 +346,7 @@ The execution of all health systems interactions are controlled through this mod
 </tr>
 <tr class="row-odd"><td><p>policy_name</p></td>
 <td><p>STRING</p></td>
-<td><p>Name of priority policy assumed to have been adopted until policy switch</p></td>
+<td><p>Name of priority policy adopted</p></td>
 </tr>
 <tr class="row-even"><td><p>year_mode_switch</p></td>
 <td><p>INT</p></td>
@@ -412,9 +412,9 @@ The execution of all health systems interactions are controlled through this mod
 </table>
 <p><strong>Class attributes:</strong></p>
 <p>INIT_DEPENDENCIES : {‘Demography’}</p>
-<p>capabilities_today : &lt;property object at 0x11f93d350&gt;</p>
-<p>hsi_event_counts : &lt;property object at 0x11f93d4e0&gt;</p>
-<p>never_ran_hsi_event_counts : &lt;property object at 0x11f93d530&gt;</p>
+<p>capabilities_today : &lt;property object at 0x124cd57b0&gt;</p>
+<p>hsi_event_counts : &lt;property object at 0x124cd5940&gt;</p>
+<p>never_ran_hsi_event_counts : &lt;property object at 0x124cd5990&gt;</p>
 <p><strong>Functions (defined or overridden in class HealthSystem):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.HealthSystem.__init__">
@@ -447,7 +447,7 @@ let no beds be ever be available; if ‘all’, then all beds are always availab
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ignore_priority</strong> – If <code class="docutils literal notranslate"><span class="pre">True</span></code> do not use the priority information in HSI
 event to schedule</p></li>
-<li><p><strong>policy_name</strong> – Name of priority policy that will be adopted if any</p></li>
+<li><p><strong>policy_name</strong> – Name of priority policy adopted</p></li>
 <li><p><strong>capabilities_coefficient</strong> – Multiplier for the capabilities of health
 officers, if <code class="docutils literal notranslate"><span class="pre">None</span></code> set to ratio of initial population to estimated 2010
 population.</p></li>
@@ -1049,7 +1049,7 @@ constructor, but may also take further keyword arguments.</p></li>
 <p>Bases: <a class="reference internal" href="tlo.events.html#tlo.events.RegularEvent" title="tlo.events.RegularEvent"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.RegularEvent</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.Event" title="tlo.events.Event"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.Event</span></code></a>, <a class="reference internal" href="tlo.events.html#tlo.events.PopulationScopeEventMixin" title="tlo.events.PopulationScopeEventMixin"><code class="xref py py-class docutils literal notranslate"><span class="pre">tlo.events.PopulationScopeEventMixin</span></code></a></p>
 <p><strong>Class attributes:</strong></p>
 <p>__annotations__ : {}</p>
-<p>current_pop_size : &lt;property object at 0x11f93d850&gt;</p>
+<p>current_pop_size : &lt;property object at 0x124cd5cb0&gt;</p>
 <p><strong>Functions (defined or overridden in class DynamicRescalingHRCapabilities):</strong></p>
 <dl class="py method">
 <dt class="sig sig-object py" id="tlo.methods.healthsystem.DynamicRescalingHRCapabilities.__init__">
@@ -1132,7 +1132,7 @@ HealthSystem at a given year.</p>
 
   <div role="contentinfo">
     <p>
-      <span class="lastupdated">Last updated on Feb 26, 2024.
+      <span class="lastupdated">Last updated on Mar 06, 2024.
       </span></p>
   </div>
 

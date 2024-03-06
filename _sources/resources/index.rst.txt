@@ -14,7 +14,6 @@ Resource  files used in ``TLOmodel`` simulations
     healthsystem/index.rst
     malaria/index.rst
     mapping/index.rst
-    .ResourceFile_Consumables.csv.un~
     ResourceFile_AbortionAndMiscarriage.xlsx
     ResourceFile_Alri.xlsx
     ResourceFile_AntenatalCare.xlsx
