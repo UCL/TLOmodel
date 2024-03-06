@@ -1,18 +1,11 @@
-from ..calibration import output_all_death_calibration_per_year, output_all_key_outcomes_per_year
+import calibration_outputs_with_ci
 
-# This script runs the the files which output calibration plots for the maternal and perinatal health modules
+# This script runs the files which output calibration plots for the maternal and perinatal health modules
 
 # pass file name to provide outputs
-for file in ['standard_mph_calibration']:
-    output_all_key_outcomes_per_year.output_incidence_for_calibration(
-        scenario_filename=f'{file}.py',
-        pop_size='50k',
-        outputspath='./outputs/sejjj49@ucl.ac.uk/',
-        sim_years=list(range(2010, 2021)))
-
-    output_all_death_calibration_per_year.output_all_death_calibrations(
-        scenario_filename=f'{file}.py',
-        outputspath='./outputs/sejjj49@ucl.ac.uk/',
-        pop_size='50k',
-        sim_years=list(range(2010, 2021)),
-        daly_years=list(range(2010, 2020)))
+for file in ['baseline_scenario-2023-11-20T133043Z']:
+    calibration_outputs_with_ci.output_incidence_for_calibration(
+       scenario_filename=f'{file}.py',
+       pop_size='250K',
+       outputspath='./outputs/sejjj49@ucl.ac.uk/',
+       sim_years=list(range(2010, 2023)))
