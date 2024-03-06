@@ -234,17 +234,23 @@ class BladderCancer(Module):
         # check parameters are sensible: probability of having any cancer stage cannot exceed 1.0
         assert sum(p['init_prop_bladder_cancer_stage']) <= 1.0
 
-        lm_init_bc_status_any_stage = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            sum(p['init_prop_bladder_cancer_stage']),
+        predictors = [
             Predictor('li_tob').when(True, p['rp_bladder_cancer_tobacco']),
-            # todo: add line when schisto is merged
-            # Predictor('sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
             Predictor('age_years', conditions_are_mutually_exclusive=True)
             .when('.between(30,49)', p['rp_bladder_cancer_age3049'])
             .when('.between(50,69)', p['rp_bladder_cancer_age5069'])
             .when('.between(70,120)', p['rp_bladder_cancer_agege70'])
             .when('.between(0,14)', 0.0)
+        ]
+
+        conditional_predictors = [
+            Predictor('ss_sh_infection_status').when('High-infection', p['rp_bladder_cancer_schisto_h']),
+        ] if "Schisto" in self.sim.modules else []
+
+        lm_init_bc_status_any_stage = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            sum(p['init_prop_bladder_cancer_stage']),
+            *(predictors + conditional_predictors)
         )
 
         bc_status_any_stage = lm_init_bc_status_any_stage.predict(df.loc[df.is_alive], self.rng)

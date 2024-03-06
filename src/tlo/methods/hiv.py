@@ -465,6 +465,12 @@ class Hiv(Module):
             Predictor("hv_behaviour_change").when(True, p["rr_behaviour_change"]),
         )
 
+        conditional_predictors = [
+            Predictor('ss_sh_infection_status').when('High-infection', p['rr_schisto']),
+        ] if "Schisto" in self.sim.modules else []
+
+
+
         # LinearModels to give the shape and scale for the Weibull distribution describing time from infection to death
         self.lm["scale_parameter_for_infection_to_death"] = LinearModel.multiplicative(
             Predictor(
