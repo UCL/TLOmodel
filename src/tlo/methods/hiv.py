@@ -40,7 +40,7 @@ from tlo.methods.symptommanager import Symptom
 from tlo.util import create_age_range_lookup
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.CRITICAL )
 
 
 class Hiv(Module):

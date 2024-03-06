@@ -332,8 +332,9 @@ class Lifestyle(Module):
         'li_date_acquire_clean_drinking_water': Property(Types.DATE, 'date acquire clean drinking water'),
         'li_date_acquire_non_wood_burn_stove': Property(Types.DATE, 'date acquire non-wood burning stove'),
         "li_is_sexworker": Property(Types.BOOL, "Is the person a sex worker"),
-        "li_is_circ": Property(Types.BOOL, "Is the person circumcised if they are male (False for all females)"),
+        "li_is_circ": Property(Types.BOOL, "Is the person circumcised if they are male (False for all females)")
     }
+
 
     def read_parameters(self, data_folder):
         p = self.parameters
@@ -387,6 +388,7 @@ class Lifestyle(Module):
         df['li_date_acquire_non_wood_burn_stove'] = pd.NaT
         df['li_is_sexworker'] = False
         df['li_is_circ'] = False
+
         # todo: express all rates per year and divide by 4 inside program
 
         # -------------------- URBAN-RURAL STATUS --------------------------------------------------
@@ -824,6 +826,7 @@ class Lifestyle(Module):
         df.at[child_id, 'li_is_circ'] = (
             self.rng.rand() < self.parameters['proportion_of_men_that_are_assumed_to_be_circumcised_at_birth']
         )
+
 
     def determine_who_will_be_sexworker(self, months_since_last_poll):
         """Determine which women will be sex workers.
@@ -1353,6 +1356,10 @@ class LifestyleEvent(RegularEvent, PopulationScopeEventMixin):
         # --- FSW ---
         self.module.determine_who_will_be_sexworker(months_since_last_poll=self.repeat_months)
 
+#       for i in range(1, 100):
+#           df[f'li_{i}'] += 1
+
+#       print(self.sim.date)
 
 class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
     """Handles lifestyle logging"""
@@ -1415,3 +1422,4 @@ class LifestylesLoggingEvent(RegularEvent, PopulationScopeEventMixin):
                 key='proportion_1549_women_sexworker',
                 data=[0]
             )
+
