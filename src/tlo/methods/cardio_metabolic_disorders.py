@@ -1460,6 +1460,7 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
         if _c == 'chronic_ischemic_heart_disease':
             self.add_equipment({'Electrocardiogram', 'Stethoscope'})
 
+        # Run a test to diagnose whether the person has condition:
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run=f'assess_{_c}',
             hsi_event=self

@@ -736,7 +736,6 @@ class Diarrhoea(Module):
         # STEP ONE: Aim to alleviate dehydration:
         prob_remove_dehydration = 0.0
         if is_in_patient:
-
             if hsi_event.get_consumables(item_codes=self.consumables_used_in_hsi['Treatment_Severe_Dehydration']):
                 # In-patient receiving IV fluids (WHO Plan C)
                 prob_remove_dehydration = \
