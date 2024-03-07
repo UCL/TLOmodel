@@ -1202,16 +1202,12 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
             _new_contraceptive = self.new_contraceptive
 
-            # Update equipment if any needed for the method
+            # Add used equipment
             if _new_contraceptive == 'female_sterilization':
                 self.add_equipment({
                     'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise'
                 })
-                self.add_equipment_from_pkg({
-                    'Minor Surgery'
-                })
-                # TODO: this is just an example - update once figured out what we want in the pkgs
-                #  (! Update also the RF_Equipment accordingly !)
+                # TODO: add equip for minor surgery
             elif _new_contraceptive == 'IUD':
                 self.add_equipment({
                     'Cusco’s/ bivalved Speculum (small, medium, large)', 'Sponge Holding Forceps'

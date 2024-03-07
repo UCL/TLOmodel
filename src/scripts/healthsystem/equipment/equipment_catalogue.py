@@ -219,6 +219,7 @@ def create_equipment_catalogues(results_folder: Path, output_folder: Path):
 
     # Remove rows with no equipment used
     equipment_counts_by_time_and_requested_details.drop("[]", level='equipment', axis=0, inplace=True)
+    # Split the equipment by an item per row
     equipment_counts_by_time_and_requested_details['equipment'] = \
         equipment_counts_by_time_and_requested_details.index.get_level_values('equipment')
     equipment_counts_by_time_and_requested_details.index = \
@@ -251,5 +252,4 @@ if __name__ == "__main__":
         results_folder=args.results_folder,
         output_folder=args.results_folder,
     )
-# NB. Edit run configuration, the Parameters:
-# "./outputs/sejjej5@ucl.ac.uk/equip_jobs/long_run_all_diseases-2023-09-04T233551Z"
+# NB. Edit run configuration, the Parameters: "./outputs/sejjej5@ucl.ac.uk/long_run_all_diseases-2023-09-04T233551Z"

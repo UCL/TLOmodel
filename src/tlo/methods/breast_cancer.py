@@ -12,7 +12,7 @@ import pandas as pd
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
-from tlo.methods import Metadata
+from tlo.methods import Metadata, cancer_consumables
 from tlo.methods.causes import Cause
 from tlo.methods.demography import InstantaneousDeath
 from tlo.methods.dxmanager import DxTest
@@ -32,6 +32,7 @@ class BreastCancer(Module):
         self.linear_models_for_progession_of_brc_status = dict()
         self.lm_onset_breast_lump_discernible = None
         self.daly_wts = dict()
+        self.item_codes_breast_can = dict()
 
     INIT_DEPENDENCIES = {'Demography', 'HealthSystem', 'SymptomManager'}
 
@@ -340,6 +341,9 @@ class BreastCancer(Module):
         * Define the Disability-weights
         * Schedule the palliative care appointments for those that are on palliative care at initiation
         """
+        # We call the following function to store the required consumables for the simulation run within the appropriate
+        # dictionary
+        cancer_consumables.get_consumable_item_codes_cancers(self, self.item_codes_breast_can)
 
         # ----- SCHEDULE LOGGING EVENTS -----
         # Schedule logging event to happen immediately
@@ -646,6 +650,17 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
         self.TREATMENT_ID = "BreastCancer_Investigation"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1, "Mammography": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'  # Biopsy only available at level 3 and above.
+        self.set_equipment_essential_to_run_event({''})
+
+        # TODO: Eva's dummy equipment example (not sure if it actually needs to be added and if it is in the RF)
+        #  {'Slice Master sample processing Unit', 'Paraffin Dispense', 'Whatever used with biopsy'}
+
+        # ap_oct23 - Eva, I cannot locate a biopsy needle in the equipment - perhaps it is in consumables
+        # the other equipment need is for histology in the lab - there is a whole long list of items needed
+        # for histology done on the sample in the lab - do we need to add each of these, or can we have a
+        # package ?  I do not think mammography is done at this point but I could be wrong.
+
+        # biopsy always performed with this HSI, hence always used the same set of equipment
         # TODO: but the appt footprints suggests mammography to be provided
 
     def apply(self, person_id, squeeze_factor):
@@ -665,45 +680,53 @@ class HSI_BreastCancer_Investigation_Following_breast_lump_discernible(HSI_Event
 
         df.at[person_id, 'brc_breast_lump_discernible_investigated'] = True
 
-        # Use a biopsy to diagnose whether the person has breast Cancer:
-        # todo: request consumables needed for this
+        # Check consumables to undertake biopsy are available
+        cons_avail = self.get_consumables(item_codes=self.module.item_codes_breast_can['screening_biopsy_core'],
+                                          optional_item_codes=
+                                          self.module.item_codes_breast_can['screening_biopsy_optional'])
 
-        dx_result = hs.dx_manager.run_dx_test(
-            dx_tests_to_run='biopsy_for_breast_cancer_given_breast_lump_discernible',
-            hsi_event=self
-        )
+        if cons_avail:
+            # Use a biopsy to diagnose whether the person has breast Cancer
+            # If consumables are available, add the used equipment and run the dx_test representing the biopsy
+            self.add_equipment({'Ultrasound scanning machine', 'Ordinary Microscope'})
 
-        if dx_result:
-            # record date of diagnosis:
-            df.at[person_id, 'brc_date_diagnosis'] = self.sim.date
+            dx_result = hs.dx_manager.run_dx_test(
+                dx_tests_to_run='biopsy_for_breast_cancer_given_breast_lump_discernible',
+                hsi_event=self
+            )
 
-            # Check if is in stage4:
-            in_stage4 = df.at[person_id, 'brc_status'] == 'stage4'
-            # If the diagnosis does detect cancer, it is assumed that the classification as stage4 is made accurately.
+            if dx_result:
+                # record date of diagnosis:
+                df.at[person_id, 'brc_date_diagnosis'] = self.sim.date
 
-            if not in_stage4:
-                # start treatment:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_BreastCancer_StartTreatment(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+                # Check if is in stage4:
+                in_stage4 = df.at[person_id, 'brc_status'] == 'stage4'
+                # If the diagnosis does detect cancer, it is assumed that the classification as stage4 is
+                # made accurately.
 
-            else:
-                # start palliative care:
-                hs.schedule_hsi_event(
-                    hsi_event=HSI_BreastCancer_PalliativeCare(
-                        module=self.module,
-                        person_id=person_id
-                    ),
-                    priority=0,
-                    topen=self.sim.date,
-                    tclose=None
-                )
+                if not in_stage4:
+                    # start treatment:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_BreastCancer_StartTreatment(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
+
+                else:
+                    # start palliative care:
+                    hs.schedule_hsi_event(
+                        hsi_event=HSI_BreastCancer_PalliativeCare(
+                            module=self.module,
+                            person_id=person_id
+                        ),
+                        priority=0,
+                        topen=self.sim.date,
+                        tclose=None
+                    )
 
 #   todo: we would like to note that the symptom has been investigated in a diagnostic test and the diagnosis was
 #   todo: was missed, so the same test will not likely be repeated, at least not in the short term, so we even
@@ -724,6 +747,10 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"MajorSurg": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({"general_bed": 5})
+        self.set_equipment_essential_to_run_event({''})
+
+        # ap_oct23 - I believe this will almost always be mastectomy surgery with chemotherapy, so I think for equipment
+        # we just need the standard surgery equipment list. We may need to add radiotherapy when more available.
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -756,19 +783,40 @@ class HSI_BreastCancer_StartTreatment(HSI_Event, IndividualScopeEventMixin):
         assert not pd.isnull(df.at[person_id, "brc_date_diagnosis"])
         assert pd.isnull(df.at[person_id, "brc_date_treatment"])
 
-        # Record date and stage of starting treatment
-        df.at[person_id, "brc_date_treatment"] = self.sim.date
-        df.at[person_id, "brc_stage_at_which_treatment_given"] = df.at[person_id, "brc_status"]
+        # Check that consumables are available
+        cons_available = self.get_consumables(
+            item_codes=self.module.item_codes_breast_can['treatment_surgery_core'],
+            optional_item_codes=self.module.item_codes_breast_can['treatment_surgery_optional'],
+        )
 
-        # Schedule a post-treatment check for 12 months:
-        hs.schedule_hsi_event(
-            hsi_event=HSI_BreastCancer_PostTreatmentCheck(
-                module=self.module,
-                person_id=person_id,
-            ),
-            topen=self.sim.date + DateOffset(months=12),
-            tclose=None,
-            priority=0
+        if cons_available:
+            # If consumables are available and the treatment will go ahead - add the used equipment
+            # TODO: link to surgical equipment package when that exists
+            self.add_equipment({'Infusion pump', 'Drip stand', 'Laparotomy Set',
+                                   'Blood pressure machine', 'Pulse oximeter'})
+
+            # Log the use of adjuvant chemotherapy
+            self.get_consumables(
+                item_codes=self.module.item_codes_breast_can['treatment_chemotherapy'],
+                optional_item_codes=self.module.item_codes_breast_can['iv_drug_cons'])
+
+            # Record date and stage of starting treatment
+            df.at[person_id, "brc_date_treatment"] = self.sim.date
+            df.at[person_id, "brc_stage_at_which_treatment_given"] = df.at[person_id, "brc_status"]
+
+            # TODO: Eva's dummy equipment example - it needs to be replaced by real items from the RF
+            # Add used equipment
+            # self.add_equipment({'Anything used for mastectomy'})
+
+            # Schedule a post-treatment check for 12 months:
+            hs.schedule_hsi_event(
+                hsi_event=HSI_BreastCancer_PostTreatmentCheck(
+                    module=self.module,
+                    person_id=person_id,
+                ),
+                topen=self.sim.date + DateOffset(months=12),
+                tclose=None,
+                priority=0
         )
 
 
@@ -786,6 +834,10 @@ class HSI_BreastCancer_PostTreatmentCheck(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "BreastCancer_Treatment"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '3'
+        self.set_equipment_essential_to_run_event({''})
+
+        # ap_oct23 - Eva, I'm not aware of any equipment needed here.  Clinical guidelines do not specify what
+        # checks or monitoring are indicated
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -842,12 +894,13 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({})
         self.ACCEPTED_FACILITY_LEVEL = '2'
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({'general_bed': 15})
+        self.set_equipment_essential_to_run_event({''})
+
+    # not sure there is any need for equipment here
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
         hs = self.sim.modules["HealthSystem"]
-
-        # todo: request consumables needed for this
 
         if not df.at[person_id, 'is_alive']:
             return hs.get_blank_appt_footprint()
@@ -855,20 +908,29 @@ class HSI_BreastCancer_PalliativeCare(HSI_Event, IndividualScopeEventMixin):
         # Check that the person is in stage4
         assert df.at[person_id, "brc_status"] == 'stage4'
 
-        # Record the start of palliative care if this is first appointment
-        if pd.isnull(df.at[person_id, "brc_date_palliative_care"]):
-            df.at[person_id, "brc_date_palliative_care"] = self.sim.date
+        # Check consumables are available
+        cons_available = self.get_consumables(
+            item_codes=self.module.item_codes_breast_can['palliation'])
 
-        # Schedule another instance of the event for one month
-        hs.schedule_hsi_event(
-            hsi_event=HSI_BreastCancer_PalliativeCare(
-                module=self.module,
-                person_id=person_id
-            ),
-            topen=self.sim.date + DateOffset(months=3),
-            tclose=None,
-            priority=0
-        )
+        if cons_available:
+
+            # If consumables are available and the treatment will go ahead - add the used equipment
+            self.add_equipment({'Infusion pump', 'Drip stand'})
+
+            # Record the start of palliative care if this is first appointment
+            if pd.isnull(df.at[person_id, "brc_date_palliative_care"]):
+                df.at[person_id, "brc_date_palliative_care"] = self.sim.date
+
+            # Schedule another instance of the event for one month
+            hs.schedule_hsi_event(
+                hsi_event=HSI_BreastCancer_PalliativeCare(
+                    module=self.module,
+                    person_id=person_id
+                ),
+                topen=self.sim.date + DateOffset(months=3),
+                tclose=None,
+                priority=0
+            )
 
 
 # ---------------------------------------------------------------------------------------------------------

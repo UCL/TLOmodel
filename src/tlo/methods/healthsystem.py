@@ -521,6 +521,7 @@ class HSI_Event:
             equipment=(tuple(sorted(self.EQUIPMENT)))
         )
 
+
 class HSIEventWrapper(Event):
     """This is wrapper that contains an HSI event.
 
@@ -1057,8 +1058,8 @@ class HealthSystem(Module):
 
     def on_simulation_end(self):
         """Put out to the log the information from the tracker of the last day of the simulation.
-        Raise warning and enter to log the set of hsi event names which were initialised but the settings of essential
-        equipment is missing."""
+        Raise warning and enter to log if any hsi event initialised but the settings of essential
+        equipment is missing, if any equipment item or package requested but not recognised."""
         self.bed_days.on_simulation_end()
         self.consumables.on_simulation_end()
         if self._hsi_event_count_log_period == "simulation":

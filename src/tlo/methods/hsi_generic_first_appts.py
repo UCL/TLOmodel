@@ -59,6 +59,7 @@ class HSI_GenericNonEmergencyFirstAppt(HSI_Event, IndividualScopeEventMixin):
         #                                                                  for this person. In some cases, small bits
         #                                                                  of care are provided (e.g. a diagnosis, or
         #                                                                  the provision of inhaler.).
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         """Run the actions required during the HSI."""
@@ -86,6 +87,7 @@ class HSI_GenericEmergencyFirstAppt(HSI_Event, IndividualScopeEventMixin):
         #                                                                  for this person. In some cases, small bits
         #                                                                  of care are provided (e.g. a diagnosis, or
         #                                                                  the provision of inhaler.).
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
 
@@ -107,6 +109,7 @@ class HSI_EmergencyCare_SpuriousSymptom(HSI_Event, IndividualScopeEventMixin):
         self.TREATMENT_ID = "FirstAttendance_SpuriousEmergencyCare"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = accepted_facility_level  # '1a' in default or '1b' as an alternative
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props

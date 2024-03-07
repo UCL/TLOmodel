@@ -1391,6 +1391,7 @@ class HSI_CardioMetabolicDisorders_CommunityTestingForHypertension(HSI_Event, In
         self.TREATMENT_ID = "CardioMetabolicDisorders_Prevention_CommunityTestingForHypertension"
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({"Over5OPD": 1})
         self.ACCEPTED_FACILITY_LEVEL = '1a'
+        self.set_equipment_essential_to_run_event({''})
 
     def apply(self, person_id, squeeze_factor):
         df = self.sim.population.props
@@ -1402,6 +1403,7 @@ class HSI_CardioMetabolicDisorders_CommunityTestingForHypertension(HSI_Event, In
             return hs.get_blank_appt_footprint()
 
         # Run a test to diagnose whether the person has condition:
+        self.add_equipment({'Blood pressure machine'})
         dx_result = hs.dx_manager.run_dx_test(
             dx_tests_to_run='assess_hypertension',
             hsi_event=self
@@ -1442,6 +1444,7 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
         self.ACCEPTED_FACILITY_LEVEL = '1b'
         self.conditions_to_investigate = conditions_to_investigate
         self.has_any_cmd_symptom = has_any_cmd_symptom
+        self.set_equipment_essential_to_run_event({''})
 
     def do_for_each_condition(self, _c) -> bool:
         """What to do for each condition that will be investigated. Returns `bool` signalling whether a follow-up HSI
@@ -1453,6 +1456,9 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
         # Do nothing if the condition is already diagnosed
         if df.at[person_id, f'nc_{_c}_ever_diagnosed']:
             return
+
+        if _c == 'chronic_ischemic_heart_disease':
+            self.add_equipment({'Electrocardiogram', 'Stethoscope'})
 
         # Run a test to diagnose whether the person has condition:
         dx_result = hs.dx_manager.run_dx_test(
@@ -1486,6 +1492,10 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
             return hs.get_blank_appt_footprint()
 
         # Do test and trigger treatment (if necessary) for each condition:
+        if any(cond in self.conditions_to_investigate for cond in
+               ('diabetes', 'chronic_kidney_disease', 'chronic_ischemic_hd')):
+            self.add_equipment({'Analyser, Haematology', 'Analyser, Combined Chemistry and Electrolytes'})
+
         hsi_scheduled = [self.do_for_each_condition(_c) for _c in self.conditions_to_investigate]
 
         # If no follow-up treatment scheduled but the person has at least 2 risk factors, start weight loss treatment
@@ -1509,6 +1519,7 @@ class HSI_CardioMetabolicDisorders_Investigations(HSI_Event, IndividualScopeEven
             and (self.module.rng.rand() < self.module.parameters['hypertension_hsi']['pr_assessed_other_symptoms'])
         ):
             # Run a test to diagnose whether the person has condition:
+            self.add_equipment({'Blood pressure machine'})
             dx_result = hs.dx_manager.run_dx_test(
                 dx_tests_to_run='assess_hypertension',
                 hsi_event=self
@@ -1545,6 +1556,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Prevention_WeightLoss'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.set_equipment_essential_to_run_event({''})
 
         self.condition = condition
 
@@ -1556,6 +1568,8 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
 
         # Don't advise those with CKD to lose weight, but do so for all other conditions if BMI is higher than normal
         if self.condition != 'chronic_kidney_disease' and (df.at[person_id, 'li_bmi'] > 2):
+            self.add_equipment({'Weighing scale'})
+
             self.sim.population.props.at[person_id, 'nc_ever_weight_loss_treatment'] = True
             # Schedule a post-weight loss event for individual to potentially lose weight in next 6-12 months:
             self.sim.schedule_event(CardioMetabolicDisordersWeightLossEvent(m, person_id),
@@ -1613,6 +1627,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'Over5OPD': 1})
         self.ACCEPTED_FACILITY_LEVEL = '1b'
+        self.set_equipment_essential_to_run_event({''})
 
         self.condition = condition
 
@@ -1684,6 +1699,7 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
         self.TREATMENT_ID = 'CardioMetabolicDisorders_Treatment'
         self.EXPECTED_APPT_FOOTPRINT = self.make_appt_footprint({'AccidentsandEmerg': 1})
         self.ACCEPTED_FACILITY_LEVEL = '2'
+        self.set_equipment_essential_to_run_event({''})
         self.events_to_investigate = events_to_investigate
 
     def do_for_each_event_to_be_investigated(self, _ev):
@@ -1692,6 +1708,12 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
         df = self.sim.population.props
 
         # Run a test to diagnose whether the person has condition:
+        if _ev == 'ever_stroke':
+            self.add_equipment({'Computed Tomography (CT machine)', 'CT scanner accessories'})
+
+        if _ev == 'ever_heart_attack':
+            self.add_equipment({'Electrocardiogram'})
+
         dx_result = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
             dx_tests_to_run=f'assess_{_ev}',
             hsi_event=self
@@ -1748,6 +1770,13 @@ class HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(HSI_Event,
             data=('This is HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment: '
                   f'The squeeze-factor is {squeeze_factor}.'),
         )
+        # TODO: link to surgical equipment package when that exists
+        self.add_equipment({'Analyser, Combined Chemistry and Electrolytes',
+                               'Analyser, Haematology',
+                               'Patient monitor', 'Drip stand',
+                               'Infusion pump', 'Blood pressure machine',
+                               'Pulse oximeter', 'Trolley, emergency', 'Stethoscope',
+                               'Oxygen cylinder, with regulator'})
 
         for _ev in self.events_to_investigate:
             self.do_for_each_event_to_be_investigated(_ev)

@@ -2290,8 +2290,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
         self._treatment_id_stub = 'Alri_Pneumonia_Treatment'
         self._facility_levels = ("0", "1a", "1b", "2")  # Health facility levels at which care may be provided
         assert facility_level in self._facility_levels
-        self.set_equipment_essential_to_run_event({'Pulse oximeter'})
-        # TODO: CORRECT --- an example with ess. equipm. set (which may or may not be used at the end)
+        self.set_equipment_essential_to_run_event({''})
+
         self.is_followup_following_treatment_failure = is_followup_following_treatment_failure
 
         if not inpatient:
@@ -2597,8 +2597,8 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
                  'chest_indrawing_pneumonia',       (symptoms-based assessment)
                  'cough_or_cold'                    (symptoms-based assessment)
          }."""
-
-        self.add_equipment({'Pulse oximeter'})
+        if use_oximeter:
+            self.add_equipment({'Pulse oximeter'})
 
         child_is_younger_than_2_months = age_exact_years < (2.0 / 12.0)
 
@@ -2653,6 +2653,15 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
 
             oxygen_available = self._get_cons('Oxygen_Therapy')
             oxygen_provided = (oxygen_available and oxygen_indicated)
+
+            # If individual is provided with oxygen, add used equipment
+            if oxygen_provided:
+                self.add_equipment({'Oxygen cylinder, with regulator', 'Nasal Prongs'})
+
+            # If individual is provided with intravenous antibiotics, add used equipment
+            if antibiotic_provided in ('1st_line_IV_antibiotics',
+                                       'Benzylpenicillin_gentamicin_therapy_for_severe_pneumonia'):
+                self.add_equipment({'Infusion pump', 'Drip stand'})
 
             all_things_needed_available = antibiotic_available and (
                 (oxygen_available and oxygen_indicated) or (not oxygen_indicated)
@@ -2735,6 +2744,7 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             if facility_level == '1a':
                 _ = self._get_cons('Inhaled_Brochodilator')
             else:
+                # todo: determine if steroids here are IV (no consumables defined)
                 _ = self._get_cons('Brochodilator_and_Steroids')
 
     def do_on_follow_up_following_treatment_failure(self):
@@ -2745,6 +2755,9 @@ class HSI_Alri_Treatment(HSI_Event, IndividualScopeEventMixin):
             _ = self._get_cons('2nd_line_Antibiotic_therapy_for_severe_staph_pneumonia')
         else:
             _ = self._get_cons('Ceftriaxone_therapy_for_severe_pneumonia')
+
+        if _:
+            self.add_equipment({'Infusion pump', 'Drip stand'})
 
     def apply(self, person_id, squeeze_factor):
         """Assess and attempt to treat the person."""
