@@ -1098,12 +1098,11 @@ class CareOfWomenDuringPregnancy(Module):
         self.balance_energy_and_protein_supplementation(hsi_event=hsi_event)
         self.calcium_supplementation(hsi_event=hsi_event)
 
-    def check_anc1_can_run(self, individual_id, squeeze_factor, gest_age_next_contact):
+    def check_anc1_can_run(self, individual_id, gest_age_next_contact):
         """
         This function is called by the first ANC contact and runs a series of checks to determine if the HSI should run
         on the date it has been scheduled for
         :param individual_id: individual id
-        :param squeeze_factor: squeeze_factor of the HSI calling this function
         :param gest_age_next_contact: gestational age, in weeks, this woman is due to return for her next ANC
         :returns True/False as to whether the event can run
         """
@@ -1151,15 +1150,13 @@ class CareOfWomenDuringPregnancy(Module):
 
         return True
 
-    def check_subsequent_anc_can_run(self, individual_id, this_contact, this_visit_number, squeeze_factor,
+    def check_subsequent_anc_can_run(self, individual_id, this_visit_number,
                                      gest_age_next_contact):
         """
         This function is called by the subsequent ANC contacts and runs a series of checks to determine if the HSI
         should run on the date it has been scheduled for
         :param individual_id: individual id
-        :param this_contact: HSI object of the current ANC contact that needs to be rebooked
         :param this_visit_number: Number of the next ANC contact in the schedule
-        :param squeeze_factor: squeeze_factor of the HSI calling this function
         :param gest_age_next_contact: gestational age, in weeks, this woman is due to return for her next ANC
         :returns True/False as to whether the event can run
         """
