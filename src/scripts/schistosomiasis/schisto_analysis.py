@@ -35,7 +35,8 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     popsize = popsize
 
     # Establish the simulation object
-    seed = random.randint(0, 50000)
+    # seed = random.randint(0, 50000)
+    seed = 5
     sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules

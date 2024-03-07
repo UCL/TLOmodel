@@ -2501,57 +2501,57 @@ class HSI_Hiv_StartOrContinueTreatment(HSI_Event, IndividualScopeEventMixin):
             }
             logger.info(key='hiv_arv_NA', data=person_details_for_tx)
 
-        # As drugs were not available, the person will default to being off ART (...if they were on ART at the
-        # beginning of the HSI.)
-        # NB. If the person was not on ART at the beginning of the HSI, then there is no need to stop them (which
-        #  causes a new AIDSOnsetEvent to be scheduled.)
-        self.counter_for_drugs_not_available += 1  # The current appointment is included in the count.
+            # As drugs were not available, the person will default to being off ART (...if they were on ART at the
+            # beginning of the HSI.)
+            # NB. If the person was not on ART at the beginning of the HSI, then there is no need to stop them (which
+            #  causes a new AIDSOnsetEvent to be scheduled.)
+            self.counter_for_drugs_not_available += 1  # The current appointment is included in the count.
 
-        if art_status_at_beginning_of_hsi != "not":
-            self.module.stops_treatment(person_id)
+            if art_status_at_beginning_of_hsi != "not":
+                self.module.stops_treatment(person_id)
 
-        p = self.module.parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"]
+            p = self.module.parameters["probability_of_seeking_further_art_appointment_if_drug_not_available"]
 
-        if self.module.rng.random_sample() >= p:
+            if self.module.rng.random_sample() >= p:
 
-            # add in referral straight back to tx
-            # if defaulting, seek another treatment appointment in 6 months
-            self.sim.modules["HealthSystem"].schedule_hsi_event(
-                hsi_event=HSI_Hiv_StartOrContinueTreatment(
-                    person_id=person_id, module=self.module,
-                    facility_level_of_this_hsi="1a",
-                ),
-                topen=self.sim.date + pd.DateOffset(months=6),
-                priority=0,
-            )
-
-        else:
-            # If person 'decides to' seek another treatment appointment,
-            # schedule a new HSI appointment for next month
-            # NB. With a probability of 1.0, this will keep occurring,
-            # if person has already tried unsuccessfully to get ART at level 1a 2 times
-            #  then refer to level 1b
-            if self.counter_for_drugs_not_available <= 2:
-                # repeat attempt for ARVs at level 1a
+                # add in referral straight back to tx
+                # if defaulting, seek another treatment appointment in 6 months
                 self.sim.modules["HealthSystem"].schedule_hsi_event(
                     hsi_event=HSI_Hiv_StartOrContinueTreatment(
                         person_id=person_id, module=self.module,
-                        facility_level_of_this_hsi="1a"
+                        facility_level_of_this_hsi="1a",
                     ),
-                    topen=self.sim.date + pd.DateOffset(months=1),
+                    topen=self.sim.date + pd.DateOffset(months=6),
                     priority=0,
                 )
 
             else:
-                # refer to higher facility level
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=HSI_Hiv_StartOrContinueTreatment(
-                        person_id=person_id, module=self.module,
-                        facility_level_of_this_hsi="2"
-                    ),
-                    topen=self.sim.date + pd.DateOffset(days=1),
-                    priority=0,
-                )
+                # If person 'decides to' seek another treatment appointment,
+                # schedule a new HSI appointment for next month
+                # NB. With a probability of 1.0, this will keep occurring,
+                # if person has already tried unsuccessfully to get ART at level 1a 2 times
+                #  then refer to level 1b
+                if self.counter_for_drugs_not_available <= 2:
+                    # repeat attempt for ARVs at level 1a
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        hsi_event=HSI_Hiv_StartOrContinueTreatment(
+                            person_id=person_id, module=self.module,
+                            facility_level_of_this_hsi="1a"
+                        ),
+                        topen=self.sim.date + pd.DateOffset(months=1),
+                        priority=0,
+                    )
+
+                else:
+                    # refer to higher facility level
+                    self.sim.modules["HealthSystem"].schedule_hsi_event(
+                        hsi_event=HSI_Hiv_StartOrContinueTreatment(
+                            person_id=person_id, module=self.module,
+                            facility_level_of_this_hsi="2"
+                        ),
+                        topen=self.sim.date + pd.DateOffset(days=1),
+                        priority=0,
+                    )
 
         # also screen for tb
         if "Tb" in self.sim.modules:
