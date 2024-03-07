@@ -766,6 +766,11 @@ class Hiv(Module):
         # this window is 1-90 days (3-monthly prescribing)
         for person in art_idx:
             days = self.rng.randint(low=1, high=self.parameters['dispensation_period_months'] * 30.5, dtype=np.int64)
+
+            date_treated = (params['dispensation_period_months'] * 30.5) - days
+            df.at[person, "hv_date_treated"] = self.sim.date - pd.to_timedelta(date_treated, unit="days")
+            df.at[person, "hv_date_last_ART"] = self.sim.date - pd.to_timedelta(date_treated, unit="days")
+
             self.sim.schedule_event(
                 Hiv_DecisionToContinueTreatment(person_id=person, module=self),
                 self.sim.date + pd.to_timedelta(days, unit="days"),
