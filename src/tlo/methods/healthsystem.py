@@ -521,6 +521,7 @@ class HSI_Event:
             equipment=(tuple(sorted(self.EQUIPMENT)))
         )
 
+
 class HSIEventWrapper(Event):
     """This is wrapper that contains an HSI event.
 

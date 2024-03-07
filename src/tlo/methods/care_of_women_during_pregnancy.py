@@ -139,9 +139,6 @@ class CareOfWomenDuringPregnancy(Module):
         'specificity_blood_test_syphilis': Parameter(
             Types.LIST, 'specificity of a blood test to detect syphilis'),
 
-        'squeeze_threshold_for_delay_three_an': Parameter(
-            Types.LIST, 'squeeze factor value over which an individual within a antenatal HSI is said to experience '
-                        'type 3 delay i.e. delay in receiving appropriate care'),
     }
 
     PROPERTIES = {
@@ -1150,8 +1147,7 @@ class CareOfWomenDuringPregnancy(Module):
 
         return True
 
-    def check_subsequent_anc_can_run(self, individual_id, this_visit_number,
-                                     gest_age_next_contact):
+    def check_subsequent_anc_can_run(self, individual_id, this_visit_number, gest_age_next_contact):
         """
         This function is called by the subsequent ANC contacts and runs a series of checks to determine if the HSI
         should run on the date it has been scheduled for
@@ -1267,9 +1263,9 @@ class CareOfWomenDuringPregnancy(Module):
         df = self.sim.population.props
 
         # Calculate the approximate dose for the remainder of pregnancy and check availability
-        dose = self.get_approx_days_of_pregnancy(individual_id) * 4
-        cons = {_i: dose for _i in self.item_codes_preg_consumables['oral_antihypertensives']}
-        avail = hsi_event.get_consumables(item_codes=cons)
+        avail = pregnancy_helper_functions.return_cons_avail(
+            self, hsi_event, self.item_codes_preg_consumables, core='oral_antihypertensives',
+            number=(self.get_approx_days_of_pregnancy(individual_id) * 4))
 
         # If the consumables are available then the woman is started on treatment
         if avail:
