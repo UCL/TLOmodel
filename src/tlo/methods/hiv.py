@@ -187,6 +187,9 @@ class Hiv(Module):
         "rr_edlevel_higher": Parameter(
             Types.REAL, "Relative risk of HIV with higher education"
         ),
+        "rr_schisto": Parameter(
+            Types.REAL, "Relative risk of HIV with high intensity S. haematobium infection"
+        ),
         # Natural history - transmission - relative risk of HIV acquisition (interventions)
         "rr_behaviour_change": Parameter(
             Types.REAL, "Relative risk of HIV with behaviour modification"
@@ -447,7 +450,7 @@ class Hiv(Module):
         # ---- LINEAR MODELS -----
         # LinearModel for the relative risk of becoming infected during the simulation
         # N.B. age assumed not to have an effect on incidence
-        self.lm["rr_of_infection"] = LinearModel.multiplicative(
+        predictors = [
             Predictor("age_years").when("<15", 0.0).when("<49", 1.0).otherwise(0.0),
             Predictor("sex").when("F", p["rr_sex_f"]),
             Predictor("li_is_circ").when(True, p["rr_circumcision"]),
@@ -462,8 +465,15 @@ class Hiv(Module):
             Predictor("li_ed_lev", conditions_are_mutually_exclusive=True)
             .when(2, p["rr_edlevel_primary"])
             .when(3, p["rr_edlevel_secondary"]),
-            Predictor("hv_behaviour_change").when(True, p["rr_behaviour_change"]),
-        )
+            Predictor("hv_behaviour_change").when(True, p["rr_behaviour_change"])
+        ]
+
+        conditional_predictors = [
+            Predictor('ss_sh_infection_status').when('High-infection', p['rr_schisto']),
+        ] if "Schisto" in self.sim.modules else []
+
+        self.lm["rr_of_infection"] = LinearModel.multiplicative(
+            *(predictors + conditional_predictors))
 
         # LinearModels to give the shape and scale for the Weibull distribution describing time from infection to death
         self.lm["scale_parameter_for_infection_to_death"] = LinearModel.multiplicative(
@@ -1934,16 +1944,21 @@ class HivAidsTbDeathEvent(Event, IndividualScopeEventMixin):
 
     def apply(self, person_id):
         df = self.sim.population.props
+        p = self.sim.modules["Hiv"].parameters
 
         # Check person is_alive
         if not df.at[person_id, "is_alive"]:
             return
 
         if df.at[person_id, 'tb_on_treatment']:
-            prob = self.module.rng.rand()
+
+            risk_of_death = p["aids_tb_treatment_adjustment"]
+
+            if "CardioMetabolicDisorders" in self.sim.modules and df.at[person_id, "nc_diabetes"]:
+                risk_of_death *= self.sim.modules["Tb"].parameters["rr_death_diabetes"]
 
             # treatment adjustment reduces probability of death
-            if prob < self.sim.modules["Hiv"].parameters["aids_tb_treatment_adjustment"]:
+            if self.module.rng.rand() < risk_of_death:
                 self.sim.modules["Demography"].do_death(
                     individual_id=person_id,
                     cause="AIDS_TB",
