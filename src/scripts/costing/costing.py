@@ -1,5 +1,8 @@
 import argparse
 from pathlib import Path
+from tlo import Date
+from collections import Counter, defaultdict
+
 import calendar
 import datetime
 import os
@@ -33,6 +36,14 @@ path_for_new_resourcefiles = resourcefilepath / "healthsystem/consumables"
 costing_outputs_folder = Path('./outputs/costing')
 if not os.path.exists(costing_outputs_folder):
     os.makedirs(costing_outputs_folder)
+
+# Declare period for which the results will be generated (defined inclusively)
+TARGET_PERIOD = (Date(2020, 1, 1), Date(2025, 12, 31))
+
+
+def drop_outside_period(_df):
+    """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
+    return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
 
 # %% Gathering basic information
 
@@ -93,6 +104,71 @@ salary_for_required_staff['Total_salary_by_cadre_and_level'] = salary_for_requir
 
 # Create a dataframe to store economic costs
 scenario_cost_economic = pd.DataFrame({'HR': salary_for_required_staff['Total_salary_by_cadre_and_level'].sum()}, index=[0])
+
+# 1. Consumables cost
+# 2.1 Consumables cost - Financial (What needs to be purchased given what is made available)
+_df = log['tlo.methods.healthsystem']['Consumables']
+
+counts_of_available = defaultdict(int)
+counts_of_not_available = defaultdict(int)
+for _, row in _df.iterrows():
+    for item, num in eval(row['Item_Available']).items():
+        counts_of_available[item] += num
+    for item, num in eval(row['Item_NotAvailable']).items():
+        counts_of_not_available[item] += num
+consumables_count_df = pd.concat(
+        {'Available': pd.Series(counts_of_available), 'Not_Available': pd.Series(counts_of_not_available)},
+        axis=1
+    ).fillna(0).astype(int).stack()
+
+# Load consumables cost data
+unit_price_consumable = workbook_cost["consumables"][['Item_Code', 'Chosen_price_per_unit (USD)', 'Number of units needed per HSI']]
+unit_price_consumable = unit_price_consumable.set_index('Item_Code').to_dict(orient='index')
+
+# Multiply number of items needed by cost of consumable
+cost_of_consumables_dispensed = dict(zip(unit_price_consumable, (unit_price_consumable[key]['Chosen_price_per_unit (USD)'] *
+                                                unit_price_consumable[key]['Number of units needed per HSI'] *
+                                                counts_of_available[key] for key in unit_price_consumable)))
+total_cost_of_consumables_dispensed = sum(value for value in cost_of_consumables_dispensed.values() if not np.isnan(value))
+
+
+# But all we have are the number of HSIs for which the consumable was needed
+# Do we need to depend on the model to give the number of consumables dispensed? or just based this on number of treatment Ids successfully delivered?
+# Ensure that expected units per case are expected units per HSI
+# check costs - 0 costs, too high, nans; Get units per HSI from Emi's file?
+
+
+def get_counts_of_items_requested(_df):
+    _df = drop_outside_period(_df)
+    counts_of_available = defaultdict(int)
+    counts_of_not_available = defaultdict(int)
+    for _, row in _df.iterrows():
+        for item, num in eval(row['Item_Available']).items():
+            counts_of_available[item] += num
+        for item, num in eval(row['Item_NotAvailable']).items():
+            counts_of_not_available[item] += num
+    return pd.concat(
+        {'Available': pd.Series(counts_of_available), 'Not_Available': pd.Series(counts_of_not_available)},
+        axis=1
+    ).fillna(0).astype(int).stack()
+
+
+cons_req = summarize(
+    extract_results(
+        results_folder,
+        module='tlo.methods.healthsystem',
+        key='Consumables',
+        custom_generate_series=get_counts_of_items_requested,
+        do_scaling=True
+    ),
+    only_mean=True,
+    collapse_columns=True)
+
+
+
+
+# 2.2 Consumables cost - Economic (Level of consumables needed to meet the demand of all patients coming in contact with the health system)
+
 
 # Compare financial costs with actual budget data
 ####################################################
