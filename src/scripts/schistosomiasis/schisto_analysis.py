@@ -3,6 +3,7 @@ it does not run in full."""
 
 import datetime
 from pathlib import Path
+import random
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -12,29 +13,70 @@ from matplotlib.dates import DateFormatter
 
 from tlo import Date, Simulation, logging
 from tlo.analysis.utils import parse_log_file
-from tlo.methods import contraception, demography, healthburden, healthsystem, schisto
-
+from tlo.methods import (
+    demography,
+    enhanced_lifestyle,
+    epi,
+    healthburden,
+    healthseekingbehaviour,
+    healthsystem,
+    hiv,
+    schisto,
+    simplified_births,
+    symptommanager,
+    tb,
+)
 
 def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     # The resource files
     resourcefilepath = Path("./resources")
     start_date = Date(2010, 1, 1)
-    end_date = Date(2011, 2, 1)
+    end_date = Date(2011, 1, 1)
     popsize = popsize
 
     # Establish the simulation object
-    sim = Simulation(start_date=start_date)
+    seed = random.randint(0, 50000)
+    sim = Simulation(start_date=start_date, seed=seed)
 
     # Register the appropriate modules
-    sim.register(demography.Demography(resourcefilepath=resourcefilepath))
-    sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
-    sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
-    sim.register(contraception.Contraception(resourcefilepath=resourcefilepath))
-    sim.register(schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute))
-    if haem:
-        sim.register(schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
-    if mansoni:
-        sim.register(schisto.Schisto_Mansoni(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
+    # sim.register(demography.Demography(resourcefilepath=resourcefilepath))
+    # sim.register(simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath)),
+    # sim.register(healthsystem.HealthSystem(resourcefilepath=resourcefilepath))
+    # sim.register(healthburden.HealthBurden(resourcefilepath=resourcefilepath))
+    # sim.register(schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute))
+    # if haem:
+    #     sim.register(schisto.Schisto_Haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
+    # if mansoni:
+    #     sim.register(schisto.Schisto_Mansoni(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
+
+    sim.register(
+        demography.Demography(resourcefilepath=resourcefilepath),
+        simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+        enhanced_lifestyle.Lifestyle(resourcefilepath=resourcefilepath),
+        healthsystem.HealthSystem(
+            resourcefilepath=resourcefilepath,
+            service_availability=["*"],  # all treatment allowed
+            mode_appt_constraints=1,  # mode of constraints to do with officer numbers and time
+            cons_availability="default",  # mode for consumable constraints (if ignored, all consumables available)
+            ignore_priority=False,  # do not use the priority information in HSI event to schedule
+            capabilities_coefficient=1.0,  # multiplier for the capabilities of health officers
+            use_funded_or_actual_staffing="actual",  # actual: use numbers/distribution of staff available currently
+            disable=False,  # disables the healthsystem (no constraints and no logging) and every HSI runs
+            disable_and_reject_all=False,  # disable healthsystem and no HSI runs
+        ),
+        symptommanager.SymptomManager(resourcefilepath=resourcefilepath),
+        healthseekingbehaviour.HealthSeekingBehaviour(resourcefilepath=resourcefilepath),
+        healthburden.HealthBurden(resourcefilepath=resourcefilepath),
+        epi.Epi(resourcefilepath=resourcefilepath),
+        hiv.Hiv(resourcefilepath=resourcefilepath, run_with_checks=False),
+        tb.Tb(resourcefilepath=resourcefilepath),
+        schisto.Schisto(resourcefilepath=resourcefilepath, mda_execute=mda_execute),
+    )
+
+    # if haem:
+    #     sim.register(schisto.Schisto_haematobium(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
+    # if mansoni:
+    #     sim.register(schisto.Schisto_mansoni(resourcefilepath=resourcefilepath, symptoms_and_HSI=False))
 
     # Sets all modules to WARNING threshold, then alters schisto to INFO
     custom_levels = {"*": logging.WARNING,
@@ -43,8 +85,6 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     # configure logging after registering modules with custom levels
     logfile = sim.configure_logging(filename="LogFile", custom_levels=custom_levels)
 
-    # Run the simulation
-    sim.seed_rngs(int(np.random.uniform(0, 1) * 0 + 1000))
     # initialise the population
     sim.make_initial_population(n=popsize)
 
@@ -55,7 +95,7 @@ def run_simulation(popsize=10000, haem=True, mansoni=True, mda_execute=True):
     return sim, output
 
 
-sim, output = run_simulation(popsize=10000, haem=True, mansoni=False, mda_execute=False)
+sim, output = run_simulation(popsize=1000, haem=True, mansoni=False, mda_execute=False)
 
 # ---------------------------------------------------------------------------------------------------------
 #   Saving the results - prevalence, mwb, dalys and parameters used
@@ -75,7 +115,7 @@ print(timestamp)
 
 
 def save_inf_outputs(infection, save_the_districts=False):
-    output_path = 'C:/Users/ieh19/Desktop/Project 1/model_outputs/'
+    output_path = Path("./outputs/schisto")
     savepath = output_path + "output_" + infection + '_' + timestamp + ".csv"
     savepath_districts_prev = output_path + "output_districts_prev_" + infection + '_' + timestamp + ".csv"
 
@@ -104,7 +144,7 @@ def save_inf_outputs(infection, save_the_districts=False):
 
 
 def save_general_outputs_and_params():
-    output_path = 'C:/Users/ieh19/Desktop/Project 1/model_outputs/'
+    output_path = Path("./outputs/schisto")
     # savepath = output_path + "output_Total" + '_' + timestamp + ".csv"
     savepath_full_pop = output_path + "output_population_" + timestamp + ".csv"
     savepath_prevalent_years = output_path + "output_prevalent_years_" + timestamp + ".csv"
@@ -142,9 +182,11 @@ def save_general_outputs_and_params():
 save_inf_outputs('Haematobium', True)
 # save_inf_outputs('Mansoni', False)
 save_general_outputs_and_params()
+
 # ---------------------------------------------------------------------------------------------------------
 #   INSPECTING & PLOTTING
 # ---------------------------------------------------------------------------------------------------------
+
 df = sim.population.props
 df = df[df['is_alive']]
 df = df[df['district_of_residence'].isin(['Blantyre', 'Chiradzulu', 'Mulanje', 'Nsanje', 'Nkhotakota', 'Phalombe'])]
