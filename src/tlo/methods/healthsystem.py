@@ -1466,12 +1466,7 @@ class HealthSystem(Module):
 
     def get_essential_equip_availability(self, essential_equip_set: Set[int]) -> bool:
         # True if all items of essential equipment available
-        if essential_equip_set:
-            for item_code in essential_equip_set:
-                if not self.get_equip_item_availability(item_code):
-                    return False
-            return True
-        return True
+        return all(self.get_equip_item_availability(item_code) for item_code in essential_equip_set)
 
     def schedule_to_call_never_ran_on_date(self, hsi_event: 'HSI_Event', tdate: datetime.datetime):
         """Function to schedule never_ran being called on a given date"""
@@ -2646,8 +2641,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         out_of_resources = \
                             not self.module.sim.modules['HealthSystem'].get_essential_equip_availability(
                                 next_event_tuple.hsi_event.ESSENTIAL_EQUIPMENT
-                            )
-                        # True if any of essential equipment unavailable
+                            )  # True if any of essential equipment unavailable
                         for officer, call in original_call.items():
                             # If any of the officers are not available, then out of resources
                             if officer not in set_capabilities_still_available:
