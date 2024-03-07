@@ -51,8 +51,8 @@ params = extract_params(results_folder)
 
 # 1. HR cost
 # 1.1 HR Cost - Financial (Given the staff available)
-# Annual salary by officer type and facility level
-workbook_cost = pd.read_excel((resourcefilepath / "ResourceFile_Costing.xlsx"),
+# Load annual salary by officer type and facility level
+workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
                                     sheet_name = None)
 hr_annual_salary = workbook_cost["human_resources"]
 hr_annual_salary['OfficerType_FacilityLevel'] = 'Officer_Type=' + hr_annual_salary['Officer_Category'].astype(str) + '|Facility_Level=' + hr_annual_salary['Facility_Level'].astype(str)
@@ -68,29 +68,31 @@ else:
     current_staff_count = pd.read_csv(
         resourcefilepath / 'healthsystem'/ 'human_resources' / f'{hr_scenario}' / 'ResourceFile_Daily_Capabilities.csv')
 
-    current_staff_count_by_level_and_officer_type = current_staff_count.groupby(['Facility_Level', 'Officer_Category'])[
-        'Staff_Count'].sum().reset_index()
+current_staff_count_by_level_and_officer_type = current_staff_count.groupby(['Facility_Level', 'Officer_Category'])[
+    'Staff_Count'].sum().reset_index()
 
-salary_actualstaff_df = pd.merge(hr_annual_salary, current_staff_count_by_level_and_officer_type, on = ['Officer_Category', 'Facility_Level'])
-salary_actualstaff_df['Total_salary_by_cadre_and_level'] = salary_actualstaff_df['Salary_USD'] * salary_actualstaff_df['Staff_Count']
+# Calculate salary cost for modelled health workforce (Staff count X Annual salary)
+salary_for_modelled_staff = pd.merge(hr_annual_salary, current_staff_count_by_level_and_officer_type, on = ['Officer_Category', 'Facility_Level'])
+salary_for_modelled_staff['Total_salary_by_cadre_and_level'] = salary_for_modelled_staff['Salary_USD'] * salary_for_modelled_staff['Staff_Count']
 
 # Create a dataframe to store financial costs
-scenario_cost_financial = pd.DataFrame({'HR': salary_actualstaff_df['Total_salary_by_cadre_and_level'].sum()}, index=[0])
+scenario_cost_financial = pd.DataFrame({'HR': salary_for_modelled_staff['Total_salary_by_cadre_and_level'].sum()}, index=[0])
 
 # 1.2 HR Cost - Economic (Staff needed for interventions delivered in the simulation)
-# For total HR cost, multiply above with total capabilities X 'Frac_Time_Used_By_OfficerType' by facility leve
-# Use log['tlo.methods.population']['scaling_factor']
+# For HR required, multiply above with total capabilities X 'Frac_Time_Used_By_OfficerType' by facility level
 frac_time_used_by_officer_type = pd.DataFrame(log['tlo.methods.healthsystem']['Capacity']['Frac_Time_Used_By_OfficerType'].to_list())
 aggregate_frac_time_used_by_officer_type = pd.DataFrame(frac_time_used_by_officer_type.sum(axis=0))/len(frac_time_used_by_officer_type)
 aggregate_frac_time_used_by_officer_type.columns = ['Value']
 aggregate_frac_time_used_by_officer_type['OfficerType_FacilityLevel'] = aggregate_frac_time_used_by_officer_type.index
 
-salary_staffneeded_df = pd.merge(hr_annual_salary, aggregate_frac_time_used_by_officer_type, on = ['OfficerType_FacilityLevel'])
-salary_staffneeded_df = pd.merge(salary_staffneeded_df, current_staff_count_by_level_and_officer_type, on = ['Officer_Category', 'Facility_Level'])
-salary_staffneeded_df['Total_salary_by_cadre_and_level'] = salary_staffneeded_df['Salary_USD'] * salary_staffneeded_df['Value'] * salary_staffneeded_df['Staff_Count']
+salary_for_required_staff = pd.merge(hr_annual_salary, aggregate_frac_time_used_by_officer_type, on = ['OfficerType_FacilityLevel'])
+salary_for_required_staff = pd.merge(salary_for_required_staff, current_staff_count_by_level_and_officer_type, on = ['Officer_Category', 'Facility_Level'])
+
+# Calculate salary cost for required  health workforce (Staff count X Fraction of staff time needed X Annual salary)
+salary_for_required_staff['Total_salary_by_cadre_and_level'] = salary_for_required_staff['Salary_USD'] * salary_for_required_staff['Value'] * salary_for_required_staff['Staff_Count']
 
 # Create a dataframe to store economic costs
-scenario_cost_economic = pd.DataFrame({'HR': salary_staffneeded_df['Total_salary_by_cadre_and_level'].sum()}, index=[0])
+scenario_cost_economic = pd.DataFrame({'HR': salary_for_required_staff['Total_salary_by_cadre_and_level'].sum()}, index=[0])
 
 # Compare financial costs with actual budget data
 ####################################################
@@ -146,10 +148,6 @@ plt.xlabel('Facility_Level')
 plt.ylabel('Total Salary')
 plt.title('Total Salary by Facility_Level')
 plt.savefig(costing_outputs_folder /  'total_salary_by_level.png')
-
-# TODO Disaggregate by district using 'Frac_Time_Used_By_Facility_ID'
-# TODO Disaggregate by Treatment_ID - will need this for cost-effectiveness estimates - current log does not provide this
-# TODO Add economic cost to figure?
 
 # Consumables
 log['tlo.methods.healthsystem']['Consumables']
