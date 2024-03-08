@@ -2254,8 +2254,10 @@ def test_const_HR_scaling_assumption(seed, tmpdir):
             healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
         )
         sim.modules['HealthSystem'].parameters['const_HR_scaling_mode'] = const_HR_scaling_mode
+        sim.modules['HealthSystem'].parameters['year_const_HR_scaling'] = 2010
         sim.make_initial_population(n=100)
-        sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+        # Days ran need to be offset by 1 in order for event on 2010,1,1 to take place - why?
+        sim.simulate(end_date=start_date + pd.DateOffset(days=1))
 
         return sim.modules['HealthSystem'].capabilities_today
 
