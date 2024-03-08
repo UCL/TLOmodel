@@ -1083,9 +1083,9 @@ class HealthSystem(Module):
         const_HR_scaling_factor = self.parameters['const_HR_scaling_table'][self.parameters['const_HR_scaling_mode']]
         const_HR_scaling_factor = const_HR_scaling_factor.set_index('Officer_Category')
 
-        level_conversion = {"1a": "L1a_Av_Mins_Per_Day", "1b": "L1b_Av_Mins_Per_Day",
-                            "2": "L2_Av_Mins_Per_Day", "0": "L0_Av_Mins_Per_Day", "3": "L3_Av_Mins_Per_Day",
-                            "4": "L4_Av_Mins_Per_Day", "5": "L5_Av_Mins_Per_Day"}
+        level_conversion = {"1a": "L1a_factor", "1b": "L1b_factor",
+                            "2": "L2_factor", "0": "L0_factor", "3": "L3_factor",
+                            "4": "L4_factor", "5": "L5_factor"}
 
         scaler = df[['Officer_Category', 'Facility_Level']].apply(
             lambda row: const_HR_scaling_factor.loc[row['Officer_Category'], level_conversion[row['Facility_Level']]],
