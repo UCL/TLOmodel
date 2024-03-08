@@ -2300,8 +2300,10 @@ def test_dynamic_HR_scaling(seed, tmpdir):
             simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
 
         )
-        sim.modules['HealthSystem'].parameters['dynamic_HR_scaling_factor'] = dynamic_HR_scaling_factor
-        sim.modules['HealthSystem'].parameters['scale_HR_by_popsize'] = scale_HR_by_pop_size
+        params = sim.modules['HealthSystem'].parameters
+        df = params['yearly_HR_scaling'][params['yearly_HR_scaling_mode']]
+        df.loc[df['year'] == 2010, 'dynamic_HR_scaling_factor'] = dynamic_HR_scaling_factor
+        df.loc[df['year'] == 2010, 'scale_HR_by_popsize'] = scale_HR_by_pop_size
         sim.make_initial_population(n=100)
 
         # Ensure simulation lasts long enough so that current capabilities reflect that used in the third year of
