@@ -1109,7 +1109,20 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         self.TREATMENT_ID = "Contraception_Routine"
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
-        self.set_equipment_essential_to_run_event({''})
+
+        # Set essential equipment based on the contraception method
+        if new_contraceptive == 'female_sterilization':
+            self.set_equipment_essential_to_run_event({
+                'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise'
+            })
+            # + 'Minor Surgery' pkg
+            # TODO: How to set pkg as essential?
+        elif new_contraceptive == 'IUD':
+            self.set_equipment_essential_to_run_event({
+                'Cusco’s/ bivalved Speculum (small, medium, large)', 'Sponge Holding Forceps'
+            })
+        else:
+            self.set_equipment_essential_to_run_event({''})
 
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
