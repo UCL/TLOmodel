@@ -71,21 +71,19 @@ class HSI_Event:
     Concrete subclasses should also inherit from one of the EventMixin classes
     defined below, and implement at least an `apply` and `did_not_run` method.
     """
-
-    # Information received about this HSI:
-    _received_info_about_bed_days: Dict[str, Union[float, int]] = None
-    expected_time_requests: Counter = {}
-    facility_info: FacilityInfo = None
-
+    
     module: "Module"
-    target: int = None  # Will be overwritten by the mixin on derived classes
+    target: int # Will be overwritten by the mixin on derived classes
 
-    # Default values for documentation
-    TREATMENT_ID: str = ""
-    ACCEPTED_FACILITY_LEVEL: str = None
+    TREATMENT_ID: str
+    ACCEPTED_FACILITY_LEVEL: str
     # These values need to be set at runtime as they depend on the modules
     # which have been loaded.
     BEDDAYS_FOOTPRINT: Dict[str, Union[float, int]]
+    
+    _received_info_about_bed_days: Dict[str, Union[float, int]] = None
+    expected_time_requests: Counter = {}
+    facility_info: FacilityInfo = None
 
     def __init__(self, module, *args, **kwargs):
         """Create a new event.
@@ -98,8 +96,15 @@ class HSI_Event:
             constructor, but may also take further keyword arguments.
         """
         self.module = module
-        super().__init__(*args, **kwargs)  # Call the mixin's constructors
+        super().__init__(*args, **kwargs)
 
+        # Information that will later be received about this HSI
+        self._received_info_about_bed_days = None
+        self.expected_time_requests = {}
+        self.facility_info = None
+
+        self.TREATMENT_ID = ""
+        self.ACCEPTED_FACILITY_LEVEL = None
         # Set "dynamic" default value
         self.BEDDAYS_FOOTPRINT = self.make_beddays_footprint({})
 

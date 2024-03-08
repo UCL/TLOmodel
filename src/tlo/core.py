@@ -4,10 +4,9 @@ This contains things that didn't obviously go in their own file, such as
 specification for parameters and properties, and the base Module class for
 disease modules.
 """
-
 import json
+import typing
 from enum import Enum, auto
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -23,7 +22,6 @@ class Types(Enum):
     sex where there are a fixed number of options to choose from. The LIST type is used
     for properties where the value is a collection, e.g. the set of children of a person.
     """
-
     DATE = auto()
     BOOL = auto()
     INT = auto()
@@ -42,16 +40,16 @@ class Specifiable:
     # Map our Types to pandas dtype specifications
     # Individuals have Property. Property Types map to Pandas dtypes
     PANDAS_TYPE_MAP = {
-        Types.DATE: "datetime64[ns]",
+        Types.DATE: 'datetime64[ns]',
         Types.BOOL: bool,
-        Types.INT: "int64",
+        Types.INT: 'int64',
         Types.REAL: float,
-        Types.CATEGORICAL: "category",
+        Types.CATEGORICAL: 'category',
         Types.LIST: object,
         Types.SERIES: object,
         Types.DATA_FRAME: object,
         Types.STRING: object,
-        Types.DICT: object,
+        Types.DICT: object
     }
 
     # Map our Types to Python types
@@ -66,7 +64,7 @@ class Specifiable:
         Types.SERIES: pd.Series,
         Types.DATA_FRAME: pd.DataFrame,
         Types.STRING: object,
-        Types.DICT: dict,
+        Types.DICT: dict
     }
 
     def __init__(self, type_, description, categories=None):
@@ -102,9 +100,9 @@ class Specifiable:
         delimiter = " === "
 
         if self.type_ == Types.CATEGORICAL:
-            return f"{self.type_.name}{delimiter}{self.description} (Possible values are: {self.categories})"
+            return f'{self.type_.name}{delimiter}{self.description} (Possible values are: {self.categories})'
 
-        return f"{self.type_.name}{delimiter}{self.description}"
+        return f'{self.type_.name}{delimiter}{self.description}'
 
 
 class Parameter(Specifiable):
@@ -231,7 +229,7 @@ class Module:
 
     # The explicit attributes of the module. We list these to distinguish dynamic
     # parameters created from the PARAMETERS specification.
-    __slots__ = ("name", "parameters", "rng", "sim")
+    __slots__ = ('name', 'parameters', 'rng', 'sim')
 
     def __init__(self, name=None):
         """Construct a new disease module ready to be included in a simulation.
@@ -242,7 +240,7 @@ class Module:
         :param name: the name to use for this module. Defaults to the concrete subclass' name.
         """
         self.parameters = {}
-        self.rng: Optional[np.random.RandomState] = None
+        self.rng: typing.Optional[np.random.RandomState] = None
         self.name = name or self.__class__.__name__
         self.sim = None
 
@@ -264,8 +262,8 @@ class Module:
 
         :param DataFrame resource: DataFrame with a column of the parameter_name and a column of `value`
         """
-        resource.set_index("parameter_name", inplace=True)
-        skipped_data_types = ("DATA_FRAME", "SERIES")
+        resource.set_index('parameter_name', inplace=True)
+        skipped_data_types = ('DATA_FRAME', 'SERIES')
         # for each supported parameter, convert to the correct type
         for parameter_name in resource.index[resource.index.notnull()]:
             parameter_definition = self.PARAMETERS[parameter_name]
@@ -274,7 +272,7 @@ class Module:
                 continue
 
             # For each parameter, raise error if the value can't be coerced
-            parameter_value = resource.at[parameter_name, "value"]
+            parameter_value = resource.at[parameter_name, 'value']
             error_message = (
                 f"The value of '{parameter_value}' for parameter '{parameter_name}' "
                 f"could not be parsed as a {parameter_definition.type_.name} data type"
@@ -285,31 +283,18 @@ class Module:
                     # because it raises error instead of joining two strings without a comma
                     parameter_value = json.loads(parameter_value)
                     assert isinstance(parameter_value, list)
-                except (
-                    json.decoder.JSONDecodeError,
-                    TypeError,
-                    AssertionError,
-                ) as exception:
+                except (json.decoder.JSONDecodeError, TypeError, AssertionError) as exception:
                     raise ValueError(error_message) from exception
             elif parameter_definition.python_type == pd.Categorical:
                 categories = parameter_definition.categories
-                assert (
-                    parameter_value in categories
-                ), f"{error_message}\nvalid values: {categories}"
-                parameter_value = pd.Categorical(
-                    [parameter_value], categories=categories
-                )
-            elif parameter_definition.type_.name == "STRING":
+                assert parameter_value in categories, f"{error_message}\nvalid values: {categories}"
+                parameter_value = pd.Categorical([parameter_value], categories=categories)
+            elif parameter_definition.type_.name == 'STRING':
                 parameter_value = parameter_value.strip()
-            elif parameter_definition.type_.name == "BOOL":
-                parameter_value = (
-                    False
-                    if (
-                        parameter_value in (0, "0", None, "FALSE", "False", "false")
-                        or pd.isna(parameter_value)
-                    )
-                    else True
-                )
+            elif parameter_definition.type_.name == 'BOOL':
+                parameter_value = False if (
+                    parameter_value in (0, '0', None, 'FALSE', 'False', 'false') or pd.isna(parameter_value)
+                ) else True
             else:
                 # All other data types, assign to the python_type defined in Parameter class
                 try:
