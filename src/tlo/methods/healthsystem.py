@@ -1460,7 +1460,7 @@ class HealthSystem(Module):
     def get_equip_item_availability(self, equip_item_code: str) -> bool:
         # TODO: update with implementation of essential equipment availability for the HSI event to run
         #  for now, always available
-        if equip_item_code == 243:
+        if equip_item_code in [243, 41]:
             return False
         return True  # True of False
 
