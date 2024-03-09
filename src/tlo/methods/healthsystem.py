@@ -2902,7 +2902,7 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
         self.module._daily_capabilities *= self.current_dynamic_HR_scaling_factor
 
         # Rescale daily capabilities by population size, if this option is included
-        if self.current_scale_HR_by_popsize == True:
+        if self.current_scale_HR_by_popsize is True:
             self.module._daily_capabilities *= this_year_pop_size/self.last_year_pop_size
 
         self.last_year_pop_size = this_year_pop_size   # Save for next year
