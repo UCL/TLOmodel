@@ -590,7 +590,7 @@ class SchistoSpecies:
         }
 
     def _assign_initial_harbouring_rate(self, population) -> None:
-        """Assign a harbouring rate to every individual in the initial populattion (based on their district of
+        """Assign a harbouring rate to every individual in the initial population (based on their district of
         residence)."""
         df = population.props
         prop = self.prefix_species_property
@@ -689,9 +689,13 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         df = population.props
         params = self.species.params
         rng = self.module.rng
+        # prop calls the property starting with the prefix species property, i.e. ss_sm or ss_sh
         prop = self.species.prefix_species_property
 
+        # betas (exposure rates) are fixed for each age-group
+        # exposure rates determine contribution to transmission and acquisition risk
         betas = [params['beta_PSAC'], params['beta_SAC'], params['beta_Adults']]
+        # R0 is district-specific and fixed
         R0 = params['R0']
 
         where = df.is_alive
@@ -701,16 +705,26 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         beta_by_age_group = pd.Series(betas, index=['PSAC', 'SAC', 'Adults'])
         beta_by_age_group.index.name = 'age_group'
 
-        # get the size of reservoir per district
+        # --------------------- get the size of reservoir per district ---------------------
+        # returns the mean worm burden and the total worm burden by age and district
         mean_count_burden_district_age_group = df.loc[where].groupby(['district_of_residence', age_group])[
             prop('aggregate_worm_burden')].agg([np.mean, np.size])
+        # get population size by district
         district_count = df.loc[where].groupby(by='district_of_residence')['district_of_residence'].count()
+        # mean worm burden by age multiplied by exposure rates of each age-gp
         beta_contribution_to_reservoir = mean_count_burden_district_age_group['mean'] * beta_by_age_group
+        # weighted mean of the worm burden, considering the size of each age-gp in district
         to_get_weighted_mean = mean_count_burden_district_age_group['size'] / district_count
+
+        # weighted mean worm burden * exposure rates -> age-specific contribution to reservoir
         age_worm_burden = beta_contribution_to_reservoir * to_get_weighted_mean
+        # sum all contributions to district reservoir of infection
         reservoir = age_worm_burden.groupby(['district_of_residence']).sum()
 
-        # harbouring new worms
+        # --------------------- harbouring new worms ---------------------
+        # the harbouring rates are randomly assigned to each individual
+        # using a gamma distribution to reflect clustering of worms in high-risk people
+        # this is not age-specific
         contact_rates = age_group.map(beta_by_age_group).astype(float)
         harbouring_rates = df.loc[where, prop('harbouring_rate')]
         rates = harbouring_rates * contact_rates
@@ -722,7 +736,9 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
             index=df.index[where]
         )
 
-        # density dependent establishment
+        # density dependent establishment of new worms
+        # establishment of new worms dependent on number of worms currently in host * worm fecundity
+        # limits numbers of worms harboured by each individual
         param_worm_fecundity = params['worms_fecundity']
         established = self.module.rng.random_sample(size=sum(where)) < np.exp(
             df.loc[where, prop('aggregate_worm_burden')] * -param_worm_fecundity
@@ -730,6 +746,8 @@ class SchistoInfectionWormBurdenEvent(RegularEvent, PopulationScopeEventMixin):
         to_establish = draw_worms[(draw_worms > 0) & established].to_dict()
 
         # schedule maturation of the established worms
+        # at this point, the person has become infected but this is not recorded until the worms mature
+        # no indicator for person harbouring only juvenile worms
         for person_id, num_new_worms in to_establish.items():
             date_of_maturation = random_date(self.sim.date + pd.DateOffset(days=30),
                                              self.sim.date + pd.DateOffset(days=55), rng)

@@ -39,14 +39,14 @@ species = ('mansoni', 'haematobium')
 
 
 # %% Run the simulation
-popsize = 10_000
+popsize = 30_000
 
 
 def run_simulation(popsize=popsize, mda_execute=True):
     start_date = Date(2010, 1, 1)
     end_date = Date(2011, 2, 1)
 
-    # For logging, set all modules to WARNING threshold, then alters `Shisto` to level "INFO"
+    # For logging, set all modules to WARNING threshold, then alters `Schisto` to level "INFO"
     custom_levels = {
         "*": logging.WARNING,
         "tlo.methods.schisto": logging.INFO,
@@ -126,7 +126,7 @@ for i, _spec in enumerate(species):
     ax.set_ylim(0, 0.50)
     ax.legend(loc=1)
 fig.tight_layout()
-fig.savefig(make_graph_file_name('prev_in_districts_all'))
+# fig.savefig(make_graph_file_name('prev_in_districts_all'))
 fig.show()
 
 # All Districts
@@ -143,7 +143,7 @@ for i, _spec in enumerate(species):
     ax.set_ylim(0, 0.50)
     ax.legend(loc=1)
 fig.tight_layout()
-fig.savefig(make_graph_file_name('prev_in_districts_fitted'))
+# fig.savefig(make_graph_file_name('prev_in_districts_fitted'))
 fig.show()
 
 
@@ -152,11 +152,10 @@ fig.show()
 def get_model_dalys_schisto_2010():
     """Get the DALYS attributed to Schistosomiasis in 2010."""
     dalys = output['tlo.methods.healthburden']["dalys"]
-    scaling_factor = 14.5e6 / popsize  # todo - this properly once dealt with https://github.com/UCL/TLOmodel/issues/536
     dalys_schisto = dalys.set_index('year').loc[2010].groupby(by='age_range')['Schistosomiasis'].sum()
     dalys_schisto.index = dalys_schisto.index.astype(make_age_grp_types())
     dalys_schisto.name = 'Model'
-    return dalys_schisto.sort_index() * scaling_factor
+    return dalys_schisto.sort_index() * output['tlo.methods.population']['scaling_factor']['scaling_factor'][0]
 
 
 def get_gbd_dalys_schisto_2010():
@@ -179,5 +178,5 @@ ax.set_ylabel('DALYS (2010)')
 ax.set_xticklabels(dat.index, rotation=90)
 ax.legend(loc=1)
 fig.tight_layout()
-fig.savefig(make_graph_file_name('dalys_2010'))
+# fig.savefig(make_graph_file_name('dalys_2010'))
 fig.show()
