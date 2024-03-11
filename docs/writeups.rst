@@ -35,7 +35,7 @@ Representation of the Healthcare System
 
 Contraception, Maternal and Newborn Health
 ===================================
-* **Contraception**: Determines fecundity, the usage of contraception (including switching between contraceptives) and the onset of pregnancy. :download:`.docx <./write-ups/Contraception.docx>`
+* **Contraception**: Determines fecundity, the usage of contraception (including switching between contraceptives) and the onset of pregnancy. :download:`.docx <./write-ups/Contraception.docx>` `Journal article (Studies in Family Planning) <https://onlinelibrary.wiley.com/doi/10.1111/sifp.12255>`
 
 * **Maternal and Newborn Health** Represents the antenatal period of pregnancy (the period from conception to the termination of pregnancy), labour, birth, the postnatal period, associated complications and healthcare delivered through routine and emergency maternity services. :download:`.pdf <./write-ups/MaternalNewbornHealth.pdf>`
 
