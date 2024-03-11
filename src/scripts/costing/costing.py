@@ -131,43 +131,72 @@ cost_of_consumables_dispensed = dict(zip(unit_price_consumable, (unit_price_cons
                                                 counts_of_available[key] for key in unit_price_consumable)))
 total_cost_of_consumables_dispensed = sum(value for value in cost_of_consumables_dispensed.values() if not np.isnan(value))
 
-
-# But all we have are the number of HSIs for which the consumable was needed
-# Do we need to depend on the model to give the number of consumables dispensed? or just based this on number of treatment Ids successfully delivered?
-# Ensure that expected units per case are expected units per HSI
-# check costs - 0 costs, too high, nans; Get units per HSI from Emi's file?
-
-
-def get_counts_of_items_requested(_df):
-    _df = drop_outside_period(_df)
-    counts_of_available = defaultdict(int)
-    counts_of_not_available = defaultdict(int)
-    for _, row in _df.iterrows():
-        for item, num in eval(row['Item_Available']).items():
-            counts_of_available[item] += num
-        for item, num in eval(row['Item_NotAvailable']).items():
-            counts_of_not_available[item] += num
-    return pd.concat(
-        {'Available': pd.Series(counts_of_available), 'Not_Available': pd.Series(counts_of_not_available)},
-        axis=1
-    ).fillna(0).astype(int).stack()
+# Cost of consumables stocked
+# Estimate the stock to dispensed ratio from OpenLMIS data
+lmis_consumable_usage = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
+# Collapse by item_code
+lmis_consumable_usage_by_item = lmis_consumable_usage.groupby(['item_code'])[['closing_bal', 'amc', 'dispensed', 'received']].sum()
+lmis_consumable_usage_by_item['stock_to_dispensed_ratio'] = lmis_consumable_usage_by_item['closing_bal']/lmis_consumable_usage_by_item['dispensed']
+#lmis_consumable_usage_by_item = lmis_consumable_usage_by_item[['item_code', 'stock_to_dispensed_ratio']]
+# Trim top and bottom 5 percentile value for stock_to_dispensed_ratio
+percentile_5 = lmis_consumable_usage_by_item['stock_to_dispensed_ratio'].quantile(0.05)
+percentile_95 = lmis_consumable_usage_by_item['stock_to_dispensed_ratio'].quantile(0.95)
+lmis_consumable_usage_by_item.loc[lmis_consumable_usage_by_item['stock_to_dispensed_ratio'] > percentile_95, 'stock_to_dispensed_ratio'] = percentile_95
+lmis_consumable_usage_by_item.loc[lmis_consumable_usage_by_item['stock_to_dispensed_ratio'] < percentile_5, 'stock_to_dispensed_ratio'] = percentile_5
+lmis_stock_to_dispensed_ratio_by_item = lmis_consumable_usage_by_item['stock_to_dispensed_ratio']
+lmis_stock_to_dispensed_ratio_by_item.to_dict()
+average_stock_to_dispensed_ratio = lmis_stock_to_dispensed_ratio_by_item.mean()
 
 
-cons_req = summarize(
-    extract_results(
-        results_folder,
-        module='tlo.methods.healthsystem',
-        key='Consumables',
-        custom_generate_series=get_counts_of_items_requested,
-        do_scaling=True
-    ),
-    only_mean=True,
-    collapse_columns=True)
+# Multiply number of items needed by cost of consumable
+cost_of_consumables_stocked = dict(zip(unit_price_consumable, (unit_price_consumable[key]['Chosen_price_per_unit (USD)'] *
+                                                unit_price_consumable[key]['Number of units needed per HSI'] *
+                                                counts_of_available[key] *
+                                                lmis_stock_to_dispensed_ratio_by_item.get(key, average_stock_to_dispensed_ratio)
+                                                for key in counts_of_available)))
+total_cost_of_consumables_stocked = sum(value for value in cost_of_consumables_stocked.values() if not np.isnan(value))
 
+scenario_cost_financial['Consumables'] = total_cost_of_consumables_stocked
 
+# Explore the ratio of dispensed drugs to drug stock
+####################################################
+# Collapse monthly data
+lmis_consumable_usage_by_district_and_level = lmis_consumable_usage.groupby(['district', 'fac_type_tlo','category', 'item_code'])[['closing_bal', 'amc', 'dispensed', 'received']].sum()
+lmis_consumable_usage_by_district_and_level.reset_index()
+lmis_consumable_usage_by_district_and_level['stock_to_dispensed_ratio'] = lmis_consumable_usage_by_district_and_level['closing_bal']/lmis_consumable_usage_by_district_and_level['dispensed']
 
+# TODO: Only consider the months for which original OpenLMIS data was available for closing_stock and dispensed
+# TODO Ensure that expected units per case are expected units per HSI
+def plot_stock_to_dispensed(_df, plot_var, groupby_var, outlier_percentile):
+    # Exclude the top x percentile (outliers) from the plot
+    percentile_excluded = _df[plot_var].quantile(outlier_percentile)
+    _df_without_outliers = _df[_df[plot_var] <= percentile_excluded]
 
-# 2.2 Consumables cost - Economic (Level of consumables needed to meet the demand of all patients coming in contact with the health system)
+    # Plot the bar plot
+    plt.figure(figsize=(10, 6))
+    sns.barplot(data=_df_without_outliers, x=groupby_var, y=plot_var, ci=None)
+
+    # Add points representing the distribution of individual values
+    sns.stripplot(data=_df_without_outliers, x=groupby_var, y=plot_var, color='black', size=5, alpha=0.2)
+
+    # Set labels and title
+    plt.xlabel(groupby_var)
+    plt.ylabel('Stock to Dispensed Ratio')
+    plt.title('Average Stock to Dispensed Ratio by ' + f'{groupby_var}')
+    plt.xticks(rotation=45)
+
+    # Show plot
+    plt.tight_layout()
+    plt.savefig(costing_outputs_folder / 'stock_to_dispensed_ratio_by' f'{groupby_var}' )
+
+plot_stock_to_dispensed(lmis_consumable_usage_by_district_and_level, 'stock_to_dispensed_ratio',
+                        'fac_type_tlo', 0.95)
+plot_stock_to_dispensed(lmis_consumable_usage_by_district_and_level, 'stock_to_dispensed_ratio',
+                        'district', 0.95)
+plot_stock_to_dispensed(lmis_consumable_usage_by_district_and_level, 'stock_to_dispensed_ratio',
+                        'category', 0.95)
+plot_stock_to_dispensed(lmis_consumable_usage_by_district_and_level, 'stock_to_dispensed_ratio',
+                        'item_code', 0.95)
 
 
 # Compare financial costs with actual budget data
