@@ -14,8 +14,8 @@ from tlo.methods import (
     healthburden,
     healthseekingbehaviour,
     healthsystem,
-    simplified_births,
     schisto,
+    simplified_births,
     symptommanager,
 )
 

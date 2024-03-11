@@ -465,12 +465,18 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("results_folder", type=Path)
-    args = parser.parse_args()
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("results_folder", type=Path)
+    # args = parser.parse_args()
+    #
+    # apply(
+    #     results_folder=args.results_folder,
+    #     output_folder=args.results_folder,
+    #     resourcefilepath=Path('./resources')
+    # )
 
     apply(
-        results_folder=args.results_folder,
-        output_folder=args.results_folder,
+        results_folder=Path("outputs/long_run_all_diseases-2024-03-05T114732Z"),
+        output_folder=Path("outputs/long_run_all_diseases-2024-03-05T114732Z"),
         resourcefilepath=Path('./resources')
     )

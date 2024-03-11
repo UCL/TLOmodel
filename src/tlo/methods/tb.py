@@ -627,7 +627,6 @@ class Tb(Module):
         self.lm["death_rate"] = LinearModel.multiplicative(
             *(predictors + conditional_predictors))
 
-
     def send_for_screening_general(self, population):
         df = population.props
         p = self.parameters
@@ -652,7 +651,6 @@ class Tb(Module):
                 priority=0,
             )
 
-
     def select_tb_test(self, person_id):
         df = self.sim.population.props
         p = self.parameters
@@ -668,7 +666,6 @@ class Tb(Module):
             return "xpert"
         else:
             return "sputum"
-
 
     def get_consumables_for_dx_and_tx(self):
         p = self.parameters
@@ -787,7 +784,6 @@ class Tb(Module):
         self.item_codes_for_consumables_required['tb_ipt'] = {
             hs.get_item_code_from_item_name("Isoniazid/Pyridoxine, tablet 300 mg"): 1}
 
-
     def initialise_population(self, population):
         df = population.props
         p = self.parameters
@@ -851,7 +847,6 @@ class Tb(Module):
             population
         )  # send some baseline population for screening
 
-
     def initialise_simulation(self, sim):
         """
         * 1) Schedule the regular TB events
@@ -879,7 +874,6 @@ class Tb(Module):
             sim.schedule_event(
                 TbCheckPropertiesEvent(self), sim.date + pd.DateOffset(months=1)
             )
-
 
     def on_birth(self, mother_id, child_id):
         """Initialise properties for a newborn individual
@@ -930,7 +924,6 @@ class Tb(Module):
                 tclose=now + DateOffset(days=28),
             )
 
-
     def report_daly_values(self):
         """
         This must send back a pd.Series or pd.DataFrame that reports on the average daly-weights that have been
@@ -972,7 +965,6 @@ class Tb(Module):
 
         return health_values.loc[df.is_alive]
 
-
     def calculate_untreated_proportion(self, population, strain):
         """
         calculate the proportion of active TB cases not on correct treatment
@@ -1003,7 +995,6 @@ class Tb(Module):
         prop_untreated = 1 - (num_treated_tb_cases / num_active_tb_cases) if num_active_tb_cases else 1
 
         return prop_untreated
-
 
     def assign_active_tb(self, population, strain, incidence):
         """
@@ -1049,7 +1040,6 @@ class Tb(Module):
             # set date of active tb - properties will be updated at TbActiveEvent poll daily
             df.at[person_id, "tb_scheduled_date_active"] = date_progression
 
-
     def consider_ipt_for_those_initiating_art(self, person_id):
         """
         this is called by HIV when person is initiating ART
@@ -1084,7 +1074,6 @@ class Tb(Module):
                 topen=self.sim.date,
                 tclose=None,
             )
-
 
     def relapse_event(self, population):
         """The Tb Regular Relapse Event
@@ -1134,7 +1123,6 @@ class Tb(Module):
         # set date of scheduled active tb
         # properties will be updated at TbActiveEvent every month
         df.loc[idx_will_relapse, "tb_scheduled_date_active"] = now
-
 
     def end_treatment(self, population):
         """
@@ -1316,7 +1304,6 @@ class Tb(Module):
             person_id=hiv_tb_infected, disease_module=self.sim.modules["Hiv"]
         )
 
-
     def check_config_of_properties(self):
         """check that the properties are currently configured correctly"""
         df = self.sim.population.props
@@ -1491,11 +1478,9 @@ class TbActiveCasePoll(RegularEvent, PopulationScopeEventMixin):
         prop_untreated_mdr = self.module.calculate_untreated_proportion(population, strain="mdr")
 
         scaled_incidence_ds = incidence_year * \
-                              p["scaling_factor_WHO"] * prop_untreated_ds
+            p["scaling_factor_WHO"] * prop_untreated_ds
         scaled_incidence_mdr = incidence_year * \
-                               p["prop_mdr2010"] * \
-                               p["scaling_factor_WHO"] * \
-                               prop_untreated_mdr
+            p["prop_mdr2010"] * p["scaling_factor_WHO"] * prop_untreated_mdr
 
         # transmission ds-tb
         self.module.assign_active_tb(population, strain="ds", incidence=scaled_incidence_ds)
@@ -2311,7 +2296,7 @@ class HSI_Tb_StartTreatment(HSI_Event, IndividualScopeEventMixin):
             & (person["age_years"] <= 16) \
             & ~(person["tb_smear"]) \
             & ~person["tb_ever_treated"] \
-            & ~person["tb_diagnosed_mdr"]:
+                & ~person["tb_diagnosed_mdr"]:
             treatment_regimen = "tb_tx_child_shorter"
 
         return treatment_regimen
@@ -2367,7 +2352,7 @@ class HSI_Tb_FollowUp(HSI_Event, IndividualScopeEventMixin):
 
         # if previously treated:
         if ((person["tb_treatment_regimen"] == "tb_retx_adult") or
-            (person["tb_treatment_regimen"] == "tb_retx_child")):
+                (person["tb_treatment_regimen"] == "tb_retx_child")):
 
             # if strain is ds and person previously treated:
             sputum_fup = follow_up_times["ds_retreatment_sputum"].dropna()
