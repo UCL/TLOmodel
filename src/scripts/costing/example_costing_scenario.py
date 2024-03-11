@@ -21,7 +21,7 @@ class SampleCostingScenario(BaseScenario):
         self.end_date = Date(2013, 1, 1)
         self.pop_size = 20_000  # <- recommended population size for the runs
         self.number_of_draws = 1  # <- one scenario
-        self.runs_per_draw = 2 # <- repeated this many times
+        self.runs_per_draw = 1 # <- repeated this many times
 
     def log_configuration(self):
         return {
@@ -41,7 +41,7 @@ class SampleCostingScenario(BaseScenario):
     def draw_parameters(self, draw_number, rng):
         return {
             'HealthSystem': {
-                'cons_availability': ['default'][draw_number]
+                'cons_availability': ['default', 'all'][draw_number]
             }
         }
 
