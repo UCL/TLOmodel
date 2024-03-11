@@ -129,6 +129,7 @@ def test_all_treatment_ids_defined_in_priority_policies(seed, tmpdir):
     # Manually add treatment_IDs which are not found by get_filtered_treatment_ids
     clean_set_of_filtered_treatment_ids.add("Alri_Pneumonia_Treatment_Inpatient")
     clean_set_of_filtered_treatment_ids.add("Alri_Pneumonia_Treatment_Inpatient_Followup")
+    clean_set_of_filtered_treatment_ids.add("DeliveryCare_Comprehensive")
 
     for policy_name in sim.modules['HealthSystem'].parameters['priority_rank'].keys():
         sim.modules['HealthSystem'].load_priority_policy(policy_name)
@@ -2276,4 +2277,75 @@ def test_const_HR_scaling_assumption(seed, tmpdir):
     )
 
 
+def test_dynamic_HR_scaling(seed, tmpdir):
+    """Check that we can scale the minutes of time available for healthcare workers on a yearly basis based on either
+    a fixed scaling factor or population grown, or both."""
 
+    def get_initial_capabilities() -> pd.Series:
+        sim = Simulation(start_date=start_date, seed=seed)
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
+        )
+        sim.make_initial_population(n=100)
+        sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+
+        return sim.modules['HealthSystem'].capabilities_today
+
+    def get_capabilities_after_two_years(dynamic_HR_scaling_factor: float, scale_HR_by_pop_size: bool) -> tuple:
+        sim = Simulation(start_date=start_date, seed=seed)
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+
+        )
+        sim.modules['HealthSystem'].parameters['dynamic_HR_scaling_factor'] = dynamic_HR_scaling_factor
+        sim.modules['HealthSystem'].parameters['scale_HR_by_popsize'] = scale_HR_by_pop_size
+        sim.make_initial_population(n=100)
+
+        # Ensure simulation lasts long enough so that current capabilities reflect that used in the third year of
+        # simulation (i.e. after two annual updates)
+        sim.simulate(end_date=start_date + pd.DateOffset(years=2, days=1))
+
+        popsize = sim.modules['Demography'].popsize_by_year
+
+        final_popsize_increase = popsize[2012]/popsize[2010]
+
+        return sim.modules['HealthSystem'].capabilities_today, final_popsize_increase
+
+    dynamic_HR_scaling_factor = 1.05
+
+    # Get initial capabilities and remove all officers with no minutes available
+    initial_caps = get_initial_capabilities()
+    initial_caps = initial_caps[initial_caps != 0]
+
+    # Check that dynamic expansion over two years leads to expansion = dynamic_HR_scaling_factor^2
+    caps, final_popsize_increase = get_capabilities_after_two_years(
+        dynamic_HR_scaling_factor=dynamic_HR_scaling_factor,
+        scale_HR_by_pop_size=False
+    )
+    caps = caps[caps != 0]
+    ratio_in_sim = caps/initial_caps
+    expected_value = dynamic_HR_scaling_factor*dynamic_HR_scaling_factor
+    assert np.allclose(ratio_in_sim, expected_value)
+
+    # Check that expansion over two years with scaling prop to pop expansion works as expected
+    caps, final_popsize_increase = get_capabilities_after_two_years(
+        dynamic_HR_scaling_factor=1.0,
+        scale_HR_by_pop_size=True
+    )
+    caps = caps[caps != 0]
+    ratio_in_sim = caps/initial_caps
+    expected_value = final_popsize_increase
+    assert np.allclose(ratio_in_sim, expected_value)
+
+    # Check that expansion over two years with both fixed scaling and pop expansion scaling works as expected
+    caps, final_popsize_increase = get_capabilities_after_two_years(
+        dynamic_HR_scaling_factor=dynamic_HR_scaling_factor,
+        scale_HR_by_pop_size=True
+    )
+    caps = caps[caps != 0]
+    ratio_in_sim = caps/initial_caps
+    expected_value = final_popsize_increase*dynamic_HR_scaling_factor*dynamic_HR_scaling_factor
+    assert np.allclose(ratio_in_sim, expected_value)
