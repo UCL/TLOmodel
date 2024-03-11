@@ -675,9 +675,6 @@ class CardioMetabolicDisorders(Module):
             Predictor('nc_chronic_kidney_disease').when(True, p['rr_chronic_kidney_disease']),
             Predictor('nc_chronic_lower_back_pain').when(True, p['rr_chronic_lower_back_pain']),
             Predictor('nc_chronic_ischemic_hd').when(True, p['rr_chronic_ischemic_heart_disease']),
-            Predictor().when('hv_inf & '
-                             '(hv_art != "on_VL_suppressed")',
-                             p["rr_hiv"]),
             Predictor('nc_ever_stroke').when(True, p['rr_ever_stroke']),
             Predictor('nc_ever_heart_attack').when(True, p['rr_ever_heart_attack']),
             Predictor('nc_diabetes_on_medication').when(True, p['rr_diabetes_on_medication']),
