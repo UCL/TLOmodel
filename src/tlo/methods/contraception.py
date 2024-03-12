@@ -1159,6 +1159,7 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.sim.population.props.at[person_id, "co_date_of_last_fp_appt"] = self.sim.date
 
         # Measure weight, height and BP even if contraception not administrated
+        # TODO: Always or only if it's not a rescheduled appt?
         self.add_equipment({
             'Weighing scale', 'Height Pole (Stadiometer)', 'Blood pressure machine'
         })
