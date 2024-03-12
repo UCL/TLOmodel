@@ -2300,8 +2300,9 @@ class HealthSystem(Module):
                 ok_to_run = self.get_essential_equip_availability(event.ESSENTIAL_EQUIPMENT)
                 # True if essential equipment available
 
-                if self.mode_appt_constraints == 1 and squeeze_factor == float('inf'):
-                    ok_to_run = False
+                if ok_to_run:
+                    if self.mode_appt_constraints == 1 and squeeze_factor == float('inf'):
+                        ok_to_run = False
 
                 if ok_to_run:
 
@@ -2637,21 +2638,25 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         # based on queue information, and we assume no squeeze ever takes place.
                         squeeze_factor = 0.
 
-                        # Check if any essential equipment unavailable or any of the officers required have run out.
-                        out_of_resources = \
-                            not self.module.sim.modules['HealthSystem'].get_essential_equip_availability(
+                        # Check if all essential equipment available and the officers required available.
+                        ok_to_run = \
+                            self.module.sim.modules['HealthSystem'].get_essential_equip_availability(
                                 next_event_tuple.hsi_event.ESSENTIAL_EQUIPMENT
-                            )  # True if any of essential equipment unavailable
-                        for officer, call in original_call.items():
-                            # If any of the officers are not available, then out of resources
-                            if officer not in set_capabilities_still_available:
-                                out_of_resources = True
+                            )  # True if all essential equipment available
+
+                        if ok_to_run:
+                            for officer, call in original_call.items():
+                                # If any of the officers are not available, we are out of resources, hence not ok_to_run
+                                if officer not in set_capabilities_still_available:
+                                    ok_to_run = False
+                                    if not ok_to_run:
+                                        break
                         # If officers still available, run event. Note: in current logic, a little
                         # overtime is allowed to run last event of the day. This seems more realistic
                         # than medical staff leaving earlier than
                         # planned if seeing another patient would take them into overtime.
 
-                        if out_of_resources:
+                        if not ok_to_run:
 
                             # Do not run,
                             # Call did_not_run for the hsi_event
@@ -2676,7 +2681,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 priority=_priority
                             )
 
-                        # Have enough capabilities left to run event
+                        # Have enough capabilities left to run event, ie ok_to_run
                         else:
                             # Notes-to-self: Shouldn't this be done after checking the footprint?
                             # Compute the bed days that are allocated to this HSI and provide this
