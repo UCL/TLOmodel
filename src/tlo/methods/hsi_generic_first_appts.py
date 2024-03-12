@@ -13,13 +13,6 @@ import pandas as pd
 
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
-from tlo.methods.bladder_cancer import (
-    HSI_BladderCancer_Investigation_Following_Blood_Urine,
-    HSI_BladderCancer_Investigation_Following_pelvic_pain,
-)
-from tlo.methods.breast_cancer import (
-    HSI_BreastCancer_Investigation_Following_breast_lump_discernible,
-)
 from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
     HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
@@ -29,14 +22,7 @@ from tlo.methods.epilepsy import HSI_Epilepsy_Start_Anti_Epileptic
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.labour import HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
-from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
-from tlo.methods.other_adult_cancers import (
-    HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom,
-)
-from tlo.methods.prostate_cancer import (
-    HSI_ProstateCancer_Investigation_Following_Pelvic_Pain,
-    HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms,
-)
+
 if TYPE_CHECKING:
     from tlo import Module
 
@@ -126,7 +112,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
     # Make top-level reads of information, to avoid repeat accesses.
     person_id = hsi_event.target
     modules: OrderedDict[str, "Module"] = hsi_event.sim.modules
-    sim_date = hsi_event.sim.date
     schedule_hsi = hsi_event.healthcare_system.schedule_hsi_event
     symptoms = hsi_event.sim.modules["SymptomManager"].has_what(person_id)
     # Create the diagnosis test runner function
@@ -210,86 +195,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
 
     else:
         # ----------------------------------- ADULT -----------------------------------
-        if "OesophagealCancer" in modules:
-            # If the symptoms include dysphagia, then begin investigation for Oesophageal Cancer:
-            if "dysphagia" in symptoms:
-                schedule_hsi(
-                    HSI_OesophagealCancer_Investigation_Following_Dysphagia(
-                        person_id=person_id, module=modules["OesophagealCancer"]
-                    ),
-                    priority=0,
-                    topen=sim_date,
-                    tclose=None,
-                )
-
-        if "BladderCancer" in modules:
-            # If the symptoms include blood_urine, then begin investigation for Bladder Cancer:
-            if "blood_urine" in symptoms:
-                schedule_hsi(
-                    HSI_BladderCancer_Investigation_Following_Blood_Urine(
-                        person_id=person_id, module=modules["BladderCancer"]
-                    ),
-                    priority=0,
-                    topen=sim_date,
-                    tclose=None,
-                )
-
-            # If the symptoms include pelvic_pain, then begin investigation for Bladder Cancer:
-            if "pelvic_pain" in symptoms:
-                schedule_hsi(
-                    HSI_BladderCancer_Investigation_Following_pelvic_pain(
-                        person_id=person_id, module=modules["BladderCancer"]
-                    ),
-                    priority=0,
-                    topen=sim_date,
-                    tclose=None,
-                )
-
-        if "ProstateCancer" in modules:
-            # If the symptoms include urinary, then begin investigation for prostate cancer:
-            if "urinary" in symptoms:
-                schedule_hsi(
-                    HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(
-                        person_id=person_id, module=modules["ProstateCancer"]
-                    ),
-                    priority=0,
-                    topen=sim_date,
-                    tclose=None,
-                )
-
-            if "pelvic_pain" in symptoms:
-                schedule_hsi(
-                    HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
-                        person_id=person_id, module=modules["ProstateCancer"]
-                    ),
-                    priority=0,
-                    topen=sim_date,
-                    tclose=None,
-                )
-
-        if "OtherAdultCancer" in modules:
-            if "early_other_adult_ca_symptom" in symptoms:
-                schedule_hsi(
-                    HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
-                        person_id=person_id, module=modules["OtherAdultCancer"]
-                    ),
-                    priority=0,
-                    topen=sim_date,
-                    tclose=None,
-                )
-
-        if "BreastCancer" in modules:
-            # If the symptoms include breast lump discernible:
-            if "breast_lump_discernible" in symptoms:
-                schedule_hsi(
-                    HSI_BreastCancer_Investigation_Following_breast_lump_discernible(
-                        person_id=person_id,
-                        module=modules["BreastCancer"],
-                    ),
-                    priority=0,
-                    topen=sim_date,
-                    tclose=None,
-                )
 
         if "Depression" in modules:
             modules["Depression"].do_on_presentation_to_care(

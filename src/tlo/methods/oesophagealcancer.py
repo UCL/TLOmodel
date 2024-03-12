@@ -8,6 +8,7 @@ Limitations to note:
 """
 
 from pathlib import Path
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple
 
 import pandas as pd
 
@@ -565,6 +566,29 @@ class OesophagealCancer(Module):
 
         return disability_series_for_alive_persons
 
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: NamedTuple = None,
+        symptoms: List[str] = None,
+        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        # If the symptoms include dysphagia, and the patient is not a child,
+        # begin investigation for Oesophageal Cancer:
+        event_info = []
+        if patient_details.age_years > 5 and "dysphagia" in symptoms:
+            event = (
+                HSI_OesophagealCancer_Investigation_Following_Dysphagia(
+                    person_id=patient_id, module=self
+                ),
+            )
+            options = {
+                "priority": 0,
+                "topen": self.sim.date,
+                "tclose": None,
+            }
+            event_info.append((event, options))
+        return event_info, {}
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS

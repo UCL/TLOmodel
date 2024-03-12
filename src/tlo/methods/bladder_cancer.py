@@ -7,6 +7,7 @@ Limitations to note:
 """
 
 from pathlib import Path
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple
 
 import pandas as pd
 
@@ -570,6 +571,39 @@ class BladderCancer(Module):
 
         return disability_series_for_alive_persons
 
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: NamedTuple = None,
+        symptoms: List[str] = None,
+        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        event_info = []
+        # Only investigate if the patient is not a child
+        if patient_details.age_years > 5:
+            # Begin investigation if symptoms are present.
+            if "blood_urine" in symptoms:
+                event = HSI_BladderCancer_Investigation_Following_Blood_Urine(
+                    person_id=patient_id, module=self
+                )
+                options = {
+                    "priority": 0,
+                    "topen": self.sim.date,
+                    "tclose": None,
+                }
+                event_info.append((event, options))
+
+            if "pelvic_pain" in symptoms:
+                event = HSI_BladderCancer_Investigation_Following_pelvic_pain(
+                    person_id=patient_id, module=self
+                )
+                options = {
+                    "priority": 0,
+                    "topen": self.sim.date,
+                    "tclose": None,
+                }
+                event_info.append((event, options))
+        return event_info, {}
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS

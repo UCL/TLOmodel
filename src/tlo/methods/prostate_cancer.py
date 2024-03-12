@@ -6,6 +6,7 @@ Limitations to note:
 """
 
 from pathlib import Path
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple
 
 import pandas as pd
 
@@ -277,14 +278,14 @@ class ProstateCancer(Module):
             disease_module=self
         )
 
-#       above code replaced with below when running for n=1 -
+        #       above code replaced with below when running for n=1 -
 
-#       self.sim.modules['SymptomManager'].change_symptom(
-#           person_id=1,
-#           symptom_string='pelvic_pain',
-#           add_or_remove='+',
-#           disease_module=self
-#       )
+        #       self.sim.modules['SymptomManager'].change_symptom(
+        #           person_id=1,
+        #           symptom_string='pelvic_pain',
+        #           add_or_remove='+',
+        #           disease_module=self
+        #       )
 
         # ----- Impose the symptom of random sample of those in each cancer stage to have urinary symptoms:
         lm_init_urinary = LinearModel.multiplicative(
@@ -306,14 +307,14 @@ class ProstateCancer(Module):
             disease_module=self
         )
 
-#       above code replaced with below when running for n=1 -
+        #       above code replaced with below when running for n=1 -
 
-#       self.sim.modules['SymptomManager'].change_symptom(
-#           person_id=1,
-#           symptom_string='pelvic_pain',
-#           add_or_remove='+',
-#           disease_module=self
-#       )
+        #       self.sim.modules['SymptomManager'].change_symptom(
+        #           person_id=1,
+        #           symptom_string='pelvic_pain',
+        #           add_or_remove='+',
+        #           disease_module=self
+        #       )
         # -------------------- pc_date_diagnosis -----------
 
         # for those with symptoms set to initially diagnosed
@@ -577,6 +578,39 @@ class ProstateCancer(Module):
 
         return disability_series_for_alive_persons
 
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: NamedTuple = None,
+        symptoms: List[str] = None,
+        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        event_info = []
+        # If the patient is not a child, and symptoms are indicative,
+        # begin investigation for prostate cancer
+        if patient_details.age_years > 5:
+            if "urinary" in symptoms:
+                event = HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(
+                    person_id=patient_id, module=self
+                )
+                options = {
+                    "priority": 0,
+                    "topen": self.sim.date,
+                    "tclose": None,
+                }
+                event_info.append((event, options))
+
+            if "pelvic_pain" in symptoms:
+                event = HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
+                    person_id=patient_id, module=self
+                )
+                options = {
+                    "priority": 0,
+                    "topen": self.sim.date,
+                    "tclose": None,
+                }
+                event_info.append((event, options))
+        return event_info, {}
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS

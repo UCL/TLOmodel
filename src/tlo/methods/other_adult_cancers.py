@@ -6,6 +6,7 @@ Limitations to note:
 """
 
 from pathlib import Path
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple
 
 import pandas as pd
 
@@ -549,6 +550,26 @@ class OtherAdultCancer(Module):
 
         return disability_series_for_alive_persons
 
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: NamedTuple = None,
+        symptoms: List[str] = None,
+        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        event_info = []
+        if patient_details.age_years > 5 and "early_other_adult_ca_symptom" in symptoms:
+            event = HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
+                person_id=patient_id,
+                module=self,
+            )
+            options = {
+                "priority": 0,
+                "topen": self.sim.date,
+                "tclose": None,
+            }
+            event_info.append((event, options))
+        return event_info, {}
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
