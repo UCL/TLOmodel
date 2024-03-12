@@ -5,12 +5,14 @@ specification for parameters and properties, and the base Module class for
 disease modules.
 """
 import json
-import typing
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple, TYPE_CHECKING
 from enum import Enum, auto
 
 import numpy as np
 import pandas as pd
 
+if TYPE_CHECKING:
+    from tlo.methods.hsi_event import HSI_Event
 
 class Types(Enum):
     """Possible types for parameters and properties.
@@ -365,3 +367,61 @@ class Module:
     def on_simulation_end(self):
         """This is called after the simulation has ended.
         Modules do not need to declare this."""
+
+    @classmethod
+    def do_at_generic_first_appt(
+        cls,
+        patient_id: int,
+        patient_details: NamedTuple = None,
+        symptoms: List[str] = None,
+        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        """
+        Actions to be take during a NON-emergency generic HSI.
+
+        Derived classes should overwrite this method so that they are
+        compatible with the HealthSystem module, and can schedule HSI
+        events when a patient presents symptoms indicative of the
+        corresponding illness or condition.
+
+        Return values should be provided in the following order.
+
+        1. The first returned value should be a list of tuples.
+        Each of these tuples should be of the form (event, options_dict) where:
+          - event is a HSI_Event instance corresponding to an event to schedule.
+          - options_dict is a dictionary of key-word arguments to be passed to
+          HealthSystem.schedule_hsi when scheduling the event.
+        If no events are to be scheduled, return an empty list.
+        For each event, if no optional arguments are to be specified, return an
+        empty dictionary as the second element of the tuple.
+
+        2. A dictionary containing any changes that need to be made to the individual's
+        row in the population DataFrame.
+        Key/value pairs should be the column name and the new value to assign to the patient.
+
+        :param patient_id: Row index (ID) of the individual target of the HSI event in the population DataFrame.
+        :param patient_details: Patient details as provided in the population DataFrame.
+        :param symptoms: List of symptoms the patient is experiencing.
+        :param diagnosis_fn: The function that can run diagnosis tests based on the patient's symptoms.
+        """
+        return [], {}, []
+
+    @classmethod
+    def do_at_generic_first_appt_emergency(
+        cls,
+        patient_id: int,
+        patient_details: NamedTuple = None,
+        symptoms: List[str] = None,
+        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        """
+        Actions to be take during an EMERGENCY generic HSI.
+        Call signature and return values are identical to the
+        do_at_generic_first_appt method.
+
+        Derived classes should overwrite this method so that they are
+        compatible with the HealthSystem module, and can schedule HSI
+        events when a patient presents symptoms indicative of the
+        corresponding illness or condition.
+        """
+        return [], {}, []
