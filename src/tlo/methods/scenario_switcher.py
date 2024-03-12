@@ -5,7 +5,7 @@ from typing import Optional, Dict, Iterable
 
 import pandas as pd
 
-from tlo import Module, Parameter, Types, Date
+from tlo import Module, Parameter, Types, Date, Simulation
 from tlo.events import RegularEvent, PopulationScopeEventMixin
 
 
@@ -24,8 +24,9 @@ class ScenarioSwitcher(Module):
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
         self.resourcefilepath = resourcefilepath
-        self.parameters_first_phase = {}
-        self.parameters_second_phase = {}
+        self.switches = []  # (Will be list of the switches.).
+        self.switches_first_phase = {}
+        self.switches_second_phase = {}
 
     INIT_DEPENDENCIES = set()
 
@@ -34,10 +35,10 @@ class ScenarioSwitcher(Module):
     METADATA = set()
 
     PARAMETERS = {
-        # Each of these parameter is a list of two booleans -- [bool, bool] -- which represent (i) the state in the time
-        # before the date of a switch in state, (ii) the state at the date of switch and thereafter.
-        # These parameters are distinguished from other parameters by the prefix "switch_". Parameters that do not have
-        # that prefix will not work as expected.
+        # Each of these parameter is a list of two booleans -- [bool, bool] -- which represent (i) the state during the
+        # period before the date of a switch in state, (ii) the state at the date of switch and the period thereafter.
+        # These parameters are distinguished from other parameters by the prefix "switch_": parameter names that do not
+        # have that prefix will not work as expected.
 
         # -- Health System Strengthening Switches
         "switch_max_healthsystem_function": Parameter(
@@ -84,7 +85,7 @@ class ScenarioSwitcher(Module):
         self.parameters["switch_scaleup_hiv"] = [False, False]
         self.parameters["switch_scaleup_tb"] = [False, False]
         self.parameters["switch_scaleup_malaria"] = [False, False]
-        self.parameters["self.parameters[switch_scaleup_epi"] = [False, False]
+        self.parameters["switch_scaleup_epi"] = [False, False]
         self.parameters["year_of_switch"] = 2020
 
         self._process_parameters()
@@ -95,24 +96,15 @@ class ScenarioSwitcher(Module):
          """
 
         # Get list of parameters which encode the change of state (i.e. have prefix of "swtich_").
-        switches = [k for k in self.parameters.keys() if k.startswith('switch_')]
+        self.switches = [k for k in self.parameters.keys() if k.startswith('switch_')]
 
         # Check that each identified parameter is a list of two bools.
-        for sw in switches:
+        for sw in self.switches:
             p = self.parameters[sw]
             assert isinstance(p, list)
             assert 2 == len(p)
             assert isinstance(p[0], bool) and isinstance(p[1], bool)
 
-        # Assemble the internal storage of these parameters
-        self.parameters_first_phase = {
-            sw: self.parameters[sw][0]  # <-- pick up first entry in list
-            for sw in switches
-        }
-        self.parameters_second_phase = {
-            sw: self.parameters[sw][1]  # <-- pick up second entry in list
-            for sw in switches
-        }
 
     def pre_initialise_population(self):
         """Set the parameters for the first period of the simulation.
@@ -123,8 +115,13 @@ class ScenarioSwitcher(Module):
          the parameters were being changed by the `Scenario` class."""
         # todo check whether this is actually needed, or if could happen at initialise simulation.
 
-        parameters_to_update = self._get_parameters_to_change(self.parameters_first_phase)
-        self._do_change_in_parameters(self.sim, parameters_to_update)
+        switch_states_in_first_phase = {
+            sw: self.parameters[sw][0]  # <-- pick up first entry in list
+            for sw in self.switches
+        }
+
+        params_to_update = self._get_parameters_to_change(switch_states_in_first_phase)
+        self._do_change_in_parameters(self.sim, params_to_update)
 
     def initialise_population(self, population):
         pass
@@ -132,7 +129,13 @@ class ScenarioSwitcher(Module):
     def initialise_simulation(self, sim):
         """Schedule an event at which the parameters are changed."""
         date_of_switch_event = Date(self.parameters["year_of_switch"], 1, 1)  # 1st January of the year specified.
-        parameters_to_update = self._get_parameters_to_change(self.parameters_second_phase)
+
+        switch_states_in_second_phase = {
+            sw: self.parameters[sw][1]  # <-- pick up second entry in list for the second phase of the simulation
+            for sw in self.switches
+        }
+        parameters_to_update = self._get_parameters_to_change(switch_states_in_second_phase)
+
         sim.schedule_event(
             ScenarioSwitchEvent(
                 module=self,
@@ -156,12 +159,12 @@ class ScenarioSwitcher(Module):
                 }
          }
          """
-        return merge_dicts(
+        return merge_dicts([
             # -- Health System Strengthening Switches
             get_parameters_for_improved_healthsystem_and_healthcare_seeking(
                 resourcefilepath=self.resourcefilepath,
-                max_healthsystem_function=switches["max_healthsystem_function"],
-                max_healthcare_seeking=switches["max_healthcare_seeking"],
+                max_healthsystem_function=switches["switch_max_healthsystem_function"],
+                max_healthcare_seeking=switches["switch_max_healthcare_seeking"],
             ),
             # todo put in the switches for other HSS as other functions, or as part of the func. above?
 
@@ -177,12 +180,12 @@ class ScenarioSwitcher(Module):
             ),
             get_parameters_for_vertical_program_scale_up_epi(
                 resourcefilepath=self.resourcefilepath,
-                switch_scaleup_malaria=switches["switch_scaleup_epi"],
+                switch_scaleup_epi=switches["switch_scaleup_epi"],
             ),
-        )
+        ])
 
     @staticmethod
-    def _do_change_in_parameters(sim, params_to_update):
+    def _do_change_in_parameters(sim: Simulation, params_to_update: Dict):
         """Make the changes to the parameters values held currently in the modules of the simulation."""
         for module, params in params_to_update.items():
             for name, updated_value in params.items():
@@ -219,7 +222,7 @@ def get_parameters_for_improved_healthsystem_and_healthcare_seeking(
     max_healthcare_seeking: Optional[bool] = False,
 ) -> Dict:
     """
-    This returs the parameters to be updated to represent certain Health System Strengthening Interventions.
+    This returns the parameters to be updated to represent certain Health System Strengthening Interventions.
 
     It reads an Excel workbook to find the parameters that should be updated. Linked sheets in the Excel workbook
     specify updated pd.Series and pd.DataFrames.
