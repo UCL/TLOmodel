@@ -151,11 +151,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
 
     # ----------------------------------- ALL AGES -----------------------------------
 
-    if "Schisto" in modules:
-        modules["Schisto"].do_on_presentation_with_symptoms(
-            person_id=person_id, symptoms=symptoms
-        )
-
     if "Malaria" in modules:
         malaria_associated_symptoms = {
             "fever",

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Sequence, Union
+from typing import Any, Callable, Dict, List, Optional, NamedTuple, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -208,22 +208,6 @@ class Schisto(Module):
         return pd.Series(index=df.index[df.is_alive], data=0.0).add(disability_weights_for_each_person_with_symptoms,
                                                                     fill_value=0.0)
 
-    def do_on_presentation_with_symptoms(self, person_id: int, symptoms: Union[list, set, tuple]) -> None:
-        """Do when person presents to the GenericFirstAppt. If the person has certain set of symptoms, refer ta HSI for
-         testing."""
-
-        set_of_symptoms_indicative_of_schisto = {'anemia', 'haematuria', 'bladder_pathology'}
-
-        if set_of_symptoms_indicative_of_schisto.issubset(symptoms):
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Schisto_TestingFollowingSymptoms(
-                    module=self,
-                    person_id=person_id),
-                topen=self.sim.date,
-                tclose=None,
-                priority=0
-            )
-
     def do_effect_of_treatment(self, person_id: Union[int, Sequence[int]]) -> None:
         """Do the effects of a treatment administered to a person or persons. This can be called for a person who is
         infected and receiving treatment following a diagnosis, or for a person who is receiving treatment as part of a
@@ -339,6 +323,29 @@ class Schisto(Module):
                 Date(year=year_first_simulated_mda, month=7, day=1)
             )
 
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: NamedTuple = None,
+        symptoms: List[str] = None,
+        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        event_info = []
+        # Do when person presents to the GenericFirstAppt.
+        # If the person has certain set of symptoms, refer ta HSI for testing.
+        set_of_symptoms_indicative_of_schisto = {'anemia', 'haematuria', 'bladder_pathology'}
+
+        if set_of_symptoms_indicative_of_schisto.issubset(symptoms):
+            event =                 HSI_Schisto_TestingFollowingSymptoms(
+                    module=self,
+                    person_id=patient_id)
+            options = {
+                "topen": self.sim.date,
+                "tclose": None,
+                "priority": 0,
+            }
+            event_info.append((event, options))
+        return event_info, {}
 
 class SchistoSpecies:
     """Helper Class to hold the information specific to a particular species (either S. mansoni or S. haematobium)."""
