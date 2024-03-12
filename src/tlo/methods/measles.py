@@ -1,6 +1,6 @@
 import math
 import os
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple, Union
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple
 
 import pandas as pd
 

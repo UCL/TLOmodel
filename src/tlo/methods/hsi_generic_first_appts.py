@@ -7,7 +7,7 @@ the onset of symptoms. Non-emergency symptoms lead to `HSI_GenericFirstApptAtFac
 lead to `HSI_GenericEmergencyFirstApptAtFacilityLevel1`.
 """
 from collections import namedtuple
-from typing import OrderedDict, TYPE_CHECKING
+from typing import TYPE_CHECKING, OrderedDict
 
 import pandas as pd
 

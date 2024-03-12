@@ -5,8 +5,8 @@ specification for parameters and properties, and the base Module class for
 disease modules.
 """
 import json
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Tuple, TYPE_CHECKING
 from enum import Enum, auto
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Tuple
 
 import numpy as np
 import pandas as pd
