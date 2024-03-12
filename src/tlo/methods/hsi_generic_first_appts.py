@@ -151,10 +151,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
 
     # ----------------------------------- ALL AGES -----------------------------------
 
-    if "injury" in symptoms:
-        if "RTI" in modules:
-            modules["RTI"].do_rti_diagnosis_and_treatment(person_id)
-
     if "Schisto" in modules:
         modules["Schisto"].do_on_presentation_with_symptoms(
             person_id=person_id, symptoms=symptoms
@@ -218,7 +214,7 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
     The actions are taken during the non-emergency generic HSI,
     HSI_GenericEmergencyFirstApptAtFacilityLevel1.
     """
-
+    # OLD shortcuts, to prune later
     sim = hsi_event.sim
     rng = hsi_event.module.rng
     person_id = hsi_event.target
@@ -226,6 +222,49 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
     symptoms = hsi_event.sim.modules['SymptomManager'].has_what(person_id=person_id)
     schedule_hsi = hsi_event.sim.modules["HealthSystem"].schedule_hsi_event
     age = df.at[person_id, 'age_years']
+
+    # Make top-level reads of information, to avoid repeat accesses.
+    person_id = hsi_event.target
+    modules: OrderedDict[str, "Module"] = hsi_event.sim.modules
+    schedule_hsi = hsi_event.healthcare_system.schedule_hsi_event
+    symptoms = hsi_event.sim.modules["SymptomManager"].has_what(person_id)
+
+    # Create the diagnosis test runner function
+    def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
+        return hsi_event.healthcare_system.dx_manager.run_dx_test(
+            tests,
+            hsi_event=hsi_event,
+            use_dict_for_single=use_dict,
+            report_dxtest_tried=report_tried,
+        )
+
+    # Dynamically create immutable container with the target's details stored.
+    # This will avoid repeat DataFrame reads when we call the module-level functions.
+    df = hsi_event.sim.population.props
+    patient_details = namedtuple("PatientDetails", df.columns)(*df.loc[person_id])
+
+    proposed_df_updates = {}
+
+    for module in modules.values():
+        event_info, df_updates = module.do_at_generic_first_appt_emergency(
+            patient_id=person_id,
+            patient_details=patient_details,
+            symptoms=symptoms,
+            diagnosis_fn=diagnosis_fn,
+        )
+        # Schedule any requested updates
+        for info in event_info:
+            event = info[0]
+            options = info[1]
+            schedule_hsi(event, **options)
+        # Record any requested DataFrame updates, but do not implement yet
+        # NOTE: |= syntax is only available in Python >=3.9
+        proposed_df_updates = {**proposed_df_updates, **df_updates}
+
+    # Perform any DataFrame updates that were requested, all in one go.
+    df.loc[person_id, proposed_df_updates.keys()] = proposed_df_updates.values()
+
+    # OLD FN CONTINUES
 
     if 'PregnancySupervisor' in sim.modules:
 
@@ -278,10 +317,6 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
                          priority=0,
                          topen=sim.date,
                          tclose=None)
-
-    if 'severe_trauma' in symptoms:
-        if 'RTI' in sim.modules:
-            sim.modules['RTI'].do_rti_diagnosis_and_treatment(person_id=person_id)
 
     if 'Alri' in sim.modules:
         if (age <= 5) and (('cough' in symptoms) or ('difficult_breathing' in symptoms)):
