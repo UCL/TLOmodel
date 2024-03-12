@@ -7,6 +7,7 @@ the onset of symptoms. Non-emergency symptoms lead to `HSI_GenericFirstApptAtFac
 lead to `HSI_GenericEmergencyFirstApptAtFacilityLevel1`.
 """
 from collections import namedtuple
+from typing import OrderedDict, TYPE_CHECKING
 
 import pandas as pd
 
@@ -38,6 +39,8 @@ from tlo.methods.prostate_cancer import (
     HSI_ProstateCancer_Investigation_Following_Pelvic_Pain,
     HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms,
 )
+if TYPE_CHECKING:
+    from tlo import Module
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -119,21 +122,49 @@ class HSI_EmergencyCare_SpuriousSymptom(HSI_Event, IndividualScopeEventMixin):
             sm.change_symptom(person_id, "spurious_emergency_symptom", '-', sm)
 
 
-def do_at_generic_first_appt_non_emergency(hsi_event, squeeze_factor):
+def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor):
     """The actions are taken during the non-emergency generic HSI, HSI_GenericFirstApptAtFacilityLevel0."""
 
     # Make top-level reads of information, to avoid repeat accesses.
     person_id = hsi_event.target
-    modules = hsi_event.sim.modules
+    modules: OrderedDict[str, "Module"] = hsi_event.sim.modules
     sim_date = hsi_event.sim.date
     schedule_hsi = hsi_event.healthcare_system.schedule_hsi_event
     symptoms = hsi_event.sim.modules["SymptomManager"].has_what(person_id)
+    # Create the diagnosis test runner function
+    def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
+        return hsi_event.healthcare_system.dx_manager.run_dx_test(
+            tests,
+            hsi_event=hsi_event,
+            use_dict_for_single=use_dict,
+            report_dxtest_tried=report_tried,
+        )
+
     # Dynamically create immutable container with the target's details stored.
     # This will avoid repeat DataFrame reads when we call the module-level functions.
     df = hsi_event.sim.population.props
     patient_details = namedtuple("PatientDetails", df.columns)(*df.loc[person_id])
 
-    # age = df.at[person_id, 'age_years']
+    proposed_df_updates = {}
+
+    for module in modules.values():
+        event_info, df_updates = module.do_at_generic_first_appt(
+            patient_id=person_id,
+            patient_details=patient_details,
+            symptoms=symptoms,
+            diagnosis_fn=diagnosis_fn,
+        )
+        # Schedule any requested updates
+        for info in event_info:
+            event = info[0]
+            options = info[1]
+            schedule_hsi(event, **options)
+        # Record any requested DataFrame updates, but do not implement yet
+        # NOTE: |= syntax is only available in Python >=3.9
+        proposed_df_updates = {**proposed_df_updates, **df_updates}
+    
+    # Perform any DataFrame updates that were requested, all in one go.
+    df.loc[person_id, proposed_df_updates.keys()] = proposed_df_updates.values()
 
     # ----------------------------------- ALL AGES -----------------------------------
     # Consider Measles if rash.

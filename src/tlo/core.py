@@ -404,7 +404,7 @@ class Module:
         :param symptoms: List of symptoms the patient is experiencing.
         :param diagnosis_fn: The function that can run diagnosis tests based on the patient's symptoms.
         """
-        return [], {}, []
+        return [], {}
 
     @classmethod
     def do_at_generic_first_appt_emergency(
@@ -424,4 +424,4 @@ class Module:
         events when a patient presents symptoms indicative of the
         corresponding illness or condition.
         """
-        return [], {}, []
+        return [], {}
