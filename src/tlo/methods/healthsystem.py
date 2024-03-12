@@ -531,7 +531,7 @@ class HealthSystem(Module):
                         ' to the module initialiser.'),
 
         'policy_name': Parameter(
-            Types.STRING, "Name of priority policy assumed to have been adopted until policy switch"),
+            Types.STRING, "Name of priority policy adopted"),
         'year_mode_switch': Parameter(
             Types.INT, "Year in which mode switch in enforced"),
 
@@ -625,7 +625,7 @@ class HealthSystem(Module):
             and priority
         :param ignore_priority: If ``True`` do not use the priority information in HSI
             event to schedule
-        :param policy_name: Name of priority policy that will be adopted if any
+        :param policy_name: Name of priority policy adopted
         :param capabilities_coefficient: Multiplier for the capabilities of health
             officers, if ``None`` set to ratio of initial population to estimated 2010
             population.

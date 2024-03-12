@@ -12,7 +12,10 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from scripts.calibration_analyses.analysis_scripts import plot_legends
-from scripts.healthsystem.finding_effects_of_each_treatment import plot_org_chart_treatment_ids
+from scripts.healthsystem.org_chart_of_hsi import plot_org_chart_treatment_ids
+from scripts.overview_paper.B_finding_effects_of_each_treatment.scenario_effect_of_each_treatment import (
+    EffectOfEachTreatment,
+)
 from tlo import Date
 from tlo.analysis.utils import (
     CAUSE_OF_DEATH_OR_DALY_LABEL_TO_COLOR_MAP,
@@ -31,13 +34,11 @@ from tlo.analysis.utils import (
 )
 
 
-def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None, rtn_results=False):
+def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = None):
     """Produce standard set of plots describing the effect of each TREATMENT_ID.
     - We estimate the epidemiological impact as the EXTRA deaths that would occur if that treatment did not occur.
     - We estimate the draw on healthcare system resources as the FEWER appointments when that treatment does not occur.
     """
-
-    results = dict()  # <-- will be a store of results that can be returned if needed.
 
     TARGET_PERIOD = (Date(2015, 1, 1), Date(2019, 12, 31))
 
@@ -52,9 +53,6 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
 
     def get_parameter_names_from_scenario_file() -> Tuple[str]:
         """Get the tuple of names of the scenarios from `Scenario` class used to create the results."""
-        from scripts.healthsystem.finding_effects_of_each_treatment.scenario_effect_of_each_treatment_defaults import (
-            EffectOfEachTreatment,
-        )
         e = EffectOfEachTreatment()
         return tuple(e._scenarios.keys())
 
@@ -163,7 +161,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         extract_results(
             results_folder,
             module='tlo.methods.healthburden',
-            key='dalys_stacked',
+            key='dalys_stacked_by_age_and_time',
             custom_generate_series=get_num_dalys_by_cause_label,
             do_scaling=True
         ).pipe(set_param_names_as_column_index_level_0)[['Everything', '*']]
@@ -199,36 +197,36 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                           color=color, alpha=0.5)
         _ax.set_xticks(range(len(_df_sorted.index)))
         _ax.set_xticklabels(_df_sorted.index, rotation=90)
-        _ax.legend([lb, ub], ['All TREATMENT_IDs', 'No TREATMENT_IDs'], loc='upper right')
+        _ax.legend([lb, ub], ["All Services Available", "No Services Available"], loc='upper right')
 
     fig, ax = plt.subplots()
-    name_of_plot = f'Deaths With None or All TREATMENT_IDs, {target_period()}'
+    name_of_plot = f'Deaths With None or All Services, {target_period()}'
     do_bar_plot_with_ci(num_deaths_by_cause_label / 1e3, ax)
     ax.set_title(name_of_plot)
     ax.set_xlabel('Cause of Death')
     ax.set_ylabel('Number of Deaths (/1000)')
-    ax.set_ylim(0, 400)
+    ax.set_ylim(0, 500)
     ax.grid(axis="y")
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
+    plt.close(fig)
 
     fig, ax = plt.subplots()
-    name_of_plot = f'DALYS With None or All TREATMENT_IDs, {target_period()}'
+    name_of_plot = f'DALYS With None or All Services, {target_period()}'
     do_bar_plot_with_ci(num_dalys_by_cause_label / 1e6, ax)
     ax.set_title(name_of_plot)
     ax.set_xlabel('Cause of Disability/Death')
-    ax.set_ylabel('Number of DALYS Averted (1/1e6)')
-    ax.set_ylim(0, 15)
-    ax.set_yticks(range(0, 18, 3))
+    ax.set_ylabel('Number of DALYS (/millions)')
+    ax.set_ylim(0, 30)
+    ax.set_yticks(np.arange(0, 35, 5))
     ax.grid(axis="y")
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
+    plt.close(fig)
 
     # %%  Quantify the health gains associated with each TREATMENT_ID (short) individually (i.e., the
     # difference in deaths and DALYS between each scenario and the 'Everything' scenario.)
@@ -271,7 +269,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         results_folder,
         module='tlo.methods.demography',
         key='death',
-        custom_generate_series=get_num_deaths_by_age_group,
+        custom_generate_series=get_num_deaths_by_cause_label,
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0).sum()  # (Summing across age-groups)
 
@@ -288,7 +286,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     num_dalys = extract_results(
         results_folder,
         module='tlo.methods.healthburden',
-        key='dalys_stacked',
+        key='dalys_stacked_by_age_and_time',
         custom_generate_series=get_num_dalys_by_cause_label,
         do_scaling=True
     ).pipe(set_param_names_as_column_index_level_0).sum()  # (Summing across causes)
@@ -303,17 +301,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             find_difference_extra_relative_to_comparison(num_dalys, comparison='Everything', scaled=True)).T
     ).iloc[0].unstack().drop(['FirstAttendance*']).sort_values(by='mean', ascending=True)
 
-    results["num_dalys_averted"] = num_dalys_averted
-    results["pc_dalys_averted"] = pc_dalys_averted
-
     # PLOTS FOR EACH TREATMENT_ID (Short)
     fig, ax = plt.subplots()
     name_of_plot = f'Deaths Averted by Each TREATMENT_ID, {target_period()}'
     do_barh_plot_with_ci(num_deaths_averted.drop(['*']) / 1e3, ax)
     ax.set_title(name_of_plot)
-    ax.set_ylabel('TREATMENT_ID (Short)')
+    ax.set_ylabel('TREATMENT_ID')
     ax.set_xlabel('Number of Deaths Averted (/1000)')
-    ax.set_xlim(0, 140)
+    ax.set_xlim(0, 300)
     do_label_barh_plot(pc_deaths_averted.drop(['*']), ax)
     ax.grid()
     ax.yaxis.set_tick_params(labelsize=7)
@@ -321,15 +316,15 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.spines['right'].set_visible(False)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
+    plt.close(fig)
 
     fig, ax = plt.subplots()
     name_of_plot = f'DALYS Averted by Each TREATMENT_ID, {target_period()}'
     do_barh_plot_with_ci(num_dalys_averted.drop(['*']) / 1e6, ax)
     ax.set_title(name_of_plot)
-    ax.set_ylabel('TREATMENT_ID (Short)')
+    ax.set_ylabel('TREATMENT_ID')
     ax.set_xlabel('Number of DALYS Averted (/1e6)')
-    ax.set_xlim(0, 6)
+    ax.set_xlim(0, 12)
     do_label_barh_plot(pc_dalys_averted.drop(['*']), ax)
     ax.grid()
     ax.yaxis.set_tick_params(labelsize=7)
@@ -337,17 +332,16 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.spines['right'].set_visible(False)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
+    plt.close(fig)
 
     # %% Quantify the health associated with each TREATMENT_ID (short) SPLIT BY AGE and WEALTH
 
     # -- DEATHS
     def get_total_num_death_by_agegrp_and_label(_df):
         """Return the total number of deaths in the TARGET_PERIOD by age-group and cause label."""
-        age_group = to_age_group(_df['age'])
-        return _df \
-            .loc[_df['date'].between(*TARGET_PERIOD)] \
-            .groupby([age_group, 'label'])['person_id'].size()
+        _df_limited_to_dates = _df.loc[_df['date'].between(*TARGET_PERIOD)]
+        age_group = to_age_group(_df_limited_to_dates['age'])
+        return _df_limited_to_dates.groupby([age_group, 'label'])['person_id'].size()
 
     total_num_death_by_agegrp_and_label = extract_results(
         results_folder,
@@ -370,7 +364,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
 
         fig, ax = plt.subplots()
-        name_of_plot = f'Deaths Averted by {_scenario_name} by Age and Cause {target_period()}'
+        name_of_plot = f'Deaths Averted by Services For {_scenario_name} by Age and Cause {target_period()}'
         (
             format_to_plot / 1000
         ).plot.bar(stacked=True, ax=ax,
@@ -384,21 +378,21 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.grid()
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.legend(ncol=3, fontsize=8, loc='upper right')
+        # ax.legend(ncol=3, fontsize=8, loc='upper right')
+        ax.legend().set_visible(False)
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-        fig.show()
+        plt.close(fig)
 
     def get_total_num_death_by_wealth_and_label(_df):
         """Return the total number of deaths in the TARGET_PERIOD by wealth and cause label."""
         wealth_cats = {5: '0-19%', 4: '20-39%', 3: '40-59%', 2: '60-79%', 1: '80-100%'}
-        wealth_group = _df['li_wealth'] \
+        _df_limited_to_time = _df.loc[_df['date'].between(*TARGET_PERIOD)]
+        wealth_group = _df_limited_to_time['li_wealth'] \
             .map(wealth_cats) \
             .astype(pd.CategoricalDtype(wealth_cats.values(), ordered=True))
 
-        return _df \
-            .loc[_df['date'].between(*TARGET_PERIOD)] \
-            .groupby([wealth_group, 'label'])['person_id'].size()
+        return _df_limited_to_time.groupby([wealth_group, 'label'])['person_id'].size()
 
     total_num_death_by_wealth_and_label = extract_results(
         results_folder,
@@ -420,7 +414,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
 
         fig, ax = plt.subplots()
-        name_of_plot = f'Deaths Averted by {_scenario_name} by Wealth and Cause {target_period()}'
+        name_of_plot = f'Deaths Averted by Services For {_scenario_name} by Wealth and Cause {target_period()}'
         (
             format_to_plot / 1000
         ).plot.bar(stacked=True, ax=ax,
@@ -434,10 +428,11 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.grid()
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
-        ax.legend(ncol=3, fontsize=8, loc='upper right')
+        # ax.legend(ncol=3, fontsize=8, loc='upper right')
+        ax.legend().set_visible(False)
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-        fig.show()
+        plt.close(fig)
 
     # -- DALYS
     def get_total_num_dalys_by_agegrp_and_label(_df):
@@ -471,7 +466,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
 
         fig, ax = plt.subplots()
-        name_of_plot = f'DALYS Averted by {_scenario_name} by Age and Cause {target_period()}'
+        name_of_plot = f'DALYS Averted by Services For: {_scenario_name} ({target_period()})'
         (
             format_to_plot / 1e6
         ).plot.bar(stacked=True, ax=ax,
@@ -479,8 +474,14 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                    )
         ax.axhline(0.0, color='black')
         ax.set_title(name_of_plot)
-        ax.set_ylabel('Number of DALYS Averted (/1e6)')
-        ax.set_ylim(-0.2, 12)
+        ax.set_ylabel('Number of DALYS Averted (Millions)')
+        if _scenario_name == "*":
+            # Scaling when looking at impact of all TREATMENT_ID
+            ax.set_ylim(0, 25)
+        else:
+            # Scaling when only looking at some particular TREATMENT_ID (smaller!)
+            ax.set_ylim(-0.2, 8)
+            ax.set_yticks(np.arange(0, 10, 2))
         ax.set_xlabel('Age-group')
         ax.grid()
         ax.spines['top'].set_visible(False)
@@ -489,7 +490,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.legend().set_visible(False)
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-        fig.show()
+        plt.close(fig)
 
     def get_total_num_dalys_by_wealth_and_label(_df):
         """Return the total number of DALYS in the TARGET_PERIOD by wealth and cause label."""
@@ -526,7 +527,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             .sort_index(axis=1, key=order_of_cause_of_death_or_daly_label)
 
         fig, ax = plt.subplots()
-        name_of_plot = f'DALYS Averted by {_scenario_name} by Wealth and Cause {target_period()}'
+        name_of_plot = f'DALYS Averted by Services For {_scenario_name} by Wealth and Cause {target_period()}'
         (
             format_to_plot / 1e6
         ).plot.bar(stacked=True, ax=ax,
@@ -534,8 +535,13 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
                    )
         ax.axhline(0.0, color='black')
         ax.set_title(name_of_plot)
-        ax.set_ylabel('Number of DALYs Averted (/1e6)')
-        ax.set_ylim(-5, 10)
+        ax.set_ylabel('Number of DALYs Averted (Millions)')
+        if _scenario_name == "*":
+            # Scaling when looking at impact of all TREATMENT_ID
+            ax.set_ylim(0, 12)
+        else:
+            # Scaling when only looking at some particular TREATMENT_ID
+            ax.set_ylim(-5, 10)
         ax.set_xlabel('Wealth Percentile')
         ax.grid()
         ax.spines['top'].set_visible(False)
@@ -544,7 +550,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         ax.legend().set_visible(False)
         fig.tight_layout()
         fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-        fig.show()
+        plt.close(fig)
 
     # %% Quantify the healthcare system resources used with each TREATMENT_ID (short) (The difference in the number of
     # appointments between each scenario and the 'Everything' scenario.)
@@ -589,7 +595,7 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
             ax.set_axis_off()
             ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
             fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-            fig.show()
+            plt.close(fig)
 
     # 2) Examine the Difference in the number/type of appointments occurring
 
@@ -619,19 +625,19 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         stacked=True, legend=True, ax=ax
     )
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
-    ax.set_ylabel('(/1e6)')
-    ax.set_xlabel('TREATMENT_ID (Short)')
+    ax.set_ylabel('(/millions)')
+    ax.set_xlabel('TREATMENT_ID')
     ax.axhline(0, color='grey')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.legend(ncol=3, fontsize=5, loc='upper left')
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
+    plt.close(fig)
 
     # VERSION WITH COARSE APPOINTMENTS, CONFORMING TO STANDARD ORDERING/COLORS AND ORDER
     fig, ax = plt.subplots()
-    name_of_plot = f'Additional Appointments, {target_period()}'
+    name_of_plot = 'Change in Appointments When Service Provided'
     delta_appts_coarse = delta_appts \
         .groupby(axis=0, by=delta_appts.index.map(get_coarse_appt_type)) \
         .sum() \
@@ -645,8 +651,8 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
         stacked=True, legend=True, ax=ax, color=[get_color_coarse_appt(_a) for _a in delta_appts_coarse.index]
     )
     ax.set_title(name_of_plot, {'size': 12, 'color': 'black'})
-    ax.set_xlabel('Additional Appointments (/1e6)')
-    ax.set_ylabel('TREATMENT_ID (Short)')
+    ax.set_xlabel('Difference in Number of Appointments (/millions)')
+    ax.set_ylabel('TREATMENT_ID')
     ax.axvline(0, color='grey')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
@@ -654,85 +660,28 @@ def apply(results_folder: Path, output_folder: Path, resourcefilepath: Path = No
     ax.legend().set_visible(False)
     fig.tight_layout()
     fig.savefig(make_graph_file_name(name_of_plot.replace(' ', '_')))
-    fig.show()
-
-    # Return results, if option `rtn_results` is True
-    if rtn_results:
-        return results
+    plt.close(fig)
 
 
 if __name__ == "__main__":
-    rfp = Path('resources')
-
-    parser = argparse.ArgumentParser(
-        description="Produce plots to show the impact each set of treatments",
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
-    )
-    parser.add_argument(
-        "--output-path",
-        help=(
-            "Directory to write outputs to. If not specified (set to None) outputs "
-            "will be written to value of --results-path argument."
-        ),
-        type=Path,
-        default=None,
-        required=False,
-    )
-    parser.add_argument(
-        "--resources-path",
-        help="Directory containing resource files",
-        type=Path,
-        default=Path('resources'),
-        required=False,
-    )
-    parser.add_argument(
-        "--results-path",
-        type=Path,
-        help=(
-            "Directory containing results from running src/scripts/healthsystem/"
-            "finding_effects_of_each_treatment/scenario_effect_of_each_treatment_defaults.py "
-            "script. If not specified (set to None) the last (sorting in alphabetical "
-            "order) directory matching either of the glob patterns outputs/"
-            "*effect_of_each_treatment* and outputs/*/*effect_of_each_treatment* will "
-            "be used if any, or an error raised if there are no matches."
-        ),
-        default=None,
-        required=False
-    )
+    parser = argparse.ArgumentParser()
+    parser.add_argument("results_folder", type=Path)
     args = parser.parse_args()
-    if args.results_path is None:
-        candidate_paths = glob.glob(
-            str(Path("outputs") / "*effect_of_each_treatment*"), recursive=True
-        )
-        candidate_paths += glob.glob(
-            str(Path("outputs") / "*" / "*effect_of_each_treatment*"), recursive=True
-        )
-        if len(candidate_paths) == 0:
-            raise FileNotFoundError(
-                "Could not find any directories matching pattern outputs/[*/]"
-                "*effect_of_each_treatment* to use as results path, directory "
-                "to use should be specified explicitly using --results-path argument."
-            )
-        else:
-            results_path = Path(sorted(candidate_paths)[-1])
-    else:
-        results_path = args.results_path
 
-    output_path = results_path if args.output_path is None else args.output_path
     apply(
-        results_folder=results_path,
-        output_folder=output_path,
-        resourcefilepath=args.resources_path
+        results_folder=args.results_folder,
+        output_folder=args.results_folder,
+        resourcefilepath=Path('./resources')
     )
 
     # Plot the legends
     plot_legends.apply(
-        results_folder=None, output_folder=results_path, resourcefilepath=rfp)
+        results_folder=None, output_folder=args.results_folder, resourcefilepath=Path('./resources'))
 
     # Plot the organisation chart of the TREATMENT_IDs
     plot_org_chart_treatment_ids.apply(
-        results_folder=None, output_folder=results_path, resourcefilepath=None)
+        results_folder=None, output_folder=args.results_folder, resourcefilepath=None)
 
-    with zipfile.ZipFile(output_path / f"images_{output_path.parts[-1]}.zip", mode="w") as archive:
-        for filename in sorted(glob.glob(str(output_path / "*.png"))):
+    with zipfile.ZipFile(args.results_folder / f"images_{args.results_folder.parts[-1]}.zip", mode="w") as archive:
+        for filename in sorted(glob.glob(str(args.results_folder / "*.png"))):
             archive.write(filename, os.path.basename(filename))
