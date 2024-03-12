@@ -577,10 +577,8 @@ class OesophagealCancer(Module):
         # begin investigation for Oesophageal Cancer:
         event_info = []
         if patient_details.age_years > 5 and "dysphagia" in symptoms:
-            event = (
-                HSI_OesophagealCancer_Investigation_Following_Dysphagia(
-                    person_id=patient_id, module=self
-                ),
+            event = HSI_OesophagealCancer_Investigation_Following_Dysphagia(
+                person_id=patient_id, module=self
             )
             options = {
                 "priority": 0,

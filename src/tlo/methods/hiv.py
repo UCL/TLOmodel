@@ -1514,14 +1514,12 @@ class Hiv(Module):
         #  - do not do referrals if the person is HIV negative (assumed not time for counselling etc).
         event_info = []
         if "aids_symptoms" in symptoms:
-            event = (
-                HSI_Hiv_TestAndRefer(
-                    person_id=patient_id,
-                    module=self,
-                    referred_from="hsi_generic_first_appt",
-                    suppress_footprint=True,
-                    do_not_refer_if_neg=True,
-                ),
+            event = HSI_Hiv_TestAndRefer(
+                person_id=patient_id,
+                module=self,
+                referred_from="hsi_generic_first_appt",
+                suppress_footprint=True,
+                do_not_refer_if_neg=True,
             )
             options = {
                 "topen": self.sim.date,

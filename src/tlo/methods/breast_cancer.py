@@ -581,7 +581,7 @@ class BreastCancer(Module):
                 "tclose": None,
             }
             event_info.append((event, options))
-        return event_info, options
+        return event_info, {}
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS
