@@ -368,9 +368,8 @@ class Module:
         """This is called after the simulation has ended.
         Modules do not need to declare this."""
 
-    @classmethod
     def do_at_generic_first_appt(
-        cls,
+        self,
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
@@ -406,9 +405,8 @@ class Module:
         """
         return [], {}
 
-    @classmethod
     def do_at_generic_first_appt_emergency(
-        cls,
+        self,
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,

@@ -167,15 +167,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
     df.loc[person_id, proposed_df_updates.keys()] = proposed_df_updates.values()
 
     # ----------------------------------- ALL AGES -----------------------------------
-    # Consider Measles if rash.
-    if "Measles" in modules:
-        if "rash" in symptoms:
-            schedule_hsi(
-                HSI_Measles_Treatment(person_id=person_id, module=modules["Measles"]),
-                priority=0,
-                topen=hsi_event.sim.date,
-                tclose=None,
-            )
 
     # 'Automatic' testing for HIV for everyone attending care with AIDS symptoms:
     #  - suppress the footprint (as it done as part of another appointment)
