@@ -24,7 +24,7 @@ import types
 from collections import defaultdict
 from itertools import chain
 from pathlib import Path
-from typing import Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -1341,21 +1341,6 @@ class Alri(Module):
         else:
             return 'failure'
 
-    def on_presentation(self, person_id, hsi_event):
-        """Action taken when a child (under 5 years old) presents at a generic appointment (emergency or non-emergency)
-         with symptoms of `cough` or `difficult_breathing`."""
-
-        self.record_sought_care_for_alri()
-
-        # All persons have an initial out-patient appointment at the current facility level.
-        self.sim.modules['HealthSystem'].schedule_hsi_event(
-            hsi_event=HSI_Alri_Treatment(person_id=person_id, module=self,
-                                         facility_level=hsi_event.ACCEPTED_FACILITY_LEVEL),
-            topen=self.sim.date,
-            tclose=self.sim.date + pd.DateOffset(days=1),
-            priority=1
-        )
-
     def record_sought_care_for_alri(self):
         """Count that the person is seeking care"""
         self.logging_event.new_seeking_care()
@@ -1433,6 +1418,51 @@ class Alri(Module):
         else:
             raise ValueError(f'Classification not recognised: {classification_for_treatment_decision}')
 
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: NamedTuple = None,
+        symptoms: List[str] = None,
+        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        facility_level: str = None,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        event_info = []
+        # Action taken when a child (under 5 years old) presents at a
+        # generic appointment (emergency or non-emergency) with symptoms
+        # of `cough` or `difficult_breathing`.
+        if patient_details.age_years <= 5 and (
+            ("cough" in symptoms) or ("difficult_breathing" in symptoms)
+        ):
+            self.record_sought_care_for_alri()
+
+            # All persons have an initial out-patient appointment at the current facility level.
+            event = HSI_Alri_Treatment(
+                person_id=patient_id, module=self, facility_level=facility_level
+            )
+            options = {
+                "topen": self.sim.date,
+                "tclose": self.sim.date + pd.DateOffset(days=1),
+                "priority": 1,
+            }
+            event_info.append((event, options))
+        return event_info, {}
+
+    def do_at_generic_first_appt_emergency(
+        self,
+        patient_id: int,
+        patient_details: NamedTuple = None,
+        symptoms: List[str] = None,
+        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        facility_level: str = None,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        # Emergency and non-emergency treatment is identical for alri
+        return self.do_at_generic_first_appt(
+            patient_id=patient_id,
+            patient_details=patient_details,
+            symptoms=symptoms,
+            diagnosis_fn=diagnosis_fn,
+            facility_level=facility_level,
+        )
 
 class Models:
     """Helper-class to store all the models that specify the natural history of the Alri disease"""

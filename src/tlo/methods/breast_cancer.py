@@ -566,6 +566,7 @@ class BreastCancer(Module):
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        facility_level: str = None,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         event_info = []
         # If the patient is not a child and symptoms include breast
@@ -582,6 +583,7 @@ class BreastCancer(Module):
             }
             event_info.append((event, options))
         return event_info, {}
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS

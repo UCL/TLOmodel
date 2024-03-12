@@ -374,6 +374,7 @@ class Module:
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        facility_level: str = None,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         """
         Actions to be take during a NON-emergency generic HSI.
@@ -402,6 +403,7 @@ class Module:
         :param patient_details: Patient details as provided in the population DataFrame.
         :param symptoms: List of symptoms the patient is experiencing.
         :param diagnosis_fn: The function that can run diagnosis tests based on the patient's symptoms.
+        :param facility_level: The level of the facility that the patient presented at.
         """
         return [], {}
 
@@ -411,6 +413,7 @@ class Module:
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        facility_level: str = None,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         """
         Actions to be take during an EMERGENCY generic HSI.

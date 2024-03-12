@@ -114,6 +114,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
     modules: OrderedDict[str, "Module"] = hsi_event.sim.modules
     schedule_hsi = hsi_event.healthcare_system.schedule_hsi_event
     symptoms = hsi_event.sim.modules["SymptomManager"].has_what(person_id)
+    facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
     # Create the diagnosis test runner function
     def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
         return hsi_event.healthcare_system.dx_manager.run_dx_test(
@@ -136,6 +137,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
             patient_details=patient_details,
             symptoms=symptoms,
             diagnosis_fn=diagnosis_fn,
+            facility_level=facility_level,
         )
         # Schedule any requested updates
         for info in event_info:
@@ -169,12 +171,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
         if "Diarrhoea" in modules:
             if "diarrhoea" in symptoms:
                 modules["Diarrhoea"].do_when_presentation_with_diarrhoea(
-                    person_id=person_id, hsi_event=hsi_event
-                )
-
-        if "Alri" in modules:
-            if ("cough" in symptoms) or ("difficult_breathing" in symptoms):
-                modules["Alri"].on_presentation(
                     person_id=person_id, hsi_event=hsi_event
                 )
 
@@ -216,14 +212,13 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
     df = hsi_event.sim.population.props
     symptoms = hsi_event.sim.modules['SymptomManager'].has_what(person_id=person_id)
     schedule_hsi = hsi_event.sim.modules["HealthSystem"].schedule_hsi_event
-    age = df.at[person_id, 'age_years']
 
     # Make top-level reads of information, to avoid repeat accesses.
     person_id = hsi_event.target
     modules: OrderedDict[str, "Module"] = hsi_event.sim.modules
     schedule_hsi = hsi_event.healthcare_system.schedule_hsi_event
     symptoms = hsi_event.sim.modules["SymptomManager"].has_what(person_id)
-
+    facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
     # Create the diagnosis test runner function
     def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
         return hsi_event.healthcare_system.dx_manager.run_dx_test(
@@ -246,6 +241,7 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
             patient_details=patient_details,
             symptoms=symptoms,
             diagnosis_fn=diagnosis_fn,
+            facility_level=facility_level,
         )
         # Schedule any requested updates
         for info in event_info:
@@ -312,10 +308,6 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
                          priority=0,
                          topen=sim.date,
                          tclose=None)
-
-    if 'Alri' in sim.modules:
-        if (age <= 5) and (('cough' in symptoms) or ('difficult_breathing' in symptoms)):
-            sim.modules['Alri'].on_presentation(person_id=person_id, hsi_event=hsi_event)
 
     # ----- spurious emergency symptom -----
     if 'spurious_emergency_symptom' in symptoms:

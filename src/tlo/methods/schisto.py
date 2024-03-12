@@ -329,6 +329,7 @@ class Schisto(Module):
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        facility_level: str = None,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         event_info = []
         # Do when person presents to the GenericFirstAppt.
