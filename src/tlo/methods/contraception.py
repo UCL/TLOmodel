@@ -1197,11 +1197,11 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         # If all essential consumables available, determine equipment availability
         if co_administrated:
             if self.new_contraceptive == 'female_sterilization':
-                co_administrated = self.sim.modules['HealthSystem'].get_essential_equip_availability({
+                co_administrated = self.get_essential_equip_availability({
                     'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise'
                 })
             elif self.new_contraceptive == 'IUD':
-                co_administrated = self.sim.modules['HealthSystem'].get_essential_equip_availability({
+                co_administrated = self.get_essential_equip_availability({
                     'Cusco’s/ bivalved Speculum (small, medium, large)', 'Sponge Holding Forceps'
                 })
 

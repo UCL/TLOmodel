@@ -451,6 +451,10 @@ class HSI_Event:
             for pkg_name in set_of_pkgs:
                 self.EQUIPMENT.update(self.get_equip_item_codes_from_pkg_name(pkg_name))
 
+    def get_essential_equip_availability(self, set_of_pkgs: Set[str]) -> bool:
+        self.set_equipment_essential_to_run_event(set_of_pkgs)
+        return self.sim.modules['HealthSystem'].get_essential_equip_availability(self.ESSENTIAL_EQUIPMENT)
+
     def initialise(self):
         """Initialise the HSI:
         * Set the facility_info
