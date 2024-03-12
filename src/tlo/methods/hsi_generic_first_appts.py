@@ -26,10 +26,8 @@ from tlo.methods.care_of_women_during_pregnancy import (
 )
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.epilepsy import HSI_Epilepsy_Start_Anti_Epileptic
-from tlo.methods.hiv import HSI_Hiv_TestAndRefer
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.labour import HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour
-from tlo.methods.measles import HSI_Measles_Treatment
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
 from tlo.methods.oesophagealcancer import HSI_OesophagealCancer_Investigation_Following_Dysphagia
 from tlo.methods.other_adult_cancers import (
@@ -167,24 +165,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
     df.loc[person_id, proposed_df_updates.keys()] = proposed_df_updates.values()
 
     # ----------------------------------- ALL AGES -----------------------------------
-
-    # 'Automatic' testing for HIV for everyone attending care with AIDS symptoms:
-    #  - suppress the footprint (as it done as part of another appointment)
-    #  - do not do referrals if the person is HIV negative (assumed not time for counselling etc).
-    if "Hiv" in modules:
-        if "aids_symptoms" in symptoms:
-            schedule_hsi(
-                HSI_Hiv_TestAndRefer(
-                    person_id=person_id,
-                    module=modules["Hiv"],
-                    referred_from="hsi_generic_first_appt",
-                    suppress_footprint=True,
-                    do_not_refer_if_neg=True,
-                ),
-                topen=hsi_event.sim.date,
-                tclose=None,
-                priority=0,
-            )
 
     if "injury" in symptoms:
         if "RTI" in modules:

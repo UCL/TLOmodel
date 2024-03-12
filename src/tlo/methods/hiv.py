@@ -25,6 +25,7 @@ If PrEP is not available due to limitations in the HealthSystem, the person defa
 """
 
 import os
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple
 
 import numpy as np
 import pandas as pd
@@ -1501,6 +1502,34 @@ class Hiv(Module):
             )
         )
 
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: NamedTuple = None,
+        symptoms: List[str] = None,
+        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        # 'Automatic' testing for HIV for everyone attending care with AIDS symptoms:
+        #  - suppress the footprint (as it done as part of another appointment)
+        #  - do not do referrals if the person is HIV negative (assumed not time for counselling etc).
+        event_info = []
+        if "aids_symptoms" in symptoms:
+            event = (
+                HSI_Hiv_TestAndRefer(
+                    person_id=patient_id,
+                    module=self,
+                    referred_from="hsi_generic_first_appt",
+                    suppress_footprint=True,
+                    do_not_refer_if_neg=True,
+                ),
+            )
+            options = {
+                "topen": self.sim.date,
+                "tclose": None,
+                "priority": 0,
+            }
+            event_info.append((event, options))
+        return event_info, {}
 
 # ---------------------------------------------------------------------------
 #   Main Polling Event
