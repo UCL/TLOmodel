@@ -18,8 +18,19 @@ def merge_dicts(dicts: Iterable[Dict]):
 
 
 class ScenarioSwitcher(Module):
-    """The ScenarioSwitcher module. This is a utility module that can be used to make changes to parameters in
-    registered simulation models. """
+    """The ScenarioSwitcher module.
+    A "Switch" is basically a way of changing a bunch of parameters, including complex parameters (like DataFrames) at
+     once through a simple type (e.g. bool) that can be done via the Scenario class.
+    This module has parameters that specify the position of the switches in two phases of the simulation - before and
+     after a change in the state of the simulation (e.g., before and after some intervention). For each phase, it
+     works out the values of the module parameters that are consistent with the configuration of switches in that phase.
+    It relies on helper function that provide the values of the parameters that are consistent with the value of a
+    particular switch (or switches).
+    e.g. This module might have a parameter, 'switch_mega_change' = [False, True] to represent that the change happens
+     part-way through the simulation. There would be a helper function defined with signature
+     `get_params_for_mega_change(switch_mega_change: bool) -> Dict` which would returns the parameters in the modules
+     needed for that value of `switch_mega_change`, of the form `{Disease_Module: {Parameter_Name: Parameter_Value}}`.
+    """
 
     def __init__(self, name=None, resourcefilepath=None):
         super().__init__(name)
