@@ -20,6 +20,8 @@ from tlo.analysis.utils import (
     make_age_grp_lookup,
     make_age_grp_types,
     summarize,
+    create_pickles_locally,
+    parse_log_file
 )
 
 # define a timestamp for script outputs
@@ -38,15 +40,12 @@ if not os.path.exists(costing_outputs_folder):
     os.makedirs(costing_outputs_folder)
 
 # Declare period for which the results will be generated (defined inclusively)
-TARGET_PERIOD = (Date(2020, 1, 1), Date(2025, 12, 31))
-
-
+TARGET_PERIOD = (Date(2000, 1, 1), Date(2050, 12, 31))
 def drop_outside_period(_df):
     """Return a dataframe which only includes for which the date is within the limits defined by TARGET_PERIOD"""
     return _df.drop(index=_df.index[~_df['date'].between(*TARGET_PERIOD)])
 
 # %% Gathering basic information
-
 # Find results_folder associated with a given batch_file and get most recent
 results_folder = get_scenario_outputs('example_costing_scenario.py', outputfilepath)[0] # impact_of_cons_regression_scenarios
 
@@ -59,31 +58,51 @@ info = get_scenario_info(results_folder)
 # 1) Extract the parameters that have varied over the set of simulations
 params = extract_params(results_folder)
 
+# Load costing resourcefile
+workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
+                                    sheet_name = None)
 
 # 1. HR cost
 # 1.1 HR Cost - Financial (Given the staff available)
 # Load annual salary by officer type and facility level
-workbook_cost = pd.read_excel((resourcefilepath / "costing/ResourceFile_Costing.xlsx"),
-                                    sheet_name = None)
 hr_annual_salary = workbook_cost["human_resources"]
 hr_annual_salary['OfficerType_FacilityLevel'] = 'Officer_Type=' + hr_annual_salary['Officer_Category'].astype(str) + '|Facility_Level=' + hr_annual_salary['Facility_Level'].astype(str)
 
 # Load scenario staffing level
-hr_scenario = log[ 'tlo.scenario'][ 'override_parameter']['new_value'][log[ 'tlo.scenario'][ 'override_parameter']['name'] == 'use_funded_or_actual_staffing']
+hr_scenario = log[ 'tlo.scenario']['override_parameter']['new_value'][log[ 'tlo.scenario'][ 'override_parameter']['name'] == 'use_funded_or_actual_staffing']
 
 if hr_scenario.empty:
     current_staff_count = pd.read_csv(
         resourcefilepath / "healthsystem/human_resources/actual/ResourceFile_Daily_Capabilities.csv")
-
 else:
     current_staff_count = pd.read_csv(
-        resourcefilepath / 'healthsystem'/ 'human_resources' / f'{hr_scenario}' / 'ResourceFile_Daily_Capabilities.csv')
+        resourcefilepath / 'healthsystem'/ 'human_resources' / f'{hr_scenario[2]}' / 'ResourceFile_Daily_Capabilities.csv')
 
 current_staff_count_by_level_and_officer_type = current_staff_count.groupby(['Facility_Level', 'Officer_Category'])[
     'Staff_Count'].sum().reset_index()
 
+# Check if any cadres were not utilised at particular levels of care in the simulation
+_df = log['tlo.methods.healthsystem']['Capacity']
+# Initialize a dictionary to store the sums
+cadres_used = {}
+# Iterate over the rows and sum values for each key
+for index, row in _df.iterrows():
+    for key, value in row['Frac_Time_Used_By_OfficerType'].items():
+        if key not in cadres_used:
+            cadres_used[key] = 0
+        cadres_used[key] += value
+
+# Store list of cadre-level combinations used in the simulation in a list
+cadres_used_df = pd.DataFrame(cadres_used.items(), columns=['Key', 'Sum'])
+list_of_cadre_and_level_combinations_used = cadres_used_df[cadres_used_df['Sum'] != 0]['Key']
+
+# Subset scenario staffing level to only include cadre-level combinations used in the simulation
+current_staff_count_by_level_and_officer_type['OfficerType_FacilityLevel'] = 'Officer_Type=' + current_staff_count_by_level_and_officer_type['Officer_Category'].astype(str) + '|Facility_Level=' + current_staff_count_by_level_and_officer_type['Facility_Level'].astype(str)
+used_staff_count_by_level_and_officer_type = current_staff_count_by_level_and_officer_type[current_staff_count_by_level_and_officer_type['OfficerType_FacilityLevel'].isin(list_of_cadre_and_level_combinations_used)]
+
 # Calculate salary cost for modelled health workforce (Staff count X Annual salary)
-salary_for_modelled_staff = pd.merge(hr_annual_salary, current_staff_count_by_level_and_officer_type, on = ['Officer_Category', 'Facility_Level'])
+salary_for_modelled_staff = pd.merge(used_staff_count_by_level_and_officer_type[['OfficerType_FacilityLevel', 'Staff_Count']],
+                                     hr_annual_salary[['OfficerType_FacilityLevel', 'Salary_USD']], on = ['OfficerType_FacilityLevel'], how = "left")
 salary_for_modelled_staff['Total_salary_by_cadre_and_level'] = salary_for_modelled_staff['Salary_USD'] * salary_for_modelled_staff['Staff_Count']
 
 # Create a dataframe to store financial costs
@@ -198,6 +217,56 @@ plot_stock_to_dispensed(lmis_consumable_usage_by_district_and_level, 'stock_to_d
 plot_stock_to_dispensed(lmis_consumable_usage_by_district_and_level, 'stock_to_dispensed_ratio',
                         'item_code', 0.95)
 
+# Open the .gz file in read mode ('rb' for binary mode)
+data = dict()
+with gzip.open('./outputs/tlo.methods.healthsystem.log.gz', 'rb') as f:
+    # Read the contents of the file
+    data = f.read()
+
+# Now you can process the data as needed
+# For example, you can decode it if it's in a text format
+decoded_data = data.decode('ascii')
+print(decoded_data)
+
+folder = './outputs/'
+output = dict()
+with open('./outputs/tlo.methods.healthsystem.log.gz', "rb") as f:
+    output = pickle.load(f)
+
+
+#-----
+
+parsed_dicts = []
+
+# Split the input string into individual JSON objects
+json_objects = decoded_data.split('\n')
+
+# Iterate over each JSON object and attempt to parse it
+for json_str in json_objects:
+    if json_str.strip():  # Check if the JSON string is not empty
+        try:
+            parsed_dict = json.loads(json_str)
+            parsed_dicts.append(parsed_dict)
+        except json.JSONDecodeError as e:
+            print("Error decoding JSON:", e)
+
+print(parsed_dicts)
+
+# Initialize an empty dictionary
+merged_dict = {}
+
+# Iterate over each dictionary in the list
+for d in parsed_dicts[4:30]:
+    # Update the merged dictionary with the contents of each dictionary
+    merged_dict.update(d)
+
+print(merged_dict)
+
+#-----
+
+with open('./outputs/tlo.methods.healthsystem.log', 'r') as file:
+    # Read the contents of the file
+    log_content = file.read()
 
 # Compare financial costs with actual budget data
 ####################################################
