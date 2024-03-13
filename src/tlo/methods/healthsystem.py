@@ -1,10 +1,11 @@
 import datetime
 import heapq as hp
 import itertools
+import re
 import warnings
 from collections import Counter, defaultdict
 from collections.abc import Iterable
-from itertools import repeat
+from itertools import combinations, product, repeat
 from pathlib import Path
 from typing import Dict, List, NamedTuple, Optional, Tuple, Union
 
@@ -563,6 +564,15 @@ class HealthSystem(Module):
             Types.BOOL, "Decide whether to scale HR capabilities by population size every year. Can be used as well as"
                         " the dynamic_HR_scaling_factor"
         ),
+        
+        'global_task_shifting_mode': Parameter(
+            Types.STRING, "Name of global task-shifting mode adopted"),
+        
+        'global_task_shifting': Parameter(
+            Types.DICT, " Global task-shifting policy adopted by the health care system. It includes a list of the officers"
+                        " eligible for task shifting. For each of those officers, it specifies which officers"
+                        " can take over the officer's tasks, and a factor explaining how the originally scheduled time "
+                        " should be scaled if performed by a different officer."),
 
         'tclose_overwrite': Parameter(
             Types.INT, "Decide whether to overwrite tclose variables assigned by disease modules"),
@@ -599,6 +609,7 @@ class HealthSystem(Module):
         beds_availability: Optional[str] = None,
         randomise_queue: bool = True,
         ignore_priority: bool = False,
+        global_task_shifting_mode: Optional[str] = None,
         policy_name: Optional[str] = None,
         capabilities_coefficient: Optional[float] = None,
         use_funded_or_actual_staffing: Optional[str] = None,
@@ -673,7 +684,7 @@ class HealthSystem(Module):
         self.randomise_queue = randomise_queue
 
         self.ignore_priority = ignore_priority
-
+        
         # This default value will be overwritten if assumed policy is not None
         self.lowest_priority_considered = 2
 
@@ -684,6 +695,8 @@ class HealthSystem(Module):
                                        'VerticalProgrammes', 'ClinicallyVulnerable', 'EHP_III',
                                        'LCOA_EHP']
         self.arg_policy_name = policy_name
+        
+        self.arg_global_task_shifting_mode = global_task_shifting_mode
 
         self.tclose_overwrite = None
         self.tclose_days_offset_overwrite = None
@@ -816,6 +829,11 @@ class HealthSystem(Module):
         self.parameters['priority_rank'] = pd.read_excel(path_to_resourcefiles_for_healthsystem / 'priority_policies' /
                                                          'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx',
                                                          sheet_name=None)
+                                                         
+        self.parameters['global_task_shifting'] = pd.read_excel(path_to_resourcefiles_for_healthsystem / 'human_resources'/
+                                                         'task_shifting'/'ResourceFile_GlobalTaskShifting.xlsx',
+                                                         sheet_name=None)
+
 
         self.parameters['const_HR_scaling_table']: Dict = pd.read_excel(
             path_to_resourcefiles_for_healthsystem /
@@ -870,6 +888,9 @@ class HealthSystem(Module):
 
         # Set up framework for considering a priority policy
         self.setup_priority_policy()
+        
+        # Set up framework for considering a global task-shifting policy
+        self.setup_global_task_shifting()
 
 
     def initialise_population(self, population):
@@ -971,11 +992,150 @@ class HealthSystem(Module):
             self.list_fasttrack.append(('hv_diagnosed', 'FT_if_Hivdiagnosed'))
         if 'Tb' in self.sim.modules:
             self.list_fasttrack.append(('tb_diagnosed', 'FT_if_tbdiagnosed'))
+            
+    def setup_global_task_shifting(self):
+    
+        # Select the global task shifting mode to be considered
+        self.global_task_shifting_mode = self.get_global_task_shifting_mode_initial()
+    
+        # Load relevant sheet from resource file
+        df = self.parameters['global_task_shifting'][self.global_task_shifting_mode]
+
+        self.global_task_shifting = {}
+
+        # Iterate through the rows of the DataFrame and populate the dictionary
+        for index, row in df.iterrows():
+            officer = row['Officer']
+            alternative_officers = row['Alternative_officer'].split(',')
+            time_factor_str = str(row['Time_factor'])
+
+            # Split the string into a list of floats
+            time_factors = [float(factor) for factor in time_factor_str.split(',')]
+
+            # Create the entry in the dictionary
+            self.global_task_shifting[officer] = (alternative_officers, time_factors)
+        
+        # If task-shifting is considered, expand the number of possible appt_footprints
+        # to include potential task-shifting
+        if self.global_task_shifting:
+
+            _appt_times_expand = {_facility_level: defaultdict(list) for _facility_level in
+                                         self._facility_levels}
+                                         
+            for level in self._facility_levels:
+
+                for appt_footprint in self._appt_times[level]:
+                    # Get all officers required for this appointment
+                    officers_required = [subunit.officer_type for subunit in self._appt_times[level][appt_footprint]]
+                    # Among these, select those that could be eligible for task-shifting if need should arise
+                    officers_eligible_for_ts = [item for item in officers_required if item in self.global_task_shifting]
+
+                    tags_dictionary = {}
+                    for officer in officers_eligible_for_ts:
+                        tags = []
+                        # Find all potential task-shifting options for this officer
+                        for officer_ts in self.global_task_shifting[officer][0]:
+                            tags.append(officer[:4] + "-" + officer_ts[:4])
+                        tags_dictionary[officer] = tags
+
+                    # Calculate all possible appt footprints that may result from task-shifting, accounting
+                    # for the fact that more than one requested officer may be eligible for task-shifting.
+                    new_footprints = []
+                    for r in range(1, len(officers_eligible_for_ts)+1):
+                        # Each combination illustrates potentially unavailable officers
+                        for combination in combinations(officers_eligible_for_ts, r):
+                            product_options = product(*(map(str, tags_dictionary[key]) for key in combination))
+                            result_strings = [appt_footprint + '_withTS_' + '_and_'.join(option) for option in product_options]
+                            new_footprints.extend(result_strings)
+                            
+                    # For all these new footprints now obtain an updated call.
+                    
+                    # Task-shifting is logged in appt_footprint name as "xxxx-yyyy", where xxxx
+                    # are the first four letters of officer-type being task-shifted, and yyyy
+                    # are the first four letters of officer-type taking over tasks
+                    pattern = re.compile(r'(?<=[-_])(\w{4}-\w{4})')
+          
+                    # Initially assume this original call. This will be updated
+                    # depending on task-shifting considered.
+                    original_call = self._appt_times[level][appt_footprint]
+                    # Get the officers and times associated with the original footprint
+                    appt_footprint_times = Counter()
+                    for appt_info in original_call:
+                        appt_footprint_times[
+                            f"{appt_info.officer_type}"
+                        ] += appt_info.time_taken
+
+                    for new_footprint in new_footprints:
+                    
+                        # Store all instances of task-shifting taking place in this appt footprint
+                        task_shifting_adopted = {}
+                    
+                        # Find all instances of task-shifting in string
+                        matches = pattern.findall(new_footprint)
+                        
+                        for match in matches:
+                            short_original_officer = match[:4]
+                            short_new_officer = match[5:]
+
+                            # Get the full name of the original medical officer
+                            original_officer = (next((subunit for subunit in original_call if subunit.officer_type.startswith(short_original_officer)), None)).officer_type
+
+                            # Iterate through officers eligible for task shiting and find the appropriate time factor
+                            # linked to this task-shifting
+                            officer_types, factors = self.global_task_shifting[original_officer]
+
+                            for i, officer_type in enumerate(officer_types):
+                                if officer_type.startswith(short_new_officer):
+                                    new_officer = officer_type
+                                    factor = factors[i]
+                                    break  # Stop iterating once a match is found
+                                    
+                            # Add this task shifting and factor by which will scale to dictionary
+                            task_shifting_adopted[original_officer] = (new_officer,factor)
+                            
+                        if task_shifting_adopted:
+                            updated_call_inc_task_shift = {}
+                            # Go over all officers required for this appointment
+                            for k in appt_footprint_times.keys():
+                            
+                                # If task-shifting was requested for this officer, change name
+                                # of officer and rescale original task by relevant factor
+                                if k in task_shifting_adopted.keys():
+                                
+                                    task_for_officer = appt_footprint_times[k]*task_shifting_adopted[k][1]
+                                    j = task_shifting_adopted[k][0]
+                                    
+                                    if j in updated_call_inc_task_shift.keys():
+                                    # If officer is already included in updated_call_inc_task_shift
+                                    # (e.g. because it was already performing own tasks as well as
+                                    # taking over that of officer not available) add to original task
+                                        updated_call_inc_task_shift[j] += task_for_officer
+                                    else:
+                                        updated_call_inc_task_shift[j] = task_for_officer
+                                
+                                # Else simply add original requirement to new call
+                                else:
+                                    if k in updated_call_inc_task_shift.keys():
+                                        # Ensure that if this officer already present in dictionary
+                                        # this task is added, not overwritten
+                                        updated_call_inc_task_shift[k] += appt_footprint_times[k]
+                                    else:
+                                        updated_call_inc_task_shift[k] = appt_footprint_times[k]
+
+                        for k in updated_call_inc_task_shift.keys():
+                             _appt_times_expand[level][new_footprint].append(
+                                           AppointmentSubunit(
+                                                officer_type=k,
+                                                time_taken= updated_call_inc_task_shift[k]
+                                            )
+                                        )
+                                        
+                # Add new footprints to the original dictionary at this level
+                self._appt_times[level].update(_appt_times_expand[level])
+
 
     def process_human_resources_files(self, use_funded_or_actual_staffing: str):
         """Create the data-structures needed from the information read into the parameters."""
-
-
 
         # * Define Facility Levels
         self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
@@ -1010,6 +1170,9 @@ class HealthSystem(Module):
             ) == len(appt_time_data)
         )
         self._appt_times = appt_times_per_level_and_type
+        
+
+            
 
         # * Define Which Appointments Are Possible At Each Facility Level
         appt_type_per_level_data = self.parameters['Appt_Offered_By_Facility_Level']
@@ -1307,6 +1470,14 @@ class HealthSystem(Module):
         return self.parameters['policy_name'] \
             if self.arg_policy_name is None \
             else self.arg_policy_name
+            
+    def get_global_task_shifting_mode_initial(self) -> str:
+        """Returns `priority_policy`. (Should be equal to what is specified by the parameter, but
+        overwrite with what was provided in argument if an argument was specified -- provided for backward
+        compatibility/debugging.)"""
+        return self.parameters['global_task_shifting_mode'] \
+            if self.arg_global_task_shifting_mode is None \
+            else self.arg_global_task_shifting_mode
 
     def load_priority_policy(self, policy):
 
@@ -1655,6 +1826,7 @@ class HealthSystem(Module):
         :return: A Counter that gives the times required for each officer-type in each facility_ID, where this time
          is non-zero.
         """
+        
         # Accumulate appointment times for specified footprint using times from appointment times table.
         appt_footprint_times = Counter()
         for appt_type in appt_footprint:
@@ -2367,7 +2539,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
             hold_over.extend(_to_be_held_over)
 
     def process_events_mode_2(self, hold_over: List[HSIEventQueueItem]) -> None:
-
+        
         capabilities_monitor = Counter(self.module.capabilities_today.to_dict())
         set_capabilities_still_available = {k for k, v in capabilities_monitor.items() if v > 0.0}
 
@@ -2441,21 +2613,67 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                         # Retrieve officers&facility required for HSI
                         original_call = next_event_tuple.hsi_event.expected_time_requests
                         _priority = next_event_tuple.priority
+
                         # In this version of mode_appt_constraints = 2, do not have access to squeeze
                         # based on queue information, and we assume no squeeze ever takes place.
                         squeeze_factor = 0.
 
-                        # Check if any of the officers required have run out.
+                        # Check if any of the officers required have run out. If including task-shifting,
+                        # this will involve checking if alternative capabilities are available for officers
+                        # that are no longer available.
                         out_of_resources = False
+                        
+                        # This string will store all TS taking place
+                        task_shifting_tag = ""
+    
                         for officer, call in original_call.items():
-                            # If any of the officers are not available, then out of resources
+                            # If any of the officers are not available, then out of resources, unless these can be
+                            # task-shifted
                             if officer not in set_capabilities_still_available:
+                            
+                                # Set this to True for now, however if:
+                                # 1. Task-shifting is included,
+                                # 2. Task-shifting is available for this officer/treatment,
+                                # 3. Alternative officers are still available
+                                # then will reset to False
                                 out_of_resources = True
+
+                                if len(self.sim.modules['HealthSystem'].global_task_shifting) > 0:
+                                
+                                    # Get officer type only
+                                    officer_no_facility = officer.split("Officer_")[1]
+                                    
+                                    # Extract task-shifting options for this officer
+                                    task_shift_options_for_officer = self.sim.modules['HealthSystem'].global_task_shifting.get(officer_no_facility)
+
+                                    # Check if possible alternatives to officer are available
+                                    # If they are, must register that we'll be using alternative.
+                                    if task_shift_options_for_officer:
+                                        
+                                        # Unpack values
+                                        new_officer_no_facility, time_scaling = task_shift_options_for_officer
+                                        
+                                        for new_officer_no_facility, time_scaling in zip(new_officer_no_facility, time_scaling):
+                                            # Get the task-shifting officer
+                                            shift_target_officer = officer.replace(officer_no_facility, new_officer_no_facility)
+                                            
+                                            # Check if this task-shifting officer is available, and save task_shift
+                                            if shift_target_officer in set_capabilities_still_available:
+                                                # Record task-shifting
+                                                if task_shifting_tag == "":
+                                                    task_shifting_tag += "_withTS_" + officer_no_facility[:4] + "-" + new_officer_no_facility[:4] + "_and_"
+                                                else:
+                                                    task_shifting_tag += officer_no_facility[:4] + "-" + new_officer_no_facility[:4] + "_and_"
+                                                out_of_resources = False
+                                                
+                                                # Once we've found available officer to replace, no need to go through other
+                                                # options
+                                                break
+
                         # If officers still available, run event. Note: in current logic, a little
                         # overtime is allowed to run last event of the day. This seems more realistic
                         # than medical staff leaving earlier than
                         # planned if seeing another patient would take them into overtime.
-
                         if out_of_resources:
 
                             # Do not run,
@@ -2499,6 +2717,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 f"Cannot run HSI {event.TREATMENT_ID} without facility_info being defined."
 
                             # Expected appt footprint before running event
+                            # NOTE-TO-ADD: This appt footprint needs to reflect that a different officer was used
                             _appt_footprint_before_running = event.EXPECTED_APPT_FOOTPRINT
                             # Run event & get actual footprint
                             actual_appt_footprint = event.run(squeeze_factor=squeeze_factor)
@@ -2509,19 +2728,36 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 # check its formatting:
                                 assert self.module.appt_footprint_is_valid(actual_appt_footprint)
 
+                                # Add task-shifting tag when recalculating updated_call if not empty.
+                                if task_shifting_tag != "":
+                                    if task_shifting_tag.endswith('_and_'):
+                                        task_shifting_tag = task_shifting_tag[:-5]
+                                    actual_appt_footprint = Counter({item + task_shifting_tag: count for item, count in actual_appt_footprint.items()})
+
                                 # Update call that will be used to compute capabilities used
                                 updated_call = self.module.get_appt_footprint_as_time_request(
                                     facility_info=event.facility_info,
                                     appt_footprint=actual_appt_footprint
                                 )
                             else:
-                                actual_appt_footprint = _appt_footprint_before_running
-                                updated_call = original_call
+                                # If no task-shifting was required, go ahead as usual
+                                if task_shifting_tag == "":
+                                    actual_appt_footprint = _appt_footprint_before_running
+                                    updated_call = original_call
+                                # Else need to update footprint and recalculate call
+                                else:
+                                    if task_shifting_tag.endswith('_and_'):
+                                        task_shifting_tag = task_shifting_tag[:-5]
+                                    actual_appt_footprint= Counter({item + task_shifting_tag: count for item, count in _appt_footprint_before_running.items()})
+                                    updated_call = self.module.get_appt_footprint_as_time_request(
+                                        facility_info=event.facility_info,
+                                        appt_footprint=actual_appt_footprint
+                                    )
 
                             # Recalculate call on officers based on squeeze factor.
                             for k in updated_call.keys():
                                 updated_call[k] = updated_call[k]/(squeeze_factor + 1.)
-
+                            
                             # Subtract this from capabilities used so-far today
                             capabilities_monitor.subtract(updated_call)
 
@@ -2542,7 +2778,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                             self.module.running_total_footprint -= original_call
                             self.module.running_total_footprint += updated_call
 
-                            # Write to the log
+                            # Write to the log. Appt footprint now includes info on task-shifting
                             self.module.record_hsi_event(
                                 hsi_event=event,
                                 actual_appt_footprint=actual_appt_footprint,
@@ -2550,6 +2786,7 @@ class HealthSystemScheduler(RegularEvent, PopulationScopeEventMixin):
                                 did_run=True,
                                 priority=_priority
                             )
+                            
 
             # Don't have any capabilities at all left for today, no
             # point in going through the queue to check what's left to do today.
