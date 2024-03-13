@@ -126,8 +126,8 @@ salary_for_required_staff['Total_salary_by_cadre_and_level'] = salary_for_requir
 # Create a dataframe to store economic costs
 scenario_cost_economic = pd.DataFrame({'HR': salary_for_required_staff['Total_salary_by_cadre_and_level'].sum()}, index=[0])
 
-# 1. Consumables cost
-# 2.1 Consumables cost - Financial (What needs to be purchased given what is made available)
+# 2. Consumables cost
+# 2.1 Consumables cost - Financial (What needs to be purchased given what is dispensed)
 _df = log['tlo.methods.healthsystem']['Consumables']
 
 counts_of_available = defaultdict(int)
@@ -135,20 +135,13 @@ counts_of_not_available = defaultdict(int)
 for _, row in _df.iterrows():
     for item, num in eval(row['Item_Available']).items():
         counts_of_available[item] += num
-    for item, num in eval(row['Item_NotAvailable']).items():
-        counts_of_not_available[item] += num
-consumables_count_df = pd.concat(
-        {'Available': pd.Series(counts_of_available), 'Not_Available': pd.Series(counts_of_not_available)},
-        axis=1
-    ).fillna(0).astype(int).stack()
 
 # Load consumables cost data
-unit_price_consumable = workbook_cost["consumables"][['Item_Code', 'Chosen_price_per_unit (USD)', 'Number of units needed per HSI']]
+unit_price_consumable = workbook_cost["consumables"][['Item_Code', 'Chosen_price_per_unit (USD)']]
 unit_price_consumable = unit_price_consumable.set_index('Item_Code').to_dict(orient='index')
 
 # Multiply number of items needed by cost of consumable
 cost_of_consumables_dispensed = dict(zip(unit_price_consumable, (unit_price_consumable[key]['Chosen_price_per_unit (USD)'] *
-                                                unit_price_consumable[key]['Number of units needed per HSI'] *
                                                 counts_of_available[key] for key in unit_price_consumable)))
 total_cost_of_consumables_dispensed = sum(value for value in cost_of_consumables_dispensed.values() if not np.isnan(value))
 
@@ -156,9 +149,8 @@ total_cost_of_consumables_dispensed = sum(value for value in cost_of_consumables
 # Estimate the stock to dispensed ratio from OpenLMIS data
 lmis_consumable_usage = pd.read_csv(path_for_new_resourcefiles / "ResourceFile_Consumables_availability_and_usage.csv")
 # Collapse by item_code
-lmis_consumable_usage_by_item = lmis_consumable_usage.groupby(['item_code'])[['closing_bal', 'amc', 'dispensed', 'received']].sum()
+lmis_consumable_usage_by_item = lmis_consumable_usage.groupby(['item_code'])[['closing_bal', 'dispensed']].sum()
 lmis_consumable_usage_by_item['stock_to_dispensed_ratio'] = lmis_consumable_usage_by_item['closing_bal']/lmis_consumable_usage_by_item['dispensed']
-#lmis_consumable_usage_by_item = lmis_consumable_usage_by_item[['item_code', 'stock_to_dispensed_ratio']]
 # Trim top and bottom 5 percentile value for stock_to_dispensed_ratio
 percentile_5 = lmis_consumable_usage_by_item['stock_to_dispensed_ratio'].quantile(0.05)
 percentile_95 = lmis_consumable_usage_by_item['stock_to_dispensed_ratio'].quantile(0.95)
@@ -168,10 +160,8 @@ lmis_stock_to_dispensed_ratio_by_item = lmis_consumable_usage_by_item['stock_to_
 lmis_stock_to_dispensed_ratio_by_item.to_dict()
 average_stock_to_dispensed_ratio = lmis_stock_to_dispensed_ratio_by_item.mean()
 
-
 # Multiply number of items needed by cost of consumable
 cost_of_consumables_stocked = dict(zip(unit_price_consumable, (unit_price_consumable[key]['Chosen_price_per_unit (USD)'] *
-                                                unit_price_consumable[key]['Number of units needed per HSI'] *
                                                 counts_of_available[key] *
                                                 lmis_stock_to_dispensed_ratio_by_item.get(key, average_stock_to_dispensed_ratio)
                                                 for key in counts_of_available)))
@@ -182,12 +172,11 @@ scenario_cost_financial['Consumables'] = total_cost_of_consumables_stocked
 # Explore the ratio of dispensed drugs to drug stock
 ####################################################
 # Collapse monthly data
-lmis_consumable_usage_by_district_and_level = lmis_consumable_usage.groupby(['district', 'fac_type_tlo','category', 'item_code'])[['closing_bal', 'amc', 'dispensed', 'received']].sum()
+lmis_consumable_usage_by_district_and_level = lmis_consumable_usage.groupby(['district', 'fac_type_tlo','category', 'item_code'])[['closing_bal', 'dispensed']].sum()
 lmis_consumable_usage_by_district_and_level.reset_index()
 lmis_consumable_usage_by_district_and_level['stock_to_dispensed_ratio'] = lmis_consumable_usage_by_district_and_level['closing_bal']/lmis_consumable_usage_by_district_and_level['dispensed']
 
 # TODO: Only consider the months for which original OpenLMIS data was available for closing_stock and dispensed
-# TODO Ensure that expected units per case are expected units per HSI
 def plot_stock_to_dispensed(_df, plot_var, groupby_var, outlier_percentile):
     # Exclude the top x percentile (outliers) from the plot
     percentile_excluded = _df[plot_var].quantile(outlier_percentile)
@@ -219,63 +208,12 @@ plot_stock_to_dispensed(lmis_consumable_usage_by_district_and_level, 'stock_to_d
 plot_stock_to_dispensed(lmis_consumable_usage_by_district_and_level, 'stock_to_dispensed_ratio',
                         'item_code', 0.95)
 
-# Open the .gz file in read mode ('rb' for binary mode)
-data = dict()
-with gzip.open('./outputs/tlo.methods.healthsystem.log.gz', 'rb') as f:
-    # Read the contents of the file
-    data = f.read()
-
-# Now you can process the data as needed
-# For example, you can decode it if it's in a text format
-decoded_data = data.decode('ascii')
-print(decoded_data)
-
-folder = './outputs/'
-output = dict()
-with open('./outputs/tlo.methods.healthsystem.log.gz', "rb") as f:
-    output = pickle.load(f)
-
-
-#-----
-
-parsed_dicts = []
-
-# Split the input string into individual JSON objects
-json_objects = decoded_data.split('\n')
-
-# Iterate over each JSON object and attempt to parse it
-for json_str in json_objects:
-    if json_str.strip():  # Check if the JSON string is not empty
-        try:
-            parsed_dict = json.loads(json_str)
-            parsed_dicts.append(parsed_dict)
-        except json.JSONDecodeError as e:
-            print("Error decoding JSON:", e)
-
-print(parsed_dicts)
-
-# Initialize an empty dictionary
-merged_dict = {}
-
-# Iterate over each dictionary in the list
-for d in parsed_dicts[4:30]:
-    # Update the merged dictionary with the contents of each dictionary
-    merged_dict.update(d)
-
-print(merged_dict)
-
-#-----
-
-with open('./outputs/tlo.methods.healthsystem.log', 'r') as file:
-    # Read the contents of the file
-    log_content = file.read()
-
 # Compare financial costs with actual budget data
 ####################################################
 salary_budget_2018 = 69478749
 consuambles_budget_2018 = 228934188
 real_budget = [salary_budget_2018, consuambles_budget_2018]
-model_cost = [scenario_cost_financial['HR'][0], 0]
+model_cost = [scenario_cost_financial['HR'][0], scenario_cost_financial['Consumables'][0]]
 labels = ['HR_salary', 'Consumables']
 
 plt.scatter(real_budget, model_cost)
