@@ -115,8 +115,10 @@ aggregate_frac_time_used_by_officer_type = pd.DataFrame(frac_time_used_by_office
 aggregate_frac_time_used_by_officer_type.columns = ['Value']
 aggregate_frac_time_used_by_officer_type['OfficerType_FacilityLevel'] = aggregate_frac_time_used_by_officer_type.index
 
-salary_for_required_staff = pd.merge(hr_annual_salary, aggregate_frac_time_used_by_officer_type, on = ['OfficerType_FacilityLevel'])
-salary_for_required_staff = pd.merge(salary_for_required_staff, current_staff_count_by_level_and_officer_type, on = ['Officer_Category', 'Facility_Level'])
+salary_for_required_staff = pd.merge(aggregate_frac_time_used_by_officer_type[['OfficerType_FacilityLevel', 'Value']],
+                                     hr_annual_salary[['OfficerType_FacilityLevel', 'Salary_USD']], on = ['OfficerType_FacilityLevel'])
+salary_for_required_staff = pd.merge(salary_for_required_staff,
+                                     current_staff_count_by_level_and_officer_type[['OfficerType_FacilityLevel', 'Staff_Count']], on = ['OfficerType_FacilityLevel'])
 
 # Calculate salary cost for required  health workforce (Staff count X Fraction of staff time needed X Annual salary)
 salary_for_required_staff['Total_salary_by_cadre_and_level'] = salary_for_required_staff['Salary_USD'] * salary_for_required_staff['Value'] * salary_for_required_staff['Staff_Count']
