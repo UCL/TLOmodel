@@ -557,6 +557,7 @@ class OtherAdultCancer(Module):
         symptoms: List[str] = None,
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
         facility_level: str = None,
+        treatment_id: str = None,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         event_info = []
         if patient_details.age_years > 5 and "early_other_adult_ca_symptom" in symptoms:
@@ -571,6 +572,7 @@ class OtherAdultCancer(Module):
             }
             event_info.append((event, options))
         return event_info, {}
+
 
 # ---------------------------------------------------------------------------------------------------------
 #   DISEASE MODULE EVENTS

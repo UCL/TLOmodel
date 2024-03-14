@@ -330,6 +330,7 @@ class Schisto(Module):
         symptoms: List[str] = None,
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
         facility_level: str = None,
+        treatment_id: str = None,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         event_info = []
         # Do when person presents to the GenericFirstAppt.
@@ -347,6 +348,7 @@ class Schisto(Module):
             }
             event_info.append((event, options))
         return event_info, {}
+
 
 class SchistoSpecies:
     """Helper Class to hold the information specific to a particular species (either S. mansoni or S. haematobium)."""
