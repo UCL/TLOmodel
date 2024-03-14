@@ -124,6 +124,11 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
             use_dict_for_single=use_dict,
             report_dxtest_tried=report_tried,
         )
+    # Create the consumables checker function
+    def consumables_fn(item_codes, opt_item_codes):
+        return hsi_event.get_consumables(
+            item_codes=item_codes, optional_item_codes=opt_item_codes
+        )
 
     # Dynamically create immutable container with the target's details stored.
     # This will avoid repeat DataFrame reads when we call the module-level functions.
@@ -138,6 +143,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
             patient_details=patient_details,
             symptoms=symptoms,
             diagnosis_fn=diagnosis_fn,
+            consumables_checker=consumables_fn,
             facility_level=facility_level,
             treatment_id=treatment_id,
         )
@@ -149,7 +155,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
         # Record any requested DataFrame updates, but do not implement yet
         # NOTE: |= syntax is only available in Python >=3.9
         proposed_df_updates = {**proposed_df_updates, **df_updates}
-    
+
     # Perform any DataFrame updates that were requested, all in one go.
     df.loc[person_id, proposed_df_updates.keys()] = proposed_df_updates.values()
 
@@ -182,12 +188,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
                 person_id=person_id
             )
 
-        if "Copd" in modules:
-            if ("breathless_moderate" in symptoms) or ("breathless_severe" in symptoms):
-                modules["Copd"].do_when_present_with_breathless(
-                    person_id=person_id, hsi_event=hsi_event
-                )
-
 
 def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
     """
@@ -217,6 +217,11 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
             use_dict_for_single=use_dict,
             report_dxtest_tried=report_tried,
         )
+    # Create the consumables checker function
+    def consumables_fn(item_codes, opt_item_codes):
+        return hsi_event.get_consumables(
+            item_codes=item_codes, optional_item_codes=opt_item_codes
+        )
 
     # Dynamically create immutable container with the target's details stored.
     # This will avoid repeat DataFrame reads when we call the module-level functions.
@@ -231,6 +236,7 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
             patient_details=patient_details,
             symptoms=symptoms,
             diagnosis_fn=diagnosis_fn,
+            consumables_checker=consumables_fn,
             facility_level=facility_level,
             treatment_id=treatment_id,
         )
@@ -302,10 +308,6 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
             person_id=person_id
         )
         schedule_hsi(event, priority=0, topen=sim.date)
-
-    if 'Copd' in sim.modules:
-        if ('breathless_moderate' in symptoms) or ('breathless_severe' in symptoms):
-            sim.modules['Copd'].do_when_present_with_breathless(person_id=person_id, hsi_event=hsi_event)
 
     # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
     if 'craving_sandwiches' in symptoms:

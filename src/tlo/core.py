@@ -6,7 +6,7 @@ disease modules.
 """
 import json
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Set, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -374,6 +374,13 @@ class Module:
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        consumables_checker: Callable[
+            [
+                Union[None, np.integer, int, List, Set, Dict],
+                Union[None, np.integer, int, List, Set, Dict],
+            ],
+            Union[bool, Dict],
+        ] = None,
         facility_level: str = None,
         treatment_id: str = None,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
@@ -414,6 +421,13 @@ class Module:
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        consumables_checker: Callable[
+            [
+                Union[None, np.integer, int, List, Set, Dict],
+                Union[None, np.integer, int, List, Set, Dict],
+            ],
+            Union[bool, Dict],
+        ] = None,
         facility_level: str = None,
         treatment_id: str = None,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:

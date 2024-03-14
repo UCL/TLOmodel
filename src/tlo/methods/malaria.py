@@ -671,6 +671,7 @@ class Malaria(Module):
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
         facility_level: str = None,
         treatment_id: str = None,
+        **kwargs,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         malaria_associated_symptoms = {
             "fever",
@@ -749,6 +750,7 @@ class Malaria(Module):
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
         facility_level: str = None,
         treatment_id: str = None,
+        **kwargs,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         df_updates = {}
         events = []
