@@ -2565,6 +2565,7 @@ class RTI(Module):
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
         facility_level: str = None,
         treatment_id: str = None,
+        **kwargs
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         if "injury" in symptoms:
             return self._common_first_appt_steps(patient_id=patient_id, patient_details=patient_details)
@@ -2578,6 +2579,7 @@ class RTI(Module):
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
         facility_level: str = None,
         treatment_id: str = None,
+        **kwargs
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         # Same process is followed for emergency and non emergency appointments, except the
         # initial symptom check

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List
+from typing import Any, Callable, Dict, List, NamedTuple, Set, Tuple, TYPE_CHECKING, Union
 
 import pandas as pd
 
@@ -12,6 +12,9 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
+
+if TYPE_CHECKING:
+    import numpy as np
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -204,29 +207,90 @@ class Copd(Module):
             data=flatten_multi_index_series_into_dict_for_logging(counts)
         )
 
-    def give_inhaler(self, person_id: int, hsi_event: HSI_Event):
-        """Give inhaler if person does not already have one"""
-        df = self.sim.population.props
-        has_inhaler = df.at[person_id, 'ch_has_inhaler']
-        if not has_inhaler:
-            if hsi_event.get_consumables(self.item_codes['bronchodilater_inhaler']):
-                df.at[person_id, 'ch_has_inhaler'] = True
-
-    def do_when_present_with_breathless(self, person_id: int, hsi_event: HSI_Event):
-        """What to do when a person presents at the generic first appt HSI with a symptom of `breathless_severe` or
-        `breathless_moderate`.
+    def _common_first_appt(
+        self,
+        patient_id: int,
+        patient_details: NamedTuple,
+        symptoms: List[str],
+        consumables_checker: Callable[[Dict[str], Union[Dict, bool]]],
+    ):
+        """What to do when a person presents at the generic first appt HSI
+        with a symptom of `breathless_severe` or `breathless_moderate`.
         * If severe --> give the inhaler and schedule the HSI for Treatment
         * Otherwise --> just give inhaler.
         """
-        self.give_inhaler(hsi_event=hsi_event, person_id=person_id)
+        event_info = []
+        df_updates = {}
 
-        if 'breathless_severe' in self.sim.modules['SymptomManager'].has_what(person_id):
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                hsi_event=HSI_Copd_TreatmentOnSevereExacerbation(module=self, person_id=person_id),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None,
+        if ('breathless_moderate' in symptoms) or ('breathless_severe' in symptoms):
+            # Give inhaler if patient does not already have one
+            if not patient_details.ch_has_inhaler and consumables_checker(
+                self.item_codes["bronchodilater_inhaler"]
+            ):
+                df_updates["ch_has_inhaler"] = True
+
+            event = HSI_Copd_TreatmentOnSevereExacerbation(
+                module=self, person_id=patient_id
             )
+            options = {
+                "priority": 0,
+                "topen": self.sim.date,
+                "tclose": None,
+            }
+            event_info.append((event, options))
+
+        return event_info, df_updates
+
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: NamedTuple = None,
+        symptoms: List[str] = None,
+        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        consumables_checker: Callable[
+            [
+                Union[None, np.integer, int, List, Set, Dict],
+                Union[None, np.integer, int, List, Set, Dict],
+            ],
+            Union[bool, Dict],
+        ] = None,
+        facility_level: str = None,
+        treatment_id: str = None,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        # Non-emergency appointments are only forwarded if
+        # the patient is over 5 years old
+        if patient_details.age_years > 5:
+            return self._common_first_appt(
+                patient_id=patient_id,
+                patient_details=patient_details,
+                symptoms=symptoms,
+                consumables_checker=consumables_checker,
+            )
+        else:
+            return [], {}
+
+    def do_at_generic_first_appt_emergency(
+        self,
+        patient_id: int,
+        patient_details: NamedTuple = None,
+        symptoms: List[str] = None,
+        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        consumables_checker: Callable[
+            [
+                Union[None, np.integer, int, List, Set, Dict],
+                Union[None, np.integer, int, List, Set, Dict],
+            ],
+            Union[bool, Dict],
+        ] = None,
+        facility_level: str = None,
+        treatment_id: str = None,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        return self._common_first_appt(
+            patient_id=patient_id,
+            patient_details=patient_details,
+            symptoms=symptoms,
+            consumables_checker=consumables_checker,
+        )
 
 
 class CopdModels:
