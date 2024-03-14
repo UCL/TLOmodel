@@ -2529,7 +2529,7 @@ class RTI(Module):
 
             # Check this person is injured, search they have an injury code that isn't "none"
             _, counts = RTI.rti_find_and_count_injuries(
-                pd.DataFrame(data=persons_injuries, columns=RTI.INJURY_COLUMNS),
+                pd.DataFrame(data=[persons_injuries], columns=RTI.INJURY_COLUMNS),
                 RTI.INJURY_CODES[1:],
             )
             # also test whether the regular injury symptom has been given to the person via spurious symptoms
