@@ -739,7 +739,7 @@ class Malaria(Module):
             )
             # Treat / refer based on diagnosis
             if malaria_test_result == "severe_malaria":
-                df_updates["mx_dx_counter"] = patient_details.ma_dx_counter + 1
+                df_updates["ma_dx_counter"] = patient_details.ma_dx_counter + 1
                 # df.at[person_id, "ma_dx_counter"] += 1
                 event = HSI_Malaria_Treatment_Complicated(person_id=patient_id, module=self)
                 options = {                    
@@ -751,7 +751,7 @@ class Malaria(Module):
 
             # return type 'clinical_malaria' includes asymptomatic infection
             elif malaria_test_result == "clinical_malaria":
-                df_updates["mx_dx_counter"] = patient_details.ma_dx_counter + 1
+                df_updates["ma_dx_counter"] = patient_details.ma_dx_counter + 1
                 event = HSI_Malaria_Treatment(person_id=patient_id, module=self)
                 options = {
                     "priority": 1,

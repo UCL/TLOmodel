@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Callable, Dict, List, NamedTuple, Set, Tuple, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Set, Tuple, Union
 
 import pandas as pd
 
@@ -212,7 +212,7 @@ class Copd(Module):
         patient_id: int,
         patient_details: NamedTuple,
         symptoms: List[str],
-        consumables_checker: Callable[[Dict[str], Union[Dict, bool]]],
+        consumables_checker: Callable[[Dict[str, Any]], Union[Dict, bool]],
     ):
         """What to do when a person presents at the generic first appt HSI
         with a symptom of `breathless_severe` or `breathless_moderate`.
@@ -249,8 +249,8 @@ class Copd(Module):
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
         consumables_checker: Callable[
             [
-                Union[None, np.integer, int, List, Set, Dict],
-                Union[None, np.integer, int, List, Set, Dict],
+                Union[None, "np.integer", int, List, Set, Dict],
+                Union[None, "np.integer", int, List, Set, Dict],
             ],
             Union[bool, Dict],
         ] = None,
@@ -277,8 +277,8 @@ class Copd(Module):
         diagnosis_fn: Callable[[str, bool, bool], Any] = None,
         consumables_checker: Callable[
             [
-                Union[None, np.integer, int, List, Set, Dict],
-                Union[None, np.integer, int, List, Set, Dict],
+                Union[None, "np.integer", int, List, Set, Dict],
+                Union[None, "np.integer", int, List, Set, Dict],
             ],
             Union[bool, Dict],
         ] = None,
