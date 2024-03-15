@@ -1110,19 +1110,19 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         self.TREATMENT_ID = "Contraception_Routine"
         self.ACCEPTED_FACILITY_LEVEL = _facility_level
 
-        # # Set essential equipment based on the contraception method
-        # if new_contraceptive == 'female_sterilization':
-        #     self.set_equipment_essential_to_run_event({
-        #         'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise'
-        #     })
-        #     # + 'Minor Surgery' pkg
-        #     # TODO: How to set pkg as essential?
-        # elif new_contraceptive == 'IUD':
-        #     self.set_equipment_essential_to_run_event({
-        #         'Cusco’s/ bivalved Speculum (small, medium, large)', 'Sponge Holding Forceps'
-        #     })
-        # else:
-        self.set_equipment_essential_to_run_event({''})
+        # Set essential equipment based on the contraception method
+        if new_contraceptive == 'female_sterilization':
+            self.set_equipment_essential_to_run_event({
+                'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise'
+            })
+            # + 'Minor Surgery' pkg
+            # TODO: How to set pkg as essential?
+        elif new_contraceptive == 'IUD':
+            self.set_equipment_essential_to_run_event({
+                'Cusco’s/ bivalved Speculum (small, medium, large)', 'Sponge Holding Forceps'
+            })
+        else:
+            self.set_equipment_essential_to_run_event({''})
 
     @property
     def EXPECTED_APPT_FOOTPRINT(self):
@@ -1193,17 +1193,6 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
         # if so do log the availability of all items and update used equipment if any, if not set the contraception to
         # "not_using":
         co_administrated = all(v for k, v in cons_available.items() if k in items_essential)
-
-        # If all essential consumables available, determine equipment availability
-        if co_administrated:
-            if self.new_contraceptive == 'female_sterilization':
-                co_administrated = self.get_essential_equip_availability({
-                    'Cusco’s/ bivalved Speculum (small, medium, large)', 'Lamp, Anglepoise'
-                })
-            elif self.new_contraceptive == 'IUD':
-                co_administrated = self.get_essential_equip_availability({
-                    'Cusco’s/ bivalved Speculum (small, medium, large)', 'Sponge Holding Forceps'
-                })
 
         if co_administrated:
             # if not running contraception module at debug level, it's pointless to save the (not) available items
