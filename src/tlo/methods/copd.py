@@ -229,15 +229,16 @@ class Copd(Module):
             ):
                 df_updates["ch_has_inhaler"] = True
 
-            event = HSI_Copd_TreatmentOnSevereExacerbation(
-                module=self, person_id=patient_id
-            )
-            options = {
-                "priority": 0,
-                "topen": self.sim.date,
-                "tclose": None,
-            }
-            event_info.append((event, options))
+            if 'breathless_severe' in symptoms:
+                event = HSI_Copd_TreatmentOnSevereExacerbation(
+                    module=self, person_id=patient_id
+                )
+                options = {
+                    "priority": 0,
+                    "topen": self.sim.date,
+                    "tclose": None,
+                }
+                event_info.append((event, options))
 
         return event_info, df_updates
 
