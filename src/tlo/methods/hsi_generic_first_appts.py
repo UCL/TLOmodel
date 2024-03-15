@@ -125,7 +125,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
             report_dxtest_tried=report_tried,
         )
     # Create the consumables checker function
-    def consumables_fn(item_codes, opt_item_codes):
+    def consumables_fn(item_codes, opt_item_codes = None):
         return hsi_event.get_consumables(
             item_codes=item_codes, optional_item_codes=opt_item_codes
         )
@@ -218,7 +218,7 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
             report_dxtest_tried=report_tried,
         )
     # Create the consumables checker function
-    def consumables_fn(item_codes, opt_item_codes):
+    def consumables_fn(item_codes, opt_item_codes = None):
         return hsi_event.get_consumables(
             item_codes=item_codes, optional_item_codes=opt_item_codes
         )
