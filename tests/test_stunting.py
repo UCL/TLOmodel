@@ -1,3 +1,4 @@
+from collections import namedtuple
 import os
 from pathlib import Path
 
@@ -222,7 +223,7 @@ def test_polling_event_progression(seed):
 
 
 def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_correctly_diagnosed(seed):
-    """Check that a call to `do_routine_assessment_for_chronic_undernutrition` can lead to immediate recovery for a
+    """Check that a call to `do_at_generic_first_appt` can lead to immediate recovery for a
     stunted child (via an HSI), if there is checking and correct diagnosis."""
     popsize = 100
     sim = get_sim(seed)
@@ -235,23 +236,24 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_correctly_
     person_id = 0
     df.loc[person_id, 'age_years'] = 2
     df.loc[person_id, 'age_exact_year'] = 2.0
-    df.loc[person_id, 'un_HAZ_category'] = '-3<=HAZ<-2'
+    df.loc[person_id, "un_HAZ_category"] = "-3<=HAZ<-2"
+    patient_details = namedtuple("PatientDetails", df.columns)(*df.loc[person_id])
 
     # Make the probability of stunting checking/diagnosis as 1.0
     sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 1.0
 
-    # Subject the person to `do_routine_assessment_for_chronic_undernutrition`
-    sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
+    # Subject the person to `do_at_generic_first_appt`
+    event_info, _ = sim.modules["Stunting"].do_at_generic_first_appt(
+        patient_id=person_id, patient_details=patient_details
+    )
+    the_event = event_info[0][0]
+    options = event_info[0][1]
 
-    # Check that there is an HSI scheduled for this person
-    hsi_event_scheduled = [
-        ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id)
-        if isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)
-    ]
-    assert 1 == len(hsi_event_scheduled)
-    assert sim.date == hsi_event_scheduled[0][0]
-    the_hsi_event = hsi_event_scheduled[0][1]
-    assert person_id == the_hsi_event.target
+    # Check that we wanted to schedule an event for this person
+    assert 1 == len(event_info)
+    assert sim.date == options["topen"]
+    assert person_id == the_event.target
+    assert isinstance(the_event, HSI_Stunting_ComplementaryFeeding)
 
     # Make probability of treatment success is 1.0 (consumables are available through use of `ignore_cons_constraints`)
     sim.modules['Stunting'].parameters[
@@ -260,19 +262,18 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_correctly_
         'effectiveness_of_food_supplementation_in_stunting_reduction'] = 1.0
 
     # Run the HSI event
-    the_hsi_event.run(squeeze_factor=0.0)
+    the_event.run(squeeze_factor=0.0)
 
     # Check that the person is not longer stunted
     assert df.at[person_id, 'un_HAZ_category'] == 'HAZ>=-2'
-
     # Check that there is a follow-up appointment scheduled
     hsi_event_scheduled_after_first_appt = [
         ev for ev in sim.modules['HealthSystem'].find_events_for_person(person_id)
         if isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)
     ]
-    assert 2 == len(hsi_event_scheduled_after_first_appt)
-    assert (sim.date + pd.DateOffset(months=6)) == hsi_event_scheduled_after_first_appt[1][0]
-    the_follow_up_hsi_event = hsi_event_scheduled_after_first_appt[1][1]
+    assert 1 == len(hsi_event_scheduled_after_first_appt)
+    assert (sim.date + pd.DateOffset(months=6)) == hsi_event_scheduled_after_first_appt[0][0]
+    the_follow_up_hsi_event = hsi_event_scheduled_after_first_appt[0][1]
 
     # Run the Follow-up HSI event
     the_follow_up_hsi_event.run(squeeze_factor=0.0)
@@ -285,7 +286,7 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_and_correctly_
 
 
 def test_routine_assessment_for_chronic_undernutrition_if_stunted_but_no_checking(seed):
-    """Check that a call to `do_routine_assessment_for_chronic_undernutrition` does not lead to an HSI for a stunted
+    """Check that a call to `do_at_generic_first_appt` does not lead to an HSI for a stunted
     child, if there is no checking/diagnosis."""
     popsize = 100
     sim = get_sim(seed)
@@ -298,29 +299,30 @@ def test_routine_assessment_for_chronic_undernutrition_if_stunted_but_no_checkin
     person_id = 0
     df.loc[person_id, 'age_years'] = 2
     df.loc[person_id, 'age_exact_year'] = 2.0
-    df.loc[person_id, 'un_HAZ_category'] = 'HAZ<-3'
+    df.loc[person_id, "un_HAZ_category"] = "HAZ<-3"
+    patient_details = namedtuple("PatientDetails", df.columns)(*df.loc[person_id])
 
     # Make the probability of stunting checking/diagnosis as 0.0
     sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 0.0
 
-    # Subject the person to `do_routine_assessment_for_chronic_undernutrition`
-    sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
+    # Subject the person to `do_at_generic_first_appt`
+    event_info, _ = sim.modules["Stunting"].do_at_generic_first_appt(patient_id=person_id, patient_details=patient_details)
 
-    # Check that there is no HSI scheduled for this person
-    hsi_event_scheduled = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-                           isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)]
-    assert 0 == len(hsi_event_scheduled)
+    # Check that no HSI event was to be scheduled
+    assert 0 == len(event_info)
 
-    # Then make the probability of stunting checking/diagnosis as 1.0 and check the HSI is scheduled for this person
+    # Then make the probability of stunting checking/diagnosis 1.0
+    # and check the HSI is scheduled for this person
     sim.modules['Stunting'].parameters['prob_stunting_diagnosed_at_generic_appt'] = 1.0
-    sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
-    hsi_event_scheduled = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-                           isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)]
-    assert 1 == len(hsi_event_scheduled)
+    event_info, _ = sim.modules["Stunting"].do_at_generic_first_appt(
+        patient_id=person_id, patient_details=patient_details
+    )
+    assert 1 == len(event_info)
+    assert isinstance(event_info[0][0], HSI_Stunting_ComplementaryFeeding)
 
 
 def test_routine_assessment_for_chronic_undernutrition_if_not_stunted(seed):
-    """Check that a call to `do_routine_assessment_for_chronic_undernutrition` does not lead to an HSI if there is no
+    """Check that a call to `do_at_generic_first_appt` does not lead to an HSI if there is no
     stunting."""
     popsize = 100
     sim = get_sim(seed)
@@ -334,14 +336,13 @@ def test_routine_assessment_for_chronic_undernutrition_if_not_stunted(seed):
     df.loc[person_id, 'age_years'] = 2
     df.loc[person_id, 'age_exact_year'] = 2.0
     df.loc[person_id, 'un_HAZ_category'] = 'HAZ>=-2'
+    patient_details = namedtuple("PatientDetails", df.columns)(*df.loc[person_id])
 
-    # Subject the person to `do_routine_assessment_for_chronic_undernutrition`
-    sim.modules['Stunting'].do_routine_assessment_for_chronic_undernutrition(person_id=person_id)
+    # Subject the person to `do_at_generic_first_appt`
+    event_info, _ = sim.modules["Stunting"].do_at_generic_first_appt(patient_id=person_id, patient_details=patient_details)
 
-    # Check that there is no HSI scheduled for this person
-    hsi_event_scheduled = [ev[1] for ev in sim.modules['HealthSystem'].find_events_for_person(person_id) if
-                           isinstance(ev[1], HSI_Stunting_ComplementaryFeeding)]
-    assert 0 == len(hsi_event_scheduled)
+    # Check that no HSI was to be scheduled for this person
+    assert 0 == len(event_info)
 
 
 def test_math_of_incidence_calcs(seed):
