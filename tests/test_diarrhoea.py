@@ -1,8 +1,8 @@
 """
 Basic tests for the Diarrhoea Module
 """
-from collections import namedtuple
 import os
+from collections import namedtuple
 from itertools import product
 from pathlib import Path
 

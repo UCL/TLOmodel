@@ -508,6 +508,57 @@ class Depression(Module):
 
         return av_daly_wt_last_month
 
+    def _check_for_suspected_depression(
+        self, symptoms: List[str], treatment_id: str, has_even_been_diagnosed: bool
+    ):
+        """
+        Returns True if any signs of depression are present, otherwise False.
+        
+        Raises an error if the treatment type cannot be identified.
+        """
+        if treatment_id == "FirstAttendance_NonEmergency":
+            if (
+                self.rng.rand()
+                < self.parameters["pr_assessed_for_depression_in_generic_appt_level1"]
+            ):
+                return True
+        elif treatment_id == "FirstAttendance_Emergency":
+            if "Injuries_From_Self_Harm" in symptoms:
+                return True
+                # TODO: Trigger surgical care for injuries.
+        elif treatment_id == "AntenatalCare_Outpatient":
+            if (not has_even_been_diagnosed) and (
+                self.rng.rand()
+                < self.parameters["pr_assessed_for_depression_for_perinatal_female"]
+            ):  # module care_of_women_during_pregnancy
+                return True
+        elif treatment_id == "PostnatalCare_Maternal":
+            if (not has_even_been_diagnosed) and self.rng.rand() < self.parameters[
+                "pr_assessed_for_depression_for_perinatal_female"
+            ]:  # module labour
+                return True
+        else:
+            raise NotImplementedError
+        return False
+
+    def do_on_presentation_to_care(self, person_id: int, hsi_event: HSI_Event):
+        """
+        This member function is called when a person is in an HSI,
+        and there may need to be screening for depression.
+        
+        Key differences from the generic HSI appointments are that any HSI events
+        that are to be opened as a result of this check are scheduled immediately,
+        and updates to the population are applied immediately to reflect this.
+        """
+        if self._check_for_suspected_depression(
+            self.sim.modules["SymptomManager"].has_what(person_id),
+            hsi_event.TREATMENT_ID,
+            self.sim.population.props.at[person_id, "de_ever_diagnosed_depression"],
+        ):
+            self.do_when_suspected_depression(
+                person_id=person_id, hsi_event=hsi_event, add_to_queue_immediately=True
+            )
+
     def do_when_suspected_depression(
         self,
         person_id: int,
@@ -618,56 +669,17 @@ class Depression(Module):
         treatment_id: str = None,
         **kwargs,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
-        # This member function is called when a person is in an HSI,
-        # and there may need to be screening for depression
         event_info = []
         df_updates = {}
 
-        if treatment_id == "FirstAttendance_NonEmergency" and (
-            self.rng.rand()
-            < self.parameters["pr_assessed_for_depression_in_generic_appt_level1"]
+        if self._check_for_suspected_depression(
+            symptoms, treatment_id, patient_details.de_ever_diagnosed_depression
         ):
             event_info, df_updates = self.do_when_suspected_depression(
                 person_id=patient_id,
                 diagnosis_fn=diagnosis_fn,
                 add_to_queue_immediately=False,
             )
-        elif (
-            treatment_id == "FirstAttendance_Emergency"
-            and "Injuries_From_Self_Harm" in symptoms
-        ):
-            event_info, df_updates = self.do_when_suspected_depression(
-                person_id=patient_id,
-                diagnosis_fn=diagnosis_fn,
-                add_to_queue_immediately=False,
-            )
-            # TODO: Trigger surgical care for injuries.
-        elif (treatment_id == "AntenatalCare_Outpatient") and (
-            (not patient_details.de_ever_diagnosed_depression)
-            and (
-                self.rng.rand()
-                < self.parameters["pr_assessed_for_depression_for_perinatal_female"]
-            )
-        ):  # module care_of_women_during_pregnancy
-            event_info, df_updates = self.do_when_suspected_depression(
-                person_id=patient_id,
-                diagnosis_fn=diagnosis_fn,
-                add_to_queue_immediately=False,
-            )
-        elif treatment_id == "PostnatalCare_Maternal" and (
-            (not patient_details.de_ever_diagnosed_depression)
-            and (
-                self.rng.rand()
-                < self.parameters["pr_assessed_for_depression_for_perinatal_female"]
-            )
-        ):  # module labour
-            event_info, df_updates = self.do_when_suspected_depression(
-                person_id=patient_id,
-                diagnosis_fn=diagnosis_fn,
-                add_to_queue_immediately=False,
-            )
-        else:
-            raise NotImplementedError
         return event_info, df_updates
 
 
