@@ -216,12 +216,7 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
     # ----------------------------------- ALL AGES -----------------------------------
 
     if patient_details.age_years <= 5:
-        # ----------------------------------- CHILD < 5 -----------------------------------
-        if "Diarrhoea" in modules:
-            if "diarrhoea" in symptoms:
-                modules["Diarrhoea"].do_when_presentation_with_diarrhoea(
-                    person_id=person_id, hsi_event=hsi_event
-                )
+        pass
 
     else:
         # ----------------------------------- ADULT -----------------------------------
