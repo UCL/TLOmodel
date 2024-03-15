@@ -18,6 +18,7 @@ Health care seeking is prompted by the onset of the symptom diarrhoea. The indiv
 """
 from collections.abc import Iterable
 from pathlib import Path
+from typing import Any, Callable, Dict, List, NamedTuple, Tuple
 
 import numpy as np
 import pandas as pd
@@ -657,35 +658,6 @@ class Diarrhoea(Module):
         self.consumables_used_in_hsi['Antibiotics_for_Dysentery'] = get_item_codes_from_package_name(
             package='Antibiotics for treatment of dysentery')
 
-    def do_when_presentation_with_diarrhoea(self, person_id, hsi_event):
-        """This routine is called when Diarrhoea is a symptom for a child attending a Generic HSI Appointment. It
-        checks for danger signs and schedules HSI Events appropriately."""
-
-        # 1) Assessment of danger signs
-        danger_signs = self.sim.modules['HealthSystem'].dx_manager.run_dx_test(
-            dx_tests_to_run="imci_severe_dehydration_visual_inspection", hsi_event=hsi_event)
-
-        # 2) Determine which HSI to use:
-        if danger_signs and (self.rng.rand() < self.parameters['prob_hospitalization_on_danger_signs']):
-            # Danger signs and hospitalized --> In-patient
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Diarrhoea_Treatment_Inpatient(
-                    person_id=person_id,
-                    module=self),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None)
-
-        else:
-            # No danger signs or otherwise not hospitalized --> Out-patient
-            self.sim.modules['HealthSystem'].schedule_hsi_event(
-                HSI_Diarrhoea_Treatment_Outpatient(
-                    person_id=person_id,
-                    module=self),
-                priority=0,
-                topen=self.sim.date,
-                tclose=None)
-
     def do_treatment(self, person_id, hsi_event):
         """Method called by the HSI that enacts decisions about a treatment and its effect for diarrhoea caused by a
         pathogen. (It will do nothing if the diarrhoea is caused by another module.)
@@ -961,6 +933,49 @@ class Diarrhoea(Module):
             set_of_person_id_in_current_episode_before_cure,
         )
         assert set_of_person_id_in_current_episode == has_symptoms
+
+    def do_at_generic_first_appt(
+        self,
+        patient_id: int,
+        patient_details: NamedTuple = None,
+        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        **kwargs,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        # This routine is called when Diarrhoea is a symptom for a child
+        # attending a Generic HSI Appointment. It checks for danger signs
+        # and schedules HSI Events appropriately.
+        if patient_details.age_years > 5:
+            return [], {}
+
+        event_info = []
+
+        # 1) Assessment of danger signs
+        danger_signs = diagnosis_fn(
+            "imci_severe_dehydration_visual_inspection"
+        )
+
+        # 2) Determine which HSI to use:
+        if danger_signs and (
+            self.rng.rand() < self.parameters["prob_hospitalization_on_danger_signs"]
+        ):
+            # Danger signs and hospitalized --> In-patient
+            event = HSI_Diarrhoea_Treatment_Inpatient(person_id=patient_id, module=self)
+            options = {
+                "priority": 0,
+                "topen": self.sim.date,
+                "tclose": None,
+            }
+            event_info.append((event, options))
+        else:
+            # No danger signs or otherwise not hospitalized --> Out-patient
+            event = HSI_Diarrhoea_Treatment_Outpatient(person_id=patient_id, module=self)
+            options = {
+                "priority": 0,
+                "topen": self.sim.date,
+                "tclose": None,
+            }
+            event_info.append((event, options))
+        return event_info, {}
 
 
 class Models:
