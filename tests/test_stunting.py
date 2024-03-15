@@ -1,5 +1,5 @@
-from collections import namedtuple
 import os
+from collections import namedtuple
 from pathlib import Path
 
 import numpy as np
