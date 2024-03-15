@@ -24,7 +24,7 @@ import types
 from collections import defaultdict
 from itertools import chain
 from pathlib import Path
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple, Union
+from typing import Any, Dict, List, NamedTuple, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -1423,9 +1423,7 @@ class Alri(Module):
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
         facility_level: str = None,
-        treatment_id: str = None,
         **kwargs,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         event_info = []
@@ -1451,22 +1449,10 @@ class Alri(Module):
 
     def do_at_generic_first_appt_emergency(
         self,
-        patient_id: int,
-        patient_details: NamedTuple = None,
-        symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
-        facility_level: str = None,
-        treatment_id: str = None,
         **kwargs,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         # Emergency and non-emergency treatment is identical for alri
         return self.do_at_generic_first_appt(
-            patient_id=patient_id,
-            patient_details=patient_details,
-            symptoms=symptoms,
-            diagnosis_fn=diagnosis_fn,
-            facility_level=facility_level,
-            treatment_id=treatment_id,
             **kwargs,
         )
 

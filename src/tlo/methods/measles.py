@@ -1,6 +1,6 @@
 import math
 import os
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple
+from typing import Any, Dict, List, Tuple
 
 import pandas as pd
 
@@ -207,11 +207,7 @@ class Measles(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
-        facility_level: str = None,
-        treatment_id: str = None,
         **kwargs,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         event_info = []
