@@ -3,7 +3,7 @@ Road traffic injury module.
 
 """
 from pathlib import Path
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple
+from typing import Any, Dict, List, NamedTuple, Tuple
 
 import numpy as np
 import pandas as pd
@@ -2562,9 +2562,6 @@ class RTI(Module):
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
-        facility_level: str = None,
-        treatment_id: str = None,
         **kwargs
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         if "injury" in symptoms:
@@ -2576,9 +2573,6 @@ class RTI(Module):
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
-        facility_level: str = None,
-        treatment_id: str = None,
         **kwargs
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         # Same process is followed for emergency and non emergency appointments, except the

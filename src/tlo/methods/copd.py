@@ -246,7 +246,6 @@ class Copd(Module):
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
         consumables_checker: Callable[
             [
                 Union[None, "np.integer", int, List, Set, Dict],
@@ -254,8 +253,7 @@ class Copd(Module):
             ],
             Union[bool, Dict],
         ] = None,
-        facility_level: str = None,
-        treatment_id: str = None,
+        **kwargs,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         # Non-emergency appointments are only forwarded if
         # the patient is over 5 years old
@@ -274,7 +272,6 @@ class Copd(Module):
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
         consumables_checker: Callable[
             [
                 Union[None, "np.integer", int, List, Set, Dict],
@@ -282,8 +279,7 @@ class Copd(Module):
             ],
             Union[bool, Dict],
         ] = None,
-        facility_level: str = None,
-        treatment_id: str = None,
+        **kwargs,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         return self._common_first_appt(
             patient_id=patient_id,

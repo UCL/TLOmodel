@@ -7,7 +7,7 @@ Limitations to note:
 """
 
 from pathlib import Path
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple
+from typing import Any, Dict, List, NamedTuple, Tuple
 
 import pandas as pd
 
@@ -576,9 +576,6 @@ class BladderCancer(Module):
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
-        facility_level: str = None,
-        treatment_id: str = None,
         **kwargs,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         event_info = []

@@ -25,7 +25,7 @@ If PrEP is not available due to limitations in the HealthSystem, the person defa
 """
 
 import os
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -1505,11 +1505,7 @@ class Hiv(Module):
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
-        facility_level: str = None,
-        treatment_id: str = None,
         **kwargs,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         # 'Automatic' testing for HIV for everyone attending care with AIDS symptoms:

@@ -392,6 +392,12 @@ class Module:
         events when a patient presents symptoms indicative of the
         corresponding illness or condition.
 
+        When overwriting, arguments that are not required can be left out
+        of the definition.
+        If done so, the method MUST take a **kwargs input to avoid errors
+        when looping over all disease modules and running their generic
+        HSI methods.
+
         Return values should be provided in the following order.
 
         1. The first returned value should be a list of tuples.
@@ -410,8 +416,10 @@ class Module:
         :param patient_id: Row index (ID) of the individual target of the HSI event in the population DataFrame.
         :param patient_details: Patient details as provided in the population DataFrame.
         :param symptoms: List of symptoms the patient is experiencing.
-        :param diagnosis_fn: The function that can run diagnosis tests based on the patient's symptoms.
+        :param diagnosis_fn: A function that can run diagnosis tests based on the patient's symptoms.
+        :param consumables_checker: A function that can query the HealthSystem to check for available consumables.
         :param facility_level: The level of the facility that the patient presented at.
+        :param treatment_id: The treatment id of the HSI event triggering the generic appointment.
         """
         return [], {}
 
