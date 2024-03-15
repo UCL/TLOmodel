@@ -213,19 +213,6 @@ def do_at_generic_first_appt_non_emergency(hsi_event: HSI_Event, squeeze_factor)
     # Perform any DataFrame updates that were requested, all in one go.
     df.loc[person_id, proposed_df_updates.keys()] = proposed_df_updates.values()
 
-    # ----------------------------------- ALL AGES -----------------------------------
-
-    if patient_details.age_years <= 5:
-        pass
-
-    else:
-        # ----------------------------------- ADULT -----------------------------------
-
-        if "Depression" in modules:
-            modules["Depression"].do_on_presentation_to_care(
-                person_id=person_id, hsi_event=hsi_event
-            )
-
 def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
     """
     The actions are taken during the non-emergency generic HSI,
@@ -323,10 +310,6 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
                     module=sim.modules['Labour'], person_id=person_id,
                     facility_level_of_this_hsi=rng.choice(['1a', '1b']))
                 schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
-
-    if "Depression" in sim.modules:
-        sim.modules['Depression'].do_on_presentation_to_care(person_id=person_id,
-                                                             hsi_event=hsi_event)
 
     # ------ CARDIO-METABOLIC DISORDERS ------
 
