@@ -9,7 +9,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
+from tlo.analysis.utils import compare_number_of_deaths, parse_log_file, unflatten_flattened_multi_index_in_logging
 from tlo.methods import (
     care_of_women_during_pregnancy,
     contraception,
@@ -88,17 +88,51 @@ class WastingAnalyses:
                 _col_counter = -1
             _col_counter += 1  # increment column counter
             fig.tight_layout()
+        fig.savefig(
+            outputs / ('wasting incidence' + datestamp + ".pdf"),
+            format="pdf"
+        )
+        plt.show()
 
-    def plot_wasting_prevalence(self):
-        w_prev_df = self.__logs_dict['wasting_prevalence_count']
+    def construct_dfs(self) -> dict:
+        """ Create dict of pd.DataFrames containing counts of different lifestyle properties by date, sex and
+        age-group """
+        return {
+            k: unflatten_flattened_multi_index_in_logging(v.set_index('date'))
+            for k, v in self.__logs_dict.items() if k in ['wasting_prevalence_count']
+        }
+
+    def plot_wasting_prevalence_per_year(self):
+        """ plot wasting prevalence of all age groups per year. Proportions are obtained by getting a total number of
+        children wasted divide by the total number of children less than 5 years"""
+        w_prev_df = self.__logs_dict["wasting_prevalence_count"]
+        w_prev_df = w_prev_df[['date', 'total_under5_prop']]
         w_prev_df.set_index(w_prev_df.date.dt.year, inplace=True)
         w_prev_df.drop(columns='date', inplace=True)
-        w_prev_df = w_prev_df.apply(lambda _row: _row / _row.sum(), axis=1)
-        w_prev_df.plot(kind='bar', stacked=True,
-                       title="Wasting prevalence in children 0-59 months",
-                       ylabel='proportions',
-                       xlabel='year'
-                       )
+        w_prev_df["total_under5_prop"].plot(kind='bar', stacked=True,
+                                            title="Wasting prevalence in children 0-59 months per year",
+                                            ylabel='proportions',
+                                            xlabel='year',
+                                            ylim=[0, 0.05])
+
+        plt.show()
+
+    def plot_wasting_prevalence_by_age_group(self):
+        """ plot wasting prevalence per each age group. Proportions are obtained by getting a total number of
+        children wasted in a particular age group divide by the total number of children per that age group"""
+        w_prev_df = self.__logs_dict["wasting_prevalence_count"]
+        w_prev_df.drop(columns={'total_under5_prop'}, inplace=True)
+        w_prev_df.set_index(w_prev_df.date.dt.year, inplace=True)
+        w_prev_df = w_prev_df.loc[w_prev_df.index == 2023]
+        w_prev_df.drop(columns='date', inplace=True)
+        # plot wasting prevalence
+        w_prev_df.squeeze().plot(kind='bar', stacked=False,
+                                 title="Wasting prevalence in children 0-59 months per age group",
+                                 ylabel='proportions',
+                                 xlabel='year',
+                                 ylim=[0, 0.1])
+
+        plt.show()
 
     def plot_modal_gbd_deaths_by_gender(self):
         """ compare modal and GBD deaths by gender """
@@ -124,6 +158,7 @@ class WastingAnalyses:
             outputs / ('modal_gbd_deaths_by_gender' + datestamp + ".pdf"),
             format="pdf"
         )
+        plt.show()
 
 
 if __name__ == "__main__":
@@ -152,7 +187,7 @@ if __name__ == "__main__":
     # Basic arguments required for the simulation
     start_date = Date(2010, 1, 1)
     end_date = Date(2030, 1, 2)
-    pop_size = 30000
+    pop_size = 20000
 
     # Create simulation instance for this run.
     sim = Simulation(start_date=start_date, seed=seed, log_config=log_config)
@@ -193,7 +228,10 @@ if __name__ == "__main__":
     wasting_analyses.plot_wasting_incidence()
 
     # plot wasting prevalence
-    wasting_analyses.plot_wasting_prevalence()
+    wasting_analyses.plot_wasting_prevalence_per_year()
+
+    # plot wasting prevalence by age group
+    wasting_analyses.plot_wasting_prevalence_by_age_group()
 
     # plot wasting deaths by gender as compared to GBD deaths
     wasting_analyses.plot_modal_gbd_deaths_by_gender()

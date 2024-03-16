@@ -1,7 +1,7 @@
 """Childhood wasting module"""
 import copy
 from pathlib import Path
-from typing import Union
+from typing import Union, Dict, Any
 
 import numpy as np
 import pandas as pd
@@ -1252,29 +1252,22 @@ class WastingLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         self.date_last_run = self.sim.date
 
         # Wasting totals (prevalence at logging time)
-        currently_wasted_age_0_5mo = (df.is_alive & (df.age_exact_years < 0.5) & (df.un_WHZ_category
+        under5s = df.loc[df.is_alive & df.age_exact_years < 5]
+        # declare a dictionary that will hold proportions of wasting prevalence per each age group
+        wasting_prev_dict: Dict[str, Any] = dict()
+        # loop through different age groups and get proportions of wasting prevalence per each age group
+        for low_bound_mos, high_bound_mos in [(0, 5), (6, 11), (12, 23), (24, 35), (36, 47), (48, 59)]:  # in months
+            low_bound_age_in_years = low_bound_mos / 12.0
+            high_bound_age_in_years = (1 + high_bound_mos) / 12.0
+            # get those children who are wasted
+            wasted_agegrp = (under5s.age_exact_years.between(low_bound_age_in_years, high_bound_age_in_years,
+                                                             inclusive='left') & (under5s.un_WHZ_category
                                                                                   != 'WHZ>=-2')).sum()
-        currently_wasted_age_6_11mo = \
-            (df.is_alive & ((df.age_exact_years >= 0.5) & (df.age_exact_years < 1))
-             & (df.un_WHZ_category != 'WHZ>=-2')).sum()
-        currently_wasted_age_12_23mo = \
-            (df.is_alive & ((df.age_exact_years >= 1) & (df.age_exact_years < 2))
-             & (df.un_WHZ_category != 'WHZ>=-2')).sum()
-        currently_wasted_age_24_35mo = \
-            (df.is_alive & ((df.age_exact_years >= 2) & (df.age_exact_years < 3)) &
-             (df.un_WHZ_category != 'WHZ>=-2')).sum()
-        currently_wasted_age_36_47mo = \
-            (df.is_alive & ((df.age_exact_years >= 3) & (df.age_exact_years < 4)) & (
-                    df.un_WHZ_category != 'WHZ>=-2')).sum()
-        currently_wasted_age_48_59mo = \
-            (df.is_alive & ((df.age_exact_years >= 4) & (df.age_exact_years < 5)) & (
-                    df.un_WHZ_category != 'WHZ>=-2')).sum()
+            total_per_agegrp = (under5s.age_exact_years < high_bound_age_in_years).sum()
+            # add proportions to the dictionary
+            wasting_prev_dict[f'{low_bound_mos}_{high_bound_mos}mo'] = wasted_agegrp / total_per_agegrp
 
-        currently_wasted = {'0_5mo': currently_wasted_age_0_5mo,
-                            '6_11mo': currently_wasted_age_6_11mo,
-                            '12_23mo': currently_wasted_age_12_23mo,
-                            '24_35mo': currently_wasted_age_24_35mo,
-                            '36_47mo': currently_wasted_age_36_47mo,
-                            '48_59mo': currently_wasted_age_48_59mo}
-
-        logger.info(key='wasting_prevalence_count', data=currently_wasted)
+        # add to dictionary proportion of all wasted children under 5 years
+        wasting_prev_dict['total_under5_prop'] = (under5s.un_WHZ_category != 'WHZ>=-2').sum() / len(under5s)
+        # log wasting prevalence
+        logger.info(key='wasting_prevalence_count', data=wasting_prev_dict)
