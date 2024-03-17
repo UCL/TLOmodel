@@ -9,7 +9,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 
 from tlo import Date, Simulation, logging
-from tlo.analysis.utils import compare_number_of_deaths, parse_log_file, unflatten_flattened_multi_index_in_logging
+from tlo.analysis.utils import compare_number_of_deaths, parse_log_file
 from tlo.methods import (
     care_of_women_during_pregnancy,
     contraception,
@@ -28,6 +28,13 @@ from tlo.methods import (
     tb,
     wasting,
 )
+
+
+def add_footnote(fig: plt.Figure, footnote: str):
+    """ A function that adds a footnote below each plot. Here we are explaining what a denominator for every
+    graph is """
+    fig.figure.text(0.5, 0.01, footnote, ha="center", fontsize=10,
+                    bbox={"facecolor": "gray", "alpha": 0.3, "pad": 5})
 
 
 class WastingAnalyses:
@@ -94,14 +101,6 @@ class WastingAnalyses:
         )
         plt.show()
 
-    def construct_dfs(self) -> dict:
-        """ Create dict of pd.DataFrames containing counts of different lifestyle properties by date, sex and
-        age-group """
-        return {
-            k: unflatten_flattened_multi_index_in_logging(v.set_index('date'))
-            for k, v in self.__logs_dict.items() if k in ['wasting_prevalence_count']
-        }
-
     def plot_wasting_prevalence_per_year(self):
         """ plot wasting prevalence of all age groups per year. Proportions are obtained by getting a total number of
         children wasted divide by the total number of children less than 5 years"""
@@ -109,29 +108,44 @@ class WastingAnalyses:
         w_prev_df = w_prev_df[['date', 'total_under5_prop']]
         w_prev_df.set_index(w_prev_df.date.dt.year, inplace=True)
         w_prev_df.drop(columns='date', inplace=True)
+        fig, ax = plt.subplots()
         w_prev_df["total_under5_prop"].plot(kind='bar', stacked=True,
+                                            ax=ax,
                                             title="Wasting prevalence in children 0-59 months per year",
                                             ylabel='proportions',
                                             xlabel='year',
                                             ylim=[0, 0.05])
-
+        add_footnote(fig, "Proportion = total number of wasted children < 5 years / total number of children < 5 years")
+        plt.tight_layout()
+        fig.savefig(
+            outputs / ('wasting_prevalence_per_year' + datestamp + ".pdf"),
+            format="pdf"
+        )
         plt.show()
 
     def plot_wasting_prevalence_by_age_group(self):
         """ plot wasting prevalence per each age group. Proportions are obtained by getting a total number of
-        children wasted in a particular age group divide by the total number of children per that age group"""
+        children wasted in a particular age-group divide by the total number of children per that age-group"""
         w_prev_df = self.__logs_dict["wasting_prevalence_count"]
         w_prev_df.drop(columns={'total_under5_prop'}, inplace=True)
         w_prev_df.set_index(w_prev_df.date.dt.year, inplace=True)
         w_prev_df = w_prev_df.loc[w_prev_df.index == 2023]
         w_prev_df.drop(columns='date', inplace=True)
+        fig, ax = plt.subplots()
         # plot wasting prevalence
         w_prev_df.squeeze().plot(kind='bar', stacked=False,
-                                 title="Wasting prevalence in children 0-59 months per age group",
+                                 ax=ax,
+                                 title="Wasting prevalence in children 0-59 months per each age group in 2023",
                                  ylabel='proportions',
                                  xlabel='year',
                                  ylim=[0, 0.1])
-
+        add_footnote(fig, "Proportion = total number of wasted children < 5 years per each age-group / total number of "
+                          "children < 5 years per each age-group")
+        plt.tight_layout()
+        fig.savefig(
+            outputs / ('wasting_prevalence_per_each_age_group' + datestamp + ".pdf"),
+            format="pdf"
+        )
         plt.show()
 
     def plot_modal_gbd_deaths_by_gender(self):
@@ -154,6 +168,7 @@ class WastingAnalyses:
             ax.set_ylabel("Number of deaths")
             ax.legend(loc=2)
         fig.tight_layout()
+        add_footnote(fig, "Model output against Global Burden of Diseases(GDB) study data")
         fig.savefig(
             outputs / ('modal_gbd_deaths_by_gender' + datestamp + ".pdf"),
             format="pdf"
