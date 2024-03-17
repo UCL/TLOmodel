@@ -452,6 +452,8 @@ class HSI_Event:
                 self.EQUIPMENT.update(self.get_equip_item_codes_from_pkg_name(pkg_name))
 
     def get_essential_equip_availability(self, set_of_pkgs: Set[str]) -> bool:
+        # TODO: Or, should it be called set_essential_equip_and_get_availability to be more transparent about what the
+        #  fnc does?
         self.set_equipment_essential_to_run_event(set_of_pkgs)
         return self.sim.modules['HealthSystem'].get_essential_equip_availability(self.ESSENTIAL_EQUIPMENT)
 
