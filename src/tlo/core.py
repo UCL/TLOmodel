@@ -387,7 +387,7 @@ class Module:
         ] = None,
         facility_level: str = None,
         treatment_id: str = None,
-        random_state: RandomState = None,
+        random_state: "RandomState" = None,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         """
         Actions to be take during a NON-emergency generic HSI.
@@ -444,7 +444,7 @@ class Module:
         ] = None,
         facility_level: str = None,
         treatment_id: str = None,
-        random_state: RandomState = None,
+        random_state: "RandomState" = None,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         """
         Actions to be take during an EMERGENCY generic HSI.
