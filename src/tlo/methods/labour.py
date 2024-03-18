@@ -2298,7 +2298,7 @@ class Labour(Module):
         self,
         patient_id: int,
         patient_details: NamedTuple = None,
-        random_state: RandomState = None,
+        random_state: "RandomState" = None,
         **kwargs,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         event_info = []
