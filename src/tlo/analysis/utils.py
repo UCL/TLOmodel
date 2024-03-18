@@ -610,6 +610,7 @@ def get_filtered_treatment_ids(depth: Optional[int] = None) -> List[str]:
             [
                 "".join(f"{x}_" for i, x in enumerate(t.split('_')) if i < depth).rstrip('_') + '_*'
                 for t in set(_treatments)
+                if t # In the event an abstract base class is detected, that does not set TREATMENT_ID by default
             ]
         )))
 
