@@ -1,3 +1,5 @@
+from typing import Any, Dict, List, Tuple
+
 import numpy as np
 import pandas as pd
 
@@ -275,6 +277,26 @@ class ChronicSyndrome(Module):
 
         return health_values
 
+    def do_at_generic_first_appt_emergency(
+        self,
+        patient_id: int,
+        symptoms: List[str] = None,
+        **kwargs,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        """Example for CHRONIC SYNDROME"""
+        event_info = []
+
+        if 'craving_sandwiches' in symptoms:
+            event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
+                module=self,
+                person_id=patient_id,
+            )
+            options = {
+                "priority": 1,
+                "topen": self.sim.date,
+            }
+            event_info.append((event, options))
+        return event_info, {}
 
 class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
 

@@ -312,18 +312,3 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
                     module=sim.modules['Labour'], person_id=person_id,
                     facility_level_of_this_hsi=rng.choice(['1a', '1b']))
                 schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
-
-    # -----  EXAMPLES FOR MOCKITIS AND CHRONIC SYNDROME  -----
-    if 'craving_sandwiches' in symptoms:
-        event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
-            module=sim.modules['ChronicSyndrome'],
-            person_id=person_id
-        )
-        schedule_hsi(event, priority=1, topen=sim.date)
-
-    if 'extreme_pain_in_the_nose' in symptoms:
-        event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(
-            module=sim.modules['Mockitis'],
-            person_id=person_id
-        )
-        schedule_hsi(event, priority=1, topen=sim.date)
