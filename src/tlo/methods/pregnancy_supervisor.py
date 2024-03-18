@@ -19,11 +19,11 @@ from tlo import (
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata, labour, pregnancy_helper_functions, pregnancy_supervisor_lm
-from tlo.methods.causes import Cause
 from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
     HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
 )
+from tlo.methods.causes import Cause
 from tlo.util import BitsetHandler
 
 if TYPE_CHECKING:

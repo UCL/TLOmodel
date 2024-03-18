@@ -13,14 +13,8 @@ import pandas as pd
 
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
-from tlo.methods.care_of_women_during_pregnancy import (
-    HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement,
-    HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
-)
-from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.labour import HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour
-from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
 
 if TYPE_CHECKING:
     from tlo import Module
