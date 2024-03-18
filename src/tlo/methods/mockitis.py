@@ -1,3 +1,5 @@
+from typing import Any, Dict, List, Tuple
+
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
@@ -285,6 +287,26 @@ class Mockitis(Module):
 
         return health_values  # returns the series
 
+    def do_at_generic_first_appt_emergency(
+        self,
+        patient_id: int,
+        symptoms: List[str] = None,
+        **kwargs,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        """Example for mockitis"""
+        event_info = []
+
+        if 'extreme_pain_in_the_nose' in symptoms:
+            event = HSI_Mockitis_PresentsForCareWithSevereSymptoms(
+                module=self,
+                person_id=patient_id,
+            )
+            options = {
+                "priority": 1,
+                "topen": self.sim.date,
+            }
+            event_info.append((event, options))
+        return event_info, {}
 
 class MockitisEvent(RegularEvent, PopulationScopeEventMixin):
     """
