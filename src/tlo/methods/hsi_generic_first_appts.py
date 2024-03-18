@@ -297,21 +297,6 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
 
     # OLD FN CONTINUES
 
-    if 'PregnancySupervisor' in sim.modules:
-
-        # -----  ECTOPIC PREGNANCY  -----
-        if df.at[person_id, 'ps_ectopic_pregnancy'] != 'none':
-            event = HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy(
-                module=sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
-            schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
-
-        # -----  COMPLICATIONS OF ABORTION  -----
-        abortion_complications = sim.modules['PregnancySupervisor'].abortion_complications
-        if abortion_complications.has_any([person_id], 'sepsis', 'injury', 'haemorrhage', first=True):
-            event = HSI_CareOfWomenDuringPregnancy_PostAbortionCaseManagement(
-                module=sim.modules['CareOfWomenDuringPregnancy'], person_id=person_id)
-            schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
-
     if 'Labour' in sim.modules:
         mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
         labour_list = sim.modules['Labour'].women_in_labour
