@@ -18,7 +18,6 @@ from tlo.methods.care_of_women_during_pregnancy import (
     HSI_CareOfWomenDuringPregnancy_TreatmentForEctopicPregnancy,
 )
 from tlo.methods.chronicsyndrome import HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment
-from tlo.methods.epilepsy import HSI_Epilepsy_Start_Anti_Epileptic
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.labour import HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour
 from tlo.methods.mockitis import HSI_Mockitis_PresentsForCareWithSevereSymptoms
@@ -328,16 +327,6 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
                     module=sim.modules['Labour'], person_id=person_id,
                     facility_level_of_this_hsi=rng.choice(['1a', '1b']))
                 schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
-
-    # ------ CARDIO-METABOLIC DISORDERS ------
-
-    if "Epilepsy" in sim.modules:
-        if 'seizures' in symptoms:
-            schedule_hsi(HSI_Epilepsy_Start_Anti_Epileptic(person_id=person_id,
-                                                           module=sim.modules['Epilepsy']),
-                         priority=0,
-                         topen=sim.date,
-                         tclose=None)
 
     # ----- spurious emergency symptom -----
     if 'spurious_emergency_symptom' in symptoms:

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -391,6 +391,23 @@ class Epilepsy(Module):
         else:
             # None of the treatment is available: return None
             return None
+
+    def do_at_generic_first_appt_emergency(
+        self,
+        patient_id: int,
+        symptoms: List[str] = None,
+        **kwargs,
+    ) -> Tuple[List[Tuple[HSI_Event, Dict[str, Any]]], Dict[str, Any]]:
+        event_info = []
+        if "seizures" in symptoms:
+            event = HSI_Epilepsy_Start_Anti_Epileptic(person_id=patient_id, module=self)
+            options = {
+                "priority": 0,
+                "topen": self.sim.date,
+                "tclose": None,
+            }
+            event_info.append((event, options))
+        return event_info, {}
 
 
 class EpilepsyEvent(RegularEvent, PopulationScopeEventMixin):
