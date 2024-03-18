@@ -272,15 +272,6 @@ def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
                     facility_level_of_this_hsi=rng.choice(['1a', '1b']))
                 schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
 
-    # ------ CARDIO-METABOLIC DISORDERS ------
-    if "Epilepsy" in sim.modules:
-        if 'seizures' in symptoms:
-            schedule_hsi(HSI_Epilepsy_Start_Anti_Epileptic(person_id=person_id,
-                                                           module=sim.modules['Epilepsy']),
-                         priority=0,
-                         topen=sim.date,
-                         tclose=None)
-
     # ----- spurious emergency symptom -----
     if 'spurious_emergency_symptom' in symptoms:
         event = HSI_EmergencyCare_SpuriousSymptom(
