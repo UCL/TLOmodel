@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Tuple
 
 import numpy as np
 import pandas as pd
@@ -13,6 +16,9 @@ from tlo.methods.dxmanager import DxTest
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.postnatal_supervisor import PostnatalWeekOneMaternalEvent
 from tlo.util import BitsetHandler
+
+if TYPE_CHECKING:
+    from numpy.random import RandomState
 
 # Standard logger
 logger = logging.getLogger(__name__)
@@ -2290,6 +2296,37 @@ class Labour(Module):
         if hsi_event.timing == 'postpartum':
             self.apply_risk_of_early_postpartum_death(person_id)
 
+    def do_at_generic_first_appt_emergency(
+        self,
+        patient_id: int,
+        patient_details: NamedTuple = None,
+        random_state: RandomState = None,
+        **kwargs,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        event_info = []
+
+        mni = self.sim.modules["PregnancySupervisor"].mother_and_newborn_info
+        labour_list = self.sim.modules["Labour"].women_in_labour
+
+        if patient_id in labour_list:
+            la_currently_in_labour = patient_details.la_currently_in_labour
+            if (
+                la_currently_in_labour
+                & mni[patient_id]["sought_care_for_complication"]
+                & (mni[patient_id]["sought_care_labour_phase"] == "intrapartum")
+            ):
+                event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
+                    module=self,
+                    person_id=patient_id,
+                    facility_level_of_this_hsi=random_state.choice(["1a", "1b"]),
+                )
+                options = {
+                    "priority": 0,
+                    "topen": self.sim.date,
+                    "tclose": self.sim.date + pd.DateOffset(days=1),
+                }
+                event_info.append((event, options))
+        return event_info, {}
 
 class LabourOnsetEvent(Event, IndividualScopeEventMixin):
     """

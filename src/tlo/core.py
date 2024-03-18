@@ -4,6 +4,8 @@ This contains things that didn't obviously go in their own file, such as
 specification for parameters and properties, and the base Module class for
 disease modules.
 """
+from __future__ import annotations
+
 import json
 from enum import Enum, auto
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Set, Tuple, Union
@@ -12,6 +14,8 @@ import numpy as np
 import pandas as pd
 
 if TYPE_CHECKING:
+    from numpy.random import RandomState
+
     from tlo.methods.hsi_event import HSI_Event
 
 class Types(Enum):
@@ -383,6 +387,7 @@ class Module:
         ] = None,
         facility_level: str = None,
         treatment_id: str = None,
+        random_state: RandomState = None,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         """
         Actions to be take during a NON-emergency generic HSI.
@@ -420,6 +425,7 @@ class Module:
         :param consumables_checker: A function that can query the HealthSystem to check for available consumables.
         :param facility_level: The level of the facility that the patient presented at.
         :param treatment_id: The treatment id of the HSI event triggering the generic appointment.
+        :param random_state: Random number generator to be used when making random choices during event creation.
         """
         return [], {}
 
@@ -438,6 +444,7 @@ class Module:
         ] = None,
         facility_level: str = None,
         treatment_id: str = None,
+        random_state: RandomState = None,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         """
         Actions to be take during an EMERGENCY generic HSI.

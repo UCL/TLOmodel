@@ -9,12 +9,9 @@ lead to `HSI_GenericEmergencyFirstApptAtFacilityLevel1`.
 from collections import namedtuple
 from typing import TYPE_CHECKING, Any, Iterable, List, OrderedDict
 
-import pandas as pd
-
 from tlo import logging
 from tlo.events import IndividualScopeEventMixin
 from tlo.methods.hsi_event import HSI_Event
-from tlo.methods.labour import HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour
 
 if TYPE_CHECKING:
     from tlo import Module
@@ -139,6 +136,7 @@ class HSI_GenericNonEmergencyFirstAppt(HSI_Event, IndividualScopeEventMixin):
                 consumables_checker=consumables_fn,
                 facility_level=facility_level,
                 treatment_id=treatment_id,
+                random_state=self.module.rng,
             )
             # Schedule any requested updates
             for info in event_info:
@@ -185,6 +183,66 @@ class HSI_GenericEmergencyFirstAppt(HSI_Event, IndividualScopeEventMixin):
         #                                                                  of care are provided (e.g. a diagnosis, or
         #                                                                  the provision of inhaler.).
 
+    def _do_at_generic_first_appt_emergency(self, squeeze_factor):
+        """
+        The actions are taken during the non-emergency generic HSI,
+        HSI_GenericEmergencyFirstApptAtFacilityLevel1.
+        """
+        # Make top-level reads of information, to avoid repeat accesses.
+        person_id = self.target
+        modules: OrderedDict[str, "Module"] = self.sim.modules
+        schedule_hsi = self.healthcare_system.schedule_hsi_event
+        symptoms = self.sim.modules["SymptomManager"].has_what(person_id)
+        facility_level = self.ACCEPTED_FACILITY_LEVEL
+        treatment_id = self.TREATMENT_ID
+
+        # Create the diagnosis test runner function
+        def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
+            return self.healthcare_system.dx_manager.run_dx_test(
+                tests,
+                hsi_event=self,
+                use_dict_for_single=use_dict,
+                report_dxtest_tried=report_tried,
+            )
+
+        # Create the consumables checker function
+        def consumables_fn(item_codes, opt_item_codes=None):
+            return self.get_consumables(
+                item_codes=item_codes, optional_item_codes=opt_item_codes
+            )
+
+        # Dynamically create immutable container with the target's details stored.
+        # This will avoid repeat DataFrame reads when we call the module-level functions.
+        df = self.sim.population.props
+        patient_details = namedtuple("PatientDetails", df.columns)(*df.loc[person_id])
+
+        proposed_df_updates = {}
+
+        module_order = sort_preserving_order(modules.keys(), FIRST_APPT_EMERGENCY_MODULE_ORDER)
+        for name in module_order:
+            module = modules[name]
+            event_info, df_updates = module.do_at_generic_first_appt_emergency(
+                patient_id=person_id,
+                patient_details=patient_details,
+                symptoms=symptoms,
+                diagnosis_fn=diagnosis_fn,
+                consumables_checker=consumables_fn,
+                facility_level=facility_level,
+                treatment_id=treatment_id,
+                random_state=self.module.rng,
+            )
+            # Schedule any requested updates
+            for info in event_info:
+                event = info[0]
+                options = info[1]
+                schedule_hsi(event, **options)
+            # Record any requested DataFrame updates, but do not implement yet
+            # NOTE: |= syntax is only available in Python >=3.9
+            proposed_df_updates = {**proposed_df_updates, **df_updates}
+
+        # Perform any DataFrame updates that were requested, all in one go.
+        df.loc[person_id, proposed_df_updates.keys()] = proposed_df_updates.values()
+
     def apply(self, person_id, squeeze_factor):
 
         df = self.sim.population.props
@@ -192,9 +250,7 @@ class HSI_GenericEmergencyFirstAppt(HSI_Event, IndividualScopeEventMixin):
         if not df.at[person_id, "is_alive"]:
             return
 
-        do_at_generic_first_appt_emergency(
-            hsi_event=self, squeeze_factor=squeeze_factor
-        )
+        self._do_at_generic_first_appt_emergency(squeeze_factor=squeeze_factor)
 
 
 class HSI_EmergencyCare_SpuriousSymptom(HSI_Event, IndividualScopeEventMixin):
@@ -219,90 +275,3 @@ class HSI_EmergencyCare_SpuriousSymptom(HSI_Event, IndividualScopeEventMixin):
         else:
             sm = self.sim.modules["SymptomManager"]
             sm.change_symptom(person_id, "spurious_emergency_symptom", "-", sm)
-
-
-def do_at_generic_first_appt_emergency(hsi_event: HSI_Event, squeeze_factor):
-    """
-    The actions are taken during the non-emergency generic HSI,
-    HSI_GenericEmergencyFirstApptAtFacilityLevel1.
-    """
-    # OLD shortcuts, to prune later
-    sim = hsi_event.sim
-    rng = hsi_event.module.rng
-    person_id = hsi_event.target
-    df = hsi_event.sim.population.props
-    symptoms = hsi_event.sim.modules["SymptomManager"].has_what(person_id=person_id)
-    schedule_hsi = hsi_event.sim.modules["HealthSystem"].schedule_hsi_event
-    treatment_id = hsi_event.TREATMENT_ID
-
-    # Make top-level reads of information, to avoid repeat accesses.
-    person_id = hsi_event.target
-    modules: OrderedDict[str, "Module"] = hsi_event.sim.modules
-    schedule_hsi = hsi_event.healthcare_system.schedule_hsi_event
-    symptoms = hsi_event.sim.modules["SymptomManager"].has_what(person_id)
-    facility_level = hsi_event.ACCEPTED_FACILITY_LEVEL
-    treatment_id = hsi_event.TREATMENT_ID
-
-    # Create the diagnosis test runner function
-    def diagnosis_fn(tests, use_dict: bool = False, report_tried: bool = False):
-        return hsi_event.healthcare_system.dx_manager.run_dx_test(
-            tests,
-            hsi_event=hsi_event,
-            use_dict_for_single=use_dict,
-            report_dxtest_tried=report_tried,
-        )
-
-    # Create the consumables checker function
-    def consumables_fn(item_codes, opt_item_codes=None):
-        return hsi_event.get_consumables(
-            item_codes=item_codes, optional_item_codes=opt_item_codes
-        )
-
-    # Dynamically create immutable container with the target's details stored.
-    # This will avoid repeat DataFrame reads when we call the module-level functions.
-    df = hsi_event.sim.population.props
-    patient_details = namedtuple("PatientDetails", df.columns)(*df.loc[person_id])
-
-    proposed_df_updates = {}
-
-    module_order = sort_preserving_order(modules.keys(), FIRST_APPT_EMERGENCY_MODULE_ORDER)
-    for name in module_order:
-        module = modules[name]
-        event_info, df_updates = module.do_at_generic_first_appt_emergency(
-            patient_id=person_id,
-            patient_details=patient_details,
-            symptoms=symptoms,
-            diagnosis_fn=diagnosis_fn,
-            consumables_checker=consumables_fn,
-            facility_level=facility_level,
-            treatment_id=treatment_id,
-        )
-        # Schedule any requested updates
-        for info in event_info:
-            event = info[0]
-            options = info[1]
-            schedule_hsi(event, **options)
-        # Record any requested DataFrame updates, but do not implement yet
-        # NOTE: |= syntax is only available in Python >=3.9
-        proposed_df_updates = {**proposed_df_updates, **df_updates}
-
-    # Perform any DataFrame updates that were requested, all in one go.
-    df.loc[person_id, proposed_df_updates.keys()] = proposed_df_updates.values()
-
-    # OLD FN CONTINUES
-
-    if 'Labour' in sim.modules:
-        mni = sim.modules['PregnancySupervisor'].mother_and_newborn_info
-        labour_list = sim.modules['Labour'].women_in_labour
-
-        if person_id in labour_list:
-            la_currently_in_labour = df.at[person_id, 'la_currently_in_labour']
-            if (
-                la_currently_in_labour &
-                mni[person_id]['sought_care_for_complication'] &
-                (mni[person_id]['sought_care_labour_phase'] == 'intrapartum')
-            ):
-                event = HSI_Labour_ReceivesSkilledBirthAttendanceDuringLabour(
-                    module=sim.modules['Labour'], person_id=person_id,
-                    facility_level_of_this_hsi=rng.choice(['1a', '1b']))
-                schedule_hsi(event, priority=0, topen=sim.date, tclose=sim.date + pd.DateOffset(days=1))
