@@ -6,6 +6,7 @@ The write-up of these estimates is: Health-seeking behaviour estimates for adult
 
 """
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
@@ -15,9 +16,13 @@ from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata
 from tlo.methods.hsi_generic_first_appts import (
+    HSI_EmergencyCare_SpuriousSymptom,
     HSI_GenericEmergencyFirstAppt,
     HSI_GenericNonEmergencyFirstAppt,
 )
+
+if TYPE_CHECKING:
+    from tlo.methods.hsi_event import HSI_Event
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -250,6 +255,24 @@ class HealthSeekingBehaviour(Module):
         else:
             return self.arg_force_any_symptom_to_lead_to_healthcareseeking
 
+    def do_at_generic_first_appt_emergency(
+        self,
+        patient_id: int,
+        symptoms: List[str] = None,
+        **kwargs,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        event_info = []
+        if 'spurious_emergency_symptom' in symptoms:
+            event = HSI_EmergencyCare_SpuriousSymptom(
+                module=self.sim.modules['HealthSeekingBehaviour'],
+                person_id=patient_id,
+            )
+            options = {
+                "priority": 0,
+                "topen": self.sim.date,
+            }
+            event_info.append((event, options))
+        return event_info, {}
 
 # ---------------------------------------------------------------------------------------------------------
 #   REGULAR POLLING EVENT
