@@ -865,6 +865,11 @@ class HealthSystem(Module):
             "ResourceFile_HR_scaling_by_level_and_officer_type.xlsx",
             sheet_name=None  # all sheets read in
         )
+        # Ensure the mode of HR scaling to be considered in included in the tables loaded
+        assert (self.parameters['HR_scaling_by_level_and_officer_type_mode'] in
+                self.parameters['HR_scaling_by_level_and_officer_type_table']), \
+            (f"Value of `HR_scaling_by_level_and_officer_type_mode` not recognised: "
+             f"{self.parameters['HR_scaling_by_level_and_officer_type_mode']}")
 
         self.parameters['HR_scaling_by_district_table']: Dict = pd.read_excel(
             path_to_resourcefiles_for_healthsystem /
