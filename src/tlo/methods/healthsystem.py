@@ -346,13 +346,13 @@ class HSI_Event:
 
     def get_equip_item_code_from_item_name(self, equip_item_name: str) -> int:
         """Helper function to provide the equip_item_code (an int) when provided with the equip_item_name of the item"""
-        lookup_df = self.sim.modules['HealthSystem'].parameters['equip_item_and_package_lookups']
+        lookup_df = self.sim.modules['HealthSystem'].parameters['Equipment']
         return int(pd.unique(lookup_df.loc[lookup_df["Equip_Item"] == equip_item_name, "Equip_Code"])[0])
 
     def get_equip_item_codes_from_pkg_name(self, equip_pkg_name: str) -> Set[int]:
         """Helper function to provide the equip_item_codes (a set of ints) when provided with the equip_pkg_name of the
         equipment package"""
-        lookup_df = self.sim.modules['HealthSystem'].parameters['equip_item_and_package_lookups']
+        lookup_df = self.sim.modules['HealthSystem'].parameters['Equipment']
         return set(lookup_df.loc[lookup_df["Equip_Pkg"] == equip_pkg_name, "Equip_Code"])
 
     def ignore_unknown_equip_names(self, set_of_names: Set[str], type_in_set: str) -> Set[str]:
@@ -375,7 +375,7 @@ class HSI_Event:
                 )
             return dict_to_be_added_to
 
-        lookup_df = self.sim.modules['HealthSystem'].parameters['equip_item_and_package_lookups']
+        lookup_df = self.sim.modules['HealthSystem'].parameters['Equipment']
         if type_in_set == "item":
             unknown_names = set_of_names.difference(set(lookup_df["Equip_Item"]))
             if unknown_names:
@@ -649,9 +649,13 @@ class HealthSystem(Module):
             "Availability of beds. If 'default' then use the availability specified in the ResourceFile; if "
             "'none', then let no beds be  ever be available; if 'all', then all beds are always available. NB. This "
             "parameter is over-ridden if an argument is provided to the module initialiser."),
-        'equip_item_and_package_lookups': Parameter(
-            Types.DATA_FRAME, "Items based on the the HSSP III 1K Equipment Costing (SEL Costing Sheet): "
-            "https://www.health.gov.mw/download/hssp-iii/, packages created in consultation with clinicians."),
+        'Equipment': Parameter(
+            Types.DATA_FRAME, "Data on equipment items, packages, and availability probabilities by facility level."),
+        'equip_availability': Parameter(
+            Types.STRING,
+            "Availability of equipment. If 'default' then use the availability specified in the ResourceFile;"
+            " if 'none', then let no equipment ever be available; if 'all', then all equipment is always available. NB."
+            " This parameter is over-ridden if an argument is provided to the module initialiser."),
 
         # Service Availability
         'Service_Availability': Parameter(
@@ -725,6 +729,7 @@ class HealthSystem(Module):
         mode_appt_constraints: Optional[int] = None,
         cons_availability: Optional[str] = None,
         beds_availability: Optional[str] = None,
+        equip_availability: Optional[str] = None,
         randomise_queue: bool = True,
         ignore_priority: bool = False,
         policy_name: Optional[str] = None,
@@ -749,6 +754,8 @@ class HealthSystem(Module):
         or 'none', requests for consumables are not logged.
         :param beds_availability: If 'default' then use the availability specified in the ResourceFile; if 'none', then
         let no beds be ever be available; if 'all', then all beds are always available.
+        :param equip_availability: If 'default' then use the availability specified in the ResourceFile; if 'none', then
+        let no equipment ever be available; if 'all', then all equipment is always available.
         :param randomise_queue ensure that the queue is not model-dependent, i.e. properly randomised for equal topen
             and priority
         :param ignore_priority: If ``True`` do not use the priority information in HSI
@@ -841,12 +848,16 @@ class HealthSystem(Module):
         self.HSI_EVENT_QUEUE = []
         self.hsi_event_queue_counter = 0  # Counter to help with the sorting in the heapq
 
-        # Store the argument provided for cons_availability
+        # Store the arguments provided for cons/beds/equip_availability
         assert cons_availability in (None, 'default', 'all', 'none')
         self.arg_cons_availability = cons_availability
 
         assert beds_availability in (None, 'default', 'all', 'none')
         self.arg_beds_availability = beds_availability
+
+        assert equip_availability in (None, 'default', 'all', 'none')
+        self.arg_equip_availability = equip_availability
+        self.equip_availability = 'all'  # provided so that there is a default even before simulation is run
 
         # `compute_squeeze_factor_to_district_level` is a Boolean indicating whether the computation of squeeze_factors
         # should be specific to each district (when `True`), or if the computation of squeeze_factors should be on the
@@ -947,7 +958,7 @@ class HealthSystem(Module):
             path_to_resourcefiles_for_healthsystem / 'infrastructure_and_equipment' / 'ResourceFile_Bed_Capacity.csv')
 
         # Read in ResourceFile_Equipment
-        self.parameters['equip_item_and_package_lookups'] = pd.read_csv(
+        self.parameters['Equipment'] = pd.read_csv(
             path_to_resourcefiles_for_healthsystem / 'infrastructure_and_equipment' / 'ResourceFile_Equipment.csv')
 
         # Data on the priority of each Treatment_ID that should be adopted in the queueing system according to different
@@ -963,7 +974,6 @@ class HealthSystem(Module):
             "ResourceFile_const_HR_scaling.xlsx",
             sheet_name=None  # all sheets read in
         )
-
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
@@ -999,6 +1009,9 @@ class HealthSystem(Module):
             rng=rng_for_consumables,
             availability=self.get_cons_availability()
         )
+
+        # Determine equip_availability
+        self.equip_availability = self.get_equip_availability()
 
         self.tclose_overwrite = self.parameters['tclose_overwrite']
         self.tclose_days_offset_overwrite = self.parameters['tclose_days_offset_overwrite']
@@ -1156,8 +1169,6 @@ class HealthSystem(Module):
 
     def process_human_resources_files(self, use_funded_or_actual_staffing: str):
         """Create the data-structures needed from the information read into the parameters."""
-
-
 
         # * Define Facility Levels
         self._facility_levels = set(self.parameters['Master_Facilities_List']['Facility_Level']) - {'5'}
@@ -1463,6 +1474,23 @@ class HealthSystem(Module):
 
         return _beds_availability
 
+    def get_equip_availability(self) -> str:
+        """Returns equipment availability. (Should be equal to what is specified by the parameter, but overwrite with
+        what was provided in argument if an argument was specified -- provided for backward compatibility/debugging.)"""
+
+        if self.arg_equip_availability is None:
+            _equip_availability = self.parameters['equip_availability']
+        else:
+            _equip_availability = self.arg_equip_availability
+
+        # Log the equip_availability
+        logger.info(key="message",
+                    data=f"Running Health System With the Following Equipment Availability: "
+                         f"{_equip_availability}"
+                    )
+
+        return _equip_availability
+
     def get_equip_item_availability(self, equip_item_code: str) -> bool:
         # TODO: update with implementation of essential equipment availability for the HSI event to run
         #  for now, always available
@@ -1472,7 +1500,12 @@ class HealthSystem(Module):
 
     def get_essential_equip_availability(self, essential_equip_set: Set[int]) -> bool:
         # True if all items of essential equipment available
-        return all(self.get_equip_item_availability(item_code) for item_code in essential_equip_set)
+        if self.equip_availability == 'all':
+            return True
+        elif self.equip_availability == 'none':
+            return False
+        else:
+            return all(self.get_equip_item_availability(item_code) for item_code in essential_equip_set)
 
     def schedule_to_call_never_ran_on_date(self, hsi_event: 'HSI_Event', tdate: datetime.datetime):
         """Function to schedule never_ran being called on a given date"""
@@ -3038,6 +3071,7 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
         * `capabilities_coefficient`
         * `cons_availability`
         * `beds_availability`
+        * `equip_availability`
     Note that no checking is done here on the suitability of values of each parameter."""
 
     def __init__(self, module: HealthSystem, parameters: Dict):
@@ -3063,6 +3097,9 @@ class HealthSystemChangeParameters(Event, PopulationScopeEventMixin):
 
         if 'beds_availability' in self._parameters:
             self.module.bed_days.availability = self._parameters['beds_availability']
+
+        if 'equip_availability' in self._parameters:
+            self.module.equip_availability = self._parameters['equip_availability']
 
 
 class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
