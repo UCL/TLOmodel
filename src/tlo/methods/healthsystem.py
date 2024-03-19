@@ -852,7 +852,7 @@ class HealthSystem(Module):
         self.parameters['HR_scaling_by_level_and_officer_type_table']: Dict = pd.read_excel(
             path_to_resourcefiles_for_healthsystem /
             "human_resources" /
-            "HR_scaling" /
+            "scaling_capabilities" /
             "ResourceFile_HR_scaling_by_level_and_officer_type.xlsx",
             sheet_name=None  # all sheets read in
         )
@@ -860,7 +860,7 @@ class HealthSystem(Module):
         self.parameters['HR_scaling_by_district_table']: Dict = pd.read_excel(
             path_to_resourcefiles_for_healthsystem /
             "human_resources" /
-            "HR_scaling" /
+            "scaling_capabilities" /
             "ResourceFile_HR_scaling_by_district.xlsx",
             sheet_name=None  # all sheets read in
         )
