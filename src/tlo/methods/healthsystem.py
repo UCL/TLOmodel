@@ -828,6 +828,9 @@ class HealthSystem(Module):
             "ResourceFile_const_HR_scaling.xlsx",
             sheet_name=None  # all sheets read in
         )
+        # Ensure the mode of HR scaling to be considered in included in the tables loaded
+        assert self.parameters['const_HR_scaling_mode'] in self.parameters['const_HR_scaling_table'], \
+            f"Value of `const_HR_scaling_mode` not recognised: {self.parameters['const_HR_scaling_mode']}"
 
         self.parameters['yearly_HR_scaling']: Dict = pd.read_excel(
             path_to_resourcefiles_for_healthsystem /
@@ -837,18 +840,13 @@ class HealthSystem(Module):
             sheet_name=None,  # all sheets read in
             dtype={'scale_HR_by_popsize': bool}  # Ensure that this column is read as boolean
         )
+        # Ensure the mode of yearly HR scaling to be considered in included in the tables loaded
+        assert self.parameters['yearly_HR_scaling_mode'] in self.parameters['yearly_HR_scaling'], \
+            f"Value of `yearly_HR_scaling` not recognised: {self.parameters['yearly_HR_scaling_mode']}"
 
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
-
-        # Ensure the mode of HR scaling to be considered in included in the tables loaded
-        assert self.parameters['const_HR_scaling_mode'] in self.parameters['const_HR_scaling_table'], \
-            f"Value of `const_HR_scaling_mode` not recognised: {self.parameters['const_HR_scaling_mode']}"
-
-        # Ensure the mode of yearly HR scaling to be considered in included in the tables loaded
-        assert self.parameters['yearly_HR_scaling_mode'] in self.parameters['yearly_HR_scaling'], \
-            f"Value of `yearly_HR_scaling` not recognised: {self.parameters['yearly_HR_scaling_mode']}"
 
         # Create dedicated RNGs for separate functions done by the HealthSystem module
         self.rng_for_hsi_queue = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
