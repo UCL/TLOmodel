@@ -166,9 +166,6 @@ class Tb(Module):
         "rr_tb_child": Parameter(
             Types.REAL, "relative risk of tb infection if under 16 years of age"
         ),
-        "rr_bcg_inf": Parameter(
-            Types.REAL, "relative risk of tb infection with bcg vaccination"
-        ),
         "monthly_prob_relapse_tx_complete": Parameter(
             Types.REAL, "monthly probability of relapse once treatment complete"
         ),
