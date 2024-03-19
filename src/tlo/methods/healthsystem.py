@@ -543,36 +543,45 @@ class HealthSystem(Module):
                         " for specific treatments"),
 
         'HR_scaling_by_level_and_officer_type_table': Parameter(
-            Types.DICT, "Factors by which capabilities of medical officer categories at different levels will be"
-                              "scaled at the start of the year specified by year_HR_scaling_by_level_and_officer_type to simulate a number of effects (e.g. absenteeism,"
-                              "boosting of specific medical cadres, etc). This is the imported from an"
-                              "Excel workbook: keys are the worksheet names and values are the worksheets in "
-                              "the format of pd.DataFrames."),
+            Types.DICT, "Factors by which capabilities of medical officer types at different levels will be"
+                        "scaled at the start of the year specified by `year_HR_scaling_by_level_and_officer_type`. This"
+                        "serves to simulate a number of effects (e.g. absenteeism, boosting capabilities of specific "
+                        "medical cadres, etc). This is the imported from an Excel workbook: keys are the worksheet "
+                        "names and values are the worksheets in the format of pd.DataFrames. Additional scenarios can "
+                        "be added by adding worksheets to this workbook: the value of "
+                        "`HR_scaling_by_level_and_officer_type_mode` indicates which sheet is used."
+        ),
+
         'year_HR_scaling_by_level_and_officer_type': Parameter(
-            Types.INT, "Year in which one-off constant HR scaling will take place"),
+            Types.INT, "Year in which one-off constant HR scaling will take place. (The change happens"
+                       "on 1st January of that year.)"
+        ),
 
         'HR_scaling_by_level_and_officer_type_mode': Parameter(
-            Types.STRING, "Mode of HR scaling considered at the start of the simulation. Options are default"
-                          " (capabilities are scaled by a constaint factor of 1), data (factors informed by survey data),"
-                          "and custom (user can freely set these factors as parameters in the analysis).",
+            Types.STRING, "Mode of HR scaling considered at the start of the simulation. This corresponds to the name"
+                          "of the worksheet in `ResourceFile_HR_scaling_by_level_and_officer_type.xlsx` that should be"
+                          " used. Options are: `default` (capabilities are scaled by a constaint factor of 1); `data` "
+                          "(factors informed by survey data); and, `custom` (user can freely set these factors as "
+                          "parameters in the analysis).",
         ),
 
         'HR_scaling_by_district_table': Parameter(
             Types.DICT, "Factors by which daily capabilities in different districts will be"
-                              "scaled at the start of the year specified by year_HR_scaling_by_district to simulate"
-                              "e.g. catastrophic event distrupting delivery of services in particular district."
-                              "Excel workbook: keys are the worksheet names and values are the worksheets in "
-                              "the format of pd.DataFrames."),
-        'year_HR_scaling_by_district': Parameter(
-            Types.INT, "Year in which scaling of daily capabilities by district will take place"),
-
-        'HR_scaling_by_district_mode': Parameter(
-            Types.STRING, "Mode of scaling of daily capabilties by district.",
+                        "scaled at the start of the year specified by year_HR_scaling_by_district to simulate"
+                        "(e.g., through catastrophic event disrupting delivery of services in particular district(s))."
+                        "This is the import of an Excel workbook: keys are the worksheet names and values are the "
+                        "worksheets in the format of pd.DataFrames. Additional scenarios can be added by adding "
+                        "worksheets to this workbook: the value of `HR_scaling_by_district_mode` indicates which"
+                        "sheet is used."
         ),
 
-        'dynamic_HR_scaling_factor': Parameter(
-            Types.REAL, "Factor by which HR capabilities are scaled at regular intervals of 1 year (in addition to the"
-                        " [optional] scaling with population size (controlled by `scale_HR_by_popsize`"
+        'year_HR_scaling_by_district': Parameter(
+            Types.INT, "Year in which scaling of daily capabilities by district will take place. (The change happens"
+                       "on 1st January of that year.)"),
+
+        'HR_scaling_by_district_mode': Parameter(
+            Types.STRING, "Mode of scaling of daily capabilities by district. This corresponds to the name of the "
+                          "worksheet in the file `ResourceFile_HR_scaling_by_district.xlsx`."
         ),
 
         'yearly_HR_scaling': Parameter(
