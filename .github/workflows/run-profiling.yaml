@@ -31,6 +31,7 @@ jobs:
   set-variables:
     name: Create unique output file identifier and artifact name
     runs-on: ubuntu-latest
+    if: (github.event_name != 'issue_comment') || ((github.event_name == 'issue_comment') && (github.event.comment.body == '/run profiling'))
     outputs:
       profiling-output-dir: profiling_results/
       profiling-filename: ${{ steps.set-profiling-filename.outputs.name }}
