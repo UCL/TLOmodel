@@ -563,7 +563,8 @@ class HealthSystem(Module):
         ),
 
         'yearly_HR_scaling_mode': Parameter(
-            Types.STRING, "Specifies which of the policies in yearly_HR_scaling should be adopted"
+            Types.STRING, "Specifies which of the policies in yearly_HR_scaling should be adopted. This corresponds to"
+                          "a worksheet of the file `ResourceFile_dynamic_HR_scaling.xlsx`."
         ),
 
         'tclose_overwrite': Parameter(
