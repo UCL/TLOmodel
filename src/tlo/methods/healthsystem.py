@@ -686,7 +686,7 @@ class HealthSystem(Module):
                                        'VerticalProgrammes', 'ClinicallyVulnerable', 'EHP_III',
                                        'LCOA_EHP']
         self.arg_policy_name = policy_name
-        
+
 
         self.tclose_overwrite = None
         self.tclose_days_offset_overwrite = None
@@ -823,17 +823,18 @@ class HealthSystem(Module):
         self.parameters['const_HR_scaling_table']: Dict = pd.read_excel(
             path_to_resourcefiles_for_healthsystem /
             "human_resources" /
-            "const_HR_scaling" /
+            "scaling_capabilities" /
             "ResourceFile_const_HR_scaling.xlsx",
             sheet_name=None  # all sheets read in
         )
-        
+
         self.parameters['yearly_HR_scaling']: Dict = pd.read_excel(
             path_to_resourcefiles_for_healthsystem /
             "human_resources" /
+            "scaling_capabilities" /
             "ResourceFile_dynamic_HR_scaling.xlsx",
             sheet_name=None,  # all sheets read in
-            dtype={'scale_HR_by_popsize': bool} # Ensure that this column is read as boolean
+            dtype={'scale_HR_by_popsize': bool}  # Ensure that this column is read as boolean
         )
 
 
