@@ -555,11 +555,18 @@ class HealthSystem(Module):
         ),
 
         'yearly_HR_scaling': Parameter(
-            Types.DICT, "Factors by which HR capabilities are scaled at regular intervals of 1 year, starting in 2011, based on"
-                        "different policies. These factors are controlled by the combination of a constant value (specified in "
-                        "yearly_HR_scaling_factor column), and - optionally - by a factor proportional to the population growth"
-                        " from the previous year (by setting scale_HR_by_popsize = TRUE). Each policy can specify years in which"
-                        " these factors should be changed. Values adopted are maintained until a new change is specified.",
+            Types.DICT, "Factors by which HR capabilities are scaled. "
+                        "Each sheet specifies a 'mode' for dynamic HR scaling. The mode to use is determined by the "
+                        "parameter `yearly_HR_scaling_mode`. Each sheet must have the same format, including the same "
+                        "column headers. On each sheet, the first row (for `2010`, when the simulation starts) specifies"
+                        " the initial configuration: `dynamic_HR_scaling_factor` (float) is the factor by which all "
+                        "human resoucres capabilities and multiplied; `scale_HR_by_popsize` (bool) specifies whether "
+                        "the capabilities should (also) grow by the factor by which the population has grown in the "
+                        "last year. Each subsequent row specifies a year where there should be a CHANGE in the "
+                        "configuration. If there are no further rows, then there is no change. But, for example, an"
+                        " additional row of the form ```2015, 1.05, TRUE``` would mean that on 1st January of 2015, "
+                        "2016, 2017, ....(and the rest of the simulation), the capabilities would increase by the "
+                        "product of 1.05 and by the ratio of the population size to that in the year previous."
         ),
 
         'yearly_HR_scaling_mode': Parameter(
