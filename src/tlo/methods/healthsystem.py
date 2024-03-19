@@ -838,7 +838,11 @@ class HealthSystem(Module):
             "scaling_capabilities" /
             "ResourceFile_dynamic_HR_scaling.xlsx",
             sheet_name=None,  # all sheets read in
-            dtype={'scale_HR_by_popsize': bool}  # Ensure that this column is read as boolean
+            dtype={
+                'year': int,
+                'dynamic_HR_scaling_factor': float,
+                'scale_HR_by_popsize': bool
+            }  # Ensure that these column are read as the right type
         )
         # Ensure the mode of yearly HR scaling to be considered in included in the tables loaded
         assert self.parameters['yearly_HR_scaling_mode'] in self.parameters['yearly_HR_scaling'], \
