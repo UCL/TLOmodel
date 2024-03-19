@@ -554,14 +554,24 @@ class HealthSystem(Module):
                           "and custom (user can freely set these factors as parameters in the analysis).",
         ),
 
-        'dynamic_HR_scaling_factor': Parameter(
-            Types.REAL, "Factor by which HR capabilities are scaled at regular intervals of 1 year (in addition to the"
-                        " [optional] scaling with population size (controlled by `scale_HR_by_popsize`"
+        'yearly_HR_scaling': Parameter(
+            Types.DICT, "Factors by which HR capabilities are scaled. "
+                        "Each sheet specifies a 'mode' for dynamic HR scaling. The mode to use is determined by the "
+                        "parameter `yearly_HR_scaling_mode`. Each sheet must have the same format, including the same "
+                        "column headers. On each sheet, the first row (for `2010`, when the simulation starts) "
+                        "specifies the initial configuration: `dynamic_HR_scaling_factor` (float) is the factor by "
+                        "which all human resoucres capabilities and multiplied; `scale_HR_by_popsize` (bool) specifies "
+                        "whether the capabilities should (also) grow by the factor by which the population has grown in"
+                        " the last year. Each subsequent row specifies a year where there should be a CHANGE in the "
+                        "configuration. If there are no further rows, then there is no change. But, for example, an"
+                        " additional row of the form ```2015, 1.05, TRUE``` would mean that on 1st January of 2015, "
+                        "2016, 2017, ....(and the rest of the simulation), the capabilities would increase by the "
+                        "product of 1.05 and by the ratio of the population size to that in the year previous."
         ),
 
-        'scale_HR_by_popsize': Parameter(
-            Types.BOOL, "Decide whether to scale HR capabilities by population size every year. Can be used as well as"
-                        " the dynamic_HR_scaling_factor"
+        'yearly_HR_scaling_mode': Parameter(
+            Types.STRING, "Specifies which of the policies in yearly_HR_scaling should be adopted. This corresponds to"
+                          "a worksheet of the file `ResourceFile_dynamic_HR_scaling.xlsx`."
         ),
 
         'tclose_overwrite': Parameter(
@@ -684,6 +694,7 @@ class HealthSystem(Module):
                                        'VerticalProgrammes', 'ClinicallyVulnerable', 'EHP_III',
                                        'LCOA_EHP']
         self.arg_policy_name = policy_name
+
 
         self.tclose_overwrite = None
         self.tclose_days_offset_overwrite = None
@@ -820,18 +831,35 @@ class HealthSystem(Module):
         self.parameters['const_HR_scaling_table']: Dict = pd.read_excel(
             path_to_resourcefiles_for_healthsystem /
             "human_resources" /
-            "const_HR_scaling" /
+            "scaling_capabilities" /
             "ResourceFile_const_HR_scaling.xlsx",
             sheet_name=None  # all sheets read in
         )
+        # Ensure the mode of HR scaling to be considered in included in the tables loaded
+        assert self.parameters['const_HR_scaling_mode'] in self.parameters['const_HR_scaling_table'], \
+            f"Value of `const_HR_scaling_mode` not recognised: {self.parameters['const_HR_scaling_mode']}"
+
+        self.parameters['yearly_HR_scaling']: Dict = pd.read_excel(
+            path_to_resourcefiles_for_healthsystem /
+            "human_resources" /
+            "scaling_capabilities" /
+            "ResourceFile_dynamic_HR_scaling.xlsx",
+            sheet_name=None,  # all sheets read in
+            dtype={
+                'year': int,
+                'dynamic_HR_scaling_factor': float,
+                'scale_HR_by_popsize': bool
+            }  # Ensure that these column are read as the right type
+        )
+        # Ensure the mode of yearly HR scaling to be considered in included in the tables loaded
+        assert self.parameters['yearly_HR_scaling_mode'] in self.parameters['yearly_HR_scaling'], \
+            f"Value of `yearly_HR_scaling` not recognised: {self.parameters['yearly_HR_scaling_mode']}"
+        # Ensure that a value for the year at the start of the simulation is provided.
+        assert all(2010 in sheet['year'].values for sheet in self.parameters['yearly_HR_scaling'].values())
 
 
     def pre_initialise_population(self):
         """Generate the accessory classes used by the HealthSystem and pass to them the data that has been read."""
-
-        # Ensure the mode of HR scaling to be considered in included in the tables loaded
-        assert self.parameters['const_HR_scaling_mode'] in self.parameters['const_HR_scaling_table'], \
-            f"Value of `const_HR_scaling_mode` not recognised: {self.parameters['const_HR_scaling_mode']}"
 
         # Create dedicated RNGs for separate functions done by the HealthSystem module
         self.rng_for_hsi_queue = np.random.RandomState(self.rng.randint(2 ** 31 - 1))
@@ -914,10 +942,10 @@ class HealthSystem(Module):
         sim.schedule_event(HealthSystemChangeMode(self),
                            Date(self.parameters["year_mode_switch"], 1, 1))
 
-        # Schedule recurring event which will rescale daily capabilities at regular intervals.
-        # The first event scheduled will only be used to update self.last_year_pop_size parameter,
-        # actual scaling will only take effect from 2011 onwards
-        sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date) + pd.DateOffset(years=1))
+        # Schedule recurring event which will rescale daily capabilities (at yearly intervals).
+        # The first event scheduled for the start of the simulation is only used to update self.last_year_pop_size,
+        # whilst the actual scaling will only take effect from 2011 onwards.
+        sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -2861,8 +2889,13 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to scale the daily capabilities assumed at fixed time intervals"""
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(years=1))
-        self.last_year_pop_size = self.current_pop_size  # store population size at initiation (when this class is
-        #                                                  created)
+        self.last_year_pop_size = self.current_pop_size  # will store population size at initiation (when this class is
+        #                                                  created, at the start of the simulation)
+
+        # Store the sequence of updates as a dict of the form
+        #   {<year_of_change>: {`dynamic_HR_scaling_factor`: float, `scale_HR_by_popsize`: bool}}
+        self.scaling_values = self.module.parameters['yearly_HR_scaling'][
+            self.module.parameters['yearly_HR_scaling_mode']].set_index("year").to_dict("index")
 
     @property
     def current_pop_size(self) -> float:
@@ -2870,18 +2903,28 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props
         return df.is_alive.sum()
 
-    def apply(self, population):
+    def _get_most_recent_year_specified_for_a_change_in_configuration(self) -> int:
+        """Get the most recent year (in the past), for which there is an entry in `parameters['yearly_HR_scaling']`."""
+        years = np.array(list(self.scaling_values.keys()))
+        return years[years <= self.sim.date.year].max()
 
+    def apply(self, population):
+        """Do the scaling on the capabilities based on instruction that is in force at this time."""
+        # Get current population size
         this_year_pop_size = self.current_pop_size
 
-        # Rescale by fixed amount
-        self.module._daily_capabilities *= self.module.parameters['dynamic_HR_scaling_factor']
+        # Get the configuration to apply now (the latest entry in the `parameters['yearly_HR_scaling']`)
+        config = self.scaling_values.get(self._get_most_recent_year_specified_for_a_change_in_configuration())
 
-        # Rescale daily capabilities by population size, if this option is included
-        if self.module.parameters['scale_HR_by_popsize']:
-            self.module._daily_capabilities *= this_year_pop_size/self.last_year_pop_size
+        # ... Do the rescaling specified for this year by the specified factor
+        self.module._daily_capabilities *= config['dynamic_HR_scaling_factor']
 
-        self.last_year_pop_size = this_year_pop_size   # Save for next year
+        # ... If requested, also do the scaling for the population growth that has occurred since the last year
+        if config['scale_HR_by_popsize']:
+            self.module._daily_capabilities *= this_year_pop_size / self.last_year_pop_size
+
+        # Save current population size as that for 'last year'.
+        self.last_year_pop_size = this_year_pop_size
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
