@@ -2244,8 +2244,8 @@ def test_service_availability_can_be_set_using_list_of_treatment_ids_and_asteris
 
 
 def test_const_HR_scaling_assumption(seed, tmpdir):
-    """Check that we can use the parameter `const_HR_scaling_mode` to manipulate the minutes of time available for healthcare
-    workers."""
+    """Check that we can use the parameter `const_HR_scaling_mode` to manipulate the minutes of time available for
+    healthcare workers."""
 
     def get_capabilities_today(const_HR_scaling_mode: str) -> pd.Series:
         sim = Simulation(start_date=start_date, seed=seed)
