@@ -237,6 +237,7 @@ results_deaths = extract_results(
                 ["year", "cause"])["person_id"].count()
         )
 )
+
 results_deaths.to_csv(outputspath / "full_deaths.csv")
 
 

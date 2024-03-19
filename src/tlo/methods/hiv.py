@@ -1565,11 +1565,13 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
 
         # baseline scenario 0: no change to parameters/functions
         if scenario == 0:
+            print('scenario 0 working')
             return
 
         # scenario 1: remove HIV treatment effects
         if (scenario == 1) or (scenario == 5):
             # HIV
+            print('scenario 1 working')
 
             # if any baseline population already assigned hv_art=on_VL_suppressed, change to not suppressed
             df.loc[df['hv_art'] == 'on_VL_suppressed', 'hv_art'] = 'on_not_VL_suppressed'
@@ -1577,7 +1579,7 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             # viral suppression rates
             # change all column values
             self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["virally_suppressed_on_art"] = \
-            treatment_effects.loc[
+                treatment_effects.loc[
                 treatment_effects.parameter == "prob_viral_suppression", "no_effect"].values[0]
 
             # relative risk HIV acquisition if VMMC
@@ -1586,13 +1588,14 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
 
             # effects of PrEP
             self.sim.modules["Hiv"].parameters["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = \
-            treatment_effects.loc[
+                treatment_effects.loc[
                 treatment_effects.parameter == "proportion_reduction_in_risk_of_hiv_aq_if_on_prep", "no_effect"].values[
                 0]
 
         # scenario 2: remove TB treatment effects
         if (scenario == 2) or (scenario == 5):
             # TB
+            print('scenario 2 working')
 
             # RR BCG
             self.sim.modules["Tb"].parameters["rr_tb_bcg"] = treatment_effects.loc[
