@@ -36,13 +36,29 @@ jobs:
       profiling-output-dir: profiling_results/
       profiling-filename: ${{ steps.set-profiling-filename.outputs.name }}
       artifact-name: ${{ steps.set-artifact-name.outputs.name }}
-      profiling-on-sha: ${{ steps.set-github-info.outputs.sha }}
+      profiling-on-sha: ${{ steps.sha.outputs.result }}
       profiling-event-trigger: ${{ steps.set-github-info.outputs.event }}
     steps:
+      - name: Get SHA of last commit on default branch if issue or pull-request branch
+        id: sha
+        uses: actions/github-script@v7
+        with:
+          result-encoding: string
+          script: |
+            if (!context.payload.issue.pull_request) {
+              return context.sha;
+            };
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.issue.owner,
+              repo: context.issue.repo,
+              pull_number: context.issue.number,
+            });
+            return pr.head.sha;
+
       - id: set-profiling-filename
         name: Set profiling output file name
         run: |
-          echo "name=${GITHUB_EVENT_NAME}_${GITHUB_RUN_NUMBER}_${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+          echo "name=${GITHUB_EVENT_NAME}_${GITHUB_RUN_NUMBER}_${{ steps.sha.outputs.result }}" >> "${GITHUB_OUTPUT}"
 
       - id: set-artifact-name
         name: Set artifact name
@@ -52,7 +68,7 @@ jobs:
       - id: set-github-info
         name: Fix Git and GitHub information when passing between workflows
         run: |
-          echo "sha=${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+          echo "sha=${{ steps.sha.outputs.result }}" >> "${GITHUB_OUTPUT}"
           echo "event=${GITHUB_EVENT_NAME}" >> "${GITHUB_OUTPUT}"
 
   profile-on-comment:
