@@ -58,6 +58,10 @@ def scale_run(
     if ignore_warnings:
         warnings.filterwarnings("ignore")
 
+    raise RuntimeError(
+        "Checking that this version of the code is being used."
+        "The SHA might be being reported wrong."
+    )
     # Start profiler if one has been passed
     if profiler is not None:
         profiler.start()
