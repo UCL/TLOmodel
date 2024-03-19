@@ -2244,8 +2244,8 @@ def test_service_availability_can_be_set_using_list_of_treatment_ids_and_asteris
 
 
 def test_HR_scaling_by_level_and_officer_type_assumption(seed, tmpdir):
-    """Check that we can use the parameter `HR_scaling_by_level_and_officer_type_mode` to manipulate the minutes of time available for healthcare
-    workers."""
+    """Check that we can use the parameter `HR_scaling_by_level_and_officer_type_mode` to manipulate the minutes of
+    time available for healthcare workers."""
 
     def get_capabilities_today(HR_scaling_by_level_and_officer_type_mode: str) -> pd.Series:
         sim = Simulation(start_date=start_date, seed=seed)
@@ -2253,10 +2253,11 @@ def test_HR_scaling_by_level_and_officer_type_assumption(seed, tmpdir):
             demography.Demography(resourcefilepath=resourcefilepath),
             healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
         )
-        sim.modules['HealthSystem'].parameters['HR_scaling_by_level_and_officer_type_mode'] = HR_scaling_by_level_and_officer_type_mode
+        sim.modules['HealthSystem'].parameters['HR_scaling_by_level_and_officer_type_mode'] = \
+            HR_scaling_by_level_and_officer_type_mode
         sim.modules['HealthSystem'].parameters['year_HR_scaling_by_level_and_officer_type'] = 2010
         sim.make_initial_population(n=100)
-        # Days ran need to be offset by 1 in order for event on 2010,1,1 to take place - why?
+        # Days ran need to be offset by 1 in order for event on 2010,1,1 to take place
         sim.simulate(end_date=start_date + pd.DateOffset(days=1))
 
         return sim.modules['HealthSystem'].capabilities_today
