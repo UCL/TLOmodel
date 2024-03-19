@@ -2889,11 +2889,13 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
     """ This event exists to scale the daily capabilities assumed at fixed time intervals"""
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(years=1))
-        self.last_year_pop_size = self.current_pop_size  # store population size at initiation (when this class is
+        self.last_year_pop_size = self.current_pop_size  # will store population size at initiation (when this class is
         #                                                  created, at the start of the simulation)
-        df = self.module.parameters['yearly_HR_scaling'][self.module.parameters['yearly_HR_scaling_mode']]
-        self.current_dynamic_HR_scaling_factor = df[df['year'] == 2010]['dynamic_HR_scaling_factor'].iloc[0]
-        self.current_scale_HR_by_popsize = df[df['year'] == 2010]['scale_HR_by_popsize'].iloc[0]
+
+        # Store the sequence of updates as a dict of the form
+        #   {<year_of_change>: {`dynamic_HR_scaling_factor`: float, `scale_HR_by_popsize`: bool}}
+        self.scaling_values = self.module.parameters['yearly_HR_scaling'][
+            self.module.parameters['yearly_HR_scaling_mode']].set_index("year").to_dict("index")
 
     @property
     def current_pop_size(self) -> float:
@@ -2901,24 +2903,28 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
         df = self.sim.population.props
         return df.is_alive.sum()
 
-    def apply(self, population):
+    def _get_most_recent_year_specified_for_a_change_in_configuration(self) -> int:
+        """Get the most recent year (in the past), for which there is an entry in `parameters['yearly_HR_scaling']`."""
+        years = np.array(list(self.scaling_values.keys()))
+        return years[years <= self.sim.date.year].max()
 
+    def apply(self, population):
+        """Do the scaling on the capabilities based on instruction that is in force at this time."""
+        # Get current population size
         this_year_pop_size = self.current_pop_size
 
-        df = self.module.parameters['yearly_HR_scaling'][self.module.parameters['yearly_HR_scaling_mode']]
+        # Get the configuration to apply now (the latest entry in the `parameters['yearly_HR_scaling']`)
+        config = self.scaling_values.get(self._get_most_recent_year_specified_for_a_change_in_configuration())
 
-        if self.sim.date.year in df['year']:
-            self.current_dynamic_HR_scaling_factor = df[df['year'] == self.sim.date.year]['dynamic_HR_scaling_factor'].iloc[0]
-            self.current_scale_HR_by_popsize = df[df['year'] == self.sim.date.year]['scale_HR_by_popsize'].iloc[0]
+        # ... Do the rescaling specified for this year by the specified factor
+        self.module._daily_capabilities *= config['dynamic_HR_scaling_factor']
 
-        # Rescale by fixed amount
-        self.module._daily_capabilities *= self.current_dynamic_HR_scaling_factor
+        # ... If requested, also do the scaling for the population growth that has occurred since the last year
+        if config['scale_HR_by_popsize']:
+            self.module._daily_capabilities *= this_year_pop_size / self.last_year_pop_size
 
-        # Rescale daily capabilities by population size, if this option is included
-        if self.current_scale_HR_by_popsize:
-            self.module._daily_capabilities *= this_year_pop_size/self.last_year_pop_size
-
-        self.last_year_pop_size = this_year_pop_size   # Save for next year
+        # Save current population size as that for 'last year'.
+        self.last_year_pop_size = this_year_pop_size
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
