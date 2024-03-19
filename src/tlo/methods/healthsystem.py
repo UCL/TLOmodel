@@ -2956,53 +2956,55 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
         self.last_year_pop_size = this_year_pop_size
 
 
-class ConstantRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
-    """ This event exists to scale the daily capabilities assumed at fixed time intervals"""
+class ConstantRescalingHRCapabilities(Event, PopulationScopeEventMixin):
+    """ This event exists to scale the daily capabilities, with a factor for each Officer Type at each Facility_Level.
+    """
     def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(years=100))
+        super().__init__(module)
+
+    def apply(self, population):
+
+        # Get the set of scaling_factors that are specified by the 'HR_scaling_by_level_and_officer_type_mode'
+        # assumption
+        HR_scaling_by_level_and_officer_type_factor = (
+            self.module.parameters['HR_scaling_by_level_and_officer_type_table'][
+                self.module.parameters['HR_scaling_by_level_and_officer_type_mode']
+            ].set_index('Officer_Category')
+        )
+
+        pattern = r"FacilityID_(\w+)_Officer_(\w+)"
+
+        for officer in self.module._daily_capabilities.keys():
+            matches = re.match(pattern, officer)
+            # Extract ID and officer type from
+            facility_id = int(matches.group(1))
+            officer_type = matches.group(2)
+            level = self.module._facility_by_facility_id[facility_id].level
+            self.module._daily_capabilities[officer] *= \
+                HR_scaling_by_level_and_officer_type_factor.at[officer_type, f"L{level}_factor"]
+
+
+class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
+    """ This event exists to scale the daily capabilities, with a factor for each district."""
+    def __init__(self, module):
+        super().__init__(module)
 
     def apply(self, population):
 
         # Get the set of scaling_factors that are specified by the 'HR_scaling_by_level_and_officer_type_mode' assumption
-        HR_scaling_by_level_and_officer_type_factor = self.module.parameters['HR_scaling_by_level_and_officer_type_table'][self.module.parameters['HR_scaling_by_level_and_officer_type_mode']]
-        HR_scaling_by_level_and_officer_type_factor = HR_scaling_by_level_and_officer_type_factor.set_index('Officer_Category')
-
-        df = self.module.parameters['Master_Facilities_List']
-
-        pattern = r"FacilityID_(\w+)_Officer_(\w+)"
-
-        for item, value in self.module._daily_capabilities.items():
-            matches = re.match(pattern, item)
-            # Extract ID and officer type from
-            thisID = matches.group(1)
-            officer = matches.group(2)
-            level = df.loc[df['Facility_ID']==int(thisID), 'Facility_Level'].values[0]
-            self.module._daily_capabilities[item] *= HR_scaling_by_level_and_officer_type_factor.at[officer, 'L' + level + '_factor']
-
-
-class RescaleHRCapabilities_ByDistrict(RegularEvent, PopulationScopeEventMixin):
-    """ This event exists to scale the daily capabilities assumed at fixed time intervals"""
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(years=100))
-
-    def apply(self, population):
-
-        # Get the set of scaling_factors that are specified by the 'HR_scaling_by_level_and_officer_type_mode' assumption
-        HR_scaling_factor_by_district = self.module.parameters['HR_scaling_by_district_table'][self.module.parameters['HR_scaling_by_district_mode']]
-
-        HR_scaling_factor_by_district = HR_scaling_factor_by_district.set_index('District')
-
-        df = self.module.parameters['Master_Facilities_List']
+        HR_scaling_factor_by_district = self.module.parameters['HR_scaling_by_district_table'][
+            self.module.parameters['HR_scaling_by_district_mode']
+        ].set_index('District').to_dict()
 
         pattern = r"FacilityID_(\w+)_Officer_(\w+)"
 
-        for item, value in self.module._daily_capabilities.items():
-            matches = re.match(pattern, item)
+        for officer in self.module._daily_capabilities.keys():
+            matches = re.match(pattern, officer)
             # Extract ID and officer type from
-            thisID = matches.group(1)
-            district = df.loc[df['Facility_ID']==int(thisID), 'District'].values[0]
-            if district in HR_scaling_factor_by_district.index:
-                self.module._daily_capabilities[item] *= HR_scaling_factor_by_district.at[district, 'Factor']
+            facility_id = int(matches.group(1))
+            district = self.module._facility_by_facility_id[facility_id].district
+            if district in HR_scaling_factor_by_district:
+                self.module._daily_capabilities[officer] *= HR_scaling_factor_by_district[district]
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):
