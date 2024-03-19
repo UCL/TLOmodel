@@ -929,10 +929,10 @@ class HealthSystem(Module):
         sim.schedule_event(HealthSystemChangeMode(self),
                            Date(self.parameters["year_mode_switch"], 1, 1))
 
-        # Schedule recurring event which will rescale daily capabilities at regular intervals.
-        # The first event scheduled will only be used to update self.last_year_pop_size parameter,
-        # actual scaling will only take effect from 2011 onwards
-        sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date) + pd.DateOffset(years=1))
+        # Schedule recurring event which will rescale daily capabilities (at yearly intervals).
+        # The first event scheduled for the start of the simulation is only used to update self.last_year_pop_size,
+        # whilst the actual scaling will only take effect from 2011 onwards.
+        sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -2877,7 +2877,7 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
     def __init__(self, module):
         super().__init__(module, frequency=DateOffset(years=1))
         self.last_year_pop_size = self.current_pop_size  # store population size at initiation (when this class is
-        #                                                  created)
+        #                                                  created, at the start of the simulation)
         df = self.module.parameters['yearly_HR_scaling'][self.module.parameters['yearly_HR_scaling_mode']]
         self.current_dynamic_HR_scaling_factor = df[df['year'] == 2010]['dynamic_HR_scaling_factor'].iloc[0]
         self.current_scale_HR_by_popsize = df[df['year'] == 2010]['scale_HR_by_popsize'].iloc[0]
