@@ -854,6 +854,8 @@ class HealthSystem(Module):
         # Ensure the mode of yearly HR scaling to be considered in included in the tables loaded
         assert self.parameters['yearly_HR_scaling_mode'] in self.parameters['yearly_HR_scaling'], \
             f"Value of `yearly_HR_scaling` not recognised: {self.parameters['yearly_HR_scaling_mode']}"
+        # Ensure that a value for the year at the start of the simulation is provided.
+        assert all(2010 in sheet['year'].values for sheet in self.parameters['yearly_HR_scaling'].values())
 
 
     def pre_initialise_population(self):
