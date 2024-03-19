@@ -32,8 +32,8 @@ from tlo.analysis.utils import (
 outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-# results_folder = get_scenario_outputs("remove_treatment_effects.py", outputspath)[-1]
-results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
+results_folder = get_scenario_outputs("effect_of_treatment_packages-2024.py", outputspath)[-1]
+# results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
 make_graph_file_name = lambda stub: results_folder / f"{stub}.png"  # noqa: E731

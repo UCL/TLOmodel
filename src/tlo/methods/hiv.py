@@ -876,14 +876,14 @@ class Hiv(Module):
         """
         df = sim.population.props
 
+        # scenario change event to switch params immediately
+        sim.schedule_event(
+            ScenarioSetupEvent(self), self.parameters["scenario_start_date"]
+        )
+
         # 1) Schedule the Main HIV Regular Polling Event
         sim.schedule_event(
             HivRegularPollingEvent(self), sim.date + DateOffset(days=0)
-        )
-
-        # add in the scenario change event to switch params immediately
-        sim.schedule_event(
-            ScenarioSetupEvent(self), sim.date + DateOffset(days=0)
         )
 
         # 2) Schedule the Logging Event
@@ -1645,10 +1645,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
             # treatment success rate DS
             self.sim.modules["Tb"].parameters["tb_prob_tx_success_5_14"] = treatment_effects.loc[
                 treatment_effects.parameter == "tb_prob_tx_success_5_14", "no_effect"].values[0]
-
-            # treatment success rate DS
-            self.sim.modules["Tb"].parameters["tb_prob_tx_success_shorter"] = treatment_effects.loc[
-                treatment_effects.parameter == "tb_prob_tx_success_shorter", "no_effect"].values[0]
 
         # scenario 3: remove malaria treatment effects
         if (scenario == 3) or (scenario == 5):
