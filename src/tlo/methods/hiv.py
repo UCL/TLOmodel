@@ -1565,13 +1565,11 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
 
         # baseline scenario 0: no change to parameters/functions
         if scenario == 0:
-            print('scenario 0 working')
             return
 
         # scenario 1: remove HIV treatment effects
         if (scenario == 1) or (scenario == 5):
             # HIV
-            print('scenario 1 working')
 
             # if any baseline population already assigned hv_art=on_VL_suppressed, change to not suppressed
             df.loc[df['hv_art'] == 'on_VL_suppressed', 'hv_art'] = 'on_not_VL_suppressed'
@@ -1595,7 +1593,6 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
         # scenario 2: remove TB treatment effects
         if (scenario == 2) or (scenario == 5):
             # TB
-            print('scenario 2 working')
 
             # RR BCG
             self.sim.modules["Tb"].parameters["rr_tb_bcg"] = treatment_effects.loc[
@@ -1634,20 +1631,20 @@ class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
                 treatment_effects.parameter == "rr_ipt_adult_hiv", "no_effect"].values[0]
 
             # treatment success rate DS
-            self.sim.modules["Tb"].parameters["tb_prob_tx_success_ds"] = treatment_effects.loc[
-                treatment_effects.parameter == "tb_prob_tx_success_ds", "no_effect"].values[0]
+            self.sim.modules["Tb"].parameters["prob_tx_success_ds"] = treatment_effects.loc[
+                treatment_effects.parameter == "prob_tx_success_ds", "no_effect"].values[0]
+
+            # treatment success rate MDR
+            self.sim.modules["Tb"].parameters["prob_tx_success_mdr"] = treatment_effects.loc[
+                treatment_effects.parameter == "prob_tx_success_mdr", "no_effect"].values[0]
 
             # treatment success rate DS
-            self.sim.modules["Tb"].parameters["tb_prob_tx_success_mdr"] = treatment_effects.loc[
-                treatment_effects.parameter == "tb_prob_tx_success_mdr", "no_effect"].values[0]
+            self.sim.modules["Tb"].parameters["prob_tx_success_0_4"] = treatment_effects.loc[
+                treatment_effects.parameter == "prob_tx_success_0_4", "no_effect"].values[0]
 
             # treatment success rate DS
-            self.sim.modules["Tb"].parameters["tb_prob_tx_success_0_4"] = treatment_effects.loc[
-                treatment_effects.parameter == "tb_prob_tx_success_0_4", "no_effect"].values[0]
-
-            # treatment success rate DS
-            self.sim.modules["Tb"].parameters["tb_prob_tx_success_5_14"] = treatment_effects.loc[
-                treatment_effects.parameter == "tb_prob_tx_success_5_14", "no_effect"].values[0]
+            self.sim.modules["Tb"].parameters["prob_tx_success_5_14"] = treatment_effects.loc[
+                treatment_effects.parameter == "prob_tx_success_5_14", "no_effect"].values[0]
 
         # scenario 3: remove malaria treatment effects
         if (scenario == 3) or (scenario == 5):

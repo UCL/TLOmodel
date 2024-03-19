@@ -321,9 +321,6 @@ class Tb(Module):
         "prob_tx_success_5_14": Parameter(
             Types.REAL, "Probability of treatment success for children aged 5-14 years"
         ),
-        "prob_tx_success_shorter": Parameter(
-            Types.REAL, "Probability of treatment success for children aged <16 years on shorter regimen"
-        ),
         # ------------------ testing rates ------------------ #
         "rate_testing_general_pop": Parameter(
             Types.REAL,
@@ -345,9 +342,6 @@ class Tb(Module):
         "mdr_treatment_length": Parameter(
             Types.REAL, "length of treatment for mdr-tb in months"
         ),
-        "child_shorter_treatment_length": Parameter(
-            Types.REAL, "length of treatment for shorter paediatric regimen in months"
-        ),
         "prob_retained_ipt_6_months": Parameter(
             Types.REAL,
             "probability of being retained on IPT every 6 months if still eligible",
@@ -359,14 +353,6 @@ class Tb(Module):
         "ipt_start_date": Parameter(
             Types.INT,
             "year from which IPT is available for paediatric contacts of diagnosed active TB cases",
-        ),
-        "scenario": Parameter(
-            Types.INT,
-            "integer value labelling the scenario to be run: default is 0"
-        ),
-        "scenario_start_date": Parameter(
-            Types.DATE,
-            "date from which different scenarios are run"
         ),
         "first_line_test": Parameter(
             Types.STRING,
