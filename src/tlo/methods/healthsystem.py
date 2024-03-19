@@ -984,18 +984,20 @@ class HealthSystem(Module):
         sim.schedule_event(HealthSystemChangeMode(self),
                            Date(self.parameters["year_mode_switch"], 1, 1))
 
+        # Schedule a one-off rescaling of _daily_capabilities broken down by officer type and level.
+        # This occurs on 1st January of the year specified in the parameters.
+        sim.schedule_event(ConstantRescalingHRCapabilities(self),
+                           Date(self.parameters["year_HR_scaling_by_level_and_officer_type"], 1, 1))
+
+        # Schedule a one-off rescaling of _daily_capabilities broken down by district
+        # This occurs on 1st January of the year specified in the parameters.
+        sim.schedule_event(RescaleHRCapabilities_ByDistrict(self),
+                           Date(self.parameters["year_HR_scaling_by_district"], 1, 1))
+
         # Schedule recurring event which will rescale daily capabilities (at yearly intervals).
         # The first event scheduled for the start of the simulation is only used to update self.last_year_pop_size,
         # whilst the actual scaling will only take effect from 2011 onwards.
         sim.schedule_event(DynamicRescalingHRCapabilities(self), Date(sim.date))
-
-        # Schedule a one-off rescaling of _daily_capabilities broken down by officer type and level
-        sim.schedule_event(ConstantRescalingHRCapabilities(self),
-                           Date(self.parameters["year_HR_scaling_by_level_and_officer_type"],1,1))
-
-        # Schedule a one-off rescaling of _daily_capabilities broken down by district
-        sim.schedule_event(RescaleHRCapabilities_ByDistrict(self),
-                           Date(self.parameters["year_HR_scaling_by_district"],1,1))
 
     def on_birth(self, mother_id, child_id):
         self.bed_days.on_birth(self.sim.population.props, mother_id, child_id)
@@ -1154,7 +1156,6 @@ class HealthSystem(Module):
         # never available.)
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
 
-
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> pd.Series:
         """
         This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to include
@@ -1166,7 +1167,6 @@ class HealthSystem(Module):
         (This is so that its easier to track where demands are being placed where there is no capacity)
         """
 
-
         # Get the capabilities data imported (according to the specified underlying assumptions).
         capabilities = pool_capabilities_at_levels_1b_and_2(
                 self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
@@ -1175,7 +1175,6 @@ class HealthSystem(Module):
 
         # Create dataframe containing background information about facility and officer types
         facility_ids = self.parameters['Master_Facilities_List']['Facility_ID'].values
-
         officer_type_codes = set(self.parameters['Officer_Types_Table']['Officer_Category'].values)
         # todo - <-- avoid use of the file or define differently?
 
@@ -1223,7 +1222,6 @@ class HealthSystem(Module):
 
         # return the pd.Series of `Total_Minutes_Per_Day' indexed for each type of officer at each facility
         return capabilities_ex['Total_Minutes_Per_Day']
-
 
     def update_consumables_availability_to_represent_merging_of_levels_1b_and_2(self, df_original):
         """To represent that facility levels '1b' and '2' are merged together under the label '2', we replace the
