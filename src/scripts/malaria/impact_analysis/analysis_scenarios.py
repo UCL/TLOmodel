@@ -103,25 +103,20 @@ class EffectOfProgrammes(BaseScenario):
         # because IRS/ITN needs to be set to 0 coverage
         # and malaria tx_complicated set to have no effect
 
-        # todo scenario 3 not higher malaria incidence???
         return {
             'HealthSystem': {
-                # 'Service_Availability': [service_availability['Everything'], service_availability['Everything'],
-                #                          service_availability['Everything'], service_availability['Everything'],
-                #                          service_availability['Everything'],
-                #                          service_availability['No_Hiv_*'], service_availability['No_Tb_*'],
-                #                          service_availability['No_Malaria_*'], service_availability['No_HTM']][
-                #     draw_number],
-                'Service_Availability': [service_availability['Everything'], service_availability['Everything']][
+                'Service_Availability': [service_availability['Everything'], service_availability['Everything'],
+                                         service_availability['Everything'], service_availability['Everything'],
+                                         service_availability['Everything'],
+                                         service_availability['No_Hiv_*'], service_availability['No_Tb_*'],
+                                         service_availability['No_Malaria_*'], service_availability['No_HTM']][
                     draw_number],
                 'use_funded_or_actual_staffing': 'funded',
                 'mode_appt_constraints': 1,
                 'policy_name': 'Naive',
             },
             'Hiv': {
-                'scenario': [0, 3][draw_number],
-            # 'Hiv': {
-            #     'scenario': [0, 1, 2, 3, 5, 0, 0, 3, 3][draw_number],
+                'scenario': [0, 1, 2, 3, 5, 0, 0, 3, 3][draw_number],
             },
         }
 
