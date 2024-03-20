@@ -480,8 +480,15 @@ class Malaria(Module):
 
         assert (df.loc[all_new_infections, 'ma_date_infected'] >= self.sim.date).all()
 
+        # ----------------------------------- ASSIGN SYMPTOM DATES -----------------------------------
+
         # assign date of symptom onset
-        df.loc[new_clinical, 'ma_date_symptoms'] = df.loc[new_clinical, 'ma_date_infected'] + DateOffset(days=7)
+        # there is some overlap between the clinical and severe cases
+        # as severe cases are sampled from existing or new clinical cases
+        new_clinical_no_dups = list(set(new_clinical) - set(new_severe))
+
+        df.loc[new_clinical_no_dups, 'ma_date_symptoms'] = (df.loc[new_clinical_no_dups, 'ma_date_infected'] +
+                                                            DateOffset(days=7))
         df.loc[new_severe, 'ma_date_symptoms'] = df.loc[new_severe, 'ma_date_infected'] + DateOffset(days=7)
 
         # ----------------------------------- CLINICAL MALARIA SYMPTOMS -----------------------------------
@@ -490,6 +497,8 @@ class Malaria(Module):
         if len(new_clinical):
             assert (df.loc[new_clinical, 'ma_date_infected'] < df.loc[new_clinical, 'ma_date_symptoms']).all()
             assert not pd.isnull(df.loc[new_clinical, 'ma_date_symptoms']).all()
+            selected_inf_types = df.loc[new_clinical]['ma_inf_type']
+            assert selected_inf_types.isin(['clinical', 'severe']).all(), "Not all 'inf_type' values are 'clinical' or 'severe'."
 
         # ----------------------------------- SCHEDULED DEATHS -----------------------------------
         # schedule deaths within the next week
@@ -1325,10 +1334,10 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         all_new_infections = sorted(set(new_symptomatic_clinical).union(new_symptomatic_severe))
 
         # clinical counter
-        df.loc[all_new_infections, 'ma_clinical_counter'] += 1
+        df.loc[all_new_infections, 'ma_clinical_counter'] += 1  # moved to malaria_poll2
         df.loc[all_new_infections, 'ma_is_infected'] = True
 
-        # sample those scheduled for rdt
+        # ----------------------- sample those scheduled for rdt
         eligible_for_rdt = df.loc[df.is_alive & (df.ma_date_symptoms == now)].index
         selected_for_rdt = self.module.rng.random_sample(size=len(eligible_for_rdt)) < p['prob_malaria_case_tests']
 
@@ -1342,17 +1351,21 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
                 tclose=None
             )
 
-        # TREATED
+        # ----------------------- TREATED
         # select people with clinical malaria and treatment for at least 5 days
         # if treated, will clear symptoms and parasitaemia
         # this will also clear parasitaemia for asymptomatic cases picked up by routine rdt
+        # treatment must have been for at least 5 days and no more than 10 days ago
+        # as treatment for earlier episodes should not clear current infection
         clinical_and_treated = df.index[df.is_alive &
                                         (df.ma_date_tx < (self.sim.date - DateOffset(days=5))) &
+                                        (df.ma_date_tx > df.ma_date_infected) &
                                         (df.ma_inf_type == 'clinical')]
 
         # select people with severe malaria and treatment for at least 7 days
         severe_and_treated = df.index[df.is_alive &
                                       (df.ma_date_tx < (self.sim.date - DateOffset(days=7))) &
+                                      (df.ma_date_tx > df.ma_date_infected) &
                                       (df.ma_inf_type == 'severe')]
 
         # create list of all cases to be resolved through treatment
@@ -1363,11 +1376,14 @@ class MalariaUpdateEvent(RegularEvent, PopulationScopeEventMixin):
         )
 
         # change properties
+        # clear treatment status as it's now had its effect
+        # to prevent is clearing future infections
         df.loc[infections_to_clear, 'ma_tx'] = 'none'
+        df.loc[infections_to_clear, 'ma_date_tx'] = pd.NaT
         df.loc[infections_to_clear, 'ma_is_infected'] = False
         df.loc[infections_to_clear, 'ma_inf_type'] = 'none'
 
-        # UNTREATED
+        # ----------------------- UNTREATED
         # if not treated, self-cure occurs after 6 days of symptoms
         # but parasites remain in blood
         clinical_not_treated = df.index[df.is_alive &

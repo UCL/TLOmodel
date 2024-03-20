@@ -217,7 +217,7 @@ mal_inc = summarize_median(
         results_folder,
         module="tlo.methods.malaria",
         key="incidence",
-        column="inc_clin_counter",
+        column="inc_1000py_2_10",
         index="date",
         do_scaling=False
     )
