@@ -2340,11 +2340,8 @@ class HealthSystem(Module):
                 # Mode 0: All HSI Event run, with no squeeze
                 # Mode 1: All HSI Events run with squeeze provided latter is not inf
                 ok_to_run = self.get_essential_equip_availability(event.ESSENTIAL_EQUIPMENT)
-                # True if essential equipment available
-
-                if ok_to_run:
-                    if self.mode_appt_constraints == 1 and squeeze_factor == float('inf'):
-                        ok_to_run = False
+                if self.mode_appt_constraints == 1 and squeeze_factor == float('inf'):
+                    ok_to_run = False
 
                 if ok_to_run:
 
