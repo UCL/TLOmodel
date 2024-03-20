@@ -74,7 +74,7 @@ class HSI_Event:
     defined in `src/tlo/events.py`, and implement at least an `apply` and 
     `did_not_run` method.
     """
-    
+
     module: Module
     target: int # Will be overwritten by the mixin on derived classes
 
@@ -83,7 +83,7 @@ class HSI_Event:
     # These values need to be set at runtime as they depend on the modules
     # which have been loaded.
     BEDDAYS_FOOTPRINT: Dict[str, Union[float, int]]
-    
+
     _received_info_about_bed_days: Dict[str, Union[float, int]] = None
     expected_time_requests: Counter = {}
     facility_info: FacilityInfo = None
@@ -201,8 +201,8 @@ class HSI_Event:
         Note that disease module can use the `get_item_codes_from_package_name` and `get_item_code_from_item_name`
          methods in the `HealthSystem` module to find item_codes.
         """
-        _item_codes = return_item_codes_in_dict(item_codes)
-        _optional_item_codes = return_item_codes_in_dict(optional_item_codes)
+        _item_codes = self._return_item_codes_in_dict(item_codes)
+        _optional_item_codes = self._return_item_codes_in_dict(optional_item_codes)
 
         # Determine if the request should be logged (over-ride argument provided if HealthSystem is disabled).
         _to_log = to_log if not self.healthcare_system.disable else False
@@ -316,6 +316,42 @@ class HSI_Event:
                 )
                 return False
 
+    @staticmethod
+    def _return_item_codes_in_dict(
+        item_codes: Union[None, np.integer, int, list, set, dict]
+    ) -> dict:
+        """Convert an argument for 'item_codes` (provided as int, list, set or dict) into the format
+        dict(<item_code>:quantity)."""
+
+        if item_codes is None:
+            return {}
+
+        if isinstance(item_codes, (int, np.integer)):
+            return {int(item_codes): 1}
+
+        elif isinstance(item_codes, list):
+            if not all([isinstance(i, (int, np.integer)) for i in item_codes]):
+                raise ValueError("item_codes must be integers")
+            return {int(i): 1 for i in item_codes}
+
+        elif isinstance(item_codes, dict):
+            if not all(
+                [
+                    (
+                        isinstance(code, (int, np.integer))
+                        and isinstance(quantity, (float, np.floating, int, np.integer))
+                    )
+                    for code, quantity in item_codes.items()
+                ]
+            ):
+                raise ValueError(
+                    "item_codes must be integers and quantities must be integers or floats."
+                )
+            return {int(i): float(q) for i, q in item_codes.items()}
+
+        else:
+            raise ValueError("The item_codes are given in an unrecognised format")
+
     def as_namedtuple(
         self, actual_appt_footprint: Optional[dict] = None
     ) -> HSIEventDetails:
@@ -375,39 +411,3 @@ class HSIEventWrapper(Event):
                 ].call_and_record_never_ran_hsi_event(
                     hsi_event=self.hsi_event, priority=-1
                 )
-
-
-def return_item_codes_in_dict(
-    item_codes: Union[None, np.integer, int, list, set, dict]
-) -> dict:
-    """Convert an argument for 'item_codes` (provided as int, list, set or dict) into the format
-    dict(<item_code>:quantity)."""
-
-    if item_codes is None:
-        return {}
-
-    if isinstance(item_codes, (int, np.integer)):
-        return {int(item_codes): 1}
-
-    elif isinstance(item_codes, list):
-        if not all([isinstance(i, (int, np.integer)) for i in item_codes]):
-            raise ValueError("item_codes must be integers")
-        return {int(i): 1 for i in item_codes}
-
-    elif isinstance(item_codes, dict):
-        if not all(
-            [
-                (
-                    isinstance(code, (int, np.integer))
-                    and isinstance(quantity, (float, np.floating, int, np.integer))
-                )
-                for code, quantity in item_codes.items()
-            ]
-        ):
-            raise ValueError(
-                "item_codes must be integers and quantities must be integers or floats."
-            )
-        return {int(i): float(q) for i, q in item_codes.items()}
-
-    else:
-        raise ValueError("The item_codes are given in an unrecognised format")
