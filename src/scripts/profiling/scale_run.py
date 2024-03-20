@@ -44,6 +44,7 @@ def scale_run(
     log_level: Literal["CRITICAL", "DEBUG", "FATAL", "WARNING", "INFO"] = "WARNING",
     parse_log_file: bool = False,
     show_progress_bar: bool = False,
+    disable_log_output_to_stdout: bool = False,
     seed: int = 0,
     disable_health_system: bool = False,
     disable_spurious_symptoms: bool = False,
@@ -70,6 +71,7 @@ def scale_run(
         "filename": log_filename,
         "directory": output_dir,
         "custom_levels": {"*": getattr(logging, log_level)},
+        "suppress_stdout": disable_log_output_to_stdout,
     }
 
     sim = Simulation(
@@ -190,6 +192,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--show-progress-bar",
         help="Show progress bar during simulation rather than log output",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--disable-log-output-to-stdout",
+        help="Disable log output being displayed in stdout stream",
         action="store_true",
     )
     parser.add_argument(

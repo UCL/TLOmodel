@@ -9,9 +9,15 @@ from typing import Dict, List, Literal, Optional, Tuple, Union
 import numpy as np
 from psutil import disk_io_counters
 from pyinstrument import Profiler
-from pyinstrument.renderers import HTMLRenderer
+from pyinstrument.renderers import ConsoleRenderer, HTMLRenderer
 from pyinstrument.session import Session
 from scale_run import save_arguments_to_json, scale_run
+
+try:
+    from ansi2html import Ansi2HTMLConverter
+    ANSI2HTML_AVAILABLE = True
+except ImportError:
+    ANSI2HTML_AVAILABLE = False
 
 from tlo import Simulation
 
@@ -176,17 +182,26 @@ def run_profiling(
     output_name: str = "profiling",
     write_html: bool = False,
     write_pyisession: bool = False,
+    write_flat_html: bool = True,
     interval: float = 2e-1,
     initial_population: int = 50000,
     simulation_years: int = 5,
     simulation_months: int = 0,
     mode_appt_constraints: Literal[0, 1, 2] = 2,
     additional_stats: Optional[List[Tuple[str, str]]] = None,
+    show_progress_bar: bool = False,
+    disable_log_output_to_stdout: bool = False,
 ) -> None:
     """
     Uses pyinstrument to profile the scale_run simulation,
     writing the output in the requested formats.
     """
+    if write_flat_html and not ANSI2HTML_AVAILABLE:
+        # Check if flat HTML output requested but ansi2html module not available at
+        # _start_ of function to avoid erroring after a potentially long profiling run
+        msg = "ansi2html required for flat HTML output."
+        raise ValueError(msg)
+
     additional_stats = dict(() if additional_stats is None else additional_stats)
 
     # Create the profiler to record the stack
@@ -208,7 +223,7 @@ def run_profiling(
         "log_filename": "scale_run_profiling",
         "log_level": "WARNING",
         "parse_log_file": False,
-        "show_progress_bar": True,
+        "show_progress_bar": show_progress_bar,
         "seed": 0,
         "disable_health_system": False,
         "disable_spurious_symptoms": False,
@@ -218,6 +233,7 @@ def run_profiling(
         "record_hsi_event_details": False,
         "ignore_warnings": True,
         "log_final_population_checksum": False,
+        "disable_log_output_to_stdout": disable_log_output_to_stdout,
     }
 
     output_arg_file = output_dir / f"{output_name}.args.json"
@@ -253,7 +269,11 @@ def run_profiling(
         # Renderer initialisation options:
         # show_all: removes library calls where identifiable
         # timeline: if true, samples are left in chronological order rather than total time
-        html_renderer = HTMLRenderer(show_all=False, timeline=False)
+        html_renderer = HTMLRenderer(
+            show_all=False,
+            timeline=False,
+            processor_options={"show_regex": ".*/tlo/.*", "hide_regex": ".*/pandas/.*"}
+        )
         print(f"Writing {output_html_file}", end="...", flush=True)
         with open(output_html_file, "w") as f:
             f.write(html_renderer.render(scale_run_session))
@@ -268,13 +288,29 @@ def run_profiling(
                 f"\tWas        : {additional_stats['html_output']}"
                 f"\tReplaced by: {output_html_file}"
             )
-        additional_stats["html_output"] = str(output_html_file)
+        additional_stats["html_output"] = str(output_html_file.name)
 
     if write_pyisession:
         output_ipysession_file = output_dir / f"{output_name}.pyisession"
         print(f"Writing {output_ipysession_file}", end="...", flush=True)
         scale_run_session.save(output_ipysession_file)
         print("done")
+        
+    if write_flat_html:
+        output_html_file = output_dir / f"{output_name}.flat.html"
+        console_renderer = ConsoleRenderer(
+            show_all=False,
+            timeline=False,
+            color=True,
+            flat=True,
+            processor_options={"show_regex": ".*/tlo/.*", "hide_regex": ".*/pandas/.*"}
+        )
+        converter = Ansi2HTMLConverter(title=output_name)
+        print(f"Writing {output_html_file}", end="...", flush=True)
+        with open(output_html_file, "w") as f:
+            f.write(converter.convert(console_renderer.render(scale_run_session)))
+        print("done")
+        additional_stats["flat_html_output"] = str(output_html_file.name)
 
     # Write the statistics file, main output
     output_stat_file = output_dir / f"{output_name}.stats.json"
@@ -330,6 +366,12 @@ if __name__ == "__main__":
         dest="write_pyisession",
     )
     parser.add_argument(
+        "--flat-html",
+        action="store_true",
+        help="Write flat HTML output in addition to statistics output.",
+        dest="write_flat_html",
+    )
+    parser.add_argument(
         "-i",
         "--interval-seconds",
         dest="interval",
@@ -381,6 +423,16 @@ if __name__ == "__main__":
             'quotes: foo="this is a sentence". Note that values are always treated '
             "as strings."
         ),
+    )
+    parser.add_argument(
+        "--show-progress-bar",
+        help="Show simulation progress bar during simulation rather than log output",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--disable-log-output-to-stdout",
+        help="Disable simulation log output being displayed in stdout stream",
+        action="store_true",
     )
 
     args = parser.parse_args()
