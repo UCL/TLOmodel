@@ -386,10 +386,6 @@ class Hiv(Module):
             Types.INT,
             "integer value labelling the scenario to be run: default is 0"
         ),
-        "scenario_start_date": Parameter(
-            Types.DATE,
-            "date from which different scenarios are run"
-        ),
         # ------------------ scale-up parameters for scenario analysis ------------------ #
         "treatment_effects": Parameter(
             Types.DATA_FRAME,
@@ -864,6 +860,139 @@ class Hiv(Module):
             years=3
         )
 
+    def update_parameters(self, population):
+        df = population.props
+        p = self.parameters
+        scenario = p["scenario"]
+        treatment_effects = p["treatment_effects"]
+
+        # baseline scenario 0: no change to parameters/functions
+        if scenario == 0:
+            return
+
+        # scenario 1: remove HIV treatment effects
+        if (scenario == 1) or (scenario == 5):
+            # HIV
+
+            # if any baseline population already assigned hv_art=on_VL_suppressed, change to not suppressed
+            df.loc[df['hv_art'] == 'on_VL_suppressed', 'hv_art'] = 'on_not_VL_suppressed'
+
+            # viral suppression rates
+            # change all column values
+            self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["virally_suppressed_on_art"] = \
+                treatment_effects.loc[
+                    treatment_effects.parameter == "prob_viral_suppression", "no_effect"].values[0]
+
+            # relative risk HIV acquisition if VMMC
+            self.sim.modules["Hiv"].parameters["rr_circumcision"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_circumcision", "no_effect"].values[0]
+
+            # effects of PrEP
+            self.sim.modules["Hiv"].parameters["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = \
+                treatment_effects.loc[
+                    treatment_effects.parameter == "proportion_reduction_in_risk_of_hiv_aq_if_on_prep", "no_effect"].values[
+                    0]
+
+        # scenario 2: remove TB treatment effects
+        if (scenario == 2) or (scenario == 5):
+            # TB
+
+            # RR BCG
+            self.sim.modules["Tb"].parameters["rr_tb_bcg"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_tb_bcg", "no_effect"].values[0]
+
+            # RR IPT child
+            self.sim.modules["Tb"].parameters["rr_ipt_child"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_ipt_child", "no_effect"].values[0]
+
+            # RR IPT adult
+            self.sim.modules["Tb"].parameters["rr_ipt_adult"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_ipt_adult", "no_effect"].values[0]
+
+            # RR ART child
+            self.sim.modules["Tb"].parameters["rr_tb_art_child"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_tb_art_child", "no_effect"].values[0]
+
+            # RR ART adult
+            self.sim.modules["Tb"].parameters["rr_tb_art_adult"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_tb_art_adult", "no_effect"].values[0]
+
+            # RR IPT ART child
+            self.sim.modules["Tb"].parameters["rr_ipt_art_child"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_ipt_art_child", "no_effect"].values[0]
+
+            # RR IPT ART adult
+            self.sim.modules["Tb"].parameters["rr_ipt_art_adult"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_ipt_art_adult", "no_effect"].values[0]
+
+            # RR IPT child HIV
+            self.sim.modules["Tb"].parameters["rr_ipt_child_hiv"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_ipt_child_hiv", "no_effect"].values[0]
+
+            # RR IPT adult HIV
+            self.sim.modules["Tb"].parameters["rr_ipt_adult_hiv"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_ipt_adult_hiv", "no_effect"].values[0]
+
+            # treatment success rate DS
+            self.sim.modules["Tb"].parameters["prob_tx_success_ds"] = treatment_effects.loc[
+                treatment_effects.parameter == "prob_tx_success_ds", "no_effect"].values[0]
+
+            # treatment success rate MDR
+            self.sim.modules["Tb"].parameters["prob_tx_success_mdr"] = treatment_effects.loc[
+                treatment_effects.parameter == "prob_tx_success_mdr", "no_effect"].values[0]
+
+            # treatment success rate DS
+            self.sim.modules["Tb"].parameters["prob_tx_success_0_4"] = treatment_effects.loc[
+                treatment_effects.parameter == "prob_tx_success_0_4", "no_effect"].values[0]
+
+            # treatment success rate DS
+            self.sim.modules["Tb"].parameters["prob_tx_success_5_14"] = treatment_effects.loc[
+                treatment_effects.parameter == "prob_tx_success_5_14", "no_effect"].values[0]
+
+        # scenario 3: remove malaria treatment effects
+        if (scenario == 3) or (scenario == 5):
+            # Malaria
+
+            # set IRS to 0 for all districts
+            # lookup table created in malaria read_parameters
+            # produces self.itn_irs called by malaria poll to draw incidence
+            # need to overwrite this
+            self.sim.modules["Malaria"].itn_irs['irs_rate'] = treatment_effects.loc[
+                treatment_effects.parameter == "irs_district", "no_effect"].values[0]
+
+            # set ITN to 0 for all districts
+            # itn_district
+            self.sim.modules["Malaria"].itn_irs['itn_rate'] = treatment_effects.loc[
+                treatment_effects.parameter == "itn_district", "no_effect"].values[0]
+
+            # itn rates for 2019 onwards
+            self.sim.modules["Malaria"].parameters["itn"] = treatment_effects.loc[
+                treatment_effects.parameter == "itn", "no_effect"].values[0]
+
+            # RR IPTP
+            self.sim.modules["Malaria"].parameters["rr_clinical_malaria_iptp"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_clinical_malaria_iptp", "no_effect"].values[0]
+
+            # RR cotrimoxazole
+            self.sim.modules["Malaria"].parameters["rr_clinical_malaria_cotrimoxazole"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_clinical_malaria_cotrimoxazole", "no_effect"].values[0]
+
+            # RR ART
+            self.sim.modules["Malaria"].parameters["rr_clinical_malaria_art"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_clinical_malaria_art", "no_effect"].values[0]
+
+            # RR IPTP - severe
+            self.sim.modules["Malaria"].parameters["rr_severe_malaria_iptp"] = treatment_effects.loc[
+                treatment_effects.parameter == "rr_severe_malaria_iptp", "no_effect"].values[0]
+
+            # RR effect of treatment on mortality risk for severe cases
+            self.sim.modules["Malaria"].parameters["treatment_adjustment"] = treatment_effects.loc[
+                treatment_effects.parameter == "treatment_adjustment", "no_effect"].values[0]
+
+            # RR prob of treatment success
+            self.sim.modules["Malaria"].parameters["prob_of_treatment_success"] = treatment_effects.loc[
+                treatment_effects.parameter == "prob_of_treatment_success", "no_effect"].values[0]
+
     def initialise_simulation(self, sim):
         """
         * 1) Schedule the Main HIV Regular Polling Event
@@ -877,9 +1006,7 @@ class Hiv(Module):
         df = sim.population.props
 
         # scenario change event to switch params immediately
-        sim.schedule_event(
-            ScenarioSetupEvent(self), self.parameters["scenario_start_date"]
-        )
+        self.update_parameters(sim.population)
 
         # 1) Schedule the Main HIV Regular Polling Event
         sim.schedule_event(
@@ -1541,156 +1668,6 @@ class Hiv(Module):
 # ---------------------------------------------------------------------------
 #   Main Polling Event
 # ---------------------------------------------------------------------------
-
-class ScenarioSetupEvent(RegularEvent, PopulationScopeEventMixin):
-    """ This event exists to change parameters or functions
-    depending on the scenario for projections which has been set
-    It only occurs once at param: scenario_start_date,
-    called by initialise_simulation
-    """
-
-    def __init__(self, module):
-        super().__init__(module, frequency=DateOffset(years=100))
-
-    def apply(self, population):
-
-        df = self.sim.population.props
-        p = self.module.parameters
-        scenario = p["scenario"]
-        treatment_effects = p["treatment_effects"]
-
-        logger.debug(
-            key="message", data=f"ScenarioSetupEvent: scenario {scenario}"
-        )
-
-        # baseline scenario 0: no change to parameters/functions
-        if scenario == 0:
-            return
-
-        # scenario 1: remove HIV treatment effects
-        if (scenario == 1) or (scenario == 5):
-            # HIV
-
-            # if any baseline population already assigned hv_art=on_VL_suppressed, change to not suppressed
-            df.loc[df['hv_art'] == 'on_VL_suppressed', 'hv_art'] = 'on_not_VL_suppressed'
-
-            # viral suppression rates
-            # change all column values
-            self.sim.modules["Hiv"].parameters["prob_start_art_or_vs"]["virally_suppressed_on_art"] = \
-                treatment_effects.loc[
-                treatment_effects.parameter == "prob_viral_suppression", "no_effect"].values[0]
-
-            # relative risk HIV acquisition if VMMC
-            self.sim.modules["Hiv"].parameters["rr_circumcision"] = treatment_effects.loc[
-                treatment_effects.parameter == "rr_circumcision", "no_effect"].values[0]
-
-            # effects of PrEP
-            self.sim.modules["Hiv"].parameters["proportion_reduction_in_risk_of_hiv_aq_if_on_prep"] = \
-                treatment_effects.loc[
-                treatment_effects.parameter == "proportion_reduction_in_risk_of_hiv_aq_if_on_prep", "no_effect"].values[
-                0]
-
-        # scenario 2: remove TB treatment effects
-        if (scenario == 2) or (scenario == 5):
-            # TB
-
-            # RR BCG
-            self.sim.modules["Tb"].parameters["rr_tb_bcg"] = treatment_effects.loc[
-                treatment_effects.parameter == "rr_tb_bcg", "no_effect"].values[0]
-
-            # RR IPT child
-            self.sim.modules["Tb"].parameters["rr_ipt_child"] = treatment_effects.loc[
-                treatment_effects.parameter == "rr_ipt_child", "no_effect"].values[0]
-
-            # RR IPT adult
-            self.sim.modules["Tb"].parameters["rr_ipt_adult"] = treatment_effects.loc[
-                treatment_effects.parameter == "rr_ipt_adult", "no_effect"].values[0]
-
-            # RR ART child
-            self.sim.modules["Tb"].parameters["rr_tb_art_child"] = treatment_effects.loc[
-                treatment_effects.parameter == "rr_tb_art_child", "no_effect"].values[0]
-
-            # RR ART adult
-            self.sim.modules["Tb"].parameters["rr_tb_art_adult"] = treatment_effects.loc[
-                treatment_effects.parameter == "rr_tb_art_adult", "no_effect"].values[0]
-
-            # RR IPT ART child
-            self.sim.modules["Tb"].parameters["rr_ipt_art_child"] = treatment_effects.loc[
-                treatment_effects.parameter == "rr_ipt_art_child", "no_effect"].values[0]
-
-            # RR IPT ART adult
-            self.sim.modules["Tb"].parameters["rr_ipt_art_adult"] = treatment_effects.loc[
-                treatment_effects.parameter == "rr_ipt_art_adult", "no_effect"].values[0]
-
-            # RR IPT child HIV
-            self.sim.modules["Tb"].parameters["rr_ipt_child_hiv"] = treatment_effects.loc[
-                treatment_effects.parameter == "rr_ipt_child_hiv", "no_effect"].values[0]
-
-            # RR IPT adult HIV
-            self.sim.modules["Tb"].parameters["rr_ipt_adult_hiv"] = treatment_effects.loc[
-                treatment_effects.parameter == "rr_ipt_adult_hiv", "no_effect"].values[0]
-
-            # treatment success rate DS
-            self.sim.modules["Tb"].parameters["prob_tx_success_ds"] = treatment_effects.loc[
-                treatment_effects.parameter == "prob_tx_success_ds", "no_effect"].values[0]
-
-            # treatment success rate MDR
-            self.sim.modules["Tb"].parameters["prob_tx_success_mdr"] = treatment_effects.loc[
-                treatment_effects.parameter == "prob_tx_success_mdr", "no_effect"].values[0]
-
-            # treatment success rate DS
-            self.sim.modules["Tb"].parameters["prob_tx_success_0_4"] = treatment_effects.loc[
-                treatment_effects.parameter == "prob_tx_success_0_4", "no_effect"].values[0]
-
-            # treatment success rate DS
-            self.sim.modules["Tb"].parameters["prob_tx_success_5_14"] = treatment_effects.loc[
-                treatment_effects.parameter == "prob_tx_success_5_14", "no_effect"].values[0]
-
-        # scenario 3: remove malaria treatment effects
-        if (scenario == 3) or (scenario == 5):
-            # Malaria
-
-            # set IRS to 0 for all districts
-            # lookup table created in malaria read_parameters
-            # produces self.itn_irs called by malaria poll to draw incidence
-            # need to overwrite this
-            self.sim.modules["Malaria"].itn_irs['irs_rate'] = treatment_effects.loc[
-                treatment_effects.parameter == "irs_district", "no_effect"].values[0]
-
-            # set ITN to 0 for all districts
-            # itn_district
-            self.sim.modules["Malaria"].itn_irs['itn_rate'] = treatment_effects.loc[
-                treatment_effects.parameter == "itn_district", "no_effect"].values[0]
-
-            # itn rates for 2019 onwards
-            self.sim.modules["Malaria"].parameters["itn"] = treatment_effects.loc[
-                treatment_effects.parameter == "itn", "no_effect"].values[0]
-
-            # RR IPTP
-            self.sim.modules["Malaria"].parameters["rr_clinical_malaria_iptp"] = treatment_effects.loc[
-                treatment_effects.parameter == "rr_clinical_malaria_iptp", "no_effect"].values[0]
-
-            # RR cotrimoxazole
-            self.sim.modules["Malaria"].parameters["rr_clinical_malaria_cotrimoxazole"] = treatment_effects.loc[
-                treatment_effects.parameter == "rr_clinical_malaria_cotrimoxazole", "no_effect"].values[0]
-
-            # RR ART
-            self.sim.modules["Malaria"].parameters["rr_clinical_malaria_art"] = treatment_effects.loc[
-                treatment_effects.parameter == "rr_clinical_malaria_art", "no_effect"].values[0]
-
-            # RR IPTP - severe
-            self.sim.modules["Malaria"].parameters["rr_severe_malaria_iptp"] = treatment_effects.loc[
-                treatment_effects.parameter == "rr_severe_malaria_iptp", "no_effect"].values[0]
-
-            # RR effect of treatment on mortality risk for severe cases
-            self.sim.modules["Malaria"].parameters["treatment_adjustment"] = treatment_effects.loc[
-                treatment_effects.parameter == "treatment_adjustment", "no_effect"].values[0]
-
-            # RR prob of treatment success
-            self.sim.modules["Malaria"].parameters["prob_of_treatment_success"] = treatment_effects.loc[
-                treatment_effects.parameter == "prob_of_treatment_success", "no_effect"].values[0]
-
-
 class HivRegularPollingEvent(RegularEvent, PopulationScopeEventMixin):
     """ The HIV Regular Polling Events
     * Schedules persons becoming newly infected through horizontal transmission

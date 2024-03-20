@@ -35,7 +35,7 @@ resourcefilepath = Path("./resources")
 
 start_date = Date(2010, 1, 1)
 end_date = Date(2014, 1, 1)
-popsize = 200
+popsize = 2000
 
 # set up the log config
 log_config = {
@@ -84,7 +84,7 @@ sim.register(
     )
 )
 
-sim.modules["Hiv"].parameters["scenario"] = 2
+sim.modules["Hiv"].parameters["scenario"] = 3
 
 
 # Run the simulation and flush the logger
