@@ -1420,8 +1420,10 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         # infected in the last time-step, clinical and severe cases only
         # incidence rate per 1000 person-years
         # include those cases that have died in the case load
+        # also exclude those scheduled to have symptoms in future
         tmp = len(
-            df.loc[(df.ma_date_symptoms > (now - DateOffset(months=self.repeat)))]
+            df.loc[(df.ma_date_symptoms >= (now - DateOffset(months=self.repeat)))
+            & (df.ma_date_symptoms < now)]
         )
         pop = len(df[df.is_alive])
 
@@ -1431,8 +1433,9 @@ class MalariaLoggingEvent(RegularEvent, PopulationScopeEventMixin):
         tmp2 = len(
             df.loc[
                 (df.age_years.between(2, 10))
-                & (df.ma_date_symptoms > (now - DateOffset(months=self.repeat)))
-                ]
+                & (df.ma_date_symptoms >= (now - DateOffset(months=self.repeat)))
+                & (df.ma_date_symptoms < now)]
+
         )
 
         pop2_10 = len(df[df.is_alive & (df.age_years.between(2, 10))])
