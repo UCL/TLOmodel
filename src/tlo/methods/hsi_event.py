@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import Counter
 from typing import TYPE_CHECKING, Dict, Literal, NamedTuple, Optional, Tuple, Union
 
@@ -73,7 +75,7 @@ class HSI_Event:
     `did_not_run` method.
     """
     
-    module: "Module"
+    module: Module
     target: int # Will be overwritten by the mixin on derived classes
 
     TREATMENT_ID: str
@@ -125,11 +127,11 @@ class HSI_Event:
         return self.sim.population.props.at[self.target, "is_alive"]
 
     @property
-    def sim(self) -> "Simulation":
+    def sim(self) -> Simulation:
         return self.module.sim
 
     @property
-    def healthcare_system(self) -> "Module":
+    def healthcare_system(self) -> Module:
         """The healthcare module being used by the Simulation."""
         return self.sim.modules["HealthSystem"]
 
