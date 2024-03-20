@@ -1,6 +1,7 @@
 import datetime
 import heapq as hp
 import itertools
+import re
 import warnings
 from collections import Counter, defaultdict
 from collections.abc import Iterable
@@ -541,17 +542,46 @@ class HealthSystem(Module):
                         " the priority, and on which categories of individuals classify for fast-tracking "
                         " for specific treatments"),
 
-        'const_HR_scaling_table': Parameter(
-            Types.DICT, "Factors by which capabilities of medical officer categories at different levels will be"
-                              "scaled at the start of the simulation to simulate a number of effects (e.g. absenteeism,"
-                              "boosting of specific medical cadres, etc). This is the imported from an"
-                              "Excel workbook: keys are the worksheet names and values are the worksheets in "
-                              "the format of pd.DataFrames."),
+        'HR_scaling_by_level_and_officer_type_table': Parameter(
+            Types.DICT, "Factors by which capabilities of medical officer types at different levels will be"
+                        "scaled at the start of the year specified by `year_HR_scaling_by_level_and_officer_type`. This"
+                        "serves to simulate a number of effects (e.g. absenteeism, boosting capabilities of specific "
+                        "medical cadres, etc). This is the imported from an Excel workbook: keys are the worksheet "
+                        "names and values are the worksheets in the format of pd.DataFrames. Additional scenarios can "
+                        "be added by adding worksheets to this workbook: the value of "
+                        "`HR_scaling_by_level_and_officer_type_mode` indicates which sheet is used."
+        ),
 
-        'const_HR_scaling_mode': Parameter(
-            Types.STRING, "Mode of HR scaling considered at the start of the simulation. Options are default"
-                          " (capabilities are scaled by a constaint factor of 1), data (factors informed by survey data),"
-                          "and custom (user can freely set these factors as parameters in the analysis).",
+        'year_HR_scaling_by_level_and_officer_type': Parameter(
+            Types.INT, "Year in which one-off constant HR scaling will take place. (The change happens"
+                       "on 1st January of that year.)"
+        ),
+
+        'HR_scaling_by_level_and_officer_type_mode': Parameter(
+            Types.STRING, "Mode of HR scaling considered at the start of the simulation. This corresponds to the name"
+                          "of the worksheet in `ResourceFile_HR_scaling_by_level_and_officer_type.xlsx` that should be"
+                          " used. Options are: `default` (capabilities are scaled by a constaint factor of 1); `data` "
+                          "(factors informed by survey data); and, `custom` (user can freely set these factors as "
+                          "parameters in the analysis).",
+        ),
+
+        'HR_scaling_by_district_table': Parameter(
+            Types.DICT, "Factors by which daily capabilities in different districts will be"
+                        "scaled at the start of the year specified by year_HR_scaling_by_district to simulate"
+                        "(e.g., through catastrophic event disrupting delivery of services in particular district(s))."
+                        "This is the import of an Excel workbook: keys are the worksheet names and values are the "
+                        "worksheets in the format of pd.DataFrames. Additional scenarios can be added by adding "
+                        "worksheets to this workbook: the value of `HR_scaling_by_district_mode` indicates which"
+                        "sheet is used."
+        ),
+
+        'year_HR_scaling_by_district': Parameter(
+            Types.INT, "Year in which scaling of daily capabilities by district will take place. (The change happens"
+                       "on 1st January of that year.)"),
+
+        'HR_scaling_by_district_mode': Parameter(
+            Types.STRING, "Mode of scaling of daily capabilities by district. This corresponds to the name of the "
+                          "worksheet in the file `ResourceFile_HR_scaling_by_district.xlsx`."
         ),
 
         'yearly_HR_scaling': Parameter(
@@ -828,16 +858,29 @@ class HealthSystem(Module):
                                                          'ResourceFile_PriorityRanking_ALLPOLICIES.xlsx',
                                                          sheet_name=None)
 
-        self.parameters['const_HR_scaling_table']: Dict = pd.read_excel(
+        self.parameters['HR_scaling_by_level_and_officer_type_table']: Dict = pd.read_excel(
             path_to_resourcefiles_for_healthsystem /
             "human_resources" /
             "scaling_capabilities" /
-            "ResourceFile_const_HR_scaling.xlsx",
+            "ResourceFile_HR_scaling_by_level_and_officer_type.xlsx",
             sheet_name=None  # all sheets read in
         )
         # Ensure the mode of HR scaling to be considered in included in the tables loaded
-        assert self.parameters['const_HR_scaling_mode'] in self.parameters['const_HR_scaling_table'], \
-            f"Value of `const_HR_scaling_mode` not recognised: {self.parameters['const_HR_scaling_mode']}"
+        assert (self.parameters['HR_scaling_by_level_and_officer_type_mode'] in
+                self.parameters['HR_scaling_by_level_and_officer_type_table']), \
+            (f"Value of `HR_scaling_by_level_and_officer_type_mode` not recognised: "
+             f"{self.parameters['HR_scaling_by_level_and_officer_type_mode']}")
+
+        self.parameters['HR_scaling_by_district_table']: Dict = pd.read_excel(
+            path_to_resourcefiles_for_healthsystem /
+            "human_resources" /
+            "scaling_capabilities" /
+            "ResourceFile_HR_scaling_by_district.xlsx",
+            sheet_name=None  # all sheets read in
+        )
+        # Ensure the mode of HR scaling by district to be considered in included in the tables loaded
+        assert self.parameters['HR_scaling_by_district_mode'] in self.parameters['HR_scaling_by_district_table'], \
+            f"Value of `HR_scaling_by_district_mode` not recognised: {self.parameters['HR_scaling_by_district_mode']}"
 
         self.parameters['yearly_HR_scaling']: Dict = pd.read_excel(
             path_to_resourcefiles_for_healthsystem /
@@ -941,6 +984,16 @@ class HealthSystem(Module):
         # Schedule a mode_appt_constraints change
         sim.schedule_event(HealthSystemChangeMode(self),
                            Date(self.parameters["year_mode_switch"], 1, 1))
+
+        # Schedule a one-off rescaling of _daily_capabilities broken down by officer type and level.
+        # This occurs on 1st January of the year specified in the parameters.
+        sim.schedule_event(ConstantRescalingHRCapabilities(self),
+                           Date(self.parameters["year_HR_scaling_by_level_and_officer_type"], 1, 1))
+
+        # Schedule a one-off rescaling of _daily_capabilities broken down by district
+        # This occurs on 1st January of the year specified in the parameters.
+        sim.schedule_event(RescaleHRCapabilities_ByDistrict(self),
+                           Date(self.parameters["year_HR_scaling_by_district"], 1, 1))
 
         # Schedule recurring event which will rescale daily capabilities (at yearly intervals).
         # The first event scheduled for the start of the simulation is only used to update self.last_year_pop_size,
@@ -1104,28 +1157,6 @@ class HealthSystem(Module):
         # never available.)
         self._officers_with_availability = set(self._daily_capabilities.index[self._daily_capabilities > 0])
 
-    def adjust_for_const_HR_scaling(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Adjust the Daily_Capabilities pd.DataFrame to account for assumptions about scaling of HR resources"""
-
-        # Get the set of scaling_factors that are specified by the 'const_HR_scaling_mode' assumption
-        const_HR_scaling_factor = self.parameters['const_HR_scaling_table'][self.parameters['const_HR_scaling_mode']]
-        const_HR_scaling_factor = const_HR_scaling_factor.set_index('Officer_Category')
-
-        level_conversion = {"1a": "L1a_Av_Mins_Per_Day", "1b": "L1b_Av_Mins_Per_Day",
-                            "2": "L2_Av_Mins_Per_Day", "0": "L0_Av_Mins_Per_Day", "3": "L3_Av_Mins_Per_Day",
-                            "4": "L4_Av_Mins_Per_Day", "5": "L5_Av_Mins_Per_Day"}
-
-        scaler = df[['Officer_Category', 'Facility_Level']].apply(
-            lambda row: const_HR_scaling_factor.loc[row['Officer_Category'], level_conversion[row['Facility_Level']]],
-            axis=1
-        )
-
-        # Apply scaling to 'Total_Mins_Per_Day'
-        df['Total_Mins_Per_Day'] *= scaler
-
-        return df
-
-
     def format_daily_capabilities(self, use_funded_or_actual_staffing: str) -> pd.Series:
         """
         This will updates the dataframe for the self.parameters['Daily_Capabilities'] so as to include
@@ -1139,9 +1170,7 @@ class HealthSystem(Module):
 
         # Get the capabilities data imported (according to the specified underlying assumptions).
         capabilities = pool_capabilities_at_levels_1b_and_2(
-            self.adjust_for_const_HR_scaling(
                 self.parameters[f'Daily_Capabilities_{use_funded_or_actual_staffing}']
-            )
         )
         capabilities = capabilities.rename(columns={'Officer_Category': 'Officer_Type_Code'})  # neaten
 
@@ -2925,6 +2954,57 @@ class DynamicRescalingHRCapabilities(RegularEvent, PopulationScopeEventMixin):
 
         # Save current population size as that for 'last year'.
         self.last_year_pop_size = this_year_pop_size
+
+
+class ConstantRescalingHRCapabilities(Event, PopulationScopeEventMixin):
+    """ This event exists to scale the daily capabilities, with a factor for each Officer Type at each Facility_Level.
+    """
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+
+        # Get the set of scaling_factors that are specified by the 'HR_scaling_by_level_and_officer_type_mode'
+        # assumption
+        HR_scaling_by_level_and_officer_type_factor = (
+            self.module.parameters['HR_scaling_by_level_and_officer_type_table'][
+                self.module.parameters['HR_scaling_by_level_and_officer_type_mode']
+            ].set_index('Officer_Category')
+        )
+
+        pattern = r"FacilityID_(\w+)_Officer_(\w+)"
+
+        for officer in self.module._daily_capabilities.keys():
+            matches = re.match(pattern, officer)
+            # Extract ID and officer type from
+            facility_id = int(matches.group(1))
+            officer_type = matches.group(2)
+            level = self.module._facility_by_facility_id[facility_id].level
+            self.module._daily_capabilities[officer] *= \
+                HR_scaling_by_level_and_officer_type_factor.at[officer_type, f"L{level}_factor"]
+
+
+class RescaleHRCapabilities_ByDistrict(Event, PopulationScopeEventMixin):
+    """ This event exists to scale the daily capabilities, with a factor for each district."""
+    def __init__(self, module):
+        super().__init__(module)
+
+    def apply(self, population):
+
+        # Get the set of scaling_factors that are specified by the 'HR_scaling_by_level_and_officer_type_mode' assumption
+        HR_scaling_factor_by_district = self.module.parameters['HR_scaling_by_district_table'][
+            self.module.parameters['HR_scaling_by_district_mode']
+        ].set_index('District').to_dict()
+
+        pattern = r"FacilityID_(\w+)_Officer_(\w+)"
+
+        for officer in self.module._daily_capabilities.keys():
+            matches = re.match(pattern, officer)
+            # Extract ID and officer type from
+            facility_id = int(matches.group(1))
+            district = self.module._facility_by_facility_id[facility_id].district
+            if district in HR_scaling_factor_by_district:
+                self.module._daily_capabilities[officer] *= HR_scaling_factor_by_district[district]
 
 
 class HealthSystemChangeMode(RegularEvent, PopulationScopeEventMixin):

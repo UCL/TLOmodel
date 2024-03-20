@@ -2243,25 +2243,28 @@ def test_service_availability_can_be_set_using_list_of_treatment_ids_and_asteris
         pd.testing.assert_frame_equal(run_with_asterisk, run_with_list)
 
 
-def test_const_HR_scaling_assumption(seed, tmpdir):
-    """Check that we can use the parameter `const_HR_scaling_mode` to manipulate the minutes of time available for
-    healthcare workers."""
+def test_HR_scaling_by_level_and_officer_type_assumption(seed, tmpdir):
+    """Check that we can use the parameter `HR_scaling_by_level_and_officer_type_mode` to manipulate the minutes of
+    time available for healthcare workers."""
 
-    def get_capabilities_today(const_HR_scaling_mode: str) -> pd.Series:
+    def get_capabilities_today(HR_scaling_by_level_and_officer_type_mode: str) -> pd.Series:
         sim = Simulation(start_date=start_date, seed=seed)
         sim.register(
             demography.Demography(resourcefilepath=resourcefilepath),
             healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
         )
-        sim.modules['HealthSystem'].parameters['const_HR_scaling_mode'] = const_HR_scaling_mode
+        sim.modules['HealthSystem'].parameters['HR_scaling_by_level_and_officer_type_mode'] = \
+            HR_scaling_by_level_and_officer_type_mode
+        sim.modules['HealthSystem'].parameters['year_HR_scaling_by_level_and_officer_type'] = 2010
         sim.make_initial_population(n=100)
-        sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+        # Days ran need to be offset by 1 in order for event on 2010,1,1 to take place
+        sim.simulate(end_date=start_date + pd.DateOffset(days=1))
 
         return sim.modules['HealthSystem'].capabilities_today
 
     caps = {
-        _const_HR_scaling_mode: get_capabilities_today(_const_HR_scaling_mode)
-        for _const_HR_scaling_mode in ('default', 'data', 'custom')
+        _HR_scaling_by_level_and_officer_type_mode: get_capabilities_today(_HR_scaling_by_level_and_officer_type_mode)
+        for _HR_scaling_by_level_and_officer_type_mode in ('default', 'data', 'custom')
     }
 
     # Check that the custom assumption (multiplying all capabilities by 0.5) gives expected result
