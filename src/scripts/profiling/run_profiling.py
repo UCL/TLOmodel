@@ -183,7 +183,7 @@ def run_profiling(
     write_html: bool = False,
     write_pyisession: bool = False,
     write_flat_html: bool = True,
-    interval: float = 1e-1,
+    interval: float = 2e-1,
     initial_population: int = 50000,
     simulation_years: int = 5,
     simulation_months: int = 0,
