@@ -69,7 +69,8 @@ class HSI_Event:
     """Base HSI event class, from which all others inherit.
 
     Concrete subclasses should also inherit from one of the EventMixin classes
-    defined below, and implement at least an `apply` and `did_not_run` method.
+    defined in `src/tlo/events.py`, and implement at least an `apply` and 
+    `did_not_run` method.
     """
     
     module: "Module"
