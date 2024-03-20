@@ -188,7 +188,7 @@ class Malaria(Module):
     }
 
     PROPERTIES = {
-        'ma_is_infected': Property(Types.BOOL, 'Current status of malaria'),
+        'ma_is_infected': Property(Types.BOOL, 'Currently has clinical or severe malaria'),
         'ma_date_infected': Property(Types.DATE, 'Date of latest infection'),
         'ma_date_symptoms': Property(
             Types.DATE, 'Date of symptom start for clinical infection'
