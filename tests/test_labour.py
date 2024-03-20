@@ -524,7 +524,7 @@ def test_bemonc_treatments_are_delivered_correctly_with_no_cons_or_quality_const
 
     # create a dummy hsi event that the treatment functions will call
     from tlo.events import IndividualScopeEventMixin
-    from tlo.methods.healthsystem import HSI_Event
+    from tlo.methods.hsi_event import HSI_Event
 
     class HSI_Dummy(HSI_Event, IndividualScopeEventMixin):
         def __init__(self, module, person_id):

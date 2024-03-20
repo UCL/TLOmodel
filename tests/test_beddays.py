@@ -11,7 +11,7 @@ from tlo.analysis.utils import parse_log_file
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata, demography, healthsystem
 from tlo.methods.bed_days import BedDays
-from tlo.methods.healthsystem import HSI_Event
+from tlo.methods.hsi_event import HSI_Event
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 

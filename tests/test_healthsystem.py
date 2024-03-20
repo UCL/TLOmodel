@@ -27,7 +27,8 @@ from tlo.methods import (
 )
 from tlo.methods.consumables import Consumables, create_dummy_data_for_cons_availability
 from tlo.methods.fullmodel import fullmodel
-from tlo.methods.healthsystem import HealthSystem, HealthSystemChangeParameters, HSI_Event
+from tlo.methods.healthsystem import HealthSystem, HealthSystemChangeParameters
+from tlo.methods.hsi_event import HSI_Event
 
 resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
