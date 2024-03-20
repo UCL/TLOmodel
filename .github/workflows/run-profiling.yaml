@@ -91,6 +91,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
+          lfs: true
 
       ## The profile environment produces outputs in the /results directory
       - name: Run profiling in dev environment
@@ -105,7 +106,7 @@ jobs:
 
       ## Upload the output as an artifact so we can push it to the profiling repository
       - name: Save results as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ needs.set-variables.outputs.artifact-name }}
           path: ${{ needs.set-variables.outputs.profiling-output-dir }}
@@ -128,7 +129,7 @@ jobs:
       )
     steps:
       - name: Download the profiling results
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ needs.set-variables.outputs.artifact-name }}
           path: ${{ needs.set-variables.outputs.profiling-output-dir }}
@@ -150,7 +151,7 @@ jobs:
           user_name:  rc-softdev-admin
 
       - name: Trigger website rebuild
-        uses: peter-evans/repository-dispatch@v2
+        uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.PROFILING_REPO_ACCESS }}
           repository: UCL/TLOmodel-profiling

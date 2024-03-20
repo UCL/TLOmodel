@@ -1,7 +1,7 @@
 import heapq as hp
 import os
 from pathlib import Path
-from typing import Set, Tuple
+from typing import Dict, Set, Tuple
 
 import numpy as np
 import pandas as pd
@@ -129,6 +129,7 @@ def test_all_treatment_ids_defined_in_priority_policies(seed, tmpdir):
     # Manually add treatment_IDs which are not found by get_filtered_treatment_ids
     clean_set_of_filtered_treatment_ids.add("Alri_Pneumonia_Treatment_Inpatient")
     clean_set_of_filtered_treatment_ids.add("Alri_Pneumonia_Treatment_Inpatient_Followup")
+    clean_set_of_filtered_treatment_ids.add("DeliveryCare_Comprehensive")
 
     for policy_name in sim.modules['HealthSystem'].parameters['priority_rank'].keys():
         sim.modules['HealthSystem'].load_priority_policy(policy_name)
@@ -2240,3 +2241,183 @@ def test_service_availability_can_be_set_using_list_of_treatment_ids_and_asteris
 
         # Check that HSI event logs are identical
         pd.testing.assert_frame_equal(run_with_asterisk, run_with_list)
+
+
+def test_HR_scaling_by_level_and_officer_type_assumption(seed, tmpdir):
+    """Check that we can use the parameter `HR_scaling_by_level_and_officer_type_mode` to manipulate the minutes of
+    time available for healthcare workers."""
+
+    def get_capabilities_today(HR_scaling_by_level_and_officer_type_mode: str) -> pd.Series:
+        sim = Simulation(start_date=start_date, seed=seed)
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
+        )
+        sim.modules['HealthSystem'].parameters['HR_scaling_by_level_and_officer_type_mode'] = \
+            HR_scaling_by_level_and_officer_type_mode
+        sim.modules['HealthSystem'].parameters['year_HR_scaling_by_level_and_officer_type'] = 2010
+        sim.make_initial_population(n=100)
+        # Days ran need to be offset by 1 in order for event on 2010,1,1 to take place
+        sim.simulate(end_date=start_date + pd.DateOffset(days=1))
+
+        return sim.modules['HealthSystem'].capabilities_today
+
+    caps = {
+        _HR_scaling_by_level_and_officer_type_mode: get_capabilities_today(_HR_scaling_by_level_and_officer_type_mode)
+        for _HR_scaling_by_level_and_officer_type_mode in ('default', 'data', 'custom')
+    }
+
+    # Check that the custom assumption (multiplying all capabilities by 0.5) gives expected result
+    assert np.allclose(
+        caps['custom'].values,
+        caps['default'].values * 0.5
+    )
+
+    # Check that the "data" assumptions leads to changes in the capabilities (of any direction)
+    assert not np.allclose(
+        caps['data'].values,
+        caps['default'].values
+    )
+
+
+def test_dynamic_HR_scaling(seed, tmpdir):
+    """Check that we can scale the minutes of time available for healthcare workers on a yearly basis based on either
+    a fixed scaling factor or population grown, or both."""
+
+    def get_initial_capabilities() -> pd.Series:
+        sim = Simulation(start_date=start_date, seed=seed)
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
+        )
+        sim.make_initial_population(n=100)
+        sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+
+        return sim.modules['HealthSystem'].capabilities_today
+
+    def get_capabilities_after_two_updates(dynamic_HR_scaling_factor: float, scale_HR_by_pop_size: bool) -> tuple:
+        sim = Simulation(start_date=start_date, seed=seed)
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+
+        )
+        params = sim.modules['HealthSystem'].parameters
+        df = params['yearly_HR_scaling'][params['yearly_HR_scaling_mode']]
+        df.loc[df['year'] == 2010, 'dynamic_HR_scaling_factor'] = dynamic_HR_scaling_factor
+        df.loc[df['year'] == 2010, 'scale_HR_by_popsize'] = scale_HR_by_pop_size
+        popsize = 100
+        sim.make_initial_population(n=popsize)
+
+        # Ensure simulation lasts long enough so that current capabilities reflect that used after two updates
+        # (updates occur on 1st Jan, starting in 2010, so simulation should stop on 2nd Jan 2011).
+        sim.simulate(end_date=Date(2011, 1, 2))
+
+        popsize_start = popsize
+        popsize_curr = sim.population.props['is_alive'].sum()
+        final_popsize_increase = popsize_curr / popsize_start
+
+        return sim.modules['HealthSystem'].capabilities_today, final_popsize_increase
+
+    dynamic_HR_scaling_factor = 1.05
+
+    # Get initial capabilities and remove all officers with no minutes available
+    initial_caps = get_initial_capabilities()
+    initial_caps = initial_caps[initial_caps != 0]
+
+    # Check that dynamic expansion over two years leads to expansion = dynamic_HR_scaling_factor^2
+    caps, final_popsize_increase = get_capabilities_after_two_updates(
+        dynamic_HR_scaling_factor=dynamic_HR_scaling_factor,
+        scale_HR_by_pop_size=False
+    )
+    caps = caps[caps != 0]
+    ratio_in_sim = caps/initial_caps
+    expected_value = dynamic_HR_scaling_factor * dynamic_HR_scaling_factor
+    assert np.allclose(ratio_in_sim, expected_value)
+
+    # Check that expansion over two years with scaling prop to pop expansion works as expected
+    caps, final_popsize_increase = get_capabilities_after_two_updates(
+        dynamic_HR_scaling_factor=1.0,
+        scale_HR_by_pop_size=True
+    )
+    caps = caps[caps != 0]
+    ratio_in_sim = caps/initial_caps
+    expected_value = final_popsize_increase
+    assert np.allclose(ratio_in_sim, expected_value)
+
+    # Check that expansion over two years with both fixed scaling and pop expansion scaling works as expected
+    caps, final_popsize_increase = get_capabilities_after_two_updates(
+        dynamic_HR_scaling_factor=dynamic_HR_scaling_factor,
+        scale_HR_by_pop_size=True
+    )
+    caps = caps[caps != 0]
+    ratio_in_sim = caps/initial_caps
+    expected_value = final_popsize_increase*dynamic_HR_scaling_factor*dynamic_HR_scaling_factor
+    assert np.allclose(ratio_in_sim, expected_value)
+
+
+def test_dynamic_HR_scaling_multiple_changes(seed, tmpdir):
+    """Check that we can scale the minutes of time available for healthcare workers with a sequence of factors that
+    apply in different years."""
+
+    def get_initial_capabilities() -> pd.Series:
+        sim = Simulation(start_date=start_date, seed=seed)
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath)
+        )
+        sim.make_initial_population(n=100)
+        sim.simulate(end_date=start_date + pd.DateOffset(days=0))
+
+        return sim.modules['HealthSystem'].capabilities_today
+
+    def run_sim(dynamic_HR_scaling_factor: Dict[int, float]) -> tuple:
+        """Run simulation for 10 years, with a sequence of factors that apply, specified in a dict of the form
+        {year: factor_to_apply_this_year_and_subsequent_years_until_next_instruction} (i.e. how the ResourceFile should
+        be structured.)
+        Returns capabilities at the end of the 10-year simulation"""
+
+        sim = Simulation(start_date=start_date, seed=seed)
+        sim.register(
+            demography.Demography(resourcefilepath=resourcefilepath),
+            healthsystem.HealthSystem(resourcefilepath=resourcefilepath),
+            simplified_births.SimplifiedBirths(resourcefilepath=resourcefilepath),
+
+        )
+        params = sim.modules['HealthSystem'].parameters
+        params['yearly_HR_scaling'][params['yearly_HR_scaling_mode']] = pd.DataFrame({
+            'year': dynamic_HR_scaling_factor.keys(),
+            'dynamic_HR_scaling_factor': dynamic_HR_scaling_factor.values(),
+            'scale_HR_by_popsize': False,
+        })
+
+        popsize = 100
+        sim.make_initial_population(n=popsize)
+
+        # Ensure simulation lasts long enough so that current capabilities reflect that used after two updates
+        # (updates occur on 1st Jan, starting in 2010, so simulation should stop on 2nd Jan 2011).
+        sim.simulate(end_date=sim.date + pd.DateOffset(years=10, days=1))
+
+        return sim.modules['HealthSystem'].capabilities_today
+
+    dynamic_HR_scaling_factor = {
+        2010: 1.0,
+        2011: 2.0,
+        # (2012 and 2013) are skipped: implies that the value for 2010 should apply in these years
+        2014: 0.2,
+        2015: 1.0,
+        # (2016, ..., 2020 are skipped: implies that the value for 2015 should apply in the years)
+    }
+    expected_overall_scaling = 2.0 * 2.0 * 2.0 * 0.2
+
+    # Get initial capabilities and remove all officers with no minutes available
+    initial_caps = get_initial_capabilities()
+    initial_caps = initial_caps[initial_caps != 0]
+
+    # Check that dynamic expansion over two years leads to expansion = dynamic_HR_scaling_factor^2
+    caps = run_sim(dynamic_HR_scaling_factor=dynamic_HR_scaling_factor)
+    caps = caps[caps != 0]
+    ratio_in_sim = caps / initial_caps
+
+    assert np.allclose(ratio_in_sim, expected_overall_scaling)
