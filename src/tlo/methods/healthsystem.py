@@ -1499,13 +1499,16 @@ class HealthSystem(Module):
         return True  # True of False
 
     def get_essential_equip_availability(self, essential_equip_set: Set[int]) -> bool:
-        # True if all items of essential equipment available
         if self.equip_availability == 'all':
+            # Always all equipment available
             return True
-        elif self.equip_availability == 'none':
-            return False
-        else:
+        elif self.equip_availability == 'default':
+            # True if all items of essential equipment available; False if any unavailable
             return all(self.get_equip_item_availability(item_code) for item_code in essential_equip_set)
+        else:  # self.equip_availability == 'none':
+            # True if no essential equipment requested, otherwise False as assumed no equipment available
+            # TODO: Should no equipment be logged then?
+            return not bool(essential_equip_set)
 
     def schedule_to_call_never_ran_on_date(self, hsi_event: 'HSI_Event', tdate: datetime.datetime):
         """Function to schedule never_ran being called on a given date"""
