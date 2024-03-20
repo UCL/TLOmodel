@@ -86,7 +86,8 @@ jobs:
           --output-name ${{ needs.set-variables.outputs.profiling-filename }} \
           --additional-stats \
           sha=${{ needs.set-variables.outputs.profiling-on-sha }} \
-          trigger=${{ needs.set-variables.outputs.profiling-event-trigger }}
+          trigger=${{ needs.set-variables.outputs.profiling-event-trigger }} \
+          --disable-log-output-to-stdout
       description: Profiled run of the model
       timeout-minutes: 8640
       application-organization: UCL
@@ -120,7 +121,8 @@ jobs:
             --output-name ${{ needs.set-variables.outputs.profiling-filename }} \
             --additional-stats \
             sha=${{ needs.set-variables.outputs.profiling-on-sha }} \
-            trigger=${{ needs.set-variables.outputs.profiling-event-trigger }}
+            trigger=${{ needs.set-variables.outputs.profiling-event-trigger }} \
+            --disable-log-output-to-stdout
 
       ## Upload the output as an artifact so we can push it to the profiling repository
       - name: Save results as artifact

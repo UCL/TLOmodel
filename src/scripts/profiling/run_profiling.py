@@ -189,6 +189,8 @@ def run_profiling(
     simulation_months: int = 0,
     mode_appt_constraints: Literal[0, 1, 2] = 2,
     additional_stats: Optional[List[Tuple[str, str]]] = None,
+    show_progress_bar: bool = False,
+    disable_log_output_to_stdout: bool = False,
 ) -> None:
     """
     Uses pyinstrument to profile the scale_run simulation,
@@ -221,7 +223,7 @@ def run_profiling(
         "log_filename": "scale_run_profiling",
         "log_level": "WARNING",
         "parse_log_file": False,
-        "show_progress_bar": True,
+        "show_progress_bar": show_progress_bar,
         "seed": 0,
         "disable_health_system": False,
         "disable_spurious_symptoms": False,
@@ -231,6 +233,7 @@ def run_profiling(
         "record_hsi_event_details": False,
         "ignore_warnings": True,
         "log_final_population_checksum": False,
+        "disable_log_output_to_stdout": disable_log_output_to_stdout,
     }
 
     output_arg_file = output_dir / f"{output_name}.args.json"
@@ -420,6 +423,16 @@ if __name__ == "__main__":
             'quotes: foo="this is a sentence". Note that values are always treated '
             "as strings."
         ),
+    )
+    parser.add_argument(
+        "--show-progress-bar",
+        help="Show simulation progress bar during simulation rather than log output",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--disable-log-output-to-stdout",
+        help="Disable simulation log output being displayed in stdout stream",
+        action="store_true",
     )
 
     args = parser.parse_args()
