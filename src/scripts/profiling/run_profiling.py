@@ -194,6 +194,12 @@ def run_profiling(
     Uses pyinstrument to profile the scale_run simulation,
     writing the output in the requested formats.
     """
+    if write_flat_html and not ANSI2HTML_AVAILABLE:
+        # Check if flat HTML output requested but ansi2html module not available at
+        # _start_ of function to avoid erroring after a potentially long profiling run
+        msg = "ansi2html required for flat HTML output."
+        raise ValueError(msg)
+
     additional_stats = dict(() if additional_stats is None else additional_stats)
 
     # Create the profiler to record the stack
@@ -288,8 +294,6 @@ def run_profiling(
         print("done")
         
     if write_flat_html:
-        if not ANSI2HTML_AVAILABLE:
-            raise ValueError("ansi2html required for flat HTML output.")
         output_html_file = output_dir / f"{output_name}.flat.html"
         console_renderer = ConsoleRenderer(
             show_all=False,
