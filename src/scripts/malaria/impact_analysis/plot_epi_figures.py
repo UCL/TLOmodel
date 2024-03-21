@@ -32,7 +32,7 @@ from tlo.analysis.utils import (
 outputspath = Path("./outputs")
 
 # Find results_folder associated with a given batch_file (and get most recent [-1])
-results_folder = get_scenario_outputs("effect_of_treatment_packages-2024-03-20.py", outputspath)[-1]
+results_folder = get_scenario_outputs("effect_of_treatment_packages-2024-03-21.py", outputspath)[-1]
 # results_folder = get_scenario_outputs("exclude_HTM_services.py", outputspath)[-1]
 
 # Declare path for output graphs from this script
