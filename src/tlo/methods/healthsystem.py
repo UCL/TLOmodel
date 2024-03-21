@@ -391,7 +391,7 @@ class HSI_Event:
                     add_unknown_names_to_dict(
                         unknown_names, self.sim.modules['HealthSystem']._equip_pkgs_missing_in_RF
                     )
-
+        # TODO: What happens if all equip in set_of_names has unknown name?
         return set_of_names.difference(unknown_names)
 
     def set_equipment_essential_to_run_event(self, set_of_equip: Set[str]) -> None:
