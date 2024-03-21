@@ -20,6 +20,7 @@ def run_sim(tmpdir,
             disable=False,
             healthsystem_disable_and_reject_all=False,
             consumables_available=True,
+            equipment_available=True,
             run=True,
             no_discontinuation=False,
             incr_prob_of_failure=False,
@@ -54,6 +55,14 @@ def run_sim(tmpdir,
     else:
         _cons_available = consumables_available
 
+    # Determine availability of equipment (True --> all available; False --> none available; other --> custom arg.)
+    if equipment_available is True:
+        _equip_available = 'all'
+    elif equipment_available is False:
+        _equip_available = 'none'
+    else:
+        _equip_available = equipment_available
+
     resourcefilepath = Path(os.path.dirname(__file__)) / '../resources'
 
     start_date = Date(2010, 1, 1)
@@ -80,6 +89,7 @@ def run_sim(tmpdir,
                                   disable=disable,
                                   disable_and_reject_all=healthsystem_disable_and_reject_all,
                                   cons_availability=_cons_available,
+                                  equip_availability=_equip_available,
                                   ),
 
         # - modules for mechanistic representation of contraception -> pregnancy -> labour -> delivery etc.
@@ -417,8 +427,11 @@ def test_record_of_appt_footprint_for_switching_to_methods(tmpdir, seed):
     """Check that the APPT_FOOTPRINTS recorded by the HealthSystem match the expectation: specifically, that the
     appointment depends on the nature of the switch and whether it is a reoccurrence."""
 
-    def get_appt_footprints(switch_from, switch_to, consumables_available) -> List[str]:
-        """Return a list of the APPT_FOOTPRINTS that are logged for one person for a particular switch."""
+    def get_appt_footprints_when_did_not_or_did_run(
+        switch_from, switch_to, consumables_available, equipment_available
+    ) -> List[str]:
+        """Return a list of the APPT_FOOTPRINTS that are logged for one person for a particular switch, for HSI events
+         that 1) did not run, 2) did run."""
 
         person_id = 0
         sim = run_sim(tmpdir,
@@ -426,6 +439,7 @@ def test_record_of_appt_footprint_for_switching_to_methods(tmpdir, seed):
                       use_healthsystem=True,
                       disable=False,
                       consumables_available=consumables_available,
+                      equipment_available=equipment_available,
                       no_changes_in_contraception=True,
                       no_discontinuation=True,
                       equalised_risk_of_preg=0.0,
@@ -436,7 +450,7 @@ def test_record_of_appt_footprint_for_switching_to_methods(tmpdir, seed):
 
         # Set the person's initial sex, age and contraceptive method
         sim.population.props.at[person_id, 'sex'] = 'F'
-        sim.population.props.at[person_id, 'age_years'] = 25
+        sim.population.props.at[person_id, 'age_years'] = 31
         sim.population.props.at[person_id, 'co_contraception'] = switch_from
 
         # Schedule the initial HSI for the change
@@ -450,49 +464,193 @@ def test_record_of_appt_footprint_for_switching_to_methods(tmpdir, seed):
         sim.simulate(end_date=sim.start_date + pd.DateOffset(months=1))
 
         hsi_run = parse_log_file(sim.log_filepath, level=logging.DEBUG)["tlo.methods.healthsystem"]["HSI_Event"]
-        return hsi_run.loc[
-            hsi_run.did_run
+        return (hsi_run.loc[
+            ~hsi_run.did_run
             & (hsi_run['Person_ID'] == person_id)
             & (hsi_run['TREATMENT_ID'] == 'Contraception_Routine'), 'Number_By_Appt_Type_Code'
-        ].to_list()
+        ].to_list(),
+                hsi_run.loc[
+                    hsi_run.did_run
+                    & (hsi_run['Person_ID'] == person_id)
+                    & (hsi_run['TREATMENT_ID'] == 'Contraception_Routine'), 'Number_By_Appt_Type_Code'
+                ].to_list())
 
-    # 1) If consumables available, the HSI will only be run once:
-    #  - If switch to female_sterilization => 'MinorSurg'"
-    assert [{'MinorSurg': 1}] == get_appt_footprints(switch_from='not_using',
-                                                     switch_to='female_sterilization',
-                                                     consumables_available=True)
-    #  - If switching to anything new => 'FamilyPlanning'
-    assert [{'FamPlan': 1}] == get_appt_footprints(switch_from='not_using',
-                                                   switch_to='pill',
-                                                   consumables_available=True)
-    #  - If maintaining on implant => 'FamilyPlanning'
-    assert [{'FamPlan': 1}] == get_appt_footprints(switch_from='implant',
-                                                   switch_to='implant',
-                                                   consumables_available=True)
-    #  - If maintaining on pill  => 'PharmDispensing'
-    assert [{'PharmDispensing': 1}] == get_appt_footprints(switch_from='pill',
-                                                           switch_to='pill',
-                                                           consumables_available=True)
-
-    # 2) If consumables not available... there should be multiple footprints, but only the first is non-blank.
-    def is_list_longer_than_length_of_one_and_with_first_element_nonblank_and_subsequent_blank(x):
-        return (
-            (len(x) > 1)
-            & (x[0] != {})
-            & (0 == len([_x for _i, _x in enumerate(x) if (_i != 0) and (_x != {})]))
+    def assert_expected_conds_for_appt_footprints(
+        cond_did_not_run: list, cond_did_run: list, _switch_from: str, _switch_to: str
+    ) -> None:
+        """Returns true if footprints for did_not_run and did_run HSIs satisfy given conditions.
+        Possible Conditions:
+        ['appt_footprint_equal', 'appt_footprint'];
+        ['len_equal_0'];
+        ['len_greater_0_and_all_footprints_equal', 'appt_footprint'];
+        ['len_greater_1_and_first_footprint_equal_subsequent_blank', 'appt_footprint'];
+        ['none']
+        """
+        # print(f"\n{set_cons_avail=}")
+        # print(f"{set_equip_avail=}")
+        # print(f"{_switch_from=}")
+        # print(f"{_switch_to=}")
+        did_not_run_footprints, did_run_footprints = get_appt_footprints_when_did_not_or_did_run(
+            switch_from=_switch_from, switch_to=_switch_to,
+            consumables_available=set_cons_avail, equipment_available=set_equip_avail
         )
+        # Assert condition for did_not_run footprints
+        if cond_did_not_run[0] == 'len_equal_0':
+            assert 0 == len(did_not_run_footprints)
+        elif cond_did_not_run[0] == 'len_greater_0_and_all_footprints_equal':
+            assert 0 < len(did_not_run_footprints) and all([_x == cond_did_not_run[1] for _x in did_not_run_footprints])
+        elif cond_did_not_run[0] == 'none':
+            assert [] == did_not_run_footprints
+        else:
+            warnings.warn(f'\nWarning: {cond_did_not_run=} does not exist.')
+            assert 0
 
-    assert is_list_longer_than_length_of_one_and_with_first_element_nonblank_and_subsequent_blank(
-        get_appt_footprints(switch_from='not_using', switch_to='female_sterilization', consumables_available=False)
+        # Assert condition for did_run footprints
+        if cond_did_run[0] == 'appt_footprint_equal':
+            assert [cond_did_run[1]] == did_run_footprints
+        elif cond_did_run[0] == 'len_greater_1_and_first_footprint_equal_subsequent_blank':
+            assert len(did_run_footprints) > 1 and did_run_footprints[0] == cond_did_run[1] and \
+                   (0 == len([_x for _i, _x in enumerate(did_run_footprints) if (_i != 0) and (_x != {})]))
+        elif cond_did_run[0] == 'none':
+            assert [] == did_run_footprints
+        else:
+            warnings.warn(f'\nWarning: {cond_did_run=} does not exist.')
+            assert 0
+
+    # 1) If both consumables and equipment available
+    set_cons_avail = True
+    set_equip_avail = True
+    # ... the HSI will only be run once, hence no footprint for did_not_run and exactly one footprint for did_run:
+    #  - If switch to female_sterilization => 'MinorSurg'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['len_equal_0'], cond_did_run=['appt_footprint_equal', {'MinorSurg': 1}],
+        _switch_from='not_using', _switch_to='female_sterilization'
     )
-    assert is_list_longer_than_length_of_one_and_with_first_element_nonblank_and_subsequent_blank(
-        get_appt_footprints(switch_from='not_using', switch_to='pill', consumables_available=False)
+    #  - If maintaining IUD => 'FamilyPlanning'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['len_equal_0'], cond_did_run=['appt_footprint_equal', {'FamPlan': 1}],
+        _switch_from='IUD', _switch_to='IUD'
     )
-    assert is_list_longer_than_length_of_one_and_with_first_element_nonblank_and_subsequent_blank(
-        get_appt_footprints(switch_from='implant', switch_to='implant', consumables_available=False)
+    #  - If switching to anything new => 'FamilyPlanning'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['len_equal_0'], cond_did_run=['appt_footprint_equal', {'FamPlan': 1}],
+        _switch_from='not_using', _switch_to='pill'
     )
-    assert is_list_longer_than_length_of_one_and_with_first_element_nonblank_and_subsequent_blank(
-        get_appt_footprints(switch_from='pill', switch_to='pill', consumables_available=False)
+    #  - If maintaining on implant => 'FamilyPlanning'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['len_equal_0'], cond_did_run=['appt_footprint_equal', {'FamPlan': 1}],
+        _switch_from='implant', _switch_to='implant'
+    )
+    #  - If maintaining on pill  => 'PharmDispensing'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['len_equal_0'], cond_did_run=['appt_footprint_equal', {'PharmDispensing': 1}],
+        _switch_from='pill', _switch_to='pill'
+    )
+
+    # 2) If consumables available, but equipment not available
+    set_cons_avail = True
+    set_equip_avail = False
+    # ... when a method with essential equipment (f. sterilization or IUD) requested, the HSI will never run hence no
+    # appt_footprint will be returned for did_run HSI, but it will be returned for did_not_run HSI multiple times:
+    #  - If switch to female_sterilization => 'MinorSurg'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['len_greater_0_and_all_footprints_equal', {'MinorSurg': 1}], cond_did_run=['none'],
+        _switch_from='not_using', _switch_to='female_sterilization'
+    )
+    #  - If maintaining IUD => 'FamilyPlanning'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['len_greater_0_and_all_footprints_equal', {'FamPlan': 1}], cond_did_run=['none'],
+        _switch_from='IUD', _switch_to='IUD'
+    )
+    # ... otherwise the HSI will run and only once:
+    #  - If switching to anything new => 'FamilyPlanning'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['len_equal_0'], cond_did_run=['appt_footprint_equal', {'FamPlan': 1}],
+        _switch_from='not_using', _switch_to='pill'
+    )
+    #  - If maintaining on implant => 'FamilyPlanning'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['len_equal_0'], cond_did_run=['appt_footprint_equal', {'FamPlan': 1}],
+        _switch_from='implant', _switch_to='implant'
+    )
+    #  - If maintaining on pill  => 'PharmDispensing'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['len_equal_0'], cond_did_run=['appt_footprint_equal', {'PharmDispensing': 1}],
+        _switch_from='pill', _switch_to='pill'
+    )
+
+    # 3) If consumables not available, but equipment available
+    set_cons_avail = False
+    set_equip_avail = True
+    # ... it does run and there should be multiple footprints, but only the first is non-blank:
+    #  - If switch to female_sterilization => 'MinorSurg'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['none'],
+        cond_did_run=['len_greater_1_and_first_footprint_equal_subsequent_blank', {'MinorSurg': 1}],
+        _switch_from='not_using', _switch_to='female_sterilization'
+    )
+    #  - If maintaining IUD => 'FamilyPlanning'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['none'],
+        cond_did_run=['len_greater_1_and_first_footprint_equal_subsequent_blank', {'FamPlan': 1}],
+        _switch_from='IUD', _switch_to='IUD'
+    )
+    #  - If switching to anything new => 'FamilyPlanning'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['none'],
+        cond_did_run=['len_greater_1_and_first_footprint_equal_subsequent_blank', {'FamPlan': 1}],
+        _switch_from='not_using', _switch_to='pill'
+    )
+    #  - If maintaining on implant => 'FamilyPlanning'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['none'],
+        cond_did_run=['len_greater_1_and_first_footprint_equal_subsequent_blank', {'FamPlan': 1}],
+        _switch_from='implant', _switch_to='implant'
+    )
+    #  - If maintaining on pill  => 'PharmDispensing'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['none'],
+        cond_did_run=['len_greater_1_and_first_footprint_equal_subsequent_blank', {'PharmDispensing': 1}],
+        _switch_from='pill', _switch_to='pill'
+    )
+
+    # 4) If both consumables and equipment not available, ...
+    set_cons_avail = False
+    set_equip_avail = False
+    # ... when a method with essential equipment (f. sterilization or IUD) requested, the HSI will never run hence no
+    # appt_footprint will be returned for did_run HSI, but it will be returned for did_not_run HSI multiple times:
+    #  - If switch to female_sterilization => 'MinorSurg'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['len_greater_0_and_all_footprints_equal', {'MinorSurg': 1}], cond_did_run=['none'],
+        _switch_from='not_using', _switch_to='female_sterilization'
+    )
+    #  - If maintaining IUD => 'FamilyPlanning'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['len_greater_0_and_all_footprints_equal', {'FamPlan': 1}], cond_did_run=['none'],
+        _switch_from='IUD', _switch_to='IUD'
+    )
+    # ... otherwise the HSI will run and there should be multiple footprints, but only the first is non-blank:
+    # TODO: this is the current logic, but it doesn't sound right, if it is never performed due to missing consumables
+    #  it should never have the footprint equal, or do we expect that they will be coming again and again and again
+    #  and again ... until they will get it in very far future?
+
+    #  - If switching to anything new => 'FamilyPlanning'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['none'],
+        cond_did_run=['len_greater_1_and_first_footprint_equal_subsequent_blank', {'FamPlan': 1}],
+        _switch_from='not_using', _switch_to='pill'
+    )
+    #  - If maintaining on implant => 'FamilyPlanning'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['none'],
+        cond_did_run=['len_greater_1_and_first_footprint_equal_subsequent_blank', {'FamPlan': 1}],
+        _switch_from='implant', _switch_to='implant'
+    )
+    #  - If maintaining on pill  => 'PharmDispensing'
+    assert_expected_conds_for_appt_footprints(
+        cond_did_not_run=['none'],
+        cond_did_run=['len_greater_1_and_first_footprint_equal_subsequent_blank', {'PharmDispensing': 1}],
+        _switch_from='pill', _switch_to='pill'
     )
 
 
