@@ -91,6 +91,7 @@ class Contraception(Module):
         'max_number_of_runs_of_hsi_if_consumable_not_available': Parameter(
             Types.INT, "The maximum number of time an HSI can run (repeats occur if the consumables are not "
                        "available)."),
+        # TODO: We don't have anything like this for equipment, should we?
 
         'max_days_delay_between_decision_to_change_method_and_hsi_scheduled': Parameter(
             Types.INT, "The maximum delay (in days) between the decision for a contraceptive to change and the `topen` "
@@ -1245,6 +1246,10 @@ class HSI_Contraception_FamilyPlanningAppt(HSI_Event, IndividualScopeEventMixin)
 
         # If the intended change was not possible due to non-available consumable, reschedule the appointment
         if (not co_administrated) and (
+            # TODO: the max nmb of runs is set to 1000, so they will be coming back every day for 1000 consecutive days?
+            #  -- but only 8 footprints for did_not_run event when switch to f. steril when consumables available but
+            #  equipment not available in test_contraception (test_record_of_appt_footprint_for_switching_to_methods).
+            #  What am I missing? ????
             self._number_of_times_run < self.module.parameters['max_number_of_runs_of_hsi_if_consumable_not_available']
         ):
             self.reschedule()
