@@ -1,13 +1,13 @@
 from __future__ import annotations
-
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Tuple
+from typing import TYPE_CHECKING, NamedTuple
 
 import numpy as np
 import pandas as pd
 import scipy.stats
 
 from tlo import Date, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType
 from tlo.methods import Metadata, labour_lm, pregnancy_helper_functions
@@ -2300,11 +2300,9 @@ class Labour(Module):
         self,
         patient_id: int,
         patient_details: NamedTuple = None,
-        random_state: "RandomState" = None,
+        random_state: RandomState = None,
         **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
-        event_info = []
-
+    ) -> IndividualPropertyUpdates:
         mni = self.sim.modules["PregnancySupervisor"].mother_and_newborn_info
         labour_list = self.sim.modules["Labour"].women_in_labour
 
@@ -2320,13 +2318,13 @@ class Labour(Module):
                     person_id=patient_id,
                     facility_level_of_this_hsi=random_state.choice(["1a", "1b"]),
                 )
-                options = {
-                    "priority": 0,
-                    "topen": self.sim.date,
-                    "tclose": self.sim.date + pd.DateOffset(days=1),
-                }
-                event_info.append((event, options))
-        return event_info, {}
+                self.healthsystem.schedule_hsi_event(
+                    event,
+                    priority=0,
+                    topen=self.sim.date,
+                    tclose=self.sim.date + pd.DateOffset(days=1),
+                )
+        return {}
 
 class LabourOnsetEvent(Event, IndividualScopeEventMixin):
     """

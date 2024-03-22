@@ -18,12 +18,13 @@ Health care seeking is prompted by the onset of the symptom diarrhoea. The indiv
 """
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple
+from typing import List, NamedTuple
 
 import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import DiagnosisFunction, IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -939,21 +940,23 @@ class Diarrhoea(Module):
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        diagnosis_function: Callable[[str, bool, bool], Any] = None,
+        diagnosis_function: DiagnosisFunction = None,
         **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+    ) -> IndividualPropertyUpdates:
         # This routine is called when Diarrhoea is a symptom for a child
         # attending a Generic HSI Appointment. It checks for danger signs
         # and schedules HSI Events appropriately.
         if (patient_details.age_years > 5) or "diarrhoea" not in symptoms:
-            return [], {}
-
-        event_info = []
+            return {}
 
         # 1) Assessment of danger signs
         danger_signs = diagnosis_function(
             "imci_severe_dehydration_visual_inspection"
         )
+        scheduling_options = {
+            "priority": 0,
+            "topen": self.sim.date,
+        }
 
         # 2) Determine which HSI to use:
         if danger_signs and (
@@ -961,22 +964,11 @@ class Diarrhoea(Module):
         ):
             # Danger signs and hospitalized --> In-patient
             event = HSI_Diarrhoea_Treatment_Inpatient(person_id=patient_id, module=self)
-            options = {
-                "priority": 0,
-                "topen": self.sim.date,
-                "tclose": None,
-            }
-            event_info.append((event, options))
         else:
             # No danger signs or otherwise not hospitalized --> Out-patient
             event = HSI_Diarrhoea_Treatment_Outpatient(person_id=patient_id, module=self)
-            options = {
-                "priority": 0,
-                "topen": self.sim.date,
-                "tclose": None,
-            }
-            event_info.append((event, options))
-        return event_info, {}
+        self.healthsystem.schedule_hsi_event(event, **scheduling_options)
+        return {}
 
 
 class Models:

@@ -7,11 +7,12 @@ Limitations to note:
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Tuple
+from typing import List, NamedTuple
 
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -577,8 +578,7 @@ class BladderCancer(Module):
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
         **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
-        event_info = []
+    ) -> IndividualPropertyUpdates:
         # Only investigate if the patient is not a child
         if patient_details.age_years > 5:
             # Begin investigation if symptoms are present.
@@ -586,24 +586,18 @@ class BladderCancer(Module):
                 event = HSI_BladderCancer_Investigation_Following_Blood_Urine(
                     person_id=patient_id, module=self
                 )
-                options = {
-                    "priority": 0,
-                    "topen": self.sim.date,
-                    "tclose": None,
-                }
-                event_info.append((event, options))
+                self.healthsystem.schedule_hsi_event(
+                    event, topen=self.sim.date, priority=0
+                )
 
             if "pelvic_pain" in symptoms:
                 event = HSI_BladderCancer_Investigation_Following_pelvic_pain(
                     person_id=patient_id, module=self
                 )
-                options = {
-                    "priority": 0,
-                    "topen": self.sim.date,
-                    "tclose": None,
-                }
-                event_info.append((event, options))
-        return event_info, {}
+                self.healthsystem.schedule_hsi_event(
+                    event, topen=self.sim.date, priority=0
+                )
+        return {}
 
 
 # ---------------------------------------------------------------------------------------------------------

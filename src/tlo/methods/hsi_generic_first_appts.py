@@ -126,7 +126,6 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
         """
         # Make top-level reads of information, to avoid repeat accesses.
         modules: OrderedDict[str, "Module"] = self.sim.modules
-        schedule_hsi = self.healthcare_system.schedule_hsi_event
         symptoms = modules["SymptomManager"].has_what(self.target)
 
         # Dynamically create immutable container with the target's details stored.
@@ -139,7 +138,7 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
         module_order = self._module_order(modules.keys())
         for name in module_order:
             module = modules[name]
-            event_info, df_updates = getattr(module, self.MODULE_METHOD_ON_APPLY)(
+            df_updates = getattr(module, self.MODULE_METHOD_ON_APPLY)(
                 patient_id=self.target,
                 patient_details=patient_details,
                 symptoms=symptoms,
@@ -149,11 +148,6 @@ class HSI_BaseGenericFirstAppt(HSI_Event, IndividualScopeEventMixin):
                 treatment_id=self.TREATMENT_ID,
                 random_state=self.module.rng,
             )
-            # Schedule any requested updates
-            for info in event_info:
-                event = info[0]
-                options = info[1]
-                schedule_hsi(event, **options)
             # Record any requested DataFrame updates, but do not implement yet
             # NOTE: |= syntax is only available in Python >=3.9
             proposed_df_updates = {**proposed_df_updates, **df_updates}

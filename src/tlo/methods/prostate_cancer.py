@@ -6,11 +6,12 @@ Limitations to note:
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Tuple
+from typing import List, NamedTuple
 
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -584,33 +585,26 @@ class ProstateCancer(Module):
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
         **kwargs
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
-        event_info = []
+    ) -> IndividualPropertyUpdates:
         # If the patient is not a child, and symptoms are indicative,
         # begin investigation for prostate cancer
+        scheduling_options = {
+            "priority": 0,
+            "topen": self.sim.date,
+        }
         if patient_details.age_years > 5:
             if "urinary" in symptoms:
                 event = HSI_ProstateCancer_Investigation_Following_Urinary_Symptoms(
                     person_id=patient_id, module=self
                 )
-                options = {
-                    "priority": 0,
-                    "topen": self.sim.date,
-                    "tclose": None,
-                }
-                event_info.append((event, options))
+                self.healthsystem.schedule_hsi_event(event, **scheduling_options)
 
             if "pelvic_pain" in symptoms:
                 event = HSI_ProstateCancer_Investigation_Following_Pelvic_Pain(
                     person_id=patient_id, module=self
                 )
-                options = {
-                    "priority": 0,
-                    "topen": self.sim.date,
-                    "tclose": None,
-                }
-                event_info.append((event, options))
-        return event_info, {}
+                self.healthsystem.schedule_hsi_event(event, **scheduling_options)
+        return {}
 
 
 # ---------------------------------------------------------------------------------------------------------

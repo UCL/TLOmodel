@@ -14,12 +14,13 @@ And:
 import math
 from itertools import combinations
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Tuple
+from typing import List, NamedTuple
 
 import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -810,18 +811,16 @@ class CardioMetabolicDisorders(Module):
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        **kwargs
+    ) -> IndividualPropertyUpdates:
         # This is called by the HSI generic first appts module whenever a
         # person attends an appointment and determines if the person will
         # be tested for one or more conditions.
         # A maximum of one instance of `HSI_CardioMetabolicDisorders_Investigations`
         # is created for the person, during which multiple conditions can
         # be investigated.
-        event_info = []
-
         if patient_details.age_years <= 5:
-            return event_info, {}
+            return {}
 
         # The list of conditions that will be investigated in follow-up HSI
         conditions_to_investigate = []
@@ -866,13 +865,8 @@ class CardioMetabolicDisorders(Module):
                 conditions_to_investigate=conditions_to_investigate,
                 has_any_cmd_symptom=has_any_cmd_symptom,
             )
-            options = {
-                "priority": 0,
-                "topen": self.sim.date,
-                "tclose": None,
-            }
-            event_info.append((event, options))
-        return event_info, {}
+            self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=0)
+        return {}
 
     def do_at_generic_first_appt_emergency(
         self,
@@ -880,7 +874,7 @@ class CardioMetabolicDisorders(Module):
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
         **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+    ) -> IndividualPropertyUpdates:
         # This is called by the HSI generic first appts module whenever
         # a person attends an emergency appointment and determines if they
         # will receive emergency care based on the duration of time since
@@ -888,8 +882,6 @@ class CardioMetabolicDisorders(Module):
         # `HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment`
         # is created for the person, during which multiple events can be
         # investigated.
-        event_info = []
-
         ev_to_investigate = []
         for ev in self.events:
             # If the person has symptoms of damage from within the last 3 days,
@@ -905,16 +897,12 @@ class CardioMetabolicDisorders(Module):
 
         if ev_to_investigate:
             event = HSI_CardioMetabolicDisorders_SeeksEmergencyCareAndGetsTreatment(
-                    module=self,
-                    person_id=patient_id,
-                    events_to_investigate=ev_to_investigate,
-                )
-            options = {
-                "priority": 1,
-                "topen": self.sim.date,
-            }
-            event_info.append((event, options))
-        return event_info, {}
+                module=self,
+                person_id=patient_id,
+                events_to_investigate=ev_to_investigate,
+            )
+            self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=1)
+        return {}
 
 
 class Tracker:
