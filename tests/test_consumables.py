@@ -96,7 +96,7 @@ def test_unrecognised_item_code_is_recorded(seed):
     assert cons._not_recognised_item_codes  # Some item_codes recorded as not recognised.
 
     # Check warning is issued at end of simulation
-    with pytest.warns(None) as recorded_warnings:
+    with pytest.warns(UserWarning) as recorded_warnings:
         cons.on_simulation_end()
 
     assert any_warnings_about_item_code(recorded_warnings)
@@ -479,7 +479,7 @@ def test_check_format_of_consumables_file():
 
 
 @pytest.mark.slow
-def test_every_declared_consumable_for_every_possible_hsi_using_actual_data():
+def test_every_declared_consumable_for_every_possible_hsi_using_actual_data(recwarn):
     """Check that every item_code that is declared can be requested from a person at every district and facility_level.
     """
 
@@ -487,27 +487,26 @@ def test_every_declared_consumable_for_every_possible_hsi_using_actual_data():
     hs = sim.modules['HealthSystem']
     item_codes = hs.consumables.item_codes
 
-    with pytest.warns(None) as recorded_warnings:
-        for month in range(1, 13):
-            sim.date = Date(2010, month, 1)
-            hs.consumables._refresh_availability_of_consumables(date=sim.date)
+    for month in range(1, 13):
+        sim.date = Date(2010, month, 1)
+        hs.consumables._refresh_availability_of_consumables(date=sim.date)
 
-            for _district in sim.modules['Demography'].PROPERTIES['district_of_residence'].categories:
-                # Change the district of person 0 (for whom the HSI is created.)
-                sim.population.props.at[0, 'district_of_residence'] = _district
-                for _facility_id in fac_ids:
-                    hsi_event = get_dummy_hsi_event_instance(
-                        module=sim.modules['DummyModule'],
-                        facility_id=_facility_id
-                    )
-                    for _item_code in item_codes:
-                        hsi_event.get_consumables(item_codes=_item_code)
+        for _district in sim.modules['Demography'].PROPERTIES['district_of_residence'].categories:
+            # Change the district of person 0 (for whom the HSI is created.)
+            sim.population.props.at[0, 'district_of_residence'] = _district
+            for _facility_id in fac_ids:
+                hsi_event = get_dummy_hsi_event_instance(
+                    module=sim.modules['DummyModule'],
+                    facility_id=_facility_id
+                )
+                for _item_code in item_codes:
+                    hsi_event.get_consumables(item_codes=_item_code)
 
-        sim.modules['HealthSystem'].on_simulation_end()
+    sim.modules['HealthSystem'].on_simulation_end()
 
     # Check that no warnings raised or item_codes recorded as being not recogised.
     assert not sim.modules['HealthSystem'].consumables._not_recognised_item_codes
-    assert not any_warnings_about_item_code(recorded_warnings)
+    assert not any_warnings_about_item_code(recwarn)
 
 
 def test_get_item_code_from_item_name():
