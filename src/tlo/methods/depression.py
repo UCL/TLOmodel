@@ -138,6 +138,8 @@ class Depression(Module):
 
         'rr_depr_agege60': Parameter(Types.REAL, 'Relative rate of depression associated with age > 60'),
 
+        'rr_depr_hiv': Parameter(Types.REAL, 'Relative rate of depression associated with HIV infection'),
+
         'depr_resolution_rates': Parameter(
             Types.LIST,
             'Risk of depression resolving in 3 months if no chronic conditions and no treatments.'
@@ -220,11 +222,13 @@ class Depression(Module):
         )
         p = self.parameters
 
-        # Build the Linear Models:
+        # Build the Linear Models
+
+        # ----- Initialisation of population -----
         self.linearModels = dict()
-        self.linearModels['Depression_At_Population_Initialisation'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            self.parameters['init_pr_depr_m_age1519_no_cc_wealth123'],
+
+        # risk of depression in initial population
+        predictors = [
             Predictor('de_cc').when(True, p['init_rp_depr_cc']),
             Predictor('li_wealth').when('.isin([4,5])', p['init_rp_depr_wealth45']),
             Predictor().when('(sex=="F") & de_recently_pregnant', p['init_rp_depr_f_rec_preg']),
@@ -237,44 +241,63 @@ class Depression(Module):
             .when('.between(0, 14)', 0)
             .when('.between(15, 19)', 1.0)
             .when('.between(20, 59)', p['init_rp_depr_age2059'])
-            .when('>= 60', p['init_rp_depr_agege60'])
+            .when('>= 60', p['init_rp_depr_agege60']),
+        ]
+
+        conditional_predictors = [
+            Predictor().when(
+                'hv_inf & hv_diagnosed',
+                p["rr_depr_hiv"]),
+        ] if "Hiv" in self.sim.modules else []
+
+        self.linearModels["Depression_At_Population_Initialisation"] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['init_pr_depr_m_age1519_no_cc_wealth123'],
+            *(predictors + conditional_predictors)
         )
 
+        # risk of ever having depression in initial population
         self.linearModels['Depression_Ever_At_Population_Initialisation_Males'] = LinearModel.multiplicative(
             Predictor('age_years').apply(
                 lambda x: (x if x > 15 else 0) * self.parameters['init_rp_ever_depr_per_year_older_m']
             )
         )
 
+        # risk of ever having depression in initial population (female)
         self.linearModels['Depression_Ever_At_Population_Initialisation_Females'] = LinearModel.multiplicative(
             Predictor('age_years').apply(lambda x: (x if x > 15 else 0) * p['init_rp_ever_depr_per_year_older_f'])
         )
 
+        # risk of ever having diagnosed depression in initial population
         self.linearModels['Depression_Ever_Diagnosed_At_Population_Initialisation'] = LinearModel.multiplicative(
             Predictor('de_ever_depr').when(True, p['init_pr_ever_diagnosed_depression'])
                                      .otherwise(0.0)
         )
 
+        # risk of currently using anti-depressants in initial population
         self.linearModels['Using_AntiDepressants_Initialisation'] = LinearModel.multiplicative(
             Predictor('de_depr').when(True, p['init_pr_antidepr_curr_depr']),
             Predictor().when('~de_depr & de_ever_diagnosed_depression', p['init_rp_antidepr_ever_depr_not_curr'])
         )
 
+        # risk of ever having talking therapy in initial population
         self.linearModels['Ever_Talking_Therapy_Initialisation'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['init_pr_ever_talking_therapy_if_diagnosed'],
             Predictor('de_ever_diagnosed_depression').when(False, 0)
         )
 
+        # risk of ever having self-harmed in initial population
         self.linearModels['Ever_Self_Harmed_Initialisation'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['init_pr_ever_self_harmed_if_ever_depr'],
             Predictor('de_ever_depr').when(False, 0)
         )
 
-        self.linearModels['Risk_of_Depression_Onset_per3mo'] = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            p['base_3m_prob_depr'],
+        # ----- Recurring events -----
+
+        # risk of depression every 3 months
+        predictors = [
             Predictor('de_cc').when(True, p['rr_depr_cc']),
             Predictor('age_years', conditions_are_mutually_exclusive=True)
             .when('.between(0, 14)', 0)
@@ -284,9 +307,26 @@ class Depression(Module):
             Predictor('sex').when('F', p['rr_depr_female']),
             Predictor('de_recently_pregnant').when(True, p['rr_depr_pregnancy']),
             Predictor('de_ever_depr').when(True, p['rr_depr_prev_epis']),
-            Predictor('de_on_antidepr').when(True, p['rr_depr_on_antidepr'])
+            Predictor('de_on_antidepr').when(True, p['rr_depr_on_antidepr']),
+        ]
+
+        conditional_predictors = [
+            Predictor('hv_inf').when(True, p['rr_depr_hiv']),
+        ] if "Hiv" in self.sim.modules else []
+
+        conditional_predictors = [
+            Predictor().when(
+                'hv_inf & hv_diagnosed',
+                p["rr_depr_hiv"]),
+        ] if "Hiv" in self.sim.modules else []
+
+        self.linearModels["Risk_of_Depression_Onset_per3mo"] = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            p['base_3m_prob_depr'],
+            *(predictors + conditional_predictors)
         )
 
+        # risk of depression resolution every 3 months
         self.linearModels['Risk_of_Depression_Resolution_per3mo'] = LinearModel.multiplicative(
             Predictor('de_intrinsic_3mo_risk_of_depr_resolution').apply(lambda x: x),
             Predictor('de_cc').when(True, p['rr_resol_depr_cc']),
@@ -294,16 +334,19 @@ class Depression(Module):
             Predictor('de_ever_talk_ther').when(True, p['rr_resol_depr_current_talk_ther'])
         )
 
+        # risk of stopping anti-depressants every 3 months
         self.linearModels['Risk_of_Stopping_Antidepressants_per3mo'] = LinearModel.multiplicative(
             Predictor('de_depr').when(True, p['prob_3m_default_antidepr'])
                                 .when(False, p['prob_3m_stop_antidepr'])
         )
 
+        # risk of self-harm every 3 months
         self.linearModels['Risk_of_SelfHarm_per3mo'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['prob_3m_selfharm_depr']
         )
 
+        # risk of suicide every 3 months
         self.linearModels['Risk_of_Suicide_per3mo'] = LinearModel(
             LinearModelType.MULTIPLICATIVE,
             p['prob_3m_suicide_depr_m'],

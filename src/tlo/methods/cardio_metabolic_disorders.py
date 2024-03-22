@@ -513,7 +513,7 @@ class CardioMetabolicDisorders(Module):
         # Hypertension is the only condition for which we assume some community-based testing occurs; build LM based on
         # age / sex
         self.lms_testing['hypertension'] = self.build_linear_model('hypertension', self.parameters[
-                'interval_between_polls'], lm_type='testing')
+            'interval_between_polls'], lm_type='testing')
 
         for event in self.events:
             self.lms_event_onset[event] = self.build_linear_model(event, self.parameters['interval_between_polls'],
@@ -594,9 +594,7 @@ class CardioMetabolicDisorders(Module):
         # LinearModel expects native python types - if it's numpy type, convert it
         baseline_annual_probability = float(baseline_annual_probability)
 
-        linearmodel = LinearModel(
-            LinearModelType.MULTIPLICATIVE,
-            baseline_annual_probability,
+        predictors = [
             Predictor('sex').when('M', p['rr_male']),
             Predictor(
                 'age_years',
@@ -689,6 +687,17 @@ class CardioMetabolicDisorders(Module):
                 'rr_chronic_ischemic_heart_disease_on_medication']),
             Predictor('nc_ever_stroke_on_medication').when(True, p['rr_stroke_on_medication']),
             Predictor('nc_ever_heart_attack_on_medication').when(True, p['rr_heart_attack_on_medication'])
+        ]
+
+        conditional_predictors = [
+            Predictor().when('hv_inf & '
+                             '(hv_art != "on_VL_suppressed")', p['rr_hiv']),
+        ] if "Hiv" in self.sim.modules else []
+
+        linearmodel = LinearModel(
+            LinearModelType.MULTIPLICATIVE,
+            baseline_annual_probability,
+            *(predictors + conditional_predictors)
         )
 
         return linearmodel
@@ -814,7 +823,7 @@ class CardioMetabolicDisorders(Module):
         person = df.loc[person_id, df.columns[df.columns.str.startswith('nc_')]]
         symptoms = self.sim.modules['SymptomManager'].has_what(person_id=person_id)
 
-        conditions_to_investigate = []   # The list of conditions that will be investigated in follow-up HSI
+        conditions_to_investigate = []  # The list of conditions that will be investigated in follow-up HSI
         has_any_cmd_symptom = False  # Marker for whether the person has any symptoms of interest
 
         # Determine if there are any conditions that should be investigated:
@@ -848,7 +857,7 @@ class CardioMetabolicDisorders(Module):
                 priority=0,
                 topen=self.sim.date,
                 tclose=None
-              )
+            )
 
     def determine_if_will_be_investigated_events(self, person_id):
         """
@@ -865,7 +874,7 @@ class CardioMetabolicDisorders(Module):
         for ev in self.events:
             # If the person has symptoms of damage from within the last 3 days, schedule them for emergency care
             if f'{ev}_damage' in symptoms and \
-                    ((self.sim.date - self.sim.population.props.at[person_id, f'nc_{ev}_date_last_event']).days <= 3):
+                ((self.sim.date - self.sim.population.props.at[person_id, f'nc_{ev}_date_last_event']).days <= 3):
                 ev_to_investigate.append(ev)
 
         if ev_to_investigate:
@@ -1593,7 +1602,7 @@ class HSI_CardioMetabolicDisorders_StartWeightLossAndMedication(HSI_Event, Indiv
             # NB. With a probability of 1.0, this will keep occurring, and the person will never give up coming back to
             # pick up medication.
             if (m.rng.random_sample() <
-                    m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
+                m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=self,
                     topen=self.sim.date + pd.DateOffset(days=1),
@@ -1658,7 +1667,7 @@ class HSI_CardioMetabolicDisorders_Refill_Medication(HSI_Event, IndividualScopeE
             # NB. With a probability of 1.0, this will keep occurring, and the person will never give-up coming back to
             # pick-up medication.
             if (m.rng.random_sample() <
-                    m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
+                m.parameters[f'{self.condition}_hsi'].get('pr_seeking_further_appt_if_drug_not_available')):
                 self.sim.modules['HealthSystem'].schedule_hsi_event(
                     hsi_event=self,
                     topen=self.sim.date + pd.DateOffset(days=1),
