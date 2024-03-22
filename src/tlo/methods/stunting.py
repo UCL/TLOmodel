@@ -11,13 +11,14 @@ if they have any stunting they are provided with an intervention - `HSI_Stunting
 
 from collections import namedtuple
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Tuple, Union
+from typing import NamedTuple, Union
 
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -285,12 +286,10 @@ class Stunting(Module):
         patient_id: int,
         patient_details: NamedTuple = None,
         **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+    ) -> IndividualPropertyUpdates:
         # This is called by the a generic HSI event for every child aged
         # less than 5 years.
         # It assesses stunting and schedules an HSI as needed.
-        event_info = []
-
         is_stunted = patient_details.un_HAZ_category in ('HAZ<-3', '-3<=HAZ<-2')
         p_stunting_diagnosed = self.parameters['prob_stunting_diagnosed_at_generic_appt']
 
@@ -308,12 +307,12 @@ class Stunting(Module):
                 event = HSI_Stunting_ComplementaryFeeding(
                     module=self, person_id=patient_id
                 )
-                options = {
-                    "priority": 2,  # <-- lower priority that for wasting and most other HSI
-                    "topen": self.sim.date,
-                }
-                event_info.append((event, options))
-        return event_info, {}
+                self.healthsystem.schedule_hsi_event(
+                    event,
+                    priority=2,  # <-- lower priority that for wasting and most other HSI
+                    topen=self.sim.date,
+                )
+        return {}
 
 class Models:
     def __init__(self, module):

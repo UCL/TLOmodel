@@ -2,12 +2,13 @@
 This is the Depression Module.
 """
 from pathlib import Path
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple
+from typing import List, NamedTuple
 
 import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import DiagnosisFunction, IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -555,17 +556,20 @@ class Depression(Module):
             hsi_event.TREATMENT_ID,
             self.sim.population.props.at[person_id, "de_ever_diagnosed_depression"],
         ):
-            self.do_when_suspected_depression(
-                person_id=person_id, hsi_event=hsi_event, add_to_queue_immediately=True
+            df_updates = self.do_when_suspected_depression(
+                person_id=person_id, hsi_event=hsi_event
             )
+            self.sim.population.props.loc[person_id, df_updates.keys()] = (
+                df_updates.values()
+            )
+        return
 
     def do_when_suspected_depression(
         self,
         person_id: int,
-        diagnosis_function: Callable[[str, bool, bool], Any] = None,
+        diagnosis_function: DiagnosisFunction = None,
         hsi_event: HSI_Event = None,
-        add_to_queue_immediately: bool = True,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+    ) -> IndividualPropertyUpdates:
         """
         This is called by any HSI event when depression is suspected or otherwise investigated.
 
@@ -579,12 +583,8 @@ class Depression(Module):
         :param person_id: Patient's row index in the population DataFrame.
         :param diagnosis_function: A function capable of running diagnosis checks on the population.
         :param hsi_event: The HSI_Event that triggered this call.
-        :param add_to_queue_immediately: If True, any events and DataFrame updates that this
-        function wants to implement will be done at the conclusion of this function. If False,
-        the HSI_Events and their scheduling options will only be returned as output arguments.
         :returns: Values as per the output of do_at_generic_first_appt().
         """
-        event_info = []
         df_updates = {}
 
         if diagnosis_function is None:
@@ -610,54 +610,29 @@ class Depression(Module):
             scheduling_options = {"priority": 0, "topen": self.sim.date}
             # Provide talking therapy
             # (this can occur even if the person has already had talking therapy before)
-            event_info.append(
-                (
-                    HSI_Depression_TalkingTherapy(module=self, person_id=person_id),
-                    scheduling_options,
-                )
+            self.healthsystem.schedule_hsi_event(
+                HSI_Depression_TalkingTherapy(module=self, person_id=person_id),
+                **scheduling_options,
             )
             # Initiate person on anti-depressants
             # (at the same facility level as the HSI event that is calling)
-            event_info.append(
-                (
-                    HSI_Depression_Start_Antidepressant(
-                        module=self, person_id=person_id
-                    ),
-                    scheduling_options,
-                )
+            self.healthsystem.schedule_hsi_event(
+                HSI_Depression_Start_Antidepressant(module=self, person_id=person_id),
+                **scheduling_options,
             )
-
-        if add_to_queue_immediately:
-            # Schedule any events and population DataFrame changes immediately.
-            # Occurs when this check is triggered by another HSI that is running,
-            # outside of scheduling generic first appointments.
-            for event_and_opts in event_info:
-                self.sim.modules["HealthSystem"].schedule_hsi_event(
-                    hsi_event=event_and_opts[0], **event_and_opts[1]
-                )
-            self.sim.population.props.loc[person_id, df_updates.keys()] = (
-                df_updates.values()
-            )
-        return event_info, df_updates
+        return df_updates
 
     def do_at_generic_first_appt(
         self,
-        patient_id: int,
         patient_details: NamedTuple = None,
-        symptoms: List[str] = None,
-        diagnosis_function: Callable[[str, bool, bool], Any] = None,
-        treatment_id: str = None,
         **kwargs
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+    ) -> IndividualPropertyUpdates:
         if patient_details.age_years <= 5:
-            return [], {}
+            return {}
         else:
             return self.do_at_generic_first_appt_emergency(
-                patient_id=patient_id,
                 patient_details=patient_details,
-                symptoms=symptoms,
-                diagnosis_function=diagnosis_function,
-                treatment_id=treatment_id,
+                **kwargs,
             )
 
     def do_at_generic_first_appt_emergency(
@@ -665,22 +640,18 @@ class Depression(Module):
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        diagnosis_function: Callable[[str, bool, bool], Any] = None,
+        diagnosis_function: DiagnosisFunction = None,
         treatment_id: str = None,
         **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
-        event_info = []
-        df_updates = {}
-
+    ) -> IndividualPropertyUpdates:
         if self._check_for_suspected_depression(
             symptoms, treatment_id, patient_details.de_ever_diagnosed_depression
         ):
-            event_info, df_updates = self.do_when_suspected_depression(
+            return self.do_when_suspected_depression(
                 person_id=patient_id,
                 diagnosis_function=diagnosis_function,
-                add_to_queue_immediately=False,
             )
-        return event_info, df_updates
+        return {}
 
 
 # ---------------------------------------------------------------------------------------------------------

@@ -6,11 +6,12 @@ Limitations to note:
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Tuple
+from typing import List, NamedTuple
 
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -556,20 +557,14 @@ class OtherAdultCancer(Module):
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
         **kwargs
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
-        event_info = []
+    ) -> IndividualPropertyUpdates:
         if patient_details.age_years > 5 and "early_other_adult_ca_symptom" in symptoms:
             event = HSI_OtherAdultCancer_Investigation_Following_early_other_adult_ca_symptom(
                 person_id=patient_id,
                 module=self,
             )
-            options = {
-                "priority": 0,
-                "topen": self.sim.date,
-                "tclose": None,
-            }
-            event_info.append((event, options))
-        return event_info, {}
+            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+        return {}
 
 
 # ---------------------------------------------------------------------------------------------------------

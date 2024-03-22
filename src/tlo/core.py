@@ -7,7 +7,7 @@ disease modules.
 from __future__ import annotations
 import json
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Set, Tuple, TypeAlias, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Set, TypeAlias, Union
 
 import numpy as np
 import pandas as pd
@@ -15,7 +15,8 @@ import pandas as pd
 if TYPE_CHECKING:
     from numpy.random import RandomState
 
-    from tlo.methods.hsi_event import HSI_Event
+    from tlo.simulation import Simulation
+    from tlo.methods.healthsystem import HealthSystem
 
 DiagnosisFunction: TypeAlias = Callable[[str, bool, bool], Any]
 ConsumablesChecker: TypeAlias = Callable[
@@ -246,6 +247,10 @@ class Module:
     # parameters created from the PARAMETERS specification.
     __slots__ = ('name', 'parameters', 'rng', 'sim')
 
+    @property
+    def healthsystem(self) -> HealthSystem:
+        return self.sim.modules["HealthSystem"]
+
     def __init__(self, name=None):
         """Construct a new disease module ready to be included in a simulation.
 
@@ -257,7 +262,7 @@ class Module:
         self.parameters = {}
         self.rng: Optional[np.random.RandomState] = None
         self.name = name or self.__class__.__name__
-        self.sim = None
+        self.sim: Simulation = None
 
     def load_parameters_from_dataframe(self, resource: pd.DataFrame):
         """Automatically load parameters from resource dataframe, updating the class parameter dictionary
@@ -391,9 +396,9 @@ class Module:
         facility_level: Optional[str] = None,
         treatment_id: Optional[str] = None,
         random_state: Optional[RandomState] = None,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], IndividualPropertyUpdates]:
+    ) -> IndividualPropertyUpdates:
         """
-        Actions to be take during a NON-emergency generic HSI.
+        Actions to be take during a NON-emergency generic HSI. TODO: UPDATE BOTH NOW RETURN TUPES HAVE BEEN CHANGED
 
         Derived classes should overwrite this method so that they are
         compatible with the HealthSystem module, and can schedule HSI
@@ -442,7 +447,7 @@ class Module:
         facility_level: Optional[str] = None,
         treatment_id: Optional[str] = None,
         random_state: Optional[RandomState] = None,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], IndividualPropertyUpdates]:
+    ) -> IndividualPropertyUpdates:
         """
         Actions to be take during an EMERGENCY generic HSI.
         Call signature and return values are identical to the

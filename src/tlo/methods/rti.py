@@ -3,12 +3,13 @@ Road traffic injury module.
 
 """
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Tuple
+from typing import List, NamedTuple
 
 import numpy as np
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -2490,12 +2491,11 @@ class RTI(Module):
         self,
         patient_id: int,
         patient_details: NamedTuple = None,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+    ) -> IndividualPropertyUpdates:
         """
         Shared logic steps that are used by the RTI module when a generic HSI
         event is to be scheduled.
         """
-        event_info = []
         df_updates = {}
         # Things to do upon a person presenting at a Non-Emergency Generic
         # HSI if they have an injury.
@@ -2509,13 +2509,12 @@ class RTI(Module):
             if set(RTI.INJURIES_REQ_IMAGING).intersection(set(persons_injuries)):
                 if patient_details.is_alive:
                     event = HSI_RTI_Imaging_Event(module=self, person_id=patient_id)
-                    options = {
-                        "priority": 0,
-                        "topen": self.sim.date + DateOffset(days=1),
-                        "tclose": self.sim.date + DateOffset(days=15),
-                    }
-                    event_info.append((event, options))
-
+                    self.healthsystem.schedule_hsi_event(
+                        event,
+                        priority=0,
+                        topen=self.sim.date + DateOffset(days=1),
+                        tclose=self.sim.date + DateOffset(days=15),
+                    )
             df_updates["rt_diagnosed"] = True
 
             # The injured person has been diagnosed in A&E and needs to progress further
@@ -2543,19 +2542,20 @@ class RTI(Module):
             # Using counts condition to stop spurious symptoms progressing people through the model
             if counts > 0:
                 event = HSI_RTI_Medical_Intervention(module=self, person_id=patient_id)
-                options = {"priority": 0, "topen": self.sim.date}
-                event_info.append((event, options))
+                self.healthsystem.schedule_hsi_event(
+                    event, priority=0, topen=self.sim.date,
+                )
 
             # We now check if they need shock treatment
             if patient_details.rt_in_shock and patient_details.is_alive:
                 event = HSI_RTI_Shock_Treatment(module=self, person_id=patient_id)
-                options = {
-                    "priority": 0,
-                    "topen": self.sim.date + DateOffset(days=1),
-                    "tclose": self.sim.date + DateOffset(days=15),
-                }
-                event_info.append((event, options))
-        return event_info, df_updates
+                self.healthsystem.schedule_hsi_event(
+                    event,
+                    priority=0,
+                    topen=self.sim.date + DateOffset(days=1),
+                    tclose=self.sim.date + DateOffset(days=15),
+                )
+        return df_updates
 
     def do_at_generic_first_appt(
         self,
@@ -2563,10 +2563,12 @@ class RTI(Module):
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
         **kwargs
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+    ) -> IndividualPropertyUpdates:
         if "injury" in symptoms:
-            return self._common_first_appt_steps(patient_id=patient_id, patient_details=patient_details)
-        return [], {}
+            return self._common_first_appt_steps(
+                patient_id=patient_id, patient_details=patient_details
+            )
+        return {}
 
     def do_at_generic_first_appt_emergency(
         self,
@@ -2574,7 +2576,7 @@ class RTI(Module):
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
         **kwargs
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+    ) -> IndividualPropertyUpdates:
         # Same process is followed for emergency and non emergency appointments, except the
         # initial symptom check
         if "severe_trauma" in symptoms:
@@ -2582,7 +2584,7 @@ class RTI(Module):
                 patient_id=patient_id,
                 patient_details=patient_details
             )
-        return [], {}
+        return {}
 
 
 # ---------------------------------------------------------------------------------------------------------

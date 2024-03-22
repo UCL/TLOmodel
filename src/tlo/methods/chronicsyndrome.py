@@ -1,9 +1,10 @@
-from typing import Any, Dict, List, Tuple
+from typing import List
 
 import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.methods import Metadata
 from tlo.methods.causes import Cause
@@ -282,21 +283,15 @@ class ChronicSyndrome(Module):
         patient_id: int,
         symptoms: List[str] = None,
         **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+    ) -> IndividualPropertyUpdates:
         """Example for CHRONIC SYNDROME"""
-        event_info = []
-
-        if 'craving_sandwiches' in symptoms:
+        if "craving_sandwiches" in symptoms:
             event = HSI_ChronicSyndrome_SeeksEmergencyCareAndGetsTreatment(
                 module=self,
                 person_id=patient_id,
             )
-            options = {
-                "priority": 1,
-                "topen": self.sim.date,
-            }
-            event_info.append((event, options))
-        return event_info, {}
+            self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=1)
+        return {}
 
 class ChronicSyndromeEvent(RegularEvent, PopulationScopeEventMixin):
 

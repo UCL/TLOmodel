@@ -6,11 +6,12 @@ including the malaria RDT using DxTest
 """
 
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Literal, NamedTuple, Tuple, Union
+from typing import List, Literal, NamedTuple, Union
 
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import DiagnosisFunction, IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, Predictor
 from tlo.methods import Metadata
@@ -666,7 +667,7 @@ class Malaria(Module):
     def check_if_fever_is_caused_by_malaria(
         self,
         true_malaria_infection_type: str,
-        diagnosis_function: Callable[[str], Any],
+        diagnosis_function: DiagnosisFunction,
         patient_id: int = None,
         fever_is_a_symptom: bool = True,
         patient_age: Union[int, float] = None,
@@ -709,12 +710,11 @@ class Malaria(Module):
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        diagnosis_function: Callable[[str, bool, bool], Any] = None,
+        diagnosis_function: DiagnosisFunction = None,
         facility_level: str = None,
         treatment_id: str = None,
         **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
-        event_info = []
+    ) -> IndividualPropertyUpdates:
         df_updates = {}
 
         malaria_associated_symptoms = {
@@ -742,40 +742,33 @@ class Malaria(Module):
                 df_updates["ma_dx_counter"] = patient_details.ma_dx_counter + 1
                 # df.at[person_id, "ma_dx_counter"] += 1
                 event = HSI_Malaria_Treatment_Complicated(person_id=patient_id, module=self)
-                options = {                    
-                    "priority": 0,
-                    "topen": self.sim.date,
-                    "tclose": None,
-                    }
-                event_info.append((event, options))
+                self.healthsystem.schedule_hsi_event(
+                    event, priority=0, topen=self.sim.date
+                )
 
             # return type 'clinical_malaria' includes asymptomatic infection
             elif malaria_test_result == "clinical_malaria":
                 df_updates["ma_dx_counter"] = patient_details.ma_dx_counter + 1
                 event = HSI_Malaria_Treatment(person_id=patient_id, module=self)
-                options = {
-                    "priority": 1,
-                    "topen": self.sim.date,
-                    "tclose": None,
-                }
-                event_info.append((event, options))
-        return event_info, df_updates
+                self.healthsystem.schedule_hsi_event(
+                    event, priority=1, topen=self.sim.date
+                )
+        return df_updates
 
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        diagnosis_function: Callable[[str, bool, bool], Any] = None,
+        diagnosis_function: DiagnosisFunction = None,
         facility_level: str = None,
         treatment_id: str = None,
         **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+    ) -> IndividualPropertyUpdates:
         # This is called for a person (of any age) that attends an
         # emergency generic HSI and has a fever.
         # (Quick diagnosis algorithm - just perfectly recognises the
         # symptoms of severe malaria.)
-        event_info = []
         df_updates = {}
 
         if 'severe_malaria' in symptoms:
@@ -799,12 +792,10 @@ class Malaria(Module):
                     event = HSI_Malaria_Treatment_Complicated(
                         person_id=patient_id, module=self,
                     )
-                    options = {
-                        "priority": 0,
-                        "topen": self.sim.date,
-                    }
-                    event_info.append((event, options))
-        return event_info, df_updates
+                    self.healthsystem.schedule_hsi_event(
+                        event, priority=0, tclose=self.sim.date
+                    )
+        return df_updates
 
 class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):
     """

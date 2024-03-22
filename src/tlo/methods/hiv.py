@@ -25,12 +25,13 @@ If PrEP is not available due to limitations in the HealthSystem, the person defa
 """
 
 import os
-from typing import Any, Dict, List, Tuple
+from typing import List
 
 import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata, demography, tb
@@ -1507,11 +1508,10 @@ class Hiv(Module):
         patient_id: int,
         symptoms: List[str] = None,
         **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+    ) -> IndividualPropertyUpdates:
         # 'Automatic' testing for HIV for everyone attending care with AIDS symptoms:
         #  - suppress the footprint (as it done as part of another appointment)
         #  - do not do referrals if the person is HIV negative (assumed not time for counselling etc).
-        event_info = []
         if "aids_symptoms" in symptoms:
             event = HSI_Hiv_TestAndRefer(
                 person_id=patient_id,
@@ -1520,13 +1520,8 @@ class Hiv(Module):
                 suppress_footprint=True,
                 do_not_refer_if_neg=True,
             )
-            options = {
-                "topen": self.sim.date,
-                "tclose": None,
-                "priority": 0,
-            }
-            event_info.append((event, options))
-        return event_info, {}
+            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+        return {}
 
 # ---------------------------------------------------------------------------
 #   Main Polling Event

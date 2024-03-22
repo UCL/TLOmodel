@@ -6,11 +6,12 @@ Limitations to note:
 """
 
 from pathlib import Path
-from typing import Any, Dict, List, NamedTuple, Tuple
+from typing import List, NamedTuple
 
 import pandas as pd
 
 from tlo import DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -566,8 +567,7 @@ class BreastCancer(Module):
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
         **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
-        event_info = []
+    ) -> IndividualPropertyUpdates:
         # If the patient is not a child and symptoms include breast
         # lump discernible
         if patient_details.age_years > 5 and "breast_lump_discernible" in symptoms:
@@ -575,13 +575,8 @@ class BreastCancer(Module):
                 person_id=patient_id,
                 module=self,
             )
-            options = {
-                "priority": 0,
-                "topen": self.sim.date,
-                "tclose": None,
-            }
-            event_info.append((event, options))
-        return event_info, {}
+            self.healthsystem.schedule_hsi_event(event, topen=self.sim.date, priority=0)
+        return {}
 
 
 # ---------------------------------------------------------------------------------------------------------

@@ -6,12 +6,13 @@ The write-up of these estimates is: Health-seeking behaviour estimates for adult
 
 """
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple
+from typing import List
 
 import numpy as np
 import pandas as pd
 
 from tlo import Date, DateOffset, Module, Parameter, Types
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import PopulationScopeEventMixin, Priority, RegularEvent
 from tlo.lm import LinearModel
 from tlo.methods import Metadata
@@ -20,9 +21,6 @@ from tlo.methods.hsi_generic_first_appts import (
     HSI_GenericEmergencyFirstAppt,
     HSI_GenericNonEmergencyFirstAppt,
 )
-
-if TYPE_CHECKING:
-    from tlo.methods.hsi_event import HSI_Event
 
 # ---------------------------------------------------------------------------------------------------------
 #   MODULE DEFINITIONS
@@ -260,19 +258,14 @@ class HealthSeekingBehaviour(Module):
         patient_id: int,
         symptoms: List[str] = None,
         **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
-        event_info = []
-        if 'spurious_emergency_symptom' in symptoms:
+    ) -> IndividualPropertyUpdates:
+        if "spurious_emergency_symptom" in symptoms:
             event = HSI_EmergencyCare_SpuriousSymptom(
-                module=self.sim.modules['HealthSeekingBehaviour'],
+                module=self.sim.modules["HealthSeekingBehaviour"],
                 person_id=patient_id,
             )
-            options = {
-                "priority": 0,
-                "topen": self.sim.date,
-            }
-            event_info.append((event, options))
-        return event_info, {}
+            self.healthsystem.schedule_hsi_event(event, priority=0, topen=self.sim.date)
+        return {}
 
 # ---------------------------------------------------------------------------------------------------------
 #   REGULAR POLLING EVENT

@@ -1,9 +1,10 @@
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Set, Tuple, Union
+from typing import Dict, List, NamedTuple
 
 import pandas as pd
 
 from tlo import Module, Parameter, Property, Types, logging
+from tlo.core import ConsumablesChecker, IndividualPropertyUpdates
 from tlo.analysis.utils import flatten_multi_index_series_into_dict_for_logging
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
@@ -12,9 +13,6 @@ from tlo.methods.causes import Cause
 from tlo.methods.hsi_event import HSI_Event
 from tlo.methods.symptommanager import Symptom
 from tlo.util import random_date
-
-if TYPE_CHECKING:
-    import numpy as np
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -212,14 +210,13 @@ class Copd(Module):
         patient_id: int,
         patient_details: NamedTuple,
         symptoms: List[str],
-        consumables_checker: Callable[[Dict[str, Any]], Union[Dict, bool]],
+        consumables_checker: ConsumablesChecker,
     ):
         """What to do when a person presents at the generic first appt HSI
         with a symptom of `breathless_severe` or `breathless_moderate`.
         * If severe --> give the inhaler and schedule the HSI for Treatment
         * Otherwise --> just give inhaler.
         """
-        event_info = []
         df_updates = {}
 
         if ('breathless_moderate' in symptoms) or ('breathless_severe' in symptoms):
@@ -229,33 +226,23 @@ class Copd(Module):
             ):
                 df_updates["ch_has_inhaler"] = True
 
-            if 'breathless_severe' in symptoms:
+            if "breathless_severe" in symptoms:
                 event = HSI_Copd_TreatmentOnSevereExacerbation(
                     module=self, person_id=patient_id
                 )
-                options = {
-                    "priority": 0,
-                    "topen": self.sim.date,
-                    "tclose": None,
-                }
-                event_info.append((event, options))
-
-        return event_info, df_updates
+                self.healthsystem.schedule_hsi_event(
+                    event, topen=self.sim.date, priority=0
+                )
+        return df_updates
 
     def do_at_generic_first_appt(
         self,
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        consumables_checker: Callable[
-            [
-                Union[None, "np.integer", int, List, Set, Dict],
-                Union[None, "np.integer", int, List, Set, Dict],
-            ],
-            Union[bool, Dict],
-        ] = None,
+        consumables_checker: ConsumablesChecker = None,
         **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+    ) -> IndividualPropertyUpdates:
         # Non-emergency appointments are only forwarded if
         # the patient is over 5 years old
         if patient_details.age_years > 5:
@@ -266,22 +253,16 @@ class Copd(Module):
                 consumables_checker=consumables_checker,
             )
         else:
-            return [], {}
+            return {}
 
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        consumables_checker: Callable[
-            [
-                Union[None, "np.integer", int, List, Set, Dict],
-                Union[None, "np.integer", int, List, Set, Dict],
-            ],
-            Union[bool, Dict],
-        ] = None,
+        consumables_checker: ConsumablesChecker = None,
         **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+    ) -> IndividualPropertyUpdates:
         return self._common_first_appt(
             patient_id=patient_id,
             patient_details=patient_details,

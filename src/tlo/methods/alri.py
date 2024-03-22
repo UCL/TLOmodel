@@ -30,6 +30,7 @@ import numpy as np
 import pandas as pd
 
 from tlo import DAYS_IN_YEAR, DateOffset, Module, Parameter, Property, Types, logging
+from tlo.core import IndividualPropertyUpdates
 from tlo.events import Event, IndividualScopeEventMixin, PopulationScopeEventMixin, RegularEvent
 from tlo.lm import LinearModel, LinearModelType, Predictor
 from tlo.methods import Metadata
@@ -1425,8 +1426,7 @@ class Alri(Module):
         symptoms: List[str] = None,
         facility_level: str = None,
         **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
-        event_info = []
+    ) -> IndividualPropertyUpdates:
         # Action taken when a child (under 5 years old) presents at a
         # generic appointment (emergency or non-emergency) with symptoms
         # of `cough` or `difficult_breathing`.
@@ -1439,18 +1439,18 @@ class Alri(Module):
             event = HSI_Alri_Treatment(
                 person_id=patient_id, module=self, facility_level=facility_level
             )
-            options = {
-                "topen": self.sim.date,
-                "tclose": self.sim.date + pd.DateOffset(days=1),
-                "priority": 1,
-            }
-            event_info.append((event, options))
-        return event_info, {}
+            self.healthsystem.schedule_hsi_event(
+                event,
+                topen=self.sim.date,
+                tclose=self.sim.date + pd.DateOffset(days=1),
+                priority=1,
+            )
+        return {}
 
     def do_at_generic_first_appt_emergency(
         self,
         **kwargs,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+    ) -> IndividualPropertyUpdates:
         # Emergency and non-emergency treatment is identical for alri
         return self.do_at_generic_first_appt(
             **kwargs,
