@@ -6,7 +6,7 @@ including the malaria RDT using DxTest
 """
 
 from pathlib import Path
-from typing import Any, Callable, Dict, List, NamedTuple, Tuple
+from typing import Any, Callable, Dict, List, Literal, NamedTuple, Tuple, Union
 
 import pandas as pd
 
@@ -663,16 +663,60 @@ class Malaria(Module):
 
         return health_values.loc[df.is_alive]  # returns the series
 
+    def check_if_fever_is_caused_by_malaria(
+        self,
+        true_malaria_infection_type: str,
+        diagnosis_function: Callable[[str], Any],
+        patient_id: int = None,
+        fever_is_a_symptom: bool = True,
+        patient_age: Union[int, float] = None,
+        facility_level: str = None,
+        treatment_id: str = None,
+    ) -> Literal["severe_malaria", "clinical_malaria", "negative_malaria_test"]:
+        """
+        Run by an HSI when an adult presents with fever.
+        Determine if the cause is malaria.
+
+        Optional arguments are used by the logger,
+        and are not needed in the diagnosis.
+        """
+        # Call the DxTest RDT to diagnose malaria
+        dx_result = diagnosis_function('malaria_rdt')
+
+        # Log the test: line-list of summary information about each test
+        logger.info(
+            key="rdt_log",
+            data={
+                "person_id": patient_id,
+                "age": patient_age,
+                "fever_present": fever_is_a_symptom,
+                "rdt_result": dx_result,
+                "facility_level": facility_level,
+                "called_by": treatment_id,
+            },
+        )
+
+        # Severe malaria infection always returns positive RDT
+        if true_malaria_infection_type == 'severe':
+            return 'severe_malaria'
+        elif dx_result and true_malaria_infection_type in ('clinical', 'asym'):
+            return 'clinical_malaria'
+        else:
+            return 'negative_malaria_test'
+
     def do_at_generic_first_appt(
         self,
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        diagnosis_function: Callable[[str, bool, bool], Any] = None,
         facility_level: str = None,
         treatment_id: str = None,
         **kwargs,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        event_info = []
+        df_updates = {}
+
         malaria_associated_symptoms = {
             "fever",
             "headache",
@@ -680,129 +724,91 @@ class Malaria(Module):
             "diarrhoea",
             "vomiting",
         }
-
-        df_updates = {}
-        events = []
-
-        if bool(set(symptoms) & malaria_associated_symptoms):
-            if patient_details.ma_tx == "none":
-                # Call the DxTest RDT to diagnose malaria
-                dx_result = diagnosis_fn("malaria_rdt")
-
-                # Log the test: line-list of summary information about each test
-                fever_present = "fever" in symptoms
-                person_details_for_test = {
-                    "person_id": patient_id,
-                    "age": patient_details.age_years,
-                    "fever_present": fever_present,
-                    "rdt_result": dx_result,
-                    "facility_level": facility_level,
-                    "called_by": treatment_id,
-                }
-                logger.info(key="rdt_log", data=person_details_for_test)
-
-                # get facility level from hsi_event
-
-                true_malaria_infection_type = patient_details.ma_inf_type
-
-                # severe malaria infection always returns positive RDT
-                if true_malaria_infection_type == "severe":
-                    malaria_test_result = "severe_malaria"
-
-                elif dx_result and true_malaria_infection_type in ("clinical", "asym"):
-                    malaria_test_result = "clinical_malaria"
-
-                else:
-                    malaria_test_result = "negative_malaria_test"
-
-                # Treat / refer based on diagnosis
-                if malaria_test_result == "severe_malaria":
-                    df_updates["ma_dx_counter"] = patient_details.ma_dx_counter + 1
-                    events.append(
-                        (
-                            HSI_Malaria_Treatment_Complicated(
-                                person_id=patient_id, module=self
-                            ),
-                            {"priority": 0, "topen": self.sim.date, "tclose": None},
-                        )
+        if (
+            bool(set(symptoms) & malaria_associated_symptoms)
+            and patient_details.ma_tx == "none"
+        ):
+            malaria_test_result = self.check_if_fever_is_caused_by_malaria(
+                true_malaria_infection_type=patient_details.ma_inf_type,
+                diagnosis_function=diagnosis_function,
+                patient_id=patient_id,
+                fever_is_a_symptom="fever" in symptoms,
+                patient_age=patient_details.age_years,
+                facility_level=facility_level,
+                treatment_id=treatment_id,
+            )
+            # Treat / refer based on diagnosis
+            if malaria_test_result == "severe_malaria":
+                df_updates["ma_dx_counter"] = patient_details.ma_dx_counter + 1
+                # df.at[person_id, "ma_dx_counter"] += 1
+                event = HSI_Malaria_Treatment_Complicated(person_id=patient_id, module=self)
+                options = {                    
+                    "priority": 0,
+                    "topen": self.sim.date,
+                    "tclose": None,
+                    }
+                event_info.append((event, options))
+            # return type 'clinical_malaria' includes asymptomatic infection
+            elif malaria_test_result == "clinical_malaria":
+                df_updates["ma_dx_counter"] = patient_details.ma_dx_counter + 1
+                event_info.append(
+                    (
+                        HSI_Malaria_Treatment(person_id=patient_id, module=self),
+                        {
+                            "priority": 1,
+                            "topen": self.sim.date,
+                            "tclose": None,
+                        },
                     )
-                # return type 'clinical_malaria' includes asymptomatic infection
-                elif malaria_test_result == "clinical_malaria":
-                    df_updates["ma_dx_counter"] = patient_details.ma_dx_counter + 1
-                    events.append(
-                        (
-                            HSI_Malaria_Treatment(person_id=patient_id, module=self),
-                            {
-                                "priority": 1,
-                                "topen": self.sim.date,
-                                "tclose": None,
-                            },
-                        )
-                    )
+                )
 
-        return events, df_updates
+        return event_info, df_updates
 
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        diagnosis_function: Callable[[str, bool, bool], Any] = None,
         facility_level: str = None,
         treatment_id: str = None,
         **kwargs,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        # This is called for a person (of any age) that attends an
+        # emergency generic HSI and has a fever.
+        # (Quick diagnosis algorithm - just perfectly recognises the
+        # symptoms of severe malaria.)
+        event_info = []
         df_updates = {}
-        events = []
 
-        if 'severe_malaria' in symptoms:
-            if patient_details.ma_tx == 'none':
+        if "severe_malaria" in symptoms:
+            if patient_details.ma_tx == "none":
                 # Check if malaria parasitaemia:
-                # Call the DxTest RDT to diagnose malaria
-                dx_result = diagnosis_fn("malaria_rdt")
+                malaria_test_result = self.check_if_fever_is_caused_by_malaria(
+                    true_malaria_infection_type=patient_details.ma_inf_type,
+                    diagnosis_function=diagnosis_function,
+                    patient_id=patient_id,
+                    fever_is_a_symptom="fever" in symptoms,
+                    patient_age=patient_details.age_years,
+                    facility_level=facility_level,
+                    treatment_id=treatment_id,
+                )
 
-                # Log the test: line-list of summary information about each test
-                fever_present = "fever" in symptoms
-                person_details_for_test = {
-                    "person_id": patient_id,
-                    "age": patient_details.age_years,
-                    "fever_present": fever_present,
-                    "rdt_result": dx_result,
-                    "facility_level": facility_level,
-                    "called_by": treatment_id,
-                }
-                logger.info(key="rdt_log", data=person_details_for_test)
-
-                # get facility level from hsi_event
-
-                true_malaria_infection_type = patient_details.ma_inf_type
-
-                # severe malaria infection always returns positive RDT
-                if true_malaria_infection_type == "severe":
-                    malaria_test_result = "severe_malaria"
-
-                elif dx_result and true_malaria_infection_type in ("clinical", "asym"):
-                    malaria_test_result = "clinical_malaria"
-
-                else:
-                    malaria_test_result = "negative_malaria_test"
                 # if any symptoms indicative of malaria and they have parasitaemia (would return a positive rdt)
-                if malaria_test_result in ('severe_malaria', 'clinical_malaria'):
-                    df_updates['ma_dx_counter'] = patient_details.ma_dx_counter + 1
-                    # Launch the HSI for treatment for Malaria, HSI_Malaria_Treatment will determine correct treatment
-                    events.append(
-                        (
-                            HSI_Malaria_Treatment_Complicated(
-                                person_id=patient_id, module=self
-                            ),
-                            {
-                                "priority": 0,
-                                "topen": self.sim.date,
-                            },
-                        )
-                    )
+                if malaria_test_result in ("severe_malaria", "clinical_malaria"):
+                    df_updates["ma_dx_counter"] = patient_details.ma_dx_counter + 1
 
-        return events, df_updates
+                    # Launch the HSI for treatment for Malaria, HSI_Malaria_Treatment will determine correct treatment
+                    event = HSI_Malaria_Treatment_Complicated(
+                        person_id=patient_id,
+                        module=self,
+                    )
+                    options = {
+                        "priority": 0,
+                        "topen": self.sim.date,
+                    }
+                    event_info.append((event, options))
+        return event_info, df_updates
 
 
 class MalariaPollingEventDistrict(RegularEvent, PopulationScopeEventMixin):

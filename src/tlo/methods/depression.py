@@ -567,20 +567,21 @@ class Depression(Module):
     def do_when_suspected_depression(
         self,
         person_id: int,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        diagnosis_function: Callable[[str, bool, bool], Any] = None,
         hsi_event: HSI_Event = None,
         add_to_queue_immediately: bool = True,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
         """
         This is called by any HSI event when depression is suspected or otherwise investigated.
-        At least one of the diagnosis_fn or hsi_event arguments must be provided; if both 
+
+        At least one of the diagnosis_function or hsi_event arguments must be provided; if both 
         are provided, the hsi_event argument is ignored.
         - If the hsi_event argument is provided, that event is used to access the diagnosis
         manager and run diagnosis tests.
-        - If the diagnosis_fn is passed in directly, it is assumed to be a Callable method that
+        - If the diagnosis_function is passed in directly, it is assumed to be a Callable method that
         runs diagnosis tests.
         :param person_id: Patient's row index in the population DataFrame.
-        :param diagnosis_fn: A function capable of running diagnosis checks on the population.
+        :param diagnosis_function: A function capable of running diagnosis checks on the population.
         :param hsi_event: The HSI_Event that triggered this call.
         :param add_to_queue_immediately: If True, any events and DataFrame updates that this
         function wants to implement will be done at the conclusion of this function. If False,
@@ -590,7 +591,7 @@ class Depression(Module):
         event_info = []
         df_updates = {}
 
-        if diagnosis_fn is None:
+        if diagnosis_function is None:
             assert isinstance(
                 hsi_event, HSI_Event
             ), "No diagnosis test function, nor HSI_Event instance, supplied."
@@ -603,10 +604,10 @@ class Depression(Module):
                     report_dxtest_tried=report_tried,
                 )
 
-            diagnosis_fn = tmp_dx_fn
+            diagnosis_function = tmp_dx_fn
 
         # Assess for depression and initiate treatments for depression if positive diagnosis
-        if diagnosis_fn("assess_depression"):
+        if diagnosis_function('assess_depression'):
             # If depressed: diagnose the person with depression
             df_updates["de_ever_diagnosed_depression"] = True
 
@@ -649,7 +650,7 @@ class Depression(Module):
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        diagnosis_function: Callable[[str, bool, bool], Any] = None,
         treatment_id: str = None,
         **kwargs,
     ) -> Tuple[List[Tuple[HSI_Event | Dict[str, Any]]] | Dict[str, Any]]:
@@ -660,7 +661,7 @@ class Depression(Module):
                 patient_id=patient_id,
                 patient_details=patient_details,
                 symptoms=symptoms,
-                diagnosis_fn=diagnosis_fn,
+                diagnosis_function=diagnosis_function,
                 treatment_id=treatment_id,
             )
 
@@ -669,7 +670,7 @@ class Depression(Module):
         patient_id: int,
         patient_details: NamedTuple = None,
         symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
+        diagnosis_function: Callable[[str, bool, bool], Any] = None,
         treatment_id: str = None,
         **kwargs,
     ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
@@ -681,7 +682,7 @@ class Depression(Module):
         ):
             event_info, df_updates = self.do_when_suspected_depression(
                 person_id=patient_id,
-                diagnosis_fn=diagnosis_fn,
+                diagnosis_function=diagnosis_function,
                 add_to_queue_immediately=False,
             )
         return event_info, df_updates

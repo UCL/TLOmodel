@@ -5,10 +5,9 @@ specification for parameters and properties, and the base Module class for
 disease modules.
 """
 from __future__ import annotations
-
 import json
 from enum import Enum, auto
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Set, Tuple, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Set, Tuple, TypeAlias, Union
 
 import numpy as np
 import pandas as pd
@@ -17,6 +16,16 @@ if TYPE_CHECKING:
     from numpy.random import RandomState
 
     from tlo.methods.hsi_event import HSI_Event
+
+DiagnosisFunction: TypeAlias = Callable[[str, bool, bool], Any]
+ConsumablesChecker: TypeAlias = Callable[
+    [
+        Union[None, np.integer, int, List, Set, Dict],
+        Union[None, np.integer, int, List, Set, Dict],
+    ],
+    Union[bool, Dict],
+]
+IndividualPropertyUpdates: TypeAlias = Dict[str, Any]
 
 class Types(Enum):
     """Possible types for parameters and properties.
@@ -375,20 +384,14 @@ class Module:
     def do_at_generic_first_appt(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
-        symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
-        consumables_checker: Callable[
-            [
-                Union[None, np.integer, int, List, Set, Dict],
-                Union[None, np.integer, int, List, Set, Dict],
-            ],
-            Union[bool, Dict],
-        ] = None,
-        facility_level: str = None,
-        treatment_id: str = None,
-        random_state: "RandomState" = None,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        patient_details: Optional[NamedTuple] = None,
+        symptoms: Optional[List[str]] = None,
+        diagnosis_function: Optional[DiagnosisFunction] = None,
+        consumables_checker: Optional[ConsumablesChecker] = None,
+        facility_level: Optional[str] = None,
+        treatment_id: Optional[str] = None,
+        random_state: Optional[RandomState] = None,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], IndividualPropertyUpdates]:
         """
         Actions to be take during a NON-emergency generic HSI.
 
@@ -421,7 +424,7 @@ class Module:
         :param patient_id: Row index (ID) of the individual target of the HSI event in the population DataFrame.
         :param patient_details: Patient details as provided in the population DataFrame.
         :param symptoms: List of symptoms the patient is experiencing.
-        :param diagnosis_fn: A function that can run diagnosis tests based on the patient's symptoms.
+        :param diagnosis_function: A function that can run diagnosis tests based on the patient's symptoms.
         :param consumables_checker: A function that can query the HealthSystem to check for available consumables.
         :param facility_level: The level of the facility that the patient presented at.
         :param treatment_id: The treatment id of the HSI event triggering the generic appointment.
@@ -432,25 +435,18 @@ class Module:
     def do_at_generic_first_appt_emergency(
         self,
         patient_id: int,
-        patient_details: NamedTuple = None,
-        symptoms: List[str] = None,
-        diagnosis_fn: Callable[[str, bool, bool], Any] = None,
-        consumables_checker: Callable[
-            [
-                Union[None, np.integer, int, List, Set, Dict],
-                Union[None, np.integer, int, List, Set, Dict],
-            ],
-            Union[bool, Dict],
-        ] = None,
-        facility_level: str = None,
-        treatment_id: str = None,
-        random_state: "RandomState" = None,
-    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], Dict[str, Any]]:
+        patient_details: Optional[NamedTuple] = None,
+        symptoms: Optional[List[str]] = None,
+        diagnosis_function: Optional[DiagnosisFunction] = None,
+        consumables_checker: Optional[ConsumablesChecker] = None,
+        facility_level: Optional[str] = None,
+        treatment_id: Optional[str] = None,
+        random_state: Optional[RandomState] = None,
+    ) -> Tuple[List[Tuple["HSI_Event", Dict[str, Any]]], IndividualPropertyUpdates]:
         """
         Actions to be take during an EMERGENCY generic HSI.
         Call signature and return values are identical to the
-        do_at_generic_first_appt method.
-
+        :py:meth:`~Module.do_at_generic_first_appt` method.
         Derived classes should overwrite this method so that they are
         compatible with the HealthSystem module, and can schedule HSI
         events when a patient presents symptoms indicative of the
